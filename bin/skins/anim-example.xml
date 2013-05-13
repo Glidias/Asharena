@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<anims loop="true">
+	<a f="1-23" id="movement1" g="ACT_MOVE" />
+	<a f="109-339" id="idle1" g="ACT_IDLE" />
+	<a f="340-550" id="idle2" g="ACT_IDLE" />
+	<a f="667-737" id="attack1" g="ACT_ATTACK" loop="false">
+		<n id="0">701</n>
+	</a>
+	<a f="738-809" id="attack2" g="ACT_ATTACK" loop="false">
+		<n id="0">769</n>
+	</a>
+	<a f="24-108" id="takedamage1" g="ACT_TAKEDAMAGE" loop="false" />
+	<a f="551-666" id="die1" g="ACT_DIE" loop="false" />
+</anims>
