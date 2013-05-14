@@ -6,4 +6,4 @@
 4) Camera system (3rd person) with raycasting
 5) Terrain geomery 
 
-6) Camera system (1st person)
+6) Camera system (1st person), trivial to implement but won't be used unless there's first-person models.
