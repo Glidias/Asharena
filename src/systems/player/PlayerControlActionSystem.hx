@@ -44,12 +44,22 @@ class PlayerControlActionSystem extends System
 	{
 		super();
 		this.key = key;
+		
 	}
 	
 	
 	override public function addToEngine(engine:Engine):Void {
 		nodeList = engine.getNodeList(PlayerActionNode);
+		//key.dispObj.addEventListener();
 	}
+	
+	override public function removeFromEngine(engine:Engine):Void {
+		super.removeFromEngine(engine);
+		//
+		
+	}
+	
+	
 	
 	override public function update(time:Float):Void {
 		var n:PlayerActionNode = nodeList.head;
@@ -64,6 +74,11 @@ class PlayerControlActionSystem extends System
 		
 		if (n.action.locked) return;
 		
+		var actionToSet:Int = PlayerAction.IDLE;
+		
+		// Consider turning to look around with key-controls (if no mouse avilable)
+		//if ( key.isDown(KeyCode.RIGHT)
+		
 		// Consider walkign animations
 			if (n.collision.maximum_ground_normal != null) {  // on ground
 				
@@ -71,30 +86,28 @@ class PlayerControlActionSystem extends System
 				
 				
 				
+				
+				
 				if ( (boo = key.isDown(KeyBindings.RIGHT)) || key.isDown(KeyBindings.LEFT) ) {  // determine whether to strafe left/right/none
 					d = n.direction.right;
 					value =  Vec3Utils.dot(d, v);
 					if (Vec3Utils.dot(d, v) >= WALK_STRAFE_THRESHOLD ) {  // got strafing
-						n.action.set( 
+						actionToSet = 
 							( key.isDown(KeyBindings.ACCELERATE) && value > RUN_STRAFE_THRESHOLD) ?  boo ? PlayerAction.STRAFE_RIGHT_FAST : PlayerAction.STRAFE_LEFT_FAST
 							:
-							boo ? PlayerAction.STRAFE_RIGHT : PlayerAction.STRAFE_LEFT
-						); 
+							boo ? PlayerAction.STRAFE_RIGHT : PlayerAction.STRAFE_LEFT; 
 					}
-					else n.action.set(PlayerAction.IDLE);
 				}
 				
 				if ( (boo=key.isDown(KeyBindings.FORWARD)) || key.isDown(KeyBindings.BACK ) ) {  // determine whether to move forward/backward/none
 					d = n.direction.forward;
 					value =  Vec3Utils.dot(d, v);
 					if (Vec3Utils.dot(d, v) >= WALK_MOVEMENT_THRESHOLD ) {  // got movement
-						n.action.set( 
+						actionToSet = 
 							( key.isDown(KeyBindings.ACCELERATE) && value > RUN_MOVEMENT_THRESHOLD) ?  boo ? PlayerAction.STRAFE_RIGHT_FAST : PlayerAction.STRAFE_LEFT_FAST
 							:
-							boo ? PlayerAction.STRAFE_RIGHT : PlayerAction.STRAFE_LEFT
-						); 
+							boo ? PlayerAction.STRAFE_RIGHT : PlayerAction.STRAFE_LEFT; 
 					}
-					else n.action.set(PlayerAction.IDLE);
 				}
 				
 			}
@@ -103,6 +116,8 @@ class PlayerControlActionSystem extends System
 				//if (n.action.current == PlayerAction.STATE_JUMP) return;  // Player is still in user-induced jumping state, do not cancel it while in air!
 				//n.action.set( n.vel.z >= 0 ? PlayerAction.IN_AIR : PlayerAction.IN_AIR_FALLING );
 			}
+			
+			n.action.set(actionToSet);
 			
 			//n = n.next;
 		//}
@@ -113,6 +128,7 @@ class PlayerControlActionSystem extends System
 class PlayerActionNode extends Node<PlayerActionNode> {
 	public var collision:CollisionResult;
 	public var vel:Vel;
+	public var rot:Rot;
 	public var direction:DirectionVectors;
 	public var action:ActionIntSignal;
 	

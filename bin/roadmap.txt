@@ -1,0 +1,9 @@
+1) Animation logic with controls and SurfaceMovement + GroundPlaneSystem (basic collision detectino against fixed ground to put to collision result)
+
+2) Jumping + Gravity : QPhysicsSystem to handle CollisionResultNode and QJumpNode 
+
+3) Mock room cube geometry  +EllipsoidColliderSystem  and QPhysicsSYstem to handle MoveREsultNode (remove GroundPlaneSYstem)
+4) Camera system (3rd person) with raycasting
+5) Terrain geomery 
+
+6) Camera system (1st person)

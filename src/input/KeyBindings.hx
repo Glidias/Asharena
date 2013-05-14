@@ -15,4 +15,14 @@ class KeyBindings
 	
 	public static inline var JUMP:UInt = KeyCode.SPACE;
 	
+	public static inline var SPELL:UInt = KeyCode.F;
+	public static inline var ACTIVATE:UInt = KeyCode.E;
+	public static inline var CHANGE_VIEW:UInt = KeyCode.R;
+	
+	public static inline var DODGE_LEFT:UInt = KeyCode.Z;
+	public static inline var DODGE_RIGHT:UInt = KeyCode.C;
+	
+	public static inline var TOGGLE_CROUCH_COMBAT:UInt = KeyCode.CONTROL;
+	public static inline var TOGGLE_STANDING_COMBAT:UInt = KeyCode.Q;
+	
 }

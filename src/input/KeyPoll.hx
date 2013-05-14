@@ -55,7 +55,7 @@ import flash.display.DisplayObject;
 class KeyPoll implements IKeyPoll
 {
     private var states:Bytes;
-    private var dispObj:DisplayObject;
+    public var dispObj:DisplayObject;
 
     /**
      * Constructor
