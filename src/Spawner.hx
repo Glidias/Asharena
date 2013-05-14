@@ -33,9 +33,9 @@ class Spawner
 		
 		ent.add( new SurfaceMovement() ).add( new DirectionVectors() );
 		
-		ent.add( new Gravity(5) ).add( new Jump(5, 15) );
+		ent.add( new Gravity(400) ).add( new Jump(.8, 4495) );
 		
-		ent.add(  new Ellipsoid(32, 32, 72)).add( new CollisionResult() );
+		ent.add(  new Ellipsoid(16, 16, 72*.5)).add( new CollisionResult() );
 		//.add(  new Ellipsoid(32,32,72)).add( new MoveResult() );
 		
 		ent.add( new ActionIntSignal() );

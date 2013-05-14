@@ -12,6 +12,7 @@ import components.Rot;
 import components.Vel;
 import haxe.io.Input;
 import input.KeyBindings;
+import input.KeyCode;
 import input.KeyPoll;
 import util.geom.Vec3;
 import util.geom.Vec3Utils;
@@ -77,21 +78,22 @@ class PlayerControlActionSystem extends System
 		var actionToSet:Int = PlayerAction.IDLE;
 		
 		// Consider turning to look around with key-controls (if no mouse avilable)
-		//if ( key.isDown(KeyCode.RIGHT)
+		if ( key.isDown(KeyCode.RIGHT)) {
+			n.rot.z -= .05;
+		}
+		if (key.isDown(KeyCode.LEFT)) {
+			n.rot.z += .05;
+		}
 		
 		// Consider walkign animations
 			if (n.collision.gotGroundNormal) {  // on ground
 				
 				v = n.vel;
-				
-				
-				
-				
-				
+
 				if ( (boo = key.isDown(KeyBindings.RIGHT)) || key.isDown(KeyBindings.LEFT) ) {  // determine whether to strafe left/right/none
 					d = n.direction.right;
-					value =  Vec3Utils.dot(d, v);
-					if (Vec3Utils.dot(d, v) >= WALK_STRAFE_THRESHOLD ) {  // got strafing
+					value =  abs(Vec3Utils.dot(d, v));
+					if (value >= WALK_STRAFE_THRESHOLD ) {  // got strafing
 						actionToSet = 
 							( key.isDown(KeyBindings.ACCELERATE) && value > RUN_STRAFE_THRESHOLD) ?  boo ? PlayerAction.STRAFE_RIGHT_FAST : PlayerAction.STRAFE_LEFT_FAST
 							:
@@ -101,26 +103,29 @@ class PlayerControlActionSystem extends System
 				
 				if ( (boo=key.isDown(KeyBindings.FORWARD)) || key.isDown(KeyBindings.BACK ) ) {  // determine whether to move forward/backward/none
 					d = n.direction.forward;
-					value =  Vec3Utils.dot(d, v);
-					if (Vec3Utils.dot(d, v) >= WALK_MOVEMENT_THRESHOLD ) {  // got movement
+					value =  abs( Vec3Utils.dot(d, v) );
+					if ( value >= WALK_MOVEMENT_THRESHOLD ) {  // got movement
 						actionToSet = 
-							( key.isDown(KeyBindings.ACCELERATE) && value > RUN_MOVEMENT_THRESHOLD) ?  boo ? PlayerAction.STRAFE_RIGHT_FAST : PlayerAction.STRAFE_LEFT_FAST
+							( key.isDown(KeyBindings.ACCELERATE) && value > RUN_MOVEMENT_THRESHOLD) ?  boo ? PlayerAction.MOVE_FORWARD_FAST : PlayerAction.MOVE_BACKWARD_FAST
 							:
-							boo ? PlayerAction.STRAFE_RIGHT : PlayerAction.STRAFE_LEFT; 
+							boo ? PlayerAction.MOVE_FORWARD : PlayerAction.MOVE_BACKWARD; 
 					}
 				}
-				
+				n.action.set(actionToSet);
 			}
 			else { // in air
 				// TODO: Threshold to determine how long in air or air speed to determine animation to choose
 				//if (n.action.current == PlayerAction.STATE_JUMP) return;  // Player is still in user-induced jumping state, do not cancel it while in air!
 				//n.action.set( n.vel.z >= 0 ? PlayerAction.IN_AIR : PlayerAction.IN_AIR_FALLING );
 			}
-			
-			n.action.set(actionToSet);
-			
+
 			//n = n.next;
 		//}
+	}
+	
+	private inline function abs(dot:Float):Float
+	{
+		return dot > 0 ? dot : -dot;
 	}
 	
 }

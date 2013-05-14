@@ -110,7 +110,7 @@ class KeyPoll implements IKeyPoll
      * @see isUp
      */
 
-    public function isDown(keyCode:Int):Bool
+    public inline function isDown(keyCode:Int):Bool
     {
         return ( states.get(keyCode >>> 3) & (1 << (keyCode & 7)) ) != 0;
     }
@@ -125,7 +125,7 @@ class KeyPoll implements IKeyPoll
      * @see isDown
      */
 
-    public function isUp(keyCode:Int):Bool
+    public inline function isUp(keyCode:Int):Bool
     {
         return ( states.get(keyCode >>> 3) & (1 << (keyCode & 7)) ) == 0;
     }

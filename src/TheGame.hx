@@ -40,7 +40,7 @@ class TheGame
 		
 
 		// Craete ticker
-		ticker = new FrameTickProvider(stage);
+		ticker = new FrameTickProvider(stage, 1000/15);
 		ticker.add(engine.update);
 		
 		// Create systems
@@ -48,13 +48,12 @@ class TheGame
 		//SurfaceMovementSystem;
 	
 		
-		engine.addSystem( new GravitySystem(), SystemPriorities.postMove );
+		engine.addSystem( new GravitySystem(), SystemPriorities.update );
 		engine.addSystem( new PlayerJumpSystem(keyPoll), SystemPriorities.update);
 		engine.addSystem( new PlayerSurfaceMovementSystem(), SystemPriorities.update );
-		
-		engine.addSystem( new SurfaceMovementSystem(), SystemPriorities.move );
+		engine.addSystem( new MovementSystem(), SystemPriorities.move );
 		engine.addSystem( new GroundPlaneCollisionSystem(), SystemPriorities.resolveCollisions );
-		engine.addSystem( new MovementSystem(), SystemPriorities.postMove );
+		engine.addSystem( new SurfaceMovementSystem(), SystemPriorities.stateMachines );
 		engine.addSystem( new PlayerControlActionSystem(keyPoll), SystemPriorities.stateMachines );
 		engine.addSystem( new AnimationSystem(), SystemPriorities.animate);
 		RenderSystem;

@@ -38,7 +38,8 @@ class Jump
 		var result:Bool = enabled && this.jump_timer <= 0;
 		if (result)
 		{
-			velocity.z += jump_speed * time;
+				
+			velocity.z += jump_speed * .04;
 			jump_timer = JUMP_COOLDOWN;     
 			
 		}

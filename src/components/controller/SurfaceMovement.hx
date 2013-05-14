@@ -15,6 +15,9 @@ class SurfaceMovement
 	public var WALK_SPEED:Float;
 	public var WALKBACK_SPEED:Float;
 	public var STRAFE_SPEED:Float;
+	
+	
+	
 
 	// State for thing
 	// delta walk/strafe state (-1 for backwards/left, 0 for neither direction, 1 for forwards/right)
@@ -46,8 +49,9 @@ class SurfaceMovement
 		//rightVec = new Vec3();
 		friction = .25;
 		
-		setWalkSpeeds(16);
-		setStrafeSpeed(10);
+		setWalkSpeeds(115, 32);
+		//setWalkSpeeds(150, 32);
+		setStrafeSpeed(37);
 	}
 	
 	inline public function setWalkSpeeds(forwardSpeed:Float, backspeed:Float = -1):Void {

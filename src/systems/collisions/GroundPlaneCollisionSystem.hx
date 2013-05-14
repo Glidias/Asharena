@@ -6,6 +6,7 @@ import ash.core.System;
 import components.CollisionResult;
 import components.Ellipsoid;
 import components.Pos;
+import components.Vel;
 
 /**
  * ...
@@ -36,10 +37,14 @@ class GroundPlaneCollisionSystem extends System
 				n.pos.z = groundLevel + n.ellipsoid.z;
 				n.result.gotGroundNormal = true;
 				n.result.maximum_ground_normal.set(0, 0, 1);
+				//trace( "on ground");
+				n.vel.z = 0;
 				
 			}
 			else {
 				n.result.gotGroundNormal = false;
+				//trace( "in air");
+				
 			}
 			n = n.next;
 		}
@@ -51,5 +56,5 @@ class CollidableNode extends Node<CollidableNode> {
 	public var result:CollisionResult;
 	public var ellipsoid:Ellipsoid;
 	public var pos:Pos;
-	
+	public var vel:Vel;
 }

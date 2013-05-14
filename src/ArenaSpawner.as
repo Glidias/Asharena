@@ -2,6 +2,7 @@ package
 {
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.Resource;
 	import alternativa.engine3d.loaders.ParserMaterial;
 	import alternativa.engine3d.loaders.TexturesLoader;
 	import alternativa.engine3d.materials.FillMaterial;
@@ -14,6 +15,7 @@ package
 	import ash.core.Engine;
 	import ash.core.Entity;
 	import components.ActionIntSignal;
+	import components.controller.SurfaceMovement;
 	import components.Pos;
 	import components.Rot;
 	import flash.display3D.Context3D;
@@ -49,7 +51,9 @@ package
 			}
 
 			skin._rotationX = Math.PI * .5;
-			skin._rotationZ = Math.PI;
+			skin._rotationZ = Math.PI ;   // for tumble_right
+
+			
 			skin.calculateBoundBox();
 			var obj:Object3D = new Object3D();
 			obj.addChild(skin);
@@ -89,6 +93,12 @@ package
 			return box;
 		}
 		
+		public function addCrossStage(pos:Pos=null, rot:Rot=null):void {
+						
+			addRenderEntity( upload( new Box(10, 900, 10, 1, 1, 1, false, new FillMaterial(0xFF0000) )), pos || new Pos(), rot || new Rot() );
+			addRenderEntity( upload( new Box(900, 10, 10, 1, 1, 1, false, new FillMaterial(0x00FF00) )), pos || new Pos(), rot || new Rot() );
+		}
+		
 		 public function addGladiator(race:String):Entity {
 			var ent:Entity = getGladiatorBase();
 			var skProto:Skin = skinDict[race];
@@ -107,16 +117,28 @@ package
 			var bb:BoundBox;
 			bb = obj.boundBox;
 			
-			//addRenderEntity(getBoundingBox(bb), ent.get(Pos) as Pos, ent.get(Rot) as Rot);
+			addRenderEntity(getBoundingBox(bb), ent.get(Pos) as Pos, ent.get(Rot) as Rot);
+			
+
 			
 			var actions:ActionIntSignal = ent.get(ActionIntSignal) as ActionIntSignal;	
-			var gladiatorStance:GladiatorStance = new GladiatorStance(sk);
+			var gladiatorStance:GladiatorStance = new GladiatorStance(sk, ent.get(SurfaceMovement) as SurfaceMovement );
 			actions.add( gladiatorStance.handleAction );
 			ent.add(gladiatorStance, IAnimatable);
 			
 			engine.addEntity(ent);
 			
 			return ent;
+		}
+		
+		private function upload(obj:Object3D, hierachy:Boolean=false):Object3D 
+		{
+			var resources:Vector.<Resource> = obj.getResources(hierachy);
+			var i:int = resources.length;
+			while (--i > -1) {
+				resources[i].upload(context3D);
+			}
+			return obj;
 		}
 		
 	}

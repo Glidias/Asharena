@@ -1,5 +1,8 @@
 package  
 {
+	import alternativa.engine3d.animation.AnimationClip;
+	import alternativa.engine3d.animation.keys.Track;
+	import alternativa.engine3d.animation.keys.TransformTrack;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.loaders.ParserA3D;
 	import alternativa.engine3d.loaders.ParserMaterial;
@@ -7,6 +10,8 @@ package
 	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.ExternalTextureResource;
+	import components.Pos;
+	import flash.Boot;
 	import flash.display.Stage;
 	import flash.events.Event;
 	import flash.events.IEventDispatcher;
@@ -52,6 +57,8 @@ package
 			
 			_view.addEventListener(Event.COMPLETE, onViewInitialized);
 			
+			Boot.getTrace().blendMode = "invert";
+		stage.addChild( Boot.getTrace() );
 		}
 		
 		private function onViewInitialized(e:Event):void 
@@ -71,8 +78,10 @@ package
 			// Setup rendering system
 			engine.addSystem( new RenderingSystem(_view.scene), SystemPriorities.render );
 			
-		
-			arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN).add(keyPoll);
+			
+			arenaSpawner.addCrossStage(  );
+			 arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN).add(keyPoll); //.get(Pos) as Pos
+	
 			
 			ticker.start();	
 		}
@@ -131,8 +140,30 @@ package
 			var bytes:ByteArray = new ANIMS();
 			bytes.uncompress();
 			anim.readExternal( bytes); 
+
+			
 			GladiatorStance.ANIM_MANAGER = anim;
+			
+			removeAnimationTrack(anim, "run", "Bip01");
 		}
+		
+		private function removeAnimationTrack(animManager:AnimationManager, animName:String, boneName:String):void 
+		{
+			var anim:AnimationClip = animManager.getAnimationByName(animName);
+			
+			var len:int = anim.numTracks;
+			for (var i:int = 0; i < len ; i++) {
+				var t:Track = anim.getTrackAt(i);
+				if (t.object === boneName) {
+					anim.removeTrack(t);
+					
+					return;
+				}
+			}
+			
+		}
+		
+		
 		
 		private function getAnimHash(xml:XML):Object {
 			var obj:Object = { };

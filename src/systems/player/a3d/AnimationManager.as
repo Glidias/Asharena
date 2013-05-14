@@ -178,6 +178,12 @@ package systems.player.a3d
 			switcher.activate(animation, time);
 		}
 		
+		public function switchAndRestartAnim(animation:AnimationClip, time:Number):void {
+			_currentAnim = animation;
+			animation.time = 0;
+			switcher.activate(animation, time);
+		}
+		
 		
 		public function setupAnimGroups(xml:XML, tableLookup:Vector.<String>=null):void {
 			var xmlList:XMLList = xml..a.(hasOwnProperty("@g"));

@@ -27,6 +27,10 @@ class PlayerSurfaceMovementSystem extends System
 	
 	public var nodeList:NodeList<PlayerSurfaceMovementNode>;
 	
+	
+
+	
+	
 	public function new() 
 	{
 		super();
