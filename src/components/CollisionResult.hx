@@ -24,19 +24,36 @@ class CollisionResult
 	public var gotCollision:Bool;
 	public var maximum_normal_impulse:Float;  
 	public var maximum_ground_normal:Vec3;
-	
 
-	public function new(flags:Int=0) 
+	public function new() 
 	{
 		gotCollision = false;
 		
-		this.flags = flags;
+		flags = 0;
 		
 		max_ground_normal_threshold = MAX_GROUND_NORMAL_THRESHOLD;
 		
 		maximum_normal_impulse = 0;
 		maximum_ground_normal = new Vec3();
 	}
+	
+	private inline function get_gotGroundNormal():Bool 
+	{
+		return (flags & FLAG_MAX_GROUND_NORMAL) != 0;
+	}
+	
+	private inline function set_gotGroundNormal(value:Bool):Bool 
+	{
+		if (value) {
+			flags |= FLAG_MAX_GROUND_NORMAL;
+		}
+		else {
+			flags &= ~(FLAG_MAX_GROUND_NORMAL);
+		}
+		return value;
+	}
+	
+	public var gotGroundNormal(get_gotGroundNormal, set_gotGroundNormal):Bool;
 	
 	
 	

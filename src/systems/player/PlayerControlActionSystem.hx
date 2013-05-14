@@ -80,7 +80,7 @@ class PlayerControlActionSystem extends System
 		//if ( key.isDown(KeyCode.RIGHT)
 		
 		// Consider walkign animations
-			if (n.collision.maximum_ground_normal != null) {  // on ground
+			if (n.collision.gotGroundNormal) {  // on ground
 				
 				v = n.vel;
 				

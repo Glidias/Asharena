@@ -39,7 +39,7 @@ class PlayerJumpSystem extends System
 		var n:PlayerJumpNode = nodeList.head;
 		if (n == null) return;
 		
-		if (n.collision.maximum_ground_normal != null) {
+		if (n.collision.gotGroundNormal) {
 			if (key.isDown(KeyBindings.JUMP) && n.jump.attemptJump(n.vel, time) ) {
 				//n.trigger.lock = true;
 				n.trigger.set( PlayerAction.STATE_JUMP );

@@ -42,12 +42,9 @@ class SurfaceMovementSystem extends System
 		
 		while (n != null) {
 			
-			// if (n.collision.gotCollision) {
-			//	n.movement.update(time,  n.rot, n.vel, ( n.collision.flags & CollisionResult.FLAG_MAX_GROUND_NORMAL )!=0 ? n.collision.maximum_ground_normal : null);
-			//}
-			
+
 			var movement:SurfaceMovement = n.movement;
-			SurfaceMovement.updateWith(time, n.rot, n.vel, movement.walk_state, movement.strafe_state, n.directions.forward, n.directions.right, movement.WALK_SPEED, movement.WALKBACK_SPEED, movement.STRAFE_SPEED, movement.friction, defaultGroundNormal );
+			SurfaceMovement.updateWith(time, n.rot, n.vel, movement.walk_state, movement.strafe_state, n.directions.forward, n.directions.right, movement.WALK_SPEED, movement.WALKBACK_SPEED, movement.STRAFE_SPEED, movement.friction, n.collision.gotGroundNormal ? defaultGroundNormal : null );
 			
 			n = n.next;
 			
@@ -64,7 +61,7 @@ class SurfaceMovementNode extends Node<SurfaceMovementNode> {
 	public var rot:Rot;
 	public var movement:SurfaceMovement;
 	public var directions:DirectionVectors;
-	//public var collision:CollisionResult;  // this is used to determine whther person is on surface or not..
+	public var collision:CollisionResult;  // this is used to determine whther person is on surface or not..
 	
 }
 

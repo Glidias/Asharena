@@ -4,6 +4,7 @@ import ash.tick.FrameTickProvider;
 import flash.display.Stage;
 import input.KeyPoll;
 import systems.animation.AnimationSystem;
+import systems.collisions.GroundPlaneCollisionSystem;
 import systems.movement.MovementSystem;
 import systems.movement.PlayerSurfaceMovementSystem;
 import systems.SystemPriorities;
@@ -50,7 +51,9 @@ class TheGame
 		engine.addSystem( new GravitySystem(), SystemPriorities.postMove );
 		engine.addSystem( new PlayerJumpSystem(keyPoll), SystemPriorities.update);
 		engine.addSystem( new PlayerSurfaceMovementSystem(), SystemPriorities.update );
+		
 		engine.addSystem( new SurfaceMovementSystem(), SystemPriorities.move );
+		engine.addSystem( new GroundPlaneCollisionSystem(), SystemPriorities.resolveCollisions );
 		engine.addSystem( new MovementSystem(), SystemPriorities.postMove );
 		engine.addSystem( new PlayerControlActionSystem(keyPoll), SystemPriorities.stateMachines );
 		engine.addSystem( new AnimationSystem(), SystemPriorities.animate);

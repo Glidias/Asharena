@@ -2,6 +2,7 @@ package ;
 import ash.core.Engine;
 import ash.core.Entity;
 import components.ActionIntSignal;
+import components.CollisionResult;
 import components.controller.SurfaceMovement;
 import components.DirectionVectors;
 import components.Ellipsoid;
@@ -32,8 +33,9 @@ class Spawner
 		
 		ent.add( new SurfaceMovement() ).add( new DirectionVectors() );
 		
-		//ent.add( new Gravity(5) ).add( new Jump(5, 15) );
+		ent.add( new Gravity(5) ).add( new Jump(5, 15) );
 		
+		ent.add(  new Ellipsoid(32, 32, 72)).add( new CollisionResult() );
 		//.add(  new Ellipsoid(32,32,72)).add( new MoveResult() );
 		
 		ent.add( new ActionIntSignal() );
