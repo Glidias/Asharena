@@ -1,4 +1,4 @@
- 2) Include tumble-left/tumble-right  (find a way to also include... longjump ability...)
+ 2) Include crouch-mode, combat-mode, and tumble-left/tumble-right, and attack (currently set to middle) (find a way to also include... longjump ability...)
 
 QPhysicsSystem to handle CollisionResultNode //and QJumpNode// , replace::::::::GroundCollisionSystem
 3) Mock room cube geometry  +EllipsoidColliderSystem  and QPhysicsSYstem to handle MoveREsultNode (remove GroundPlaneSYstem)

@@ -43,11 +43,38 @@ package systems.player.a3d
 		
 		private var _stance:int = 0;
 		private var _stanceString:String = "stand";
+		public function set stance(val:int):void {
+			_stanceString = val === 0 ? "stand" : val === 1 ? "combat" : "crouch";
+			_stance = val;
+		}
+		private var isCombat:Boolean = true;
+		
+		
+		public function toggleCombat():void {
+			isCombat = !isCombat;
+			if (isCombat) {
+				stance = 1;
+			}
+			else {
+				stance = 0;
+			}
+		}
+		public function toggleCrouch():void {
+			if (_stance != 2) {
+				stance = 2;
+			}
+			else {
+				stance = isCombat ? 1 : 0;
+			}
+		
+		}
+		
 		
 		
 		public static const SPEED_BACKWARDS:Number = 60;
 		public static const SPEED_JOG:Number = 112;
 		public static const SPEED_RUN:Number = 170;
+		public static const SPEED_CROUCH:Number = 44;
 		
 		public static const SPEED_STRAFE:Number = 34;
 		
@@ -55,7 +82,7 @@ package systems.player.a3d
 		private static const I_SPEED_JOG:Number = 1/SPEED_JOG;
 		private static const I_SPEED_RUN:Number = 1/SPEED_RUN;
 		private static const I_SPEED_STRAFE:Number = 1 / SPEED_STRAFE;
-		
+		private static const I_SPEED_CROUCH:Number =1 / SPEED_CROUCH;
 	
 		
 		private var speed_backwards_fast:Number = 65;
@@ -66,6 +93,7 @@ package systems.player.a3d
 		private var speed_strafe_fast:Number = 58;
 		private var speed_strafe:Number = 36;
 		public var SPEED_RUN_MULTIPLIER:Number = speed_run / speed_jog;
+		public var SPEED_CROUCH_MULTIPLIER:Number = SPEED_CROUCH / SPEED_JOG;
 		
 		
 		
@@ -88,8 +116,12 @@ package systems.player.a3d
 			surfaceMovement.setStrafeSpeed(speed_strafe);
 		
 			init();
+			
+			stance = 2;
 		}
 		
+	
+	
 		public function getJoint(name:String):Joint {
 			var i:int = skin._renderedJoints.length;
 			while (--i > -1) {
@@ -112,6 +144,8 @@ package systems.player.a3d
 				}
 			}
 			
+			
+			
 			fullBodyController.root = fullBody;
 			upperBodyController.root = upperBody;
 			lowerBodyController.root = lowerBody;
@@ -133,6 +167,7 @@ package systems.player.a3d
 				skin.rotationZ = Math.PI;
 				_skinRotated = false;
 			}
+
 			return anim;
 		}
 				
@@ -152,6 +187,7 @@ package systems.player.a3d
 
 		// handles any changes in action!
 		public function handleAction(val:int):void {
+			_running = false;
 			
 			if (val === PlayerAction.STATE_JUMP) {
 				setAnimation(fullBodyAnims["jump"], fullBodyController, fullBody, 0).speed = 1;
@@ -176,7 +212,8 @@ package systems.player.a3d
 					// Else
 					//Log.trace(val === PlayerAction.STRAFE_LEFT);
 					surfaceMovement.setStrafeSpeed( (mask & MASK_STRAFE_FAST) ? speed_strafe_fast : speed_strafe );
-					setAnimation(lowerBodyAnims["combat" + ( mask & (1 << PlayerAction.STRAFE_LEFT) ? "_moveleft" : "_moveright")], lowerBodyController, lowerBody, .3).speed = surfaceMovement.STRAFE_SPEED * I_SPEED_STRAFE;
+
+					setAnimation(lowerBodyAnims[ (_stance != 0 ? _stanceString : "combat") + ( mask & (1 << PlayerAction.STRAFE_LEFT) ? "_moveleft" : "_moveright")], lowerBodyController, lowerBody, .3).speed = surfaceMovement.STRAFE_SPEED * I_SPEED_STRAFE;
 				setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
 					_curController = null;
 			}
@@ -184,24 +221,34 @@ package systems.player.a3d
 				if (mask & MASK_WALK_FORWARD  ) {
 					
 					if (val != PlayerAction.MOVE_FORWARD_FAST) {
-						setAnimation(fullBodyAnims["jog"], fullBodyController, fullBody, .2).speed = speed_jog * I_SPEED_JOG;
-						_curController = fullBodyController;
-						setAccelerate(false);
+						if (_stance != 2) {
+							setAnimation(fullBodyAnims["jog"], fullBodyController, fullBody, .2).speed = speed_jog * I_SPEED_JOG;
+							_curController = fullBodyController;
+						}
+						else {
+							//ref_melee_aim
+								setAnimation(lowerBodyAnims["crouch_walkforward"], lowerBodyController, lowerBody, .3).speed = speed_jog * SPEED_CROUCH_MULTIPLIER * I_SPEED_CROUCH 
+							setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
+							_curController = null;
+						}
+						//setAccelerate(false);
+						surfaceMovement.setWalkSpeeds(speed_jog*SPEED_CROUCH_MULTIPLIER* .75);
+						//_running = true;
 					}
 					else {
 						_skinRotated = false;
+						_running = true;
 						setAnimation(fullBodyAnims["run"], fullBodyController, fullBody, .1).speed = speed_run * I_SPEED_RUN;
 						_curController = fullBodyController; 
-						skin._rotationZ = Math.PI + .22;
+						skin._rotationZ = Math.PI + (_stance != 2 ? .22 : .02);
 						skin.transformChanged = true;
 						_skinRotated = true;
 						setAccelerate(true);
-						
 					}
 				}
 				else {
-					surfaceMovement.WALKBACK_SPEED =  val != PlayerAction.MOVE_BACKWARD_FAST ? speed_backwards : speed_backwards_fast;
-					setAnimation(lowerBodyAnims["combat_walkback"], lowerBodyController, lowerBody, .3).speed = surfaceMovement.WALKBACK_SPEED * I_SPEED_BACKWARDS;
+					surfaceMovement.WALKBACK_SPEED = _stance != 2 ? (val != PlayerAction.MOVE_BACKWARD_FAST ? speed_backwards : speed_backwards_fast) : speed_jog * SPEED_CROUCH_MULTIPLIER * .75;
+					setAnimation(lowerBodyAnims[(_stance != 0 ? _stanceString : "combat")+"_walkback"], lowerBodyController, lowerBody, .3).speed = surfaceMovement.WALKBACK_SPEED * (_stance != 2 ? I_SPEED_BACKWARDS : I_SPEED_CROUCH);
 					setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
 				
 					_curController = null;
@@ -212,6 +259,7 @@ package systems.player.a3d
 		
 		private var surfaceMovement:SurfaceMovement;
 		private var _skinRotated:Boolean = true;
+		private var _running:Boolean;
 		
 		/* INTERFACE systems.animation.IAnimatable */
 		
@@ -225,6 +273,8 @@ package systems.player.a3d
 			rootJoint._x = 0;
 			rootJoint._y = 0;
 			rootJoint._z = 0;
+			
+			skin.z = _running || _stance != 2  ? 0 : -13;
 		}
 			
 		

@@ -80,7 +80,7 @@ package
 			
 			
 			arenaSpawner.addCrossStage(  );
-			 arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN).add(keyPoll); //.get(Pos) as Pos
+			arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN).add(keyPoll); //.get(Pos) as Pos
 	
 			
 			ticker.start();	
