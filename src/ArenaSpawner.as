@@ -18,7 +18,9 @@ package
 	import components.controller.SurfaceMovement;
 	import components.Pos;
 	import components.Rot;
+	import flash.display.Stage;
 	import flash.display3D.Context3D;
+	import flash.events.IEventDispatcher;
 	import flash.utils.Dictionary;
 	import systems.animation.IAnimatable;
 	import systems.player.a3d.GladiatorStance;
@@ -99,7 +101,7 @@ package
 			addRenderEntity( upload( new Box(900, 10, 10, 1, 1, 1, false, new FillMaterial(0x00FF00) )), pos || new Pos(), rot || new Rot() );
 		}
 		
-		 public function addGladiator(race:String):Entity {
+		 public function addGladiator(race:String, playerStage:IEventDispatcher=null):Entity {
 			var ent:Entity = getGladiatorBase();
 			var skProto:Skin = skinDict[race];
 			var sk:Skin = skProto.clone() as Skin;
@@ -117,12 +119,13 @@ package
 			var bb:BoundBox;
 			bb = obj.boundBox;
 			
-			//addRenderEntity(getBoundingBox(bb), ent.get(Pos) as Pos, ent.get(Rot) as Rot);
+			addRenderEntity(getBoundingBox(bb), ent.get(Pos) as Pos, ent.get(Rot) as Rot);
 			
 
 			
 			var actions:ActionIntSignal = ent.get(ActionIntSignal) as ActionIntSignal;	
 			var gladiatorStance:GladiatorStance = new GladiatorStance(sk, ent.get(SurfaceMovement) as SurfaceMovement );
+			if (playerStage!=null) gladiatorStance.bindKeys(playerStage);
 			actions.add( gladiatorStance.handleAction );
 			ent.add(gladiatorStance, IAnimatable);
 			
