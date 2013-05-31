@@ -119,7 +119,7 @@ package
 			var bb:BoundBox;
 			bb = obj.boundBox;
 			
-			addRenderEntity(getBoundingBox(bb), ent.get(Pos) as Pos, ent.get(Rot) as Rot);
+			//addRenderEntity(getBoundingBox(bb), ent.get(Pos) as Pos, ent.get(Rot) as Rot);
 			
 
 			

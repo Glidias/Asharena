@@ -1,8 +1,40 @@
- 2) Include crouch-mode, combat-mode, and tumble-left/tumble-right, and attack (currently set to middle) (find a way to also include... longjump ability...)
+1) Include tumble-left/tumble-right, (jump velocity, ground normal WILL always not be available, or at least something to disable surface movmeent during duration of tumble) !
+1a) Attack (currently set to middle) (find a way to also include... longjump ability...) !
 
-QPhysicsSystem to handle CollisionResultNode //and QJumpNode// , replace::::::::GroundCollisionSystem
-3) Mock room cube geometry  +EllipsoidColliderSystem  and QPhysicsSYstem to handle MoveREsultNode (remove GroundPlaneSYstem)
-4) Camera system (3rd person) with raycasting
-5) Terrain geomery 
+Animation fixes to:
+- fix jump hangups *
+- standing mode should use manual skin rotation and jog towards diection for strafe movement
+- changing direction (strafe left - middle - strafe right ) should include animation blending  and gradual acceleration to either direction. (lower body dominant strafe)
+  OR consider swapping controller update order for strafe animations  (upper body dominant strafe) .
+     Perhaps, lower body dominant can allow bonuses to blocking/evasion ability since character tends to face towards opponent while strafing with his lower body...while upper body dominant
+	 strafe allows for quicker attack due to combat ready (upper-body) position. One could toggle between 2 stances while in combat mode.
+- changing stance could  take time and temporarily prevent any movement (velocity always set to zero!).  
+  ->  default combat animation should be assigned to full-body  to support seamless transitioning of stance from combat to standing.
+   -> full-body standing should be assigned to the 2 half-controllers. (instant pose) to lower stance to combat.
+   //-> find a way to resolve combat->crouch stances and vice versa, 
 
-6) Camera system (1st person), trivial to implement but won't be used unless there's first-person models.
+1b) Attach weapon to hand !
+
+
+QPhysicsSystem to handle CollisionResultNode //and QJumpNode// ,   *  
+2) Mock room cube geometry  +EllipsoidColliderSystem  and QPhysicsSYstem to handle MoveREsultNode
+3) Camera system (3rd person) with raycasting *
+4) Terrain geomery, terrain collision and raycasting  *
+
+
+5) Camera system (1st person), trivial to implement but won't be used unless there's first-person models.
+
+
+// -----------------------------------
+
+Atheletics: (Considerations)
+----------
+1) The ability to immediately sprint from a crouching/combat position without having to change stance. (Acceleration pickup varies depending on skill).
+2) Crouch + Sprint + Attack combo. (Pouncing attack)
+
+
+Acrobatics: (Considerations)
+----------
+1) Variable Jump Power (Falling animation frame), 
+2) Scale walls/Vault obstacles with jump and no jump. (Auto-jump when sprinting ahead)
+3) Tumble when fall from great height (hold sprinting while in air?)

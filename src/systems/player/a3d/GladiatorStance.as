@@ -11,8 +11,10 @@ package systems.player.a3d
 	import flash.Boot;
 	import flash.events.IEventDispatcher;
 	import flash.events.KeyboardEvent;
+	import flash.events.MouseEvent;
 	import flash.ui.Keyboard;
 	import flash.utils.Dictionary;
+	import input.KeyBindings;
 	import systems.animation.IAnimatable;
 	import systems.player.PlayerAction;
 	import alternativa.engine3d.alternativa3d;
@@ -50,37 +52,17 @@ package systems.player.a3d
 			_stanceString = val === 0 ? "stand" : val === 1 ? "combat" : "crouch";
 			_stance = val;
 		}
-		private var isCombat:Boolean = true;
-		
-		
-		public function toggleCombat():void {
-			isCombat = !isCombat;
-			if (isCombat) {
-				stance = 1;
-			}
-			else {
-				stance = 0;
-			}
-		}
-		public function toggleCrouch():void {
-			if (_stance != 2) {
-				stance = 2;
-			}
-			else {
-				stance = isCombat ? 1 : 0;
-			}
-			
-		}
-		
-		
+	
 		
 		public static const SPEED_BACKWARDS:Number = 60;
+		public static const SPEED_FORWARDS:Number = 60;
 		public static const SPEED_JOG:Number = 112;
 		public static const SPEED_RUN:Number = 170;
 		public static const SPEED_CROUCH:Number = 38;
 		
 		public static const SPEED_STRAFE:Number = 54;
 		
+		private static const I_SPEED_FORWARDS:Number =1/SPEED_FORWARDS;
 		private static const I_SPEED_BACKWARDS:Number =1/SPEED_BACKWARDS;
 		private static const I_SPEED_JOG:Number = 1/SPEED_JOG;
 		private static const I_SPEED_RUN:Number = 1/SPEED_RUN;
@@ -91,15 +73,17 @@ package systems.player.a3d
 		private var speed_backwards_fast:Number = 65;
 		private var speed_backwards:Number = 34;
 		
-		private var speed_jog:Number = 102;
-		private var speed_run:Number = 150;
+		private var speed_jog:Number = 100;
+		private var speed_run:Number = 160;
+		
 		private var speed_strafe_fast:Number = 62;
 		private var speed_strafe:Number = 48;
 		public var SPEED_RUN_MULTIPLIER:Number = speed_run / speed_jog;
 		public var SPEED_CROUCH_MULTIPLIER:Number = SPEED_CROUCH / SPEED_JOG;
 		public var SPEED_CROUCHSTRAFE_MULTIPLIER:Number = SPEED_CROUCH / SPEED_STRAFE;
 		public var SPEED_CROUCHBACK_MULTIPLIER:Number = SPEED_CROUCH / SPEED_BACKWARDS;
-		public var playerSpeedCrouchRatio:Number = 1;
+		public var playerSpeedCrouchRatio:Number = .8;
+		public var playerSpeedCombatRatio:Number = .65;
 		
 		private static const MASK_STRAFE:int = ( (1 << PlayerAction.STRAFE_LEFT_FAST) | (1 << PlayerAction.STRAFE_RIGHT_FAST) | (1 << PlayerAction.STRAFE_LEFT) | (1 << PlayerAction.STRAFE_RIGHT));
 		private static const MASK_WALK:int = ( (1<<PlayerAction.MOVE_FORWARD) | (1<<PlayerAction.MOVE_FORWARD_FAST) | (1<<PlayerAction.MOVE_BACKWARD) | (1<<PlayerAction.MOVE_BACKWARD_FAST));
@@ -180,22 +164,40 @@ package systems.player.a3d
 
 		public function bindKeys(stage:IEventDispatcher):void {
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false, 0, true);
+			//stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown, false,0,true);
+		}
+		
+		private function onMouseDown(e:MouseEvent):void 
+		{
+			if (_stance === 0) {
+				lowerStanceToggle();
+			}
+		}
+		
+		public function lowerStanceToggle():void {
+			_stance++;
+	
+			stance = _stance > 2 ? 1 : _stance;
+			handleAction(lastAction);
+		}
+		
+		public function raiseStanceToggle():void {
+			_stance--;
+			stance = _stance < 0 ? 1 : _stance;
+			handleAction(lastAction);
 		}
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
 			var keyCode:uint = e.keyCode;
 			if (keyCode === Keyboard.Q) {
-				toggleCombat();
-				
-				handleAction(PlayerAction.IDLE);
+				raiseStanceToggle();
 			}
 			else if (keyCode === Keyboard.CONTROL) {
-				toggleCrouch();
-				
-				handleAction(PlayerAction.IDLE);
-				
-				//animate(0);
+				lowerStanceToggle();
+			}
+			else if (_stance ==1  && keyCode === KeyBindings.ACCELERATE) {
+				raiseStanceToggle();
 			}
 		}
 
@@ -205,13 +207,17 @@ package systems.player.a3d
 			speed_run = speed * SPEED_RUN_MULTIPLIER;
 		}
 		
-
+		private var lastAction:int = PlayerAction.IDLE;
+		
 		// handles any changes in action!
 		public function handleAction(val:int):void {
+			lastAction = val;
 			_running = false;
 			_idle = false;
 			if (val === PlayerAction.STATE_JUMP) {
 				setAnimation(fullBodyAnims["jump"], fullBodyController, fullBody, 0).speed = 1;
+			
+			//setAnimation(fullBodyAnims["tumbleleft"], fullBodyController, fullBody, 0).speed = 1;
 				//(fullBodyAnims["jump"] as AnimationClip).time = .5;
 				_curController = fullBodyController;
 				_curController.update();
@@ -227,6 +233,8 @@ package systems.player.a3d
 			}
 			
 			var mask:uint = (1 << val);
+			// TODO:: 0 or some blend time >0, depending on whether stance change was changed earlier (crouching to combat/combat to crouching currently set to zero to avoid height discrepancies!)
+			
 			if ( mask & MASK_STRAFE ) {
 					// always do fast turn run animation
 					// Am i in runmode or not and is it fast enough to warrant a fast move??
@@ -237,25 +245,35 @@ package systems.player.a3d
 else surfaceMovement.setStrafeSpeed( (mask & MASK_STRAFE_FAST) ? speed_strafe*playerSpeedCrouchRatio*SPEED_CROUCHSTRAFE_MULTIPLIER : speed_strafe*playerSpeedCrouchRatio*SPEED_CROUCHSTRAFE_MULTIPLIER );
 surfaceMovement.setWalkSpeeds(speed_backwards*.5);
 	// TODO: do full body turn run for speed_strafe_fast instead!
-					setAnimation(lowerBodyAnims[ (_stance != 0 ? _stanceString : "combat") + ( mask & (1 << PlayerAction.STRAFE_LEFT) ? "_moveleft" : "_moveright")], lowerBodyController, lowerBody, .3).speed = surfaceMovement.STRAFE_SPEED * I_SPEED_STRAFE;
+					setAnimation(lowerBodyAnims[ (_stance != 0 ? _stanceString : "combat") + ( mask & (1 << PlayerAction.STRAFE_LEFT) ? "_moveleft" : "_moveright")], lowerBodyController, lowerBody, 0).speed = surfaceMovement.STRAFE_SPEED * I_SPEED_STRAFE;
 				setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
 					_curController = null;
 			}
 			else if (mask & MASK_WALK) {
 				if (mask & MASK_WALK_FORWARD  ) {
 					
-					if (val != PlayerAction.MOVE_FORWARD_FAST) {
+					if (_stance=== 2 || val != PlayerAction.MOVE_FORWARD_FAST) {
 					
 						if (_stance != 2) {
+							if (_stance != 1) {  // stance 0
 								surfaceMovement.setWalkSpeeds(speed_jog);
 								surfaceMovement.setStrafeSpeed(speed_strafe*.5);
-							setAnimation(fullBodyAnims["jog"], fullBodyController, fullBody, .2).speed = surfaceMovement.WALK_SPEED * I_SPEED_JOG;
-							_curController = fullBodyController;
+								setAnimation(fullBodyAnims["jog"], fullBodyController, fullBody, .2).speed = surfaceMovement.WALK_SPEED * I_SPEED_JOG;
+								_curController = fullBodyController;
+							}
+							else {  // stance 1
+								surfaceMovement.setStrafeSpeed(speed_strafe * .5);
+					surfaceMovement.WALK_SPEED = (val != PlayerAction.MOVE_FORWARD_FAST ? speed_jog : speed_run) * playerSpeedCombatRatio;
+					
+					setAnimation(lowerBodyAnims[(_stance != 0 ? _stanceString : "combat")+"_walkforward"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALK_SPEED * (I_SPEED_FORWARDS);  // todo: use different walk forward speed for combat
+					setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
+								_curController = null;
+							}
 						}
 						else {
 							//ref_melee_aim
-								surfaceMovement.setAllSpeeds(speed_jog*SPEED_CROUCH_MULTIPLIER* playerSpeedCrouchRatio);
-								setAnimation(lowerBodyAnims["crouch_walkforward"], lowerBodyController, lowerBody, .3).speed = surfaceMovement.WALK_SPEED *  I_SPEED_CROUCH; 
+								surfaceMovement.setAllSpeeds( (val != PlayerAction.MOVE_FORWARD_FAST ? speed_jog : speed_run)*SPEED_CROUCH_MULTIPLIER* playerSpeedCrouchRatio );
+								setAnimation(lowerBodyAnims["crouch_walkforward"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALK_SPEED *  I_SPEED_CROUCH; 
 							setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
 							_curController = null;
 						}
@@ -264,6 +282,7 @@ surfaceMovement.setWalkSpeeds(speed_backwards*.5);
 						//_running = true;
 					}
 					else { // sprinting
+
 						_skinRotated = false;
 						_running = true;
 						setAnimation(fullBodyAnims["run"], fullBodyController, fullBody, .1).speed = speed_run * I_SPEED_RUN;
@@ -278,7 +297,7 @@ surfaceMovement.setWalkSpeeds(speed_backwards*.5);
 				else {
 					surfaceMovement.setStrafeSpeed(speed_strafe * .25);
 					surfaceMovement.WALKBACK_SPEED = _stance != 2 ? (val != PlayerAction.MOVE_BACKWARD_FAST ? speed_backwards : speed_backwards_fast) : speed_backwards * playerSpeedCrouchRatio * SPEED_CROUCHBACK_MULTIPLIER;
-					setAnimation(lowerBodyAnims[(_stance != 0 ? _stanceString : "combat")+"_walkback"], lowerBodyController, lowerBody, .3).speed = surfaceMovement.WALKBACK_SPEED * (_stance != 2 ? I_SPEED_BACKWARDS : I_SPEED_CROUCH);
+					setAnimation(lowerBodyAnims[(_stance != 0 ? _stanceString : "combat")+"_walkback"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALKBACK_SPEED * (_stance != 2 ? I_SPEED_BACKWARDS : I_SPEED_CROUCH);
 					setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
 				
 					_curController = null;
@@ -300,7 +319,6 @@ surfaceMovement.setWalkSpeeds(speed_backwards*.5);
 				_curController.update();  // TODO: inject time into modifed clas
 			}
 			else {
-				
 				upperBodyController.update();
 				lowerBodyController.update();
 			}

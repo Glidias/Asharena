@@ -87,7 +87,7 @@ Attributes:
     ...Mainly affects total weight you can carry and hit points.
 * Dexterity - All throwing, archery-related skills. Short blade, Short Axe, Staff and Dual-Weiding. (partially affects Crossbow, and all other melee weapons with regards to scroring critical hits.)
 * Agility - Acrobatics, Light Armour, Sneak, Block.  (partially: Unarmored while moving/blocking, Staff)
-* Speed - Athletics, Unarmored while moving/blocking, Short blade, Unarmed combat  (partially: Sand magic)
+* Speed - Athletics, Unarmored while moving/blocking, Unarmed combat  (partially: Sand magic)
 * Personality- Etiquette, Mercantile, Speechcraft (partially: Spirit magic)
 * Intelligence - All magic related skills (particularly Blood and Fire magic)
 
@@ -112,7 +112,7 @@ Imperial (non-playable, NPC "race") - Fighting Imperial man are often trained in
 
 Controls:
 ------------
-Q- Toggle Combat/Non-Combat Stance while standing. To combat stance while Crouching.
+Q- Toggle Combat/Non-Combat Stance while standing. Always switches to combat stance if crouching.  When in combat stance, player will automatically attempt to block/deflect any enemy attacks.
 Ctrl - Toggle Crouching/Combat position.
 E - Use/Activate/Pick up/Steal/etc.
 R - change view
