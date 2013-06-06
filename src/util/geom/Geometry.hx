@@ -37,7 +37,7 @@ class Geometry
 	}
 	
 	
-	public function pushVertices(values:Vector<Float>):Void {
+	public function pushVertices(values:flash.Vector<Float>):Void {
 		var len:Int= values.length;
 		var numVF:Float = len / 3;
 		len = Math.floor( numVF);
@@ -54,7 +54,7 @@ class Geometry
 	
 	}
 	
-	public inline function addFace(valIndices:Vector<Int>):Void {
+	public inline function addFace(valIndices:flash.Vector<Int>):Void {
 		//if (valIndices.length < 3) trace("Invalid n-gon length:" + valIndices.length);
 		valIndices = valIndices.slice(0);
 		valIndices.reverse();

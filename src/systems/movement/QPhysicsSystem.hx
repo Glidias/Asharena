@@ -82,7 +82,7 @@ class CollisionResultNode extends Node<CollisionResultNode> {
 // (rmb, after this is done, postSolveHandler is called if available for MoveResult under each MoveResultNode!)
 
 
-///*
+/*
 // preMove
 class QJumpNode extends Node<QJumpNode> {  // adjust jump lock according to CollisionResult, so long as user is touching ground
 	public var result:CollisionResult;
@@ -90,4 +90,4 @@ class QJumpNode extends Node<QJumpNode> {  // adjust jump lock according to Coll
 	// if jump state changes, some trigger is required! This can be handled by optional component query of JumpSignal, 
 	//  since change doesn't happen often.
 }
-//*/
+*/

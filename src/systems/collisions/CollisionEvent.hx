@@ -7,7 +7,7 @@
 package systems.collisions;
 import ash.core.Entity;
 import flash.errors.Error;
-import flash.geom.Vector3D;
+import jeash.geom.Vector3D;
 import util.geom.Vec3;
 import util.geom.Vec3Utils;
 import util.geom.XYZ;
@@ -45,8 +45,8 @@ class CollisionEvent
 	
 		
 	// Pooling, linked list and disposal
-	#if (inlineCollector) inline #end
-	public static function Get(collision:XYZ, normal:XYZ, offset:Float, t:Float, geomtype:Int):CollisionEvent {
+
+	public static inline  function Get(collision:XYZ, normal:XYZ, offset:Float, t:Float, geomtype:Int):CollisionEvent {
 		var c:CollisionEvent = COLLECTOR!= null ? COLLECTOR : (COLLECTOR = new CollisionEvent());
 		COLLECTOR = COLLECTOR.next;
 		c.write(collision, normal, offset, t, geomtype);
@@ -54,8 +54,22 @@ class CollisionEvent
 		return c;
 	}
 	
-	#if (inlineCollector) inline #end
-	public static function get(collision:XYZ, normal:XYZ, offset:Float, t:Float, geomtype:Int):CollisionEvent {
+	public static inline  function GetAs3(collision:Vector3D, normal:Vector3D, offset:Float, t:Float, geomtype:Int):CollisionEvent {
+		var c:CollisionEvent = COLLECTOR!= null ? COLLECTOR : (COLLECTOR = new CollisionEvent());
+		COLLECTOR = COLLECTOR.next;
+	
+		Vec3Utils.matchValuesVector3D(c.collision, collision);
+		Vec3Utils.matchValuesVector3D(c.normal, normal);
+        c.offset = offset;
+        c.t = t;
+        c.geomtype = geomtype;
+		
+		c.next = null;
+		return c;
+	}
+	
+
+	public static inline function get(collision:XYZ, normal:XYZ, offset:Float, t:Float, geomtype:Int):CollisionEvent {
 		return Get(collision, normal, offset, t, geomtype);
 	}
 	

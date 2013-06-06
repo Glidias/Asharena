@@ -4,10 +4,12 @@ import ash.tick.FrameTickProvider;
 import flash.display.Stage;
 import input.KeyPoll;
 import systems.animation.AnimationSystem;
+import systems.collisions.EllipsoidColliderSystem;
 import systems.collisions.GroundPlaneCollisionSystem;
 import systems.movement.MovementSystem;
 import systems.movement.PlayerSurfaceMovementSystem;
 import systems.SystemPriorities;
+import util.geom.room.RoomCreator;
 
 import systems.collisions.EllipsoidCollider;
 import systems.movement.GravitySystem;
@@ -56,7 +58,9 @@ class TheGame
 		engine.addSystem( new SurfaceMovementSystem(), SystemPriorities.stateMachines );
 		engine.addSystem( new PlayerControlActionSystem(keyPoll), SystemPriorities.stateMachines );
 		engine.addSystem( new AnimationSystem(), SystemPriorities.animate);
+		EllipsoidColliderSystem;
 		RenderSystem;
+		RoomCreator;
 		
 		// Spawn starting entities
 	

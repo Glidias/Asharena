@@ -88,6 +88,8 @@ typedef Vector<T> = Array<T>
 		
 		public var timestamp:Int;
 		
+		public var collisions:CollisionEvent;
+		
 		
 		
 		/**
@@ -394,11 +396,20 @@ typedef Vector<T> = Array<T>
 			collidable.collectGeometry(this);
 			loopGeometries();
 			
+			collisions = null;
+			
 			var result:Vector3D;
+			var t:Float;
 			if (numFaces > 0) {
 			//	var limit:Int = 50;  // Max tries before timing out
 				for (i in 0...50) {
-					if (checkCollision()) {
+					if ( (t=checkCollision()) < 1 ) {
+						
+						var coll:CollisionEvent = CollisionEvent.GetAs3(collisionPoint, collisionPlane, collisionPlane.w, t, CollisionEvent.GEOMTYPE_POLYGON); 
+						coll.next = collisions;
+						collisions = coll;
+						
+						
 						// Offset destination point from behind collision plane by radius of the sphere over plane, along the normal
 						var offset:Float = radius + threshold + collisionPlane.w - dest.x*collisionPlane.x - dest.y*collisionPlane.y - dest.z*collisionPlane.z;
 						dest.x += collisionPlane.x*offset;
@@ -452,7 +463,7 @@ return a != a;
 			prepare(source, displacement);
 			
 			if (numFaces > 0) {
-				if (checkCollision()) {
+				if (checkCollision() < 1) {
 					
 					// Transform the point to the global space
 					resCollisionPoint.x = matrix.a*collisionPoint.x + matrix.b*collisionPoint.y + matrix.c*collisionPoint.z + matrix.d;
@@ -510,7 +521,7 @@ return a != a;
 		}
 		//*/
 		
-		private function checkCollision():Bool {
+		private function checkCollision():Float {
 			var minTime:Float = 1;
 			var displacementLength:Float = displ.length;
 			var t:Float;
@@ -733,7 +744,7 @@ return a != a;
 		
 			}
 		
-			return minTime < 1;
+			return minTime;
 		}
 		
 		

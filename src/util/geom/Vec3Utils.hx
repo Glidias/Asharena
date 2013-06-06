@@ -4,7 +4,7 @@
  */
 
 package util.geom;
-import flash.geom.Vector3D;
+import jeash.geom.Vector3D;
 
 /**
  * Library of static Vec3 methods, and generic XYZ tuple values for parameters.

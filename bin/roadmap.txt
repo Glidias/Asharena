@@ -4,10 +4,7 @@
 Animation fixes to:
 - fix jump hangups *
 - standing mode should use manual skin rotation and jog towards diection for strafe movement
-- changing direction (strafe left - middle - strafe right ) should include animation blending  and gradual acceleration to either direction. (lower body dominant strafe)
-  OR consider swapping controller update order for strafe animations  (upper body dominant strafe) .
-     Perhaps, lower body dominant can allow bonuses to blocking/evasion ability since character tends to face towards opponent while strafing with his lower body...while upper body dominant
-	 strafe allows for quicker attack due to combat ready (upper-body) position. One could toggle between 2 stances while in combat mode.
+- changing direction (strafe left - middle - strafe right ) should include animation blending  and gradual acceleration to either direction. (lower body dominant strafe vs upper body dominant strafe)
 - changing stance could  take time and temporarily prevent any movement (velocity always set to zero!).  
   ->  default combat animation should be assigned to full-body  to support seamless transitioning of stance from combat to standing.
    -> full-body standing should be assigned to the 2 half-controllers. (instant pose) to lower stance to combat.
