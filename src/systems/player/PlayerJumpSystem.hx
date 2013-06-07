@@ -41,6 +41,7 @@ class PlayerJumpSystem extends System
 		
 		n.jump.update(time);
 		if (n.collision.gotGroundNormal) {
+		
 			if (key.isDown(KeyBindings.JUMP) && n.jump.attemptJump(n.vel, time) ) {
 			
 				

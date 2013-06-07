@@ -20,7 +20,7 @@ import jeash.geom.Vector3D;
 class EllipsoidColliderSystem extends System
 {
 	private var _collider:EllipsoidCollider;
-	private var _collidable:IECollidable;
+	public var collidable:IECollidable;
 	
 	private var nodeList:NodeList<EllipsoidNode>;
 	
@@ -31,11 +31,15 @@ class EllipsoidColliderSystem extends System
 	{
 		super();
 		_collider =  new EllipsoidCollider(0, 0, 0, threshold);
-		_collidable = collidable;
+		this.collidable = collidable;
 		
 		
 		pos = new Vector3D();
 		disp = new Vector3D();
+	}
+
+	public inline function setThreshold(val:Float):Void {
+		_collider.threshold = val;
 	}
 	
 	override public function addToEngine(engine:Engine):Void
@@ -46,7 +50,11 @@ class EllipsoidColliderSystem extends System
 	override public function update(time:Float):Void
     {
 		var n:EllipsoidNode = nodeList.head;
+		var result:MoveResult;
 		while (n != null) {
+			result = n.result;
+			
+			
 			_collider.radiusX = n.ellipsoid.x;
 			_collider.radiusY = n.ellipsoid.y;
 			_collider.radiusZ = n.ellipsoid.z;
@@ -59,11 +67,27 @@ class EllipsoidColliderSystem extends System
 			disp.y = n.vel.y * time;
 			disp.z = n.vel.z * time;
 			
-			var vec:Vector3D =  _collider.calculateDestination(pos, disp, _collidable);
-			n.result.x = vec.x;
-			n.result.y = vec.y;
-			n.result.z = vec.z;
-			n.result.collisions = _collider.collisions;
+			var vec:Vector3D =  _collider.calculateDestination(pos, disp, collidable);
+			result.x = vec.x;
+			result.y = vec.y;
+			result.z = vec.z;
+			n.pos.x  = result.x;
+				n.pos.y = result.y;
+				n.pos.z =  result.z;
+			//	/*
+			result.collisions = _collider.collisions;
+			
+			if (result.collisions != null) {
+				result.x  =result.collisions.pos.x;
+				result.y  =result.collisions.pos.y;
+				result.z  = result.collisions.pos.z;
+				n.pos.x = result.x;
+				n.pos.y = result.y;
+				n.pos.z = result.z;
+				//trace( );
+				trace("A:"+result.collisions.normal.x + ", "+result.collisions.normal.y + ", "+result.collisions.normal.z + "::: "+result.collisions.getNumEvents());
+			}
+			//*/
 			
 			_collider.collisions = null;
 			

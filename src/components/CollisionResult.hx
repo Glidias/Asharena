@@ -16,9 +16,12 @@ class CollisionResult
 	
 	// What results are calculated. In some cases, not calculating certain things might force engines to re-calculate stuff, or ignore
 	// situations where it can't find the relavant results.
-	public var flags:Int;	
+	private var stateFlags:Int;	
 	public static inline var FLAG_MAX_NORMAL_IMPULSE:Int = 1;
 	public static inline var FLAG_MAX_GROUND_NORMAL:Int = 2;
+	
+	public var flags:Int;
+	
 	
 	// Results
 	public var gotCollision:Bool;
@@ -30,6 +33,7 @@ class CollisionResult
 		gotCollision = false;
 		
 		flags = 0;
+		stateFlags = 0;
 		
 		max_ground_normal_threshold = MAX_GROUND_NORMAL_THRESHOLD;
 		
@@ -39,16 +43,17 @@ class CollisionResult
 	
 	private inline function get_gotGroundNormal():Bool 
 	{
-		return (flags & FLAG_MAX_GROUND_NORMAL) != 0;
+		return (stateFlags & FLAG_MAX_GROUND_NORMAL) != 0;
 	}
+	
 	
 	private inline function set_gotGroundNormal(value:Bool):Bool 
 	{
 		if (value) {
-			flags |= FLAG_MAX_GROUND_NORMAL;
+			stateFlags |= FLAG_MAX_GROUND_NORMAL;
 		}
 		else {
-			flags &= ~(FLAG_MAX_GROUND_NORMAL);
+			stateFlags &= ~(FLAG_MAX_GROUND_NORMAL);
 		}
 		return value;
 	}

@@ -32,6 +32,7 @@ class MovementSystem extends System
 			n.pos.x += (n.vel.x * time);
 			n.pos.y += (n.vel.y * time);
 			n.pos.z += (n.vel.z * time);
+	
 			n = n.next;
 		}
 	}

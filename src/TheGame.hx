@@ -8,7 +8,9 @@ import systems.collisions.EllipsoidColliderSystem;
 import systems.collisions.GroundPlaneCollisionSystem;
 import systems.movement.MovementSystem;
 import systems.movement.PlayerSurfaceMovementSystem;
+import systems.movement.QPhysicsSystem;
 import systems.SystemPriorities;
+import util.geom.Geometry;
 import util.geom.room.RoomCreator;
 
 import systems.collisions.EllipsoidCollider;
@@ -25,6 +27,8 @@ import systems.rendering.RenderSystem;
 
 class TheGame 
 {
+	public var colliderSystem:EllipsoidColliderSystem;
+	
 	public var engine:Engine;
 	public var spawner:Spawner;
 	public var stage:Stage;
@@ -53,14 +57,16 @@ class TheGame
 		engine.addSystem( new GravitySystem(), SystemPriorities.update );
 		engine.addSystem( new PlayerJumpSystem(keyPoll), SystemPriorities.update);
 		engine.addSystem( new PlayerSurfaceMovementSystem(), SystemPriorities.update );
-		engine.addSystem( new MovementSystem(), SystemPriorities.move );
-		engine.addSystem( new GroundPlaneCollisionSystem(), SystemPriorities.resolveCollisions );
+		engine.addSystem( colliderSystem= new EllipsoidColliderSystem( new Geometry() ), SystemPriorities.preSolveCollisions );
+	//	engine.addSystem( new QPhysicsSystem(), SystemPriorities.solveCollisions );
+		//engine.addSystem( new MovementSystem(), SystemPriorities.move );
+		//engine.addSystem( new GroundPlaneCollisionSystem(), SystemPriorities.resolveCollisions );
 		engine.addSystem( new SurfaceMovementSystem(), SystemPriorities.stateMachines );
 		engine.addSystem( new PlayerControlActionSystem(keyPoll), SystemPriorities.stateMachines );
 		engine.addSystem( new AnimationSystem(), SystemPriorities.animate);
-		EllipsoidColliderSystem;
+		
 		RenderSystem;
-		RoomCreator;
+	
 		
 		// Spawn starting entities
 	

@@ -8,6 +8,7 @@ import components.DirectionVectors;
 import components.Ellipsoid;
 import components.Gravity;
 import components.Jump;
+import components.MoveResult;
 import components.Pos;
 import components.Rot;
 import components.Vel;
@@ -29,13 +30,15 @@ class Spawner
 	public function getGladiatorBase():Entity {
 		var ent:Entity = new Entity();
 		
-		ent.add( new Pos() ).add( new Rot() ).add( new Vel() );
+		ent.add( new Pos(0,0,0) ).add( new Rot() ).add( new Vel() );
 		
 		ent.add( new SurfaceMovement() ).add( new DirectionVectors() );
 		
-		ent.add( new Gravity(400) ).add( new Jump(.8, 4495) );
+		ent.add( new Gravity(100) ).add( new Jump(.8, 4495) );
 		
-		ent.add(  new Ellipsoid(16, 16, 72*.5)).add( new CollisionResult() );
+		var coll:CollisionResult;
+		ent.add(  new Ellipsoid(4, 4, 4)).add( coll = new CollisionResult() ).add( new MoveResult() );
+		coll.flags |= CollisionResult.FLAG_MAX_GROUND_NORMAL;
 		//.add(  new Ellipsoid(32,32,72)).add( new MoveResult() );
 		
 		ent.add( new ActionIntSignal() );

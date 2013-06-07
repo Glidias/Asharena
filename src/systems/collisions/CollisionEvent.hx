@@ -14,7 +14,7 @@ import util.geom.XYZ;
 
 class CollisionEvent 
 {
-	public var collision:Vec3;
+	public var pos:Vec3;
 	
     public var offset:Float;
 	public var normal:Vec3;
@@ -39,8 +39,17 @@ class CollisionEvent
 	
 	public function new() 
 	{
-		collision = new Vec3();
+		pos = new Vec3();
 		normal = new Vec3();
+	}
+	
+	public function getNumEvents():Int {
+		var ct:Int = 1;
+		var m:CollisionEvent = this;
+		while ((m= m.next)!=null) {
+			ct++;
+		}
+		return ct;
 	}
 	
 		
@@ -54,11 +63,11 @@ class CollisionEvent
 		return c;
 	}
 	
-	public static inline  function GetAs3(collision:Vector3D, normal:Vector3D, offset:Float, t:Float, geomtype:Int):CollisionEvent {
+	public static inline  function GetAs3(pos:Vector3D, normal:Vector3D, offset:Float, t:Float, geomtype:Int):CollisionEvent {
 		var c:CollisionEvent = COLLECTOR!= null ? COLLECTOR : (COLLECTOR = new CollisionEvent());
 		COLLECTOR = COLLECTOR.next;
 	
-		Vec3Utils.matchValuesVector3D(c.collision, collision);
+		Vec3Utils.matchValuesVector3D(c.pos, pos);
 		Vec3Utils.matchValuesVector3D(c.normal, normal);
         c.offset = offset;
         c.t = t;
@@ -69,12 +78,12 @@ class CollisionEvent
 	}
 	
 
-	public static inline function get(collision:XYZ, normal:XYZ, offset:Float, t:Float, geomtype:Int):CollisionEvent {
-		return Get(collision, normal, offset, t, geomtype);
+	public static inline function get(pos:XYZ, normal:XYZ, offset:Float, t:Float, geomtype:Int):CollisionEvent {
+		return Get(pos, normal, offset, t, geomtype);
 	}
 	
-	inline public function write(collision:XYZ, normal:XYZ, offset:Float, t:Float, geomtype:Int):Void {
-		Vec3Utils.matchValues(this.collision, collision);
+	inline public function write(pos:XYZ, normal:XYZ, offset:Float, t:Float, geomtype:Int):Void {
+		Vec3Utils.matchValues(this.pos, pos);
 		Vec3Utils.matchValues(this.normal, normal);
         this.offset = offset;
         this.t = t;

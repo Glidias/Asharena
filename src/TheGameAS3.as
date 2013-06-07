@@ -4,12 +4,15 @@ package
 	import alternativa.engine3d.animation.keys.Track;
 	import alternativa.engine3d.animation.keys.TransformTrack;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.loaders.ParserA3D;
 	import alternativa.engine3d.loaders.ParserMaterial;
 	import alternativa.engine3d.loaders.TexturesLoader;
 	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.ExternalTextureResource;
+	import util.geom.Geometry;
+
 	import components.Pos;
 	import flash.Boot;
 	import flash.display.Stage;
@@ -58,7 +61,7 @@ package
 			_view.addEventListener(Event.COMPLETE, onViewInitialized);
 			
 			Boot.getTrace().blendMode = "invert";
-		stage.addChild( Boot.getTrace() );
+			stage.addChild( Boot.getTrace() );
 		}
 		
 		private function onViewInitialized(e:Event):void 
@@ -74,14 +77,21 @@ package
 		
 		private function startGame():void {
 			
+			var geom:Geometry = new Geometry();
+
+			geom.setVertices( _view.box.geometry.getAttributeValues(VertexAttributes.POSITION) );
+			geom.addTriFaces(_view.box.geometry.indices);
+			
+			if (colliderSystem) colliderSystem.collidable = geom;
+			//colliderSystem.setThreshold(1);
 			
 			// Setup rendering system
 			engine.addSystem( new RenderingSystem(_view.scene), SystemPriorities.render );
 			
 			
-			arenaSpawner.addCrossStage(  );
+		//	arenaSpawner.addCrossStage();
 			arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage).add(keyPoll); //.get(Pos) as Pos
-	
+			
 			
 			ticker.start();	
 		}

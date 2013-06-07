@@ -1,8 +1,8 @@
 package util.geom.room;
 import flash.geom.Rectangle;
-import flash.Vector;
 import util.geom.Geometry;
 import util.geom.Vec3;
+import util.TypeDefs;
 
 /**
  * ...

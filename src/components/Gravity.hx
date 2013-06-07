@@ -15,6 +15,6 @@ class Gravity
 	}
 	
 	public inline function update(vel:XYZ, time:Float):Void {
-		vel.z -= force * time;
+		vel.z -= force;
 	}
 }

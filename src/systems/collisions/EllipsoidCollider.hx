@@ -19,11 +19,6 @@ package systems.collisions;
 	import util.geom.ITransform3D;
 	import util.TypeDefs;
 
-	 
- #if (flash9 || flash9doc || js )
-typedef UInt = Int
-typedef Vector<T> = Array<T>
-#end
 
 	/**
 	 * The class implements the algorithm of the continuous collision of an ellipsoid with the faces.
@@ -137,7 +132,7 @@ typedef Vector<T> = Array<T>
 		/**
 		 * @private 
 		 */
-		public function calculateSphere(transform:ITransform3D):Void {
+		private function calculateSphere(transform:ITransform3D):Void {
 			sphere.x = transform.d;
 			sphere.y = transform.h;
 			sphere.z = transform.l; 
@@ -175,7 +170,7 @@ typedef Vector<T> = Array<T>
 			sphere.w = Math.sqrt(sphere.w);
 		}
 		
-		public function prepare(source:Vector3D, displacement:Vector3D):Void {
+		private function prepare(source:Vector3D, displacement:Vector3D):Void {
 			
 			// Radius of the sphere
 			radius = radiusX;
@@ -222,7 +217,7 @@ typedef Vector<T> = Array<T>
 		
 		
 		
-		public function loopGeometries():Void {
+		private function loopGeometries():Void {   // TODO: If all geometries are NOT provided dynamically, than no need to use matrices!! precalculate normals, indices, and vertices and merely assign!
 			var rad:Float = radius + displ.length;
 			numI = 0;
 			
@@ -251,7 +246,9 @@ typedef Vector<T> = Array<T>
 				trace("Too much geometries!"+geometriesLength);
 				return;
 			}
+			
 			for (i in 0...geometriesLength) {
+			
 				geometry = geometries[i];	
 				geometryIndices = geometry.indices;
 				 geometryIndicesLength = geometryIndices.length;
@@ -266,6 +263,7 @@ typedef Vector<T> = Array<T>
 						vertices[verticesLength] = transform.e*vx + transform.f*vy + transform.g*vz + transform.h; verticesLength++;
 						vertices[verticesLength] = transform.i*vx + transform.j*vy + transform.k*vz + transform.l; verticesLength++;
 					}
+					
 					
 				// Loop faces  
 				j = 0;
@@ -298,7 +296,8 @@ typedef Vector<T> = Array<T>
 					oa = a;  // temp fix
 					a &= A3DConst._FMASK_;
 					
-					var index:Int = a*3;
+					var index:Int = a * 3;
+					
 					var ax:Float = vertices[index]; index++;
 					var ay:Float = vertices[index]; index++;
 					var az:Float = vertices[index];
@@ -362,12 +361,7 @@ typedef Vector<T> = Array<T>
 			
 			}
 			
-				#if (cpp||php)
-					geometries.splice(0,arr.length);    
-					
-				#else
-					untyped geometries.length = 0;
-				#end
+				TypeDefs.setVectorLen(geometries, 0);
 				
 				numI = indicesLength;
 				
@@ -408,7 +402,6 @@ typedef Vector<T> = Array<T>
 						var coll:CollisionEvent = CollisionEvent.GetAs3(collisionPoint, collisionPlane, collisionPlane.w, t, CollisionEvent.GEOMTYPE_POLYGON); 
 						coll.next = collisions;
 						collisions = coll;
-						
 						
 						// Offset destination point from behind collision plane by radius of the sphere over plane, along the normal
 						var offset:Float = radius + threshold + collisionPlane.w - dest.x*collisionPlane.x - dest.y*collisionPlane.y - dest.z*collisionPlane.z;
