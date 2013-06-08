@@ -79,11 +79,16 @@ package
 			
 			var geom:Geometry = new Geometry();
 
-			geom.setVertices( _view.box.geometry.getAttributeValues(VertexAttributes.POSITION) );
-			geom.addTriFaces(_view.box.geometry.indices);
+			//geom.setVertices( _view.box.geometry.getAttributeValues(VertexAttributes.POSITION) );
+			//geom.addTriFaces(_view.box.geometry.indices);
 			
-			if (colliderSystem) colliderSystem.collidable = geom;
-			//colliderSystem.setThreshold(1);
+			if (colliderSystem) {
+				geom.setVertices(  _view.box.geometry.getAttributeValues(VertexAttributes.POSITION)  );
+				//geom.indices = _view.box.geometry.indices;
+				geom.addTriFaces(_view.box.geometry.indices);
+				colliderSystem.collidable = geom;
+			}
+			
 			
 			// Setup rendering system
 			engine.addSystem( new RenderingSystem(_view.scene), SystemPriorities.render );

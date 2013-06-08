@@ -75,8 +75,8 @@ class Geometry implements IECollidable
 	
 	public inline function addFace(valIndices:Vector<UInt>):Void {
 		//if (valIndices.length < 3) trace("Invalid n-gon length:" + valIndices.length);
-		valIndices = valIndices.slice(0);
-		valIndices.reverse();
+
+
 		var startD:Int;
 		var d:Int = startD= indices.length;
 		var len:Int = valIndices.length;

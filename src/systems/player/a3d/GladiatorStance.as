@@ -7,6 +7,7 @@ package systems.player.a3d
 	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Skin;
 	import components.controller.SurfaceMovement;
+	import components.Ellipsoid;
 	import components.Pos;
 	import flash.Boot;
 	import flash.events.IEventDispatcher;
@@ -88,6 +89,7 @@ package systems.player.a3d
 		public var playerSpeedCrouchRatio:Number = .8;
 		public var playerSpeedCombatRatio:Number = .65;
 		public var upperBodyDominant:Boolean = false;
+		public var ellipsoid:Ellipsoid;
 		
 		private static const MASK_STRAFE:int = ( (1 << PlayerAction.STRAFE_LEFT_FAST) | (1 << PlayerAction.STRAFE_RIGHT_FAST) | (1 << PlayerAction.STRAFE_LEFT) | (1 << PlayerAction.STRAFE_RIGHT));
 		private static const MASK_STRAFE_LEFT:int = ((1 << PlayerAction.STRAFE_LEFT_FAST) | (1 << PlayerAction.STRAFE_LEFT));
@@ -98,9 +100,10 @@ package systems.player.a3d
 		private var rootJoint:Joint;
 		
 		
-		public function GladiatorStance(skin:Skin, surfaceMovement:SurfaceMovement) 
+		public function GladiatorStance(skin:Skin, surfaceMovement:SurfaceMovement, ellipsoid:Ellipsoid) 
 		{
 				this.surfaceMovement = surfaceMovement;
+				this.ellipsoid = ellipsoid;
 				
 			this.skin = skin;
 			anims = ANIM_MANAGER.cloneFor(skin);

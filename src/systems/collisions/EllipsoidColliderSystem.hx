@@ -8,7 +8,7 @@ import components.MoveResult;
 import components.Pos;
 import components.Transform3D;
 import components.Vel;
-import jeash.geom.Vector3D;
+import util.TypeDefs;
 
 /**
  * Calculates move results of all relavant collidable entities against static environment.
@@ -38,15 +38,14 @@ class EllipsoidColliderSystem extends System
 		disp = new Vector3D();
 	}
 
-	public inline function setThreshold(val:Float):Void {
-		_collider.threshold = val;
-	}
+	
 	
 	override public function addToEngine(engine:Engine):Void
     {
 		nodeList = engine.getNodeList(EllipsoidNode);
     }
 	
+	private var lastPos:Vector3D;
 	override public function update(time:Float):Void
     {
 		var n:EllipsoidNode = nodeList.head;
@@ -66,29 +65,22 @@ class EllipsoidColliderSystem extends System
 			disp.x = n.vel.x * time;
 			disp.y = n.vel.y * time;
 			disp.z = n.vel.z * time;
-			
+			if (lastPos != null) {
+				
+				n = n.next;
+				continue;
+			}
 			var vec:Vector3D =  _collider.calculateDestination(pos, disp, collidable);
+			
+			
+			
 			result.x = vec.x;
 			result.y = vec.y;
 			result.z = vec.z;
-			n.pos.x  = result.x;
-				n.pos.y = result.y;
-				n.pos.z =  result.z;
-			//	/*
+			
+			
 			result.collisions = _collider.collisions;
-			
-			if (result.collisions != null) {
-				result.x  =result.collisions.pos.x;
-				result.y  =result.collisions.pos.y;
-				result.z  = result.collisions.pos.z;
-				n.pos.x = result.x;
-				n.pos.y = result.y;
-				n.pos.z = result.z;
-				//trace( );
-				trace("A:"+result.collisions.normal.x + ", "+result.collisions.normal.y + ", "+result.collisions.normal.z + "::: "+result.collisions.getNumEvents());
-			}
-			//*/
-			
+
 			_collider.collisions = null;
 			
 			n = n.next;

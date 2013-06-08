@@ -121,7 +121,7 @@ class QPhysicsSystem extends System
 			}
 			c = c.next;
 		}
-		
+	
 		// postSolveCollisions
 		m = moveResultList.head;
 		while (m != null) {
@@ -130,7 +130,7 @@ class QPhysicsSystem extends System
 		}
 		
 		
-	 var invT:Float = 1 / time;  // required because MovementSystem integreates forward by time
+//	 var invT:Float = 1 / time;  // required because MovementSystem integreates forward by time
 		
 		// preMove
 		m = moveResultList.head;
@@ -153,7 +153,7 @@ class QPhysicsSystem extends System
 	}
 	
 	inline public function processFlags(result:CollisionResult, event:CollisionEvent, velocity:XYZ,  flags:Int = 0):Void {
-		result.maximum_ground_normal = null; // to return back to pool
+		
 		
 		if (result.gotCollision = event != null) {
 			var coll:CollisionEvent = event;
@@ -171,7 +171,7 @@ class QPhysicsSystem extends System
 		if (flags & CollisionResult.FLAG_MAX_GROUND_NORMAL != 0) {
 			if (event.normal.z > result.max_ground_normal_threshold)
             {
-                if (result.maximum_ground_normal == null || result.maximum_ground_normal.z < event.normal.z)
+                if (!result.gotGroundNormal || result.maximum_ground_normal.z < event.normal.z)
                 {
                     Vec3Utils.matchValues( result.maximum_ground_normal, event.normal);
 					result.gotGroundNormal = true;

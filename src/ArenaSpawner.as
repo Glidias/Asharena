@@ -8,14 +8,17 @@ package
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.StandardMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
+	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.primitives.Box;
+	import alternativa.engine3d.primitives.GeoSphere;
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.utils.Object3DUtils;
 	import ash.core.Engine;
 	import ash.core.Entity;
 	import components.ActionIntSignal;
 	import components.controller.SurfaceMovement;
+	import components.Ellipsoid;
 	import components.Pos;
 	import components.Rot;
 	import flash.display.Stage;
@@ -83,9 +86,7 @@ package
 		private function getBoundingBox(bb:BoundBox):Box {
 			var box:Box = new Box((bb.maxX - bb.minX), (bb.maxY - bb.minY), (bb.maxZ - bb.minZ) );
 			
-			box.x = bb.minX + (bb.maxX - bb.minX) * .5;
-			box.y = bb.minY + (bb.maxY - bb.minY) * .5;
-			box.z = bb.minZ + (bb.maxZ - bb.minZ) * .5;
+
 			
 			box.geometry.upload(context3D);
 			var mat:FillMaterial = new FillMaterial(0xFF0000, .2);
@@ -93,6 +94,11 @@ package
 			
 			
 			return box;
+		}
+		
+		private function uploadMesh(m:Mesh):Mesh {
+			m.geometry.upload(context3D);
+			return m;
 		}
 		
 		public function addCrossStage(pos:Pos=null, rot:Rot=null):void {
@@ -117,14 +123,26 @@ package
 			ent.add(obj, Object3D);
 			
 			var bb:BoundBox;
-			bb = obj.boundBox;
+			//bb = obj.boundBox;
+			bb = new BoundBox();
+			bb.minX = -16;
+			bb.minY  = -16;
+			bb.minZ = -16;
+			bb.maxX = 16;
+			bb.maxY = 16;
+			bb.maxZ = 16;
 			
+			var ellipsoid:Ellipsoid = ent.get(Ellipsoid) as Ellipsoid;
 			//addRenderEntity(getBoundingBox(bb), ent.get(Pos) as Pos, ent.get(Rot) as Rot);
-			
+			var m:Mesh;
+				//addRenderEntity(m = uploadMesh(new GeoSphere(1, 2, false, new FillMaterial(0xFF0000, .5))), ent.get(Pos) as Pos, ent.get(Rot) as Rot);
+				//m.scaleX = ellipsoid.x;
+				//m.scaleY = ellipsoid.y;
+				//m.scaleZ = ellipsoid.z;
 
 			
 			var actions:ActionIntSignal = ent.get(ActionIntSignal) as ActionIntSignal;	
-			var gladiatorStance:GladiatorStance = new GladiatorStance(sk, ent.get(SurfaceMovement) as SurfaceMovement );
+			var gladiatorStance:GladiatorStance = new GladiatorStance(sk, ent.get(SurfaceMovement) as SurfaceMovement, ellipsoid );
 			if (playerStage!=null) gladiatorStance.bindKeys(playerStage);
 			actions.add( gladiatorStance.handleAction );
 			ent.add(gladiatorStance, IAnimatable);

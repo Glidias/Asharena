@@ -14,7 +14,7 @@ package systems.collisions;
 
 
 	import components.Transform3D;
-	import jeash.geom.Vector3D;
+	
 	import util.geom.Geometry;
 	import util.geom.ITransform3D;
 	import util.TypeDefs;
@@ -70,6 +70,8 @@ package systems.collisions;
 		
 		private var collisionPoint:Vector3D;
 		private var collisionPlane:Vector3D;
+		private var resCollisionPoint:Vector3D;
+		private var resCollisionPlane:Vector3D;
 		
 		/**
 		 * @private 
@@ -113,6 +115,8 @@ package systems.collisions;
 			
 			collisionPoint = new Vector3D();
 			collisionPlane = new Vector3D();
+			resCollisionPoint = new Vector3D();
+			resCollisionPlane = new Vector3D();
 			
 			geometries = new Vector<Geometry>();
 			vertices =   new Vector<Float>();
@@ -397,9 +401,59 @@ package systems.collisions;
 			if (numFaces > 0) {
 			//	var limit:Int = 50;  // Max tries before timing out
 				for (i in 0...50) {
-					if ( (t=checkCollision()) < 1 ) {
+					if ( (t = checkCollision()) < 1 ) {
 						
-						var coll:CollisionEvent = CollisionEvent.GetAs3(collisionPoint, collisionPlane, collisionPlane.w, t, CollisionEvent.GEOMTYPE_POLYGON); 
+						
+						//collisionPlane.z *= -1; // hack
+						
+						// Transform the point to the global space
+					resCollisionPoint.x = matrix.a*collisionPoint.x + matrix.b*collisionPoint.y + matrix.c*collisionPoint.z + matrix.d;
+					resCollisionPoint.y = matrix.e*collisionPoint.x + matrix.f*collisionPoint.y + matrix.g*collisionPoint.z + matrix.h;
+					resCollisionPoint.z = matrix.i*collisionPoint.x + matrix.j*collisionPoint.y + matrix.k*collisionPoint.z + matrix.l;
+					
+					// Transform the plane to the global space
+					var abx:Float;
+					var aby:Float;
+					var abz:Float;
+					if (collisionPlane.x < collisionPlane.y) {
+						if (collisionPlane.x < collisionPlane.z) {
+							abx = 0;
+							aby = -collisionPlane.z;
+							abz = collisionPlane.y;
+						} else {
+							abx = -collisionPlane.y;
+							aby = collisionPlane.x;
+							abz = 0;
+						}
+					} else {
+						if (collisionPlane.y < collisionPlane.z) {
+							abx = collisionPlane.z;
+							aby = 0;
+							abz = -collisionPlane.x;
+						} else {
+							abx = -collisionPlane.y;
+							aby = collisionPlane.x;
+							abz = 0;
+						}
+					}
+					var acx:Float = collisionPlane.z*aby - collisionPlane.y*abz;
+					var acy:Float = collisionPlane.x*abz - collisionPlane.z*abx;
+					var acz:Float = collisionPlane.y*abx - collisionPlane.x*aby;
+					
+					var abx2:Float = matrix.a*abx + matrix.b*aby + matrix.c*abz;
+					var aby2:Float = matrix.e*abx + matrix.f*aby + matrix.g*abz;
+					var abz2:Float = matrix.i*abx + matrix.j*aby + matrix.k*abz;
+					var acx2:Float = matrix.a*acx + matrix.b*acy + matrix.c*acz;
+					var acy2:Float = matrix.e*acx + matrix.f*acy + matrix.g*acz;
+					var acz2:Float = matrix.i*acx + matrix.j*acy + matrix.k*acz;
+					
+					resCollisionPlane.x = abz2*acy2 - aby2*acz2;
+					resCollisionPlane.y = abx2*acz2 - abz2*acx2;
+					resCollisionPlane.z = aby2*acx2 - abx2*acy2;
+					resCollisionPlane.normalize();
+					resCollisionPlane.w = resCollisionPoint.x*resCollisionPlane.x + resCollisionPoint.y*resCollisionPlane.y + resCollisionPoint.z*resCollisionPlane.z;
+						
+						var coll:CollisionEvent = CollisionEvent.GetAs3(resCollisionPoint, resCollisionPlane, resCollisionPlane.w, t, CollisionEvent.GEOMTYPE_POLYGON); 
 						coll.next = collisions;
 						collisions = coll;
 						
@@ -552,6 +606,7 @@ return a != a;
 				
 				var index:Int = indices[i]; i++;
 				nSides = ((index & A3DConst._NMASK_) >> A3DConst._NSHIFT); 	// get number of n-sides from header
+				//if (nSides == 0) throw "A";
 				nSides = nSides != 0  ? nSides : 3;   // handle default zero case to 3 sides
 				
 				/*

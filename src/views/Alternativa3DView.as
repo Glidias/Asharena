@@ -9,6 +9,8 @@ package views
 	import flash.display.BitmapData;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
+	import flash.geom.Matrix;
+	import flash.geom.Matrix3D;
 	import flash.ui.Keyboard;
 	/**
 	 * ...
@@ -25,6 +27,8 @@ package views
 			addEventListener(VIEW_CREATE, onViewCreated);
 			
 			box = new Box(800, 800, 200, 1, 1, 1, true, getColorStandardMaterial(0x888888) );
+			
+			
 			//box.z += 800 * .5 - 70;
 		}
 		
@@ -47,7 +51,8 @@ package views
 
 		private function createWorld():void 
 		{
-	
+				box.matrix = new Matrix3D();
+				scene.matrix = new Matrix3D();
 			scene.addChild( box);
 		
 		}

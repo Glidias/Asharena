@@ -3,9 +3,11 @@ package util;
 
 #if (flash9 || flash9doc  )
 typedef Vector<T> = flash.Vector<T>
+typedef Vector3D = flash.geom.Vector3D
 #else
 typedef Vector<T> = Array<T>
 typedef UInt = Int
+typedef Vector3D = jeash.geom.Vector3D
 #end
 
 
