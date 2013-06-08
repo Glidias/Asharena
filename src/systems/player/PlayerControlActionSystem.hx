@@ -36,8 +36,8 @@ class PlayerControlActionSystem extends System
 	public static inline var WALK_MOVEMENT_THRESHOLD:Float = 0;
 	public static inline var RUN_MOVEMENT_THRESHOLD:Float = 0;
 	
-	public static inline var WALK_STRAFE_THRESHOLD:Float = WALK_MOVEMENT_THRESHOLD;
-	public static inline var RUN_STRAFE_THRESHOLD:Float = RUN_MOVEMENT_THRESHOLD;
+	public static inline var WALK_STRAFE_THRESHOLD:Float = 0;
+	public static inline var RUN_STRAFE_THRESHOLD:Float = 0;
 	
 	public var key:KeyPoll;
 	
@@ -92,7 +92,7 @@ class PlayerControlActionSystem extends System
 
 				if ( (boo = key.isDown(KeyBindings.RIGHT)) || key.isDown(KeyBindings.LEFT) ) {  // determine whether to strafe left/right/none
 					d = n.direction.right;
-					value =  abs(Vec3Utils.dot(d, v));
+					value =  abs(Vec3Utils.dot(d, v)) * time;
 					if (value >= WALK_STRAFE_THRESHOLD ) {  // got strafing
 						actionToSet = 
 							( key.isDown(KeyBindings.ACCELERATE) && value > RUN_STRAFE_THRESHOLD) ?  boo ? PlayerAction.STRAFE_RIGHT_FAST : PlayerAction.STRAFE_LEFT_FAST
@@ -103,10 +103,10 @@ class PlayerControlActionSystem extends System
 				
 				if ( (boo=key.isDown(KeyBindings.FORWARD)) || key.isDown(KeyBindings.BACK ) ) {  // determine whether to move forward/backward/none
 					d = n.direction.forward;
-					value =  abs( Vec3Utils.dot(d, v) );
+					value =  abs( Vec3Utils.dot(d, v) ) * time;
 					if ( value >= WALK_MOVEMENT_THRESHOLD ) {  // got movement
 						actionToSet = 
-							( key.isDown(KeyBindings.ACCELERATE) && value > RUN_MOVEMENT_THRESHOLD) ?  boo ? PlayerAction.MOVE_FORWARD_FAST : PlayerAction.MOVE_BACKWARD_FAST
+							( key.isDown(KeyBindings.ACCELERATE) ) ?  boo ? ( value >= RUN_MOVEMENT_THRESHOLD ? PlayerAction.MOVE_FORWARD_FAST : PlayerAction.MOVE_FORWARD) : (value >= RUN_MOVEMENT_THRESHOLD ?  PlayerAction.MOVE_BACKWARD_FAST : PlayerAction.MOVE_BACKWARD)
 							:
 							boo ? PlayerAction.MOVE_FORWARD : PlayerAction.MOVE_BACKWARD; 
 					}

@@ -130,7 +130,7 @@ class QPhysicsSystem extends System
 		}
 		
 		
-//	 var invT:Float = 1 / time;  // required because MovementSystem integreates forward by time
+ var invT:Float = 1 / time;  // required because MovementSystem integreates forward by time
 		
 		// preMove
 		m = moveResultList.head;
@@ -139,12 +139,10 @@ class QPhysicsSystem extends System
 				vel = m.vel;
 				pos = m.pos;
 				result = m.move;	
-				vel.x = 0;  //(result.x - pos.x) * invT; 
-				vel.y = 0; //(result.y - pos.y) * invT; 
-				vel.z = 0;// (result.z - pos.z) * invT; 
-				pos.x = result.x;
-				pos.y = result.y;
-				pos.z = result.z;
+				vel.x = (result.x - pos.x) * invT; 
+				vel.y = (result.y - pos.y) * invT; 
+				vel.z = (result.z - pos.z) * invT; 
+				
 				result.disposeCollisions();  // consider returnig collisionEvents to POOL, assumin git's no longer needed 
 			}
 			m = m.next;
