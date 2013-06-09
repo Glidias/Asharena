@@ -12,14 +12,11 @@ Animation fixes to:
 
 1b) Attach weapon to hand !
 
-
-QPhysicsSystem to handle CollisionResultNode //and QJumpNode// ,   *  
-2) Mock room cube geometry  +EllipsoidColliderSystem  and QPhysicsSYstem to handle MoveREsultNode
-3) Camera system (3rd person) with raycasting *
-4) Terrain geomery, terrain collision and raycasting  *
+2) Camera system (3rd person) with raycasting *
+3) Terrain geomery, terrain collision and raycasting  *
 
 
-5) Camera system (1st person), trivial to implement but won't be used unless there's first-person models.
+4) Camera system (1st person), trivial to implement but won't be used unless there's first-person models.
 
 
 // -----------------------------------
