@@ -4,6 +4,7 @@ package util.geom;
  * Basic geometry class to support collision detection/raycasting/etc., or some basic 3D
  * @author Glenn Ko
  */
+ import components.Transform3D;
  import systems.collisions.A3DConst;
  import systems.collisions.EllipsoidCollider;
  import systems.collisions.IECollidable;
@@ -16,13 +17,16 @@ class Geometry implements IECollidable
 	public var indices:Vector<UInt>;
 	//public var normals:Vector<Float>;
 	public var numVertices:Int;
+	public var numIndices:Int;
+	static public  var IDENTITY:Transform3D = new Transform3D();
 
 	public function new() 
 	{
 		vertices = new Vector<Float>();
 		indices = new Vector<UInt>();
 		//normals = [];
-		numVertices = 0;		
+		numVertices = 0;
+		numIndices = 0;
 	}
 	
 	public inline function addVertex(x:Float, y:Float, z:Float):Int {
@@ -51,7 +55,6 @@ class Geometry implements IECollidable
 			vertices.push(values[i]);
 			
 		}
-	
 	}
 	
 	public inline function setVertices(val:Vector<Float>):Void {
@@ -59,7 +62,12 @@ class Geometry implements IECollidable
 		numVertices = Std.int( val.length / 3);
 	}
 	
-	public inline function addTriFaces(indices:Vector<UInt>):Void {
+	public inline function setIndices(val:Vector<UInt>):Void {
+		indices = val;
+		numIndices = val.length;
+	}
+	
+	public inline function addTriFaces(indices:Vector<UInt>, d:Int=-1):Void {
 		var i:Int = 0;
 		var addFaceBuffer:Vector<UInt> = TypeDefs.createUIntVector(3, true);
 		var len:Int = indices.length;
@@ -68,89 +76,33 @@ class Geometry implements IECollidable
 			addFaceBuffer[1] = indices[i + 1];
 			addFaceBuffer[2] = indices[i + 2];
 			
-			addFace(addFaceBuffer);
+			addFace(addFaceBuffer, d);
 			i += 3;
 		}
 	}
 	
-	public inline function addFace(valIndices:Vector<UInt>):Void {
+	public inline function addFace(valIndices:Vector<UInt>, d:Int=-1):Void {
 		//if (valIndices.length < 3) trace("Invalid n-gon length:" + valIndices.length);
 
-
-		var startD:Int;
-		var d:Int = startD= indices.length;
+		if (d < 0) d = indices.length;
+		var d:Int = indices.length;
 		var len:Int = valIndices.length;
 	
 		var header:Int = ( (valIndices.length << A3DConst._NSHIFT) | valIndices[0] ); 
-		//trace("H:" + header);
 		indices[d++] = header;  
 		for (i in 1...len) {
 			indices[d++] = valIndices[i];
 		}
-	
-			d = startD;
-			// v1
-			
-		//	var testVal;
-			//trace( testVal=((indices[d] & A3DConst._NMASK_) >> A3DConst._NSHIFT) );
-			//if (testVal == 0) trace("indiceD:"+ Std.string(indices[d]));  //1073741824 >> A3DConst._NSHIFT
-			
-			/*
-			d = (indices[d] & A3DConst._FMASK_) * 3;
-			var ax = vertices[  d ]; d++;
-			var ay =  vertices[d ];  d++;
-			var az =  vertices[ d ]; 
-
-			// v2
-			d = ++startD;
-			d = indices[d] * 3;
-			var bx =  vertices[ d ]; d++;
-			var by =  vertices[ d ]; d++;
-			var bz = vertices[ d ]; 
-
-			// v3
-			d = ++startD;
-			d = indices[d] * 3;
-			var cx = vertices[ d]; d++;
-			var cy =  vertices[d ]; d++;
-			var cz = vertices[ d]; 
-
-			// v2-v1
-			var abx = bx - ax;
-			var aby = by - ay;
-			var abz = bz - az;
-
-			// v3-v1
-			var acx = cx - ax;
-			var acy = cy - ay;
-			var acz = cz - az;
-
-			var normalX = acz*aby - acy*abz;
-			var normalY = acx*abz - acz*abx;
-			var normalZ = acy*abx - acx*aby;
-
-			var normalLen = Math.sqrt(normalX*normalX + normalY*normalY + normalZ*normalZ);
-
-			if (normalLen > 0) {
-				normalX /= normalLen;
-				normalY /= normalLen;
-				normalZ /= normalLen;
-			} else {
-				trace("degenerated triangle");
-			}
-			
-			normals.push(normalX);
-			normals.push(normalY);
-			normals.push(normalZ);
-			normals.push(normalX * ax + normalY * ay + normalZ * az);
-			*/
+		
+		numIndices = d;
+		
 	}
 	
 	/* INTERFACE systems.collisions.IECollidable */
 	
 	public function collectGeometry(collider:EllipsoidCollider):Void 
 	{
-		collider.addGeometry(this);
+		collider.addGeometry(this, collider.inverseMatrix);
 	}
 	
 	/*

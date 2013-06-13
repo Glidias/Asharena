@@ -14,6 +14,7 @@ package systems.collisions;
 
 
 	import components.Transform3D;
+	import flash.errors.Error;
 	
 	import util.geom.Geometry;
 	import util.geom.ITransform3D;
@@ -46,14 +47,16 @@ package systems.collisions;
 		 */
 		public var threshold:Float;
 		
-		private var matrix:Transform3D;
-		private var inverseMatrix:Transform3D;
+		public var matrix:Transform3D;
+		public var inverseMatrix:Transform3D;
 		
 		// flag header 4 bits in 32 bit integer, for determining number of sides for convex n-gons. (up to 16 sides), leaving behind 28 bits (up to 268435456) possible vertex indices per geometry. 
 		// You can add /reduce space if required in the inline variable, but 16 sides should be sufficient for most cases.
 
 		
 		private var geometries:Vector<Geometry>;
+		private var numGeometries:Int;
+		private var transforms:Vector<Transform3D>;
 		
 		private var vertices:Vector<Float>;
 		
@@ -119,6 +122,8 @@ package systems.collisions;
 			resCollisionPlane = new Vector3D();
 			
 			geometries = new Vector<Geometry>();
+			transforms = new Vector<Transform3D>();
+			numGeometries = 0;
 			vertices =   new Vector<Float>();
 			normals =  new Vector<Float>();
 			indices = new Vector<Int>();
@@ -136,7 +141,7 @@ package systems.collisions;
 		/**
 		 * @private 
 		 */
-		private function calculateSphere(transform:ITransform3D):Void {
+		public function calculateSphere(transform:ITransform3D):Void {
 			sphere.x = transform.d;
 			sphere.y = transform.h;
 			sphere.z = transform.l; 
@@ -215,8 +220,6 @@ package systems.collisions;
 			cornerD.y = rad;
 			cornerD.z = -rad;
 
-			// Gathering the faces which with collision can occur
-			calculateSphere(matrix);
 		}
 		
 		
@@ -233,8 +236,9 @@ package systems.collisions;
 			var j:Int;
 		
 			var verticesLength:Int = 0;
-			var geometriesLength:Int = geometries.length;
-			var transform:Transform3D = inverseMatrix;
+			var geometriesLength:Int = numGeometries;
+	
+			var transform:Transform3D;
 			var vx:Float;
 			var vy:Float;
 			var vz:Float;
@@ -255,7 +259,9 @@ package systems.collisions;
 			
 				geometry = geometries[i];	
 				geometryIndices = geometry.indices;
-				 geometryIndicesLength = geometryIndices.length;
+				 geometryIndicesLength = geometry.numIndices;
+				 
+				 transform = transforms[i];
 				 
 					verts = geometry.vertices;
 					numVertices = geometry.numVertices;
@@ -281,6 +287,7 @@ package systems.collisions;
 					j = k;
 					var a:Int = geometryIndices[j]; j++;
 					nSides = ((a & A3DConst._NMASK_) >> A3DConst._NSHIFT);
+					nSides = nSides != 0 ? nSides : 3;
 					/*
 					if (nSides != 4) {
 						trace("Invalid nsides:" + nSides);
@@ -365,13 +372,19 @@ package systems.collisions;
 			
 			}
 			
-				TypeDefs.setVectorLen(geometries, 0);
+			numGeometries = 0;
 				
 				numI = indicesLength;
 				
 			
 		}
 		
+		
+		public inline function addGeometry(geometry:Geometry, transform:Transform3D):Void {
+			geometries[numGeometries] = geometry;
+			transforms[numGeometries] = transform;
+			numGeometries++;
+		}
 		
 		/**
 		 * Calculates destination point from given start position and displacement vector.
@@ -406,7 +419,7 @@ package systems.collisions;
 						
 						//collisionPlane.z *= -1; // hack
 						
-						// Transform the point to the global space
+					// Transform the point to the global space
 					resCollisionPoint.x = matrix.a*collisionPoint.x + matrix.b*collisionPoint.y + matrix.c*collisionPoint.z + matrix.d;
 					resCollisionPoint.y = matrix.e*collisionPoint.x + matrix.f*collisionPoint.y + matrix.g*collisionPoint.z + matrix.h;
 					resCollisionPoint.z = matrix.i*collisionPoint.x + matrix.j*collisionPoint.y + matrix.k*collisionPoint.z + matrix.l;
@@ -486,10 +499,7 @@ package systems.collisions;
 return a != a;
 }
 		
-		public inline function addGeometry(g:Geometry) 
-		{
-			geometries.push(g);
-		}
+	
 	//	*/
 		
 		/**
@@ -592,7 +602,7 @@ return a != a;
 			
 			//var maxIterations:Int = 400;
 		//	var count:Int = 0;
-			
+		
 			while (k < indicesLength) {
 				// Points
 				locI = i = k;

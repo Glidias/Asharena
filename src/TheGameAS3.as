@@ -11,6 +11,7 @@ package
 	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.ExternalTextureResource;
+	import alternterrain.CollidableImpl;
 	import util.geom.Geometry;
 
 	import components.Pos;
@@ -77,6 +78,7 @@ package
 		
 		private function startGame():void {
 			
+			CollidableImpl;
 			var geom:Geometry = new Geometry();
 
 			//geom.setVertices( _view.box.geometry.getAttributeValues(VertexAttributes.POSITION) );
@@ -85,7 +87,8 @@ package
 			if (colliderSystem) {
 				geom.setVertices(  _view.box.geometry.getAttributeValues(VertexAttributes.POSITION)  );
 				//geom.indices = _view.box.geometry.indices;
-				geom.addTriFaces(_view.box.geometry.indices);
+				geom.setIndices(_view.box.geometry.indices);
+				//geom.addTriFaces(_view.box.geometry.indices);
 				colliderSystem.collidable = geom;
 			}
 			
