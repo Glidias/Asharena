@@ -4,6 +4,7 @@ package alternativa.engine3d.controller
   import alternativa.engine3d.core.RayIntersectionData;
   import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.materials.TextureMaterial;
+	import components.Rot;
 	import flash.display.InteractiveObject;
     import flash.events.Event;
 	import flash.events.IEventDispatcher;
@@ -23,6 +24,7 @@ package alternativa.engine3d.controller
     {
 
         private var _followTarget:Object3D;
+		public var rot:Rot;
         public var controller:OrbitCameraController;
         
         protected var _preferedZoom:Number;
@@ -55,8 +57,9 @@ package alternativa.engine3d.controller
         public var instant:Boolean = false;
         public var mouseWheelSensitivity:Number = 30;
         
-        public function OrbitCameraMan(camera:Camera3D,  cameraTarget:Object3D, stager:InteractiveObject, scene:Object3D, followTarget:Object3D=null, useMouseWheel:Boolean=false) 
+        public function OrbitCameraMan(camera:Camera3D,  cameraTarget:Object3D, stager:InteractiveObject, scene:Object3D, followTarget:Object3D=null, rot:Rot=null, useMouseWheel:Boolean=false) 
         {
+			this.rot = rot;
 			var controller:OrbitCameraController = new OrbitCameraController(camera, cameraTarget, stager, stager, stager, false, useMouseWheel, mouseWheelHandler);
             this._followTarget = followTarget || (controller._followTarget);
 			alphaSetter = new DummyAlpha();
@@ -66,6 +69,8 @@ package alternativa.engine3d.controller
             ignoreDict[controller._followTarget] = true;
             controller.minPitch = Math.PI * .5;
 			preferedMinDistance = 0;
+			
+			
         }
         
         /*
@@ -99,8 +104,12 @@ package alternativa.engine3d.controller
             var camera:Camera3D = controller._target;
         
             var camLookAtTarget:Object3D = controller._followTarget;
-            if (followAzimuth) _followTarget.rotationZ = camera.rotationZ;
-            if (followPitch) _followTarget.rotationX =  camera.rotationX + Math.PI * .5;
+            if (followAzimuth) {
+				_followTarget.rotationZ = rot.z = camera.rotationZ;
+			}
+            if (followPitch) {
+				_followTarget.rotationX =  rot.x= camera.rotationX + Math.PI * .5;
+			}
             
         
             

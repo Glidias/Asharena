@@ -1116,10 +1116,13 @@ package alternterrain.objects
 			public function setupCollisionGeometry(sphere:Vector3D, vertices:Vector.<Number>, indices:Vector.<uint>, vi:int = 0, ii:int = 0):void {
 				numCollisionTriangles = 0;
 
-				if (tree != null && boundIntersectSphere(sphere, tree.xorg, -tree.xorg - ((1 << tree.Level) << 1), tree.Square.MinY,  tree.zorg, tree.zorg + ((1 << tree.Level) << 1), tree.Square.MaxY )) {
+				if (tree != null ) {
 						_currentPage = tree;
-						collectTrisForTree2D(tree, sphere, vertices, indices, vi, ii);			
-					}
+						collectTrisForTree2D(tree, sphere, vertices, indices, vi, ii);		
+				//	if (numCollisionTriangles > 0) throw new Error("A")
+					//else throw new Error("B");
+				}
+				
 					
 					if ( gridPagesVector != null) {
 						// TODO: for multiple pages case
@@ -1666,12 +1669,16 @@ package alternterrain.objects
 				
 			private function collectTrisForTree2D(tree:QuadTreePage, sphere:Vector3D, vertices:Vector.<Number>, indices:Vector.<uint>, vi:int, ii:int):void {
 				var hm:HeightMapInfo = tree.heightMap;
-				var xi:int = (sphere.x - sphere.w - tree.xorg -hm.XOrigin ) * tileSizeInv;
-				var yi:int = ( -sphere.y + sphere.y - tree.zorg - hm.ZOrigin) * tileSizeInv;
+				var radius:Number = sphere.w;
+				radius = radius < (tileSize>>1) ? (tileSize>>1) : radius;
+				var startX:int = (sphere.x - radius - tree.xorg -hm.XOrigin)  * tileSizeInv - 1;
+				var startY:int = (-(sphere.y - radius) - tree.zorg - hm.ZOrigin) * tileSizeInv - 1;
 				var data:Vector.<int> = hm.Data;
-				var len:int = sphere.w * 2 * tileSizeInv;
-				var xtmax:int = xi + len;
-				var ytmax:int = yi + len;
+				var len:int = radius * 2 * tileSizeInv + 2;
+				var xtmax:int = startX + len;
+				var ytmax:int = startY + len;
+				var yi:int;
+				var xi:int;
 					var whichFan:Vector.<int>;
 					var RowWidth:int = hm.RowWidth;
 					var cxorg:Number = _currentPage.xorg;
@@ -1691,8 +1698,8 @@ package alternterrain.objects
 					
 					var vMult:Number = 1 / 3;
 					
-				for (yi; yi < ytmax; yi++) {
-					for (xi; xi < xtmax; xi++) {
+				for (yi=startY; yi < ytmax; yi++) {
+					for (xi=startX; xi < xtmax; xi++) {
 
 					_patchHeights[2] = data[xi + yi * RowWidth];   // nw
 					_patchHeights[5] =  data[(xi + 1) + (yi) * RowWidth];  // ne

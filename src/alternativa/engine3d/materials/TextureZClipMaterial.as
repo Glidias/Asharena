@@ -56,7 +56,7 @@ package alternativa.engine3d.materials {
 		 static alternativa3d const kilProcedure:Procedure = new Procedure([
 			"#c0=cThresholdAlpha",
 			"#v0=vPosition",
-			"sub t0.z, v0.z, c0.z",
+			"sub t0.z, v0.y, c0.z",
 			"kil t0.z"
 		], "kilProcedure");
 		

@@ -3,6 +3,7 @@ import ash.core.Engine;
 import ash.core.Node;
 import ash.core.NodeList;
 import ash.core.System;
+import components.CollisionResult;
 import components.Gravity;
 import components.Vel;
 
@@ -27,6 +28,7 @@ class GravitySystem extends System
 		
 		while (n != null) {
 			n.gravity.update(n.vel, time);
+			
 			n = n.next;
 		}
 	}
@@ -36,6 +38,6 @@ class GravitySystem extends System
 class GravityNode extends Node<GravityNode> {
 	public var gravity:Gravity;
 	public var vel:Vel;
-	
+	public var result:CollisionResult;
 	
 }

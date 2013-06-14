@@ -12,6 +12,7 @@ class RenderSystem extends System
 {
 
 	public var nodeList:NodeList<RenderNode>; 
+	public var renderEngine:IRenderable;
 	
 	public function new() 
 	{

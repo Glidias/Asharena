@@ -72,15 +72,16 @@ package systems.player.a3d
 		private static const I_SPEED_STRAFE_LOWER:Number = 1 / SPEED_STRAFE_LOWER;
 		private static const I_SPEED_CROUCH:Number =1 / SPEED_CROUCH;
 	
+		private static const SPEED_SCALE:Number = 1.5;
+		private var speed_backwards_fast:Number = 45*SPEED_SCALE;
+		private var speed_backwards:Number = 30*SPEED_SCALE;
 		
-		private var speed_backwards_fast:Number = 45;
-		private var speed_backwards:Number = 30;
+		private var speed_jog:Number = 100*SPEED_SCALE;
+		private var speed_run:Number = 160*SPEED_SCALE;
 		
-		private var speed_jog:Number = 100;
-		private var speed_run:Number = 160;
+		private var speed_strafe_fast:Number = 52*SPEED_SCALE;
+		private var speed_strafe:Number = 38 * SPEED_SCALE;
 		
-		private var speed_strafe_fast:Number = 52;
-		private var speed_strafe:Number = 38;
 	//	private static const UPPER_BODY_PENALTY:Number = .75;
 		public var SPEED_RUN_MULTIPLIER:Number = speed_run / speed_jog;
 		public var SPEED_CROUCH_MULTIPLIER:Number = SPEED_CROUCH / SPEED_JOG;
@@ -300,9 +301,9 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 						_running = true;
 						setAnimation(fullBodyAnims["run"], fullBodyController, fullBody, .1).speed = speed_run * I_SPEED_RUN;
 						_curController = fullBodyController; 
-						skin._rotationZ = Math.PI + (_stance != 2 ? .22 : .02);
-						skin.transformChanged = true;
-						_skinRotated = true;
+						//skin._rotationZ = Math.PI + (_stance != 2 ? .0 : .02);
+						//skin.transformChanged = true;
+						//_skinRotated = true;
 						surfaceMovement.setWalkSpeeds(speed_jog*SPEED_RUN_MULTIPLIER);
 						surfaceMovement.setStrafeSpeed(speed_strafe*.5);
 					}

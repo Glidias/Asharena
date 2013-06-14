@@ -1,6 +1,7 @@
 package alternativa.engine3d 
 {
 	import alternativa.engine3d.core.Object3D;
+	import systems.rendering.IRenderable;
 	import systems.rendering.RenderNode;
 	import systems.rendering.RenderSystem;
 	import alternativa.engine3d.alternativa3d;
@@ -14,9 +15,10 @@ package alternativa.engine3d
 	{
 		private var scene:Object3D;
 	
-		public function RenderingSystem(scene:Object3D) 
+		public function RenderingSystem(scene:Object3D, renderingSystem:IRenderable=null) 
 		{
 			this.scene = scene;
+			this.renderEngine = renderingSystem;
 		}
 		
 	
@@ -38,6 +40,7 @@ package alternativa.engine3d
 				r.object._rotationZ = r.rot.z;
 				r.object.transformChanged = true;
 			}
+			if (renderEngine != null) renderEngine.render();
 		}
 		
 	}

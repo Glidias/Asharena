@@ -42,6 +42,9 @@ package
 		
 		public static const RACE_SAMNIAN:String = "samnian";
 		public var context3D:Context3D;
+		public var currentPlayer:Object3D;
+		public var currentPlayerSkin:Skin;
+		public var currentPlayerEntity:Entity;
 		
 		public function ArenaSpawner(engine:Engine) 
 		{
@@ -122,6 +125,7 @@ package
 			obj.addChild(sk);
 			ent.add(obj, Object3D);
 			
+			/*
 			var bb:BoundBox;
 			//bb = obj.boundBox;
 			bb = new BoundBox();
@@ -131,6 +135,7 @@ package
 			bb.maxX = 16;
 			bb.maxY = 16;
 			bb.maxZ = 16;
+			*/
 			
 			var ellipsoid:Ellipsoid = ent.get(Ellipsoid) as Ellipsoid;
 			//addRenderEntity(getBoundingBox(bb), ent.get(Pos) as Pos, ent.get(Rot) as Rot);
@@ -143,7 +148,12 @@ package
 			
 			var actions:ActionIntSignal = ent.get(ActionIntSignal) as ActionIntSignal;	
 			var gladiatorStance:GladiatorStance = new GladiatorStance(sk, ent.get(SurfaceMovement) as SurfaceMovement, ellipsoid );
-			if (playerStage!=null) gladiatorStance.bindKeys(playerStage);
+			if (playerStage != null) {
+				gladiatorStance.bindKeys(playerStage);
+				currentPlayer = obj;
+				currentPlayerSkin = sk;
+				currentPlayerEntity = ent;
+			}
 			actions.add( gladiatorStance.handleAction );
 			ent.add(gladiatorStance, IAnimatable);
 			

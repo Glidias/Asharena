@@ -8,10 +8,18 @@ package
 	import alternativa.engine3d.loaders.ParserA3D;
 	import alternativa.engine3d.loaders.ParserMaterial;
 	import alternativa.engine3d.loaders.TexturesLoader;
+	import alternativa.engine3d.materials.Material;
+	import alternativa.engine3d.materials.TextureMaterial;
+	import alternativa.engine3d.materials.TextureZClipMaterial;
 	import alternativa.engine3d.objects.Skin;
+	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.ExternalTextureResource;
+	import alternativa.engine3d.resources.TextureResource;
 	import alternterrain.CollidableImpl;
+	import ash.core.Entity;
+	import components.Rot;
+	import examples.WaterAndTerrain3rdPerson;
 	import util.geom.Geometry;
 
 	import components.Pos;
@@ -47,7 +55,7 @@ package
 		private var skinTexturePath:String = "skins/textures/";
 	
 		private var arenaSpawner:ArenaSpawner;	
-		private var _view:Alternativa3DView = new Alternativa3DView();
+		private var _view:WaterAndTerrain3rdPerson = new WaterAndTerrain3rdPerson();
 		
 		public function TheGameAS3(stage:Stage) 
 		{
@@ -61,81 +69,100 @@ package
 			
 			_view.addEventListener(Event.COMPLETE, onViewInitialized);
 			
+					
 			Boot.getTrace().blendMode = "invert";
 			stage.addChild( Boot.getTrace() );
 		}
 		
 		private function onViewInitialized(e:Event):void 
 		{
-	
-			arenaSpawner.context3D = _view.stage3D.context3D;
-			setupSkins();
+			engine.addSystem( new RenderingSystem(_view.scene, _view), SystemPriorities.render );
 			
 			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onViewInitialized);
+			
+			arenaSpawner.context3D = _view.stage3D.context3D;	
+			var injectMaterial:TextureZClipMaterial = setupSkins();
+			arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage).add(keyPoll);
+			_view.inject(arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Pos) as Pos,  arenaSpawner.currentPlayerEntity.get(Rot) as Rot, arenaSpawner.currentPlayerSkin, injectMaterial);
 			startGame();
 		}
 	
 		
 		private function startGame():void {
-			
-			CollidableImpl;
-			var geom:Geometry = new Geometry();
-
-			//geom.setVertices( _view.box.geometry.getAttributeValues(VertexAttributes.POSITION) );
-			//geom.addTriFaces(_view.box.geometry.indices);
-			
+					
 			if (colliderSystem) {
+				/*
+				var geom:Geometry = new Geometry();
 				geom.setVertices(  _view.box.geometry.getAttributeValues(VertexAttributes.POSITION)  );
-				//geom.indices = _view.box.geometry.indices;
 				geom.setIndices(_view.box.geometry.indices);
-				//geom.addTriFaces(_view.box.geometry.indices);
 				colliderSystem.collidable = geom;
+				*/		
+				colliderSystem._collider.threshold = 0.0001;
+				colliderSystem.collidable = new CollidableImpl(_view.terrainLOD, _view.getWaterPlane());
 			}
-			
-			
+				
 			// Setup rendering system
-			engine.addSystem( new RenderingSystem(_view.scene), SystemPriorities.render );
-			
-			
-		//	arenaSpawner.addCrossStage();
-			arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage).add(keyPoll); //.get(Pos) as Pos
-			
-			
 			ticker.start();	
 		}
 
 		
-		override public function getSpawner():Spawner {
-			
+		override public function getSpawner():Spawner {	
 			return (arenaSpawner=new ArenaSpawner(engine));
 		}
-		
 		
 		
 		// -- LOGISITICS
 		
 		private var _textureLoader:TexturesLoader;
 		
-		private function setupSkins():void 
+	//	/*
+		private function setupSkins():TextureZClipMaterial 
 		{
-			_textureLoader = new TexturesLoader(_view.stage3D.context3D);
+			
 			
 			var parserA3D:ParserA3D = new ParserA3D();
 			parserA3D.parse( new A3D_SKIN() );
 			
 			//loadMaterials(  );
 			
-			var diffuseRes:ExternalTextureResource = parserA3D.materials[0].textures.diffuse;
-			diffuseRes.url = skinTexturePath + diffuseRes.url;
-			_textureLoader.loadResource( diffuseRes);
+			//var diffuseRes:ExternalTextureResource = parserA3D.materials[0].textures.diffuse;
+			//diffuseRes.url = skinTexturePath + diffuseRes.url;
+			//_textureLoader.loadResource( diffuseRes);
 			
 			var sk:Skin = findSkin( parserA3D.objects );
 			
-			arenaSpawner.setupSkin(sk  , ArenaSpawner.RACE_SAMNIAN );
+			
+			var textures:Vector.<ExternalTextureResource> = new Vector.<ExternalTextureResource>(); //create a vector ExternalTextureResource
+			var injectMaterial:TextureZClipMaterial;
+			for (var i:int = 0; i < sk.numSurfaces; i++){ //cycle through all surface
+				var surface:Surface = sk.getSurface(i); //get the current surface
+				var material:ParserMaterial = surface.material as ParserMaterial; //a material property, we obtain ParserMaterial (for materials in Section 1.3)
+				if (material != null) { //if the material is there, not null
+					
+					var diffuse:ExternalTextureResource = material.textures["diffuse"]; //Create TextureResource-is the base class for all texture resources
+					if (diffuse != null){ //if there is texture
+						textures.push(diffuse); //add a vector with ExternalTextureResource
+						diffuse.url = skinTexturePath + diffuse.url;
+						surface.material = injectMaterial = new TextureZClipMaterial(diffuse); //and assign the surface
+						
+					}
+				}
+			}
+			var texturesLoader:TexturesLoader = new TexturesLoader(_view.stage3D.context3D);
+			_textureLoader = texturesLoader;
+			texturesLoader.loadResources(textures); //load the textures in the context
+			
+		
+			arenaSpawner.setupSkin(sk, ArenaSpawner.RACE_SAMNIAN );
 			
 			
+		
+			return injectMaterial;
 			//ParserMaterial().
 		}
+		//*/
+		
+	
 		
 		
 		private function findSkin(objects:Vector.<Object3D>):Skin {
