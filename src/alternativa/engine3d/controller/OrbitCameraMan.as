@@ -82,9 +82,9 @@ package alternativa.engine3d.controller
             _object.z += forward.z * 120;
         */
         
-        public function mouseWheelHandler(e:MouseEvent):void {
+        public function mouseWheelHandler(e:MouseEvent, delta:Number=0):void {
             var _lastLength:Number = controller.getDistance();
-            _lastLength -= e.delta * mouseWheelSensitivity;
+            _lastLength -= e!= null ? e.delta * mouseWheelSensitivity : delta;
 			var minDist:Number = (preferedMinDistance > 0 ? preferedMinDistance : controller.minDistance);
             if (_lastLength < minDist )
             {

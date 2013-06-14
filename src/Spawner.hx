@@ -34,7 +34,7 @@ class Spawner
 		
 		ent.add( new SurfaceMovement() ).add( new DirectionVectors() );
 		
-		ent.add( new Gravity(10) ).add( new Jump(.8, 4495) );
+		ent.add( new Gravity(10*5) ).add( new Jump(.8, 4495*5) );
 		
 		var coll:CollisionResult;
 		ent.add(  new Ellipsoid(20, 20, 36)).add( coll = new CollisionResult() ).add( new MoveResult() );

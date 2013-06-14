@@ -11,7 +11,7 @@ class CollisionResult
 	// Settings
 
 	 // default .8, the slope to be considered a jumpable ground surface (Component var could be static inlined as well)
-	 public static inline var MAX_GROUND_NORMAL_THRESHOLD:Float = .8;
+	 public static inline var MAX_GROUND_NORMAL_THRESHOLD:Float = .5;
 	public var max_ground_normal_threshold:Float; 
 	
 	// What results are calculated. In some cases, not calculating certain things might force engines to re-calculate stuff, or ignore

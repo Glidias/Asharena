@@ -99,7 +99,7 @@ package examples
 		static private const SBRight:Class;
 		
 		static public const START_LOD:Number = 1;
-		static public const FOG_DIST_TILES:int = 800;
+		static public const FOG_DIST_TILES:int = 512;
 		
 		private var _normalMapData:BitmapData;
 		private var settings:TemplateSettings = new TemplateSettings();
@@ -150,7 +150,7 @@ package examples
 			thirdPerson.preferedMinDistance = 60;
 			thirdPerson.fadeDistance = thirdPerson.preferedMinDistance-1;
 			thirdPerson.minFadeAlpha = 0;
-            thirdPerson.controller.maxDistance =256;
+            thirdPerson.controller.maxDistance =256*32;
             //thirdPerson.controller.minAngleLatitude = 5;  // LEFT HANDED SYSTEM with thumb being latitude
             thirdPerson.controller.minAngleLatitude = -85;  // pitch up
             thirdPerson.controller.maxAngleLatidude = 75;  // pitch down
@@ -185,6 +185,7 @@ package examples
 			stage3D.requestContext3D(Context3DRenderMode.AUTO);
 			
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
 			
 			crosshair = new CrossHair();
 			crosshair.x = stage.stageWidth * .5;
@@ -196,6 +197,13 @@ package examples
 
 		}
 		
+		private function onKeyUp(e:KeyboardEvent):void 
+		{
+			if (e.keyCode === Keyboard.R) {
+				_orbitKeyDown = false;
+			}
+		}
+		
 		private function onStageResize(e:Event):void 
 		{
 			crosshair.x = stage.stageWidth * .5;
@@ -204,8 +212,20 @@ package examples
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
-			if (e.keyCode === Keyboard.TAB) {
+			var key:uint = e.keyCode;
+			if (key === Keyboard.TAB) {
 				terrainLOD.debug = !terrainLOD.debug;
+			}
+			else if (key === Keyboard.R) {
+				_orbitKeyDown = true;
+			}
+			else if (key === Keyboard.PAGE_UP) {
+				thirdPerson.mouseWheelHandler(null, 5);
+				
+			}
+			else if (key === Keyboard.PAGE_DOWN) {
+				thirdPerson.mouseWheelHandler(null, -5);
+				
 			}
 			
 		}
@@ -229,9 +249,9 @@ package examples
 			// Container
 			
 			// Camera
-			camera = new Camera3D(1, FOG_DIST_TILES*256);  //1024*256
-			camera.x = -315*256;
-			camera.y = -315*256;
+			camera = new Camera3D(1, FOG_DIST_TILES*256*1.5);  //1024*256
+			camera.x = 0*256;
+			camera.y = 0*256;
 			camera.z = waterLevel + 66400;
 			camera.rotationX = -1.595;
 			camera.rotationZ = -0.6816;
@@ -442,6 +462,7 @@ package examples
 			follower._y = playerPos.y;
 			follower._z= playerPos.z + 44;
 			
+			thirdPerson.followAzimuth = _orbitKeyDown ? false : true;
 			 thirdPerson.update();
 			//teapot.rotationZ -= 0.02;
 			
@@ -522,6 +543,7 @@ package examples
 		private var followTarget:Object3D;
 		private var playerPos:Pos;
 		private var skinRenderable:Object3D;
+		private var _orbitKeyDown:Boolean;
 
 
 		
@@ -579,7 +601,7 @@ class RaycastImpl extends Object3D {
 	private var childDirection:Vector3D = new Vector3D();
 	private var terrainLOD:TerrainLOD;
 	
-	public var ddaMaxRange:Number = 8912;
+	public var ddaMaxRange:Number = 8192;
 	
 	public function RaycastImpl(terrainLOD:TerrainLOD) {
 		this.terrainLOD = terrainLOD;
