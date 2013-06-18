@@ -1,0 +1,67 @@
+Based on technical limitations/capabilities of the terrain engine:
+	
+	New storyline premise:
+A fog has descended on the Realm of Dominul (causing strange creatures to descend from it's ash-y depths) and it's up to our brave warriors to restore back the land which was one's theirs. What's even stranger, is that the land which they once knew has changed as a result of the mist. 
+
+
+
+For islands <= 2kmx2km in space
+++++++++++++++++++++++++++++++++++++++++++++
+1) One could simply preload all the assets at once, since the map isn't too big and consist only of 1 single page. We already have this functionality.
+
+
+For worlds beyond 2kmx2km in space
+++++++++++++++++++++++++++++++++++++++++++++++++++
+1) One needs to use payloads of smaller sizes that can be quickly loaded on demand.
+
+Macro loads per page size (each page is kept at 1024x1024 worth of tiles, which is the 2kmx2km reccomeneded limit)
+-----------------
+
+(128x128 payload download)
+128 micro
+256 macro to 128
+512 macro to 128
+1024 macro to 128 (full page macro)
+
+
+Each micro/macro is a 128x128 space of heightmap/normalmap/texturemap/quad-tree data and any entity-related data bundle that is to be downloaded like a Google earth tile.. As you know, Google loads a single 256x256 image tile, but terrain requires multiple assets so 128x128 would be more reasonable, plus the heights are pre-processed so so grayscale compression won't work.
+
+download macro and draw scale up(or copy pixels but notify region limitation) to match 1024x1024 terrain page's heightmap/normalmap/texturemap or any map space of lesser dimension.. 
+
+Up to 4 1024x1024 heightmaps/normalmaps/texturemaps must be provided in memory due to straddling quad-tree partitions.
+Then, seveal 512x512/256x256/128x128 maps in reserve, depending on visibility distance. Each page would check for the maximum LOD level found in it to determine map space to be provided for the page. This does mean potentially wasted space due to incomplete loads at various portions of a texture map.
+
+For chunks without immediate LOD transition due to not yet loaded LOD levels, may need to use skirts. Or use skirts for ALL chunks regardless.
+
+
+How much visibility distance??:::
+:::
+Usuaully up to 6x6 pages in diameter max (6km)  / 12x12 km space
+Normally 4x4 pages high   (4km)     8x8 km space
+3x3 pages med (3km)   6x6 km space
+2x2 pages low  (2km)   (No need for reserve 512,256,128 maps in such a case...)   4x4km space
+
+
+Every page could first use a 1024 macro to 128, ie. a 128x128 minimap downloaded version of the entire 2kmx2km area, before attempting to progressively download 128x128 macro. Note that immediate 128x128 macros within movement vincity should be downloaded first prior to moving, thus, these won't be progressively loaded but paused-loaded on demand. For cases with hard-drive access, we aim for minimal lag time to allow for fairly fast streaming. (There would still be lag time assosiated with uploading/updating texture map information onto Stage3D).
+
+Development process::
+Create 1024x1024 terrain page,  generated height map (unprocessed), than processed heights, generate normal map, generate texture map, and quadtree LOD bounds and error values. split into downloadable micro sizes, covering the micro/macro areas. Thus, lots of duplicate files that contain similar info, but at varying zoom levels.
+
+Potential issues with sandbox user-randomly generated terrains online:
+Creating a 1024x1024 terrain page as described above purely on server side is too heavy (might only works for devs' creation/uploading), and even uploading such data is heavy in bandwidth due to it being 4MB and such even if processing is done client side....Thus, only way to pull this off is to use smaller sizes that can easily be handled server side and uploaded, if custom user-generated content is made instead. Thus, 128x128 should be the upper limit for such cases. Unprocessed portions of the island's terrain should remain fogged until processed, cached on the server, and loaded fully as a 128x128 payload! This means the world's visiblity distance starts off very low and locational mist fog could be used to conceal all terrain that hasn't been payloaded yet. Only, when a terrain page is fully formed, a cron job can than be used to form up the development process of micro/macro image variants and creating the files on the server. Again, such a cron job is intensive to execute on the server, but can be done, perhaps spread out over cases where certain data quads are already formed to allow for cron job to execute over those areas. Such "create-on-demand" terains can act as dungeon-like connected terrains, that require users to kill monsters around these fogged areas to reveal those araes in greater detail. Since such unprocessed areas cannot be loaded on demand, they'll remain fogged. Thus, up to 2-3 128x128 micro pieces might have to be downloaded seperately if there's no 2x2=4 macro piece available yet to cover a fully processed area. This represents sparse regions which are pages that aren't fully processed yet. Users might need to be encouraged to clear a quad before proceeding to the next....to avoid having 2-3 micro piece loads building up (ie. pushing too far in...).
+
+As a start, one could create a initial homebase 1024x1024 terrain page area (or several pages) that is fully revealed and is deemed to be a "safe" homebase part of the world. From there, users explore uncharted randomly generated regions outside their homebase based on the fog, and carve out their strongholds, exposing away the fog of war and basically forming up a whole new world on their own. Effectively, as the game gets older, the world's friendly area vincity gets larger and expands outwards. There needs to be a rule mechanic for users to have to clear areas within the quad region first prior to pushing in deeper.
+
+Survivor is critical in the harsh environment consisting of monsters. Water, food, equipment, etc. becomes part of the means to survive. Set up shelter at areas like lakes/ponds/reservoir is required to later develop into settlements. Killing monsters and gathering natural material becomes a means to build stuff. Contributors are welcomed to provide dev assets for such stuff.
+
+Each fogged square (aka. the Ash) ( a 128x128 payload, which is a 250x250m space) contains a certain number of monster points (MP), represneting how many monsters can spawn out of it. Anyone that approaches near the square will draw out monsters. Some monsters can retreat back to the Ash to recuperate. All monsters need to be killed to reduce the MP of the fogged square to clear away the Ash, which triggers the server to process that square's terrain. Once the terrain is processed and cached, the ash clears away and is revaeled to the player. Players cannot enter the Ash, and approaching too close to it can result in loss of health points....Thus, they need to keep a safe distance and defend themselves from the monsters emerging out of the ash. Naturally, monsters will be drawn out of squares where the quad priority holds premise (ie. to complete the quad). Ie. Fogged squares belonging to incomplete parent quad nodes, will have the higher priority and fogged squares that result in completing a quad in the higher level will have higher priority, especially if it'll complete at root page level. This will be shown in the overhead map. Thus, naturally, users will always end up clearing a full QuadTreePage first, restoring a full 2kmx2km worth of space as the ultimate objective.
+
+How could adjacient fogged (unknown) terrain be generated? Perhaps, by 2D Spatial Hash ID (for base island) + Perlin Noise Seed (for terrain variation). Or it could be based on the username fella id that triggered  it  (3rd dimension), together with the spatial hash ids on x and y dimensions accordingly, assuming all 3 values result in a unique value, though this would limit world space to about the size of great britain at the most...would work well for a singleplayer offline version.
+
+
+For worlds beyond 12kmx12km in space  (>6km visiblity distance)
+++++++++++++++++++++++++++++++++++++++++++++++++++
+Macro per beyond page size 
+2048 macro to 1024
+2048*2 macro to 1024
+etc.
