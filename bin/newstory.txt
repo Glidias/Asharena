@@ -65,3 +65,42 @@ Macro per beyond page size
 2048 macro to 1024
 2048*2 macro to 1024
 etc.
+
+
+
+
+
+
+PAYLOAD
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+FOR 128x128s
+heightmap processed
+normalmap processed
+x1 or x2 rgb-splat/colormap based on biomes *
+quadtree
+
+(((
+For 1024x1024 base  (client side can have potential security issues, server side may involve bandwidth issues)
+- heightmap unprocessed grayscale
+- blurred rgb image based on biomes
+)))
+
+
+* Splatting (ie. if splatting is used...)
+- Default texture base ( could be tiling sand, or a fully stretched diffuse color base)
+- Splatting of detail/textured materials.
+Amount of R/G/B indicate the amount of splats accordingly for the 3 given tiling textures....With texture atlases and AGAL2 partial deririative, it's possible to go beyond 3 texture limit, but that would need multiple splat maps and complicate the process. Or perhaps, a splat map and a smaller UV variant map index download, but still needing AGAL2 deririttive and clamping.
+
+0) Color base
+1) Sand
+2) Shrub
+3) Rock
+
+0) Sand
+1) Shrub
+2) Dirt
+3) Rock
+
+
+TODO: Test various Tribes tileset if it works well....Daggerfall texture set probably won't work at all but for Daggerfall itself would work.
