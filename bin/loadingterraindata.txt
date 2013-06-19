@@ -40,7 +40,7 @@ Besides more triangle output, it lumps the process of asset loading with the LOD
 Depending on the visibility distance, page size and such, chunks of 64x64 might be a good balance between download.
 
 
-Downloading sceheme #3:
+Downloading sceheme #3:  (as done in http://www.zephyrosanemos.com/)
 Quad-tree page information which contains minimum height/maximum height
 +
 grayscale heightmap info to match the given information in compressed manner, given minimum and maximum.
@@ -52,7 +52,9 @@ Derive dynamic normal map from height map via CPU, or download static lightmap, 
 A page size of 256x256 or 512x512 is suitable. 1024x1024 might be too big a download. Thus visibility distance for such an implemetnation would be lower than the beyond 2km variety that comes with multiple 2kmx2km pages.
 
 Advatanges of this method:
-Simple. Just download the information and dump everything into the page data. Switch mist map accordingly for each page. For unprocessed terrain sections,  some info constants could be updated and a shader to handle it accordingly to mask out stuff accordingly. Constants are like 2x2 or 4x4 only, not much required. No need to produce macro chunks in pipeline.
+Simple. Just download the assets and dump everything into the page data, uploading stuff to Stage3D if necessary. Technically, this isn't streaming because there's no feeding in of stream byte data/downloaded information into a given system. Switch mist map accordingly for each page depending on whether neighbor pages are downloaded yet or not. For unprocessed terrain sections,  some info constants could be updated and a shader to handle it accordingly to mask out stuff accordingly. Constants are like 2x2 or 4x4 only, not much required. No need to produce macro chunks in pipeline.
  
 Disadvantages of this method:
-Won't work well for large visisibility distance scenes with page sizes of 1024x1024 (ie. 2km by 2km). BUt for mobile devices/consoles where scaling down (in visiblity distance) may be required anyway and CPU overhead must be kept to t he minimal, this is the best option, even though normal map would probably need to be downloaded or a static lightmap is used instead..If information is drawn from disk, than no issue, really, but streaming it in would be even more seamless.
+Won't work well for large visisibility distance scenes with page sizes of 1024x1024 (ie. 2km by 2km, thus viewing 2km and beyond), when directly walking on the ground. 
+
+BUt for mobile devices/consoles where scaling down (in visiblity distance) may be required anyway and CPU overhead must be kept to t he minimal, this is the best option, even though normal map would probably need to be downloaded or a static lightmap is used instead..If information is drawn from disk, than no issue, really, as streaming it in would be even more seamless.
