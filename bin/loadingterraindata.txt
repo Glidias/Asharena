@@ -1,0 +1,58 @@
+Downloading sceheme #1:
+
+Page must load quad-tree first as mandatory for entire page, and immediate surrounding vincity micro chunks. (ie.For rendering, if a chunk's height data isn't deemed to be loaded yet, use upperY bounds for TerrainChunkState's geometry heights, until height data is loaded than can update vertex buffer if required..Such a chunk is fogged away so it won't be visible anyway.....).
+
+
+And for progresssive downloading::
+
+
+Micro/Macro heightmap/texturemap/normalmap data.
+or
+Micro/Macro heightmap/texturemap   (normal map derived from heightmap as CPU operation...)
+or
+Micro/Macro heightmap/texturemap/lightmap (grayscale lightmap would take less filespace, but dynamic directional lighting will not work)
+
+
+Everytime micro chunk is loaded, update main page's HeightMap, TextureMap and Normal/Light map accordingly. If a macro chunk is loaded, copy pixels 2x2 or draw stretch to fit region. I think it might be better for TextureMap and Normal/Light map to copy pixels 2x2 and inform t he micro chunk texture uv scale to use a smaller one when refering to texturemap/normalmap to avoid the possibility of seaming over black regions. But this might not be foolproof. 
+
+Disadvantages of this method:
+CPU overhead in copying pixels (or drawing) of loaded bitmapdata to buffer, than uploading/udpating actual Texture.T hus, can't use ATF. Need to produce macro chunks in pipeline.
+
+Advatnages of t his method:
+Current LOD per page can be treated as if it's currently fully loaded without any changes to the existing terrain code. Mist map (fog of war) can be easily updated on global mistmap texture. Thus, this is flexible and non-obstrusive. QuadTree page size has nothing to do with the load dimension size. In short, this is like a streaming solution, but requires more processing on CPU end to interpret the stream data and feed it in.
+
+
+Downloading sceheme #2:
+
+Page could load entire quad tree page first as mandatory, but need not go down multiple levels. Immediate vincinity mjust be preloaded to update the quad. Heightmap data download for nodes could include the quadtree bounds and error.
+
+Stick to 128x128 leaf chunks for QuadTree to match download region size. This means quad tree page is only like about 1024->512->256->128 deep. 
+
+
+Advantages of this method:
+It easily allows quadtree chunk rendering requests to exactly match loading requests! Draw counts are lesser due to larger chunks, but with more triangle output. Each TerrainChunkState can simply  directly reference the downloaded ATF textures and height map data accordingly for that node, since they are all downloaded seperately per chunk case without much need for CPU translation. In short, every quad-tree node has their own set of assets to download and doesn't need to rely on QuadTreePage global heightmap or material texture to perform rendering,. beyond switching the texture within the material itself.
+
+
+Disadvantages of this method:
+Besides more triangle output, it lumps the process of asset loading with the LOD system itself, which is questionable, tightly coupling the loading process with the rendering process. Reducing the chunk size invariably causes more http downloads to have to occur since both must match. Need to produce macro chunks in pipeline.
+
+
+Depending on the visibility distance, page size and such, chunks of 64x64 might be a good balance between download.
+
+
+Downloading sceheme #3:
+Quad-tree page information which contains minimum height/maximum height
++
+grayscale heightmap info to match the given information in compressed manner, given minimum and maximum.
++
+texture map
+and 
+Derive dynamic normal map from height map via CPU, or download static lightmap, or download full normal map.
+
+A page size of 256x256 or 512x512 is suitable. 1024x1024 might be too big a download. Thus visibility distance for such an implemetnation would be lower than the beyond 2km variety that comes with multiple 2kmx2km pages.
+
+Advatanges of this method:
+Simple. Just download the information and dump everything into the page data. Switch mist map accordingly for each page. For unprocessed terrain sections,  some info constants could be updated and a shader to handle it accordingly to mask out stuff accordingly. Constants are like 2x2 or 4x4 only, not much required. No need to produce macro chunks in pipeline.
+ 
+Disadvantages of this method:
+Won't work well for large visisibility distance scenes with page sizes of 1024x1024 (ie. 2km by 2km). BUt for mobile devices/consoles where scaling down (in visiblity distance) may be required anyway and CPU overhead must be kept to t he minimal, this is the best option, even though normal map would probably need to be downloaded or a static lightmap is used instead..If information is drawn from disk, than no issue, really, but streaming it in would be even more seamless.

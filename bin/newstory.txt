@@ -14,6 +14,8 @@ For worlds beyond 2kmx2km in space
 ++++++++++++++++++++++++++++++++++++++++++++++++++
 1) One needs to use payloads of smaller sizes that can be quickly loaded on demand.
 
+
+
 Macro loads per page size (each page is kept at 1024x1024 worth of tiles, which is the 2kmx2km reccomeneded limit)
 -----------------
 
@@ -25,6 +27,9 @@ Macro loads per page size (each page is kept at 1024x1024 worth of tiles, which 
 
 
 Each micro/macro is a 128x128 space of heightmap/normalmap/texturemap/quad-tree data and any entity-related data bundle that is to be downloaded like a Google earth tile.. As you know, Google loads a single 256x256 image tile, but terrain requires multiple assets so 128x128 would be more reasonable, plus the heights are pre-processed so so grayscale compression won't work.
+
+Form up Minimum LOD grid under Quad-tree to determine starting load order from nearest to furthest
+Immeidate vincity micro regions must be preloaded on demand including base low LOD macro mesh for entire page. This is a 4x 128 + 1x 128 download. The rest is loaded progressively according to order of minimum LOD tree starting order. Rendering the tree from front-to-back would re-order the progressive on-demand LODs accordingly (or be used primarily to trigger loads into the queue). Thus, on-demand LODs that go beyond the required resolution for certain chunks would add to the list and form a progressive load. 
 
 download macro and draw scale up(or copy pixels but notify region limitation) to match 1024x1024 terrain page's heightmap/normalmap/texturemap or any map space of lesser dimension.. 
 
