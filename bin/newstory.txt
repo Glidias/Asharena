@@ -28,15 +28,13 @@ Macro loads per page size (each page is kept at 1024x1024 worth of tiles, which 
 
 Each micro/macro is a 128x128 space of heightmap/normalmap/texturemap/quad-tree data and any entity-related data bundle that is to be downloaded like a Google earth tile.. As you know, Google loads a single 256x256 image tile, but terrain requires multiple assets so 128x128 would be more reasonable, plus the heights are pre-processed so so grayscale compression won't work.
 
-Form up Minimum LOD grid under Quad-tree to determine starting load order from nearest to furthest
-Immeidate vincity micro regions must be preloaded on demand including base low LOD macro mesh for entire page. This is a 4x 128 + 1x 128 download. The rest is loaded progressively according to order of minimum LOD tree starting order. Rendering the tree from front-to-back would re-order the progressive on-demand LODs accordingly (or be used primarily to trigger loads into the queue). Thus, on-demand LODs that go beyond the required resolution for certain chunks would add to the list and form a progressive load. 
+Form up Minimum 2D LOD grid under Quad-tree to determine starting load order from nearest to furthest
+Immeidate vincity micro regions must be preloaded on demand including base low LOD macro mesh for entire page. This is a 4x 128 + 1x 128 download. The rest is loaded progressively according to order of minimum LOD tree starting order. Rendering the tree from front-to-back would re-order the progressive on-demand LODs accordingly (or be used primarily to trigger loads into the queue). Thus, on-demand LODs that go beyond the required resolution for certain regions would add to the list and form a progressive load to upgrade an existing terrain region to higher detail.  So long as minimum LOD of area isn't met, that area will be fogged. However, re-fogging doesn't occur if minimum LOD grid changes and any on-demand upgrades of exuisting LOD of alraedy unfogged areas will be progressively upgraded. If the areas that require upgrading are closeby, than the game needs to pause a bit first .
 
 download macro and draw scale up(or copy pixels but notify region limitation) to match 1024x1024 terrain page's heightmap/normalmap/texturemap or any map space of lesser dimension.. 
 
 Up to 4 1024x1024 heightmaps/normalmaps/texturemaps must be provided in memory due to straddling quad-tree partitions.
-Then, seveal 512x512/256x256/128x128 maps in reserve, depending on visibility distance. Each page would check for the maximum LOD level found in it to determine map space to be provided for the page. This does mean potentially wasted space due to incomplete loads at various portions of a texture map.
-
-For chunks without immediate LOD transition due to not yet loaded LOD levels, may need to use skirts. Or use skirts for ALL chunks regardless.
+Then, seveal 512x512/256x256/128x128 maps in reserve, depending on visibility distance. Each page would check for the maximum LOD level found in it to determine map space to be provided for the page. This does mean potentially wasted space due to incomplete loads at various portions of a texture map. 
 
 
 How much visibility distance??:::
