@@ -3,76 +3,96 @@ Based on technical limitations/capabilities of the terrain engine:
 	New storyline premise:
 A fog has descended on the Realm of Dominul (causing strange creatures to descend from it's ash-y depths) and it's up to our brave warriors to restore back the land which was one's theirs. What's even stranger, is that the land which they once knew has changed as a result of the mist. 
 
+Layout Generators:
+-------------
+1) Quad/KD tree Division  (+ with input image support for early leafing)
+2) BSP tree division  (+ with input image support for early leafing)
+3) Voronoi (+ with input image support)
+4) Room neighbor generator
+5) Maze generator
 
+For island/city regions:  1
+For cities/villages: 1,2,3,4,5   
 
-For islands <= 2kmx2km in space
-++++++++++++++++++++++++++++++++++++++++++++
-1) One could simply preload all the assets at once, since the map isn't too big and consist only of 1 single page. We already have this functionality.
+Suitability for settlements:  
+1) Is it near water?
+2) Is the overall ground area relatively flat to allow building stuff on it?
 
-
-For worlds beyond 2kmx2km in space
-++++++++++++++++++++++++++++++++++++++++++++++++++
-1) One needs to use payloads of smaller sizes that can be quickly loaded on demand.
-
-
-
-Macro loads per page size (each page is kept at 1024x1024 worth of tiles, which is the 2kmx2km reccomeneded limit)
------------------
-
-(128x128 payload download)
-128 micro
-256 macro to 128
-512 macro to 128
-1024 macro to 128 (full page macro)
-
-
-Each micro/macro is a 128x128 space of heightmap/normalmap/texturemap/quad-tree data and any entity-related data bundle that is to be downloaded like a Google earth tile.. As you know, Google loads a single 256x256 image tile, but terrain requires multiple assets so 128x128 would be more reasonable, plus the heights are pre-processed so so grayscale compression won't work.
-
-Form up Minimum 2D LOD grid under Quad-tree to determine starting load order from nearest to furthest
-Immeidate vincity micro regions must be preloaded on demand including base low LOD macro mesh for entire page. This is a 4x 128 + 1x 128 download. The rest is loaded progressively according to order of minimum LOD tree starting order. Rendering the tree from front-to-back would re-order the progressive on-demand LODs accordingly (or be used primarily to trigger loads into the queue). Thus, on-demand LODs that go beyond the required resolution for certain regions would add to the list and form a progressive load to upgrade an existing terrain region to higher detail.  So long as minimum LOD of area isn't met, that area will be fogged. However, re-fogging doesn't occur if minimum LOD grid changes and any on-demand upgrades of exuisting LOD of alraedy unfogged areas will be progressively upgraded. If the areas that require upgrading are closeby, than the game needs to pause a bit first .
-
-download macro and draw scale up(or copy pixels but notify region limitation) to match 1024x1024 terrain page's heightmap/normalmap/texturemap or any map space of lesser dimension.. 
-
-Up to 4 1024x1024 heightmaps/normalmaps/texturemaps must be provided in memory due to straddling quad-tree partitions.
-Then, seveal 512x512/256x256/128x128 maps in reserve, depending on visibility distance. Each page would check for the maximum LOD level found in it to determine map space to be provided for the page. This does mean potentially wasted space due to incomplete loads at various portions of a texture map. 
-
-
-How much visibility distance??:::
-:::
-Usuaully up to 6x6 pages in diameter max (6km)  / 12x12 km space
-Normally 4x4 pages high   (4km)     8x8 km space
-3x3 pages med (3km)   6x6 km space
-2x2 pages low  (2km)   (No need for reserve 512,256,128 maps in such a case...)   4x4km space
-
-
-Every page could first use a 1024 macro to 128, ie. a 128x128 minimap downloaded version of the entire 2kmx2km area, before attempting to progressively download 128x128 macro. Note that immediate 128x128 macros within movement vincity should be downloaded first prior to moving, thus, these won't be progressively loaded but paused-loaded on demand. For cases with hard-drive access, we aim for minimal lag time to allow for fairly fast streaming. (There would still be lag time assosiated with uploading/updating texture map information onto Stage3D).
-
-Development process::
-Create 1024x1024 terrain page,  generated height map (unprocessed), than processed heights, generate normal map, generate texture map, and quadtree LOD bounds and error values. split into downloadable micro sizes, covering the micro/macro areas. Thus, lots of duplicate files that contain similar info, but at varying zoom levels.
-
-Potential issues with sandbox user-randomly generated terrains online:
-Creating a 1024x1024 terrain page as described above purely on server side is too heavy (might only works for devs' creation/uploading), and even uploading such data is heavy in bandwidth due to it being 4MB and such even if processing is done client side....Thus, only way to pull this off is to use smaller sizes that can easily be handled server side and uploaded, if custom user-generated content is made instead. Thus, 128x128 should be the upper limit for such cases. Unprocessed portions of the island's terrain should remain fogged until processed, cached on the server, and loaded fully as a 128x128 payload! This means the world's visiblity distance starts off very low and locational mist fog could be used to conceal all terrain that hasn't been payloaded yet. Only, when a terrain page is fully formed, a cron job can than be used to form up the development process of micro/macro image variants and creating the files on the server. Again, such a cron job is intensive to execute on the server, but can be done, perhaps spread out over cases where certain data quads are already formed to allow for cron job to execute over those areas. Such "create-on-demand" terains can act as dungeon-like connected terrains, that require users to kill monsters around these fogged areas to reveal those araes in greater detail. Since such unprocessed areas cannot be loaded on demand, they'll remain fogged. Thus, up to 2-3 128x128 micro pieces might have to be downloaded seperately if there's no 2x2=4 macro piece available yet to cover a fully processed area. This represents sparse regions which are pages that aren't fully processed yet. Users might need to be encouraged to clear a quad before proceeding to the next....to avoid having 2-3 micro piece loads building up (ie. pushing too far in...).
-
-As a start, one could create a initial homebase 1024x1024 terrain page area (or several pages) that is fully revealed and is deemed to be a "safe" homebase part of the world. From there, users explore uncharted randomly generated regions outside their homebase based on the fog, and carve out their strongholds, exposing away the fog of war and basically forming up a whole new world on their own. Effectively, as the game gets older, the world's friendly area vincity gets larger and expands outwards. There needs to be a rule mechanic for users to have to clear areas within the quad region first prior to pushing in deeper.
-
-Survivor is critical in the harsh environment consisting of monsters. Water, food, equipment, etc. becomes part of the means to survive. Set up shelter at areas like lakes/ponds/reservoir is required to later develop into settlements. Killing monsters and gathering natural material becomes a means to build stuff. Contributors are welcomed to provide dev assets for such stuff.
-
-Each fogged square (aka. the Ash) ( a 128x128 payload, which is a 250x250m space) contains a certain number of monster points (MP), represneting how many monsters can spawn out of it. Anyone that approaches near the square will draw out monsters. Some monsters can retreat back to the Ash to recuperate. All monsters need to be killed to reduce the MP of the fogged square to clear away the Ash, which triggers the server to process that square's terrain. Once the terrain is processed and cached, the ash clears away and is revaeled to the player. Players cannot enter the Ash, and approaching too close to it can result in loss of health points....Thus, they need to keep a safe distance and defend themselves from the monsters emerging out of the ash. Naturally, monsters will be drawn out of squares where the quad priority holds premise (ie. to complete the quad). Ie. Fogged squares belonging to incomplete parent quad nodes, will have the higher priority and fogged squares that result in completing a quad in the higher level will have higher priority, especially if it'll complete at root page level. This will be shown in the overhead map. Thus, naturally, users will always end up clearing a full QuadTreePage first, restoring a full 2kmx2km worth of space as the ultimate objective.
-
-How could adjacient fogged (unknown) terrain be generated? Perhaps, by 2D Spatial Hash ID (for base island) + Perlin Noise Seed (for terrain variation). Or it could be based on the username fella id that triggered  it  (3rd dimension), together with the spatial hash ids on x and y dimensions accordingly, assuming all 3 values result in a unique value, though this would limit world space to about the size of great britain at the most...would work well for a singleplayer offline version.
-
-
-For worlds beyond 12kmx12km in space  (>6km visiblity distance)
-++++++++++++++++++++++++++++++++++++++++++++++++++
-Macro per beyond page size 
-2048 macro to 1024
-2048*2 macro to 1024
-etc.
+LOD terrain detail processing
+1) Default heights from polygonal height info (or low-res heightmap)
+2) Generic Noise function...
+3) Unique feature generation like circles, fault regions, etc. at specific areas
 
 
 
+Assumign each QuadTreePage starts at  1km by 1km 
+at 256 pixels/tiles per 1km as a start, but expanding outwards, can grow as big as 2km, 4km, 8km, 16km, etc. depending on visibility distance......
+Each page, if procedurally generated, takes around 16-20 seconds to fully process asyncronously (heights, quad-tree, textures, normals, etc.) . For online servers, they could be notified to perform a cron job as well to procedurally generate the terrain as well, saving out the necessary terrain assets and height assets as downloadables so that clients could download the data rather than procedurally generate them on the fly, which will hog CPU unnecessarily. Trusted clients could send the procedurally generated data for the server to save in some cases, but to avoid cheating and server/world grieving, this is disabled by default and server-side code must be used instead.)
+Each page always assumed to use fixed 256 tiles across in resolution, but the pages span larger distances (exponentially) for further away pages, forming a bottom-up hierachical grid quad-tree. See: http://wonderfl.net/c/k9HO for demonstration.
+
+The world is effectively infinite...ie. it has minimum/maximum integer of +/-2147483647 accordingly that is grid seeded per zone. The minimum size of a seeded zone is 32kmx32km. Thus, the entire world length can 137,438,953,408 kilometers in length. However, if island zone quad tree resolution starts at 128x128 pixels via global noise, than perhaps only up to 33,554,431 kilometers in length (or double of that using 1x1 pixel ). Whatever it is, the entire world size can be procedurally generated to be bigger than earth itself.
 
 
+Forming Island zones:
+--------------------------------
+The world is divided into a grid of zones, each zone grid square which are seeded to contain a quad-tree of possible islands of varying sizes. Some zones might be completely empty, representing large bodies of ocean. A zone is a 1024x1024km square, a little bit less than the length of singapore island but slightly higher in land area of singapore island. so overall similar to the land area of singapore. Not all zones have islands, thus able to represent large bodies of ocean.
+ 
+Sizes:
+Assuming 1024x1024 pixels for island texture information.
+2x2km - 4km^2 = 512x512   16x16
+4x4km - 16km^2 =  1024x1024           32x32
+8x8km - 64km^2  = 1024x1024 (x2) - 128 pixels per page     64x64
+16x16km - 256km^2  = 1024x1024 (x4) - 64 pixels  per page    128x128
+32x32km = 1024km^2 = 1024x1024 (x8) - 32 pixels per page     256x256
+Bracketed reprsents pixel scale-up ratio...thus potential loss of resolution.   
+
+Creating page height map:
+* Precompute entire island grayscale byte heightmap texture, which is box-blurred to avoid harsh stepping and save into heightmap.
+- Apply noise function at correct scale to sampled linearly interpolated heights.
+- (Optional) Apply random unique land formations modifiers across the page heightmap (which can go up to 1km by 1km), such as finite fault regions, circles, volcanoes, pleateaus, etc.. These are seeded.
+
+Creating page normal map:
+- From final heightmap
+
+Creating page biome splat textures: 
+- Precompute entire island biome texture and scale up sample if necessary
+- or - Precompute entire island biome texture, smooth scale up if necessary, and apply internal noise distribution per biome. (more detail/variety)
+
+
+Creating vegetation:
+- Based on biome, assign vergetation either using another noise function or a uniform grid random chance and deviation.
+
+
+Forming Country regions: 
+---------------------------
+To do this infinitely would be hard strictly...without first forming continents from which are subdivided into countries. Thus, we treat "countries" as purely MUCH larger islands that can qualify as a somewhat a semi-continent and country (eg. Great Britian/India/Japan/New Zealand. etc.).Such a country's landmass can integrate into a much larger scheme of infinitely generated continents, where the lowest altitude at that region isn't necessarily the sea level but the lowest altitude somewhere in the continent, or the landmass is connected to a continent.
+
+Thus, in order for real countries exist within continents, a much larger grid of continent regions must be first generated similar to how islands are formed (but at a larger scale), which is further subdivided down into a smaller grid of country regions for the the filled country areas and then a much smaller grid of island regions...where islands are only formed around/near the country where water is available and the sea-floor isn't too low.
+
+The largest stipulated conutry size is along the entire length of Daggerfall (ie. 2 times the size of Great britain). Technically, one can go larger by 1 more level, but any more would mean no pixel could be used to represent a single page. Currently, 2 pixels is used to represent 1 km for the map!
+
+Country Sizes:
+64x64km = 4096km^2  - 16 pixels per page
+128x128km = 16384km^2  - 8 pixels per page
+256x256km = 65536km^2  - 4 pixels per page
+1024x1024km = 1048576km^2  - 2 pixels per page
+
+Creating page height map:
+Heights are formed formed by raycasting into polygon soup (by default, the terrain generator uses polygon regions to represent a landmass). The polygons are placed in a quad-tree to support faster raycasting by sampling a potential visibility polygon set around only a small region of the map. This is the only way to accruate represent heights smoothly since the "square" pixel resolution might be too small to be linearly interpolated. Then again, I might be wrong and the earlier island method might still work....even across 2 pixels.
+
+Creating page normal map:
+From final heightmap
+
+Creating page biome splat textures: 
+Fuzzy quad cross edges + Blur + Internal Noise distribution per biome to form a 256x256 (or smaller) texture map.
+
+Additionally, the world is divided into a grid of regions, which can contain countries of varyign sizes. (up to >2 times the land area of Great britain)  and down to 2 times the land area of Singapore.
+
+
+
+
+
+_
 
 PAYLOAD
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -107,3 +127,23 @@ Amount of R/G/B indicate the amount of splats accordingly for the 3 given tiling
 
 
 TODO: Test various Tribes tileset if it works well....Daggerfall texture set probably won't work at all but for Daggerfall itself would work.
+
+-----------------------------------------------------------------------------
+
+128x128 sampled procedural generation generated on client/server and may be cached on server. Basically, small samples of terrain (128x128 tiles) is progressively generated on the fly and un-fogged as the user explores the world. A 128 tileed area is about 250 meters long only. As the araes gets unfogged, users can view terrains that can potentially span kilometers.
+
+But what goes on during 128x128 sampled procedural generation?
+
+1) biome seeded item placement (based on current low-res/polygon-based biome sample) *
+2) terrain height processing global seeded noise. (based on current low-res height sample or sampled slope polygon) *
+3) per 3x3 sector process seeded circles (hmm...)
+4) per 3x3 sector post process smooth (hmm...)
+5) (possibly) terrain diffuse map based on biomes and slopes. *
+6) normal map of finalised terrain heights *
+7) quadtree of finalised terrain heights *
+
+Problem with seaming neighbor generation: The nature of 3x3 neighboring terrain processing is that everything would then seem to have to be pre-generated beforehand to take into account neighbouring terrain samples. Otherwise, localized samples only work when it comes to applying seeded noise, but when applying smoothing and circle blasts that can spill across neighboring terrain samples, these has to be taken into consideration (for circles, 8x neighbor seed blasts that may affect current location and factored into result, and for smoothing, only if the terrain is alraedy processed along that adjacient edge, exist, smooth along edge, and this has to occur on BOTH heightmaps as part of a post processing process), thus, neighboring loads of terrain will smooth out edges on current adjcient terrains. Post-processing of terrain (such as smoothing processes) tend to require the entire terrain to be known beforehand for consistency, instead of procedurally generated on the fly, due to the factors mentioned above.  
+
+If one adopts on-the-fly post-processing of terrain after procedural generation, one must store the unsmoothed heightmap copy per sample as well (so long as there are unloaded neighbors), in case a neighbor terrain sample gets generated, the post-processing operation must be applied again and than the terrain updated for not just 1 sample, but up to 9 samples due to the neighborign terrain samples taking into account smoothing across corners as well and not along edges. This is even harder to manage if the data is cached on the server.
+
+Thus, post processing adds overhead. If one removes it, circle algorithms would look like crap either and noise might be too heavy if the setting for noise is too high. However, a good noise function (that isn't too rough) without circles or post-process smoothing, might be do-able, without any post-processing smoothing whatsoever.  However, it also means the terrain will lack a lot of variation that comes with the use of other algorithms.
