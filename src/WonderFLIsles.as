@@ -25,21 +25,23 @@ package
     import flash.display.Loader;
     import flash.display.Sprite;
     import flash.events.Event;
+	import flash.events.IEventDispatcher;
+	import flash.events.KeyboardEvent;
     import flash.events.MouseEvent;
     import flash.net.URLRequest;
     import flash.system.LoaderContext;
     import flash.text.TextField;
+	import flash.ui.Keyboard;
 
     /**
-     * ...
-     * @author DefaultUser (Tools -> Custom Arguments...)
+     * Island explorer utility and previewer
+     * @author Glidias
      */
     [SWF(width = "465", height = "465", frameRate = "30", backgroundColor = "#ffffff")]
     
     public class WonderFLIsles extends Sprite 
     {
-        [Embed(source="examples/assets/islands2.png")]
-		private static var IMAGE:Class;
+    
         //標準偏差の閾値。小さくすると細かくなるけど、小さすぎるとただのモザイクみたくなる。
         private const THRESHOLD:Number = .33;
 
@@ -51,25 +53,66 @@ package
 
         public function WonderFLIsles():void 
         {
-            if (stage) init();
-            else addEventListener(Event.ADDED_TO_STAGE, init);
+           loadComplete();
+		   init();
+		   if (stage) {
+			   initStage();
+		   }
+		   else addEventListener(Event.ADDED_TO_STAGE, initStage);
 		
         }
+		
+		private function initStage(e:Event=null):void 
+		{
+			if (e != null) (e.currentTarget as IEventDispatcher).removeEventListener(e.type, initStage);
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false, 0, true);
+		}
+		
+		private function onKeyDown(e:KeyboardEvent):void 
+		{
+			var kc:uint = e.keyCode;
+			
+			if (kc === Keyboard.UP ) {
+				init(tx, ty-1);
+			}
+			else if (kc === Keyboard.DOWN) {
+				init(tx, ty+1);
+			}
+			else if (kc === Keyboard.LEFT) {
+				init(tx-1, ty);
+			}
+			else if (kc === Keyboard.RIGHT) {
+				init(tx+1, ty);
+			}
+			
+		}
         
-        private function init(setX:int = 0, setY:int=0 ):void 
+        public function init(setX:Number = 0, setY:Number=0 ):void 
         {
-          loadComplete();
-		  
-		  tx = setX != 0 ? setX : -int.MAX_VALUE + int(Math.random() * int.MAX_VALUE); 
-		   ty = setY != 0 ? setY : -int.MAX_VALUE + int(Math.random() * int.MAX_VALUE);
+       //  setX *= 2;
+		 
+		// setY *= 2;
+		   var p:RectanglePiece = new RectanglePiece();
+            p.x0 = 0;
+            p.y0 = 0;
+            p.x1 = imageData.width;
+            p.y1 = imageData.height;
+            p.c = 0;
+            //フラクタルデータ保持用配列に初期値挿入
+            fillRectangleArray = new Array(p);
+			
+		  tx = setX; 
+		   ty = setY;
 		  seed = (ty * uint.MAX_VALUE + tx) + int.MAX_VALUE;
 	
 		  updateLores();
+		  _canvas.graphics.clear();
+			while (onEnterFrame()) { };
+			//addEventListener(Event.ENTER_FRAME, onEnterFrame);
         }
 		
 		private static const BM_SIZE_SMALL:Number = 64;
-		private static const BM_SIZE_BIG:Number = 256;
-		private static const BM_SCALE:Number = BM_SIZE_BIG / BM_SIZE_SMALL;
+
 		private var bitmapData:BitmapData = new BitmapData(BM_SIZE_SMALL, BM_SIZE_SMALL, false, 0);
 		public var tx:Number = 0;
 		public var ty:Number = 0;
@@ -87,7 +130,7 @@ package
 			var y:Number;
 			bitmapData.lock();
 			for (y = 0; y < BM_SIZE_SMALL; y++)
-				for (x = 0; x < BM_SIZE_SMALL; x++) drawNoise(x, y, BM_SCALE);
+				for (x = 0; x < BM_SIZE_SMALL; x++) drawNoise(x, y, 4);
 			bitmapData.unlock();
 			//phase += sldSpeed.value;		
 
@@ -96,8 +139,8 @@ package
 		}
 		
 		public function drawNoise(x:Number, y:Number, r:Number):void {
-			var i:Number = (x * r - BM_SIZE_BIG * 0.5) / scaler + tx;
-			var j:Number = (y * r - BM_SIZE_BIG * 0.5) / scaler + ty;
+			var i:Number = (x * r - BM_SIZE_SMALL * 0.5) / scaler + tx*r;
+			var j:Number = (y * r - BM_SIZE_SMALL * 0.5) / scaler + ty*r;
 
 			var n:Number = int( 255 * MathUtils.clamp(postFunction (MathUtils.contrast (MathUtils.brightness( noiseFunction(i, j, phase), brightness), contrast) ) ));
 			//var n:Number = int(255 * noiseFunction(i, j, phase) );
@@ -122,49 +165,47 @@ package
 
 
 	
-            image = new IMAGE();
+          
             imageData = bitmapData;
 
             //キャンバス用スプライト
             _canvas = new Sprite;
             
-            var p:RectanglePiece = new RectanglePiece();
-            p.x0 = 0;
-            p.y0 = 0;
-            p.x1 = imageData.width;
-            p.y1 = imageData.height;
-            p.c = 0;
-            //フラクタルデータ保持用配列に初期値挿入
-            fillRectangleArray = new Array(p);
+           
             
 				  _noiseBmp = new Bitmap(bitmapData);
-		  addChild(_noiseBmp);
-            addChild(_canvas);
-			_canvas.x += BM_SIZE_SMALL;
-           addEventListener(Event.ENTER_FRAME, onEnterFrame);
+				  var cont:Sprite = new Sprite();
+				addChild(cont);
+				cont.scaleX = 4;
+				cont.scaleY = 4;
+		 addChild(_noiseBmp);
+            cont.addChild(_canvas);
+			_canvas.x += BM_SIZE_SMALL / 4;
+      //   addEventListener(Event.ENTER_FRAME, onEnterFrame);
 		 
-		 //addEventListener(Event.ENTER_FRAME, updateNoiseEnterFrame);
+		
+		 
+		//addEventListener(Event.ENTER_FRAME, updateNoiseEnterFrame);
         }
 		
 		private function updateNoiseEnterFrame(e:Event):void 
 		{
-				//tx += (1);
-				//ty+= (1 );
-				//updateLores();
+				tx += (1)/64;
+				ty+= (1 )/64;
+				updateLores();
 		}
         
         //ループ
-        private function onEnterFrame(e:Event):void 
+        private function onEnterFrame(e:Event=null):Boolean 
         {
 	
             	
             //フラクタル処理終了
             if (fillRectangleArray.length < 1) {
                 removeEventListener(Event.ENTER_FRAME, onEnterFrame);
-                var tx:TextField = new TextField();
-                tx.text = '終了';
-                tx.textColor = 0xFFFFFF;
-                addChild(tx);
+		
+				return false;
+              
             }else {
                 //フラクタルデータ保持用配列から1つ取り出す
                 var rect:RectanglePiece = fillRectangleArray.shift();
@@ -214,7 +255,11 @@ package
                         fillRectangleArray.push(rect1);
                     }
                 }
+				return true;
             }
+			
+			
+			return false;
         }
         /**
          * 指定した矩形間の輝度の標準偏差を求める

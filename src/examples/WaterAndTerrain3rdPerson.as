@@ -99,7 +99,7 @@ package examples
 		static private const SBRight:Class;
 		
 		static public const START_LOD:Number = 1;
-		static public const FOG_DIST_TILES:int = 512;
+		static public const FOG_DIST_TILES:int = 2048;
 		
 		private var _normalMapData:BitmapData;
 		private var settings:TemplateSettings = new TemplateSettings();
@@ -249,7 +249,7 @@ package examples
 			// Container
 			
 			// Camera
-			camera = new Camera3D(1, FOG_DIST_TILES*256*1.5);  //1024*256
+			camera = new Camera3D(1, FOG_DIST_TILES*256);  //1024*256
 			camera.x = 0*256;
 			camera.y = 0*256;
 			camera.z = waterLevel + 66400;
@@ -307,7 +307,7 @@ package examples
 			// Reflective plane
 			var normalRes:BitmapTextureResource = new BitmapTextureResource(new Normal1().bitmapData);
 			waterMaterial = new WaterMaterial(normalRes, normalRes);
-			plane = new Plane(1024*256, 1024*256, 1, 1, false, false, null, waterMaterial);
+			plane = new Plane(2048*256, 2048*256, 1, 1, false, false, null, waterMaterial);
 			plane.geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0], uvs);			
 			plane.z = waterLevel;
 			uploadResources(plane.getResources());
