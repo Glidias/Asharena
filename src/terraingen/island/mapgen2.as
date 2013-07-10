@@ -24,6 +24,40 @@ package terraingen.island  {
   public class mapgen2 extends Sprite {
     static public var SIZE:int = 512;
     static public var EXPORT_SIZE:int = 512;
+	
+	 static public var previewColors:Object = {
+      // Features
+      OCEAN: 0x0000CC,
+      COAST: 0x33335a,
+      LAKESHORE: 0x225588,
+      LAKE: 0x336699,
+      RIVER: 0x225588,
+      MARSH: 0x2f6666,
+      ICE: 0x99ffff,
+      BEACH: 0xa09077,
+      ROAD1: 0x442211,
+      ROAD2: 0x553322,
+      ROAD3: 0x664433,
+      BRIDGE: 0x686860,
+      LAVA: 0xcc3333,
+
+      // Terrain
+      SNOW: 0xffffff,
+      TUNDRA: 0xbbbbaa,
+      BARE: 0x888888,
+      SCORCHED: 0x555555,
+      TAIGA: 0x99aa77,
+      SHRUBLAND: 0x889977,
+      TEMPERATE_DESERT: 0xc9d29b,
+      TEMPERATE_RAIN_FOREST: 0x448855,
+      TEMPERATE_DECIDUOUS_FOREST: 0x679459,
+      GRASSLAND: 0x88aa55,
+      SUBTROPICAL_DESERT: 0xd2b98b,
+      TROPICAL_RAIN_FOREST: 0x337755,
+      TROPICAL_SEASONAL_FOREST: 0x559944
+    };
+	
+	
 	/*
     static public var displayColors:Object = {
       // Features
@@ -325,6 +359,7 @@ package terraingen.island  {
       if (_guiQueue.length == 0) {
         stage.removeEventListener(Event.ENTER_FRAME, _onEnterFrame);
         statusBar.text = "";
+		dispatchEvent( new Event(COMPLETED));
       } else {
         statusBar.text = _guiQueue[0][0];
       }
@@ -1036,13 +1071,31 @@ package terraingen.island  {
       GRADIENT_LOW: 0x00,
       GRADIENT_HIGH: 0xff
     };
-
+	static public const COMPLETED:String = "mapGenCompleted";
+	static public var  PREVIEW_SIZE:int = 64;
     static public var exportMoistureColors:Object = {
+
       OCEAN: 0xff,
       GRADIENT_LOW: 0x00,
       GRADIENT_HIGH: 0xff
     };
       
+	
+	public function getPreviewBmp(exportSize:int = 0):Bitmap {
+		if (exportSize == 0) exportSize = PREVIEW_SIZE;
+		var exportBitmap:BitmapData = new BitmapData(exportSize, exportSize, false, 0);
+		var exportGraphics:Shape = new Shape();
+		  renderPolygons(exportGraphics.graphics, previewColors, null, colorWithSmoothColors);
+		  
+		   var m:Matrix = new Matrix();
+      m.scale(exportSize / SIZE, exportSize / SIZE);
+			exportBitmap.draw(exportGraphics, m, null,null,null,true);
+			
+			//	exportBitmap.applyFilter( exportBitmap, exportBitmap.rect, new Point(), new BlurFilter(12, 12, 4) );
+			//	exportBitmap.draw(noiseLayer, null, noiseLayer.transform.colorTransform, noiseLayer.blendMode, null, false);
+			//exportBitmap.applyFilter( exportBitmap, exportBitmap.rect, new Point(), new BlurFilter(1, 1, 4) );
+			return new Bitmap(exportBitmap, "auto", true);
+	}
     
     // This function draws to a bitmap and copies that data into the
     // three export byte arrays.  The layer parameter should be one of

@@ -5,7 +5,7 @@
     <movie outputType="Application" />
     <movie input="" />
     <movie path="bin\ArenaAS3.swf" />
-    <movie fps="30" />
+    <movie fps="60" />
     <movie width="800" />
     <movie height="600" />
     <movie version="11" />
@@ -53,6 +53,8 @@
   <libraryPaths>
     <element path="lib\Alternativa3D.swc" />
     <element path="lib\asharena.swc" />
+    <element path="lib\marchingsquares.swc" />
+    <element path="lib\Progression4.swc" />
   </libraryPaths>
   <!-- External Libraries -->
   <externalLibraryPaths>
@@ -72,7 +74,7 @@
   </library>
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
-    <compile path="src\Main.as" />
+    <compile path="src\WonderFLIsles.as" />
   </compileTargets>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>

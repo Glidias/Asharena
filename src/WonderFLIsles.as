@@ -25,6 +25,7 @@ package
 	import de.polygonal.math.PM_PRNG;
     import flash.display.Bitmap;
     import flash.display.BitmapData;
+	import flash.display.DisplayObject;
 	import flash.display.Graphics;
 	import flash.display.GraphicsPath;
 	import flash.display.GraphicsPathWinding;
@@ -53,7 +54,7 @@ package
     {
     
         //標準偏差の閾値。小さくすると細かくなるけど、小さすぎるとただのモザイクみたくなる。
-        private const THRESHOLD:Number = .33;
+        private const THRESHOLD:Number = .35;
 
         private var fillRectangleArray:Array;
         private var image:Bitmap;
@@ -144,25 +145,40 @@ package
 			if (node == null) return;
 		//	throw new Error(node);
 		//	if (node.isSeeded()) {
-			//	_canvas.graphics.beginFill(0x000000, 1);
+				_canvas.graphics.beginFill(0x0000CC, 1);
 			//	_canvas.graphics.drawRect(node.boundMinX + (node.isRectangle() === 1 ? node.offset : 0), node.boundMinY + (node.isRectangle() === 2 ? node.offset : 0), node.getShortSide(), node.getShortSide() );
-			//	_canvas.graphics.drawRect(node.boundMinX, node.boundMinY, (node.boundMaxX - node.boundMinX), (node.boundMaxY - node.boundMinY));
+				_canvas.graphics.drawRect(node.boundMinX, node.boundMinY, (node.boundMaxX - node.boundMinX), (node.boundMaxY - node.boundMinY));
 		
 				if (node.isSeeded()) {
 					if (_mapGen && _mapGen.parent) {
 						removeChild(_mapGen);
 					}
-					mapgen2.EXPORT_SIZE = node.getShortSide() / cont.scaleX;
+					mapgen2.PREVIEW_SIZE = node.getShortSide();  // / cont.scaleX
 					mapgen2.SIZE = 1024;
 					mapgen2.islandSeedInitial = node.seed+"-1";
 					_mapGen = new mapgen2();
-
 					//_mapGen.visible = false;
+					_mapGen.addEventListener(mapgen2.COMPLETED, onMapGenCompleted);
+
+				
 					addChild(_mapGen);
-										_mapGen.scaleX = .25;
+					_mapGen.x = node.boundMinX + (node.isRectangle() === 1 ? node.offset : 0);
+					_mapGen.y = node.boundMinY + (node.isRectangle() === 2 ? node.offset : 0);
+					_mapGen.scaleX = .25;
 					_mapGen.scaleY = .25;
 				}
 		//	}
+		}
+		
+		private function onMapGenCompleted(e:Event):void 
+		{
+			_mapGen.removeEventListener(e.type, onMapGenCompleted);
+			var child:DisplayObject = hitAreas.addChild( _mapGen.getPreviewBmp() );
+			child.x = _mapGen.x;
+			child.y = _mapGen.y;
+			removeChild(_mapGen);
+			
+			_mapGen = null;
 		}
 		
 		private var _mapGen:mapgen2;
@@ -364,7 +380,7 @@ package
 			
 			var graphics:Graphics =_canvas.graphics;
 			graphics.clear();
-			 _canvas.graphics.lineStyle(0, 0xAAAAAA);
+		//	 _canvas.graphics.lineStyle(0, 0xAAAAAA);
 			hitAreas.removeChildren();
 			
 			//graphics.beginFill( rootNode.flags & 1 ? 0x00CCFF : 0x0000CC  );
@@ -380,6 +396,7 @@ package
 					
 				//if (node.flags & 4) {
 					//if (node.flags &1) {
+				//	_canvas.graphics.lineStyle(0, node.flags & 1 ? 0xAAAAAA : 0x0000CC);
 						graphics.beginFill( node.flags & 1 ? 0x00CCFF : 0x0000CC  );
 						graphics.drawRect(node.boundMinX, node.boundMinY, (node.boundMaxX - node.boundMinX), (node.boundMaxY - node.boundMinY));
 						hitAreas.addChild(  new HitArea(node, node.boundMinX, node.boundMinY, (node.boundMaxX - node.boundMinX), (node.boundMaxY - node.boundMinY), node.flags & 1) );
