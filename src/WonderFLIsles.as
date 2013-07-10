@@ -41,6 +41,7 @@ package
     import flash.system.LoaderContext;
     import flash.text.TextField;
 	import flash.ui.Keyboard;
+	import flash.utils.Dictionary;
 	import terraingen.island.mapgen2;
 	import terraingen.island.MapGen2Main;
 
@@ -52,9 +53,10 @@ package
     
     public class WonderFLIsles extends Sprite 
     {
-    
+		public static var LATE_LEAF:Boolean = false;
         //標準偏差の閾値。小さくすると細かくなるけど、小さすぎるとただのモザイクみたくなる。
-        private const THRESHOLD:Number = .35;
+        public var THRESHOLD:Number = LATE_LEAF ? .35 : .15;
+		public var COLOR_THRESHOLD:uint = 168;
 
         private var fillRectangleArray:Array;
         private var image:Bitmap;
@@ -67,6 +69,23 @@ package
 		private var stepperY:NumericStepper;
 		private var rootNode:KDNode;
 		private var prng:PM_PRNG;
+		
+		private var seededNodeDict:Dictionary = new Dictionary();
+		
+		private const OFFSETS:Vector.<int> = createOffsetTable();
+		private static function createOffsetTable():Vector.<int> {
+			var vec:Vector.<int> = new Vector.<int>(8, true);
+			var len:int = vec.length;
+			var count:int = 0;
+			
+			for (var i:int = 1; i < len; i++) {
+				var totalPerLevel:int = (1 << (i-1));
+				totalPerLevel *= totalPerLevel;
+				vec[i] = count += totalPerLevel;
+			}
+
+			return vec;
+		}
 		
         public function WonderFLIsles():void 
         {
@@ -96,7 +115,7 @@ package
 			
 			var length:int = Math.sqrt(PM_PRNG.MAX);
 		
-			var vBox = new VBox(this, 0, 100);
+			vBox = new VBox(this, 0, 100);
 			stepperX = new NumericStepper(vBox, 0, 0, onStepperChange);
 			stepperY  = new NumericStepper(vBox, 0, 0, onStepperChange);
 			stepperX.minimum =  -length * .5;
@@ -128,7 +147,7 @@ package
 				if  ( (node.flags &1) && !(x < node.boundMinX || x > node.boundMaxX || y < node.boundMinY || y> node.boundMaxY)  ) return node;
 				
 			
-				if (node.positive) searchStack[si++] = node.positive;
+				if (node.positive && (node.flags & KDNode.FLAG_SLAVE) == 0) searchStack[si++] = node.positive;
 				if (node.negative) searchStack[si++] = node.negative;
 			
 		
@@ -143,21 +162,30 @@ package
 	
 			var node:KDNode = findNode(e.localX, e.localY);  
 			if (node == null) return;
+			
 		//	throw new Error(node);
 		//	if (node.isSeeded()) {
 				_canvas.graphics.beginFill(0x0000CC, 1);
 			//	_canvas.graphics.drawRect(node.boundMinX + (node.isRectangle() === 1 ? node.offset : 0), node.boundMinY + (node.isRectangle() === 2 ? node.offset : 0), node.getShortSide(), node.getShortSide() );
 				_canvas.graphics.drawRect(node.boundMinX, node.boundMinY, (node.boundMaxX - node.boundMinX), (node.boundMaxY - node.boundMinY));
-		
+			//throw new Error(node.isSeeded() + ", " +  seededNodeDict[node] + ", "+node.rect.level);
+				
+			
 				if (node.isSeeded()) {
 					if (_mapGen && _mapGen.parent) {
 						removeChild(_mapGen);
 					}
+					
+					vBox.mouseChildren = false;
+				vBox.alpha = .5;
+					
+					hitAreas.mouseChildren = false;
+					hitAreas.mouseEnabled = false;
 					mapgen2.PREVIEW_SIZE = node.getShortSide();  // / cont.scaleX
 					mapgen2.SIZE = 1024;
 					mapgen2.islandSeedInitial = node.seed+"-1";
 					_mapGen = new mapgen2();
-					//_mapGen.visible = false;
+					_mapGen.visible = false;
 					_mapGen.addEventListener(mapgen2.COMPLETED, onMapGenCompleted);
 
 				
@@ -172,12 +200,20 @@ package
 		
 		private function onMapGenCompleted(e:Event):void 
 		{
+			
 			_mapGen.removeEventListener(e.type, onMapGenCompleted);
-			var child:DisplayObject = hitAreas.addChild( _mapGen.getPreviewBmp() );
+			var scaler:Number = 4;
+			var child:Bitmap = hitAreas.addChild( _mapGen.getPreviewBmp(mapgen2.PREVIEW_SIZE * scaler) ) as Bitmap;
+			previewBmps.push( child.bitmapData);
 			child.x = _mapGen.x;
 			child.y = _mapGen.y;
+			child.scaleX = 1/scaler;
+			child.scaleY = 1/scaler;
 			removeChild(_mapGen);
-			
+			vBox.alpha = 1;
+								vBox.mouseChildren = true;
+								hitAreas.mouseChildren = true;
+					hitAreas.mouseEnabled = true; 
 			_mapGen = null;
 		}
 		
@@ -196,6 +232,7 @@ package
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
+			if (!vBox.mouseChildren) return;
 			var kc:uint = e.keyCode;
 			
 			if (kc === Keyboard.UP ) {
@@ -230,6 +267,9 @@ package
        //  setX *= 2;
 		 
 		// setY *= 2;
+		
+		seededNodeDict = new Dictionary();
+		
 		   var p:RectanglePiece = new RectanglePiece();
             p.x0 = 0;
             p.y0 = 0;
@@ -262,31 +302,196 @@ package
 			//addEventListener(Event.ENTER_FRAME, onEnterFrame);
         }
 		
-		// any nodes that are seeded, their children will be removed
+		// any nodes that are seeded, their children will be removed. Remove any neighbor nodes (rightwards/downwards) to be made slaves of the topmost/leftmost one (ie. merge them).
 		private function cleanupTree():void 
 		{
+			var nodeIndex:int;
+			var mult:Number;
+			var curLevel:int;
+			var node:KDNode;
+			
 			si  = 1;
-	
 			searchStack[0] = rootNode;
+			searchStackLevels[0] = 0;
 			
-		
-		
-			
+			// Save seeded items in dictionary and remove off children links
 			while (si > 0) {
-				var node:KDNode = searchStack[--si];
-			
+				node = searchStack[--si];
+				curLevel = searchStackLevels[si];
+				var shortSide:Number =  node.getShortSide();
+				
 				if (node.flags & 1) {
 					node.positive = null;
 					node.negative = null;
+					
+					mult = (1 /shortSide );
+					nodeIndex = OFFSETS[curLevel] + (node.boundMinY * mult) * (1 << curLevel) + (node.boundMinX * mult);
+					seededNodeDict[  nodeIndex ] = node;
+				//	if (node.isRectangle()
+					seededNodeDict[node] = curLevel +"|"+nodeIndex+"|"+node.boundMinY+"|"+node.boundMinX + "| "+node.getShortSide(); // for debugging only
+					
+					continue;
+				}
+			
+				if (node.positive ) {
+					searchStack[si] = node.positive;
+				
+					searchStackLevels[si] = curLevel + (node.splitDownLevel() ? 1 : 0);
+					si++;
+				}
+				if (node.negative) {
+					searchStack[si] = node.negative;
+					//(shortSide > node.negative.getShortSide() ? 1 : 0)
+					searchStackLevels[si] = curLevel  + (node.splitDownLevel() ? 1 : 0);
+					si++;
+				}
+			}
+			
+				//return;
+			
+			// Remove off rightward/downward neighboring seeded items on the same level
+			si  = 1;
+			searchStack[0] = rootNode;
+			searchStackLevels[0] = 0;
+			
+			var masterOff:int;
+			var slaveCount:int;
+			
+			while (si > 0) {
+				node = searchStack[--si];
+				curLevel = searchStackLevels[si];
+				
+				shortSide = node.getShortSide();
+				if (node.flags & 1) {
+					
+					
+					mult = (1 /  shortSide);
+					
+					nodeIndex =  OFFSETS[curLevel] + (node.boundMinY * mult) * (1 << curLevel) + (node.boundMinX * mult);
+				//	if (seededNodeDict[nodeIndex] != node) throw new Error("MISMATCH!"+nodeIndex + ", "+node + ", "+seededNodeDict[nodeIndex]);
+					///*
+					
+					
+					var off:int;
+					var master:KDNode;
+						var masterNodeIndex:int;
+						var reachEnd:Boolean;
+					var slave:KDNode;
+				
+					off = 0;
+					slaveCount = 0;
+					master = null;
+					reachEnd = false;
+					while (true) {  // move leftwards finding  leftmost master node
+						++off;
+						reachEnd =  node.boundMinX * mult - off < 0;
+						nodeIndex = !reachEnd ? OFFSETS[curLevel] + (node.boundMinY * mult) * (1 << curLevel) + (node.boundMinX * mult) - off : -1;
+						if (nodeIndex != -1 && seededNodeDict[nodeIndex]) {
+							master = seededNodeDict[nodeIndex];
+							masterNodeIndex = nodeIndex;
+							masterOff = off;
+							
+						}
+						else break;
+					}
+			
+					
+					
+					if (master == null) off = 0;
+					else off = masterOff;
+					if (reachEnd) off--;
+					
+					while (--off > -1) {  // backtrack and clear entire row
+						nodeIndex =  OFFSETS[curLevel] + (node.boundMinY * mult) * (1 << curLevel) + (node.boundMinX * mult) - off;
+						slave = seededNodeDict[nodeIndex];
+								if (master === slave) {  // dunno why got this exception
+									//throw new Error("SHOULD NOT BE!:" + master + "," + slave + "," + masterOff + "," + off + "," + nodeIndex + ", " + masterNodeIndex + ", " + (seededNodeDict[masterNodeIndex] === seededNodeDict[nodeIndex])) {
+									continue;
+								
+								}
+								
+						//if (slave == null) throw new Error("H:"+masterNodeIndex + ", " + nodeIndex + ", "+off + ", "+node.isSeeded() + ", "+seededNodeDict[node] + ", "+curLevel  );
+						slave.flags |= KDNode.FLAG_SLAVE;
+						slave.flags &= ~1;
+						slave.positive = master;
+						master.boundMaxX += shortSide;
+						slaveCount++;
+						delete seededNodeDict[nodeIndex];
+						// dunno why below case is like that
+			
+					}
+					
+					if (slaveCount > 0) {
+						master.offset = prng.nextDoubleRange(0, slaveCount * shortSide);
+					}
+		
+					
+					if (master!=null) continue;
+					
+					//  VERTICAL
+					///*
+					off = 0;
+					master = null;
+					slaveCount = 0;
+					reachEnd = false;
+					while (true) {  // move upwards finding  topmost master node
+						++off;
+						reachEnd =  node.boundMinY * mult - off < 0;
+						nodeIndex = !reachEnd ? OFFSETS[curLevel] + (node.boundMinY * mult - off) * (1 << curLevel) + (node.boundMinX * mult) : -1;
+						if (nodeIndex != -1 && seededNodeDict[nodeIndex]) {
+							master = seededNodeDict[nodeIndex];
+							masterNodeIndex = nodeIndex;
+							masterOff = off;	
+						}
+						else break;
+					}
+			
+					if (master == null) off = 0;
+					else off = masterOff;
+					if (reachEnd) off--;
+					
+					while (--off > -1) {  // backtrack and clear entire row
+						nodeIndex =  OFFSETS[curLevel] + (node.boundMinY*mult- off) * (1 << curLevel) + (node.boundMinX * mult);
+						slave = seededNodeDict[nodeIndex];
+						if (master === slave) { 
+								//throw new Error("SHOULD NOT BE!:" + master + "," + slave + "," + masterOff + "," + off + "," + nodeIndex + ", " + masterNodeIndex + ", " + (seededNodeDict[masterNodeIndex] === seededNodeDict[nodeIndex])) 
+									continue;
+						}
+						//if (slave == null) throw new Error("IS NULL:"+master+","+reachEnd + ", "+masterNodeIndex + ", " + nodeIndex +"|"+node.boundMinY+"|"+node.boundMinX +  ","+masterOff +"/"+off + ", "+node.isSeeded() + ","+seededNodeDict[node]+ ", "+ ", "+curLevel + ", "+(nodeIndex>=OFFSETS[curLevel] && nodeIndex < OFFSETS[curLevel+1]) + ", "+(1 << curLevel) );
+						
+						slave.flags |= KDNode.FLAG_SLAVE;
+						slave.flags &= ~1;
+						slave.positive = master;
+					
+						master.boundMaxY += shortSide;
+						slaveCount++;
+						delete seededNodeDict[nodeIndex];
+
+					}
+					
+					if (slaveCount > 0) {
+						master.offset = prng.nextDoubleRange(0, slaveCount * shortSide);
+					}
+				//	*/
+					
+					//*/
+					
 					continue;
 				}
 				
-				if (node.positive) searchStack[si++] = node.positive;
-				if (node.negative) searchStack[si++] = node.negative;
+				if (node.positive && ((node.flags & KDNode.FLAG_SLAVE)==0) ) {
+					searchStack[si] = node.positive;
+					searchStackLevels[si] = curLevel + (node.splitDownLevel() ? 1 : 0);
+					si++;
+				}
+				if (node.negative) {
+					searchStack[si] = node.negative;
+						searchStackLevels[si] = curLevel + (node.splitDownLevel() ? 1 : 0);
+					si++;
+				}
 				
 				//if ((node.positive && !node.negative) || (node.negative && !node.positive)) throw new Error("MISMATCH!");
 					
-	
 			}
 		}
 		
@@ -367,11 +572,21 @@ package
         }
 		
 		private var searchStack:Vector.<KDNode> = new Vector.<KDNode>();
+		private var searchStackLevels:Vector.<int> = new Vector.<int>();
 		private var si:int = 0;
 		
 		private var hitAreas:Sprite;
 		private var cont:Sprite;
+		private var vBox:VBox;
 
+		private var previewBmps:Vector.<BitmapData> = new Vector.<BitmapData>();
+		private function disposePreviewBmps():void {
+			var i:int = previewBmps.length;
+			while (--i > -1) {
+				previewBmps[i].dispose();
+			}
+			previewBmps.length = 0;
+		}
 		
 		private function renderTree():void {
 			si  = 1;
@@ -382,6 +597,7 @@ package
 			graphics.clear();
 		//	 _canvas.graphics.lineStyle(0, 0xAAAAAA);
 			hitAreas.removeChildren();
+			disposePreviewBmps();
 			
 			//graphics.beginFill( rootNode.flags & 1 ? 0x00CCFF : 0x0000CC  );
 			//graphics.drawRect(rootNode.boundMinX, rootNode.boundMinY, (rootNode.boundMaxX - rootNode.boundMinX), (rootNode.boundMaxY - rootNode.boundMinY));
@@ -389,7 +605,7 @@ package
 			while (si > 0) {
 				var node:KDNode = searchStack[--si];
 			
-				if (node.positive) searchStack[si++] = node.positive;
+				if (node.positive && !(node.flags & KDNode.FLAG_SLAVE)) searchStack[si++] = node.positive;
 				if (node.negative) searchStack[si++] = node.negative;
 			
 				//if ((node.positive && !node.negative) || (node.negative && !node.positive)) throw new Error("MISMATCH!");
@@ -414,6 +630,7 @@ package
         //ループ
         private function onEnterFrame(e:Event=null):Boolean 
         {
+			
 	
             	
             //フラクタル処理終了
@@ -436,15 +653,21 @@ package
                     //矩形を書くよ
                     //_canvas.graphics.lineStyle(0, 0xAAAAAA);
 				
-					var seeded:Boolean = (cArray[1] & 0xFF) > 128;
+					var seeded:Boolean = (cArray[1] & 0xFF) > COLOR_THRESHOLD;
 					
 					if (seeded) {
+						var mult:Number = (1 /  rect.node.getShortSide());
+					
+						var nodeIndex:int = OFFSETS[rect.level] + rect.y0*mult*(1<<rect.level) + rect.x0 *mult;
 						
-						var seededParent:RectanglePiece = rect.findSeededParent();// rect.parent && rect.parent.node.isSeeded ? rect.parent : null;
+						 var isRect:int = rect.node.isRectangle();
+						if (isRect == 1) seededNodeDict[nodeIndex + 1] = rect.node;
+
+						var seededParent:RectanglePiece = LATE_LEAF ?  rect.findSeededParent() : null;// rect.parent && rect.parent.node.isSeeded ? rect.parent : null;
 						if (seededParent)  seededParent.node.transferSeedTo( rect.node );
 						else  rect.node.setSeed( prng.nextInt() );
 						
-					 var isRect:int = rect.node.isRectangle();
+					
 					  rect.node.offset = isRect === 0 ? 0 : isRect === 1 ? prng.nextDoubleRange(0, (rect.node.boundMaxX - rect.node.boundMinX)*.5 ): prng.nextDoubleRange(0,(rect.node.boundMaxY - rect.node.boundMinY)*.5);
 					// if (isRect) throw new Error(rect.node.offset+","+prng.nextDoubleRange(0, rect.node.boundMaxX - rect.node.boundMinX));
 					}
@@ -456,12 +679,13 @@ package
 						rect.node.flags |= 4;
 					//_canvas.graphics.beginFill( seeded ? 0x00CCFF : 0x0000CC  );
                   //  _canvas.graphics.drawRect(rect.x0, rect.y0, (rect.x1 - rect.x0), (rect.y1 - rect.y0));
-                  
 					
                     //矩形を2分割してフラクタルデータ保持用配列に突っ込む
                     var rect0:RectanglePiece = new RectanglePiece();
                     var rect1:RectanglePiece = new RectanglePiece();
-                    if (halfWidth > halfHeight) {
+					
+					
+                    if (halfWidth > halfHeight) {  // split along horizontal x axis
 						rect.node.vertical = false;
                         rect0.x0 = rect.x0;
                         rect0.y0 = rect.y0;
@@ -476,10 +700,8 @@ package
                         rect1.y1 = rect.y1;
                         fillRectangleArray.push(rect1);
 						
-						
 
-                    }else {
-						
+                    }else {    // split along vertical y axis
 						rect.node.vertical = true;
 
                         rect0.x0 = rect.x0;
@@ -495,17 +717,24 @@ package
                         fillRectangleArray.push(rect1);
                     }
 	
-			
-					rect0.parent = rect;
-					rect1.parent = rect;
+		
+				
 					
 					var node0:KDNode = setupNode(rect0);
 					var node1:KDNode = setupNode(rect1);
-				//	if (!rect.node.isSeeded() ) {
+					
+				//	if ((rect.node.getShortSide() > node0.getShortSide()) != rect.node.splitDownLevel() ) throw new Error("A mismatch here!");  // for debugging only
+					
+					rect0.level = rect.node.getShortSide() > node0.getShortSide() ? rect.level + 1 : rect.level;
+					rect1.level = rect0.level;
+					
+					if (LATE_LEAF || !rect.node.isSeeded() ) {
+							rect0.parent = rect;
+						rect1.parent = rect;
 						rect.node.positive = node0;
 						rect.node.negative = node1;
 						
-				//	}
+					}
 					
 				
                 }
@@ -520,6 +749,9 @@ package
             var node:KDNode;
           
 		   node =  new KDNode();
+		   
+		 //  node.rect = p;  // for debugging only
+		   
 		    p.node = node;
 		   
             node.boundMinX = p.x0;
@@ -527,6 +759,8 @@ package
            // node.boundMinZ = 0;
             node.boundMaxX = p.x1;
             node.boundMaxY = p.y1;
+			
+			node.shortSide = node.vertical ? node.boundMaxX - node.boundMinX : node.boundMaxY - node.boundMinY;
           //  node.boundMaxZ = MAX_Z_BOUNDS;
             
 		  /*
@@ -653,6 +887,7 @@ import flash.display.Sprite;
         public var c:Number;
 		public var node:KDNode;
 		public var parent:RectanglePiece;
+		public var level:int;
 		
         public function RectanglePiece() 
         {
@@ -661,6 +896,7 @@ import flash.display.Sprite;
              this.x1 = 0;
              this.x1 = 0;
              this.c = 0;            
+			 this.level = 0;
         }
 		
 		public function findSeededParent():RectanglePiece {
@@ -684,11 +920,17 @@ import flash.display.Sprite;
 		public var boundMinY:Number;
 		public var boundMaxY:Number;
 		
+		public var shortSide:int;
+		
+		//public var rect:RectanglePiece; // for debugging only
+		
 		public var seed:uint;
 		public var flags:int;
 		public static const FLAG_SEEDED:int = 1;
 		public static const FLAG_VERTICAL:int = 2;
 		public static const FLAG_CONSIDERSEED:int = 4;
+		public static const FLAG_SLAVE:int = 8;   // object seed is now invalid, and no island is formed except for the positive node island being to be generated.
+		
 		public var offset:int;
 		
 		public function setSeed(val:uint):void {
@@ -707,8 +949,17 @@ import flash.display.Sprite;
 		}
 		public function getShortSide():Number {
 			//throw new Error(isRectangle() === 1);
+			return shortSide;// (flags & FLAG_VERTICAL) ?  boundMaxX - boundMinX : boundMaxY - boundMinY;
+		}
+		
+		public function getMeasuredShortSide():Number {
 			return isRectangle() === 1 ? boundMaxY - boundMinY :  boundMaxX - boundMinX; 
 		}
+		
+		public function splitDownLevel():Boolean {
+			return flags & FLAG_VERTICAL;
+		}
+		
 		
 		/**
 		 * 
