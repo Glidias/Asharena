@@ -134,21 +134,36 @@ package
 			
 		}
 		
+		private var foundLevel:int;
 		private function findNode(x:Number, y:Number):KDNode {
 			si  = 1;
-	
+		
+			var curLevel:int;
 			searchStack[0] = rootNode;
+			searchStackLevels[0] = 0;
 			
 			var node:KDNode  = null;
 			
 			while (si > 0) {
 				node = searchStack[--si];
+				curLevel = searchStackLevels[si];
 				//!node.negative && !node.positive && !(x < node.boundMinX || x > node.boundMaxX || y < node.boundMinY || y> node.boundMaxY )
-				if  ( (node.flags &1) && !(x < node.boundMinX || x > node.boundMaxX || y < node.boundMinY || y> node.boundMaxY)  ) return node;
+				if  ( (node.flags & 1) && !(x < node.boundMinX || x > node.boundMaxX || y < node.boundMinY || y > node.boundMaxY)  ) {
+					foundLevel = curLevel;
+					return node;
+				}
 				
 			
-				if (node.positive && (node.flags & KDNode.FLAG_SLAVE) == 0) searchStack[si++] = node.positive;
-				if (node.negative) searchStack[si++] = node.negative;
+			if (node.positive && (node.flags & KDNode.FLAG_SLAVE) == 0) {
+				searchStack[si] = node.positive;
+				searchStackLevels[si] = curLevel + (node.splitDownLevel() ?  1 : 0);
+				si++;
+			}
+				if (node.negative) {
+					searchStack[si] = node.negative;
+					searchStackLevels[si] = curLevel + (node.splitDownLevel() ?  1 : 0);
+					si++;
+				}
 			
 		
 			}
@@ -181,7 +196,7 @@ package
 					
 					hitAreas.mouseChildren = false;
 					hitAreas.mouseEnabled = false;
-					mapgen2.PREVIEW_SIZE = node.getShortSide();  // / cont.scaleX
+					mapgen2.PREVIEW_SIZE = getShortSide(foundLevel);  // / cont.scaleX
 					mapgen2.SIZE = 1024;
 					mapgen2.islandSeedInitial = node.seed+"-1";
 					_mapGen = new mapgen2();
@@ -318,7 +333,7 @@ package
 			while (si > 0) {
 				node = searchStack[--si];
 				curLevel = searchStackLevels[si];
-				var shortSide:Number =  node.getShortSide();
+				var shortSide:Number =  getShortSide(curLevel);
 				
 				if (node.flags & 1) {
 					node.positive = null;
@@ -328,7 +343,7 @@ package
 					nodeIndex = OFFSETS[curLevel] + (node.boundMinY * mult) * (1 << curLevel) + (node.boundMinX * mult);
 					seededNodeDict[  nodeIndex ] = node;
 				//	if (node.isRectangle()
-					seededNodeDict[node] = curLevel +"|"+nodeIndex+"|"+node.boundMinY+"|"+node.boundMinX + "| "+node.getShortSide(); // for debugging only
+					seededNodeDict[node] = curLevel +"|"+nodeIndex+"|"+node.boundMinY+"|"+node.boundMinX + "| "+getShortSide(curLevel); // for debugging only
 					
 					continue;
 				}
@@ -361,7 +376,7 @@ package
 				node = searchStack[--si];
 				curLevel = searchStackLevels[si];
 				
-				shortSide = node.getShortSide();
+				shortSide = getShortSide(curLevel);
 				if (node.flags & 1) {
 					
 					
@@ -626,7 +641,10 @@ package
 		
 		
 		
-        
+        private function getShortSide(level:int):int {
+			return BM_SIZE_SMALL / (1 << level);
+		}
+		
         //ループ
         private function onEnterFrame(e:Event=null):Boolean 
         {
@@ -656,7 +674,7 @@ package
 					var seeded:Boolean = (cArray[1] & 0xFF) > COLOR_THRESHOLD;
 					
 					if (seeded) {
-						var mult:Number = (1 /  rect.node.getShortSide());
+						var mult:Number = (1 /  getShortSide(rect.level));
 					
 						var nodeIndex:int = OFFSETS[rect.level] + rect.y0*mult*(1<<rect.level) + rect.x0 *mult;
 						
@@ -725,7 +743,7 @@ package
 					
 				//	if ((rect.node.getShortSide() > node0.getShortSide()) != rect.node.splitDownLevel() ) throw new Error("A mismatch here!");  // for debugging only
 					
-					rect0.level = rect.node.getShortSide() > node0.getShortSide() ? rect.level + 1 : rect.level;
+					rect0.level = rect.node.splitDownLevel() ? rect.level + 1 : rect.level;
 					rect1.level = rect0.level;
 					
 					if (LATE_LEAF || !rect.node.isSeeded() ) {
@@ -760,7 +778,7 @@ package
             node.boundMaxX = p.x1;
             node.boundMaxY = p.y1;
 			
-			node.shortSide = node.vertical ? node.boundMaxX - node.boundMinX : node.boundMaxY - node.boundMinY;
+			
           //  node.boundMaxZ = MAX_Z_BOUNDS;
             
 		  /*
@@ -920,7 +938,7 @@ import flash.display.Sprite;
 		public var boundMinY:Number;
 		public var boundMaxY:Number;
 		
-		public var shortSide:int;
+		//public var shortSide:int;
 		
 		//public var rect:RectanglePiece; // for debugging only
 		
@@ -947,10 +965,10 @@ import flash.display.Sprite;
 			if (val) flags |= FLAG_VERTICAL
 			else flags &= ~FLAG_VERTICAL;
 		}
-		public function getShortSide():Number {
+		//public function getShortSide():Number {
 			//throw new Error(isRectangle() === 1);
-			return shortSide;// (flags & FLAG_VERTICAL) ?  boundMaxX - boundMinX : boundMaxY - boundMinY;
-		}
+		//	return shortSide;// (flags & FLAG_VERTICAL) ?  boundMaxX - boundMinX : boundMaxY - boundMinY;
+		//}
 		
 		public function getMeasuredShortSide():Number {
 			return isRectangle() === 1 ? boundMaxY - boundMinY :  boundMaxX - boundMinX; 
