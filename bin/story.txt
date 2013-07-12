@@ -1,6 +1,9 @@
 Settings:
 -------------
-Continent of Asharena
+Continent of Asharena  
+(NOTE: Asharena is long gone and appears to have vanished from the world as a result of the new story.). (see newstory.txt)
+
+ The word "Ash" was formed due to an unusual event in history where smoke and haze engulfed the continent, and refers to the continent itself that was lost. Prior to that, there was no word in the English dictionary to describe a haze on a large-scale. 
 
 Regions and races:
 ---------------------------
@@ -12,7 +15,7 @@ Regions and races:
 
 Races:
 
-Gladiators of various indigenous races that lie across the borders of the Continent of Asharena, make their way through various towns on the road towards the Imperial Realm of Dominul, where the final battle is staged for the most prestigious gladiatorial tournament of all.
+Gladiators of various indigenous races that lie across the borders of the Continent of Asharena, make their way through various towns on the road towards the Imperial Realm of Dominul, where the final battle is staged for the most prestigious gladiatorial tournament of all. However, things had changed unexpectedly due to a rebellion.
 
 * Slavus race - small-sized, fast, nimple and cunning. Gladiators of this race are naturally well-versed in in all sorts of Fire, Sand and Spirit magic (including defensive Blood magic). They are also good at sneaking. They have a lower base hp. They naturally start out with good balance of speed, agility and intelligence.
 
@@ -21,7 +24,6 @@ Gladiators of various indigenous races that lie across the borders of the Contin
 * Samnians race - Skillful fighters of relatively short but sturdy stature that start out with medium base hp. Gladiators of this race are naturally good in shield, block, and all manners of blade and spear. They naturally start out with fair balance of strength/endurance/dexterity.
 
 * Flammites race - Big-sized strong fighters of large stature.  Gladiators of this race are good tankers that start out with high base hp. Naturally good in shield, block and all sorts of strength/endurance-related melee weaponary. They naturally start out with high strength and endurance.
-
 
 
 
