@@ -17,7 +17,7 @@ Races:
 
 Gladiators of various indigenous races that lie across the borders of the Continent of Asharena, make their way through various towns on the road towards the Imperial Realm of Dominul, where the final battle is staged for the most prestigious gladiatorial tournament of all. However, things had changed unexpectedly due to a rebellion.
 
-* Slavus race - small-sized, fast, nimple and cunning. Gladiators of this race are naturally well-versed in in all sorts of Fire, Sand and Spirit magic (including defensive Blood magic). They are also good at sneaking. They have a lower base hp. They naturally start out with good balance of speed, agility and intelligence.
+* Slavus race - small-sized, fast, nimple and cunning. Gladiators of this race are naturally well-versed in in all sorts of Fire, Sand and Spirit magic (including defensive Blood magic). They are also good at sneaking. They have a lower base hp but  naturally start out with good balance of speed, agility, dexterity and intelligence.
 
 * Dimachao race  - Oriental cultured race that is naturally dextrous that start out with average base hp.  Gladiators of this race are good in dual-wielding short blades and axes. They are naturally well-versed in offensive Blood Magic. They naturally start out with high dexterity.
 
@@ -59,6 +59,12 @@ Skills:
 * Etiquette
 * Sneak
 * Security
+* Herbology
+* Blacksmithing
+* Gunsmithing
+* Pistol
+* Rifle
+* Shotgun
 
 
 Skill type categories:
@@ -87,11 +93,11 @@ Attributes:
     ...Partially affects total weight you can carry and hit points.
 * Endurance - Spear, Shield, Medium Armour, Heavy Armour  
     ...Mainly affects total weight you can carry and hit points.
-* Dexterity - All throwing, archery-related skills. Short blade, Short Axe, Staff and Dual-Weiding. (partially affects Crossbow, and all other melee weapons with regards to scroring critical hits.)
+* Dexterity - All throwing, shooting (firearms accruacy including reload times), archery-related skills. Short blade, Short Axe, Staff and Dual-Weiding. (partially affects Crossbow, and all other melee weapons with regards to scroring critical hits.) 
 * Agility - Acrobatics, Light Armour, Sneak, Block.  (partially: Unarmored while moving/blocking, Staff)
 * Speed - Athletics, Unarmored while moving/blocking, Unarmed combat  (partially: Sand magic)
 * Personality- Etiquette, Mercantile, Speechcraft (partially: Spirit magic)
-* Intelligence - All magic related skills (particularly Blood and Fire magic)
+* Intelligence - All magic related skills (particularly Blood and Fire magic) and when it comes to learning how to operate firearms.
 
 Encumbrance: How much weight you are carrying and how well your character copes with it.
 

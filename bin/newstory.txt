@@ -1,7 +1,7 @@
 Ashes of the Arena:  
 ********************** 
 The World Situation:
-A mysterious haze (collectively known as The Ash) has taken over the entire world, changing it's landscape entirely, and leaving few survivors to fend for themselves against strange creatures emerging from the ashey depths itself. It's up to our brave warriors to restore back the land which was one's theirs, by expanding outwards, and conquering lands, clearing away the mist. However, it seems that the land which they once knew has changed drastically as a result of uncovering the mist,  mostly now flooded with water and consisting mostly of islands. Also, the entire world seems to be no longer a finite planet that runs in full circle, but seems to go on forever. Perhaps, the world has expanded. Will humanity be able to find back the land which was originally theirs, or create a new one in this new era? Or will the Ash finally engulf the whole planet and destroy it completely for the humans?
+A mysterious haze (collectively known as The Ash) has taken over the entire world, changing it's landscape entirely, and leaving few survivors to fend for themselves against strange creatures emerging from the ashey depths itself. It's up to our brave warriors to restore back the land which was one's theirs, by expanding outwards to conquer the surrounding lands, clearing away the mist. However, it seems that the land which they once knew has changed drastically as a result of uncovering the mist,  mostly now flooded with water and consisting mostly of islands. Also, the entire world seems to be no longer a finite planet that runs in full circle, but seems to go on forever. Perhaps, the world has expanded. Will humanity be able to find back the land which was originally theirs, or create a new one in this new era? Or will the Ash finally engulf the whole planet and destroy it completely for the humans?
 
 
 Ocean traps/obstacles:
@@ -18,38 +18,46 @@ Sea Volcano
 ------------------------------
 At Infinitus Carribean : A Prequel
 
-Introducing our 3 Viking Warriors:
-- Eldgrim Smidkelson  (Berserker)
-- Astrador Finnrson   (Spearman)
+Introducing our 3 Viking Warriors (aka. your VIking misfits):
 - Strolf Hallgeirson  (Axeman)
+- Astrador Finnrson   (Spearman)
+- Eldgrim Smidkelson  (Berserker)
 
 And the Main Protagonist:
 - (Your own Name here) (Swashbuckler/Marksman from the Pirate Confedaracy)	
 	
-You can play all 4 characters though, but the Main Protagonist MUST survive. This is like a singleplayer tutorial/gameplay/tech demo showing everything from ship exploration/combat, and visiting islands  for land-based exploration/combat. It is replayable because your starting location can begin anywhere in the world, and the event seed can be changed, varying the environment/experience accordingly.
+You can play all 4 characters though, but the Main Protagonist MUST survive. This is like a singleplayer tutorial/gameplay/tech demo showing everything from ship exploration/combat, and visiting islands  for land-based exploration/combat. It is replayable because your starting location can begin anywhere in the world, and the event seed can be changed, varying the environment/experience accordingly. You can travel about raiding islands and various places on your Viking boat.
 
 
 The Actual Game (Multiplayer persistant)
 -------------------------------------------
 
-Currently there are 2 known surviving warrior inhabitant groups, that originally came from opposite ends of the world map before the Ash took over.
+Currently there are 2 known surviving warrior inhabitant groups, that originally came from opposite ends of the world map before the Ash took over, and their original lands....lost and missing.
 
 _________
 
 
-Dominul Inhabitants' Races:  (see story.txt for more information on Dominul races)
+Dominul Inhabitants' Races:  (see story.txt for more information on Dominul races and their origins. Currently loosely based off Gladiator Half-life Mod)
 	- Slavus 
 	- Dimochi
 	- Samnians
 	- Flammites
 
-Choice of a race
+Choice of a race can tend to favor certain skills and attributes a bit more than others, but players are still be able to train all other skills without being limited to a character class, allowing more flexibility character development. However, they start out with generally less equipment and resources.
 	
 	
-History before The Ash:
-The Realm of Dominul was originally an empire under Imperial rule in the Continent of Asharena until state gladiators started a rebellion which overthrew their masters, forming a new republic that unforuntately did not work out and wasn't entirely peaceful in the end.
+Before The Ash:
+The Realm of Dominul was originally an empire under Imperial rule in the Continent of Asharena until state gladiators started a rebellion which overthrew their masters, forming a new republic that unfortunately did not work out and wasn't entirely peaceful in the end.
 
 _________
 
-Euridin Inhabitants' Factions:
+Euridin Inhabitants' Factions and classes (currently based off Pirates, Knights and Vikings 1 Half-life mod):
 	
+- Pirate Confederacy ( Skirmisher, Sniper, Pirate Captain)
+- Viking Seafarers   ( Axeman, Spearman, Berserker)
+- Knights' Order     ( Heavy Knight, Man-At-Arms, Bowman)
+
+Every faction allows sub-choices of 3 character class unique to each faction. They provide much more starting powerful and specialized (but fixed) skillsets with proper equipment at the beginning of the game, and they improve as the character progresses. 
+
+Before The Ash:
+	Euridin was a region consisting of simple townsfolk wanting a good life, caught among 3 powerful warring factions of entirely different idealogies.
