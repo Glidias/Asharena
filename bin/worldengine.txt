@@ -34,7 +34,7 @@ The world is effectively infinite...well sort of, it'd probasbly support unique 
 
 Forming Island zones:
 --------------------------------
-The world is divided into a grid of zones, each zone grid square which are seeded to contain a quad-tree of possible islands of varying sizes. Some zones might be completely empty, representing large bodies of ocean. A zone is a 1024x1024km square, a little bit less than the length of singapore island but slightly higher in land area of singapore island. so overall similar to the land area of singapore. Not all zones have islands, thus able to represent large bodies of ocean.
+The world is divided into a grid of zones, each zone grid square which are seeded to contain a quad-tree of possible islands of varying sizes. Some zones might be completely empty, representing large bodies of ocean. A zone is a 32x32km square, a little bit less than the length of singapore island but slightly higher in land area of singapore island. so overall similar to the land area of singapore. Not all zones have islands, thus able to represent large bodies of ocean.
  
 Sizes:
 Assuming 1024x1024 pixels for island texture information.
