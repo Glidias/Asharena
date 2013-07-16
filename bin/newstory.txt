@@ -4,8 +4,6 @@ The World Situation:
 A mysterious haze (collectively known as The Ash) has taken over the entire world, changing it's landscape entirely, and leaving few survivors to fend for themselves against strange creatures emerging from the ashey depths itself. It's up to our brave warriors to restore back the land which was one's theirs, by expanding outwards to conquer the surrounding lands, clearing away the mist. However, it seems that the land which they once knew has changed drastically as a result of uncovering the mist,  mostly now flooded with water and consisting mostly of islands. Also, the entire world seems to be no longer a finite planet that runs in full circle, but seems to go on forever. Perhaps, the world has expanded. Will humanity be able to find back the land which was originally theirs, or create a new one in this new era? Or will the Ash finally engulf the whole planet and destroy it completely for the humans?
 
 
-A survivor action RPG rogue-like game that primarily involves islands, settlement building and ship-exploration/combat.
-
 
 Ocean traps/obstacles:
 --------------------
