@@ -7,11 +7,11 @@ Continent of Asharena
 
 Regions and races:
 ---------------------------
-1) Imperial Province of Dominul   (Central)
-2) Flammus Romnia     			  (Flammites)  (North-west)
-3) Itolia Samnia   				(Samnians)     (South-west)
-4) Slavu Sands    				 (Slavus)       (North east)
-5) Duochao Dimalands            (Dimachao)    (South-East)
+1) Imperial Province of Dominul	(Central)
+2) Flammus Romnia				(Flammites)	(North-west)
+3) Itolia Samnia				(Samnians)	(South-west)
+4) Slavu Sands				    (Slavus)	(North east)
+5) Duochao Dimalands			(Dimachao)	(South-East)
 
 Races:
 
