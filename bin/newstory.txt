@@ -4,6 +4,9 @@ The World Situation:
 A mysterious haze (collectively known as The Ash) has taken over the entire world, changing it's landscape entirely, and leaving few survivors to fend for themselves against strange creatures emerging from the ashey depths itself. It's up to our brave warriors to restore back the land which was one's theirs, by expanding outwards to conquer the surrounding lands, clearing away the mist. However, it seems that the land which they once knew has changed drastically as a result of uncovering the mist,  mostly now flooded with water and consisting mostly of islands. Also, the entire world seems to be no longer a finite planet that runs in full circle, but seems to go on forever. Perhaps, the world has expanded. Will humanity be able to find back the land which was originally theirs, or create a new one in this new era? Or will the Ash finally engulf the whole planet and destroy it completely for the humans?
 
 
+A survivor action RPG rogue-like game that primarily involves islands, settlement building and ship-exploration/combat.
+
+
 Ocean traps/obstacles:
 --------------------
 Boulder Spikes (Still/ Moving Up-Down / Moving Laterally)
@@ -32,7 +35,7 @@ You can play all 4 characters though, but the Main Protagonist MUST survive. Thi
 The Actual Game (Multiplayer persistant)
 -------------------------------------------
 
-Currently there are 2 known surviving warrior inhabitant groups, that originally came from opposite ends of the world map before the Ash took over, and their original lands....lost and missing.
+Currently there are 2 known surviving warrior inhabitant groups, that originally came from opposite ends of the world map before the Ash took over, and their original lands....lost and missing. These 2 known surviving inhabitant groups provide a two different RPG styles to the player, one more tailored to open-ended "classless" Elder Scrolls type of characters, while the other veers more towards poster Diablo-esque characters with classes and fixed skillsets.
 
 _________
 
@@ -53,11 +56,11 @@ _________
 
 Euridin Inhabitants' Factions and classes (currently based off Pirates, Knights and Vikings 1 Half-life mod):
 	
-- Pirate Confederacy ( Skirmisher, Sniper, Pirate Captain)
-- Viking Seafarers   ( Axeman, Spearman, Berserker)
-- Knights' Order     ( Heavy Knight, Man-At-Arms, Bowman)
+- Pirate Confederacy (Skirmisher, Sniper, Pirate Captain)
+- Viking Seafarers   (Axeman, Spearman, Berserker)
+- Knights' Order     (Heavy Knight, Man-At-Arms, Bowman)
 
-Every faction allows sub-choices of 3 character class unique to each faction. They provide much more starting powerful and specialized (but fixed) skillsets with proper equipment at the beginning of the game, and they improve as the character progresses. 
+Every faction allows sub-choices of 3 character class unique to each faction. They provide much more starting powerful and specialized (sometimes even exclusive, but fixed) skills with proper equipment at the beginning of the game, and they improve as the character progresses. 
 
 Before The Ash:
 	Euridin was a region consisting of simple townsfolk wanting a good life, caught among 3 powerful warring factions of entirely different idealogies.

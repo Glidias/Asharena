@@ -1,3 +1,23 @@
+1) Test load all chars for current island (single-island.swf)
+2) Docked Viking Ship and collision model on island
+3) Docked Viking Ship and procedurally generated foggy island (test new terrain paging system)  (generate-island.swf)
+4) Place Biomes, terrain, props, etc.  as part of above process with location specific collisions
+
+3 Vikings & Me:  (three-vikings-and-me.swf)
+------------------
+4) Rocking Ship and collision
+5) Intro and ship exploration
+6) (all chars with animations + punching + weaponary)
+7) Monsters and AI / Sea Obstacles & encounters
+
+
+Asharena: (ash-arena.swf)
+.........
+- Multiplayer integration
+- Character stats and actual rules for different character types.
+
+______________________________________________
+
 1) Include tumble-left/tumble-right, (jump velocity, ground normal WILL always not be available, or at least something to disable surface movmeent during duration of tumble) ! *
 1a) (find a way to also include... longjump ability...) !
 
@@ -9,6 +29,7 @@ Animation fixes to:
   ->  default combat animation should be assigned to full-body  to support seamless transitioning of stance from combat to standing.
    -> full-body standing should be assigned to the 2 half-controllers. (instant pose) to lower stance to combat.
    //-> find a way to resolve combat->crouch stances and vice versa, 
+ - possible to include falling jump animation
 
 1b) Melee Attack.  Attach weapon to hand! * 
 1c)  Spell: projectile/target/area-effect based attacks. First person view for projectile/target based attacks. Some projectiles are bouncing type, and some are sticky.... *

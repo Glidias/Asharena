@@ -97,7 +97,7 @@ Attributes:
 * Agility - Acrobatics, Light Armour, Sneak, Block.  (partially: Unarmored while moving/blocking, Staff)
 * Speed - Athletics, Unarmored while moving/blocking, Unarmed combat  (partially: Sand magic)
 * Personality- Etiquette, Mercantile, Speechcraft (partially: Spirit magic)
-* Intelligence - All magic related skills (particularly Blood and Fire magic) and when it comes to learning how to operate firearms.
+* Intelligence - All magic related skills (particularly Blood and Fire magic) and when it comes to learning how to operate firearms or utilizing knowledge-based skills.
 
 Encumbrance: How much weight you are carrying and how well your character copes with it.
 
