@@ -1,0 +1,91 @@
+___________________________________
+
+Bag   Repair/Destroy 
+Tools Repair/Destroy
+Lamp  Repair/Destroy
+
+Map
+
+Start point
+
+Tunnel
+
+Blow up
+
+-----------------
+Swap all items
+
+Jail  Execute/Escape
+
+Peek Role
+Force New Role
+
+Theft Add/Remove
+
+Tunnels
+- with ladder
+- with green/red gate
+
+-------------------------------
+
+Environment modes:
+------------------
+Trenches 
+Tunnels
+River (morning and night respectively)
+
+Gameplay mode:
+Free-for-all
+Turn-based
+
+Roles:
+==================
+Unknown - Skirmisher 
+Green Miner - Skirmisher (fully dark green shirt)
+Red Miner - Skirmisher (fully dark red shirt)
+Boss - Pirate Captain
+Slacker  - Skirmisher ( completely white shirt)
+Geologist - Pirate Sniper
+Saboteur -  Bowman
+
+
+AI Impression:
+Saboteur - Miner
+Red - Green
+Suspect Gold 1 -2 -3
+
+
+AI Goals:
+Saboteur - Mislead /Block
+Miner/Boss- 
+
+
+AI Bot Goals:
+1) Perform action
+2) Watch (look around consistently)
+3) Recover card
+
+
+Pistol/Crossbow is used to shoot down enemies with penalties or actions. There is a range with these weapons.
+
+
+Naive Miner AI:
+-----------------
+1) Start from top row, down to bottom, consider nearest-manhatten distance card match to goal and place card accordingly.
+
+2) Sabotage suspected saboteurs
+
+Choice is based on proximity to execute goal.
+
+
+Naive Saboteur AI:
+-------------------
+-Weighing between suspicion and urgency weight ratio to consider whether to do sabotating acts * (chance of) being watched by miners:
+1) Start from top row, down to bottom, consider nearest-manhatten distance card to goal, and block it, 
+2) Find routes to nearest cards to goal, find only 1 path given blowing of somewhere in middle of route (thus no more path) and blow them up, in order of most connected surrounding nodes.
+
+Choice is based on proximity to execute goal.
+
+3) Sabotage miners (if 1 and 2 not available), but still keeping weighing of suspicion.
+
+4) If Saboteur knows where gold is displaced to side, and can't do above actions, consider create route furthest away starting from top row to bottom.
