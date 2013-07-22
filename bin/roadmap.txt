@@ -3,12 +3,13 @@
 3) Docked Viking Ship and procedurally generated foggy island (test new terrain paging system)  (generate-island.swf)
 4) Place Biomes, terrain, props, etc.  as part of above process with location specific collisions
 
+
 3 Vikings & Me:  (three-vikings-and-me.swf)
 ------------------
-4) Rocking Ship and collision
+4) Rocking Ship and collision and piloting mode /  Sea Obstacles & encounters
 5) Intro and ship exploration
 6) (all chars with animations + punching + weaponary)
-7) Monsters and AI / Sea Obstacles & encounters
+7) Monsters and AI 
 
 
 Asharena: (ash-arena.swf)
