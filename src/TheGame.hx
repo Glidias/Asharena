@@ -6,6 +6,7 @@ import input.KeyPoll;
 import systems.animation.AnimationSystem;
 import systems.collisions.EllipsoidColliderSystem;
 import systems.collisions.GroundPlaneCollisionSystem;
+import systems.movement.FlockingSystem;
 import systems.movement.MovementSystem;
 import systems.movement.PlayerSurfaceMovementSystem;
 import systems.movement.QPhysicsSystem;
@@ -66,6 +67,7 @@ class TheGame
 		engine.addSystem( new AnimationSystem(), SystemPriorities.animate);
 		
 		RenderSystem;
+		FlockingSystem;
 	
 		
 		// Spawn starting entities

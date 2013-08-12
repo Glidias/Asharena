@@ -610,7 +610,7 @@ package
 			
 			var graphics:Graphics =_canvas.graphics;
 			graphics.clear();
-		//	 _canvas.graphics.lineStyle(0, 0xAAAAAA);
+			 _canvas.graphics.lineStyle(0, 0xAAAAAA);
 			hitAreas.removeChildren();
 			disposePreviewBmps();
 			

@@ -4,6 +4,7 @@
  */
 
 package util.geom;
+import components.Vel;
 import util.TypeDefs;
 
 /**
@@ -99,6 +100,11 @@ class Vec3Utils
 		output.y = v1.y - v2.y;
 		output.z = v1.z - v2.z;
 		return output;
+	}
+	
+	static public function getLength(v:XYZ) :Float
+	{
+		return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 	}
 
 	

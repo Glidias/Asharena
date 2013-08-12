@@ -73,7 +73,7 @@ class Vec3 implements XYZ
 		y += v.y;
 		z += v.z;
 	}
-
+	
 	inline public function addScaled(k:Float, v:XYZ):Void {
 		x += k*v.x;
 		y += k*v.y;
@@ -86,7 +86,7 @@ class Vec3 implements XYZ
 		y -= v.y;
 		z -= v.z;
 	}
-		
+	
 
 	inline public function sum(a:XYZ, b:XYZ):Void {
 		x = a.x + b.x;

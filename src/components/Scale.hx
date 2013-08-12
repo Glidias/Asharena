@@ -13,9 +13,9 @@ class Scale implements XYZ
 	
 	public function new(x:Float=0, y:Float=0, z:Float=0) 
 	{
-		this.x = 0;
-		this.y = 0;
-		this.z = 0;
+		this.x = x;
+		this.y = y;
+		this.z = z;
 	}
 	
 }
