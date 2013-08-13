@@ -15,6 +15,7 @@ package alternativa.engine3d
     import alternativa.engine3d.core.VertexAttributes;
     import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.resources.BitmapTextureResource;
+	import flash.display.Bitmap;
     import flash.display.BitmapData;
 
     import alternativa.engine3d.objects.Mesh;
@@ -136,6 +137,26 @@ package alternativa.engine3d
 			
 			
         }
+		
+		   public function takeScreenshot( method:Function=null) : Bitmap  //width:int, height:int,
+     {
+          var view:View = camera.view;
+
+          view.renderToBitmap = true;
+          camera.render(stage3D);
+         var canvas:BitmapData =  view.canvas.clone();
+         // var bitmapData:BitmapData = view.canvas.clone();
+          view.renderToBitmap = false;
+        //  view.width = oldWidth;
+        //  view.height = oldHeight;   
+            var child:Bitmap = new Bitmap(canvas);
+            stage.addChildAt( child,0 );
+         // take screenshot here
+             if (method!= null && method() ) {
+                if (child.parent) child.parent.removeChild(child);
+             }
+          return child;
+     }
 		
 		private function onStageResize(e:Event):void 
 		{
