@@ -7,12 +7,12 @@ package util.geom;
 
 class Frustum 
 {
-	public var planes:Array<XYZ>;
+	public var planes:Array<Vec3>;
 
 
 	public function new() 
 	{
-		planes = new Array<XYZ>();
+		planes = new Array<Vec3>();
 	}
 	
 	public function toString():String {
@@ -22,34 +22,34 @@ class Frustum
 	public function fillNewPlanes():Void {
 		var len = planes.length;
 		for (i in 0...len) {
-			planes[i] = new XYZ(0,0,0,0);
+			planes[i] = new Vec3(0,0,0,0);
 		}
 	}
 	
 	public static function create6():Frustum {
 		var me:Frustum = new Frustum();
-		var planes:Array<XYZ> = me.planes;
-		planes[0] = new XYZ(0, 0, 0, 0);
-		planes[1] = new XYZ(0, 0, 0, 0);
-		planes[2] = new XYZ(0, 0, 0, 0);
-		planes[3] = new XYZ(0, 0, 0, 0);
-		planes[4] = new XYZ(0, 0, 0, 0);
-		planes[5] = new XYZ(0,0,0,0);
+		var planes:Array<Vec3> = me.planes;
+		planes[0] = new Vec3(0, 0, 0, 0);
+		planes[1] = new Vec3(0, 0, 0, 0);
+		planes[2] = new Vec3(0, 0, 0, 0);
+		planes[3] = new Vec3(0, 0, 0, 0);
+		planes[4] = new Vec3(0, 0, 0, 0);
+		planes[5] = new Vec3(0,0,0,0);
 		return me;
 	}
 	
 	public static inline function create4():Frustum {
 		var me:Frustum = new Frustum();
-		var planes:Array<XYZ> = me.planes;
-		planes[0] = new XYZ(0, 0, 0, 0);
-		planes[1] = new XYZ(0, 0, 0, 0);
-		planes[2] = new XYZ(0, 0, 0, 0);
-		planes[3] = new XYZ(0, 0, 0, 0);
+		var planes:Array<Vec3> = me.planes;
+		planes[0] = new Vec3(0, 0, 0, 0);
+		planes[1] = new Vec3(0, 0, 0, 0);
+		planes[2] = new Vec3(0, 0, 0, 0);
+		planes[3] = new Vec3(0, 0, 0, 0);
 		return me;
 	}
 	
 	
-	public var debugPts:Array<XYZ>;
+	public var debugPts:Array<Vec3>;
 
 	/**
 	 * Sets up 4 planes based on portal.
@@ -59,23 +59,23 @@ class Frustum
 	 * @param	pts
 	 * @param	o	Offset plane index to start assignign values from. Defaulted to 0.
 	 */
-	public inline function setup4FromPortal(camX:Float, camY:Float, camZ:Float, pts:Array<XYZ>, o:Int=0):Frustum {
-		var a:XYZ;
-		var b:XYZ;
+	public inline function setup4FromPortal(camX:Float, camY:Float, camZ:Float, pts:Array<Vec3>, o:Int=0):Frustum {
+		var a:Vec3;
+		var b:Vec3;
 		
 		debugPts = pts;
 		
 		var ax:Float, ay:Float, az:Float;
 		var bx:Float, by:Float, bz:Float;
 		var vx:Float, vy:Float, vz:Float;
-		var p:XYZ;
+		var p:Vec3;
 		
-		var planes:Array<XYZ> = this.planes;
+		var planes:Array<Vec3> = this.planes;
 		
 		//camX = 999999999;
 		//camY = -999999999;
 		//camZ = 999999999;
-		//pts =[new XYZ(99999999999,99999999999,99999999999), new XYZ(99999999999,99999999999,99999999999), new XYZ(99999999999,99999999999,99999999999), new XYZ(99999999999,99999999999,99999999999)];
+		//pts =[new Vec3(99999999999,99999999999,99999999999), new Vec3(99999999999,99999999999,99999999999), new Vec3(99999999999,99999999999,99999999999), new Vec3(99999999999,99999999999,99999999999)];
 		
 		p = planes[o];
 		a = pts[0];
@@ -169,7 +169,7 @@ class Frustum
 
 		
 		for (i in 0...len) {
-			var plane:XYZ = planes[i];
+			var plane:Vec3 = planes[i];
 			
 				if (plane.x >= 0)   
 				if (plane.y >= 0)
@@ -232,7 +232,7 @@ class Frustum
 		var rootCull = culling;
 		
 		for (i in 0...len) {
-			var plane:XYZ = planes[i];
+			var plane:Vec3 = planes[i];
 			if ((culling & side) != 0) {     // GASP!! Arrow anti-pattern! Anyway, determine nearest determinatate corner to compare against plane.
 
 				if (plane.x >= 0)   
@@ -284,8 +284,8 @@ class Frustum
 	 * @param	far
 	 */
 	public inline function setup6FromWorldMatrix(te:Array<Float>, screenWhalf:Float, screenHhalf:Float, focalLength:Float, near:Float=0, far:Float=9999999999):Void {
-		var planes:Array<XYZ> = this.planes;
-		var p:XYZ;
+		var planes:Array<Vec3> = this.planes;
+		var p:Vec3;
 		
 		
 	
@@ -443,8 +443,8 @@ class Frustum
 	 */
 	/*
 	public inline function setup6FromProjMatrix(me:Array<Float>):Void {
-		var plane:XYZ; 
-		var planes:Array<XYZ> = this.planes;
+		var plane:Vec3; 
+		var planes:Array<Vec3> = this.planes;
 		
 		var me0 = me[0], me1 = me[1], me2 = me[2], me3 = me[3];
 		var me4 = me[4], me5 = me[5], me6 = me[6], me7 = me[7];
@@ -494,13 +494,13 @@ class Frustum
 			var  correctionY:Float = screenHhalf / focalLength;
 			
 			
-			var planes:Array<XYZ> = this.planes;
-			var nearPlane:XYZ = planes[4];
-			var farPlane:XYZ = planes[5];
-			var leftPlane:XYZ = planes[3];
-			var rightPlane:XYZ = planes[1];
-			var topPlane:XYZ = planes[0];
-			var bottomPlane:XYZ = planes[2];
+			var planes:Array<Vec3> = this.planes;
+			var nearPlane:Vec3 = planes[4];
+			var farPlane:Vec3 = planes[5];
+			var leftPlane:Vec3 = planes[3];
+			var rightPlane:Vec3 = planes[1];
+			var topPlane:Vec3 = planes[0];
+			var bottomPlane:Vec3 = planes[2];
 			
 			var a:Float = me[0]; var b:Float = me[1]; var c:Float = me[2]; var d:Float = me[3];
 			var e:Float = me[4]; var f:Float = me[5]; var g:Float = me[6]; var h:Float = me[7];

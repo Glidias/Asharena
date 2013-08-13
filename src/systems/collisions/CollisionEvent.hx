@@ -8,7 +8,7 @@ package systems.collisions;
 import ash.core.Entity;
 import util.geom.Vec3;
 import util.geom.Vec3Utils;
-import util.geom.XYZ;
+import util.geom.Vec3;
 import util.TypeDefs;
 
 class CollisionEvent 
@@ -54,7 +54,7 @@ class CollisionEvent
 		
 	// Pooling, linked list and disposal
 
-	public static inline  function Get(collision:XYZ, normal:XYZ, offset:Float, t:Float, geomtype:Int):CollisionEvent {
+	public static inline  function Get(collision:Vec3, normal:Vec3, offset:Float, t:Float, geomtype:Int):CollisionEvent {
 		var c:CollisionEvent = COLLECTOR!= null ? COLLECTOR : (COLLECTOR = new CollisionEvent());
 		COLLECTOR = COLLECTOR.next;
 		c.write(collision, normal, offset, t, geomtype);
@@ -77,11 +77,11 @@ class CollisionEvent
 	}
 	
 
-	public static inline function get(pos:XYZ, normal:XYZ, offset:Float, t:Float, geomtype:Int):CollisionEvent {
+	public static inline function get(pos:Vec3, normal:Vec3, offset:Float, t:Float, geomtype:Int):CollisionEvent {
 		return Get(pos, normal, offset, t, geomtype);
 	}
 	
-	inline public function write(pos:XYZ, normal:XYZ, offset:Float, t:Float, geomtype:Int):Void {
+	inline public function write(pos:Vec3, normal:Vec3, offset:Float, t:Float, geomtype:Int):Void {
 		Vec3Utils.matchValues(this.pos, pos);
 		Vec3Utils.matchValues(this.normal, normal);
         this.offset = offset;

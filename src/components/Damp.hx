@@ -1,5 +1,5 @@
 package components;
-import util.geom.XYZ;
+import util.geom.Vec3;
 
 /**
  * ...
@@ -14,7 +14,7 @@ class Damp
 		this.ratio = ratio;
 	}
 	
-	public inline function update(vel:XYZ, time:Float):Void {
+	public inline function update(vel:Vec3, time:Float):Void {
 		time = Math.exp(( -time) / ratio);
 		vel.x *= ratio * time;
 		vel.y *= ratio * time;

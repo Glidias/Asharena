@@ -9,10 +9,9 @@ import components.Rot;
 import components.Vel;
 import util.geom.Vec3;
 import util.geom.Vec3Utils;
-import util.geom.XYZ;
 
 /**
- * Random (primarily wandering) flocking behaviour with full collision avoidance/speed-limit adjustmenets
+ * Random flocking behaviour with  collision avoidance/speed-limit adjustmenet support
  * @author Glenn Ko
  */
 class FlockingSystem extends System
@@ -138,16 +137,17 @@ class FlockingSystem extends System
 					
 					Vec3Utils.writeSubtract(collision, mypos, hispos);
 					collisionLen = collision.lengthSqr();
-					if ( !(collisionLen >= curS.mindistSquared*6.25) )  {  
+					if ( !(collisionLen >= curS.mindistSquared) )  {   //*6.25
 						minTime = time;
 						collisionLen = (1/Math.sqrt(collisionLen));
 						collision.scale(collisionLen);
 						//_a.incrementBy(collision);
 						curF._a.copyFrom(collision);
+						//text.text = "C";
 					}
 				}
 				//*/
-					//text.text = "C";
+					
 				// end routine
 				
 				other = other.previous;
@@ -201,7 +201,7 @@ class FlockingSystem extends System
 					
 					Vec3Utils.writeSubtract(collision, mypos, hispos);
 					collisionLen = collision.lengthSqr();
-					if ( !(collisionLen >= curS.mindistSquared*6.25) )  {  
+					if ( !(collisionLen >= curS.mindistSquared) )  {   //*6.25
 						minTime = time;
 						collisionLen = (1/Math.sqrt(collisionLen));
 						collision.scale(collisionLen);
@@ -315,7 +315,7 @@ class FlockingSystem extends System
 		return (arg > 0) ? 1 : ((arg < 0) ? -1 : 0);
 	}
 	
-	private inline function getAngle(vec:XYZ):Float { return Math.atan2(vec.y, vec.x); }
+	private inline function getAngle(vec:Vec3):Float { return Math.atan2(vec.y, vec.x); }
 	
 	private inline function isAlmostZero(a:Vec3, min:Float = 0.15999) 
 	{
@@ -324,7 +324,7 @@ class FlockingSystem extends System
 	
 
 	
-	private inline function angleBetween(me:XYZ, v:XYZ):Float {
+	private inline function angleBetween(me:Vec3, v:Vec3):Float {
         var result:Float = Math.atan2(me.y, me.x) - Math.atan2(v.y, v.x);
         if (result < -Math.PI) result += Math.PI*2;
         if (result > Math.PI) result -= Math.PI*2;

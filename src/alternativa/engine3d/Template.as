@@ -14,6 +14,7 @@ package alternativa.engine3d
     import alternativa.engine3d.core.View;
     import alternativa.engine3d.core.VertexAttributes;
     import alternativa.engine3d.core.Transform3D;
+	import alternativa.engine3d.resources.BitmapTextureResource;
     import flash.display.BitmapData;
 
     import alternativa.engine3d.objects.Mesh;
@@ -47,15 +48,26 @@ package alternativa.engine3d
         protected var directionalLight:DirectionalLight;
         protected var ambientLight:AmbientLight;   
 		
+		public var bitmapResource:BitmapTextureResource;
+		public var normalResource:BitmapTextureResource;
+		
 		public var settings:TemplateSettings = new TemplateSettings();
 		public var renderId:int = 0;
         
         public function Template() {
+			
+			
             addEventListener(Event.ADDED_TO_STAGE, init);
         }
         
         protected function init(e:Event = null):void 
         {
+			 var diffuseMap:BitmapData = new BitmapData(16, 16, false, 0xFF6666);
+            var normalMap:BitmapData = new BitmapData(16, 16, false, 0x8080FF);
+
+            bitmapResource = new BitmapTextureResource(diffuseMap);
+            normalResource = new BitmapTextureResource(normalMap);
+			
             removeEventListener(Event.ADDED_TO_STAGE, init);
             
             stage.scaleMode = StageScaleMode.NO_SCALE;
@@ -137,8 +149,7 @@ package alternativa.engine3d
             //オブジェクト用のコントローラー（マウス操作）
             objectController = new SimpleObjectController(stage, controlObject, 100);
             objectController.mouseSensitivity = 0.2;
-            
-			
+         
             //レンダリング
             camera.render(stage3D);
             

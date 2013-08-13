@@ -4,7 +4,7 @@
  */
 
 package components;
-import util.geom.XYZ;
+import util.geom.Vec3;
 
 
 class Jump 
@@ -34,7 +34,7 @@ class Jump
 	}
 	 
 	
-	inline public function attemptJump(velocity:XYZ, time:Float):Bool {
+	inline public function attemptJump(velocity:Vec3, time:Float):Bool {
 		var result:Bool = enabled && this.jump_timer <= 0;
 		if (result)
 		{

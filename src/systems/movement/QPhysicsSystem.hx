@@ -13,7 +13,7 @@ import components.Vel;
 import systems.collisions.CollisionEvent;
 import util.geom.Vec3;
 import util.geom.Vec3Utils;
-import util.geom.XYZ;
+import util.geom.Vec3;
 
 /**
  * "Q" is for Quake-like physics. Works with EllipsoidCollider system or any other system that creates MoveResults as a result of a move query!
@@ -150,7 +150,7 @@ class QPhysicsSystem extends System
 
 	}
 	
-	inline public function processFlags(result:CollisionResult, event:CollisionEvent, velocity:XYZ,  flags:Int = 0):Void {
+	inline public function processFlags(result:CollisionResult, event:CollisionEvent, velocity:Vec3,  flags:Int = 0):Void {
 		
 		
 		if (result.gotCollision = event != null) {
@@ -165,7 +165,7 @@ class QPhysicsSystem extends System
 	}
 	
 	
-	inline public function processCollision(result:CollisionResult, event:CollisionEvent, velocity:XYZ, flags:Int=0):Void {
+	inline public function processCollision(result:CollisionResult, event:CollisionEvent, velocity:Vec3, flags:Int=0):Void {
 		if (flags & CollisionResult.FLAG_MAX_GROUND_NORMAL != 0) {
 			if (event.normal.z > result.max_ground_normal_threshold)
             {

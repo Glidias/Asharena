@@ -1,5 +1,5 @@
 package components;
-import util.geom.XYZ;
+import util.geom.Vec3;
 
 /**
  * ...
@@ -14,7 +14,7 @@ class Gravity
 		this.force = force;
 	}
 	
-	public inline function update(vel:XYZ, time:Float):Void {
+	public inline function update(vel:Vec3, time:Float):Void {
 		vel.z -= force;
 		
 	}

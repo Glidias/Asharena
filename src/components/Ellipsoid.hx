@@ -1,21 +1,17 @@
 package components;
-import util.geom.XYZ;
+import util.geom.Vec3;
 
 /**
  * For character basic collision detection.
  * @author Glenn Ko
  */
-class Ellipsoid implements XYZ
+class Ellipsoid extends Vec3
 {
-	public var x:Float;
-	public var y:Float;
-	public var z:Float;
+
 
 	public function new(x:Float=32,y:Float=32,z:Float=32) 
 	{
-		this.x = x;
-		this.y = y;
-		this.z = z;
+		super(x, y, z);
 	}
 	
 }

@@ -5,7 +5,7 @@
 
 package util.geom;
 
-class Vec3 implements XYZ
+class Vec3 
 {
 	public static var ZERO:Vec3 = new Vec3(0, 0, 0);
 	public static var X_AXIS:Vec3 = new Vec3(1, 0, 0);
@@ -43,11 +43,11 @@ class Vec3 implements XYZ
 		return x*x + y*y + z*z;
 	}	
 	
-	inline public function dotProduct(v:XYZ):Float {
+	inline public function dotProduct(v:Vec3):Float {
 		return x*v.x + y*v.y + z*v.z;
 	}
 	
-	inline public function crossProduct(v:XYZ):Vec3 {
+	inline public function crossProduct(v:Vec3):Vec3 {
 		return new Vec3(y*v.z - z*v.y, z*v.x - x*v.z,  x*v.y - y*v.x);
 	}
 	
@@ -62,40 +62,40 @@ class Vec3 implements XYZ
 	
 	// -- Setters (inline)
 	
-	inline public function crossProductSet(v:XYZ):Void {
+	inline public function crossProductSet(v:Vec3):Void {
 		x = y * v.z - z * v.y;
 		y = z * v.x - x * v.z;
 		z = x * v.y - y * v.x;
 	}
 	
-	inline public function add(v:XYZ):Void {
+	inline public function add(v:Vec3):Void {
 		x += v.x;
 		y += v.y;
 		z += v.z;
 	}
 	
-	inline public function addScaled(k:Float, v:XYZ):Void {
+	inline public function addScaled(k:Float, v:Vec3):Void {
 		x += k*v.x;
 		y += k*v.y;
 		z += k*v.z;
 	}
 
 
-	inline public function subtract(v:XYZ):Void {
+	inline public function subtract(v:Vec3):Void {
 		x -= v.x;
 		y -= v.y;
 		z -= v.z;
 	}
 	
 
-	inline public function sum(a:XYZ, b:XYZ):Void {
+	inline public function sum(a:Vec3, b:Vec3):Void {
 		x = a.x + b.x;
 		y = a.y + b.y;
 		z = a.z + b.z;
 	}
 
 
-	inline public function diff(a:XYZ, b:XYZ):Void {
+	inline public function diff(a:Vec3, b:Vec3):Void {
 		x = a.x - b.x;
 		y = a.y - b.y;
 		z = a.z - b.z;
@@ -137,13 +137,13 @@ class Vec3 implements XYZ
     }
 
 
-	inline public function saveTo(result:XYZ):Void {
+	inline public function saveTo(result:Vec3):Void {
 		result.x = x;
 		result.y = y;
 		result.z = z;
 	}
 		
-	inline public function copyFrom(source:XYZ):Void {
+	inline public function copyFrom(source:Vec3):Void {
 		x = source.x;
 		y = source.y;
 		z = source.z;
@@ -177,7 +177,7 @@ class Vec3 implements XYZ
 	
 	// -- Setters 
 
-	inline public function assignAddition(v1:XYZ, v2:XYZ):Void {
+	inline public function assignAddition(v1:Vec3, v2:Vec3):Void {
 		x = v1.x + v2.x;
 		y = v1.y + v2.y;
 		z = v1.z + v2.z;
@@ -303,10 +303,10 @@ class Vec3 implements XYZ
 		return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
 	}
 	
-	inline public static function lengthOf(v:XYZ):Float {
+	inline public static function lengthOf(v:Vec3):Float {
 		return Math.sqrt(squareLengthOf(v));
 	}
-	inline public static function squareLengthOf(v:XYZ):Float {
+	inline public static function squareLengthOf(v:Vec3):Float {
 		return v.x * v.x + v.y * v.y + v.z * v.z;
 	}
 

@@ -1,7 +1,7 @@
 package components.controller;
 import util.geom.Vec3;
 import util.geom.Vec3Utils;
-import util.geom.XYZ;
+import util.geom.Vec3;
 
 /**
  * Component that supports your basic move forward/back and strafe left/right actions.
@@ -90,12 +90,12 @@ class SurfaceMovement
 	
 	// -- macro methods
 	/*
-	inline public function update(time:Float,rotation:XYZ, velocity:XYZ, ground_normal:XYZ = null):Void {
+	inline public function update(time:Float,rotation:Vec3, velocity:Vec3, ground_normal:Vec3 = null):Void {
 		updateWith(time, rotation,velocity, walk_state, strafe_state, forwardVec, rightVec, WALK_SPEED, WALKBACK_SPEED, STRAFE_SPEED, friction, ground_normal);
 	}
 	*/
 	
-	public static inline function updateWith(time:Float, rotation:XYZ, velocity:XYZ, walkState:Int, strafeState:Int, forwardVec:XYZ, rightVec:XYZ, WALK_SPEED:Float, WALKBACK_SPEED:Float, STRAFE_SPEED:Float, friction:Float=.25, ground_normal:XYZ = null):Void {
+	public static inline function updateWith(time:Float, rotation:Vec3, velocity:Vec3, walkState:Int, strafeState:Int, forwardVec:Vec3, rightVec:Vec3, WALK_SPEED:Float, WALKBACK_SPEED:Float, STRAFE_SPEED:Float, friction:Float=.25, ground_normal:Vec3 = null):Void {
 		var multiplier:Float;
 		
 		if (ground_normal != null) { // can walk on ground

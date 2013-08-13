@@ -1,21 +1,18 @@
 package components;
 import ash.core.Entity;
 import systems.collisions.CollisionEvent;
-import util.geom.XYZ;
+import util.geom.Vec3;
 
 /**
  * A component that is specific to each entity instance, storing it's unique result for any collisions that might occur
  * when it moves.  It also allows supply of custom collision event handlers for an entity to hook onto.
  * @author Glenn Ko
  */
-class MoveResult implements XYZ
+class MoveResult extends Vec3
 {
 	public var collisions:CollisionEvent;  // any collisions that occur if any
 	
-	// Final position of move
-	public var x:Float;
-	public var y:Float;
-	public var z:Float;
+
 	
 	// Collision Event handlers
 	// If no handler is used, default behaviour occurs.
@@ -33,7 +30,7 @@ class MoveResult implements XYZ
 	
 	public function new() 
 	{
-		
+		super();
 	}
 	
 	public inline function init():Void {

@@ -1,11 +1,11 @@
 package components;
-import util.geom.XYZ;
+import util.geom.Vec3;
 
 /**
  * ...
  * @author Glenn Ko
  */
-class Scale implements XYZ
+class Scale extends Vec3
 {
 	public var x:Float;
 	public var y:Float;

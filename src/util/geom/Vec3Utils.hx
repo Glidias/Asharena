@@ -8,7 +8,7 @@ import components.Vel;
 import util.TypeDefs;
 
 /**
- * Library of static Vec3 methods, and generic XYZ tuple values for parameters.
+ * Library of static Vec3 methods, and generic Vec3 tuple values for parameters.
  */
 class Vec3Utils 
 {
@@ -16,61 +16,61 @@ class Vec3Utils
 	// Create Vec3
 
 	
-	inline public static function copy(v:XYZ):Vec3 {
+	inline public static function copy(v:Vec3):Vec3 {
 		return new Vec3(v.x, v.y, v.z);
 	}
 	
-	inline public static function createCross(v1:XYZ, v2:XYZ):Vec3 {
+	inline public static function createCross(v1:Vec3, v2:Vec3):Vec3 {
 		return new Vec3(v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z,  v1.x*v2.y - v1.y*v2.x);
 	}
 	
-	inline public static function createAdd(v1:XYZ, v2:XYZ):Vec3 {
+	inline public static function createAdd(v1:Vec3, v2:Vec3):Vec3 {
         return new Vec3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
     }
 	
-	inline public static function createSubtract(v1:XYZ, v2:XYZ):Vec3 {
+	inline public static function createSubtract(v1:Vec3, v2:Vec3):Vec3 {
         return new Vec3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
     }
 	
-	inline public static function createScale(v:XYZ, scaleAmt:Float):Vec3 {
+	inline public static function createScale(v:Vec3, scaleAmt:Float):Vec3 {
         return new Vec3(v.x*scaleAmt, v.y*scaleAmt, v.z*scaleAmt);
     }
 	
-	inline public static function createProjection(v:XYZ, axis:XYZ):Vec3 {
+	inline public static function createProjection(v:Vec3, axis:Vec3):Vec3 {
 		var scalar:Float = dot(v, axis); 
         return new Vec3(v.x - axis.x * scalar, v.y - axis.y * scalar, v.z - axis.z * scalar);
     }		
 	
 	// Retrieve/ Write
 	
-	inline public static function matchValues(output:XYZ, withValue:XYZ):Void {
+	inline public static function matchValues(output:Vec3, withValue:Vec3):Void {
 		output.x = withValue.x;
 		output.y = withValue.y;
 		output.z = withValue.z;
 	}
-	inline public static function matchValuesVector3D(output:XYZ, withValue:Vector3D):Void {
+	inline public static function matchValuesVector3D(output:Vec3, withValue:Vector3D):Void {
 		output.x = withValue.x;
 		output.y = withValue.y;
 		output.z = withValue.z;
 	}
 	
-	inline public static function dot(v1:XYZ, v2:XYZ):Float {
+	inline public static function dot(v1:Vec3, v2:Vec3):Float {
 		return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
 	}
 
-    inline public static function writeCross(v1:XYZ, v2:XYZ, output:XYZ):Void
+    inline public static function writeCross(v1:Vec3, v2:Vec3, output:Vec3):Void
     {
        output.x = v1.y * v2.z - v1.z * v2.y;
        output.y = v1.z * v2.x - v2.z * v1.x;
        output.z = v1.x * v2.y - v1.y * v2.x;
     }
-	inline public static function writeProjection(v:XYZ, axis:XYZ, output:XYZ):Void {
+	inline public static function writeProjection(v:Vec3, axis:Vec3, output:Vec3):Void {
 		var scalar:Float = dot(v, axis); 
 		output.x = v.x - axis.x * scalar;
 		output.y =  v.y - axis.y * scalar;
 		output.z = v.z - axis.z * scalar;
     }	
-	inline public static function normalize(v:XYZ):Void {
+	inline public static function normalize(v:Vec3):Void {
 		
 		var sc:Float = 1 / Math.sqrt( v.x * v.x + v.y * v.y + v.z * v.z );
 		v.x *= sc;
@@ -78,31 +78,30 @@ class Vec3Utils
 		v.z *= sc;
 	}
 	
-	inline public static function subtract(output:XYZ, input:XYZ):Void {
+	inline public static function subtract(output:Vec3, input:Vec3):Void {
 		output.x -= input.x;
 		output.y -= input.y;
 		output.z -= input.z;
 	}
-	inline public static function add(output:XYZ, input:XYZ):Void {
+	inline public static function add(output:Vec3, input:Vec3):Void {
 		output.x += input.x;
 		output.y += input.y;
 		output.z += input.z;
 	}
-	inline public static function scale(output:XYZ, scaleAmt:Float):Void {
+	inline public static function scale(output:Vec3, scaleAmt:Float):Void {
 		output.x *= scaleAmt;
 		output.y *= scaleAmt;
 		output.z *= scaleAmt;
 	}
 	
-	inline public static function writeSubtract(output:Vec3, v1:XYZ, v2:XYZ):Vec3 
+	inline public static function writeSubtract(output:Vec3, v1:Vec3, v2:Vec3):Void 
 	{
 		output.x = v1.x - v2.x;
 		output.y = v1.y - v2.y;
 		output.z = v1.z - v2.z;
-		return output;
 	}
 	
-	static public function getLength(v:XYZ) :Float
+	static public function getLength(v:Vec3) :Float
 	{
 		return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 	}

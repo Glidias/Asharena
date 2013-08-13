@@ -37,7 +37,7 @@ class AABBUtils
 		return "AABB: "+[aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ];
 	}
 	
-	public static inline function pointInside(aabb:IAABB, pt:XYZ):Bool {
+	public static inline function pointInside(aabb:IAABB, pt:Vec3):Bool {
 		return !(pt.x < aabb.minX || pt.y < aabb.minY || pt.z < aabb.minZ || pt.x > aabb.maxX || pt.y > aabb.maxY || pt.z > aabb.maxZ);
 	}
 	
@@ -80,7 +80,7 @@ class AABBUtils
 		if (y > aabb.maxY) aabb.maxY = y;
 		if (z > aabb.maxZ) aabb.maxZ = z;
 	}
-	public static inline function expandWithPoint(vec:XYZ, aabb:IAABB):Void {
+	public static inline function expandWithPoint(vec:Vec3, aabb:IAABB):Void {
 		if (vec.x < aabb.minX) aabb.minX = vec.x;
 		if (vec.y < aabb.minY) aabb.minY = vec.y;
 		if (vec.z < aabb.minZ) aabb.minZ = vec.z;
@@ -92,7 +92,7 @@ class AABBUtils
 	// -- Alternativa3d methods
 
 	/*
-		public function checkRays(origins:Array<XYZ>, directions:Array<XYZ>, raysLength:Int):Bool {
+		public function checkRays(origins:Array<Vec3>, directions:Array<Vec3>, raysLength:Int):Bool {
 			for (var i:int = 0; i < raysLength; i++) {
 				var origin:Vector3D = origins[i];
 				var direction:Vector3D = directions[i];
@@ -154,7 +154,7 @@ class AABBUtils
 		}
 
 		
-		public static inline function intersectRay(aabb:IAABB, origin:XYZ, direction:XYZ):Bool {
+		public static inline function intersectRay(aabb:IAABB, origin:Vec3, direction:Vec3):Bool {
 			if (origin.x >= aabb.minX && origin.x <= aabb.maxX && origin.y >= aabb.minY && origin.y <= aabb.maxY && origin.z >= aabb.minZ && origin.z <= aabb.maxZ) return true;
 			if (origin.x < aabb.minX && direction.x <= 0) return false;
 			if (origin.x > aabb.maxX && direction.x >= 0) return false;
