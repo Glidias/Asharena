@@ -46,12 +46,12 @@ package saboteur.util
 		
 		private var gridEast:int = 0; // along east
 		private var gridSouth:int = 0 // along south
-		private var gridEastWidth:Number = 1;
-		private var gridSouthWidth:Number = 1;
-		private var gridEastWidth_i:Number = 1;
-		private var gridSouthWidth_i:Number = 1;
+		alternativa3d var gridEastWidth:Number = 1;
+		alternativa3d var gridSouthWidth:Number = 1;
+		alternativa3d var gridEastWidth_i:Number = 1;
+		alternativa3d var gridSouthWidth_i:Number = 1;
 		
-		private var _floor:Object3D;
+		alternativa3d var _floor:Object3D;
 		public var collisionScene:Object3D;
 		
 		private var _value:uint;
@@ -86,6 +86,7 @@ package saboteur.util
 		
 			
 			_value = pathUtil.getValue( SaboteurPathUtil.EAST | SaboteurPathUtil.NORTH | SaboteurPathUtil.WEST | SaboteurPathUtil.SOUTH, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL);
+			
 			refreshValue();
 			
 			setup();
@@ -106,8 +107,13 @@ package saboteur.util
 			var xd:Number = bounds.maxX - bounds.minX;
 			var yd:Number = bounds.maxY - bounds.minY;
 			
+						_gridSquareBound.maxZ += 40;
+			_gridSquareBound.minZ -= 40;
+			
 			gridEastWidth  =cardinal.getDist(cardinal.east, _gridSquareBound, 1);
-			gridSouthWidth =cardinal.getDist(cardinal.south, _gridSquareBound, 1);
+			gridSouthWidth = cardinal.getDist(cardinal.south, _gridSquareBound, 1);
+			
+
 				
 			gridEastWidth_i = 1 / gridEastWidth;
 			gridSouthWidth_i = 1 / gridSouthWidth;
@@ -180,12 +186,20 @@ package saboteur.util
 					
 					blueprint._x = _floor._x;
 					blueprint._y = _floor._y;
+				
 					
 					blueprint.transformChanged = true;
 					_floor.transformChanged = true;
 					
 					return checkBuildableResult(_value);
 					
+			}
+			
+			public function show(val:Boolean):void 
+			{
+				_floor.visible = val;
+				blueprint.visible = val;
+				if (val && blueprint._parent != startScene) startScene.addChild(blueprint);
 			}
 			
 			private function visJetty3DByValue(obj:Object3D, value:uint):void {
@@ -216,6 +230,15 @@ package saboteur.util
 					}
 					return result;
 			}
+			
+			public function setBlueprintIdVis(val:uint):void 
+			{
+				for (var obj:Object3D = blueprint.childrenList; obj != null; obj = obj.next) {
+					obj.visible = pathUtil.visJetty(val, obj.name);
+				}
+			}
+			
+			
 			
 			public function get value():uint 
 			{
