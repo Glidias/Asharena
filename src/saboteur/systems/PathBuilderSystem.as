@@ -65,26 +65,37 @@ package saboteur.systems
 				camera.calculateRay(origin, direction, camera.view._width * .5, camera.view._height * .5);
 				// direction should be transformed to local rotated coordinate space of builder object3d if required...
 				
+				eastVal = direction.x * cardinal.east.x + direction.y * cardinal.east.y + direction.z * cardinal.east.z;
+				northVal = direction.x * cardinal.north.x + direction.y * cardinal.north.y + direction.z * cardinal.north.z;
+				
 				// camera position must be inside bound, or else camera ray must intersect bound, and if so, get ray exit position
 			//	if ( !(camera._x < _lastGridBound.minX || camera._y < _lastGridBound.minY || camera._x > _lastGridBound.maxX || camera._y > _lastGridBound.maxY)   ) {
 					// check if ray exit position lies within _lastGridBound's z altitude range (else return), but if so, check with builder if can build accross adjacient tile
-					eastVal = direction.x * cardinal.east.x + direction.y * cardinal.east.y + direction.z * cardinal.east.z;
-					northVal = direction.x * cardinal.north.x + direction.y * cardinal.north.y + direction.z * cardinal.north.z;
 					
 					if (direction.x > 0) {
 						x = _lastGridBound.maxX - camera._x;
+						x /= direction.x;
+					}
+					else if (direction.x == 0) {
+						x = Number.MAX_VALUE;  // in case divide by zero infinity doesn't result in a "large" value
 					}
 					else {
 						x = camera._x - _lastGridBound.minX;
+						x /= direction.x;
 					}
-					x /= direction.x;
+					
 					if (direction.y > 0) {
 						y = _lastGridBound.maxY - camera._y;
+						y /= direction.y;
+					}
+					else if (direction.y == 0) {
+						y = Number.MAX_VALUE;  // in case divide by zero infinity doesn't result in a "large" value
 					}
 					else {
 						y = camera._y  - _lastGridBound.minY;
+						y /= direction.y;
 					}
-					y /= direction.y;
+					
 					
 					if (x < y) { 
 						direction.scaleBy(x);
