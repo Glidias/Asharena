@@ -145,12 +145,13 @@ class DisplayNode extends Node {
 	public var pos:Pos;
 	public var rot:Rot;
 	
-	private static var _components:ObjectMap;
+	
 
 	public function DisplayNode() {
 		
 	}
 	
+	private static var _components:ObjectMap;
 	public static function _getComponents():ObjectMap {
 		if(_components == null) {
 				_components = new ash.ObjectMap();

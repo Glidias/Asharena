@@ -9,12 +9,14 @@ package saboteur.util
 	import alternativa.engine3d.loaders.TexturesLoader;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.Material;
+	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.MeshSetClone;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.ExternalTextureResource;
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
-	import utils.terrain.Bounds3D;
+	import alternativa.engine3d.alternativa3d;
+	use namespace alternativa3d;
 
 	public class GameBuilder3D {
 		private var applyMaterial:Material;

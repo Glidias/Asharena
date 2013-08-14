@@ -1,5 +1,6 @@
 package saboteur.util 
 {
+	import flash.utils.Dictionary;
 	/**
 	 * ...
 	 * @author Glenn Ko
