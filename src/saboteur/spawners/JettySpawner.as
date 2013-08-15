@@ -30,10 +30,7 @@ package saboteur.spawners
 	 */
 	public class JettySpawner extends SpawnerBundle
 	{
-		private var myAssets:JettyAssets;
-		
 
-	
 		private var editorMat:FillMaterial = new FillMaterial(0, .1);
 		private var genesis:Object3D;
 		private var blueprint:Object3D;
@@ -44,13 +41,13 @@ package saboteur.spawners
 
 		public function JettySpawner() 
 		{
-			myAssets = new JettyAssets();
-			ASSETS = myAssets;
+		
+			ASSETS = [JettyAssets];
 			
 			super();
 		}
 		
-		override public function init():void 
+		override protected function init():void 
 		{
 			 var plane:Plane = new Plane(1, 1, 1, 1, false, false, editorMat, editorMat);
 			 editorMat.color = GameBuilder3D.COLOR_OCCUPIED;
@@ -60,7 +57,7 @@ package saboteur.spawners
 		 
 			plane.geometry.upload(context3D);
 			
-			var diffuse:BitmapTextureResource = new BitmapTextureResource(new myAssets.$_TEXTURE().bitmapData);
+			var diffuse:BitmapTextureResource = new BitmapTextureResource(new JettyAssets.$_TEXTURE().bitmapData);
 			
 		
 			var normalResource:BitmapTextureResource = new BitmapTextureResource(    new BitmapData(16, 16, false, 0x8080FF) );
@@ -76,7 +73,7 @@ package saboteur.spawners
 			
 			// Setup parsing of 3d stuff from a3d
 			var parserA3D:ParserA3D = new ParserA3D();
-            parserA3D.parse( new myAssets.$_MODEL() );
+            parserA3D.parse( new JettyAssets.$_MODEL() );
 			
 			var rootCont:Object3D = parserA3D.hierarchy[0];
 

@@ -102,7 +102,7 @@ package alternativa.engine3d
 			camera.view.backgroundColor  = settings.viewBackgroundColor;
             
             //Cameraをコントロールする場合は、CameraControlerの作成
-            cameraController = new SimpleObjectController(stage, camera, settings.cameraSpeed, settings.cameraSpeedMultiplier, settings.cameraSensitivity);
+           if (cameraController == null) cameraController = new SimpleObjectController(stage, camera, settings.cameraSpeed, settings.cameraSpeedMultiplier, settings.cameraSensitivity);
             //cameraController.mouseSensitivity = 0;
             //cameraController.unbindAll();
 		

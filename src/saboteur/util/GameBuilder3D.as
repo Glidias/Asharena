@@ -4,6 +4,8 @@ package saboteur.util
 	 * ...
 	 * @author Glenn Ko
 	 */
+	import alternativa.a3d.collisions.CollisionBoundNode;
+	import alternativa.a3d.collisions.CollisionUtil;
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.loaders.TexturesLoader;
@@ -57,6 +59,8 @@ package saboteur.util
 		private var _value:uint;
 		public var minSquareBuildDistance:Number;
 		
+		public var collisionGraph:CollisionBoundNode;
+		
 		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane) {
 			if (PATH_UTIL == null) PATH_UTIL = new SaboteurPathUtil();
 			
@@ -74,7 +78,8 @@ package saboteur.util
 			
 			collisionScene = new Object3D();
 			collisionScene.matrix = startScene.matrix;
-			collisionScene.addChild(collision);
+			collisionScene.boundBox = null;
+			collisionGraph = CollisionUtil.getCollisionGraph(collisionScene);
 			
 			
 			buildDict = new Dictionary();
@@ -127,7 +132,8 @@ package saboteur.util
 			
 			
 			pathUtil.buildAt(buildDict, gridEast, gridSouth, _value  ); 
-			
+			buildCollidablesAt( gridEast, gridSouth, collision );	
+			//buildAt(1, 1, 63);
 		}
 		
 		public function buildAt(gridEast:int, gridSouth:int, value:uint):void 
@@ -139,11 +145,20 @@ package saboteur.util
 					cardinal.transform(cardinal.east, newBuilding, cardinal.getDist(cardinal.east, _gridSquareBound)* gridEast );
 					cardinal.transform(cardinal.south, newBuilding, cardinal.getDist(cardinal.south, _gridSquareBound) * gridSouth );
 					
-					var collisionBuilding:Object3D = collision.clone();
-					collisionBuilding.x = newBuilding.x;
-					collisionBuilding.y = newBuilding.y;
-					visJetty3DByValue(newBuilding, value);
-					collisionScene.addChild(collisionBuilding);
+					var collisionBuilding:Object3D = collision; // .clone();
+					collisionBuilding._x = newBuilding._x;
+					collisionBuilding._y = newBuilding._y;
+					collisionBuilding.transformChanged = true;
+					visJetty3DByValue(collisionBuilding, value);
+					collisionGraph.addChild( CollisionUtil.getCollisionGraph(collisionBuilding) );
+					//collisionScene.addChild(collisionBuilding);
+					
+		}
+		
+		private function buildCollidablesAt(gridEast:int, gridSouth:int, refer:Object3D):void {
+			cardinal.transform(cardinal.east, refer, cardinal.getDist(cardinal.east, _gridSquareBound)* gridEast );
+			cardinal.transform(cardinal.south, refer, cardinal.getDist(cardinal.south, _gridSquareBound) * gridSouth );
+			collisionGraph.addChild( CollisionUtil.getCollisionGraph(refer) );
 		}
 		
 			public function tryBuild():void 

@@ -8,7 +8,7 @@ package util.geom;
 class TransformUtil 
 {
 
-		public static inline function identity(targ:ITransform3D):Void {
+		public static inline function identity(targ:Transform3D):Void {
 targ.a = 1;
 targ.b = 0;
 targ.c = 0;
@@ -23,7 +23,7 @@ targ.k = 1;
 targ.l = 0;
 }
 
-public static inline function compose(targ:ITransform3D, x:Float, y:Float, z:Float, rotationX:Float, rotationY:Float, rotationZ:Float, scaleX:Float, scaleY:Float, scaleZ:Float):Void {
+public static inline function compose(targ:Transform3D, x:Float, y:Float, z:Float, rotationX:Float, rotationY:Float, rotationZ:Float, scaleX:Float, scaleY:Float, scaleZ:Float):Void {
 var cosX:Float = Math.cos(rotationX);
 var sinX:Float = Math.sin(rotationX);
 var cosY:Float = Math.cos(rotationY);
@@ -51,7 +51,7 @@ targ.k = cosY*cosXscaleZ;
 targ.l = z;
 }
 
-public static inline function composeInverse(targ:ITransform3D, x:Float, y:Float, z:Float, rotationX:Float, rotationY:Float, rotationZ:Float, scaleX:Float, scaleY:Float, scaleZ:Float):Void {
+public static inline function composeInverse(targ:Transform3D, x:Float, y:Float, z:Float, rotationX:Float, rotationY:Float, rotationZ:Float, scaleX:Float, scaleY:Float, scaleZ:Float):Void {
 var cosX:Float = Math.cos(rotationX);
 var sinX:Float = Math.sin(-rotationX);
 var cosY:Float = Math.cos(rotationY);
@@ -77,7 +77,7 @@ targ.k = cosY*cosXscaleZ;
 targ.l = -targ.i*x - targ.j*y - targ.k*z;
 }
 
-public static inline function invert(targ:ITransform3D):Void {
+public static inline function invert(targ:Transform3D):Void {
 var ta:Float = targ.a;
 var tb:Float = targ.b;
 var tc:Float = targ.c;
@@ -105,7 +105,7 @@ targ.k = (-tb*te + ta*tf)*det;
 targ.l = (td*tf*ti - tb*th*ti - td*te*tj + ta*th*tj + tb*te*tl - ta*tf*tl)*det;
 }
 
-public static inline function initFromVector(targ:ITransform3D, vector:Array<Float>):Void {
+public static inline function initFromVector(targ:Transform3D, vector:Array<Float>):Void {
 targ.a = vector[0];
 targ.b = vector[1];
 targ.c = vector[2];
@@ -120,7 +120,7 @@ targ.k = vector[10];
 targ.l = vector[11];
 }
 
-public static inline function append(targ:ITransform3D, transform:ITransform3D):Void {
+public static inline function append(targ:Transform3D, transform:Transform3D):Void {
 var ta:Float = targ.a;
 var tb:Float = targ.b;
 var tc:Float = targ.c;
@@ -147,7 +147,7 @@ targ.k = transform.i*tc + transform.j*tg + transform.k*tk;
 targ.l = transform.i*td + transform.j*th + transform.k*tl + transform.l;
 }
 
-public static inline function prepend(targ:ITransform3D, transform:ITransform3D):Void {
+public static inline function prepend(targ:Transform3D, transform:Transform3D):Void {
 var ta:Float = targ.a;
 var tb:Float = targ.b;
 var tc:Float = targ.c;
@@ -175,7 +175,7 @@ targ.l = ti*transform.d + tj*transform.h + tk*transform.l + tl;
 
 }
 
-public static inline function combine(targ:ITransform3D, transformA:ITransform3D, transformB:ITransform3D):Void {
+public static inline function combine(targ:Transform3D, transformA:Transform3D, transformB:Transform3D):Void {
 targ.a = transformA.a*transformB.a + transformA.b*transformB.e + transformA.c*transformB.i;
 targ.b = transformA.a*transformB.b + transformA.b*transformB.f + transformA.c*transformB.j;
 targ.c = transformA.a*transformB.c + transformA.b*transformB.g + transformA.c*transformB.k;
@@ -190,7 +190,7 @@ targ.k = transformA.i*transformB.c + transformA.j*transformB.g + transformA.k*tr
 targ.l = transformA.i*transformB.d + transformA.j*transformB.h + transformA.k*transformB.l + transformA.l;
 }
 
-public static inline function calculateInversion(targ:ITransform3D, source:ITransform3D):Void {
+public static inline function calculateInversion(targ:Transform3D, source:Transform3D):Void {
 var ta = source.a;
 var tb = source.b;
 var tc = source.c;
@@ -218,7 +218,7 @@ targ.k = (-tb*te + ta*tf)*det;
 targ.l = (td*tf*ti - tb*th*ti - td*te*tj + ta*th*tj + tb*te*tl - ta*tf*tl)*det;
 }
 
-public static inline function copy(targ:ITransform3D, source:ITransform3D):Void {
+public static inline function copy(targ:Transform3D, source:Transform3D):Void {
 targ.a = source.a;
 targ.b = source.b;
 targ.c = source.c;

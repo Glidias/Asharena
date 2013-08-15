@@ -8,10 +8,11 @@ package util.geom;
  import systems.collisions.A3DConst;
  import systems.collisions.EllipsoidCollider;
  import systems.collisions.IECollidable;
+ import systems.collisions.ITCollidable;
  import util.TypeDefs;
  import haxe.io.Error;
  
-class Geometry implements IECollidable
+class Geometry implements IECollidable, implements ITCollidable
 {
 	public var vertices:Vector<Float>;
 	public var indices:Vector<UInt>;
@@ -104,6 +105,14 @@ class Geometry implements IECollidable
 	{
 		collider.addGeometry(this, collider.inverseMatrix);
 	}
+	
+	/* INTERFACE systems.collisions.ITCollidable */
+	
+	public function collectGeometryAndTransforms(collider:EllipsoidCollider, baseTransform:Transform3D):Void 
+	{
+		collider.addGeometry(this, baseTransform);
+	}
+	
 	
 	/*
 	public inline function pushNFaces(indices:Vector<Int>, nSides:Int):Void {

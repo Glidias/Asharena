@@ -1,12 +1,11 @@
 package components;
-import util.geom.ITransform3D;
 
 /**
  * ...
  * @author Glenn Ko
  */
 
-class Transform3D implements ITransform3D
+class Transform3D
 {
 
 	public var a:Float;
@@ -141,7 +140,7 @@ k = vector[10];
 l = vector[11];
 }
 
-public inline function append(transform:ITransform3D):Void {
+public inline function append(transform:Transform3D):Void {
 var ta:Float = a;
 var tb:Float = b;
 var tc:Float = c;
@@ -168,7 +167,7 @@ k = transform.i*tc + transform.j*tg + transform.k*tk;
 l = transform.i*td + transform.j*th + transform.k*tl + transform.l;
 }
 
-public inline function prepend(transform:ITransform3D):Void {
+public inline function prepend(transform:Transform3D):Void {
 var ta:Float = a;
 var tb:Float = b;
 var tc:Float = c;
@@ -196,7 +195,7 @@ l = ti*transform.d + tj*transform.h + tk*transform.l + tl;
 
 }
 
-public inline function combine( transformA:ITransform3D, transformB:ITransform3D):Void {
+public inline function combine( transformA:Transform3D, transformB:Transform3D):Void {
 a = transformA.a*transformB.a + transformA.b*transformB.e + transformA.c*transformB.i;
 b = transformA.a*transformB.b + transformA.b*transformB.f + transformA.c*transformB.j;
 c = transformA.a*transformB.c + transformA.b*transformB.g + transformA.c*transformB.k;
@@ -211,7 +210,7 @@ k = transformA.i*transformB.c + transformA.j*transformB.g + transformA.k*transfo
 l = transformA.i*transformB.d + transformA.j*transformB.h + transformA.k*transformB.l + transformA.l;
 }
 
-public inline function calculateInversion( source:ITransform3D):Void {
+public inline function calculateInversion( source:Transform3D):Void {
 var ta = source.a;
 var tb = source.b;
 var tc = source.c;
@@ -239,7 +238,7 @@ k = (-tb*te + ta*tf)*det;
 l = (td*tf*ti - tb*th*ti - td*te*tj + ta*th*tj + tb*te*tl - ta*tf*tl)*det;
 }
 
-public inline function copy( source:ITransform3D):Void {
+public inline function copy( source:Transform3D):Void {
 a = source.a;
 b = source.b;
 c = source.c;

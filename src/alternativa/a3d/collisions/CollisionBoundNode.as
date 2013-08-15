@@ -1,0 +1,246 @@
+package alternativa.a3d.collisions 
+{
+	import alternativa.engine3d.core.BoundBox;
+	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.objects.Mesh;
+	import components.Transform3D;
+	import flash.utils.Dictionary;
+	import systems.collisions.EllipsoidCollider;
+	import systems.collisions.IECollidable;
+	import alternativa.engine3d.alternativa3d;
+	import systems.collisions.ITCollidable;
+	use namespace alternativa3d;
+
+	/**
+	 * A 3d collision graph node, to support hierachical bounding volumes of arbituary ITCollidable instances!
+	 * @author Glenn Ko
+	 */
+	public class CollisionBoundNode implements IECollidable
+	{
+
+		alternativa3d var childrenList:CollisionBoundNode;
+		alternativa3d var next:CollisionBoundNode;
+		alternativa3d var _parent:CollisionBoundNode;
+		
+		alternativa3d var transform:Transform3D;
+		alternativa3d var inverseTransform:Transform3D;
+		alternativa3d var localToGlobalTransform:Transform3D;
+		alternativa3d var globalToLocalTransform:Transform3D;
+		alternativa3d var collidable:ITCollidable;
+		
+		alternativa3d var boundBox:BoundBox;  
+		//alternativa3d var object:Object3D;
+		
+		
+		public function CollisionBoundNode() 
+		{
+			transform = new Transform3D();
+			inverseTransform = new Transform3D();
+			localToGlobalTransform = new Transform3D();
+			globalToLocalTransform = new Transform3D();
+		}
+		
+		
+		// -- Alternativa3D-specific Object3D setups
+		
+		alternativa3d function setup(object:Object3D, collidable:ITCollidable):void {
+			boundBox = object.boundBox;
+			if (object.transformChanged) {
+				object.composeTransforms();
+			}
+			transform.a = object.transform.a; 
+			transform.b = object.transform.b;
+			transform.c = object.transform.c;
+			transform.d = object.transform.d;
+			transform.e = object.transform.e;
+			transform.f = object.transform.f;
+			transform.g = object.transform.g;
+			transform.h = object.transform.h;
+			transform.i = object.transform.i;
+			transform.j = object.transform.j;
+			transform.k = object.transform.k;
+			transform.l = object.transform.l;
+			
+			inverseTransform.a = object.inverseTransform.a; 
+			inverseTransform.b = object.inverseTransform.b;
+			inverseTransform.c = object.inverseTransform.c;
+			inverseTransform.d = object.inverseTransform.d;
+			inverseTransform.e = object.inverseTransform.e;
+			inverseTransform.f = object.inverseTransform.f;
+			inverseTransform.g = object.inverseTransform.g;
+			inverseTransform.h = object.inverseTransform.h;
+			inverseTransform.i = object.inverseTransform.i;
+			inverseTransform.j = object.inverseTransform.j;
+			inverseTransform.k = object.inverseTransform.k;
+			inverseTransform.l = object.inverseTransform.l;
+			//transform.compose(object._x, object._y, object._z, object._rotationX, object._rotationY, object._rotationZ, object._scaleX, object._scaleY, object._scaleZ);
+			//inverseTransform.calculateInversion(transform);
+			this.collidable = collidable;
+			
+		}
+		
+		alternativa3d function setupChildren(obj:Object3D, factoryMethodHash:Dictionary):void {
+			
+			var startChild:Object3D = obj.childrenList;
+			while (startChild!=null && !startChild.visible) {
+				startChild = startChild.next;
+			}
+			if (startChild == null) return;
+			
+			childrenList  = new CollisionBoundNode();
+			var classe:Class = Object(obj).constructor;
+
+			childrenList.setup( startChild, factoryMethodHash[classe] ? factoryMethodHash[classe](obj) : null);
+		
+				
+			if (startChild.childrenList) childrenList.setupChildren(startChild, factoryMethodHash);
+		
+			
+			var tail:CollisionBoundNode = childrenList;
+			
+			startChild = startChild.next;
+			
+			
+			for (var c:Object3D = startChild; c != null; c = c.next) {
+				if (!c.visible) continue;
+				var me:CollisionBoundNode = new CollisionBoundNode();
+				classe = Object(c).constructor;
+				me.setup(c, factoryMethodHash[classe] ? factoryMethodHash[classe](c) : null);	
+				if (c.childrenList) me.setupChildren(c, factoryMethodHash);
+				tail.next = me;
+				tail = me;
+			}
+		}
+		
+		
+		/* INTERFACE systems.collisions.IECollidable */	
+		public function collectGeometry(collider:EllipsoidCollider):void 
+		{
+			//if (!object.visible) return;
+			
+			var intersects:Boolean = true;
+			if (boundBox != null) {
+				globalToLocalTransform.combine(inverseTransform, collider.matrix);
+				collider.calculateSphere(globalToLocalTransform);
+				intersects = boundBox.checkSphere(collider.sphere);  
+			}
+			if (!intersects) return;
+			
+			localToGlobalTransform.combine(collider.inverseMatrix, transform); 
+				
+			if (collidable) collidable.collectGeometryAndTransforms(collider, localToGlobalTransform);
+			if (childrenList != null) visitChildren(collider);
+		}
+		
+		
+		///*  // inlinable visitor/visitor-succeeded method
+		
+		alternativa3d function visitChildren(collider:EllipsoidCollider):void {
+			for (var child:CollisionBoundNode = childrenList; child != null; child = child.next) {		
+				//if (!child.object.visible) continue;
+				// Calculating matrix for converting from collider coordinates to local coordinates
+				child.globalToLocalTransform.combine(child.inverseTransform, globalToLocalTransform);
+				// Check boundbox intersecting
+				var intersects:Boolean = true;
+				if (child.boundBox != null) {
+					collider.calculateSphere(child.globalToLocalTransform);
+					intersects = child.boundBox.checkSphere(collider.sphere);
+				}
+				// Adding the geometry of self content
+				if (intersects) {
+					// Calculating matrix for converting from local coordinates to callider coordinates
+					child.localToGlobalTransform.combine(localToGlobalTransform, child.transform);
+					if (child.collidable) child.collidable.collectGeometryAndTransforms(collider, child.localToGlobalTransform);
+				}
+				// Check for children
+				if (child.childrenList != null) child.visitChildren(collider);		
+			}
+		}
+
+		//*/
+		
+		
+		
+		// -- borrowed from alternativa3d below
+		
+
+			public function addChild(child:CollisionBoundNode):CollisionBoundNode {
+			// Error checking
+			if (child == null) throw new TypeError("Parameter child must be non-null.");
+			if (child == this) throw new ArgumentError("An object cannot be added as a child of itself.");
+			for (var container:CollisionBoundNode = _parent; container != null; container = container._parent) {
+			if (container == child) throw new ArgumentError("An object cannot be added as a child to one of it's children (or children's children, etc.).");
+			}
+			// Adding
+			if (child._parent != this) {
+			// Removing from old place
+			if (child._parent != null) child._parent.removeChild(child);
+			// Adding
+			addToList(child);
+			child._parent = this;
+			// Dispatching the event
+			} else {
+				child = removeFromList(child);
+				if (child == null) throw new ArgumentError("Cannot add child.");
+				// Adding
+				addToList(child);
+				}
+			return child;
+			}
+			
+				public function removeChild(child:CollisionBoundNode):CollisionBoundNode {
+			// Error checking
+			if (child == null) throw new TypeError("Parameter child must be non-null.");
+			if (child._parent != this) throw new ArgumentError("The supplied CollisionBoundNode must be a child of the caller.");
+			child = removeFromList(child);
+			if (child == null) throw new ArgumentError("Cannot remove child.");
+			// Dispatching the event
+			child._parent = null;
+			return child;
+			}
+			
+
+			
+				private function addToList(child:CollisionBoundNode, item:CollisionBoundNode = null):void {
+			child.next = item;
+			if (item == childrenList) {
+			childrenList = child;
+			} else {
+			for (var current:CollisionBoundNode = childrenList; current != null; current = current.next) {
+			if (current.next == item) {
+			current.next = child;
+			break;
+			}
+			}
+			}
+			}
+
+			/**
+			* @private
+			*/
+			alternativa3d function removeFromList(child:CollisionBoundNode):CollisionBoundNode {
+			var prev:CollisionBoundNode;
+			for (var current:CollisionBoundNode = childrenList; current != null; current = current.next) {
+			if (current == child) {
+			if (prev != null) {
+			prev.next = current.next;
+			} else {
+			childrenList = current.next;
+			}
+			current.next = null;
+			return child;
+			}
+			prev = current;
+			}
+			return null;
+			}
+
+
+
+
+		
+		
+		
+	}
+
+}

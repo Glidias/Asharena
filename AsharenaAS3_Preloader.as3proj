@@ -4,15 +4,14 @@
   <output>
     <movie outputType="Application" />
     <movie input="" />
-    <movie path="bin\ArenaAS3.swf" />
-    <movie fps="60" />
+    <movie path="bin\AsharenaAS3Preloader.swf" />
+    <movie fps="30" />
     <movie width="800" />
     <movie height="600" />
     <movie version="11" />
     <movie minorVersion="0" />
     <movie platform="Flash Player" />
     <movie background="#FFFFFF" />
-    <movie preferredSDK="Flex 4.6.0, AIR 3.1;4.6.0, 3.1;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
@@ -42,7 +41,7 @@
     <option loadExterns="" />
     <option staticLinkRSL="True" />
     <option additional="" />
-    <option compilerConstants="CONFIG::usePreloader,false&#xA;CONFIG::debugging,false&#xA;CONFIG::embed,true" />
+    <option compilerConstants="CONFIG::usePreloader,true" />
     <option minorVersion="" />
   </build>
   <!-- SWC Include Libraries -->
@@ -53,7 +52,6 @@
   <libraryPaths>
     <element path="lib\Alternativa3D.swc" />
     <element path="lib\asharena.swc" />
-    <element path="lib\marchingsquares.swc" />
     <element path="lib\Progression4.swc" />
   </libraryPaths>
   <!-- External Libraries -->
@@ -74,7 +72,7 @@
   </library>
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
-    <compile path="src\tests\pathbuilding\TestPathBuilding3rdPerson.as" />
+    <compile path="src\Main.as" />
   </compileTargets>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>

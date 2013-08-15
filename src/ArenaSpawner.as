@@ -41,7 +41,10 @@ package
 		
 		
 		public static const RACE_SAMNIAN:String = "samnian";
-		public var context3D:Context3D;
+		public static const RACE_DOMOCHAI:String = "dimochai";
+		public static const RACE_FLAMMITE:String = "flammite";
+		public static const RACE_SLAVUS:String = "slavus";
+		
 		public var currentPlayer:Object3D;
 		public var currentPlayerSkin:Skin;
 		public var currentPlayerEntity:Entity;
@@ -74,7 +77,6 @@ package
 			skin.boundBox.maxY += 10;
 			skin.boundBox.maxZ += 10;
 			
-			skin.geometry.upload(context3D);
 			
 			skinDict[race] = skin;
 		}
@@ -91,7 +93,7 @@ package
 			
 
 			
-			box.geometry.upload(context3D);
+			
 			var mat:FillMaterial = new FillMaterial(0xFF0000, .2);
 			box.setMaterialToAllSurfaces( mat);
 			
@@ -99,15 +101,15 @@ package
 			return box;
 		}
 		
-		private function uploadMesh(m:Mesh):Mesh {
+		private function uploadMesh(m:Mesh, context3D:Context3D):Mesh {
 			m.geometry.upload(context3D);
 			return m;
 		}
 		
-		public function addCrossStage(pos:Pos=null, rot:Rot=null):void {
+		public function addCrossStage(context3D:Context3D, pos:Pos=null, rot:Rot=null):void {
 						
-			addRenderEntity( upload( new Box(10, 900, 10, 1, 1, 1, false, new FillMaterial(0xFF0000) )), pos || new Pos(), rot || new Rot() );
-			addRenderEntity( upload( new Box(900, 10, 10, 1, 1, 1, false, new FillMaterial(0x00FF00) )), pos || new Pos(), rot || new Rot() );
+			addRenderEntity( upload( new Box(10, 900, 10, 1, 1, 1, false, new FillMaterial(0xFF0000) ),  context3D), pos || new Pos(), rot || new Rot() );
+			addRenderEntity( upload( new Box(900, 10, 10, 1, 1, 1, false, new FillMaterial(0x00FF00) ),  context3D), pos || new Pos(), rot || new Rot() );
 		}
 		
 		 public function addGladiator(race:String, playerStage:IEventDispatcher=null):Entity {
@@ -144,7 +146,6 @@ package
 				//m.scaleX = ellipsoid.x;
 				//m.scaleY = ellipsoid.y;
 				//m.scaleZ = ellipsoid.z;
-
 			
 			var actions:ActionIntSignal = ent.get(ActionIntSignal) as ActionIntSignal;	
 			var gladiatorStance:GladiatorStance = new GladiatorStance(sk, ent.get(SurfaceMovement) as SurfaceMovement, ellipsoid );
@@ -162,7 +163,7 @@ package
 			return ent;
 		}
 		
-		private function upload(obj:Object3D, hierachy:Boolean=false):Object3D 
+		private function upload(obj:Object3D,context3D:Context3D, hierachy:Boolean=false):Object3D 
 		{
 			var resources:Vector.<Resource> = obj.getResources(hierachy);
 			var i:int = resources.length;

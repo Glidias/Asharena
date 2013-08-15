@@ -17,7 +17,6 @@ package systems.collisions;
 	import flash.errors.Error;
 	
 	import util.geom.Geometry;
-	import util.geom.ITransform3D;
 	import util.TypeDefs;
 
 
@@ -141,7 +140,7 @@ package systems.collisions;
 		/**
 		 * @private 
 		 */
-		public function calculateSphere(transform:ITransform3D):Void {
+		public function calculateSphere(transform:Transform3D):Void {
 			sphere.x = transform.d;
 			sphere.y = transform.h;
 			sphere.z = transform.l; 
