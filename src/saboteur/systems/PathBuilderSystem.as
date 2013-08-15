@@ -25,7 +25,7 @@ package saboteur.systems
 	public class PathBuilderSystem extends System
 	{
 		private var camera:Camera3D;
-		private var _lastGridBound:BoundBox;
+
 	
 		private var origin:Vector3D = new Vector3D();
 		private var direction:Vector3D = new Vector3D();
@@ -43,20 +43,19 @@ package saboteur.systems
 		{
 			if ( nodeList && nodeList.head) {
 				if (curBuildId >= 0) (nodeList.head as PathBuildingNode).builder.setBlueprintIdVis(curBuildId)
-				else (nodeList.head as PathBuildingNode).builder.show(false);
+				else (nodeList.head as PathBuildingNode).builder.setBlueprintVis(false);
 			}
 		}
 		private var _lastResult:int = -999;
+		private var camPos:Vector3D;
 		
 		//public var signalBuildableChange:Signal1 = new Signal1();
 		
 		public function PathBuilderSystem(camera:Camera3D) 
 		{
 			this.camera = camera;
+			camPos  = new Vector3D();
 			
-			_lastGridBound = new BoundBox();
-			_lastGridBound.maxX = -Number.MAX_VALUE;
-			_lastGridBound.maxY = -Number.MAX_VALUE;
 			
 		}
 		
@@ -94,112 +93,89 @@ package saboteur.systems
 			var southOffset:int;
 			
 			// we assume camera in global coordiante space, later, we do a proper function for this!
-			var camPos:Vector3D = builder.startScene.globalToLocal( new Vector3D(camera.x, camera.y, camera.z) );
 				
 			// for now, we use camera position to determine current builder's location, so only case 111 should occur
 			//if ( (camPos._x < _lastGridBound.minX || camPos._y < _lastGridBound.minY || camPos._x > _lastGridBound.maxX || camPos._y > _lastGridBound.maxY ) 
 
-				// update world scene builder bounds according to camera position,  Currently, we assume startScene is in same coordinate space of camera
-				/*
-				if (builder.startScene.transformChanged) {
-					builder.startScene.composeTransforms();
-					builder.startScene.globalToLocalTransform
+				camPos.x = camera._x;
+				camPos.y = camera._y;
+				camPos.z = camera._z;
+				
+				eastVal = camPos.x * cardinal.east.x + camPos.y * cardinal.east.y + camPos.z * cardinal.east.z ;
+				southVal = camPos.x * cardinal.south.x + camPos.y * cardinal.south.y + camPos.z * cardinal.south.z ;
+				var ge:int = Math.round(eastVal * builder.gridEastWidth_i);
+				var gs:int = Math.round(southVal * builder.gridSouthWidth_i);
+				
+				
+				if (!builder.isOccupiedAt(ge, gs)) {
+					builder.setBlueprintVis(false);
+					return;
 				}
-				*/
-				
-				var cxo:Number = camPos.x - builder.gridEastWidth * .5;
-				var cyo:Number = camPos.y - builder.gridSouthWidth * .5;
-					eastVal = cxo * cardinal.east.x + cyo * cardinal.east.y;
-				southVal = cxo * cardinal.south.x + cyo * cardinal.south.y;
-				/*
-				_lastGridBound.minX = cxo * builder.gridEastWidth_i)*builder.gridEastWidth - builder.gridEastWidth*.5;
-				_lastGridBound.minY = cyo * builder.gridSouthWidth_i)*builder.gridSouthWidth -builder.gridSouthWidth*.5;
-				_lastGridBound.maxX = _lastGridBound.minX + builder.gridEastWidth;
-				_lastGridBound.maxY = _lastGridBound.minY + builder.gridSouthWidth;
-				*/
-				// check with builder whether can potentially build across any adjacient tile, if cannot, hide building gizmo & return; /
-				//builder.genesis.rotationZ = Math.PI * .5;
-	//	throw new Error(builder.gridEastWidth + " ," + builder.blueprint.boundBox.maxX*2);
-				builder.blueprint.x = _lastGridBound.minX + builder.gridEastWidth*.5;
-				builder.blueprint.y = _lastGridBound.minY + builder.gridSouthWidth*.5;
-				
-					//	builder.updateFloorPosition(ge, gs);
-				return;
-				
-			
-				
-				eastVal = camPos.x * cardinal.east.x + camPos.y * cardinal.east.y + camPos.z * cardinal.east.z;
-				southVal = camPos.x * cardinal.south.x + camPos.y * cardinal.south.y + camPos.z * cardinal.south.z;
-				var ge:int = eastVal * builder.gridEastWidth_i;
-				var gs:int = southVal * builder.gridSouthWidth_i;
-			
-			
 				
 				camera.calculateRay(origin, direction, camera.view._width * .5, camera.view._height * .5);
+				
+				var de:Number = direction.x * cardinal.east.x + direction.y * cardinal.east.y + direction.z * cardinal.east.z;
+				var ds:Number = direction.x * cardinal.south.x + direction.y * cardinal.south.y + direction.z * cardinal.south.z;
 				// direction should be transformed to local rotated coordinate space of builder object3d if required... ! important
 				
-				
-				
-				eastVal = direction.x * cardinal.east.x + direction.y * cardinal.east.y + direction.z * cardinal.east.z;
-				southVal = direction.x * cardinal.south.x + direction.y * cardinal.south.y + direction.z * cardinal.south.z;
+					var xoff:Number = (eastVal+builder.gridEastWidth*.5) - ge*builder.gridEastWidth;  // integer modulus + floating point
+					xoff *= builder.gridEastWidth_i;
+					var yoff:Number = (southVal+builder.gridSouthWidth*.5) - gs*builder.gridSouthWidth;  // integer modulus + floating point
+					yoff *= builder.gridSouthWidth_i;
+	
 				
 				// camera position must be inside bound, or else camera ray must intersect bound, and if so, get ray exit position
 			//	if ( !(camPos.x < camPos.minX || camPos._y < _lastGridBound.minY || camPos._x > _lastGridBound.maxX || camPos._y > _lastGridBound.maxY)   ) {
-					// check if ray exit position lies within _lastGridBound's z altitude range (else return), but if so, check with builder if can build accross adjacient tile
 					
-					if (direction.x > 0) {
-						x = _lastGridBound.maxX - camPos.x;
-						x /= direction.x;
+					var xt:Number;
+					var yt:Number;
+					
+					if (de > 0) {
+
+						xt= (1 - xoff) / de;
 					}
-					else if (direction.x == 0) {
-						x = Number.MAX_VALUE;  // in case divide by zero infinity doesn't result in a "large" value
+					else if (de == 0) {
+						xt = Number.MAX_VALUE;  // in case divide by zero infinity doesn't result in a "large" value
 					}
 					else {
-						x = camPos.x - _lastGridBound.minX;
-						x /= direction.x;
+						xt = -xoff / de;
+			
 					}
 					
-					if (direction.y > 0) {
-						y = _lastGridBound.maxY - camPos.y;
-						y /= direction.y;
+					if (ds > 0) {
+						yt = (1 - yoff) / ds;
 					}
-					else if (direction.y == 0) {
-						y = Number.MAX_VALUE;  // in case divide by zero infinity doesn't result in a "large" value
+					else if (ds == 0) {
+						yt = Number.MAX_VALUE;  // in case divide by zero infinity doesn't result in a "large" value
 					}
 					else {
-						y = camPos.y  - _lastGridBound.minY;
-						y /= direction.y;
+						yt = -yoff / ds;
 					}
 					
-				
-					if (x < y) { 
-						direction.scaleBy(x);
-						eastOffset = eastVal < 0 ? -1 : 1;
+					if (yt < 0 || xt < 0) throw new Error("Should not be! Time should not be less than zero!");
+
+					if (xt < yt) { 
+						direction.scaleBy(xt*builder.gridEastWidth);
+						eastOffset = de < 0 ? -1 : 1;
 						southOffset = 0;
 					}
 					else {
-						direction.scaleBy(y);
-						southOffset = 0;// southVal < 0 ? -1 : 1;
+						direction.scaleBy(yt*builder.gridSouthWidth);
+						southOffset = ds < 0 ? -1 : 1;
 						eastOffset = 0;
 					}
 					origin.x += direction.x;
 					origin.y += direction.y;
 					origin.z += direction.z;
-					//if (origin.z < _lastGridBound.minZ || origin.z > _lastGridBound.maxZ) {
+					//if (origin.z < builder._gridSquareBound.minZ || origin.z > builder._gridSquareBound.maxZ) {
 						// hide building gizmo
-						//signalBuildableChange.dispatch( SaboteurPathUtil. );
-						builder.show(true);
-				
-						builder.updateFloorPosition(ge+eastOffset, gs+southOffset);
-						//builder.blueprint.x = 30;
-						//builder.blueprint.y = 50;
-				
-						return;
+					
+						//	builder.setBlueprintVis(false);
+
+						//	return;
 					//}
-						
 					
-					
-					builder.show(true);
+					builder.setBlueprintVis(true);
 					var result:int = builder.updateFloorPosition(ge+eastOffset, gs+southOffset);
 					if (result != _lastResult) {
 						_lastResult = result;

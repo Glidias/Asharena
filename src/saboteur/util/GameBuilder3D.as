@@ -107,8 +107,8 @@ package saboteur.util
 			var xd:Number = bounds.maxX - bounds.minX;
 			var yd:Number = bounds.maxY - bounds.minY;
 			
-						_gridSquareBound.maxZ += 40;
-			_gridSquareBound.minZ -= 40;
+				_gridSquareBound.maxZ += 45;
+				_gridSquareBound.minZ -= 45;
 			
 			gridEastWidth  =cardinal.getDist(cardinal.east, _gridSquareBound, 1);
 			gridSouthWidth = cardinal.getDist(cardinal.south, _gridSquareBound, 1);
@@ -195,18 +195,17 @@ package saboteur.util
 					
 			}
 			
-			public function show(val:Boolean):void 
-			{
-				_floor.visible = val;
-				blueprint.visible = val;
-				if (val && blueprint._parent != startScene) startScene.addChild(blueprint);
-			}
+			
 			
 			private function visJetty3DByValue(obj:Object3D, value:uint):void {
 
 				for (var c:Object3D = obj.childrenList; c != null; c = c.next) {
 				  c.visible = pathUtil.visJetty(value, c.name);
 				}
+			}
+			
+			public function isOccupiedAt(ge:int, gs:int):Boolean {
+				return buildDict[pathUtil.getGridKey(ge, gs)] != null;
 			}
 			
 			private function checkBuildableResult(value:uint):int 
