@@ -8,6 +8,8 @@ package saboteur.systems
 	import ash.core.System;
 	import ash.signals.Signal0;
 	import ash.signals.Signal1;
+	import components.DirectionVectors;
+	import components.Pos;
 	import flash.geom.Vector3D;
 	import saboteur.util.CardinalVectors;
 	import alternativa.engine3d.core.Camera3D;
@@ -17,46 +19,69 @@ package saboteur.systems
 	use namespace alternativa3d;
 	
 	/**
-	 * THis is a system used for the client player to help build stuff along a path-building grid.
+	 * This is a system used for the client player (head node) to help build 3d stuff along a 2d path-building grid
+	 * that can be cardinally-rotated and offsetted.
 	 * 
-	 * It can later support checking against other players' grids as well, if multiple grids are added later.
+	 * It can later support checking against other players' grids as well (subsequent nodes), if multiple grids are added later.
+	 * 
+	 * It supports some optional components that work with Alternativa3D's camera for the head node builder.
+	 * fromPos(Pos),  fromDirection(DirectionVectors)
+	 * 
+	 * If only fromPos is provided (no camera or fromDirection), than we treat fromPos as the intended build position, with no raycasting.
+	 * If only the camera is provided, than ray is casted through camera's screen's center position.
+	 * If both fromPos and fromDirection is provided, than camera reference doesn't need to be provided at all, and ray is casted with fromPos/fromDirection to determine build position.
+	 * If camera is provided with fromPos (without fromDirection), than ray is casted from camera position along through fromPos
+	 * If camera is provided with fromDirection (without fromPos), it is assumed the fromDirection.forward already stores the intended ray direction vector from the camera position.
+	 * 
 	 * @author Glenn Ko
 	 */
 	public class PathBuilderSystem extends System
 	{
+		/**
+		 * Build distance ratio in relation to current grid east/south width to indicate how near to edge required
+		 * before allowed to build. Lower ratios indiciate nearer to edge required.
+		 */
 		public var buildDistRatio:Number =  .5;
+		
+		private var curBuildId:int = 63; // -1;
+		public function setBuildId(val:int):void  {
+			curBuildId = val;
+			validateVis();
+		}
+		public function getCurBuildID():int {
+			return curBuildId;
+		}
+		
 		private var camera:Camera3D;
-
+		private var fromPos:Pos;
+		private var fromDirection:DirectionVectors;
 	
 		private var origin:Vector3D = new Vector3D();
 		private var direction:Vector3D = new Vector3D();
 		
 		private var nodeList:NodeList;
 		
-		private var curBuildId:int = 63; // -1;
-		public function setBuildId(val:int):void  {
-			curBuildId = val;
-			validateVis();
-			
-		}
+
 		
 		private function validateVis():void 
 		{
 			if ( nodeList && nodeList.head) {
+				fromPos = (nodeList.head as PathBuildingNode).entity.get(Pos) as Pos;
+				fromDirection = (nodeList.head as PathBuildingNode).entity.get(DirectionVectors) as DirectionVectors;
 				(nodeList.head as PathBuildingNode).builder.value = curBuildId;
 				if (curBuildId >= 0) (nodeList.head as PathBuildingNode).builder.setBlueprintIdVis(curBuildId)
 				else (nodeList.head as PathBuildingNode).builder.setBlueprintVis(false);
 			}
 		}
 		private var _lastResult:int = -999;
-		private var camPos:Vector3D;
+		//private var camPos:Vector3D;
 		
 		//public var signalBuildableChange:Signal1 = new Signal1();
 		
-		public function PathBuilderSystem(camera:Camera3D) 
+		public function PathBuilderSystem(camera:Camera3D=null) 
 		{
 			this.camera = camera;
-			camPos  = new Vector3D();
+		//	camPos  = new Vector3D();
 			
 			
 		}
@@ -73,7 +98,6 @@ package saboteur.systems
 			
 			//camera.debug = true;
 			//camera.addToDebug( Debug.BOUNDS, node.builder.blueprint);
-
 			//camera.addToDebug( Debug.BOUNDS, node.builder.genesis);
 		}
 		
@@ -87,47 +111,81 @@ package saboteur.systems
 			var cardinal:CardinalVectors = curBuild.cardinalVectors;
 			var builder:GameBuilder3D = curBuild.builder;
 			
-			var x:Number;
-			var y:Number;
 			var eastVal:Number;
 			var southVal:Number;
 			var eastOffset:int;
 			var southOffset:int;
-			
-			// we assume camera in global coordiante space, later, we do a proper function for this!
-				
-			// for now, we use camera position to determine current builder's location, so only case 111 should occur
-			//if ( (camPos._x < _lastGridBound.minX || camPos._y < _lastGridBound.minY || camPos._x > _lastGridBound.maxX || camPos._y > _lastGridBound.maxY ) 
 
-				camPos.x = camera._x;
-				camPos.y = camera._y;
-				camPos.z = camera._z;
+				var ge:int;
+				var gs:int;
 				
-				eastVal = camPos.x * cardinal.east.x + camPos.y * cardinal.east.y + camPos.z * cardinal.east.z ;
-				southVal = camPos.x * cardinal.south.x + camPos.y * cardinal.south.y + camPos.z * cardinal.south.z ;
-				var ge:int = Math.round(eastVal * builder.gridEastWidth_i);
-				var gs:int = Math.round(southVal * builder.gridSouthWidth_i);
+				if (fromPos != null) {
+					origin.x = fromPos.x - builder.startScene._x;
+					origin.y = fromPos.y - builder.startScene._y;
+					origin.z = fromPos.z - builder.startScene._z;
+					
+					eastVal = origin.x * cardinal.east.x + origin.y * cardinal.east.y + origin.z * cardinal.east.z ;
+					southVal = origin.x * cardinal.south.x + origin.y * cardinal.south.y + origin.z * cardinal.south.z ;
+					
+					if (camera == null && fromDirection == null) {
+						// resolve now (consider using floor instead of round, or hiding vis if occupied)
+						ge = Math.round(eastVal * builder.gridEastWidth_i);
+						gs = Math.round(southVal * builder.gridSouthWidth_i);
+						builder.setBlueprintVis(true);
+						builder.updateFloorPosition(ge, gs);
+						return;
+					}
+					ge = Math.round(eastVal * builder.gridEastWidth_i);
+					gs = Math.round(southVal * builder.gridSouthWidth_i);
+				}
+				else if (camera != null) {
+					origin.x = camera._x - builder.startScene._x;
+					origin.y = camera._y - builder.startScene._y;
+					origin.z = camera._z - builder.startScene._z;
+					
+					eastVal = origin.x * cardinal.east.x + origin.y * cardinal.east.y + origin.z * cardinal.east.z;
+					southVal = origin.x * cardinal.south.x + origin.y * cardinal.south.y + origin.z * cardinal.south.z;
+					
+					ge =  Math.round(eastVal * builder.gridEastWidth_i);
+					gs =  Math.round(southVal * builder.gridSouthWidth_i);
+				}
+				else {  // without camera, need at least a fromPos
+					throw new Error("Need at least fromPos or camera to continue!");
+				}
 				
+		
 				
-				if (!builder.isOccupiedAt(ge, gs)) {
+				if (!builder.isOccupiedAt(ge, gs)) {  // where builder is located (gridEast2/gridSouth2)
 					builder.setBlueprintVis(false);
 					return;
 				}
 				
-				camera.calculateRay(origin, direction, camera.view._width * .5, camera.view._height * .5);
+				if (fromDirection == null) {
+					if (fromPos == null) {
+						camera.calculateRay(origin, direction, camera.view._width * .5, camera.view._height * .5);
+					}
+					else {
+						direction.x = camera._x- builder.startScene._x - origin.x ;
+						direction.y = camera._y -builder.startScene._y- origin.y ;
+						direction.z = camera._z -builder.startScene._z- origin.z ;
+						direction.normalize();
+					}
+				}
+				else {
+					direction.x = fromDirection.forward.x;
+					direction.y = fromDirection.forward.y;
+					direction.z = fromDirection.forward.z;
+				}
 				
+			
+				// Start raycasting from current grid position (direction along east and south axes)
 				var de:Number = direction.x * cardinal.east.x + direction.y * cardinal.east.y + direction.z * cardinal.east.z;
 				var ds:Number = direction.x * cardinal.south.x + direction.y * cardinal.south.y + direction.z * cardinal.south.z;
-				// direction should be transformed to local rotated coordinate space of builder object3d if required... ! important
-			
 					var xoff:Number = (eastVal+builder.gridEastWidth * .5) - ge*builder.gridEastWidth;  // integer modulus + floating point
 					xoff *= builder.gridEastWidth_i;
 					var yoff:Number = (southVal+builder.gridSouthWidth * .5) - gs*builder.gridSouthWidth;  // integer modulus + floating point
 					yoff *= builder.gridSouthWidth_i;
 	
-				
-				// camera position must be inside bound, or else camera ray must intersect bound, and if so, get ray exit position
-			//	if ( !(camPos.x < camPos.minX || camPos._y < _lastGridBound.minY || camPos._x > _lastGridBound.maxX || camPos._y > _lastGridBound.maxY)   ) {
 					
 					var xt:Number;
 					var yt:Number;
@@ -169,11 +227,10 @@ package saboteur.systems
 					origin.x += direction.x;
 					origin.y += direction.y;
 					origin.z += direction.z;
+					// bound Z hit check if you wish to include it in
 					//if (origin.z < builder._gridSquareBound.minZ || origin.z > builder._gridSquareBound.maxZ) {
 						// hide building gizmo
-					
-						//	builder.setBlueprintVis(false);
-
+						//	builder.setBlueprintVis(false)
 						//	return;
 					//}
 					var vec:Vector3D = xt < yt ? cardinal.east : cardinal.south;
@@ -181,10 +238,11 @@ package saboteur.systems
 					builder.setBlueprintVis(true);
 					
 					var result:int;
+					
 					if ( Math.abs(vec.dotProduct(direction)) > (xt < yt ? builder.gridEastWidth : builder.gridSouthWidth ) * buildDistRatio  ) {
 						builder.updateFloorPosition(ge+eastOffset, gs+southOffset);
 						builder.editorMat.color = GameBuilder3D.COLOR_OUTSIDE;
-						_lastResult = SaboteurPathUtil.RESULT_OUT;
+						result = SaboteurPathUtil.RESULT_OUT;
 						if (result != _lastResult) {
 							_lastResult = result;
 							//signalBuildableChange.dispatch(result);
@@ -199,97 +257,16 @@ package saboteur.systems
 						_lastResult = result;
 						//signalBuildableChange.dispatch(result);
 					}
-				
-					
-			//	}
-			//	else if (_lastGridBound.intersectRay(origin, direction)) {
-			//		throw new Error("For now, this hsouldn't be the case 222 ");
-			//	}
-			//	else {
-			//		throw new Error("For now, this hsouldn't be the case 333");
-			//	}
-				
-					
+
 			}
 			
 				
-						public function calcBoundIntersection(point:Vector3D, origin:Vector3D, direction:Vector3D, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number):Number {
-
-				
-				if (origin.x >= minX && origin.x <= maxX && origin.y >= minY && origin.y <= maxY && origin.z >= minZ && origin.z <= maxZ) return 0;  // true
-				
-				if (origin.x < minX && direction.x <= 0) return -1;
-				if (origin.x > maxX && direction.x >= 0) return -1;
-				if (origin.y < minY && direction.y <= 0) return -1;
-				if (origin.y > maxY && direction.y >= 0) return -1;
-				if (origin.z < minZ && direction.z <= 0) return -1;
-				if (origin.z > maxZ && direction.z >= 0) return -1;
-				var a:Number;
-				var b:Number;
-				var c:Number;
-				var d:Number;
-				var threshold:Number = 0.000001;
-				// Intersection of X and Y projection
-				if (direction.x > threshold) {
-					a = (minX - origin.x) / direction.x;
-					b = (maxX - origin.x) / direction.x;
-				} else if (direction.x < -threshold) {
-					a = (maxX - origin.x) / direction.x;
-					b = (minX - origin.x) / direction.x;
-				} else {
-					a = -1e+22;
-					b = 1e+22;
-				}
-				if (direction.y > threshold) {
-					c = (minY - origin.y) / direction.y;
-					d = (maxY - origin.y) / direction.y;
-				} else if (direction.y < -threshold) {
-					c = (maxY - origin.y) / direction.y;
-					d = (minY - origin.y) / direction.y;
-				} else {
-					c = -1e+22;
-					d = 1e+22;
-				}
-				if (c >= b || d <= a) return -1;
-				if (c < a) {
-					if (d < b) b = d;
-				} else {
-					a = c;
-					if (d < b) b = d;
-				}
-				// Intersection of XY and Z projections
-				if (direction.z > threshold) {
-					c = (minZ - origin.z) / direction.z;
-					d = (maxZ - origin.z) / direction.z;
-				} else if (direction.z < -threshold) {
-					c = (maxZ - origin.z) / direction.z;
-					d = (minZ - origin.z)  / direction.z;
-				} else {
-					c = -1e+22;
-					d = 1e+22;
-				}
-				
-				c = c > a ? c : a;  // added to ensure reference is correct!
-				d = d < b ? d : b;
-	
-				if (c >= b || d <= a) return -1;
-	 
-				point.x = origin.x + direction.x * c;
-				point.y = origin.y + direction.y * c;
-				point.z = origin.z + direction.z * c;
-				
-				//if (c < 0) throw new Error("WRONG DIRECTION!");
-				
-				return c;
-			}
 			
 			public function get lastResult():int 
 			{
 				return _lastResult;
 			}
 		
-			
-	
 	
 		
 	}

@@ -45,6 +45,7 @@ package tests.pathbuilding
 		{
 			SpawnerBundle.context3D = _template3D.stage3D.context3D;
 			
+			
 			engine.addSystem( new PathBuilderSystem(_template3D.camera), 0 );
 			
 			jettySpawner = new JettySpawner();

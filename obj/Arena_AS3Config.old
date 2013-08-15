@@ -16,7 +16,7 @@
     </define>
     <define append="true">
       <name>CONFIG::timeStamp</name>
-      <value>'7/10/2013'</value>
+      <value>'8/15/2013'</value>
     </define>
     <define append="true">
       <name>CONFIG::air</name>
@@ -28,6 +28,18 @@
     </define>
     <define append="true">
       <name>CONFIG::desktop</name>
+      <value>false</value>
+    </define>
+    <define append="true">
+      <name>CONFIG::usePreloader</name>
+      <value>false</value>
+    </define>
+    <define append="true">
+      <name>CONFIG::debugging</name>
+      <value>false</value>
+    </define>
+    <define append="true">
+      <name>CONFIG::embed</name>
       <value>false</value>
     </define>
     <optimize>true</optimize>
@@ -45,7 +57,7 @@
     </library-path>
   </compiler>
   <file-specs>
-    <path-element>D:\Git\Asharena\src\WonderFLIsles.as</path-element>
+    <path-element>D:\Git\Asharena\src\tests\pathbuilding\TestPathBuilding.as</path-element>
   </file-specs>
   <default-background-color>#FFFFFF</default-background-color>
   <default-frame-rate>60</default-frame-rate>

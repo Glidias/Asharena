@@ -6,7 +6,7 @@ package saboteur.spawners
 	 * @author Glenn Ko
 	 */
 	public class JettyAssets extends Sprite
-	{
+	{	
 		[Embed(source = "../../../bin/assets/models/jetty/layout-jetty.a3d", mimeType = "application/octet-stream")]
 		public  var $_MODEL:Class;
 		
@@ -16,6 +16,7 @@ package saboteur.spawners
 		public function JettyAssets() 
 		{
 			
+		
 		}
 		
 	}

@@ -31,7 +31,7 @@ package saboteur.util
 		
 		private var buildDict:Dictionary;
 		
-		public static var CARDINAL_VECTORS:CardinalVectors;
+		public static const CARDINAL_VECTORS:CardinalVectors = new CardinalVectors();
 		public var cardinal:CardinalVectors;
 		
 	
@@ -59,7 +59,6 @@ package saboteur.util
 		
 		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane) {
 			if (PATH_UTIL == null) PATH_UTIL = new SaboteurPathUtil();
-			if (CARDINAL_VECTORS == null) CARDINAL_VECTORS = new CardinalVectors();
 			
 			
 			cardinal = CARDINAL_VECTORS;
