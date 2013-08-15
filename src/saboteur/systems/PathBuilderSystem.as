@@ -24,6 +24,7 @@ package saboteur.systems
 	 */
 	public class PathBuilderSystem extends System
 	{
+		public var buildDistRatio:Number =  .5;
 		private var camera:Camera3D;
 
 	
@@ -42,6 +43,7 @@ package saboteur.systems
 		private function validateVis():void 
 		{
 			if ( nodeList && nodeList.head) {
+				(nodeList.head as PathBuildingNode).builder.value = curBuildId;
 				if (curBuildId >= 0) (nodeList.head as PathBuildingNode).builder.setBlueprintIdVis(curBuildId)
 				else (nodeList.head as PathBuildingNode).builder.setBlueprintVis(false);
 			}
@@ -69,10 +71,10 @@ package saboteur.systems
 		{
 			if (node === nodeList.head) validateVis();
 			
-			camera.debug = true;
-			camera.addToDebug( Debug.BOUNDS, node.builder.blueprint);
+			//camera.debug = true;
+			//camera.addToDebug( Debug.BOUNDS, node.builder.blueprint);
 
-			camera.addToDebug( Debug.BOUNDS, node.builder.genesis);
+			//camera.addToDebug( Debug.BOUNDS, node.builder.genesis);
 		}
 		
 		override public function update(time:Number):void {
@@ -117,10 +119,10 @@ package saboteur.systems
 				var de:Number = direction.x * cardinal.east.x + direction.y * cardinal.east.y + direction.z * cardinal.east.z;
 				var ds:Number = direction.x * cardinal.south.x + direction.y * cardinal.south.y + direction.z * cardinal.south.z;
 				// direction should be transformed to local rotated coordinate space of builder object3d if required... ! important
-				
-					var xoff:Number = (eastVal+builder.gridEastWidth*.5) - ge*builder.gridEastWidth;  // integer modulus + floating point
+			
+					var xoff:Number = (eastVal+builder.gridEastWidth * .5) - ge*builder.gridEastWidth;  // integer modulus + floating point
 					xoff *= builder.gridEastWidth_i;
-					var yoff:Number = (southVal+builder.gridSouthWidth*.5) - gs*builder.gridSouthWidth;  // integer modulus + floating point
+					var yoff:Number = (southVal+builder.gridSouthWidth * .5) - gs*builder.gridSouthWidth;  // integer modulus + floating point
 					yoff *= builder.gridSouthWidth_i;
 	
 				
@@ -174,9 +176,25 @@ package saboteur.systems
 
 						//	return;
 					//}
+					var vec:Vector3D = xt < yt ? cardinal.east : cardinal.south;
 					
 					builder.setBlueprintVis(true);
-					var result:int = builder.updateFloorPosition(ge+eastOffset, gs+southOffset);
+					
+					var result:int;
+					if ( Math.abs(vec.dotProduct(direction)) > (xt < yt ? builder.gridEastWidth : builder.gridSouthWidth ) * buildDistRatio  ) {
+						builder.updateFloorPosition(ge+eastOffset, gs+southOffset);
+						builder.editorMat.color = GameBuilder3D.COLOR_OUTSIDE;
+						_lastResult = SaboteurPathUtil.RESULT_OUT;
+						if (result != _lastResult) {
+							_lastResult = result;
+							//signalBuildableChange.dispatch(result);
+						}
+						
+						return;
+					}
+					
+					
+					result= builder.updateFloorPosition(ge+eastOffset, gs+southOffset);
 					if (result != _lastResult) {
 						_lastResult = result;
 						//signalBuildableChange.dispatch(result);

@@ -19,6 +19,7 @@ package saboteur.spawners
 	import flash.display3D.Context3D;
 	import saboteur.util.CardinalVectors;
 	import saboteur.util.GameBuilder3D;
+	import saboteur.util.SaboteurPathUtil;
 	import util.SpawnerBundle;
 	import alternativa.engine3d.alternativa3d;
 	use namespace alternativa3d;
@@ -33,10 +34,12 @@ package saboteur.spawners
 		
 
 	
+		private var editorMat:FillMaterial = new FillMaterial(0, .1);
 		private var genesis:Object3D;
 		private var blueprint:Object3D;
 		private var injectMaterial:StandardMaterial;
 		private var collision:Object3D;
+		private var _floor:Plane;
 
 
 		public function JettySpawner() 
@@ -49,6 +52,14 @@ package saboteur.spawners
 		
 		override public function init():void 
 		{
+			 var plane:Plane = new Plane(1, 1, 1, 1, false, false, editorMat, editorMat);
+			 editorMat.color = GameBuilder3D.COLOR_OCCUPIED;
+		
+			_floor = plane;	
+		 _floor.z += 8;
+		 
+			plane.geometry.upload(context3D);
+			
 			var diffuse:BitmapTextureResource = new BitmapTextureResource(new myAssets.$_TEXTURE().bitmapData);
 			
 		
@@ -80,7 +91,7 @@ package saboteur.spawners
 			collision = rootCont.getChildByName("collision");
 			if (collision == null) throw new Error("Could not find collision!");
 
-	
+		
 			uploadResources(rootCont.getResources(true, null));
 			
 			 
@@ -101,7 +112,7 @@ package saboteur.spawners
 		public function spawn(engine:Engine, scene:Object3D):Entity {
 			
 			var root:Object3D = scene.addChild(new Object3D());
-			var gameBuilder:GameBuilder3D = new GameBuilder3D(root, genesis, blueprint, collision, injectMaterial);
+			var gameBuilder:GameBuilder3D = new GameBuilder3D(root, genesis, blueprint, collision, injectMaterial, editorMat, _floor);
 			var cardinal:CardinalVectors = new CardinalVectors();
 			var entity:Entity = new Entity().add(cardinal).add(gameBuilder);
 		blueprint.visible = true;

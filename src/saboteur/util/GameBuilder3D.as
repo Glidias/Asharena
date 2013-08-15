@@ -34,13 +34,13 @@ package saboteur.util
 		public static var CARDINAL_VECTORS:CardinalVectors;
 		public var cardinal:CardinalVectors;
 		
-		public static var EDITOR_MAT:FillMaterial;
-		private var editorMat:FillMaterial;
+	
+		public var editorMat:FillMaterial;
 		
-		static private const COLOR_OCCUPIED:uint = 0x99AA44;
-		static private const COLOR_INVALID:uint = 0xFF6666;
-		static private const COLOR_VALID:uint = 0x00FF00;
-		static private const COLOR_OUTSIDE:uint = 0x333333;
+		static public const COLOR_OCCUPIED:uint = 0x99AA44;
+		static public const COLOR_INVALID:uint = 0xFF6666;
+		static public const COLOR_VALID:uint = 0x00FF22;
+		static public const COLOR_OUTSIDE:uint =0xAAFF66   ;
 		
 		public var _gridSquareBound:BoundBox;
 		
@@ -55,16 +55,17 @@ package saboteur.util
 		public var collisionScene:Object3D;
 		
 		private var _value:uint;
+		public var minSquareBuildDistance:Number;
 		
-		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material) {
+		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane) {
 			if (PATH_UTIL == null) PATH_UTIL = new SaboteurPathUtil();
 			if (CARDINAL_VECTORS == null) CARDINAL_VECTORS = new CardinalVectors();
-			if (EDITOR_MAT == null) EDITOR_MAT = new FillMaterial(0, .3);
+			
 			
 			cardinal = CARDINAL_VECTORS;
 			pathUtil = PATH_UTIL;
-			editorMat = EDITOR_MAT;
-			
+		
+			this.editorMat = editorMat;
 			this.applyMaterial = applyMaterial;
 			
 			this.collision = collision;
@@ -80,7 +81,7 @@ package saboteur.util
 			buildDict = new Dictionary();
 			
 			blueprint.visible = false;
-			
+				_floor = floor;
 			this.startScene.addChild(genesis);
 			this.startScene.addChild(blueprint);
 		
@@ -95,6 +96,7 @@ package saboteur.util
 		
 		public function setBlueprintVis(val:Boolean):void {
 			blueprint.visible = val;
+			_floor.visible = val;
 			if (val && blueprint._parent != startScene) startScene.addChild(blueprint);
 			
 		}
@@ -106,24 +108,22 @@ package saboteur.util
 			
 			var xd:Number = bounds.maxX - bounds.minX;
 			var yd:Number = bounds.maxY - bounds.minY;
+				 _floor.scaleX = xd;
+			 _floor.scaleY = yd;
 			
+			 
 				_gridSquareBound.maxZ += 45;
 				_gridSquareBound.minZ -= 45;
 			
 			gridEastWidth  =cardinal.getDist(cardinal.east, _gridSquareBound, 1);
 			gridSouthWidth = cardinal.getDist(cardinal.south, _gridSquareBound, 1);
-			
+			minSquareBuildDistance = gridEastWidth * gridEastWidth + gridSouthWidth * gridSouthWidth;
 
 				
 			gridEastWidth_i = 1 / gridEastWidth;
 			gridSouthWidth_i = 1 / gridSouthWidth;
 			
-			
-			 var plane:Plane = new Plane(1, 1, 1, 1, false, false, editorMat, editorMat);
-			 editorMat.color = COLOR_OCCUPIED;
-			 plane.scaleX = xd;
-			 plane.scaleY = yd;
-			_floor = plane;
+		
 			this.startScene.addChild(_floor);
 			
 			
@@ -248,7 +248,8 @@ package saboteur.util
 			{
 				if (_value === value) return;
 				_value = value;
-				refreshValue();
+				
+				if (_value >= 0) refreshValue();
 			}
 			
 			private function refreshValue():void {
