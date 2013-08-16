@@ -34,7 +34,7 @@ package alternativa.a3d.collisions
 			var classe:Class = Object(scene).constructor;
 			rootNode.setup(scene, FUNC_MAP[classe] ? FUNC_MAP[classe](scene) : scene is Mesh ? FUNC_MAP[Mesh](scene) : null);
 			if ( scene.childrenList != null) rootNode.setupChildren(scene, FUNC_MAP);
-			rootNode.validate(scene);
+			//rootNode.validate(scene);
 			return rootNode;
 			
 		}

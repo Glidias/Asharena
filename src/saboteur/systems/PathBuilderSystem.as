@@ -52,6 +52,10 @@ package saboteur.systems
 			return curBuildId;
 		}
 		
+		public function setBuildIndex(index:uint):void {
+			setBuildId(  SaboteurPathUtil.getInstance().getValueByIndex(index) );
+		}
+		
 		private var camera:Camera3D;
 		private var fromPos:Pos;
 		private var fromDirection:DirectionVectors;
@@ -76,7 +80,7 @@ package saboteur.systems
 		private var _lastResult:int = -999;
 		//private var camPos:Vector3D;
 		
-		//public var signalBuildableChange:Signal1 = new Signal1();
+		public var signalBuildableChange:Signal1 = new Signal1();
 		
 		public function PathBuilderSystem(camera:Camera3D=null) 
 		{
@@ -84,6 +88,19 @@ package saboteur.systems
 		//	camPos  = new Vector3D();
 			
 			
+		}
+		public function attemptDel():void 
+		{
+			var head:PathBuildingNode = nodeList.head as PathBuildingNode;
+			if (head == null) return;
+			if (_lastResult === SaboteurPathUtil.RESULT_OCCUPIED) head.builder.attemptRemove();
+		}
+			
+		public function attemptBuild():void {
+			var head:PathBuildingNode = nodeList.head as PathBuildingNode;
+			if (head == null) return;
+			if (_lastResult != SaboteurPathUtil.RESULT_VALID) return;
+			head.builder.attemptBuild();
 		}
 		
 		override public function addToEngine(engine:Engine):void {
@@ -96,8 +113,8 @@ package saboteur.systems
 		{
 			if (node === nodeList.head) validateVis();
 			
-			//camera.debug = true;
-			//camera.addToDebug( Debug.BOUNDS, node.builder.blueprint);
+			camera.debug = true;
+			camera.addToDebug( Debug.BOUNDS, node.builder.blueprint);
 			//camera.addToDebug( Debug.BOUNDS, node.builder.genesis);
 		}
 		
@@ -240,26 +257,31 @@ package saboteur.systems
 					var result:int;
 					
 					if ( Math.abs(vec.dotProduct(direction)) > (xt < yt ? builder.gridEastWidth : builder.gridSouthWidth ) * buildDistRatio  ) {
-						builder.updateFloorPosition(ge+eastOffset, gs+southOffset);
-						builder.editorMat.color = GameBuilder3D.COLOR_OUTSIDE;
-						result = SaboteurPathUtil.RESULT_OUT;
+						result = builder.updateFloorPosition(ge + eastOffset, gs + southOffset);
+						if (result === SaboteurPathUtil.RESULT_VALID) {
+							builder.editorMat.color = GameBuilder3D.COLOR_OUTSIDE;
+							result = SaboteurPathUtil.RESULT_OUT;
+						}
 						if (result != _lastResult) {
 							_lastResult = result;
-							//signalBuildableChange.dispatch(result);
+							signalBuildableChange.dispatch(result);
 						}
 						
 						return;
 					}
 					
-					
-					result= builder.updateFloorPosition(ge+eastOffset, gs+southOffset);
+					ge += eastOffset;
+					gs += southOffset;
+					result = builder.updateFloorPosition(ge, gs);
+					//if (ge === 0 && gs === 0) result = SaboteurPathUtil.RESULT_OUT;  // not allowed to bulid at genesis rule. 
 					if (result != _lastResult) {
 						_lastResult = result;
-						//signalBuildableChange.dispatch(result);
+						signalBuildableChange.dispatch(result);
 					}
 
 			}
 			
+	
 				
 			
 			public function get lastResult():int 
@@ -284,6 +306,10 @@ class PathBuildingNode extends Node {
 	public var builder:GameBuilder3D;
 	public var cardinalVectors:CardinalVectors;
 	//public var playerPos:Pos;
+	
+	public function PathBuildingNode() {
+		
+	}
 
 	private static var _components:ObjectMap;
 	

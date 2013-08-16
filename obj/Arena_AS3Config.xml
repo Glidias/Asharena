@@ -16,7 +16,7 @@
     </define>
     <define append="true">
       <name>CONFIG::timeStamp</name>
-      <value>'8/15/2013'</value>
+      <value>'8/16/2013'</value>
     </define>
     <define append="true">
       <name>CONFIG::air</name>
@@ -57,7 +57,7 @@
     </library-path>
   </compiler>
   <file-specs>
-    <path-element>D:\Git\Asharena\src\tests\pathbuilding\TestPathBuilding3rdPerson.as</path-element>
+    <path-element>D:\Git\Asharena\src\tests\pathbuilding\TestPathBuildingGhost.as</path-element>
   </file-specs>
   <default-background-color>#FFFFFF</default-background-color>
   <default-frame-rate>60</default-frame-rate>

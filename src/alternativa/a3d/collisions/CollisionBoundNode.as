@@ -29,7 +29,7 @@ package alternativa.a3d.collisions
 		alternativa3d var collidable:ITCollidable;
 		
 		alternativa3d var boundBox:BoundBox;  
-		alternativa3d var object:Object3D;
+		//alternativa3d var object:Object3D; //Alternativa3d debugging
 		
 		
 		public function CollisionBoundNode() 
@@ -42,6 +42,8 @@ package alternativa.a3d.collisions
 		
 		
 		// -- Alternativa3D-specific Object3D setups
+		
+		/*
 		public function validate(root:Object3D):void {
 			if ( root != object) throw new Error("SHould not be!!!:" + [object, root]);
 			var r:Object3D = root.childrenList;
@@ -53,9 +55,11 @@ package alternativa.a3d.collisions
 				r = r.next;
 			}
 		}
+		*/
 		
 		alternativa3d function setup(object:Object3D, collidable:ITCollidable):void {
-			this.object = object;
+			//this.object = object; // Alternativa3d debugging
+			
 			boundBox = object.boundBox;
 			if (object.transformChanged) {
 				object.composeTransforms();
@@ -96,7 +100,6 @@ package alternativa.a3d.collisions
 			var startChild:Object3D = obj.childrenList;
 			while (startChild!=null && !startChild.visible) {
 				startChild = startChild.next;
-				throw new Error("A");
 			}
 			if (startChild == null) return;
 			
@@ -116,7 +119,6 @@ package alternativa.a3d.collisions
 			
 			for (var c:Object3D = startChild; c != null; c = c.next) {
 				if (!c.visible) {
-					throw new Error("A");
 					continue;
 				}
 				var me:CollisionBoundNode = new CollisionBoundNode();

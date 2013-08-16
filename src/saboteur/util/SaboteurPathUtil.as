@@ -2,7 +2,7 @@ package saboteur.util
 {
 	import flash.utils.Dictionary;
 	/**
-	 * ...
+	 * Utility for Saboteur building path rules
 	 * @author Glenn Ko
 	 */
 	public class SaboteurPathUtil {
@@ -158,7 +158,13 @@ package saboteur.util
             return vec;
         }
 		
+		private static var INSTANCE:SaboteurPathUtil;
+		public static function getInstance():SaboteurPathUtil {
+			return INSTANCE || (INSTANCE = new SaboteurPathUtil());
+		}
+		
 		public function SaboteurPathUtil() {
+			
 			collectNumCombinations(); 
 		}
         

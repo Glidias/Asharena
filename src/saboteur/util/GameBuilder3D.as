@@ -22,6 +22,9 @@ package saboteur.util
 	import alternativa.engine3d.alternativa3d;
 	use namespace alternativa3d;
 
+	/**
+	 * Class to help handle building of saboteur jetty structures for Alternativa3D, including collision graph.
+	 */
 	public class GameBuilder3D {
 		private var applyMaterial:Material;
 		
@@ -34,6 +37,7 @@ package saboteur.util
 		public var  pathUtil:SaboteurPathUtil;
 		
 		private var buildDict:Dictionary;
+		private var build3DGrid:Dictionary = new Dictionary();
 		
 		public static const CARDINAL_VECTORS:CardinalVectors = new CardinalVectors();
 		public var cardinal:CardinalVectors;
@@ -45,6 +49,7 @@ package saboteur.util
 		static public const COLOR_INVALID:uint = 0xFF6666;
 		static public const COLOR_VALID:uint = 0x00FF22;
 		static public const COLOR_OUTSIDE:uint =0xAAFF66   ;
+		static public const OCCUPIED_FLOOR_ALPHA:Number = .4;
 		
 		public var _gridSquareBound:BoundBox;
 		
@@ -59,9 +64,11 @@ package saboteur.util
 		public var collisionScene:Object3D;
 		
 		private var _value:uint;
+		private var startEditorAlpha:Number;
 		public var minSquareBuildDistance:Number;
 		
 		public var collisionGraph:CollisionBoundNode;
+		public var showOccupied:Boolean=false;
 		
 		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane) {
 			if (PATH_UTIL == null) PATH_UTIL = new SaboteurPathUtil();
@@ -71,6 +78,7 @@ package saboteur.util
 			pathUtil = PATH_UTIL;
 		
 			this.editorMat = editorMat;
+			startEditorAlpha = editorMat.alpha;
 			this.applyMaterial = applyMaterial;
 			
 			this.collision = collision;
@@ -140,8 +148,23 @@ package saboteur.util
 			//buildAt(1, 1, 63);
 		}
 		
+	
+		
+		public function removeAt(gridEast:int, gridSouth:int):Boolean { 
+			var key:uint = pathUtil.getGridKey(gridEast, gridSouth);
+			var payload:BuildPayload3D = build3DGrid[key];	
+			if (payload == null) return false;
+			collisionGraph.removeChild(payload.collisionNode);
+			startScene.removeChild(payload.object);
+			
+			delete buildDict[key];
+			delete build3DGrid[key];
+			return true;	
+		}
+		
 		public function buildAt(gridEast:int, gridSouth:int, value:uint):void 
 		{
+			
 				pathUtil.buildAt(buildDict, gridEast, gridSouth, value  );
 					var newBuilding:Object3D = genesis.clone();  // should be genesis or blueprint and re-apply material? depends...for now, just use genesis!
 					startScene.addChild( newBuilding);
@@ -154,9 +177,12 @@ package saboteur.util
 					collisionBuilding._y = newBuilding._y;
 					collisionBuilding.transformChanged = true;
 					visJetty3DByValueRecursive(collisionBuilding, value);
-					collisionGraph.addChild( CollisionUtil.getCollisionGraph(collisionBuilding) );
+					
+					var node:CollisionBoundNode;
+					collisionGraph.addChild( node= CollisionUtil.getCollisionGraph(collisionBuilding) );
 					//collisionScene.addChild(collisionBuilding);
 					
+					build3DGrid[pathUtil.getGridKey(gridEast,gridSouth)] =  new BuildPayload3D(newBuilding, node);
 		}
 		
 		private function buildCollidablesAt(gridEast:int, gridSouth:int, refer:Object3D, value:uint):void {
@@ -166,8 +192,7 @@ package saboteur.util
 			cardinal.transform(cardinal.east, refer, cardinal.getDist(cardinal.east, _gridSquareBound)* gridEast );
 			cardinal.transform(cardinal.south, refer, cardinal.getDist(cardinal.south, _gridSquareBound) * gridSouth );
 			collisionGraph.addChild( CollisionUtil.getCollisionGraph(refer) );
-			setMaterialToCont( new FillMaterial(0xFF0000, 1), refer.childrenList);
-			startScene.addChild(refer);
+
 	
 		}
 		
@@ -227,24 +252,15 @@ package saboteur.util
 				  c.visible = pathUtil.visJetty(value, c.name);
 				}
 			}
-			private var numMeshes:int = 0;
+			
 			private function visJetty3DByValueRecursive(obj:Object3D, value:uint):void {
 			
-				if (obj is Mesh) { numMeshes++;
-				(obj as Mesh).setMaterialToAllSurfaces(new FillMaterial(0xFF0000));
-				obj.boundBox = null;
-				}
-					obj.visible = true;
+				//if (obj is Mesh) (obj as Mesh).setMaterialToAllSurfaces(new FillMaterial(0xFF0000));
 				//obj.visible = pathUtil.visJetty(value, obj.name);
 				for (var c:Object3D = obj.childrenList; c != null; c = c.next) {
-					if (c is Mesh) {
-						(c as Mesh).setMaterialToAllSurfaces(new FillMaterial(0xFF0000));
-						numMeshes++;obj.boundBox = null;
-					}
-					if (c.childrenList != null) visJetty3DByValueRecursive(c, value);
-					c.visible = true;
-				//	c.visible = pathUtil.visJetty(value, c.name);
-				 
+					c.visible = pathUtil.visJetty(value, c.name);
+					//if (c is Mesh) (c as Mesh).setMaterialToAllSurfaces(new FillMaterial(0xFF0000));
+					if (c.childrenList != null) visJetty3DByValueRecursive(c, value);	 
 				}
 			}
 			
@@ -257,27 +273,62 @@ package saboteur.util
 
 				var result:int = pathUtil.getValidResult(buildDict, gridEast, gridSouth, value );
 					if (result === SaboteurPathUtil.RESULT_OCCUPIED) {
-					
-						editorMat.color = COLOR_OCCUPIED;
+						if (gridEast!=0 || gridSouth != 0) {
+							editorMat.alpha =  OCCUPIED_FLOOR_ALPHA;
+							editorMat.color = COLOR_OCCUPIED;
+							blueprint.visible = showOccupied;
+						}
+						else {  // outta range
+							blueprint.visible = false;
+							_floor.visible = false;
+							result =  SaboteurPathUtil.RESULT_OUT;
+						}
+					//	_floor.visible = showOccupied;
 						//throw new Error(pathUtil.getGridKey(ge, gs));
 					}
 					else if (result === SaboteurPathUtil.RESULT_INVALID) {
 						editorMat.color = COLOR_INVALID;
+						editorMat.alpha = startEditorAlpha;
 						
 					}
 					else if (result === SaboteurPathUtil.RESULT_OUT) {
 							editorMat.color = COLOR_OUTSIDE;
+							editorMat.alpha = startEditorAlpha;
 					}
 					else {
 						editorMat.color = COLOR_VALID;
+						editorMat.alpha = startEditorAlpha;
 					}
+					
 					return result;
+			}
+			
+			private function getCurBuildableResult():int 
+			{
+
+				return pathUtil.getValidResult(buildDict, gridEast, gridSouth, _value );
+					
 			}
 			
 			public function setBlueprintIdVis(val:uint):void 
 			{
 				for (var obj:Object3D = blueprint.childrenList; obj != null; obj = obj.next) {
 					obj.visible = pathUtil.visJetty(val, obj.name);
+				}
+			}
+			
+			
+			public function attemptBuild():void 
+			{
+				if (getCurBuildableResult() === SaboteurPathUtil.RESULT_VALID) {
+					buildAt(gridEast, gridSouth, _value);
+				}
+			}
+			
+			public function attemptRemove():void 
+			{
+				if (getCurBuildableResult() === SaboteurPathUtil.RESULT_OCCUPIED) {
+					removeAt(gridEast, gridSouth);
 				}
 			}
 			
@@ -304,6 +355,19 @@ package saboteur.util
 		
 		
 		
+		
+	}
+
+}
+import alternativa.a3d.collisions.CollisionBoundNode;
+import alternativa.engine3d.core.Object3D;
+
+class BuildPayload3D {
+	public var object:Object3D
+	public var collisionNode:CollisionBoundNode;
+	public function BuildPayload3D(object:Object3D, collisionNode:CollisionBoundNode) {
+		this.collisionNode = collisionNode;
+		this.object = object;
 		
 	}
 

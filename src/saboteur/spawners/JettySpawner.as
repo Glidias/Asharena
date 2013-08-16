@@ -31,7 +31,7 @@ package saboteur.spawners
 	public class JettySpawner extends SpawnerBundle
 	{
 
-		private var editorMat:FillMaterial = new FillMaterial(0, .1);
+		public var editorMat:FillMaterial = new FillMaterial(0, .1);
 		private var genesis:Object3D;
 		private var blueprint:Object3D;
 		private var injectMaterial:StandardMaterial;
