@@ -6,7 +6,13 @@ package spawners.arena
 	import alternativa.engine3d.loaders.ParserA3D;
 	import alternativa.engine3d.loaders.ParserMaterial;
 	import alternativa.engine3d.materials.compiler.SamplerVariable;
+	import alternativa.engine3d.materials.Material;
+	import alternativa.engine3d.materials.NormalMapSpace;
+	import alternativa.engine3d.materials.StandardTerrainMaterial;
+	import alternativa.engine3d.materials.StandardTerrainMaterial2;
+	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.materials.TextureZClipMaterial;
+	import alternativa.engine3d.materials.VertexLightTextureMaterial;
 	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.BitmapTextureResource;
@@ -57,9 +63,22 @@ package spawners.arena
 		
 			var diffuse:BitmapTextureResource = new BitmapTextureResource(texture);
 			diffuse.upload(context3D);
-			var injectMaterial:TextureZClipMaterial =  new TextureZClipMaterial(diffuse);
+			sk.geometry.calculateNormals();
+			/*
+			
+			var standard:StandardTerrainMaterial = new StandardTerrainMaterial(diffuse, getDummyNormalResource());
+			standard.normalMapSpace = NormalMapSpace.OBJECT;
+			standard.glossiness = 0;
+			standard.specularPower = 0;
+			sk.geometry.calculateTangents(0);
+			*/
+			var textureMat:VertexLightTextureMaterial = new VertexLightTextureMaterial(diffuse);
+			
+			var injectMaterial:Material =  textureMat;
 			sk.setMaterialToAllSurfaces(injectMaterial);
-		
+			
+			
+	
 		
 			arenaSpawner.setupSkin(sk,raceName );
 			sk.geometry.upload(context3D);

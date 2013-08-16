@@ -41,9 +41,9 @@ package
 		
 		
 		public static const RACE_SAMNIAN:String = "samnian";
-		public static const RACE_DOMOCHAI:String = "dimochai";
-		public static const RACE_FLAMMITE:String = "flammite";
-		public static const RACE_SLAVUS:String = "slavus";
+		//public static const RACE_DOMOCHAI:String = "dimochai";
+		//public static const RACE_FLAMMITE:String = "flammite";
+		//public static const RACE_SLAVUS:String = "slavus";
 		
 		public var currentPlayer:Object3D;
 		public var currentPlayerSkin:Skin;
@@ -106,16 +106,24 @@ package
 			return m;
 		}
 		
+		public function getSkin(race:String, clone:Boolean=true):Skin {
+
+			var skProto:Skin = skinDict[race];
+			var sk:Skin = clone ? skProto.clone() as Skin : skProto;
+			return sk;
+		}
+		
 		public function addCrossStage(context3D:Context3D, pos:Pos=null, rot:Rot=null):void {
 						
 			addRenderEntity( upload( new Box(10, 900, 10, 1, 1, 1, false, new FillMaterial(0xFF0000) ),  context3D), pos || new Pos(), rot || new Rot() );
 			addRenderEntity( upload( new Box(900, 10, 10, 1, 1, 1, false, new FillMaterial(0x00FF00) ),  context3D), pos || new Pos(), rot || new Rot() );
 		}
 		
-		 public function addGladiator(race:String, playerStage:IEventDispatcher=null):Entity {
-			var ent:Entity = getGladiatorBase();
+		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0 ):Entity {
+			var ent:Entity = getGladiatorBase(x,y,z);
 			var skProto:Skin = skinDict[race];
 			var sk:Skin = skProto.clone() as Skin;
+			
 			
 			var obj:Object3D;
 			

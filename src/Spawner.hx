@@ -27,10 +27,10 @@ class Spawner
 		this.engine = engine;	
 	}
 
-	public function getGladiatorBase():Entity {
+	public function getGladiatorBase(x:Float = 0, y:Float = 0, z:Float = 0, rx:Float = 0, ry:Float = 0, rz:Float=0 ):Entity {
 		var ent:Entity = new Entity();
 		
-		ent.add( new Pos(0,0,0) ).add( new Rot() ).add( new Vel() );
+		ent.add( new Pos(x,y,z) ).add( new Rot(rx,ry,rz) ).add( new Vel() );
 		
 		ent.add( new SurfaceMovement() ).add( new DirectionVectors() );
 		

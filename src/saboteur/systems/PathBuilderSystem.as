@@ -113,8 +113,8 @@ package saboteur.systems
 		{
 			if (node === nodeList.head) validateVis();
 			
-			camera.debug = true;
-			camera.addToDebug( Debug.BOUNDS, node.builder.blueprint);
+			//camera.debug = true;
+			//camera.addToDebug( Debug.BOUNDS, node.builder.blueprint);
 			//camera.addToDebug( Debug.BOUNDS, node.builder.genesis);
 		}
 		
@@ -133,6 +133,8 @@ package saboteur.systems
 			var eastOffset:int;
 			var southOffset:int;
 
+					
+					
 				var ge:int;
 				var gs:int;
 				
@@ -140,6 +142,9 @@ package saboteur.systems
 					origin.x = fromPos.x - builder.startScene._x;
 					origin.y = fromPos.y - builder.startScene._y;
 					origin.z = fromPos.z - builder.startScene._z;
+					origin.x /= builder.startScene._scaleX;
+					origin.y /= builder.startScene._scaleY;
+					origin.z /= builder.startScene._scaleZ;
 					
 					eastVal = origin.x * cardinal.east.x + origin.y * cardinal.east.y + origin.z * cardinal.east.z ;
 					southVal = origin.x * cardinal.south.x + origin.y * cardinal.south.y + origin.z * cardinal.south.z ;
@@ -159,6 +164,9 @@ package saboteur.systems
 					origin.x = camera._x - builder.startScene._x;
 					origin.y = camera._y - builder.startScene._y;
 					origin.z = camera._z - builder.startScene._z;
+					origin.x /= builder.startScene._scaleX;
+					origin.y /= builder.startScene._scaleY;
+					origin.z /= builder.startScene._scaleZ;
 					
 					eastVal = origin.x * cardinal.east.x + origin.y * cardinal.east.y + origin.z * cardinal.east.z;
 					southVal = origin.x * cardinal.south.x + origin.y * cardinal.south.y + origin.z * cardinal.south.z;
@@ -170,8 +178,7 @@ package saboteur.systems
 					throw new Error("Need at least fromPos or camera to continue!");
 				}
 				
-		
-				
+	
 				if (!builder.isOccupiedAt(ge, gs)) {  // where builder is located (gridEast2/gridSouth2)
 					builder.setBlueprintVis(false);
 					return;

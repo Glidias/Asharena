@@ -15,6 +15,7 @@ class SystemPriorities
     public static inline var resolveCollisions:Int = 8;
     public static inline var stateMachines:Int = 9;
     public static inline var animate:Int = 10;
-    public static inline var render:Int = 11;
-	 public static inline var postRender:Int = 12;
+	 public static inline var preRender:Int = 11;
+    public static inline var render:Int = 12;
+	 public static inline var postRender:Int = 13;
 }

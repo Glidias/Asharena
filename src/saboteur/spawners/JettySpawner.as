@@ -7,6 +7,7 @@ package saboteur.spawners
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.StandardMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
+	import alternativa.engine3d.materials.VertexLightTextureMaterial;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.primitives.Plane;
@@ -14,6 +15,8 @@ package saboteur.spawners
 	import alternativa.engine3d.utils.Object3DUtils;
 	import ash.core.Engine;
 	import ash.core.Entity;
+	import components.DirectionVectors;
+	import components.Pos;
 	import flash.display.BitmapData;
 	import flash.display.Sprite;
 	import flash.display3D.Context3D;
@@ -32,9 +35,10 @@ package saboteur.spawners
 	{
 
 		public var editorMat:FillMaterial = new FillMaterial(0, .1);
+		static public const SPAWN_SCALE:Number = 17;
 		private var genesis:Object3D;
 		private var blueprint:Object3D;
-		private var injectMaterial:StandardMaterial;
+		private var injectMaterial:VertexLightTextureMaterial;
 		private var collision:Object3D;
 		private var _floor:Plane;
 
@@ -60,13 +64,13 @@ package saboteur.spawners
 			var diffuse:BitmapTextureResource = new BitmapTextureResource(new JettyAssets.$_TEXTURE().bitmapData);
 			
 		
-			var normalResource:BitmapTextureResource = new BitmapTextureResource(    new BitmapData(16, 16, false, 0x8080FF) );
-			injectMaterial = new StandardMaterial(diffuse, normalResource);
-			injectMaterial.glossiness = 0;
-			injectMaterial.specularPower = 0;
+		//	var normalResource:BitmapTextureResource = new BitmapTextureResource(    new BitmapData(16, 16, false, 0x8080FF) );
+			injectMaterial = new VertexLightTextureMaterial(diffuse);
+			//injectMaterial.glossiness = 0;
+		//	injectMaterial.specularPower = 0;
             
             
-			var previewMaterial:StandardMaterial = injectMaterial.clone() as StandardMaterial;
+			var previewMaterial:TextureMaterial = injectMaterial.clone() as TextureMaterial;
 			previewMaterial.alphaThreshold = .99;
 			previewMaterial.alpha = .4;
 
@@ -106,14 +110,17 @@ package saboteur.spawners
 		}
 		
 	
-		public function spawn(engine:Engine, scene:Object3D):Entity {
+		public function spawn(engine:Engine, scene:Object3D, pos:Pos=null, rayDir:DirectionVectors=null):Entity {
 			
 			var root:Object3D = scene.addChild(new Object3D());
+			root._scaleX = root._scaleY = root._scaleZ =  SPAWN_SCALE;
+			
 			var gameBuilder:GameBuilder3D = new GameBuilder3D(root, genesis, blueprint, collision, injectMaterial, editorMat, _floor);
 			var cardinal:CardinalVectors = new CardinalVectors();
 			var entity:Entity = new Entity().add(cardinal).add(gameBuilder);
-		
-		engine.addEntity(entity);
+			if (pos != null) entity.add(pos, Pos);
+			if (rayDir != null) entity.add(rayDir, DirectionVectors);
+			engine.addEntity(entity);
 			return entity;
 		}
 		
