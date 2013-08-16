@@ -74,7 +74,7 @@ package
 
 			var spawnerBundle:GladiatorBundle = new GladiatorBundle(arenaSpawner);
 			arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage).add(keyPoll);
-			_view.inject(arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Pos) as Pos,  arenaSpawner.currentPlayerEntity.get(Rot) as Rot, arenaSpawner.currentPlayerSkin);
+			_view.inject(arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Pos) as Pos,  arenaSpawner.currentPlayerEntity.get(Rot) as Rot, arenaSpawner.currentPlayerSkin, arenaSpawner.currentPlayerSkin.getSurface(0).material as TextureZClipMaterial);
 			
 			startGame();
 		}

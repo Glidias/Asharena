@@ -65,6 +65,7 @@ package systems.collisions;
 		private var numI:Int;
 		
 		private var radius:Float;
+		private var rad:Float;
 		private var src:Vector3D;
 		private var displ:Vector3D;
 		private var dest:Vector3D;
@@ -217,104 +218,81 @@ package systems.collisions;
 			cornerD.x = -rad;
 			cornerD.y = rad;
 			cornerD.z = -rad;
+			this.rad = rad;
 
 		}
 		
-		
-		/*
+		#if !triOnly
+		///*
 		private function loopGeometries():Void {   // Consider: If all geometries are NOT provided dynamically, than no need to use matrices!! precalculate normals, indices, and vertices and merely assign!
-			var rad:Float = radius + displ.length;
-			numI = 0;
-			
-			numFaces = 0;
+			var rad:Float = this.rad;
+			numFaces = 0;  // changed naming
 			var indicesLength:Int = 0;
 			var normalsLength:Int = 0;
 			
 			// Loop geometries
 			var j:Int;
-		
+			var mapOffset:Int = 0;
 			var verticesLength:Int = 0;
-			var geometriesLength:Int = numGeometries;
-	
-			var transform:Transform3D;
-			var vx:Float;
-			var vy:Float;
-			var vz:Float;
-			var oa;
-			var numVertices:Int;
-			var geometryIndicesLength:Int;
-			var verts:Vector<Float>;
-			var geometry:Geometry;
+			var geometriesLength:Int = numGeometries;  // changed
 			var nSides:Int;
-			var geometryIndices:Vector<UInt>;
 			
-			if (geometriesLength > 400) {
-				trace("Too much geometries!"+geometriesLength);
-				return;
-			}
 			
 			for (i in 0...geometriesLength) {
-			
-				geometry = geometries[i];	
-				geometryIndices = geometry.indices;
-				 geometryIndicesLength = geometry.numIndices;
-				 
-				 transform = transforms[i];
-				 
-					verts = geometry.vertices;
-					numVertices = geometry.numVertices;
-					for (j in 0...numVertices) {
-						vx = verts[j * 3];
-						vy= verts[j * 3 + 1];
-						vz = verts[j * 3 + 2];
-						vertices[verticesLength] = transform.a*vx + transform.b*vy + transform.c*vz + transform.d; verticesLength++;
-						vertices[verticesLength] = transform.e*vx + transform.f*vy + transform.g*vz + transform.h; verticesLength++;
-						vertices[verticesLength] = transform.i*vx + transform.j*vy + transform.k*vz + transform.l; verticesLength++;
-					}
+				var geometry:Geometry = geometries[i];
+				var transform:Transform3D = transforms[i];
+				var geomNumVertices:Int = geometry.numVertices;  // changed
+				
+				var geometryIndicesLength:Int = geometry.numIndices; // changed
+				var geomVertices:Vector<Float> = geometry.vertices; // new
+				if (geomNumVertices == 0 || geometryIndicesLength == 0) continue;
+				// Transform vertices
+				j = 0;
+				var geomVertLen:Int = geomNumVertices * 3;
+				while (j < geomVertLen) {  // changed
+					var vx:Float = geomVertices[j];
+					var vy:Float = geomVertices[j+1];
+					var vz:Float = geomVertices[j+2];
+					vertices[verticesLength] = transform.a*vx + transform.b*vy + transform.c*vz + transform.d; verticesLength++;
+					vertices[verticesLength] = transform.e*vx + transform.f*vy + transform.g*vz + transform.h; verticesLength++;
+					vertices[verticesLength] = transform.i * vx + transform.j * vy + transform.k * vz + transform.l; verticesLength++;
+					j += 3;
+				}
 					
 					
 				// Loop faces  
+				var geometryIndices:Vector<UInt> = geometry.indices;
 				j = 0;
-				var k:Int = 0;
-				//var maxIterations:Int = 400;
-				//var count:Int = 0;
-			
-			//	trace("Total processed vertices"+verticesLength);
+				while (j < geometryIndicesLength) {   
+					var k:Int = j;
 				
-				while (k < geometryIndicesLength) {   
-					j = k;
-					var a:Int = geometryIndices[j]; j++;
-					nSides = ((a & A3DConst._NMASK_) >> A3DConst._NSHIFT);
-					nSides = nSides != 0 ? nSides : 3;
-
-				
+					var oa:UInt = geometryIndices[k] + mapOffset; k++;  // get header
 					
-					k += nSides;
-
-					oa = a;  // temp fix
+					nSides = (( oa & A3DConst._NMASK_) >> A3DConst._NSHIFT);
+					
+					nSides = nSides != 0 ? nSides : 3;	
+					j += nSides;
+					
+					var a:UInt = oa;
+				
 					a &= A3DConst._FMASK_;
 					
-					var index:Int = a * 3;
-					
+					var index:Int = a*3;
 					var ax:Float = vertices[index]; index++;
 					var ay:Float = vertices[index]; index++;
 					var az:Float = vertices[index];
-					var b:Int = geometryIndices[j]; j++;
+					var b:UInt = geometryIndices[k] + mapOffset; k++;
 					index = b*3;
 					var bx:Float = vertices[index]; index++;
 					var by:Float = vertices[index]; index++;
 					var bz:Float = vertices[index];
-					var c:Int = geometryIndices[j]; j++;
+					var c:UInt = geometryIndices[k]+mapOffset; k++;
 					index = c*3;
 					var cx:Float = vertices[index]; index++;
 					var cy:Float = vertices[index]; index++;
 					var cz:Float = vertices[index];
-			
-	
-					
-					// Exclusion by bound   // TODO: does n-gons allow for exclusion by bound without looping?  Else remove this test
-					
-					
+
+					// Exclusion by bound   // TODO: does n-gons allow for exclusion by bound without looping?  Else remove this test	
 					if (nSides == 3) {
 					
 						if (ax > rad && bx > rad && cx > rad || ax < -rad && bx < -rad && cx < -rad) continue;
@@ -331,7 +309,6 @@ package systems.collisions;
 					var normalX:Float = acz*aby - acy*abz;
 					var normalY:Float = acx*abz - acz*abx;
 					var normalZ:Float = acy*abx - acx*aby;
-
 					var len:Float = normalX*normalX + normalY*normalY + normalZ*normalZ;
 					if (len < 0.001) continue;  
 					len = 1/Math.sqrt(len);
@@ -340,7 +317,7 @@ package systems.collisions;
 					normalZ *= len;
 					var offset:Float = ax*normalX + ay*normalY + az*normalZ;
 					if (offset > rad || offset < -rad) continue;
-					indices[indicesLength] = oa; indicesLength++;
+					indices[indicesLength] = oa; indicesLength++;  
 					indices[indicesLength] = b; indicesLength++;
 					indices[indicesLength] = c; indicesLength++;
 					normals[normalsLength] = normalX; normalsLength++;
@@ -348,26 +325,29 @@ package systems.collisions;
 					normals[normalsLength] = normalZ; normalsLength++;
 					normals[normalsLength] = offset; normalsLength++;
 					for (n in 3...nSides) {  // add more indices if required
-						
-						c =  geometryIndices[j]; j++;
+						c =  geometryIndices[k]; k++;
 						indices[indicesLength] = c; indicesLength++;
 					}
 					numFaces++;
 				}
-				
+				// Offset by nomber of vertices
+				mapOffset += geomNumVertices;
 				
 			
 			}
 			
-			numGeometries = 0;
-				
+			numGeometries = 0;	
 				numI = indicesLength;
 		
 		}
-		*/
+		//*/
+		#end
+		
 		
 		///*
+		#if triOnly
 		private function loopGeometries():Void {  // ORIGINAL
+			var rad:Float = this.rad;
 			numFaces = 0;  // changed naming
 			var indicesLength:Int = 0;
 			var normalsLength:Int = 0;
@@ -418,9 +398,9 @@ package systems.collisions;
 					var cy:Float = vertices[index]; index++;
 					var cz:Float = vertices[index];
 					// Exclusion by bound
-					if (ax > radius && bx > radius && cx > radius || ax < -radius && bx < -radius && cx < -radius) continue;
-					if (ay > radius && by > radius && cy > radius || ay < -radius && by < -radius && cy < -radius) continue;
-					if (az > radius && bz > radius && cz > radius || az < -radius && bz < -radius && cz < -radius) continue;
+					if (ax > rad && bx > rad && cx > rad || ax < -rad && bx < -rad && cx < -rad) continue;
+					if (ay > rad && by > rad && cy > rad || ay < -rad && by < -rad && cy < -rad) continue;
+					if (az > rad && bz > rad && cz > rad || az < -rad && bz < -rad && cz < -rad) continue;
 					// The normal
 					var abx:Float = bx - ax;
 					var aby:Float = by - ay;
@@ -438,7 +418,7 @@ package systems.collisions;
 					normalY *= len;
 					normalZ *= len;
 					var offset:Float = ax*normalX + ay*normalY + az*normalZ;
-					if (offset > radius || offset < -radius) continue;
+					if (offset > rad || offset < -rad) continue;
 					indices[indicesLength] = a; indicesLength++;
 					indices[indicesLength] = b; indicesLength++;
 					indices[indicesLength] = c; indicesLength++;
@@ -457,7 +437,9 @@ package systems.collisions;
 				numI = indicesLength;
 				
 		}
+		#end
 //*/
+	
 			
 			
 
@@ -663,7 +645,8 @@ return a != a;
 		}
 		//*/
 		
-		/*
+		///*
+		#if (!triOnly)
 		private function checkCollision():Float {
 			var minTime:Float = 1;
 			var displacementLength:Float = displ.length;
@@ -878,9 +861,10 @@ return a != a;
 		
 			return minTime;
 		}
-		*/
+		#end
+		//*/
 		
-		
+		#if (triOnly)
 		private function checkCollision():Float {  // ORIGINAL
 			var t:Float;
 			var minTime:Float = 1;
@@ -1061,7 +1045,7 @@ return a != a;
 			}
 			return minTime;
 		}
-		
+		#end
 		
 		
 	}
