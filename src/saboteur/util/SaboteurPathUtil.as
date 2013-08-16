@@ -261,7 +261,7 @@ package saboteur.util
                     return arcValue === (ARC_VERTICAL|ARC_HORIZONTAL)  || ((arcValue & ARC_SOUTH_EAST)!=0 && bottom90Deg); 
                 //*/
                 
-                default: return false;
+                default: return true;
             }
             //    */
             ///return false;

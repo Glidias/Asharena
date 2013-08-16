@@ -29,7 +29,7 @@ package alternativa.a3d.collisions
 		alternativa3d var collidable:ITCollidable;
 		
 		alternativa3d var boundBox:BoundBox;  
-		//alternativa3d var object:Object3D;
+		alternativa3d var object:Object3D;
 		
 		
 		public function CollisionBoundNode() 
@@ -42,8 +42,20 @@ package alternativa.a3d.collisions
 		
 		
 		// -- Alternativa3D-specific Object3D setups
+		public function validate(root:Object3D):void {
+			if ( root != object) throw new Error("SHould not be!!!:" + [object, root]);
+			var r:Object3D = root.childrenList;
+			for (var c:CollisionBoundNode = childrenList; c != null; c = c.next) {
+				if (c.object != r) throw new Error("WRONG!:"+[c.object,r]);
+				
+				if (c.object.childrenList != r.childrenList) throw new Error("WROG22N"+[c.object.childrenList,r.childrenList] );
+				if (c.childrenList) c.childrenList.validate(r.childrenList);
+				r = r.next;
+			}
+		}
 		
 		alternativa3d function setup(object:Object3D, collidable:ITCollidable):void {
+			this.object = object;
 			boundBox = object.boundBox;
 			if (object.transformChanged) {
 				object.composeTransforms();
@@ -84,14 +96,15 @@ package alternativa.a3d.collisions
 			var startChild:Object3D = obj.childrenList;
 			while (startChild!=null && !startChild.visible) {
 				startChild = startChild.next;
+				throw new Error("A");
 			}
 			if (startChild == null) return;
 			
 			childrenList  = new CollisionBoundNode();
-			var classe:Class = Object(obj).constructor;
+			var classe:Class = Object(startChild).constructor;
 
-			childrenList.setup( startChild, factoryMethodHash[classe] ? factoryMethodHash[classe](obj) : null);
-		
+			childrenList.setup( startChild, factoryMethodHash[classe] ? factoryMethodHash[classe](startChild) : startChild is Mesh ? factoryMethodHash[Mesh](startChild) :  null);
+			
 				
 			if (startChild.childrenList) childrenList.setupChildren(startChild, factoryMethodHash);
 		
@@ -102,10 +115,13 @@ package alternativa.a3d.collisions
 			
 			
 			for (var c:Object3D = startChild; c != null; c = c.next) {
-				if (!c.visible) continue;
+				if (!c.visible) {
+					throw new Error("A");
+					continue;
+				}
 				var me:CollisionBoundNode = new CollisionBoundNode();
 				classe = Object(c).constructor;
-				me.setup(c, factoryMethodHash[classe] ? factoryMethodHash[classe](c) : null);	
+				me.setup(c, factoryMethodHash[classe] ? factoryMethodHash[classe](c) : c is Mesh ? factoryMethodHash[Mesh](c) : null);	
 				if (c.childrenList) me.setupChildren(c, factoryMethodHash);
 				tail.next = me;
 				tail = me;
@@ -119,8 +135,9 @@ package alternativa.a3d.collisions
 			//if (!object.visible) return;
 			
 			var intersects:Boolean = true;
+			globalToLocalTransform.combine(inverseTransform, collider.matrix);
 			if (boundBox != null) {
-				globalToLocalTransform.combine(inverseTransform, collider.matrix);
+				
 				collider.calculateSphere(globalToLocalTransform);
 				intersects = boundBox.checkSphere(collider.sphere);  
 			}
@@ -151,6 +168,7 @@ package alternativa.a3d.collisions
 					// Calculating matrix for converting from local coordinates to callider coordinates
 					child.localToGlobalTransform.combine(localToGlobalTransform, child.transform);
 					if (child.collidable) child.collidable.collectGeometryAndTransforms(collider, child.localToGlobalTransform);
+					
 				}
 				// Check for children
 				if (child.childrenList != null) child.visitChildren(collider);		

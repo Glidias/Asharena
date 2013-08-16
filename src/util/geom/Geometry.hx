@@ -10,7 +10,6 @@ package util.geom;
  import systems.collisions.IECollidable;
  import systems.collisions.ITCollidable;
  import util.TypeDefs;
- import haxe.io.Error;
  
 class Geometry implements IECollidable, implements ITCollidable
 {

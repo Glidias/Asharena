@@ -88,7 +88,7 @@ package saboteur.spawners
 			collision = rootCont.getChildByName("collision");
 			if (collision == null) throw new Error("Could not find collision!");
 
-		
+			uploadResources(collision.getResources(true));
 			uploadResources(rootCont.getResources(true, null));
 			
 			 
@@ -112,9 +112,7 @@ package saboteur.spawners
 			var gameBuilder:GameBuilder3D = new GameBuilder3D(root, genesis, blueprint, collision, injectMaterial, editorMat, _floor);
 			var cardinal:CardinalVectors = new CardinalVectors();
 			var entity:Entity = new Entity().add(cardinal).add(gameBuilder);
-		blueprint.visible = true;
-		blueprint.x = 40;
-		blueprint.y = 30;
+		
 		engine.addEntity(entity);
 			return entity;
 		}

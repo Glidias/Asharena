@@ -15,6 +15,8 @@ package saboteur.util
 	import alternativa.engine3d.objects.MeshSetClone;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.ExternalTextureResource;
+	import flash.geom.Matrix3D;
+	import flash.geom.Vector3D;
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
 	import alternativa.engine3d.alternativa3d;
@@ -78,7 +80,9 @@ package saboteur.util
 			
 			collisionScene = new Object3D();
 			collisionScene.matrix = startScene.matrix;
+			collisionScene.composeTransforms();
 			collisionScene.boundBox = null;
+			
 			collisionGraph = CollisionUtil.getCollisionGraph(collisionScene);
 			
 			
@@ -132,7 +136,7 @@ package saboteur.util
 			
 			
 			pathUtil.buildAt(buildDict, gridEast, gridSouth, _value  ); 
-			buildCollidablesAt( gridEast, gridSouth, collision );	
+			buildCollidablesAt( gridEast, gridSouth, collision, _value );	
 			//buildAt(1, 1, 63);
 		}
 		
@@ -149,16 +153,35 @@ package saboteur.util
 					collisionBuilding._x = newBuilding._x;
 					collisionBuilding._y = newBuilding._y;
 					collisionBuilding.transformChanged = true;
-					visJetty3DByValue(collisionBuilding, value);
+					visJetty3DByValueRecursive(collisionBuilding, value);
 					collisionGraph.addChild( CollisionUtil.getCollisionGraph(collisionBuilding) );
 					//collisionScene.addChild(collisionBuilding);
 					
 		}
 		
-		private function buildCollidablesAt(gridEast:int, gridSouth:int, refer:Object3D):void {
+		private function buildCollidablesAt(gridEast:int, gridSouth:int, refer:Object3D, value:uint):void {
+		
+			visJetty3DByValueRecursive(refer, value);
+			//throw new Error(numMeshes);
+			//throw new Error( refer.getChildAt(0).getChildAt(12).name );
+			
+		//	refer.addChild(   refer.getChildAt(0).getChildByName("side0") );
+			var child:Object3D =refer.addChild(   refer.getChildAt(0).getChildByName("side0").getChildByName("base") );
+
+		//	var child:Object3D = refer.addChild(   refer.getChildAt(0).getChildByName("side0") );
+			child.matrix = new Matrix3D();
+		refer.matrix = new Matrix3D();
+	//refer.addChild(   refer.getChildAt(0).getChildAt(13) );
+		
+			
+			refer.removeChildAt(0);
+			
 			cardinal.transform(cardinal.east, refer, cardinal.getDist(cardinal.east, _gridSquareBound)* gridEast );
 			cardinal.transform(cardinal.south, refer, cardinal.getDist(cardinal.south, _gridSquareBound) * gridSouth );
 			collisionGraph.addChild( CollisionUtil.getCollisionGraph(refer) );
+			setMaterialToCont( new FillMaterial(0xFF0000, 1), refer.childrenList);
+			startScene.addChild(refer);
+	
 		}
 		
 			public function tryBuild():void 
@@ -215,6 +238,26 @@ package saboteur.util
 
 				for (var c:Object3D = obj.childrenList; c != null; c = c.next) {
 				  c.visible = pathUtil.visJetty(value, c.name);
+				}
+			}
+			private var numMeshes:int = 0;
+			private function visJetty3DByValueRecursive(obj:Object3D, value:uint):void {
+			
+				if (obj is Mesh) { numMeshes++;
+				(obj as Mesh).setMaterialToAllSurfaces(new FillMaterial(0xFF0000));
+				obj.boundBox = null;
+				}
+					obj.visible = true;
+				//obj.visible = pathUtil.visJetty(value, obj.name);
+				for (var c:Object3D = obj.childrenList; c != null; c = c.next) {
+					if (c is Mesh) {
+						(c as Mesh).setMaterialToAllSurfaces(new FillMaterial(0xFF0000));
+						numMeshes++;obj.boundBox = null;
+					}
+					if (c.childrenList != null) visJetty3DByValueRecursive(c, value);
+					c.visible = true;
+				//	c.visible = pathUtil.visJetty(value, c.name);
+				 
 				}
 			}
 			

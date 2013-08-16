@@ -14,7 +14,6 @@ package systems.collisions;
 
 
 	import components.Transform3D;
-	import flash.errors.Error;
 	
 	import util.geom.Geometry;
 	import util.TypeDefs;
@@ -222,8 +221,8 @@ package systems.collisions;
 		}
 		
 		
-		
-		private function loopGeometries():Void {   // TODO: If all geometries are NOT provided dynamically, than no need to use matrices!! precalculate normals, indices, and vertices and merely assign!
+		/*
+		private function loopGeometries():Void {   // Consider: If all geometries are NOT provided dynamically, than no need to use matrices!! precalculate normals, indices, and vertices and merely assign!
 			var rad:Float = radius + displ.length;
 			numI = 0;
 			
@@ -287,19 +286,8 @@ package systems.collisions;
 					var a:Int = geometryIndices[j]; j++;
 					nSides = ((a & A3DConst._NMASK_) >> A3DConst._NSHIFT);
 					nSides = nSides != 0 ? nSides : 3;
-					/*
-					if (nSides != 4) {
-						trace("Invalid nsides:" + nSides);
-						nSides = 4;
-						return;
-					}
-			
-					
-					if (count++ > maxIterations) {
-						trace("BREAK OTU!");
-						return;
-					}
-					*/
+
+				
 					
 					k += nSides;
 
@@ -328,7 +316,7 @@ package systems.collisions;
 					
 					
 					if (nSides == 3) {
-						
+					
 						if (ax > rad && bx > rad && cx > rad || ax < -rad && bx < -rad && cx < -rad) continue;
 						if (ay > rad && by > rad && cy > rad || ay < -rad && by < -rad && cy < -rad) continue;
 						if (az > rad && bz > rad && cz > rad || az < -rad && bz < -rad && cz < -rad) continue;
@@ -374,9 +362,105 @@ package systems.collisions;
 			numGeometries = 0;
 				
 				numI = indicesLength;
-				
-			
+		
 		}
+		*/
+		
+		///*
+		private function loopGeometries():Void {  // ORIGINAL
+			numFaces = 0;  // changed naming
+			var indicesLength:Int = 0;
+			var normalsLength:Int = 0;
+			
+			// Loop geometries
+			var j:Int;
+			var mapOffset:Int = 0;
+			var verticesLength:Int = 0;
+			var geometriesLength:Int = numGeometries;  // changed
+			
+			for (i in 0...geometriesLength) {
+				var geometry:Geometry = geometries[i];
+				var transform:Transform3D = transforms[i];
+				var geomNumVertices:Int = geometry.numVertices;  // changed
+				var geometryIndicesLength:Int = geometry.numIndices; // changed
+				var geomVertices:Vector<Float> = geometry.vertices; // new
+				if (geomNumVertices == 0 || geometryIndicesLength == 0) continue;
+				// Transform vertices
+				j = 0;
+				var geomVertLen:Int = geomNumVertices * 3;
+				while (j < geomVertLen) {  // changed
+					var vx:Float = geomVertices[j];
+					var vy:Float = geomVertices[j+1];
+					var vz:Float = geomVertices[j+2];
+					vertices[verticesLength] = transform.a*vx + transform.b*vy + transform.c*vz + transform.d; verticesLength++;
+					vertices[verticesLength] = transform.e*vx + transform.f*vy + transform.g*vz + transform.h; verticesLength++;
+					vertices[verticesLength] = transform.i * vx + transform.j * vy + transform.k * vz + transform.l; verticesLength++;
+					j += 3;
+				}
+			
+				// Loop triangles
+				var geometryIndices:Vector<UInt> = geometry.indices;
+				j  = 0;
+				while (j < geometryIndicesLength) {
+					var a:Int = geometryIndices[j] + mapOffset; j++;
+					var index:Int = a*3;
+					var ax:Float = vertices[index]; index++;
+					var ay:Float = vertices[index]; index++;
+					var az:Float = vertices[index];
+					var b:Int = geometryIndices[j] + mapOffset; j++;
+					index = b*3;
+					var bx:Float = vertices[index]; index++;
+					var by:Float = vertices[index]; index++;
+					var bz:Float = vertices[index];
+					var c:Int = geometryIndices[j] + mapOffset; j++;
+					index = c*3;
+					var cx:Float = vertices[index]; index++;
+					var cy:Float = vertices[index]; index++;
+					var cz:Float = vertices[index];
+					// Exclusion by bound
+					if (ax > radius && bx > radius && cx > radius || ax < -radius && bx < -radius && cx < -radius) continue;
+					if (ay > radius && by > radius && cy > radius || ay < -radius && by < -radius && cy < -radius) continue;
+					if (az > radius && bz > radius && cz > radius || az < -radius && bz < -radius && cz < -radius) continue;
+					// The normal
+					var abx:Float = bx - ax;
+					var aby:Float = by - ay;
+					var abz:Float = bz - az;
+					var acx:Float = cx - ax;
+					var acy:Float = cy - ay;
+					var acz:Float = cz - az;
+					var normalX:Float = acz*aby - acy*abz;
+					var normalY:Float = acx*abz - acz*abx;
+					var normalZ:Float = acy*abx - acx*aby;
+					var len:Float = normalX*normalX + normalY*normalY + normalZ*normalZ;
+					if (len < 0.001) continue;
+					len = 1/Math.sqrt(len);
+					normalX *= len;
+					normalY *= len;
+					normalZ *= len;
+					var offset:Float = ax*normalX + ay*normalY + az*normalZ;
+					if (offset > radius || offset < -radius) continue;
+					indices[indicesLength] = a; indicesLength++;
+					indices[indicesLength] = b; indicesLength++;
+					indices[indicesLength] = c; indicesLength++;
+					normals[normalsLength] = normalX; normalsLength++;
+					normals[normalsLength] = normalY; normalsLength++;
+					normals[normalsLength] = normalZ; normalsLength++;
+					normals[normalsLength] = offset; normalsLength++;
+					numFaces++;
+				}
+				// Offset by nomber of vertices
+				mapOffset += geomNumVertices;
+				
+			}
+		
+			numGeometries = 0;
+				numI = indicesLength;
+				
+		}
+//*/
+			
+			
+
 		
 		
 		public inline function addGeometry(geometry:Geometry, transform:Transform3D):Void {
@@ -412,7 +496,8 @@ package systems.collisions;
 			var t:Float;
 			if (numFaces > 0) {
 			//	var limit:Int = 50;  // Max tries before timing out
-				for (i in 0...50) {
+			var i:Int = 0;
+				while (i++ < 50) {
 					if ( (t = checkCollision()) < 1 ) {
 						
 						
@@ -490,8 +575,9 @@ package systems.collisions;
 			} else {
 				result = new Vector3D(source.x + displacement.x, source.y + displacement.y, source.z + displacement.z);
 			}
-			return isNaN2(result.x) ? source.clone() : result;
-			//return result;
+			
+			//return isNaN2(result.x) ? source.clone() : result;
+			return result;
 		}
 		
 		private static inline function isNaN2(a:Float):Bool {
@@ -577,6 +663,7 @@ return a != a;
 		}
 		//*/
 		
+		/*
 		private function checkCollision():Float {
 			var minTime:Float = 1;
 			var displacementLength:Float = displ.length;
@@ -605,26 +692,14 @@ return a != a;
 			while (k < indicesLength) {
 				// Points
 				locI = i = k;
-				/*
-				if (count++ >= maxIterations) {
-					
-					trace("Brreak out!");
-					return false;
-				}
-				*/
+
 				
 				var index:Int = indices[i]; i++;
 				nSides = ((index & A3DConst._NMASK_) >> A3DConst._NSHIFT); 	// get number of n-sides from header
 				//if (nSides == 0) throw "A";
 				nSides = nSides != 0  ? nSides : 3;   // handle default zero case to 3 sides
 				
-				/*
-				if (nSides != 4) {
-					trace("Invalid nsides:" + nSides);
-					nSides = 4;
-					return false;
-				}
-				*/
+		
 			
 				k += nSides;
 				
@@ -803,7 +878,189 @@ return a != a;
 		
 			return minTime;
 		}
+		*/
 		
+		
+		private function checkCollision():Float {  // ORIGINAL
+			var t:Float;
+			var minTime:Float = 1;
+			var displacementLength:Float = displ.length;
+			// Loop triangles
+			var indicesLength:Int = numFaces * 3;
+			var j:Int = 0;
+			var i:Int = 0;
+			while ( i < indicesLength) {
+				// Points
+				var index:Int = indices[i]*3; i++;
+				var ax:Float = vertices[index]; index++;
+				var ay:Float = vertices[index]; index++;
+				var az:Float = vertices[index];
+				index = indices[i]*3; i++;
+				var bx:Float = vertices[index]; index++;
+				var by:Float = vertices[index]; index++;
+				var bz:Float = vertices[index];
+				index = indices[i]*3; i++;
+				var cx:Float = vertices[index]; index++;
+				var cy:Float = vertices[index]; index++;
+				var cz:Float = vertices[index];
+				// Normal
+				var normalX:Float = normals[j]; j++;
+				var normalY:Float = normals[j]; j++;
+				var normalZ:Float = normals[j]; j++;
+				var offset:Float = normals[j]; j++;
+				var distance:Float = src.x*normalX + src.y*normalY + src.z*normalZ - offset;
+				// The intersection of plane and sphere
+				var pointX:Float;
+				var pointY:Float;
+				var pointZ:Float;
+				if (distance < radius) {
+					pointX = src.x - normalX*distance;
+					pointY = src.y - normalY*distance;
+					pointZ = src.z - normalZ*distance;
+				} else {
+					t = (distance - radius)/(distance - dest.x*normalX - dest.y*normalY - dest.z*normalZ + offset);
+					pointX = src.x + displ.x*t - normalX*radius;
+					pointY = src.y + displ.y*t - normalY*radius;
+					pointZ = src.z + displ.z*t - normalZ*radius;
+				}
+				// Closest polygon vertex
+				var faceX:Float=0;
+				var faceY:Float=0;
+				var faceZ:Float=0;
+				var min:Float = 1e+22;
+				// Loop edges
+				var inside:Bool = true;
+				for (k in 0...3) {
+					var p1x:Float;
+					var p1y:Float;
+					var p1z:Float;
+					var p2x:Float;
+					var p2y:Float;
+					var p2z:Float;
+					if (k == 0) {
+						p1x = ax;
+						p1y = ay;
+						p1z = az;
+						p2x = bx;
+						p2y = by;
+						p2z = bz;
+					} else if (k == 1) {
+						p1x = bx;
+						p1y = by;
+						p1z = bz;
+						p2x = cx;
+						p2y = cy;
+						p2z = cz;
+					} else {
+						p1x = cx;
+						p1y = cy;
+						p1z = cz;
+						p2x = ax;
+						p2y = ay;
+						p2z = az;
+					}
+					var abx:Float = p2x - p1x;
+					var aby:Float = p2y - p1y;
+					var abz:Float = p2z - p1z;
+					var acx:Float = pointX - p1x;
+					var acy:Float = pointY - p1y;
+					var acz:Float = pointZ - p1z;
+					var crx:Float = acz*aby - acy*abz;
+					var cry:Float = acx*abz - acz*abx;
+					var crz:Float = acy*abx - acx*aby;
+					// Case of the point is outside of the polygon
+					if (crx*normalX + cry*normalY + crz*normalZ < 0) {
+						var edgeLength:Float = abx*abx + aby*aby + abz*abz;
+						var edgeDistanceSqr:Float = (crx*crx + cry*cry + crz*crz)/edgeLength;
+						if (edgeDistanceSqr < min) {
+							// Edge normalization
+							edgeLength = Math.sqrt(edgeLength);
+							abx /= edgeLength;
+							aby /= edgeLength;
+							abz /= edgeLength;
+							// Distance to intersecion of normal along theedge
+							t = abx*acx + aby*acy + abz*acz;
+							var acLen:Float;
+							if (t < 0) {
+								// Closest point is the first one
+								acLen = acx*acx + acy*acy + acz*acz;
+								if (acLen < min) {
+									min = acLen;
+									faceX = p1x;
+									faceY = p1y;
+									faceZ = p1z;
+								}
+							} else if (t > edgeLength) {
+								// Closest point is the second one
+								acx = pointX - p2x;
+								acy = pointY - p2y;
+								acz = pointZ - p2z;
+								acLen = acx*acx + acy*acy + acz*acz;
+								if (acLen < min) {
+									min = acLen;
+									faceX = p2x;
+									faceY = p2y;
+									faceZ = p2z;
+								}
+							} else {
+								// Closest point is on edge
+								min = edgeDistanceSqr;
+								faceX = p1x + abx*t;
+								faceY = p1y + aby*t;
+								faceZ = p1z + abz*t;
+							}
+						}
+						inside = false;
+					}
+				}
+				// Case of point is inside polygon
+				if (inside) {
+					faceX = pointX;
+					faceY = pointY;
+					faceZ = pointZ;
+				}
+				// Vector pointed from closest point to the center of sphere
+				var deltaX:Float = src.x - faceX;
+				var deltaY:Float = src.y - faceY; 
+				var deltaZ:Float = src.z - faceZ;
+				// If movement directed to point
+				if (deltaX*displ.x + deltaY*displ.y + deltaZ*displ.z <= 0) {
+					// reversed vector
+					var backX:Float = -displ.x/displacementLength;
+					var backY:Float = -displ.y/displacementLength;
+					var backZ:Float = -displ.z/displacementLength;
+					// Length of Vector pointed from closest point to the center of sphere
+					var deltaLength:Float = deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ;
+					// Projection Vector pointed from closest point to the center of sphere  on reversed vector
+					var projectionLength:Float = deltaX*backX + deltaY*backY + deltaZ*backZ;
+					var projectionInsideLength:Float = radius*radius - deltaLength + projectionLength*projectionLength;
+					if (projectionInsideLength > 0) {
+						// Time of the intersection
+						var time:Float = (projectionLength - Math.sqrt(projectionInsideLength))/displacementLength;
+						// Collision with closest point occurs
+						if (time < minTime) {
+							minTime = time;
+							collisionPoint.x = faceX;
+							collisionPoint.y = faceY;
+							collisionPoint.z = faceZ;
+							if (inside) {
+								collisionPlane.x = normalX;
+								collisionPlane.y = normalY;
+								collisionPlane.z = normalZ;
+								collisionPlane.w = offset;
+							} else {
+								deltaLength = Math.sqrt(deltaLength);
+								collisionPlane.x = deltaX/deltaLength;
+								collisionPlane.y = deltaY/deltaLength;
+								collisionPlane.z = deltaZ/deltaLength;
+								collisionPlane.w = collisionPoint.x*collisionPlane.x + collisionPoint.y*collisionPlane.y + collisionPoint.z*collisionPlane.z;
+							}
+						}
+					}
+				}
+			}
+			return minTime;
+		}
 		
 		
 		
