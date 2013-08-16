@@ -20,6 +20,7 @@ package saboteur.util
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
 	import alternativa.engine3d.alternativa3d;
+	import util.SpawnerBundle;
 	use namespace alternativa3d;
 
 	public class GameBuilder3D {
@@ -166,15 +167,17 @@ package saboteur.util
 			//throw new Error( refer.getChildAt(0).getChildAt(12).name );
 			
 		//	refer.addChild(   refer.getChildAt(0).getChildByName("side0") );
-			var child:Object3D =refer.addChild(   refer.getChildAt(0).getChildByName("side0").getChildByName("base") );
+		//	var child:Object3D =refer.addChild(   refer.getChildAt(0).getChildByName("side0").getChildByName("base") );
 
 		//	var child:Object3D = refer.addChild(   refer.getChildAt(0).getChildByName("side0") );
-			child.matrix = new Matrix3D();
-		refer.matrix = new Matrix3D();
+		
 	//refer.addChild(   refer.getChildAt(0).getChildAt(13) );
 		
 			
 			refer.removeChildAt(0);
+			var plane:Plane = new Plane(1000, 1000, 1, 1, true, false, null, new FillMaterial(0xFF0000));
+			plane.geometry.upload( SpawnerBundle.context3D);
+			refer.addChild(plane);
 			
 			cardinal.transform(cardinal.east, refer, cardinal.getDist(cardinal.east, _gridSquareBound)* gridEast );
 			cardinal.transform(cardinal.south, refer, cardinal.getDist(cardinal.south, _gridSquareBound) * gridSouth );
