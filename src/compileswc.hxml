@@ -1,4 +1,4 @@
--swf9 ../lib/asharena.swc
+-swf ../lib/asharena.swc
 -swf-version 10
 -main TheGame
 -D triOnly

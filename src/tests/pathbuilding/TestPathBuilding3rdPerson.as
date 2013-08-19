@@ -33,7 +33,7 @@ package tests.pathbuilding
 	public class TestPathBuilding3rdPerson extends MovieClip
 	{
 		//public var engine:Engine;
-		//public var ticker:FrameTickProvider;
+		public var ticker:FrameTickProvider;
 		public var game:TheGame;
 		static public const START_PLAYER_Z:Number = 134;
 		
@@ -43,9 +43,11 @@ package tests.pathbuilding
 		private var stepper:BuildStepper;
 		private var thirdPerson:ThirdPersonController;
 		
+
+		
 		public function TestPathBuilding3rdPerson() 
 		{
-	haxe.init(this);
+	haxe.initSwc(this);
 			game = new TheGame(stage);
 	
 			addChild( _template3D = new MainView3D() );
@@ -61,7 +63,7 @@ package tests.pathbuilding
 		{
 			SpawnerBundle.context3D = _template3D.stage3D.context3D;
 
-			game.engine.addSystem( new RenderingSystem(_template3D.scene, _template3D), SystemPriorities.render );
+			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 			
 			var pathBuilder:PathBuilderSystem;
 			game.engine.addSystem( pathBuilder = new PathBuilderSystem(_template3D.camera), SystemPriorities.postRender );
@@ -93,7 +95,7 @@ package tests.pathbuilding
 						GameSettings.SPECTATOR_SPEED_SHIFT_MULT)
 						,preRender);
 				*/		
-		thirdPerson=new ThirdPersonController(stage, _template3D.camera, new Object3D(), arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity), SystemPriorities.postRender
+		thirdPerson = new ThirdPersonController(stage, _template3D.camera, new Object3D(), arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity);
 			game.engine.addSystem( thirdPerson, SystemPriorities.postRender ) ;
 			
 			
@@ -104,8 +106,14 @@ package tests.pathbuilding
 			stepper.onStep.add(pathBuilder.setBuildIndex);
 			stepper.onDelete.add(pathBuilder.attemptDel);
 			
-			
-			game.ticker.start();
+			ticker = new FrameTickProvider(stage);
+			ticker.add(tick);
+			ticker.start();
+		}
+		
+		private function tick(time:Number):void {
+			game.engine.update(time);
+			_template3D.render();
 		}
 		
 		private function onBuildStateChange(result:int):void 

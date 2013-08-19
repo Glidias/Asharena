@@ -26,6 +26,9 @@ class PlayerAction
 	
 	public static inline var STATE_JUMP:Int = -11;
 	
+	
+
+	
 	// Sample XML if you wish to bind PlayerAction ids to strings!
 	
 	/*

@@ -1,5 +1,7 @@
 package ;
 import ash.core.Engine;
+import ash.fsm.EngineState;
+import ash.fsm.EngineStateMachine;
 import ash.tick.FrameTickProvider;
 import flash.display.Stage;
 import input.KeyPoll;
@@ -12,7 +14,6 @@ import systems.movement.PlayerSurfaceMovementSystem;
 import systems.movement.QPhysicsSystem;
 import systems.SystemPriorities;
 import util.geom.Geometry;
-import util.geom.room.RoomCreator;
 
 import systems.collisions.EllipsoidCollider;
 import systems.movement.GravitySystem;
@@ -35,6 +36,8 @@ class TheGame
 	public var stage:Stage;
 	public var ticker:FrameTickProvider;
 	public var keyPoll:KeyPoll;
+	
+	
 
 	
 	public function new(stage:Stage) 
@@ -53,12 +56,22 @@ class TheGame
 		// Create systems
 		//EllipsoidCollider;
 		//SurfaceMovementSystem;
-	
+		/*
+		var esm:EngineStateMachine = new EngineStateMachine(engine);
+		
+		colliderSystem = new EllipsoidColliderSystem( new Geometry(), 0.001);
+		var thirdPerson:EngineState = new EngineState();
+		thirdPerson.addSingleton(GravitySystem).withPriority( SystemPriorities.update);
+		thirdPerson.addInstance( new PlayerJumpSystem(keyPoll) ).withPriority( SystemPriorities.update);
+		thirdPerson.addInstance( new PlayerSurfaceMovementSystem()).withPriority( SystemPriorities.update);
+		thirdPerson.addInstance( colliderSystem).withPriority( SystemPriorities.preSolveCollisions);
+		//esm.addState("thirdperson",  );
+		*/
 		
 		engine.addSystem( new GravitySystem(), SystemPriorities.update );
 		engine.addSystem( new PlayerJumpSystem(keyPoll), SystemPriorities.update);
 		engine.addSystem( new PlayerSurfaceMovementSystem(), SystemPriorities.update );
-		engine.addSystem( colliderSystem= new EllipsoidColliderSystem( new Geometry(), 0.001), SystemPriorities.preSolveCollisions );
+		engine.addSystem(colliderSystem , SystemPriorities.preSolveCollisions );
 		engine.addSystem( new QPhysicsSystem(), SystemPriorities.solveCollisions );
 		engine.addSystem( new MovementSystem(), SystemPriorities.move );
 		//engine.addSystem( new GroundPlaneCollisionSystem(), SystemPriorities.resolveCollisions );

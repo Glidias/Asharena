@@ -3,7 +3,10 @@
  */
 package ash.signals;
 
-import ash.ObjectMap;
+#if flash
+import flash.utils.Dictionary;
+#end
+
 import ash.GenericListIterator;
 
 /**
@@ -14,9 +17,12 @@ class SignalBase<TListener>
     public var head:ListenerNode<TListener>;
     public var tail:ListenerNode<TListener>;
 
-    #if !(cpp || neko)
-    private var nodes:ObjectMap<TListener, ListenerNode<TListener>>;
+    public var numListeners(default, null):Int;
+
+    #if flash
+    private var nodes:Dictionary;
     #end
+
     private var listenerNodePool:ListenerNodePool<TListener>;
     private var toAddHead:ListenerNode<TListener>;
     private var toAddTail:ListenerNode<TListener>;
@@ -24,10 +30,11 @@ class SignalBase<TListener>
 
     public function new()
     {
-        #if !(cpp || neko)
-        nodes = new ObjectMap<TListener, ListenerNode<TListener>>();
+        #if flash
+        nodes = new Dictionary(true);
         #end
         listenerNodePool = new ListenerNodePool();
+        numListeners = 0;
     }
 
     private function startDispatch():Void
@@ -57,29 +64,38 @@ class SignalBase<TListener>
         listenerNodePool.releaseCache();
     }
 
-    private #if !(cpp || neko) inline #end function nodeExists(listener:TListener):Bool
+    private inline function getNode(listener:TListener):ListenerNode<TListener>
     {
-        #if (cpp || neko)
+        #if flash
+        return untyped nodes[listener];
+        #else
         var node:ListenerNode<TListener> = head;
         while (node != null)
         {
-            if (node.listener == listener)
-                return true;
+            if (Reflect.compareMethods(node.listener, listener))
+                break;
             node = node.next;
         }
-        node = toAddHead;
-        while (node != null)
+
+        if (node == null)
         {
-            if (node.listener == listener)
-                return true;
-            node = node.next;
+            node = toAddHead;
+            while (node != null)
+            {
+                if (Reflect.compareMethods(node.listener, listener))
+                    break;
+                node = node.next;
+            }
         }
-        return false;
-        #else
-        return nodes.exists(listener);
+
+        return node;
         #end
     }
 
+    private inline function nodeExists(listener:TListener):Bool
+    {
+        return getNode(listener) != null;
+    }
 
     public function add(listener:TListener):Void
     {
@@ -88,8 +104,8 @@ class SignalBase<TListener>
 
         var node:ListenerNode<TListener> = listenerNodePool.get();
         node.listener = listener;
-        #if !(cpp || neko)
-        nodes.set(listener, node);
+        #if flash
+        untyped nodes[listener] =  node;
         #end
         addNode(node);
     }
@@ -102,8 +118,8 @@ class SignalBase<TListener>
         var node:ListenerNode<TListener> = listenerNodePool.get();
         node.listener = listener;
         node.once = true;
-        #if !(cpp || neko)
-        nodes.set(listener, node);
+        #if flash
+        untyped nodes[listener] = node;
         #end
         addNode(node);
     }
@@ -136,46 +152,12 @@ class SignalBase<TListener>
                 tail = node;
             }
         }
+        numListeners++;
     }
 
     public function remove(listener:TListener):Void
     {
-        var node:ListenerNode<TListener>;
-
-        #if (cpp || neko)
-        var foundNode:Bool = false;
-
-        node = head;
-        while (node != null)
-        {
-            if (node.listener == listener)
-            {
-                foundNode = true;
-                break;
-            }
-            node = node.next;
-        }
-
-        if (!foundNode)
-        {
-            node = toAddHead;
-            while (node != null)
-            {
-                if (node.listener == listener)
-                {
-                    foundNode = true;
-                    break;
-                }
-                node = node.next;
-            }
-        }
-
-        if (!foundNode)
-            node = null;
-        #else
-        node = nodes.get(listener);
-        #end
-
+        var node:ListenerNode<TListener> = getNode(listener);
         if (node != null)
         {
             if (head == node)
@@ -191,14 +173,16 @@ class SignalBase<TListener>
             if (node.next != null)
                 node.next.previous = node.previous;
 
-            #if !(cpp || neko)
-            nodes.remove(listener);
+            #if flash
+            untyped __delete__(nodes, listener);
             #end
 
             if (dispatching)
                 listenerNodePool.cache(node);
             else
                 listenerNodePool.dispose(node);
+
+            numListeners--;
         }
     }
 
@@ -206,14 +190,19 @@ class SignalBase<TListener>
     {
         while (head != null)
         {
-            var listener:ListenerNode<TListener> = head;
+            var node:ListenerNode<TListener> = head;
             head = head.next;
-            listener.previous = null;
-            listener.next = null;
+            #if flash
+            untyped __delete__(nodes, node.listener);
+            #end
+            listenerNodePool.dispose(node);
+            node.previous = null;
+            node.next = null;
         }
         tail = null;
         toAddHead = null;
         toAddTail = null;
+        numListeners = 0;
     }
 
     private function iterator():Iterator<ListenerNode<TListener>>

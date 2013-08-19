@@ -302,8 +302,8 @@ package saboteur.systems
 
 }
 import alternativa.engine3d.core.Camera3D;
+import ash.ClassMap;
 import ash.core.Node;
-import ash.ObjectMap;
 import components.Pos;
 import saboteur.util.CardinalVectors;
 import saboteur.util.GameBuilder3D;
@@ -318,11 +318,11 @@ class PathBuildingNode extends Node {
 		
 	}
 
-	private static var _components:ObjectMap;
+	private static var _components:ClassMap;
 	
-	public static function _getComponents():ObjectMap {
+	public static function _getComponents():ClassMap {
 		if(_components == null) {
-				_components = new ash.ObjectMap();
+				_components = new ash.ClassMap();
 				_components.set(GameBuilder3D, "builder");
 				_components.set(CardinalVectors, "cardinalVectors");
 				//_components.set(Camera3D, "camera");

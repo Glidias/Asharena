@@ -19,7 +19,8 @@ class FlockingSystem extends System
 
 	private var nodeList:NodeList<FlockingNode>;
 	
-	private static inline var myr:Float = 2 / 3 * Math.PI;
+	//private static inline function get_myr() { return 2 / 3 * Math.PI; }
+	private static inline var myr:Float = 2.0943951023931954923084289221863;
 	private static inline var scalerSpeed:Float = 1. / 12;
 	//private static inline var minTime:Float = 10.0 / 3;
 	

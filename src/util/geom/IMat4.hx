@@ -5,7 +5,7 @@
 
 package util.geom;
 
-interface IMat4 implements IMat3
+interface IMat4 extends IMat3
 {
 	var d:Float;
 	var h:Float;

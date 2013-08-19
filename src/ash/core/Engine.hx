@@ -1,6 +1,6 @@
 package ash.core;
 
-import ash.ObjectMap;
+import ash.ClassMap;
 import ash.signals.Signal0;
 import ash.signals.Signal1;
 
@@ -13,14 +13,15 @@ class Engine
     public var entities(get_entities, never):Iterable<Entity>;
     public var systems(get_systems, never):Iterable<System>;
 
+    private var entityNames:Map<String, Entity>;
     private var entityList:EntityList;
     private var systemList:SystemList;
-    private var families:ObjectMap<Class<Dynamic>, IFamily<Dynamic>>;
+    private var families:ClassMap<Class<Dynamic>, IFamily<Dynamic>>;
 
     /**
      * Indicates if the engine is currently in its update loop.
      */
-    public var updating:Bool;
+    public var updating(default, null):Bool;
 
     public var entityAdded(default, null):Signal1<Entity>;
     public var entityRemoved(default, null):Signal1<Entity>;
@@ -30,7 +31,7 @@ class Engine
      * engine it is usually best not to do so during the update loop. To avoid this you can
      * listen for this signal and make the change when the signal is dispatched.
      */
-    public var updateComplete (default, null):Signal0;
+    public var updateComplete(default, null):Signal0;
 
     /**
      * The class used to manage node lists. In most cases the default class is sufficient
@@ -44,8 +45,9 @@ class Engine
     public function new()
     {
         entityList = new EntityList();
+        entityNames = new Map<String, Entity>();
         systemList = new SystemList();
-        families = new ObjectMap<Class<Node<Dynamic>>, IFamily<Dynamic>>();
+        families = new ClassMap();
         entityAdded = new Signal1<Entity>();
         entityRemoved = new Signal1<Entity>();
         updateComplete = new Signal0();
@@ -60,9 +62,13 @@ class Engine
 
     public function addEntity(entity:Entity):Void
     {
+        if (entityNames.exists(entity.name))
+            throw "The entity name " + entity.name + " is already in use by another entity.";
         entityList.add(entity);
+        entityNames.set(entity.name, entity);
         entity.componentAdded.add(componentAdded);
         entity.componentRemoved.add(componentRemoved);
+        entity.nameChanged.add(entityNameChanged);
         for (family in families)
         {
             family.newEntity(entity);
@@ -80,18 +86,39 @@ class Engine
     {
         entity.componentAdded.remove(componentAdded);
         entity.componentRemoved.remove(componentRemoved);
+        entity.nameChanged.remove(entityNameChanged);
         for (family in families)
         {
             family.removeEntity(entity);
         }
+        entityNames.remove(entity.name);
         entityList.remove(entity);
         entityRemoved.dispatch(entity);
+    }
+
+    private function entityNameChanged(entity:Entity, oldName:String):Void
+    {
+        if (entityNames.get(oldName) == entity)
+        {
+            entityNames.remove(oldName);
+            entityNames.set(entity.name, entity);
+        }
+    }
+
+    /**
+     * Get an entity based n its name.
+     *
+     * @param name The name of the entity
+     * @return The entity, or null if no entity with that name exists on the engine
+     */
+    public inline function getEntityByName(name:String):Entity
+    {
+        return entityNames.get(name);
     }
 
     /**
      * Remove all entities from the engine.
      */
-
     public function removeAllEntities():Void
     {
         while (entityList.head != null)

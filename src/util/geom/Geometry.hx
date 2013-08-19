@@ -11,7 +11,7 @@ package util.geom;
  import systems.collisions.ITCollidable;
  import util.TypeDefs;
  
-class Geometry implements IECollidable, implements ITCollidable
+class Geometry implements ITECollidable
 {
 	public var vertices:Vector<Float>;
 	public var indices:Vector<UInt>;
@@ -120,4 +120,8 @@ class Geometry implements IECollidable, implements ITCollidable
 	*/
 	
 	
+}
+
+
+interface ITECollidable extends IECollidable extends ITCollidable {
 }

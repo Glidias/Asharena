@@ -11,11 +11,11 @@ import haxe.macro.Expr;
  **/
 class NodeMacro
 {
-    @:macro public static function build():Array<Field>
+    macro public static function build():Array<Field>
     {
         var nodeClass:ClassType = Context.getLocalClass().get();
         var fields:Array<Field> = Context.getBuildFields();
-		
+
         var componentLinkFields:Array<Field> = [];
         for (field in fields)
         {
@@ -36,11 +36,7 @@ class NodeMacro
                     // functions and properties are ignored and intended to be used only in custom Node APIs
                     // only variables are set by component system
             }
-			
-			
         }
-		
-
 
         if (componentLinkFields.length == 0)
             throw new Error("Node subclass doesnt declare any component variables", nodeClass.pos);
@@ -49,7 +45,7 @@ class NodeMacro
         var componentsTypePath:TypePath =
         {
             pack: ["ash"],
-            name: "ObjectMap",
+            name: "ClassMap",
             params: [
                 TPType(TPath({
                     pack: [],
@@ -160,8 +156,7 @@ class NodeMacro
             access: [APublic, AStatic, AInline],
             pos: nodeClass.pos
         });
-		
-	
+
         return fields;
     }
 }

@@ -103,7 +103,8 @@ package alternativa.a3d.collisions
 			}
 			if (startChild == null) return;
 			
-			childrenList  = new CollisionBoundNode();
+			childrenList = new CollisionBoundNode();
+			childrenList._parent = this;
 			var classe:Class = Object(startChild).constructor;
 
 			childrenList.setup( startChild, factoryMethodHash[classe] ? factoryMethodHash[classe](startChild) : startChild is Mesh ? factoryMethodHash[Mesh](startChild) :  null);
@@ -124,6 +125,7 @@ package alternativa.a3d.collisions
 				var me:CollisionBoundNode = new CollisionBoundNode();
 				classe = Object(c).constructor;
 				me.setup(c, factoryMethodHash[classe] ? factoryMethodHash[classe](c) : c is Mesh ? factoryMethodHash[Mesh](c) : null);	
+				me._parent = this;
 				if (c.childrenList) me.setupChildren(c, factoryMethodHash);
 				tail.next = me;
 				tail = me;

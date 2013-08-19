@@ -29,7 +29,7 @@ package tests.pathbuilding
 			engine = new Engine();
 			ticker = new FrameTickProvider(stage);
 			
-			
+				
 			
 	
 			addChild( _template3D = new Template());
