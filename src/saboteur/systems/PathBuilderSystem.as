@@ -8,8 +8,11 @@ package saboteur.systems
 	import ash.core.System;
 	import ash.signals.Signal0;
 	import ash.signals.Signal1;
+	import components.ActionIntSignal;
+	import components.ActionUIntSignal;
 	import components.DirectionVectors;
 	import components.Pos;
+	import flash.geom.Point;
 	import flash.geom.Vector3D;
 	import saboteur.util.CardinalVectors;
 	import alternativa.engine3d.core.Camera3D;
@@ -41,7 +44,7 @@ package saboteur.systems
 		 * Build distance ratio in relation to current grid east/south width to indicate how near to edge required
 		 * before allowed to build. Lower ratios indiciate nearer to edge required.
 		 */
-		public var buildDistRatio:Number =  .5;
+		public var buildDistRatio:Point =  new Point(.5, .5);
 		
 		private var curBuildId:int = 63; // -1;
 		public function setBuildId(val:int):void  {
@@ -64,7 +67,7 @@ package saboteur.systems
 		private var direction:Vector3D = new Vector3D();
 		
 		private var nodeList:NodeList;
-		
+		public var onEndPointStateChange:ActionIntSignal = new ActionIntSignal();
 
 		
 		private function validateVis():void 
@@ -81,6 +84,7 @@ package saboteur.systems
 		//private var camPos:Vector3D;
 		
 		public var signalBuildableChange:Signal1 = new Signal1();
+		private var pathUtil:SaboteurPathUtil = SaboteurPathUtil.getInstance();
 		
 		public function PathBuilderSystem(camera:Camera3D=null) 
 		{
@@ -118,8 +122,21 @@ package saboteur.systems
 			//camera.addToDebug( Debug.BOUNDS, node.builder.genesis);
 		}
 		
+		//private var _lastGe:int = -int.MAX_VALUE;
+		//private var _lastGs:int = -int.MAX_VALUE;	
+		/*
+		public var onGridPositionChange()
+		private function validateFloorPosition(ge:int, gs:int):void {
+			if (_lastGe != ge || _lastGs != gs) {
+				_lastGe = ge;
+				_lastGs = gs;
+			}
+		}
+		*/
+		
 		override public function update(time:Number):void {
-			if (curBuildId < 0) return;
+			var endPtResult:int;
+
 		
 			
 			var curBuild:PathBuildingNode = nodeList.head as PathBuildingNode;
@@ -133,10 +150,10 @@ package saboteur.systems
 			var eastOffset:int;
 			var southOffset:int;
 
-					
-					
+				var key:uint ;
 				var ge:int;
 				var gs:int;
+				
 				
 				if (fromPos != null) {
 					origin.x = fromPos.x - builder.startScene._x;
@@ -153,8 +170,19 @@ package saboteur.systems
 						// resolve now (consider using floor instead of round, or hiding vis if occupied)
 						ge = Math.round(eastVal * builder.gridEastWidth_i);
 						gs = Math.round(southVal * builder.gridSouthWidth_i);
+						key = pathUtil.getGridKey(ge, gs);
+						endPtResult = builder.pathGraph.endPoints[key] != null ? builder.pathGraph.endPoints[key]  : -1;
+						
+						if (curBuildId < 0 || endPtResult<= 0) {  // !builder.isOccupiedAt(ge, gs)  // where builder is located (gridEast2/gridSouth2)
+							builder.setBlueprintVis(false);
+						
+							onEndPointStateChange.set(endPtResult); 
+							return;
+						}
+						
 						builder.setBlueprintVis(true);
 						builder.updateFloorPosition(ge, gs);
+						onEndPointStateChange.set(endPtResult); 
 						return;
 					}
 					ge = Math.round(eastVal * builder.gridEastWidth_i);
@@ -177,21 +205,22 @@ package saboteur.systems
 				else {  // without camera, need at least a fromPos
 					throw new Error("Need at least fromPos or camera to continue!");
 				}
-				
-	
-				if (!builder.isOccupiedAt(ge, gs)) {  // where builder is located (gridEast2/gridSouth2)
+				key = pathUtil.getGridKey(ge, gs);
+				endPtResult = builder.pathGraph.endPoints[key] != null ? builder.pathGraph.endPoints[key]  : -1;
+				if (curBuildId < 0 || endPtResult<= 0) {  // !builder.isOccupiedAt(ge, gs)  // where builder is located (gridEast2/gridSouth2)
 					builder.setBlueprintVis(false);
+					onEndPointStateChange.set(endPtResult); 
 					return;
 				}
-				
+
 				if (fromDirection == null) {
-					if (fromPos == null) {
+					if (fromPos == null) {   // calculate ray manually from camera screen center
 						camera.calculateRay(origin, direction, camera.view._width * .5, camera.view._height * .5);
 					}
-					else {
-						direction.x = camera._x- builder.startScene._x - origin.x ;
-						direction.y = camera._y -builder.startScene._y- origin.y ;
-						direction.z = camera._z -builder.startScene._z- origin.z ;
+					else {  // cast ray from camera position through origin position
+						direction.x =   origin.x - (camera._x+ builder.startScene._x)/builder.startScene._scaleX;
+						direction.y =  origin.y -(camera._y +builder.startScene._y)/builder.startScene._scaleY;
+						direction.z = origin.z -(camera._z +builder.startScene._z)/builder.startScene._scaleZ;
 						direction.normalize();
 					}
 				}
@@ -210,7 +239,7 @@ package saboteur.systems
 					var yoff:Number = (southVal+builder.gridSouthWidth * .5) - gs*builder.gridSouthWidth;  // integer modulus + floating point
 					yoff *= builder.gridSouthWidth_i;
 	
-					
+				
 					var xt:Number;
 					var yt:Number;
 					
@@ -263,7 +292,7 @@ package saboteur.systems
 					
 					var result:int;
 					
-					if ( Math.abs(vec.dotProduct(direction)) > (xt < yt ? builder.gridEastWidth : builder.gridSouthWidth ) * buildDistRatio  ) {
+					if (false&& (xt < yt ?  de < 0 ? xt - int(xt) : int(xt) + 1 - xt :  ds < 0 ? yt - int(yt) : int(yt) + 1 - yt) > (xt < yt ? buildDistRatio.x : buildDistRatio.y)  ) {  
 						result = builder.updateFloorPosition(ge + eastOffset, gs + southOffset);
 						if (result === SaboteurPathUtil.RESULT_VALID) {
 							builder.editorMat.color = GameBuilder3D.COLOR_OUTSIDE;
@@ -274,6 +303,7 @@ package saboteur.systems
 							signalBuildableChange.dispatch(result);
 						}
 						
+						onEndPointStateChange.set(endPtResult);
 						return;
 					}
 					
@@ -285,6 +315,8 @@ package saboteur.systems
 						_lastResult = result;
 						signalBuildableChange.dispatch(result);
 					}
+					
+					onEndPointStateChange.set(endPtResult);
 
 			}
 			

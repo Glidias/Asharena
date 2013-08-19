@@ -75,8 +75,9 @@ package views.engine3d
             camera.view = view;
             scene.addChild(camera)
            // ..camera.diagram
+		   
             addChild(camera.diagram);
-			
+			view.hideLogo();
 
             
             //Lightを追加

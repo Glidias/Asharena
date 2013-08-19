@@ -40,6 +40,11 @@ package alternativa.a3d.collisions
 			globalToLocalTransform = new Transform3D();
 		}
 		
+		public function updateTransform(x:Number = 0, y:Number = 0, z:Number = 0, rotationX:Number=0, rotationY:Number=0, rotationZ:Number=0, scaleX:Number = 1, scaleY:Number = 1, scaleZ:Number = 1):void {
+			transform.compose(x, y, z, rotationX, rotationY, rotationZ, scaleX, scaleY, scaleZ);
+			inverseTransform.calculateInversion(transform);
+		}
+		
 		
 		// -- Alternativa3D-specific Object3D setups
 		
@@ -259,7 +264,17 @@ package alternativa.a3d.collisions
 
 
 
-
+			alternativa3d function _prepend(child:CollisionBoundNode):void {
+				child.next = childrenList;
+				childrenList = child;
+				child._parent = this;
+			}
+			
+			alternativa3d function _removeHead():void {
+				var removed:CollisionBoundNode = childrenList;
+				if (removed != null) childrenList =  removed.next;
+				removed._parent = null;
+			}
 		
 		
 		

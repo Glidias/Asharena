@@ -9,7 +9,11 @@ public class CardinalVectors {
 	public var east:Vector3D = new Vector3D(0, -1, 0);
 	public var north:Vector3D = new Vector3D(1,0, 0);
 	public var west:Vector3D = new Vector3D(0, 1, 0);
-	public var south:Vector3D = new Vector3D(-1, 0, 0);
+	public var south:Vector3D = new Vector3D( -1, 0, 0);
+	
+	public function CardinalVectors() {
+		
+	}
 	
 	public function transform(vec:Vector3D, obj:Object3D, distance:Number):void {
 		obj.x += vec.x * distance;

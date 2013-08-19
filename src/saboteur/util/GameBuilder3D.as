@@ -13,6 +13,7 @@ package saboteur.util
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.MeshSetClone;
+	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.ExternalTextureResource;
 	import flash.geom.Matrix3D;
@@ -33,8 +34,7 @@ package saboteur.util
 		public var collision:Object3D;
 		public var blueprint:Object3D;
 		
-		private static var PATH_UTIL:SaboteurPathUtil;
-		public var  pathUtil:SaboteurPathUtil;
+
 		
 		private var buildDict:Dictionary;
 		private var build3DGrid:Dictionary = new Dictionary();
@@ -65,17 +65,21 @@ package saboteur.util
 		
 		private var _value:uint;
 		private var startEditorAlpha:Number;
+		private var _boundGridBoxConvex3D:CollisionBoundNode;
+		private var pathUtil:SaboteurPathUtil;
 		public var minSquareBuildDistance:Number;
 		
 		public var collisionGraph:CollisionBoundNode;
-		public var showOccupied:Boolean=false;
+		public var showOccupied:Boolean = false;
+		public var pathGraph:SaboteurGraph;
 		
 		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane) {
-			if (PATH_UTIL == null) PATH_UTIL = new SaboteurPathUtil();
+
 			
 			
 			cardinal = CARDINAL_VECTORS;
-			pathUtil = PATH_UTIL;
+			pathUtil =  SaboteurPathUtil.getInstance();
+			pathGraph = new SaboteurGraph();
 		
 			this.editorMat = editorMat;
 			startEditorAlpha = editorMat.alpha;
@@ -114,22 +118,35 @@ package saboteur.util
 			blueprint.visible = val;
 			_floor.visible = val;
 			if (val && blueprint._parent != startScene) startScene.addChild(blueprint);
+			if (!val) {
+				if ( _boundGridBoxConvex3D._parent ) collisionGraph._removeHead()
+			}
+			else {
+				if ( !_boundGridBoxConvex3D._parent ) collisionGraph._prepend(_boundGridBoxConvex3D)
+			}
 			
 		}
+		
+		
 		
 		private function setup():void 
 		{
 			var bounds:BoundBox;
 			_gridSquareBound = bounds = genesis.boundBox.clone();  // new BoundBox();  // we assume already set up correctly for now, even though there mayh be slight discrepancy
-			
+		
 			var xd:Number = bounds.maxX - bounds.minX;
 			var yd:Number = bounds.maxY - bounds.minY;
 				 _floor.scaleX = xd;
 			 _floor.scaleY = yd;
 			
-			 
+	
 				_gridSquareBound.maxZ += 45;
 				_gridSquareBound.minZ -= 45;
+				
+				_boundGridBoxConvex3D = CollisionUtil.getCollisionGraph(new Box((_gridSquareBound.maxX - _gridSquareBound.minX), (_gridSquareBound.maxY - _gridSquareBound.minY), (_gridSquareBound.maxZ - _gridSquareBound.minZ) ) );
+				
+				collisionGraph._prepend(_boundGridBoxConvex3D);
+				
 			
 			gridEastWidth  =cardinal.getDist(cardinal.east, _gridSquareBound, 1);
 			gridSouthWidth = cardinal.getDist(cardinal.south, _gridSquareBound, 1);
@@ -142,6 +159,8 @@ package saboteur.util
 		
 			this.startScene.addChild(_floor);
 			
+			pathGraph.addStartNodeDirectly( pathGraph.addNode(gridEast, gridSouth, _value) );
+			pathGraph.recalculateEndpoints();
 			
 			pathUtil.buildAt(buildDict, gridEast, gridSouth, _value  ); 
 			buildCollidablesAt( gridEast, gridSouth, collision, _value );	
@@ -157,6 +176,7 @@ package saboteur.util
 			collisionGraph.removeChild(payload.collisionNode);
 			startScene.removeChild(payload.object);
 			
+			pathGraph.removeNode(gridEast, gridSouth);
 			delete buildDict[key];
 			delete build3DGrid[key];
 			return true;	
@@ -182,7 +202,10 @@ package saboteur.util
 					collisionGraph.addChild( node= CollisionUtil.getCollisionGraph(collisionBuilding) );
 					//collisionScene.addChild(collisionBuilding);
 					
-					build3DGrid[pathUtil.getGridKey(gridEast,gridSouth)] =  new BuildPayload3D(newBuilding, node);
+					build3DGrid[pathUtil.getGridKey(gridEast, gridSouth)] =  new BuildPayload3D(newBuilding, node);
+					
+					pathGraph.addNode(gridEast, gridSouth, _value);
+					pathGraph.recalculateEndpoints();
 		}
 		
 		private function buildCollidablesAt(gridEast:int, gridSouth:int, refer:Object3D, value:uint):void {
@@ -235,8 +258,8 @@ package saboteur.util
 					
 					blueprint._x = _floor._x;
 					blueprint._y = _floor._y;
-				
 					
+					_boundGridBoxConvex3D.updateTransform(blueprint._x, blueprint._y, blueprint.z);
 					blueprint.transformChanged = true;
 					_floor.transformChanged = true;
 					
@@ -270,17 +293,19 @@ package saboteur.util
 			
 			private function checkBuildableResult(value:uint):int 
 			{
-
+		
 				var result:int = pathUtil.getValidResult(buildDict, gridEast, gridSouth, value );
 					if (result === SaboteurPathUtil.RESULT_OCCUPIED) {
 						if (gridEast!=0 || gridSouth != 0) {
 							editorMat.alpha =  OCCUPIED_FLOOR_ALPHA;
 							editorMat.color = COLOR_OCCUPIED;
 							blueprint.visible = showOccupied;
+							if ( _boundGridBoxConvex3D._parent ) collisionGraph._removeHead();
 						}
 						else {  // outta range
 							blueprint.visible = false;
 							_floor.visible = false;
+							if ( _boundGridBoxConvex3D._parent ) collisionGraph._removeHead();
 							result =  SaboteurPathUtil.RESULT_OUT;
 						}
 					//	_floor.visible = showOccupied;
@@ -305,7 +330,7 @@ package saboteur.util
 			
 			private function getCurBuildableResult():int 
 			{
-
+			
 				return pathUtil.getValidResult(buildDict, gridEast, gridSouth, _value );
 					
 			}

@@ -2,11 +2,12 @@ package tests
 {
 	import ash.core.Engine;
 	import ash.tick.FrameTickProvider;
+	import flash.display.Sprite;
 	/**
 	 * ...
 	 * @author Glenn Ko
 	 */
-	public class TestBuild 
+	public class TestBuild extends Sprite
 	{
 		public var engine:Engine;
 		public var ticker:FrameTickProvider;
@@ -16,7 +17,7 @@ package tests
 			engine = new Engine();
 			ticker = new FrameTickProvider(stage);
 			
-			
+			//
 			ticker.add(tick);
 			ticker.start();
 		}

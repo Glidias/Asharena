@@ -10,6 +10,7 @@ package tests.pathbuilding
 	import ash.core.Entity;
 	import ash.tick.FrameTickProvider;
 	import com.bit101.components.ComboBox;
+	import components.Pos;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -25,6 +26,7 @@ package tests.pathbuilding
 	import util.SpawnerBundle;
 	import views.engine3d.MainView3D;
 	import views.ui.bit101.BuildStepper;
+	import views.ui.indicators.CanBuildIndicator;
 	import views.ui.UISpriteLayer;
 	/**
 	 * Spectator ghost flyer with wall collision against builded paths
@@ -47,7 +49,7 @@ package tests.pathbuilding
 		
 		public function TestPathBuilding3rdPerson() 
 		{
-	haxe.initSwc(this);
+			haxe.initSwc(this);
 			game = new TheGame(stage);
 	
 			addChild( _template3D = new MainView3D() );
@@ -65,17 +67,24 @@ package tests.pathbuilding
 
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 			
+			
+			var arenaSpawner:ArenaSpawner;
+			var gladiatorBundle:GladiatorBundle = new GladiatorBundle(arenaSpawner = new ArenaSpawner(game.engine));
+			gladiatorBundle.arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage, 0,0,START_PLAYER_Z+33).add( game.keyPoll );
+			
 			var pathBuilder:PathBuilderSystem;
 			game.engine.addSystem( pathBuilder = new PathBuilderSystem(_template3D.camera), SystemPriorities.postRender );
 			pathBuilder.signalBuildableChange.add( onBuildStateChange);
+			var canBuildIndicator:CanBuildIndicator = new CanBuildIndicator();
+			addChild(canBuildIndicator);
+			pathBuilder.onEndPointStateChange.add(canBuildIndicator.setCanBuild);
 	
 			var jettySpawner:JettySpawner = new JettySpawner();
-			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene);
+			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
 			
-			var arenaSpawner:ArenaSpawner;
-			var gladiatorBundle:GladiatorBundle = new GladiatorBundle(arenaSpawner=new ArenaSpawner(game.engine));
 			
-			gladiatorBundle.arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage, 0,0,START_PLAYER_Z+33).add( game.keyPoll );
+			
+		
 
 			if (game.colliderSystem) {
 				

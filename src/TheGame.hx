@@ -3,6 +3,7 @@ import ash.core.Engine;
 import ash.fsm.EngineState;
 import ash.fsm.EngineStateMachine;
 import ash.tick.FrameTickProvider;
+import components.ActionUIntSignal;
 import flash.display.Stage;
 import input.KeyPoll;
 import systems.animation.AnimationSystem;
@@ -53,13 +54,15 @@ class TheGame
 		ticker = new FrameTickProvider(stage, 1000/15);
 		ticker.add(engine.update);
 		
+		colliderSystem = new EllipsoidColliderSystem( new Geometry(), 0.001);
+		
 		// Create systems
 		//EllipsoidCollider;
 		//SurfaceMovementSystem;
 		/*
 		var esm:EngineStateMachine = new EngineStateMachine(engine);
 		
-		colliderSystem = new EllipsoidColliderSystem( new Geometry(), 0.001);
+		
 		var thirdPerson:EngineState = new EngineState();
 		thirdPerson.addSingleton(GravitySystem).withPriority( SystemPriorities.update);
 		thirdPerson.addInstance( new PlayerJumpSystem(keyPoll) ).withPriority( SystemPriorities.update);
@@ -67,6 +70,8 @@ class TheGame
 		thirdPerson.addInstance( colliderSystem).withPriority( SystemPriorities.preSolveCollisions);
 		//esm.addState("thirdperson",  );
 		*/
+		
+		
 		
 		engine.addSystem( new GravitySystem(), SystemPriorities.update );
 		engine.addSystem( new PlayerJumpSystem(keyPoll), SystemPriorities.update);
@@ -79,6 +84,7 @@ class TheGame
 		engine.addSystem( new PlayerControlActionSystem(keyPoll), SystemPriorities.stateMachines );
 		engine.addSystem( new AnimationSystem(), SystemPriorities.animate);
 		
+		ActionUIntSignal;
 		RenderSystem;
 		FlockingSystem;
 	

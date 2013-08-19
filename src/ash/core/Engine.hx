@@ -66,6 +66,7 @@ class Engine
             throw "The entity name " + entity.name + " is already in use by another entity.";
         entityList.add(entity);
         entityNames.set(entity.name, entity);
+		
         entity.componentAdded.add(componentAdded);
         entity.componentRemoved.add(componentRemoved);
         entity.nameChanged.add(entityNameChanged);

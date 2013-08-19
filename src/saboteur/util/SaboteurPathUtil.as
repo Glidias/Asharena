@@ -1,5 +1,6 @@
 package saboteur.util 
 {
+	import alternativa.protocol.codec.primitive.UIntCodec;
 	import flash.utils.Dictionary;
 	/**
 	 * Utility for Saboteur building path rules
@@ -102,6 +103,13 @@ package saboteur.util
 		public function getGridKey(east:int, south:int):uint {
 			
 			return (south + INT_LIMIT) * INT_LIMIT * 2 + (east + INT_LIMIT);
+		}
+		
+		public function getEast(value:uint):int {
+			return (value / (INT_LIMIT * 2)) - INT_LIMIT;
+		}
+		public function getSouth(value:uint):int {
+			return (value % (INT_LIMIT * 2)) - INT_LIMIT;
 		}
 		
 		public function buildAt(dict:Dictionary, east:int, south:int, value:uint):void {
@@ -208,7 +216,15 @@ package saboteur.util
 			
         }
         
-        
+        public function getArcValue(value:uint):uint {
+			return (value & ARC_MASK) >> ARC_SHIFT;
+		}
+		
+		public function getEdgeValue(value:uint):uint {
+			return  value & ~ARC_MASK;
+		}
+		
+	
         
         
         public function visJetty(value:uint, groupName:String):Boolean {
