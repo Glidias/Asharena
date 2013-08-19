@@ -54,7 +54,7 @@ package saboteur.util
 		public static const RESULT_VALID:int = 1;  
 		public static const RESULT_OCCUPIED:int = -2;  
 		
-		public function getValidResult(buildDict:Dictionary, east:int, south:int, value:uint):int {
+		public function getValidResult(buildDict:Dictionary, east:int, south:int, value:uint, pathGraph:SaboteurGraph):int {
 			if (buildDict[getGridKey(east, south)] != null) return RESULT_OCCUPIED;
 			var toNorth:uint = getGridKey(east, south - 1);
 			var toSouth:uint = getGridKey(east, south + 1);
@@ -91,7 +91,18 @@ package saboteur.util
 				if ( ((value & SOUTH) != 0) != ((neighborVal & NORTH) != 0) ) return RESULT_INVALID;
 			}
 			
+			/*
+			if (pathGraph != null) {  // TODO: 
 			
+			//	var arc:uint = getArcValue(value);
+				if ( (neighborVal & EAST) && pathGraph.preflightZones[toEast] != null && (getArcValue(buildDict[toEast])  & SaboteurGraph.ARC_WEST_MASK)  ) return RESULT_VALID;
+				if ( (neighborVal & WEST) && pathGraph.preflightZones[toWest] != null && (getArcValue(buildDict[toWest]) & SaboteurGraph.ARC_EAST_MASK)  ) return RESULT_VALID;
+				if ( (neighborVal & NORTH) && pathGraph.preflightZones[toNorth] != null && (getArcValue(buildDict[toNorth]) & SaboteurGraph.ARC_SOUTH_MASK) ) return RESULT_VALID;
+				if ( (neighborVal & SOUTH) && pathGraph.preflightZones[toSouth] != null && (getArcValue(buildDict[toSouth]) & SaboteurGraph.ARC_NORTH_MASK) ) return RESULT_VALID;
+				
+				return RESULT_OUT;
+			}
+			*/
 			
 			return RESULT_VALID;
 		}

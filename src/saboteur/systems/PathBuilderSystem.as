@@ -85,11 +85,13 @@ package saboteur.systems
 		
 		public var signalBuildableChange:Signal1 = new Signal1();
 		private var pathUtil:SaboteurPathUtil = SaboteurPathUtil.getInstance();
+		public var buildToValidity:Boolean=false ;
 		
 		public function PathBuilderSystem(camera:Camera3D=null) 
 		{
 			this.camera = camera;
 		//	camPos  = new Vector3D();
+		onEndPointStateChange.current = -2;
 			
 			
 		}
@@ -173,15 +175,16 @@ package saboteur.systems
 						key = pathUtil.getGridKey(ge, gs);
 						endPtResult = builder.pathGraph.endPoints[key] != null ? builder.pathGraph.endPoints[key]  : -1;
 						
+						// TODO: this case won't be correct
 						if (curBuildId < 0 || endPtResult<= 0) {  // !builder.isOccupiedAt(ge, gs)  // where builder is located (gridEast2/gridSouth2)
 							builder.setBlueprintVis(false);
-						
+							builder.updateFloorPosition(ge, gs, buildToValidity);
 							onEndPointStateChange.set(endPtResult); 
 							return;
 						}
 						
 						builder.setBlueprintVis(true);
-						builder.updateFloorPosition(ge, gs);
+						builder.updateFloorPosition(ge, gs, buildToValidity);
 						onEndPointStateChange.set(endPtResult); 
 						return;
 					}
@@ -205,10 +208,20 @@ package saboteur.systems
 				else {  // without camera, need at least a fromPos
 					throw new Error("Need at least fromPos or camera to continue!");
 				}
-				key = pathUtil.getGridKey(ge, gs);
-				endPtResult = builder.pathGraph.endPoints[key] != null ? builder.pathGraph.endPoints[key]  : -1;
-				if (curBuildId < 0 || endPtResult<= 0) {  // !builder.isOccupiedAt(ge, gs)  // where builder is located (gridEast2/gridSouth2)
+			
+				//if (!buildToValidity) {
+					key = pathUtil.getGridKey(ge, gs);
+					endPtResult = builder.pathGraph.endPoints[key] != null ? builder.pathGraph.endPoints[key]  : -1;
+				//}
+				
+				if (curBuildId < 0 || !builder.isOccupiedAt(ge, gs) ) {  //  // where builder is located (gridEast2/gridSouth2)
 					builder.setBlueprintVis(false);
+					//builder.updateFloorPosition(ge, gs);
+					result = SaboteurPathUtil.RESULT_OUT;
+					if (result != _lastResult) {
+							_lastResult = result;
+							signalBuildableChange.dispatch(result);
+						}
 					onEndPointStateChange.set(endPtResult); 
 					return;
 				}
@@ -292,8 +305,28 @@ package saboteur.systems
 					
 					var result:int;
 					
-					if (false&& (xt < yt ?  de < 0 ? xt - int(xt) : int(xt) + 1 - xt :  ds < 0 ? yt - int(yt) : int(yt) + 1 - yt) > (xt < yt ? buildDistRatio.x : buildDistRatio.y)  ) {  
-						result = builder.updateFloorPosition(ge + eastOffset, gs + southOffset);
+					ge += eastOffset;
+					gs += southOffset;
+					
+					if (!buildToValidity && endPtResult <= 0 ) {  // exit case for no valid path to build at location
+						builder.setBlueprintVis(true);
+						result = builder.updateFloorPosition(ge, gs, buildToValidity);
+						if (result != SaboteurPathUtil.RESULT_OCCUPIED) {
+							result = SaboteurPathUtil.RESULT_OUT;
+							builder.setBlueprintVis(false);
+						}
+	
+						if (result != _lastResult) {
+							_lastResult = result;
+							signalBuildableChange.dispatch(result);
+						}
+						onEndPointStateChange.set(endPtResult);
+						return;
+					}
+					
+					// TODO: fix this calculation
+					if (false && (xt < yt ?  de < 0 ? xt - int(xt) : int(xt) + 1 - xt :  ds < 0 ? yt - int(yt) : int(yt) + 1 - yt) > (xt < yt ? buildDistRatio.x : buildDistRatio.y)  ) {  
+						result = builder.updateFloorPosition(ge , gs,buildToValidity );
 						if (result === SaboteurPathUtil.RESULT_VALID) {
 							builder.editorMat.color = GameBuilder3D.COLOR_OUTSIDE;
 							result = SaboteurPathUtil.RESULT_OUT;
@@ -306,10 +339,9 @@ package saboteur.systems
 						onEndPointStateChange.set(endPtResult);
 						return;
 					}
+
+					result = builder.updateFloorPosition(ge, gs, buildToValidity);
 					
-					ge += eastOffset;
-					gs += southOffset;
-					result = builder.updateFloorPosition(ge, gs);
 					//if (ge === 0 && gs === 0) result = SaboteurPathUtil.RESULT_OUT;  // not allowed to bulid at genesis rule. 
 					if (result != _lastResult) {
 						_lastResult = result;

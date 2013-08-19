@@ -36,7 +36,7 @@ package saboteur.util
 		
 
 		
-		private var buildDict:Dictionary;
+		public var buildDict:Dictionary;
 		private var build3DGrid:Dictionary = new Dictionary();
 		
 		public static const CARDINAL_VECTORS:CardinalVectors = new CardinalVectors();
@@ -176,9 +176,10 @@ package saboteur.util
 			collisionGraph.removeChild(payload.collisionNode);
 			startScene.removeChild(payload.object);
 			
-			pathGraph.removeNode(gridEast, gridSouth);
 			delete buildDict[key];
 			delete build3DGrid[key];
+			pathGraph.removeNode(gridEast, gridSouth);
+			pathGraph.recalculateEndpoints();
 			return true;	
 		}
 		
@@ -219,12 +220,12 @@ package saboteur.util
 	
 		}
 		
-			public function tryBuild():void 
+			public function tryBuild(buildToValidity:Boolean):void 
 			{
 
-				if (checkBuildableResult(_value) > 0) {
+				if (checkBuildableResult(_value, buildToValidity) > 0) {
 					buildAt(gridEast, gridSouth, _value);	
-					checkBuildableResult(_value);
+					checkBuildableResult(_value, buildToValidity);
 				}
 			}
 			
@@ -242,7 +243,7 @@ package saboteur.util
 			}
 		}
 		
-		public function updateFloorPosition(ge:int, gs:int):int 
+		public function updateFloorPosition(ge:int, gs:int, buildToValidity:Boolean):int 
 			{
 					gridEast = ge;
 					gridSouth = gs;
@@ -263,10 +264,30 @@ package saboteur.util
 					blueprint.transformChanged = true;
 					_floor.transformChanged = true;
 					
-					return checkBuildableResult(_value);
+					return checkBuildableResult(_value, buildToValidity);
 					
 			}
 			
+			public function setFloorPosition(ge:int, gs:int):void {
+				gridEast = ge;
+					gridSouth = gs;
+					//_floor.x = ge*gridEastWidth;
+					//_floor.y = gs * gridSouthWidth;
+					var eastD:Number = gridEastWidth * ge;
+					var southD:Number = gridSouthWidth * gs;
+					
+					_floor._x = eastD * cardinal.east.x;
+					_floor._y = eastD * cardinal.east.y;
+					_floor._x += southD * cardinal.south.x;
+					_floor._y += southD * cardinal.south.y;
+					
+					blueprint._x = _floor._x;
+					blueprint._y = _floor._y;
+					
+					_boundGridBoxConvex3D.updateTransform(blueprint._x, blueprint._y, blueprint.z);
+					blueprint.transformChanged = true;
+					_floor.transformChanged = true;
+			}
 			
 			
 			private function visJetty3DByValue(obj:Object3D, value:uint):void {
@@ -291,10 +312,10 @@ package saboteur.util
 				return buildDict[pathUtil.getGridKey(ge, gs)] != null;
 			}
 			
-			private function checkBuildableResult(value:uint):int 
+			private function checkBuildableResult(value:uint, buildToValidity:Boolean):int 
 			{
 		
-				var result:int = pathUtil.getValidResult(buildDict, gridEast, gridSouth, value );
+				var result:int = pathUtil.getValidResult(buildDict, gridEast, gridSouth, value,  pathGraph  );
 					if (result === SaboteurPathUtil.RESULT_OCCUPIED) {
 						if (gridEast!=0 || gridSouth != 0) {
 							editorMat.alpha =  OCCUPIED_FLOOR_ALPHA;
@@ -320,9 +341,11 @@ package saboteur.util
 							editorMat.color = COLOR_OUTSIDE;
 							editorMat.alpha = startEditorAlpha;
 					}
-					else {
+					else {  // result valid (doublecheck buildToValidity if required!)
+						
 						editorMat.color = COLOR_VALID;
 						editorMat.alpha = startEditorAlpha;
+						
 					}
 					
 					return result;
@@ -331,7 +354,7 @@ package saboteur.util
 			private function getCurBuildableResult():int 
 			{
 			
-				return pathUtil.getValidResult(buildDict, gridEast, gridSouth, _value );
+				return pathUtil.getValidResult(buildDict, gridEast, gridSouth, _value, null );
 					
 			}
 			

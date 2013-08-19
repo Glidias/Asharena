@@ -17,10 +17,12 @@ class GroundPlaneCollisionSystem extends System
 
 	private var nodeList:NodeList<CollidableNode>;
 	private var groundLevel:Float;
+	private var passive:Bool;
 	
-	public function new(groundLevel:Float=0) 
+	public function new(groundLevel:Float=0, passive:Bool=false) 
 	{
 		super();
+		this.passive = passive;
 		this.groundLevel = groundLevel;
 	}
 	
@@ -33,16 +35,17 @@ class GroundPlaneCollisionSystem extends System
 		var n:CollidableNode = nodeList.head;
 		while (n != null) {
 			var bottom:Float = n.pos.z - n.ellipsoid.z;
-			if (bottom <= groundLevel) {
+			if (bottom <= groundLevel - .001) {
 				n.pos.z = groundLevel + n.ellipsoid.z;
 				n.result.gotGroundNormal = true;
 				n.result.maximum_ground_normal.set(0, 0, 1);
 				//trace( "on ground");
+				
 				n.vel.z = 0;
 				
 			}
 			else {
-				n.result.gotGroundNormal = false;
+				if (!passive) n.result.gotGroundNormal = false;
 				//trace( "in air");
 				
 			}

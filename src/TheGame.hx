@@ -76,10 +76,12 @@ class TheGame
 		engine.addSystem( new GravitySystem(), SystemPriorities.update );
 		engine.addSystem( new PlayerJumpSystem(keyPoll), SystemPriorities.update);
 		engine.addSystem( new PlayerSurfaceMovementSystem(), SystemPriorities.update );
+		
 		engine.addSystem(colliderSystem , SystemPriorities.preSolveCollisions );
 		engine.addSystem( new QPhysicsSystem(), SystemPriorities.solveCollisions );
+			engine.addSystem( new GroundPlaneCollisionSystem(122, true), SystemPriorities.solveCollisions );
 		engine.addSystem( new MovementSystem(), SystemPriorities.move );
-		//engine.addSystem( new GroundPlaneCollisionSystem(), SystemPriorities.resolveCollisions );
+	
 		engine.addSystem( new SurfaceMovementSystem(), SystemPriorities.stateMachines );
 		engine.addSystem( new PlayerControlActionSystem(keyPoll), SystemPriorities.stateMachines );
 		engine.addSystem( new AnimationSystem(), SystemPriorities.animate);
