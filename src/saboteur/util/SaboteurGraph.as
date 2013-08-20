@@ -32,36 +32,7 @@ package saboteur.util
 			graphGrid = new Dictionary();
 		}
 		
-		public function checkLocationLinked(east:int, south:int, value:uint):Boolean {
-			var key:uint = pathUtil.getGridKey(east, south);
-			var toNorth:uint = pathUtil.getGridKey(east, south - 1);
-			var toSouth:uint = pathUtil.getGridKey(east, south + 1);
-			var toWest:uint = pathUtil.getGridKey(east-1, south);
-			var toEast:uint = pathUtil.getGridKey(east + 1, south);
-			
-			var gotArc:Boolean = false;
-			// setup links to neighboring nodes
-			var edges:uint = pathUtil.getEdgeValue(value);
-			var arcs:uint = pathUtil.getArcValue(value);
-			
-			if (graphGrid[toNorth] && (edges & SaboteurPathUtil.NORTH) ) {
-				if (preflightZones[toNorth]) return true;
-				
-			}
-			if (graphGrid[toSouth] && (edges & SaboteurPathUtil.SOUTH) )  {
-				if (preflightZones[toSouth]) return true;
-				
-			}
-			if (graphGrid[toWest] && (edges & SaboteurPathUtil.WEST) )  {
-				if (preflightZones[toWest]) return true;
-			}
-			if (graphGrid[toEast] && (edges & SaboteurPathUtil.EAST) )  {
-				if (preflightZones[toEast]) return true;
-			}
-			
-			return false;
-			
-		}
+
 		
 		private function addMutualArc(a:GraphNode, b:GraphNode):void {
 			//if (graph
@@ -92,28 +63,28 @@ package saboteur.util
 			
 			if (graphGrid[toNorth] && (edges & SaboteurPathUtil.NORTH) ) {
 				if (arcs & ARC_NORTH_MASK) {
-					graph.addMutualArc(node, graphGrid[toNorth] );
+					addMutualArc(node, graphGrid[toNorth] );
 					gotArc = true;
 				}
 			
 			}
 			if (graphGrid[toSouth] && (edges & SaboteurPathUtil.SOUTH) )  {
 				if (arcs & ARC_SOUTH_MASK) {
-					graph.addMutualArc(node, graphGrid[toSouth] );
+					addMutualArc(node, graphGrid[toSouth] );
 					gotArc = true;
 				
 				}
 			}
 			if (graphGrid[toWest] && (edges & SaboteurPathUtil.WEST) )  {
 				if (arcs & ARC_WEST_MASK) {
-					graph.addMutualArc(node, graphGrid[toWest] );
+					addMutualArc(node, graphGrid[toWest] );
 					gotArc = true;
 				//	throw new Error("W");
 				}
 			}
 			if (graphGrid[toEast] && (edges & SaboteurPathUtil.EAST) )  {
 				if (arcs & ARC_EAST_MASK) {
-					graph.addMutualArc(node, graphGrid[toEast] );
+					addMutualArc(node, graphGrid[toEast] );
 					gotArc = true;
 					//throw new Error("E");
 				}
