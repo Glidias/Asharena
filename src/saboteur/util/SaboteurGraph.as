@@ -48,8 +48,10 @@ package saboteur.util
 				
 				throw new Error("Node already found at: "+east+" ,"+south);
 			}
-			node = new GraphNode(graph, [east,south,value]);
-			graph.addNode(node);
+			var pathValue:uint = 0;
+			var valueArr:Array =  [east, south, value];
+			node = new GraphNode(graph,valueArr);
+			
 			
 			var toNorth:uint = pathUtil.getGridKey(east, south - 1);
 			var toSouth:uint = pathUtil.getGridKey(east, south + 1);
@@ -60,38 +62,68 @@ package saboteur.util
 			// setup links to neighboring nodes
 			var edges:uint = pathUtil.getEdgeValue(value);
 			var arcs:uint = pathUtil.getArcValue(value);
+			var hasCenter:Boolean = pathUtil.hasCenterConnection(arcs);  // can arcs be connected through center zone, or is it a diagonal cut corner case on 2 opposite corners?
+			graph.addNode(node);
+			
 			
 			if (graphGrid[toNorth] && (edges & SaboteurPathUtil.NORTH) ) {
 				if (arcs & ARC_NORTH_MASK) {
 					addMutualArc(node, graphGrid[toNorth] );
+					if (!hasCenter) {  // dont have center branch
+						pathValue |= (arcs & SaboteurPathUtil.ARC_NORTH_WEST) ? SaboteurPathUtil.ARC_NORTH_WEST : SaboteurPathUtil.ARC_NORTH_EAST;
+					}
+					
 					gotArc = true;
 				}
-			
 			}
+			if (graphGrid[toNorth] && graphGrid[toNorth].val.length > 3) {
+				graphGrid[toNorth].val[3] |= ( (graphGrid[toNorth].val[2] & ((SaboteurPathUtil.ARC_SOUTH_EAST | SaboteurPathUtil.ARC_SOUTH_WEST)<<SaboteurPathUtil.ARC_SHIFT) ));
+			}
+			
 			if (graphGrid[toSouth] && (edges & SaboteurPathUtil.SOUTH) )  {
 				if (arcs & ARC_SOUTH_MASK) {
 					addMutualArc(node, graphGrid[toSouth] );
+					if (!hasCenter)  {
+						pathValue |= (arcs & SaboteurPathUtil.ARC_SOUTH_WEST) ? SaboteurPathUtil.ARC_SOUTH_WEST : SaboteurPathUtil.ARC_SOUTH_EAST;
+					}
 					gotArc = true;
 				
 				}
 			}
+			if (graphGrid[toSouth] && graphGrid[toSouth].val.length > 3) {
+				graphGrid[toSouth].val[3] |= ( (graphGrid[toSouth].val[2] & ( (SaboteurPathUtil.ARC_NORTH_EAST | SaboteurPathUtil.ARC_NORTH_WEST )<<SaboteurPathUtil.ARC_SHIFT) ) );
+			}
+			
 			if (graphGrid[toWest] && (edges & SaboteurPathUtil.WEST) )  {
 				if (arcs & ARC_WEST_MASK) {
 					addMutualArc(node, graphGrid[toWest] );
+					if (!hasCenter) {
+						pathValue |= (arcs & SaboteurPathUtil.ARC_NORTH_WEST) ? SaboteurPathUtil.ARC_NORTH_WEST : SaboteurPathUtil.ARC_SOUTH_WEST;
+					}
 					gotArc = true;
 				//	throw new Error("W");
 				}
 			}
+			if (graphGrid[toWest] && graphGrid[toWest].val.length > 3) {
+				graphGrid[toWest].val[3] |= ( (graphGrid[toWest].val[2] & ((SaboteurPathUtil.ARC_NORTH_EAST | SaboteurPathUtil.ARC_SOUTH_EAST )<<SaboteurPathUtil.ARC_SHIFT)));
+			}
+			
 			if (graphGrid[toEast] && (edges & SaboteurPathUtil.EAST) )  {
 				if (arcs & ARC_EAST_MASK) {
-					addMutualArc(node, graphGrid[toEast] );
+					 addMutualArc(node, graphGrid[toEast] );
+					if (!hasCenter) {
+						pathValue |= (arcs & SaboteurPathUtil.ARC_NORTH_EAST) ? SaboteurPathUtil.ARC_NORTH_EAST : SaboteurPathUtil.ARC_SOUTH_EAST;
+					}
 					gotArc = true;
 					//throw new Error("E");
 				}
 			}
+			if (graphGrid[toEast] && graphGrid[toEast].val.length > 3) {
+				graphGrid[toEast].val[3] |= ( (graphGrid[toEast].val[2] & ((SaboteurPathUtil.ARC_NORTH_WEST | SaboteurPathUtil.ARC_SOUTH_WEST) <<SaboteurPathUtil.ARC_SHIFT))  );
+			}
 			
-		
-		
+			if (pathValue != 0) valueArr.push( (pathValue << SaboteurPathUtil.ARC_SHIFT) | (value & 15)  ) ;
+			
 			graphGrid[key] = node;
 				//if (assertGotArc) {
 				//	if (!firstTime && !gotArc) throw new Error("Assertion arc created failed!");
@@ -100,6 +132,9 @@ package saboteur.util
 			
 			return node;
 		}
+		
+	
+		
 		private var firstTime:Boolean = true;
 		
 		public function removeNode(east:int, south:int):void {
@@ -139,60 +174,32 @@ package saboteur.util
 		
 		public function recalculateEndpoints():void {
 			endPoints = new Dictionary();
-			preflightZones = new Dictionary();
+		//	preflightZones = new Dictionary();
 			graph.clearMarks();
 			var i:int = startNodes.length;
 			while (--i > -1) {
 				
-				graph.DFS(true, startNodes[i], visitNodeForEndPoints);
+				graph.BFS(false, startNodes[i], visitNodeForEndPoints);
 			}
 		}
 		
 	
 		
-		public var preflightZones:Dictionary = new Dictionary();
+		//public var preflightZones:Dictionary = new Dictionary();
 		
-		/*
-		public function canBuildAt(east:int, south:int, key:uint, value:uint):void {
-			var toNorth:uint = pathUtil.getGridKey(east, south - 1);
-			var toSouth:uint = pathUtil.getGridKey(east, south + 1);
-			var toWest:uint = pathUtil.getGridKey(east-1, south);
-			var toEast:uint = pathUtil.getGridKey(east + 1, south);
-			
-			var edges:uint = pathUtil.getEdgeValue(value);
-			var arcs:uint = pathUtil.getArcValue(value);
-			
-			if ( (arcs & SaboteurPathUtil.ARC_VERTICAL) ) {
-				if ( !preflightZones[toNorth] || !preflightZones[toSouth] ) return false; 
-			}
-			if (preflightZones[toSouth] && (edges & SaboteurPathUtil.SOUTH)  ) {
-				if ( ((arcs & SaboteurPathUtil.ARC_VERTICAL) && preflightZones[key]	)
-					|| ((arcs & SaboteurPathUtil.ARC_SOUTH_WEST) && preflightZones[toWest]  )
-					|| ((arcs & SaboteurPathUtil.ARC_SOUTH_EAST) && preflightZones[toEast]) )  endPointsAccum |= SaboteurPathUtil.SOUTH;
-			}
-			if (preflightZones[toWest] && (edges & SaboteurPathUtil.WEST) ) {
-				if ( ((arcs & SaboteurPathUtil.ARC_HORIZONTAL) && preflightZones[key])	
-					|| ((arcs & SaboteurPathUtil.ARC_NORTH_WEST) && preflightZones[toNorth])  
-					|| ((arcs & SaboteurPathUtil.ARC_SOUTH_WEST) && preflightZones[toSouth]) )  endPointsAccum |= SaboteurPathUtil.WEST;
-			}
-			if (preflightZones[toEast] && (edges & SaboteurPathUtil.EAST)  ) {
-					if ( ((arcs & SaboteurPathUtil.ARC_HORIZONTAL) && preflightZones[key])	
-					|| ((arcs & SaboteurPathUtil.ARC_NORTH_EAST) && preflightZones[toNorth])  
-					|| ((arcs & SaboteurPathUtil.ARC_SOUTH_EAST) && preflightZones[toSouth]) )  endPointsAccum |= SaboteurPathUtil.EAST;
-			}
-			
-		}
-		*/
+
 		
 		private function visitNodeForEndPoints(node:GraphNode, preflight:Boolean, data:uint):Boolean {
 	
 			var keyer:Array = node.val as Array;
 			var key:uint =  pathUtil.getGridKey(keyer[0], keyer[1]);
+			/*
 			if (preflight) {
 				
 				preflightZones[key] = true;
 				return true;
 			}
+			*/
 			
 			var value:uint = keyer[2];
 			var edges:uint = pathUtil.getEdgeValue(value);

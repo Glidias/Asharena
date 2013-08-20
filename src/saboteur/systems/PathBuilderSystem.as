@@ -85,7 +85,9 @@ package saboteur.systems
 		
 		public var signalBuildableChange:Signal1 = new Signal1();
 		private var pathUtil:SaboteurPathUtil = SaboteurPathUtil.getInstance();
-		public var buildToValidity:Boolean=false ;
+
+		
+		public var buildToValidity:Boolean=false;  // set this to true to use traditional boardgame saboteur rules where spatial position of videogame player avatar doesn't matter
 		
 		public function PathBuilderSystem(camera:Camera3D=null) 
 		{

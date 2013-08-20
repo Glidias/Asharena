@@ -92,20 +92,25 @@ package saboteur.util
 			}
 			
 			///*
-			if (pathGraph != null) {  // TODO: 
-			
+			if (pathGraph != null) {  
+		
 			//	var arc:uint = getArcValue(value);
-				if ( (neighborVal & EAST) && pathGraph.preflightZones[toEast] != null && ((getArcValue(buildDict[toEast])  & SaboteurGraph.ARC_WEST_MASK))  ) return RESULT_VALID;
-				if ( (neighborVal & WEST) && pathGraph.preflightZones[toWest] != null && ((getArcValue(buildDict[toWest]) & SaboteurGraph.ARC_EAST_MASK)  )) return RESULT_VALID;
-				if ( (neighborVal & NORTH) && pathGraph.preflightZones[toNorth] != null && ((getArcValue(buildDict[toNorth]) & SaboteurGraph.ARC_SOUTH_MASK)) ) return RESULT_VALID;
-				if ( (neighborVal & SOUTH) && pathGraph.preflightZones[toSouth] != null && ((getArcValue(buildDict[toSouth]) & SaboteurGraph.ARC_NORTH_MASK)) ) return RESULT_VALID;
+				if ( (neighborFlags & EAST) && pathGraph.endPoints[toEast] != null  && ((getTailEndArcVal(pathGraph.graphGrid[toEast].val)  & SaboteurGraph.ARC_WEST_MASK))  ) return RESULT_VALID; //
+				if ( (neighborFlags & WEST) && pathGraph.endPoints[toWest] != null && ((getTailEndArcVal(pathGraph.graphGrid[toWest].val) & SaboteurGraph.ARC_EAST_MASK)  ) ) return RESULT_VALID;  // 
+				if ( (neighborFlags & NORTH) && pathGraph.endPoints[toNorth] != null && ((getTailEndArcVal(pathGraph.graphGrid[toNorth].val) & SaboteurGraph.ARC_SOUTH_MASK)) ) return RESULT_VALID; //
+				if ( (neighborFlags & SOUTH) && pathGraph.endPoints[toSouth] != null && ((getTailEndArcVal(pathGraph.graphGrid[toSouth].val) & SaboteurGraph.ARC_NORTH_MASK)) ) return RESULT_VALID; //
 				// special indicator for above case to show no true path
-				
+				//throw new Error("Should have neighbor at least!" + ", "+pathGraph.endPoints[toNorth] + "/"+buildDict[toNorth] + ", "+pathGraph.endPoints[toSouth] + "/"+ buildDict[toSouth]);
 				return RESULT_OUT;
 			}
 		//	*/
 			
 			return RESULT_VALID;
+		}
+		
+		private function getTailEndArcVal(val:Array):uint {
+			
+			return (val[val.length - 1] & ARC_MASK) >> ARC_SHIFT;
 		}
 		
 		private static const INT_LIMIT:int = Math.sqrt(int.MAX_VALUE) * .5;
@@ -234,6 +239,16 @@ package saboteur.util
 		
 		public function getEdgeValue(value:uint):uint {
 			return  value & ~ARC_MASK;
+		}
+		
+		public function hasCenterConnection(arcValue:uint):Boolean {
+			if ((arcValue & (ARC_HORIZONTAL | ARC_VERTICAL))) return true;
+			var valuer:uint = 0;
+			valuer |= (arcValue & ARC_NORTH_WEST) ? (NORTH | WEST) : 0;
+			valuer |= (arcValue & ARC_NORTH_EAST) ? (NORTH | EAST) : 0;
+			valuer |= (arcValue & ARC_SOUTH_WEST) ? (SOUTH | WEST) : 0;
+			valuer |= (arcValue & ARC_SOUTH_EAST) ? (SOUTH | EAST) : 0;
+			return valuer != 15;
 		}
 		
 	

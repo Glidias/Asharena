@@ -12,21 +12,16 @@ package util
 	public class SpawnerBundle
 	{
 		public var ASSETS:Array;
-		public static const onInitialized:Signal1 = new Signal1();
-		private static var COUNT:int = 0;
-		public static function isLoading():Boolean {
-			return COUNT > 0;
-		}
+		public var onInitialized:Signal1 = new Signal1();
 		
 		public static var context3D:Context3D;
 		static private var DUMMY_NORMAL:BitmapTextureResource;
 		
 		public function SpawnerBundle() 
-		{
-			COUNT++;
-			// TODO: check for any ASSETS needed to load, before calling init
-			
-			
+		{	
+			if (ASSETS != null) {  // check assets if need to load, if so, do not Call init and return!
+		
+			}
 			init();
 		}
 		
@@ -42,7 +37,7 @@ package util
 		
 		protected function init():void {
 			ASSETS = null;
-			COUNT--;
+			
 			onInitialized.dispatch(this);
 		}
 		
