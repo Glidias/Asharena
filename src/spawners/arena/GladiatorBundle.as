@@ -49,7 +49,6 @@ package spawners.arena
 		}
 		
 		
-		
 		private function setupSkin(a3d:ByteArray, texture:BitmapData, raceName:String):void 
 		{
 			

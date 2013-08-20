@@ -5,6 +5,7 @@ package util
 	import ash.signals.Signal1;
 	import flash.display.BitmapData;
 	import flash.display3D.Context3D;
+	import flash.utils.describeType;
 	/**
 	 * ...
 	 * @author Glenn Ko
@@ -19,9 +20,14 @@ package util
 		
 		public function SpawnerBundle() 
 		{	
-			if (ASSETS != null) {  // check assets if need to load, if so, do not Call init and return!
-		
+			if (ASSETS != null && ASSETS.length > 0) {  // check assets if need to load, if so, do not Call init and return!
+				return;
 			}
+			init();
+		}
+		
+		internal function doInit():void 
+		{
 			init();
 		}
 		

@@ -59,7 +59,7 @@
     </library-path>
   </compiler>
   <file-specs>
-    <path-element>D:\Git\Asharena\src\tests\pathbuilding\TestPathBuilding3rdPerson.as</path-element>
+    <path-element>D:\Git\Asharena\src\spawners\arena\GladiatorialAnims.as</path-element>
   </file-specs>
   <default-background-color>#FFFFFF</default-background-color>
   <default-frame-rate>60</default-frame-rate>

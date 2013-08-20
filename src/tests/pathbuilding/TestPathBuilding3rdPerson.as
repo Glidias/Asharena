@@ -24,6 +24,7 @@ package tests.pathbuilding
 	import systems.collisions.EllipsoidCollider;
 	import systems.SystemPriorities;
 	import util.SpawnerBundle;
+	import util.SpawnerBundleLoader;
 	import views.engine3d.MainView3D;
 	import views.ui.bit101.BuildStepper;
 	import views.ui.indicators.CanBuildIndicator;
@@ -45,6 +46,11 @@ package tests.pathbuilding
 		private var stepper:BuildStepper;
 		private var thirdPerson:ThirdPersonController;
 		
+		private var bundleLoader:SpawnerBundleLoader;
+		private var gladiatorBundle:GladiatorBundle;
+		private var jettySpawner:JettySpawner;
+		private var arenaSpawner:ArenaSpawner;
+		
 
 		
 		public function TestPathBuilding3rdPerson() 
@@ -55,6 +61,7 @@ package tests.pathbuilding
 			addChild( _template3D = new MainView3D() );
 			_template3D.onViewCreate.add(onReady3D);
 			addChild(uiLayer);
+		
 			
 		}
 		
@@ -64,12 +71,21 @@ package tests.pathbuilding
 		private function onReady3D():void 
 		{
 			SpawnerBundle.context3D = _template3D.stage3D.context3D;
+			
+			gladiatorBundle = new GladiatorBundle(arenaSpawner = new ArenaSpawner(game.engine));
+			jettySpawner = new JettySpawner();
+				
+			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[gladiatorBundle, jettySpawner]);
 
+		}
+		
+		private function onSpawnerBundleLoaded():void 
+		{
+						
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 			
-			
-			var arenaSpawner:ArenaSpawner;
-			var gladiatorBundle:GladiatorBundle = new GladiatorBundle(arenaSpawner = new ArenaSpawner(game.engine));
+
+		
 			gladiatorBundle.arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage, 0,0,START_PLAYER_Z+33).add( game.keyPoll );
 			
 			var pathBuilder:PathBuilderSystem;
@@ -79,31 +95,16 @@ package tests.pathbuilding
 			addChild(canBuildIndicator);
 			pathBuilder.onEndPointStateChange.add(canBuildIndicator.setCanBuild);
 	
-			var jettySpawner:JettySpawner = new JettySpawner();
+			
 			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
-			
-			
-			
-		
+
 
 			if (game.colliderSystem) {
 				
 				game.colliderSystem.collidable = (ent.get(GameBuilder3D) as GameBuilder3D).collisionGraph;
 				game.colliderSystem._collider.threshold = 0.0001;
 			}
-			/*
-			_template3D.camera.z = 200;
-			_template3D.rotationX = Math.PI * .5;
 			
-			game.engine.addSystem(  new SimpleFlyController( 
-						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
-						(ent.get(GameBuilder3D) as GameBuilder3D).collisionGraph ,
-						stage, 
-						_template3D.camera, 
-						GameSettings.SPECTATOR_SPEED,
-						GameSettings.SPECTATOR_SPEED_SHIFT_MULT)
-						,preRender);
-				*/		
 		thirdPerson = new ThirdPersonController(stage, _template3D.camera, new Object3D(), arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity);
 			game.engine.addSystem( thirdPerson, SystemPriorities.postRender ) ;
 			
