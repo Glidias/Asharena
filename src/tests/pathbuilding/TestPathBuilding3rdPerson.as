@@ -27,6 +27,7 @@ package tests.pathbuilding
 	import util.SpawnerBundleLoader;
 	import views.engine3d.MainView3D;
 	import views.ui.bit101.BuildStepper;
+	import views.ui.bit101.PreloaderBar;
 	import views.ui.indicators.CanBuildIndicator;
 	import views.ui.UISpriteLayer;
 	/**
@@ -50,19 +51,23 @@ package tests.pathbuilding
 		private var gladiatorBundle:GladiatorBundle;
 		private var jettySpawner:JettySpawner;
 		private var arenaSpawner:ArenaSpawner;
+		private var _preloader:PreloaderBar = new PreloaderBar();
 		
 
 		
 		public function TestPathBuilding3rdPerson() 
 		{
 			haxe.initSwc(this);
+			addChild(_preloader);
+			
 			game = new TheGame(stage);
 	
 			addChild( _template3D = new MainView3D() );
 			_template3D.onViewCreate.add(onReady3D);
 			addChild(uiLayer);
-		
+				
 			
+			_template3D.visible = false;
 		}
 		
 		
@@ -70,18 +75,22 @@ package tests.pathbuilding
 		
 		private function onReady3D():void 
 		{
+			
+			
 			SpawnerBundle.context3D = _template3D.stage3D.context3D;
 			
 			gladiatorBundle = new GladiatorBundle(arenaSpawner = new ArenaSpawner(game.engine));
 			jettySpawner = new JettySpawner();
 				
 			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[gladiatorBundle, jettySpawner]);
-
+			bundleLoader.progressSignal.add( _preloader.setProgress );
+			bundleLoader.loadBeginSignal.add( _preloader.setLabel );
 		}
 		
 		private function onSpawnerBundleLoaded():void 
 		{
-						
+			_template3D.visible = true;
+			removeChild(_preloader);			
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 			
 

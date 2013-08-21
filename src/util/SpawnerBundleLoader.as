@@ -11,6 +11,7 @@ package util
 	import flash.utils.describeType;
 	import flash.utils.Dictionary;
 	import flash.utils.getQualifiedClassName;
+	import flash.utils.setTimeout;
 	/**
 	 * ...
 	 * @author Glenn Ko
@@ -22,19 +23,20 @@ package util
 		private var _totalLoads:int = 0;
 		private var _curLoaded:int = 0;
 	
-		private var loadDict:Dictionary = new Dictionary();
-		private var loadList:Vector.<SpawnerBundle>;
+	
+		private var loadList:Vector.<LoadItem>;
 		public var baseUrlPrefix:String = "bundle/";
 		private var context:LoaderContext;
 		private static const CROSS_DOMAIN_POLICY:String = "http://glidias.uphero.com/crossdomain.xml";
 		private var LOADED_DOMAIN:ApplicationDomain = new ApplicationDomain();
 		private var currentLoadItem:LoadItem;
-		private var progressSignal:Signal1 = new Signal1();
+		public var progressSignal:Signal1 = new Signal1();
+		public var loadBeginSignal:Signal1 = new Signal1();
 		
 		public function SpawnerBundleLoader(stage:Stage, completeHandler:Function, bundleList:Vector.<SpawnerBundle>) 
 		{
 			this.completeHandler = completeHandler;
-			loadList = new Vector.<SpawnerBundle>();
+			loadList = new Vector.<LoadItem>();
 			
 			var domain:SecurityDomain = stage.loaderInfo.url.indexOf("file://") >= 0 ? null : SecurityDomain.currentDomain;
 			if (domain != null) {
@@ -48,13 +50,15 @@ package util
 			while (--i > -1) {
 				var considerAsset:SpawnerBundle = bundleList[i];
 				if (considerAsset.ASSETS != null) {
-					
-					loadList.push(considerAsset);
+					var u:int = considerAsset.ASSETS.length;
+					while (--u > -1) {
+						loadList.push( new LoadItem(baseUrlPrefix+getQualifiedClassName(considerAsset.ASSETS[u]).split(".").join("/").replace("::", "/") + ".swf", considerAsset.ASSETS[u], getQualifiedClassName(considerAsset.ASSETS[u]), considerAsset)  );
+					}
+					_totalLoads++;
 				}
-				_totalLoads++;
 			}
 			
-			checkNext();
+			setTimeout(checkNext,1);
 		}
 		
 		private function checkNext():void {
@@ -72,31 +76,34 @@ package util
 		private function loadSpawnerBundle(loadItem:LoadItem):void 
 		{
 			var loader:ClassLoader = new ClassLoader();
-			loadDict[loader] = currentLoadItem;
+			loadBeginSignal.dispatch(loadItem.targetInstance.toString());
 			var filename:String = loadItem.url;
 		//	throw new Error(filename);
 			loader.addEventListener(ClassLoader.CLASS_LOADED, handleLoadComplete);
 			loader.load(filename, context);
+			//throw new Error(filename);
 			
 				
 		}
 		
 		private function handleLoadComplete(e:Event):void {
-			
+		
 			
 			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, handleLoadComplete);
 			
-			var me:Object = Object(currentLoadItem).constructor;
+			var me:Object = currentLoadItem.targetInstance;
 			var variables : XMLList = describeType( me ).variable;
 			
 			
 			var loader:ClassLoader = (e.currentTarget as ClassLoader);
-			var classe:Class = loader.getClass( baseUrlPrefix );
+			var classe:Class = loader.getClass( currentLoadItem.className );
 			
 			  for each ( var atom:XML in variables )
 				{		
 					var componentClass : Class = classe[atom.@name.toString()];			
+					if (componentClass == null) throw new Error("COuld not find classe!"+currentLoadItem.targetInstance);
 					me[atom.@name.toString()] = componentClass;
+				
 					
 				}
 			//	currentLoadItem.doInit();
@@ -104,6 +111,8 @@ package util
 					_curLoaded++;
 					
 					progressSignal.dispatch(_curLoaded/_totalLoads);
+					
+					currentLoadItem.popCheck();
 					
 					checkNext();
 			}
@@ -120,12 +129,12 @@ package util
 			
 			public function get curLoadItem():* 
 			{
-				return currentLoadItem;
+				return currentLoadItem ? currentLoadItem.targetInstance : null;
 			}
 			
 			public function get curLoadItemString():String
 			{
-				return currentLoadItem ? String(currentLoadItem) : "";
+				return currentLoadItem ? String(currentLoadItem.targetInstance) : "";
 			}
 			
 		
@@ -133,16 +142,25 @@ package util
 		
 }
 
+import util.SpawnerBundle;
 
 class LoadItem {
 	public var url:String;
 	public var targetInstance:*;
 	public var className:String;
+	public var bundle:SpawnerBundle;
 	
-	public function LoadItem(url:String, targetInstance:*, className:String):void {
+	public function LoadItem(url:String, targetInstance:*, className:String, bundle:SpawnerBundle):void {
 		this.url = url;
 		this.targetInstance = targetInstance;
 		this.className = className;
+		this.bundle = bundle;
+	}
+	
+	public function popCheck():void {
+		bundle.ASSETS.pop();
+		if (bundle.ASSETS.length == 0) bundle._doInit()
+	
 	}
 	
 }

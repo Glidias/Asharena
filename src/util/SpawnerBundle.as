@@ -26,7 +26,7 @@ package util
 			init();
 		}
 		
-		internal function doInit():void 
+		public function _doInit():void 
 		{
 			init();
 		}
