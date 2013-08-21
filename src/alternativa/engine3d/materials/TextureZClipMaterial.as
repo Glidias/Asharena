@@ -172,6 +172,10 @@ package alternativa.engine3d.materials {
 			}
 		}
 		
+		public static const WATER_BIT:uint = 128;
+		public static const NON_WATER_MASK:uint = ~WATER_BIT;
+		public var waterMode:Boolean = true;
+		
 		/**
 		 * @param object
 		 * @param programs
@@ -180,8 +184,9 @@ package alternativa.engine3d.materials {
 		 * @param alphaTest 0 - disabled, 1 - opaque, 2 - contours
 		 * @return
 		 */
-		private function getProgram(object:Object3D, programs:Vector.<TextureZClipMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):TextureZClipMaterialProgram {
+		private function getProgram(object:Object3D, programs:Vector.<TextureZClipMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int, waterMode:Boolean):TextureZClipMaterialProgram {
 			var key:uint = (opacityMap != null ? 3 : 0) + alphaTest;
+			key |= waterMode ? WATER_BIT : 0;
 			
 			var program:TextureZClipMaterialProgram = programs[key];
 			if (program == null) {
@@ -201,7 +206,7 @@ package alternativa.engine3d.materials {
 
 				// Pixel shader
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
-				fragmentLinker.addProcedure(kilProcedure);
+				if (waterMode) fragmentLinker.addProcedure(kilProcedure);
 				var outProcedure:Procedure = (opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure);
 				fragmentLinker.addProcedure(outProcedure);
 				if (alphaTest > 0) {
@@ -282,11 +287,11 @@ package alternativa.engine3d.materials {
 				if (alphaThreshold > 0) {
 					// Alpha test
 					// use opacityMap if it is presented
-					program = getProgram(object, optionsPrograms, camera, opacityMap, 1);
+					program = getProgram(object, optionsPrograms, camera, opacityMap, 1, waterMode);
 					drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap);
 				} else {
 					// do not use opacityMap at all
-					program = getProgram(object, optionsPrograms, camera, null, 0);
+					program = getProgram(object, optionsPrograms, camera, null, 0, waterMode);
 					drawUnit = getDrawUnit(program, camera, surface, geometry, null);
 				}
 				// Use z-buffer within DrawCall, draws without blending
@@ -297,11 +302,11 @@ package alternativa.engine3d.materials {
 				// use opacityMap if it is presented
 				if (alphaThreshold <= alpha && !opaquePass) {
 					// Alpha threshold
-					program = getProgram(object, optionsPrograms, camera, opacityMap, 2);
+					program = getProgram(object, optionsPrograms, camera, opacityMap, 2, waterMode);
 					drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap);
 				} else {
 					// There is no Alpha threshold or check z-buffer by previous pass
-					program = getProgram(object, optionsPrograms, camera, opacityMap, 0);
+					program = getProgram(object, optionsPrograms, camera, opacityMap, 0, waterMode);
 					drawUnit = getDrawUnit(program, camera, surface, geometry, opacityMap);
 				}
 				// Do not use z-buffer, draws with blending

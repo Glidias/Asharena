@@ -2,12 +2,14 @@ package saboteur.spawners
 {
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.loaders.ParserA3D;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.StandardMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.materials.VertexLightTextureMaterial;
+	import alternativa.engine3d.materials.VertexLightZClipMaterial;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.primitives.Plane;
@@ -38,7 +40,7 @@ package saboteur.spawners
 		static public const SPAWN_SCALE:Number = 17;
 		private var genesis:Object3D;
 		private var blueprint:Object3D;
-		private var injectMaterial:VertexLightTextureMaterial;
+		private var injectMaterial:VertexLightZClipMaterial;
 		private var collision:Object3D;
 		private var _floor:Plane;
 
@@ -65,7 +67,7 @@ package saboteur.spawners
 			
 		
 		//	var normalResource:BitmapTextureResource = new BitmapTextureResource(    new BitmapData(16, 16, false, 0x8080FF) );
-			injectMaterial = new VertexLightTextureMaterial(diffuse);
+			injectMaterial = new VertexLightZClipMaterial(diffuse);
 			//injectMaterial.glossiness = 0;
 		//	injectMaterial.specularPower = 0;
             

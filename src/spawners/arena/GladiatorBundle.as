@@ -13,6 +13,7 @@ package spawners.arena
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.materials.TextureZClipMaterial;
 	import alternativa.engine3d.materials.VertexLightTextureMaterial;
+	import alternativa.engine3d.materials.VertexLightZClipMaterial;
 	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.BitmapTextureResource;
@@ -28,6 +29,7 @@ package spawners.arena
 	 */
 	public class GladiatorBundle extends SpawnerBundle
 	{
+		public var textureMat:VertexLightZClipMaterial;
 		public var arenaSpawner:ArenaSpawner;
 		
 		
@@ -71,7 +73,7 @@ package spawners.arena
 			standard.specularPower = 0;
 			sk.geometry.calculateTangents(0);
 			*/
-			var textureMat:VertexLightTextureMaterial = new VertexLightTextureMaterial(diffuse);
+			textureMat = new VertexLightZClipMaterial(diffuse);
 			
 			var injectMaterial:Material =  textureMat;
 			sk.setMaterialToAllSurfaces(injectMaterial);

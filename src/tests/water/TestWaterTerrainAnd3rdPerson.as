@@ -19,7 +19,7 @@ package tests.water
 		private function init(e:Event):void 
 		{
 			removeEventListener(Event.ADDED_TO_STAGE, init);
-			haxe.init(this);
+			haxe.initSwc(this);
 			game = new TheGameAS3(stage);
 		}
 		

@@ -23,6 +23,7 @@ package
 	import spawners.arena.GladiatorBundle;
 	import util.geom.Geometry;
 	import util.SpawnerBundle;
+	import util.SpawnerBundleLoader;
 
 	import components.Pos;
 	import flash.Boot;
@@ -46,6 +47,7 @@ package
 	
 		private var arenaSpawner:ArenaSpawner;	
 		private var _view:WaterAndTerrain3rdPerson = new WaterAndTerrain3rdPerson();
+		private var spawnerBundle:GladiatorBundle;
 		
 		public function TheGameAS3(stage:Stage) 
 		{
@@ -66,15 +68,25 @@ package
 		
 		private function onViewInitialized(e:Event):void 
 		{
+			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onViewInitialized);
+				
 			SpawnerBundle.context3D = _view.stage3D.context3D;
 			
-			engine.addSystem( new RenderingSystem(_view.scene, _view), SystemPriorities.render );
+			spawnerBundle = new GladiatorBundle(arenaSpawner);
+			new SpawnerBundleLoader(stage, begin, new <SpawnerBundle>[spawnerBundle]);
 			
-			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onViewInitialized);
+			begin();
+		}
+		
+		private function begin():void 
+		{
+			spawnerBundle.textureMat.waterMode = true;
 
-			var spawnerBundle:GladiatorBundle = new GladiatorBundle(arenaSpawner);
+			engine.addSystem( new RenderingSystem(_view.scene, _view), SystemPriorities.render );
+		
+
 			arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage).add(keyPoll);
-			_view.inject(arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Pos) as Pos,  arenaSpawner.currentPlayerEntity.get(Rot) as Rot, arenaSpawner.currentPlayerSkin, arenaSpawner.currentPlayerSkin.getSurface(0).material as TextureZClipMaterial);
+			_view.inject(arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Pos) as Pos,  arenaSpawner.currentPlayerEntity.get(Rot) as Rot, arenaSpawner.currentPlayerSkin,spawnerBundle.textureMat);
 			
 			startGame();
 		}
@@ -92,6 +104,8 @@ package
 				colliderSystem._collider.threshold = 0.0001;
 				colliderSystem.collidable = new CollidableImpl(_view.terrainLOD, _view.getWaterPlane());
 			}
+			
+			gameStates.engineState.changeState( "thirdPerson");
 				
 			// Setup rendering system
 			ticker.start();	

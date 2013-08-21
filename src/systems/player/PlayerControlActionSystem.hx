@@ -57,6 +57,10 @@ class PlayerControlActionSystem extends System
 	override public function removeFromEngine(engine:Engine):Void {
 		super.removeFromEngine(engine);
 		//
+		var n:PlayerActionNode = nodeList.head;
+		if (n != null) {
+			n.action.set(PlayerAction.IDLE);
+		}
 		
 	}
 	

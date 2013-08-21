@@ -173,6 +173,7 @@ package alternativa.a3d.controller {
 		
 		override public function addToEngine(engine:Engine):void {
 			enable();
+			updateObjectTransform();
 		}
 		override public function removeFromEngine(engine:Engine):void {
 			disable();

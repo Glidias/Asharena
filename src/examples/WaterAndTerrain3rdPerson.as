@@ -19,6 +19,7 @@ package examples
 	import alternativa.engine3d.materials.StandardTerrainMaterial2;
 	import alternativa.engine3d.materials.TextureZClipMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
+	import alternativa.engine3d.materials.VertexLightZClipMaterial;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.SkyBox;
 	import alternativa.engine3d.primitives.Box;
@@ -125,7 +126,7 @@ package examples
 
 		}
 		
-		public function inject(cameraTarget:Object3D, followTarget:Object3D, playerPos:Pos, playerRot:Rot, skinRenderable:Object3D, teapotMaterial:TextureZClipMaterial=null):void {
+		public function inject(cameraTarget:Object3D, followTarget:Object3D, playerPos:Pos, playerRot:Rot, skinRenderable:Object3D, teapotMaterial:VertexLightZClipMaterial=null):void {
 			this.playerPos = playerPos;
 			this.teapotMaterial = teapotMaterial;
 			this.followTarget = followTarget;
@@ -242,7 +243,7 @@ package examples
 	}
 		
 		private var waterLevel:Number =  -20000;
-		public var reflectClipOffset:Number = 0;
+		public var reflectClipOffset:Number = 2;
 				
 		private function onContext3DCreated(e:Event):void			
 		{
@@ -446,7 +447,7 @@ package examples
 		public var _baseWaterLevel:Number = waterLevel;// -20000 + _baseWaterLevelOscillate;
 		public var _waterSpeed:Number = 0;// 2.0 * .001;
 		public var clipReflection:Boolean = true;
-		public var teapotMaterial:TextureZClipMaterial;
+		public var teapotMaterial:VertexLightZClipMaterial;
 		private var _lastTime:int = -1;
 		private var _waterOscValue:Number = 0;
 	
@@ -486,7 +487,8 @@ package examples
 		
 			if (teapotMaterial != null) {
 				var waterLocalPos:Vector3D = skinRenderable.globalToLocal(new Vector3D(0, 0, waterLevel));
-				teapotMaterial.waterLevel =  waterLocalPos.y - 0; 
+				teapotMaterial.waterLevel =  waterLocalPos.y-reflectClipOffset; 
+				
 			}
 			plane.z = waterLevel;
 			

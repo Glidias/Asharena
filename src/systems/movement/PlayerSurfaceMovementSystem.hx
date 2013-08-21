@@ -37,6 +37,15 @@ class PlayerSurfaceMovementSystem extends System
 		
 	}	
 	
+	override public function removeFromEngine(engine:Engine):Void {
+		var n:PlayerSurfaceMovementNode = nodeList.head;
+		while ( n != null) {
+			n.movement.strafe_state = 0;
+			n.movement.walk_state = 0;
+			n = n.next;
+		}
+	}
+	
 	
 	override public function addToEngine(engine:Engine):Void {
 		nodeList = engine.getNodeList(PlayerSurfaceMovementNode);

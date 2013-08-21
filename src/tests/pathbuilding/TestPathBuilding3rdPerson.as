@@ -4,6 +4,8 @@ package tests.pathbuilding
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.materials.FillMaterial;
+	import alternativa.engine3d.objects.Sprite3D;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.Template;
 	import ash.core.Engine;
@@ -15,6 +17,8 @@ package tests.pathbuilding
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.IEventDispatcher;
+	import flash.events.KeyboardEvent;
+	import flash.ui.Keyboard;
 	import input.KeyPoll;
 	import saboteur.spawners.JettySpawner;
 	import saboteur.systems.PathBuilderSystem;
@@ -22,6 +26,7 @@ package tests.pathbuilding
 	import saboteur.util.SaboteurPathUtil;
 	import spawners.arena.GladiatorBundle;
 	import systems.collisions.EllipsoidCollider;
+	import systems.collisions.GroundPlaneCollisionSystem;
 	import systems.SystemPriorities;
 	import util.SpawnerBundle;
 	import util.SpawnerBundleLoader;
@@ -31,7 +36,7 @@ package tests.pathbuilding
 	import views.ui.indicators.CanBuildIndicator;
 	import views.ui.UISpriteLayer;
 	/**
-	 * Spectator ghost flyer with wall collision against builded paths
+	 * Third person view and Spectator ghost flyer switching with wall collision against builded paths
 	 * @author Glenn Ko
 	 */
 	public class TestPathBuilding3rdPerson extends MovieClip
@@ -53,6 +58,7 @@ package tests.pathbuilding
 		private var arenaSpawner:ArenaSpawner;
 		private var _preloader:PreloaderBar = new PreloaderBar();
 		
+		private var spectatorPerson:SimpleFlyController;
 
 		
 		public function TestPathBuilding3rdPerson() 
@@ -89,20 +95,30 @@ package tests.pathbuilding
 		
 		private function onSpawnerBundleLoaded():void 
 		{
+		//		game.gameStates.engineState.changeState("thirdPerson");
+				
 			_template3D.visible = true;
 			removeChild(_preloader);			
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 			
 
-		
-			gladiatorBundle.arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage, 0,0,START_PLAYER_Z+33).add( game.keyPoll );
 			
-			var pathBuilder:PathBuilderSystem;
-			game.engine.addSystem( pathBuilder = new PathBuilderSystem(_template3D.camera), SystemPriorities.postRender );
+		
+			gladiatorBundle.arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage, 0, 0, START_PLAYER_Z + 33).add( game.keyPoll );
+		
+		
+			
+			
+			var pathBuilder:PathBuilderSystem = new PathBuilderSystem(_template3D.camera);
+			 
+			game.gameStates.thirdPerson.addInstance(pathBuilder).withPriority(SystemPriorities.postRender);
+			//game.engine.addSystem(pathBuilder, SystemPriorities.postRender );
 			pathBuilder.signalBuildableChange.add( onBuildStateChange);
 			var canBuildIndicator:CanBuildIndicator = new CanBuildIndicator();
 			addChild(canBuildIndicator);
 			pathBuilder.onEndPointStateChange.add(canBuildIndicator.setCanBuild);
+			
+			
 	
 			
 			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
@@ -114,11 +130,27 @@ package tests.pathbuilding
 				game.colliderSystem._collider.threshold = 0.0001;
 			}
 			
-		thirdPerson = new ThirdPersonController(stage, _template3D.camera, new Object3D(), arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity);
-			game.engine.addSystem( thirdPerson, SystemPriorities.postRender ) ;
+			spectatorPerson =new SimpleFlyController( 
+						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
+						(ent.get(GameBuilder3D) as GameBuilder3D).collisionGraph ,
+						stage, 
+						_template3D.camera, 
+						GameSettings.SPECTATOR_SPEED,
+						GameSettings.SPECTATOR_SPEED_SHIFT_MULT);
 			
+						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
+		
+	
+			thirdPerson = new ThirdPersonController(stage, _template3D.camera, new Object3D(), arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity);
+			//game.engine.addSystem( thirdPerson, SystemPriorities.postRender ) ;
+			game.gameStates.thirdPerson.addInstance(thirdPerson).withPriority(SystemPriorities.postRender);
 			
 		
+			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(122, true) ).withPriority(SystemPriorities.resolveCollisions);
+			
+			game.gameStates.engineState.changeState("thirdPerson");
+		
+			
 			
 			uiLayer.addChild( stepper = new BuildStepper());
 			stepper.onBuild.add(pathBuilder.attemptBuild);
@@ -128,6 +160,19 @@ package tests.pathbuilding
 			ticker = new FrameTickProvider(stage);
 			ticker.add(tick);
 			ticker.start();
+			
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+		
+		}
+		
+		private var _isThirdPerson:Boolean = true;
+		private function onKeyDown(e:KeyboardEvent):void 
+		{
+			if (e.keyCode === Keyboard.L) {
+				
+				_isThirdPerson = !_isThirdPerson;
+				game.gameStates.engineState.changeState(_isThirdPerson ? "thirdPerson" : "spectator");
+			}
 		}
 		
 		private function tick(time:Number):void {

@@ -30,16 +30,20 @@ import systems.rendering.RenderSystem;
 
 class TheGame 
 {
+
 	public var colliderSystem:EllipsoidColliderSystem;
 	
 	public var engine:Engine;
-	public var spawner:Spawner;
+	public var engineState:EngineStateMachine;
+	
+	public var spawner:Spawner;  // to depeciate
+	
 	public var stage:Stage;
 	public var ticker:FrameTickProvider;
 	public var keyPoll:KeyPoll;
 	
+	public var gameStates:GameStates;
 	
-
 	
 	public function new(stage:Stage) 
 	{
@@ -56,39 +60,14 @@ class TheGame
 		
 		colliderSystem = new EllipsoidColliderSystem( new Geometry(), 0.001);
 		
-		// Create systems
-		//EllipsoidCollider;
-		//SurfaceMovementSystem;
-		/*
-		var esm:EngineStateMachine = new EngineStateMachine(engine);
+		gameStates = new GameStates(engine, colliderSystem, keyPoll);
 		
-		
-		var thirdPerson:EngineState = new EngineState();
-		thirdPerson.addSingleton(GravitySystem).withPriority( SystemPriorities.update);
-		thirdPerson.addInstance( new PlayerJumpSystem(keyPoll) ).withPriority( SystemPriorities.update);
-		thirdPerson.addInstance( new PlayerSurfaceMovementSystem()).withPriority( SystemPriorities.update);
-		thirdPerson.addInstance( colliderSystem).withPriority( SystemPriorities.preSolveCollisions);
-		//esm.addState("thirdperson",  );
-		*/
-		
-		
-		
-		engine.addSystem( new GravitySystem(), SystemPriorities.update );
-		engine.addSystem( new PlayerJumpSystem(keyPoll), SystemPriorities.update);
-		engine.addSystem( new PlayerSurfaceMovementSystem(), SystemPriorities.update );
-		
-		engine.addSystem(colliderSystem , SystemPriorities.preSolveCollisions );
-		engine.addSystem( new QPhysicsSystem(), SystemPriorities.solveCollisions );
-			engine.addSystem( new GroundPlaneCollisionSystem(122, true), SystemPriorities.solveCollisions );
-		engine.addSystem( new MovementSystem(), SystemPriorities.move );
-	
-		engine.addSystem( new SurfaceMovementSystem(), SystemPriorities.stateMachines );
-		engine.addSystem( new PlayerControlActionSystem(keyPoll), SystemPriorities.stateMachines );
-		engine.addSystem( new AnimationSystem(), SystemPriorities.animate);
 		
 		ActionUIntSignal;
 		RenderSystem;
 		FlockingSystem;
+		Spawner;
+		GroundPlaneCollisionSystem;
 	
 		
 		// Spawn starting entities

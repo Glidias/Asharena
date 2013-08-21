@@ -92,8 +92,8 @@ package saboteur.systems
 		public function PathBuilderSystem(camera:Camera3D=null) 
 		{
 			this.camera = camera;
-		//	camPos  = new Vector3D();
-		onEndPointStateChange.current = -2;
+			//	camPos  = new Vector3D();
+			onEndPointStateChange.current = -2;
 			
 			
 		}
@@ -115,6 +115,12 @@ package saboteur.systems
 			nodeList = engine.getNodeList(PathBuildingNode);
 			nodeList.nodeAdded.add( onNodeAdded);
 			validateVis();
+		}
+		
+		override public function removeFromEngine(engine:Engine):void {
+			var head:PathBuildingNode = nodeList.head as PathBuildingNode;
+			if (head == null) return;
+			head.builder.setBlueprintVis(false);
 		}
 		
 		private function onNodeAdded(node:PathBuildingNode):void 
