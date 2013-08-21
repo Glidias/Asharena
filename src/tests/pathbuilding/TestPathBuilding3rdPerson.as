@@ -3,8 +3,11 @@ package tests.pathbuilding
 	import alternativa.a3d.collisions.CollisionBoundNode;
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
+	import alternativa.engine3d.alternativa3d;
+	import alternativa.engine3d.core.events.MouseEvent3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.FillMaterial;
+	import alternativa.engine3d.objects.Hud2D;
 	import alternativa.engine3d.objects.Sprite3D;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.Template;
@@ -161,9 +164,33 @@ package tests.pathbuilding
 			ticker.add(tick);
 			ticker.start();
 			
+			var hud:Hud2D;
+			_template3D.camera.addChild( hud = new Hud2D() );
+			
+			var spr:Sprite3D = new Sprite3D(16, 16, new FillMaterial(0xFF0000, 1));
+			spr.x -= 8;
+		//	spr.mouseEnabled = false;
+		//	spr.mouseChildren = false;
+			//spr.perspectiveScale = false;
+			spr.alwaysOnTop = true;
+			spr.useHandCursor = true;
+			spr.z = 0;
+			
+			var spr2:Sprite3D = new Sprite3D(32, 32, new FillMaterial(0x00FF00, 1));
+			//spr2.perspectiveScale = false;
+			spr2.alwaysOnTop = true;
+			spr2.useHandCursor = true;
+			spr2.z = 0;
+			
+			
+			hud.addChild(spr);
+			hud.addChild(spr2);
+			
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		
 		}
+		
+		
 		
 		private var _isThirdPerson:Boolean = true;
 		private function onKeyDown(e:KeyboardEvent):void 
