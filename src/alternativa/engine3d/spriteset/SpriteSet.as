@@ -25,7 +25,7 @@ package alternativa.engine3d.spriteset
 	 * 
 	 * @author Glenn Ko
 	 */
-	public class Sprite3DSet extends Object3D
+	public class SpriteSet extends Object3D
 	{
 		/**
 		 * Raw sprite data to upload to GPU if number of renderable sprites is lower than batch
@@ -106,7 +106,7 @@ package alternativa.engine3d.spriteset
 		 * 									Specify more registers if needed depending on material type.
 		 * @param	geometry   (Optional)   Specific custom geometry layout for the spriteset if needed, else, it'll try to create a normalized (1x1 sized geometry sprite batch geometry) to fit according to available material types in Alternativa3D. 
 		 */
-		public function Sprite3DSet(numSprites:int, viewAligned:Boolean, material:TextureMaterial, width:Number, height:Number,maxSprites:int=0, numRegistersPerSprite:int=1, geometry:Geometry=null) 
+		public function SpriteSet(numSprites:int, viewAligned:Boolean, material:TextureMaterial, width:Number, height:Number,maxSprites:int=0, numRegistersPerSprite:int=1, geometry:Geometry=null) 
 		{
 			super();
 			
@@ -338,7 +338,7 @@ package alternativa.engine3d.spriteset
 			var key:String = maxSprites + "_" + (maxSprites * NUM_REGISTERS_PER_SPR) + "_z";
 			var res:Procedure = _transformProcedures[key];
 			if (res != null) return res;
-			res = _transformProcedures[key] = new Procedure(null, "Sprite3DSetTransformProcedure");
+			res = _transformProcedures[key] = new Procedure(null, "SpriteSetTransformProcedure");
 			res.compileFromArray([
 				"mov t2, c[a0.x].xyz",  // origin position in local coordinate space
 				
@@ -385,7 +385,7 @@ package alternativa.engine3d.spriteset
 			var key:String = maxSprites + "_" + (maxSprites * NUM_REGISTERS_PER_SPR) + "_axis";
 			var res:Procedure = _transformProcedures[key];
 			if (res != null) return res;
-			res = _transformProcedures[key] = new Procedure(null, "Sprite3DSetTransformProcedure");
+			res = _transformProcedures[key] = new Procedure(null, "SpriteSetTransformProcedure");
 			res.compileFromArray([
 				"mov t2, c[a0.x].xyz",  // origin position in local coordinate space
 				
@@ -431,7 +431,7 @@ package alternativa.engine3d.spriteset
 			var key:String = maxSprites + "_" + (maxSprites * NUM_REGISTERS_PER_SPR) + "_view";
 			var res:Procedure = _transformProcedures[key];
 			if (res != null) return res;
-			res = _transformProcedures[key] = new Procedure(null, "Sprite3DSetTransformProcedure");
+			res = _transformProcedures[key] = new Procedure(null, "SpriteSetTransformProcedure");
 			
 			
 			res.compileFromArray([
