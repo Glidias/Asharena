@@ -29,8 +29,8 @@ package assets.fonts
 		protected function init(texture:BitmapData, rectBytes:ByteArray):void {
 			sheet = new BitmapData(texture.width, texture.height, true, 0x330000FF);
 			var mat:Matrix = new Matrix();
-			//mat.scale(1, -1);
-			//mat.translate(0, sheet.height);
+			mat.scale(1, -1);
+			mat.translate(0, sheet.height);
 			sheet.draw(texture, mat);
 			//sheet = texture;
 			
@@ -58,7 +58,7 @@ package assets.fonts
 		
 		public function getRandomRect(rect:Rectangle=null):Rectangle {
 			rect = rect || (new Rectangle());
-			var index:uint =  Math.random() * getNumLetters();
+			var index:uint =Math.random() * getNumLetters();
 			rect.width = rects[(index << 2) + 2];
 			rect.height = rects[(index << 2) + 3];
 			
