@@ -43,6 +43,7 @@ package saboteur.spawners
 		private var injectMaterial:VertexLightZClipMaterial;
 		private var collision:Object3D;
 		private var _floor:Plane;
+		public var diffuse:BitmapTextureResource;
 
 
 		public function JettySpawner() 
@@ -63,7 +64,7 @@ package saboteur.spawners
 		 
 			plane.geometry.upload(context3D);
 			
-			var diffuse:BitmapTextureResource = new BitmapTextureResource(new JettyAssets.$_TEXTURE().bitmapData);
+			diffuse = new BitmapTextureResource(new JettyAssets.$_TEXTURE().bitmapData);
 			
 		
 		//	var normalResource:BitmapTextureResource = new BitmapTextureResource(    new BitmapData(16, 16, false, 0x8080FF) );

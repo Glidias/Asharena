@@ -43,7 +43,7 @@ package alternativa.engine3d.objects
 		
 		
 		override alternativa3d function calculateChildrenVisibility(camera:Camera3D):void {
-		/*
+		///*
 			if (!camera.orthographic) {
 				if (lastWidth != camera.view._width || lastHeight != camera.view._height || nearClipping != camera.nearClipping || farClipping != camera.farClipping || fov != camera.fov) {
 					lastWidth = camera.view._width;
@@ -55,7 +55,7 @@ package alternativa.engine3d.objects
 					orthoCamera.nearClipping = nearClipping;
 					orthoCamera.farClipping = farClipping;
 					orthoCamera.calculateProjection(lastWidth, lastHeight);
-	
+					orthoCamera.renderer = camera.renderer;
 					orthoCamera.view = camera.view;
 					orthoCamera.calculateFrustum(cameraToLocalTransform);
 				}
@@ -65,22 +65,19 @@ package alternativa.engine3d.objects
 				camera = orthoCamera;
 			}
 			
-			localToCameraTransform.identity(); //camera.localToCameraTransform;
-			cameraToLocalTransform.identity(); //camera.cameraToLocalTransform;
-			*/
-			
-			localToCameraTransform.l =  camera.focalLength
-			cameraToLocalTransform.l = -camera.focalLength;
+		
+			//*/
+		
 			super.calculateChildrenVisibility(camera);
 		}
 		
-		/*
+	
 		override alternativa3d function collectChildrenDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			
 			if (!camera.orthographic) camera = orthoCamera;
 			super.collectChildrenDraws(camera,lights,lightsLength,useShadow);
 		}
-		*/
+	
 		
 	}
 

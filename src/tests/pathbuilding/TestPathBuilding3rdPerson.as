@@ -7,20 +7,26 @@ package tests.pathbuilding
 	import alternativa.engine3d.core.events.MouseEvent3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.FillMaterial;
+	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.objects.Hud2D;
 	import alternativa.engine3d.objects.Sprite3D;
 	import alternativa.engine3d.RenderingSystem;
+	import alternativa.engine3d.spriteset.materials.TextureAtlasMaterial;
+	import alternativa.engine3d.spriteset.SpriteSet;
 	import alternativa.engine3d.Template;
 	import ash.core.Engine;
 	import ash.core.Entity;
 	import ash.tick.FrameTickProvider;
+	import assets.fonts.ConsoleFont;
 	import com.bit101.components.ComboBox;
 	import components.Pos;
+	import flash.display.Bitmap;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.IEventDispatcher;
 	import flash.events.KeyboardEvent;
+	import flash.geom.Rectangle;
 	import flash.ui.Keyboard;
 	import input.KeyPoll;
 	import saboteur.spawners.JettySpawner;
@@ -165,26 +171,54 @@ package tests.pathbuilding
 			ticker.start();
 			
 			var hud:Hud2D;
+			//_template3D.camera.orthographic = true;
 			_template3D.camera.addChild( hud = new Hud2D() );
-			
+			hud.z = 1.1;
 			var spr:Sprite3D = new Sprite3D(16, 16, new FillMaterial(0xFF0000, 1));
 			spr.x -= 8;
 		//	spr.mouseEnabled = false;
 		//	spr.mouseChildren = false;
 			//spr.perspectiveScale = false;
-			spr.alwaysOnTop = true;
+		//	spr.alwaysOnTop = true;
 			spr.useHandCursor = true;
 			spr.z = 0;
 			
 			var spr2:Sprite3D = new Sprite3D(32, 32, new FillMaterial(0x00FF00, 1));
-			//spr2.perspectiveScale = false;
-			spr2.alwaysOnTop = true;
 			spr2.useHandCursor = true;
-			spr2.z = 0;
+			spr2.z = 1;
+			
+			_template3D.viewBackgroundColor = 0xFFFFFF;
+			
+			var font:ConsoleFont = new ConsoleFont();
+			var atlasMaterial:TextureAtlasMaterial = new TextureAtlasMaterial(font.bmpResource, null);
+			atlasMaterial.alphaThreshold = .99;
+		//	atlasMaterial.opaquePass
+		//addChild( new Bitmap(font.bmpResource.data));
+			var spriteSet:SpriteSet = new SpriteSet(333, true, atlasMaterial, font.sheet.width, font.sheet.height, 60,2)
+			spriteSet.randomisePositions(0, 1|2, stage.stageWidth);
+			//spriteSet.alwaysOnTop = true;
 			
 			
-			hud.addChild(spr);
-			hud.addChild(spr2);
+			var rect:Rectangle = new Rectangle();
+			var data:Vector.<Number> = spriteSet.spriteData;
+			var previewFontSpr:Sprite = new Sprite();
+			addChild(previewFontSpr);
+			previewFontSpr.graphics.lineStyle(0, 0xFF0000);
+			
+			for (var i:int = 0; i < data.length; i += 8) {
+				font.getRandomRect(rect);
+				data[i + 4] =  rect.x;
+				data[i + 5] = rect.y;
+				data[i + 6] =  rect.width;// 1; rect.width;
+				data[i + 7] =  rect.height;// 1; rect.height;
+				previewFontSpr.graphics.drawRect(rect.x*font.sheet.width, rect.y*font.sheet.height, rect.width*font.sheet.width, rect.height*font.sheet.height);
+				//if (rect.x > 1 || rect.y > 1 || rect.width > 1 || rect.height > 1 || rect.x < 0 || rect.y < 0 || rect.width < 0 || rect.height < 0) throw new Error("OUTTA BOUNDS:" +rect);
+			}
+			
+			//hud.addChild(spr);
+			//hud.addChild(spr2);
+			hud.addChild(spriteSet);
+			previewFontSpr.addChild( new Bitmap(font.sheet));
 			
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		

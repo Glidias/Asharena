@@ -4,6 +4,7 @@ package alternativa.engine3d.spriteset
 	import alternativa.engine3d.core.DrawUnit;
 	import alternativa.engine3d.core.Light3D;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.Renderer;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.materials.compiler.VariableType;
@@ -13,6 +14,7 @@ package alternativa.engine3d.spriteset
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.Geometry;
+	import alternativa.engine3d.spriteset.materials.IAtlasVertexMaterial;
 	import alternativa.engine3d.spriteset.util.SpriteGeometryUtil;
 	import flash.display3D.Context3D;
 	import flash.display3D.Context3DVertexBufferFormat;
@@ -53,6 +55,8 @@ package alternativa.engine3d.spriteset
 			this.material = mat;
 			surface.material = mat;
 		}
+		
+		public var alwaysOnTop:Boolean = false;
 		
 		private static var _transformProcedures:Dictionary = new Dictionary();
 		public var geometry:Geometry;
@@ -106,7 +110,7 @@ package alternativa.engine3d.spriteset
 		 * 									Specify more registers if needed depending on material type.
 		 * @param	geometry   (Optional)   Specific custom geometry layout for the spriteset if needed, else, it'll try to create a normalized (1x1 sized geometry sprite batch geometry) to fit according to available material types in Alternativa3D. 
 		 */
-		public function SpriteSet(numSprites:int, viewAligned:Boolean, material:TextureMaterial, width:Number, height:Number,maxSprites:int=0, numRegistersPerSprite:int=1, geometry:Geometry=null) 
+		public function SpriteSet(numSprites:int, viewAligned:Boolean, material:Material, width:Number, height:Number,maxSprites:int=0, numRegistersPerSprite:int=1, geometry:Geometry=null) 
 		{
 			super();
 			
@@ -154,7 +158,7 @@ package alternativa.engine3d.spriteset
 				else  drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("up"), 0, 0, 1, 0);
 				drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("right"), cameraToLocalTransform.a, cameraToLocalTransform.e, cameraToLocalTransform.i, 0);  
 			}
-			drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("spriteSet"), width*.5, height*.5, 0, 0);  
+			drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("spriteSet"), width*.5, height*.5, 0, 1);  
 			drawUnit.setVertexConstantsFromVector(0, toUploadSpriteData, toUploadNumSprites*NUM_REGISTERS_PER_SPR ); 
 		}
 		
@@ -163,10 +167,11 @@ package alternativa.engine3d.spriteset
 			var spriteDataSize:int;
 			var i:int;
 			var numSprites:int = _numSprites;
+			var objRenderPriority:int = alwaysOnTop ? -1 : Renderer.NEXT_LAYER;
 		
 			// setup defaults if required
 			if (geometry == null) {
-				geometry = SpriteGeometryUtil.createNormalizedSpriteGeometry(maxSprites, 0, SpriteGeometryUtil.guessRequirementsAccordingToMaterial(material), 1);
+				geometry = SpriteGeometryUtil.createNormalizedSpriteGeometry(maxSprites, 0, SpriteGeometryUtil.guessRequirementsAccordingToMaterial(material), 1,0,0,NUM_REGISTERS_PER_SPR);
 				geometry.upload( camera.context3D );
 			}
 			if (transformProcedure == null) validateTransformProcedure();
@@ -176,7 +181,7 @@ package alternativa.engine3d.spriteset
 					toUploadSpriteData = spriteData;
 					toUploadNumSprites = _numSprites;
 					surface.numTriangles = (toUploadNumSprites << 1);
-					 surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow);
+					 surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objRenderPriority);
 				}
 				else if (staticBatches) {
 					spriteDataSize = NUM_REGISTERS_PER_SPR * 4;
@@ -184,11 +189,10 @@ package alternativa.engine3d.spriteset
 						toUploadSpriteData = staticBatches[i];
 						toUploadNumSprites = toUploadSpriteData.length / spriteDataSize;
 						surface.numTriangles = (toUploadNumSprites << 1);
-						surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow);
+						surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objRenderPriority);
 					}
 				}
-				else { 
-				
+				else {
 					spriteDataSize = (NUM_REGISTERS_PER_SPR << 2);
 					toUploadSpriteData = uploadSpriteData;
 					for (i = 0; i < _numSprites;  i += maxSprites) {
@@ -206,7 +210,7 @@ package alternativa.engine3d.spriteset
 						}
 						surface.numTriangles = (toUploadNumSprites << 1);
 					
-						surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow);
+						surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objRenderPriority);
 					
 					}
 				}
@@ -233,7 +237,7 @@ package alternativa.engine3d.spriteset
 			if (geometry != null) {
 				geometry.dispose();
 			}
-			geometry = SpriteGeometryUtil.createNormalizedSpriteGeometry(maxSprites, 0, SpriteGeometryUtil.guessRequirementsAccordingToMaterial(material), 1);
+			geometry = SpriteGeometryUtil.createNormalizedSpriteGeometry(maxSprites, 0, SpriteGeometryUtil.guessRequirementsAccordingToMaterial(material), 1, 0,0, NUM_REGISTERS_PER_SPR);
 			if (context3D) geometry.upload(context3D);
 		}
 		
@@ -241,7 +245,7 @@ package alternativa.engine3d.spriteset
 		 * Sets up transform procedure according to settings found in this instance.
 		 */
 		public function validateTransformProcedure():void {
-			transformProcedure = viewAligned ? getViewAlignedTransformProcedure(maxSprites) : axis!= null ? getAxisAlignedTransformProcedure(maxSprites) :  getTransformProcedure(maxSprites);
+			transformProcedure = material is IAtlasVertexMaterial ? (material as IAtlasVertexMaterial).getAtlasTransformProcedure(maxSprites, NUM_REGISTERS_PER_SPR, viewAligned, axis) :  viewAligned ? getViewAlignedTransformProcedure(maxSprites) : axis!= null ? getAxisAlignedTransformProcedure(maxSprites) :  getTransformProcedure(maxSprites);
 		}
 		
 	
@@ -282,7 +286,7 @@ package alternativa.engine3d.spriteset
 		public function bakeSpriteData(flushOldSpriteDataIfPossible:Boolean = false):Vector.<Vector.<Number>> {
 			
 			// setup defaults if required
-			if (geometry == null) geometry = SpriteGeometryUtil.createNormalizedSpriteGeometry(maxSprites, 0, SpriteGeometryUtil.guessRequirementsAccordingToMaterial(material), 1);
+			if (geometry == null) geometry = SpriteGeometryUtil.createNormalizedSpriteGeometry(maxSprites, 0, SpriteGeometryUtil.guessRequirementsAccordingToMaterial(material), 1, 0,0, NUM_REGISTERS_PER_SPR);
 			if (transformProcedure == null) validateTransformProcedure();
 			
 			staticBatches = new Vector.<Vector.<Number>>();
