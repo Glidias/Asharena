@@ -37,13 +37,13 @@ package alternativa.engine3d.spriteset.materials {
 	use namespace alternativa3d;
 
 	/**
-	 * The material fills surface with bitmap image in light-independent manner. Mainly used for drawing SpriteSet data.
+	 * 
 	 * 
 	 * To be drawn with this material, geometry shoud have UV coordinates.
 	 * @see alternativa.engine3d.objects.Skin#divide()
 	 * @see alternativa.engine3d.core.VertexAttributes#TEXCOORDS
 	 */
-	public class TextureAtlasMaterial extends Material  implements IAtlasVertexMaterial  {  //
+	public class MaskColorAtlasMaterial extends Material  implements IAtlasVertexMaterial  {  //
 
 		private static var caches:Dictionary = new Dictionary(true);
 		private var cachedContext3D:Context3D;
@@ -62,6 +62,38 @@ package alternativa.engine3d.spriteset.materials {
 		public static  const FLAG_MIPNONE:uint = 4;
 		public var flags:uint = 0;
 
+		/*
+		private var maskRed:Number;
+		private var maskBlue:Number;
+		private var maskGreen:Number;
+		*/
+		private var red:Number; 
+		private var blue:Number;
+		private var green:Number;
+
+		
+			public function get color():uint {
+			return (red*0xFF << 16) + (green*0xFF << 8) + blue*0xFF;
+			}
+
+			/**
+			* @private
+			*/
+			public function set color(value:uint):void {
+			red = ((value >> 16) & 0xFF)/0xFF;
+			green = ((value >> 8) & 0xFF)/0xFF;
+			blue = (value & 0xff)/0xFF;
+			}
+
+			/*
+			private function get maskColor():uint {
+			return (maskRed*0xFF << 16) + (maskGreen*0xFF << 8) + maskBlue*0xFF;
+			}
+			*/
+
+
+		
+		
 		/**
 		 * @private
 		 * Procedure for diffuse map with alpha channel
@@ -77,7 +109,14 @@ package alternativa.engine3d.spriteset.materials {
 				"#v0=vUV",
 				"#s0=sDiffuse",
 				"#c0=cThresholdAlpha",
+				"#c1=cColor",
 				"tex t0, v0, s0 <2d,"+((flags & FLAG_PIXEL_NEAREST) ? "nearest" : "linear")+",repeat,"+((flags & FLAG_MIPNONE) ? "mipnone" : "miplinear")+">",  //nearest,repeat,nomip  //linear,repeat,miplinear
+				"sge t1.w, t0.z, c1.w",   // should we mask? c1.w is mask color value on blue at full 255
+				"mul t1.xyz, t1.www, c1.xyz",  // setup color to add if any...
+				"sub t1.w, c0.z, t1.w",  // flip 1/0.
+				"mul t0.xyz, t0.xyz, t1.www",   
+				"add t0.xyz, t0.xyz, t1.xyz",  // add color
+				
 				"mul t0.w, t0.w, c0.w",
 				"mov o0, t0"
 			], "getDiffuseProcedure");
@@ -95,7 +134,16 @@ package alternativa.engine3d.spriteset.materials {
 				"#s0=sDiffuse",
 				"#s1=sOpacity",
 				"#c0=cThresholdAlpha",
+				"#c1=cColor",
 				"tex t0, v0, s0 <2d,"+((flags & FLAG_PIXEL_NEAREST) ? "nearest" : "linear")+",repeat,"+((flags & FLAG_MIPNONE) ? "mipnone" : "miplinear")+">",
+								"sge t1.w, t0.z, c1.w",   // should we mask? c1.w is mask color value on blue at full 255
+				"mul t1.xyz, t1.www, c1.xyz",  // setup color to add if any...
+				"sub t1.w, c0.z, t1.w", // flip 1/0. if not masking, than set value to to 1 to multiply against original color, else, it'll be zero which will negate original color.
+			
+				
+				"mul t0.xyz, t0.xyz, t1.www",   
+				"add t0.xyz, t0.xyz, t1.xyz",  // add color
+				
 				"tex t1, v0, s1 <2d,"+((flags & FLAG_PIXEL_NEAREST) ? "nearest" : "linear")+",repeat,"+((flags & FLAG_MIPNONE) ? "mipnone" : "miplinear")+">",
 				"mul t0.w, t1.x, c0.w",
 				"mov o0, t0"
@@ -186,15 +234,16 @@ package alternativa.engine3d.spriteset.materials {
 		public var alpha:Number = 1;
 		
 		/**
-		 * Creates a new TextureAtlasMaterial instance.
+		 * Creates a new MaskColorAtlasMaterial instance.
 		 *
 		 * @param diffuseMap Diffuse map.
 		 * @param alpha Transparency.
 		 */
-		public function TextureAtlasMaterial(diffuseMap:TextureResource = null, opacityMap:TextureResource = null, alpha:Number = 1) {
+		public function MaskColorAtlasMaterial(diffuseMap:TextureResource = null, opacityMap:TextureResource = null, alpha:Number = 1) {
 			this.diffuseMap = diffuseMap;
 			this.opacityMap = opacityMap;
 			this.alpha = alpha;
+			color = 0xAACC88;
 		}
 
 		/**
@@ -218,9 +267,9 @@ package alternativa.engine3d.spriteset.materials {
 		 * @param alphaTest 0 - disabled, 1 - opaque, 2 - contours
 		 * @return
 		 */
-		private function getProgram(object:Object3D, programs:Vector.<TextureAtlasMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):TextureAtlasMaterialProgram {
+		private function getProgram(object:Object3D, programs:Vector.<MaskColorAtlasMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):MaskColorAtlasMaterialProgram {
 			var key:int = (opacityMap != null ? 3 : 0) + alphaTest;
-			var program:TextureAtlasMaterialProgram = programs[key];
+			var program:MaskColorAtlasMaterialProgram = programs[key];
 			if (program == null) {
 				// Make program
 				// Vertex shader
@@ -250,7 +299,7 @@ package alternativa.engine3d.spriteset.materials {
 				}
 				fragmentLinker.varyings = vertexLinker.varyings;
 				
-				program = new TextureAtlasMaterialProgram(vertexLinker, fragmentLinker);
+				program = new MaskColorAtlasMaterialProgram(vertexLinker, fragmentLinker);
 
 				program.upload(camera.context3D);
 				programs[key] = program;
@@ -301,7 +350,7 @@ package alternativa.engine3d.spriteset.materials {
 			return res;
 		}
 		
-		private function getDrawUnit(program:TextureAtlasMaterialProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource):DrawUnit {
+		private function getDrawUnit(program:MaskColorAtlasMaterialProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource):DrawUnit {
 			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
 			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
 
@@ -316,7 +365,8 @@ package alternativa.engine3d.spriteset.materials {
 			//Constants
 			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
 			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
-			drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
+			drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 1, alpha);
+			drawUnit.setFragmentConstantsFromNumbers(program.cColor, red, green, blue, 1);
 			// Textures
 			drawUnit.setTextureAt(program.sDiffuse, diffuseMap._texture);
 			if (opacityMap != null) {
@@ -347,13 +397,13 @@ package alternativa.engine3d.spriteset.materials {
 					caches[cachedContext3D] = programsCache;
 				}
 			}
-			var optionsPrograms:Vector.<TextureAtlasMaterialProgram> = programsCache[object.transformProcedure];
+			var optionsPrograms:Vector.<MaskColorAtlasMaterialProgram> = programsCache[object.transformProcedure];
 			if(optionsPrograms == null) {
-				optionsPrograms = new Vector.<TextureAtlasMaterialProgram>(6, true);
+				optionsPrograms = new Vector.<MaskColorAtlasMaterialProgram>(6, true);
 				programsCache[object.transformProcedure] = optionsPrograms;
 			}
 
-			var program:TextureAtlasMaterialProgram;
+			var program:MaskColorAtlasMaterialProgram;
 			var drawUnit:DrawUnit;
 			// Opaque pass
 			if (opaquePass && alphaThreshold <= alpha) {
@@ -393,7 +443,7 @@ package alternativa.engine3d.spriteset.materials {
 		 * @inheritDoc
 		 */
 		override public function clone():Material {
-			var res:TextureAtlasMaterial = new TextureAtlasMaterial(diffuseMap, opacityMap, alpha);
+			var res:MaskColorAtlasMaterial = new MaskColorAtlasMaterial(diffuseMap, opacityMap, alpha);
 			res.clonePropertiesFrom(this);
 			return res;
 		}
@@ -403,7 +453,7 @@ package alternativa.engine3d.spriteset.materials {
 		 */
 		override protected function clonePropertiesFrom(source:Material):void {
 			super.clonePropertiesFrom(source);
-			var tex:TextureAtlasMaterial = source as TextureAtlasMaterial;
+			var tex:MaskColorAtlasMaterial = source as MaskColorAtlasMaterial;
 			diffuseMap = tex.diffuseMap;
 			opacityMap = tex.opacityMap;
 			opaquePass = tex.opaquePass;
@@ -411,6 +461,9 @@ package alternativa.engine3d.spriteset.materials {
 			alphaThreshold = tex.alphaThreshold;
 			alpha = tex.alpha;
 			flags = tex.flags;
+			red = tex.red;
+			green = tex.green;
+			blue = tex.blue;
 		}
 
 	}
@@ -421,7 +474,7 @@ import alternativa.engine3d.materials.compiler.Linker;
 
 import flash.display3D.Context3D;
 
-class TextureAtlasMaterialProgram extends ShaderProgram {
+class MaskColorAtlasMaterialProgram extends ShaderProgram {
 
 	public var aPosition:int = -1;
 	public var aUV:int = -1;
@@ -429,8 +482,9 @@ class TextureAtlasMaterialProgram extends ShaderProgram {
 	public var cThresholdAlpha:int = -1;
 	public var sDiffuse:int = -1;
 	public var sOpacity:int = -1;
+	public var cColor:int = -1;
 
-	public function TextureAtlasMaterialProgram(vertex:Linker, fragment:Linker) {
+	public function MaskColorAtlasMaterialProgram(vertex:Linker, fragment:Linker) {
 		super(vertex, fragment);
 	}
 
@@ -443,6 +497,9 @@ class TextureAtlasMaterialProgram extends ShaderProgram {
 		cThresholdAlpha = fragmentShader.findVariable("cThresholdAlpha");
 		sDiffuse = fragmentShader.findVariable("sDiffuse");
 		sOpacity = fragmentShader.findVariable("sOpacity");
+		
+		cColor = fragmentShader.findVariable("cColor");
+
 	}
 
 }

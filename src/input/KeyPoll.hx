@@ -67,11 +67,25 @@ class KeyPoll implements IKeyPoll
         states = Bytes.alloc(8);
         dispObj = displayObj;
 		
-        dispObj.addEventListener(KeyboardEvent.KEY_DOWN, keyDownListener);
+		enable();
+    }
+	
+	public inline function enable():Void
+	{
+		resetAllStates();
+		dispObj.addEventListener(KeyboardEvent.KEY_DOWN, keyDownListener);
         dispObj.addEventListener(KeyboardEvent.KEY_UP, keyUpListener);
         dispObj.addEventListener(Event.ACTIVATE, activateListener);
         dispObj.addEventListener(Event.DEACTIVATE, deactivateListener);
-    }
+	}
+	
+	public inline function disable():Void {
+		resetAllStates();
+		dispObj.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownListener);
+        dispObj.removeEventListener(KeyboardEvent.KEY_UP, keyUpListener);
+        dispObj.removeEventListener(Event.ACTIVATE, activateListener);
+        dispObj.removeEventListener(Event.DEACTIVATE, deactivateListener);
+	}
 
     private function keyDownListener(ev:KeyboardEvent):Void
     {
@@ -90,15 +104,18 @@ class KeyPoll implements IKeyPoll
 
     private function activateListener(ev:Event):Void
     {
-        for (i in 0...8)
-            states.set(i, 0);
+        resetAllStates();
     }
 
     private function deactivateListener(ev:Event):Void
     {
-        for (i in 0...8)
-            states.set(i, 0);
+      resetAllStates();
     }
+	
+	public inline function resetAllStates():Void {
+		 for (i in 0...8)
+            states.set(i, 0);
+	}
 
     /**
      * To test whether a key is down.

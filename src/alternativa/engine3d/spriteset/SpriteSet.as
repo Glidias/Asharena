@@ -66,7 +66,7 @@ package alternativa.engine3d.spriteset
 		 */
 		public static var MAX:int = 80;	
 		
-		private var NUM_REGISTERS_PER_SPR:int = 1;
+		alternativa3d var NUM_REGISTERS_PER_SPR:int = 1;
 		
 		private var viewAligned:Boolean = false;
 		/**
@@ -166,7 +166,7 @@ package alternativa.engine3d.spriteset
 		
 			var spriteDataSize:int;
 			var i:int;
-			var numSprites:int = _numSprites;
+			var numSprites:int = _numSprites;  // TODO: use different reference
 			var objRenderPriority:int = alwaysOnTop ? Renderer.NEXT_LAYER :  -1;
 		
 			// setup defaults if required
@@ -177,9 +177,9 @@ package alternativa.engine3d.spriteset
 			if (transformProcedure == null) validateTransformProcedure();
 		
 
-				if (_numSprites  <= maxSprites) {
+				if (numSprites  <= maxSprites) {
 					toUploadSpriteData = spriteData;
-					toUploadNumSprites = _numSprites;
+					toUploadNumSprites = numSprites;
 					surface.numTriangles = (toUploadNumSprites << 1);
 					 surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objRenderPriority);
 				}
@@ -195,8 +195,8 @@ package alternativa.engine3d.spriteset
 				else {
 					spriteDataSize = (NUM_REGISTERS_PER_SPR << 2);
 					toUploadSpriteData = uploadSpriteData;
-					for (i = 0; i < _numSprites;  i += maxSprites) {
-						var limit:int = _numSprites - i;  // remaining sprites left to iterate
+					for (i = 0; i < numSprites;  i += maxSprites) {
+						var limit:int = numSprites - i;  // remaining sprites left to iterate
 						
 						if (limit > maxSprites) limit = maxSprites;
 						toUploadNumSprites = limit;

@@ -1,5 +1,6 @@
 package assets.fonts 
 {
+	import de.polygonal.gl.text.fonts.rondaseven.PFRondaSeven;
 	import flash.utils.ByteArray;
 	/**
 	 * ...
@@ -13,11 +14,17 @@ package assets.fonts
 		[Embed(source="../../../resources/fonts/console-bounds.bin", mimeType="application/octet-stream")]
 		public static var BOUNDS:Class;
 		
+		
+		
 		public function ConsoleFont() 
 		{
+			
+			fontV = new PFRondaSeven();
+			
 			var bytes:ByteArray = new BOUNDS();
 			bytes.uncompress();
 			init( new FONT().bitmapData, bytes);
+			
 		}
 		
 	}

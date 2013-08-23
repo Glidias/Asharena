@@ -2,6 +2,7 @@ package assets.fonts
 {
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.resources.BitmapTextureResource;
+	import de.polygonal.gl.text.VectorFont;
 	import flash.display.BitmapData;
 	import flash.geom.Matrix;
 	import flash.geom.Matrix3D;
@@ -19,9 +20,12 @@ package assets.fonts
 		
 		public var rectsInt:Vector.<uint> = new Vector.<uint>();
 		public var rects:Vector.<Number> = new Vector.<Number>();
+		public var charRectIndices:Vector.<int>;
 		public var sheet:BitmapData;
 		public var bmpResource:BitmapTextureResource;
 		public var padding:uint;
+		public var fontV:VectorFont;
+		public var tight:Boolean = true;  // for now, this setting should not change!
 		
 		public function Fontsheet() 
 		{
@@ -29,7 +33,10 @@ package assets.fonts
 		}
 		
 		protected function init(texture:BitmapData, rectBytes:ByteArray):void {
-		
+			
+			if (fontV == null) throw new Error("Please define a vector font fontV variable before calling init()!");
+			charRectIndices = fontV.getCharSetIndices();
+			
 			sheet = texture;
 			
 			var sheetWidthMult:Number = 1/ sheet.width;
@@ -70,12 +77,14 @@ package assets.fonts
 			rect.x = rects[(index << 2)];
 			rect.y = rects[(index << 2) + 1];
 			
-			if (rect.x < 0) rect.x = 0;
-			if (rect.y < 0) rect.y = 0;
+			//if (rect.x < 0) rect.x = 0;
+			//if (rect.y < 0) rect.y = 0;
 			//if (rect.x < 0 || rect.y <0) throw new Error("A:"+rect);
 		
 			return rect;
 		}
+		
+	
 		
 		public function getRectangleAt(index:uint, rect:Rectangle = null):Rectangle {
 			rect = rect || (new Rectangle());

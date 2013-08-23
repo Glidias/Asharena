@@ -89,7 +89,7 @@ class Entity
     public function add<T>(component:T, componentClass:Class<Dynamic> = null):Entity
     {
         if (componentClass == null)
-            componentClass = Type.getClass(component);
+            componentClass = #if flash untyped component.constructor; #else Type.getClass(component); #end
 
         if (components.exists(componentClass))
             remove(componentClass);

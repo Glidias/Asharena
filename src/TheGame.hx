@@ -47,6 +47,8 @@ class TheGame
 	
 	public function new(stage:Stage) 
 	{
+		Type.getClass(stage);
+		
 		keyPoll = new KeyPoll(stage);
 		
 		engine = new Engine();
