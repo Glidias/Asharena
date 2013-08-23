@@ -17,9 +17,11 @@ package assets.fonts
 	{
 		private static var _transformProcedures:Dictionary = new Dictionary();
 		
+		public var rectsInt:Vector.<uint> = new Vector.<uint>();
 		public var rects:Vector.<Number> = new Vector.<Number>();
 		public var sheet:BitmapData;
 		public var bmpResource:BitmapTextureResource;
+		public var padding:uint;
 		
 		public function Fontsheet() 
 		{
@@ -27,24 +29,27 @@ package assets.fonts
 		}
 		
 		protected function init(texture:BitmapData, rectBytes:ByteArray):void {
-			sheet = new BitmapData(texture.width, texture.height, true, 0x330000FF);
-			var mat:Matrix = new Matrix();
-			mat.scale(1, -1);
-			mat.translate(0, sheet.height);
-			sheet.draw(texture, mat);
-			//sheet = texture;
+		
+			sheet = texture;
 			
 			var sheetWidthMult:Number = 1/ sheet.width;
 			var sheetHeightMult:Number = 1 / sheet.height;
 			
-			var len:int =  rectBytes.length /4 / 4;//*4/4;  //4 bytes per number
-	
+			var len:int =  rectBytes.length / 4 / 4;//*4/4;  //4 bytes per number
+			
+			padding = rectBytes.readUnsignedInt();
+			
 			var count:int = 0;
+			var countI:int = 0;
 			for (var i:int = 0; i < len; i++) {
-				var x:Number=rectBytes.readFloat();
-				var y:Number=  rectBytes.readFloat();
-				var width:Number = rectBytes.readFloat();
-				var height:Number = rectBytes.readFloat();
+				var x:uint=rectBytes.readUnsignedInt();
+				var y:uint=  rectBytes.readUnsignedInt();
+				var width:uint = rectBytes.readUnsignedInt();
+				var height:uint = rectBytes.readUnsignedInt();
+				rectsInt[countI++] = x;
+				rectsInt[countI++] = y;
+				rectsInt[countI++] = width;
+				rectsInt[countI++] = height;
 				rects[count++] = x * sheetWidthMult;
 				rects[count++] = y * sheetHeightMult;
 				rects[count++] = width * sheetWidthMult;
@@ -58,7 +63,7 @@ package assets.fonts
 		
 		public function getRandomRect(rect:Rectangle=null):Rectangle {
 			rect = rect || (new Rectangle());
-			var index:uint =Math.random() * getNumLetters();
+			var index:uint = Math.random() * getNumLetters();
 			rect.width = rects[(index << 2) + 2];
 			rect.height = rects[(index << 2) + 3];
 			

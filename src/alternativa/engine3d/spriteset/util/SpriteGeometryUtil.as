@@ -39,7 +39,7 @@ package alternativa.engine3d.spriteset.util
 			}
 		}
 		
-		public static function createNormalizedSpriteGeometry(numSprites:int, indexOffset:int, requirements:uint = 1, scale:Number=1, originX:Number=0, originY:Number=0, indexMultiplier:int=1, flipV:Boolean=false ):Geometry 
+		public static function createNormalizedSpriteGeometry(numSprites:int, indexOffset:int, requirements:uint = 1, scale:Number=1, originX:Number=0, originY:Number=0, indexMultiplier:int=1):Geometry 
 		{
 			var geometry:Geometry = new Geometry();
 			var attributes:Array = [];
@@ -76,7 +76,7 @@ package alternativa.engine3d.spriteset.util
 			}
 			attributes[i++] = ATTRIBUTE;
 			
-			var vFlip:Number = flipV ? -1 : 1; 
+			
 			
 		
 			for (i = 0; i<numSprites;i++) {
@@ -85,7 +85,7 @@ package alternativa.engine3d.spriteset.util
 				vertices.writeFloat(0);
 				if ( requireUV) {
 					vertices.writeFloat(0);
-					vertices.writeFloat(0);
+					vertices.writeFloat(1);
 				}
 				if ( requireNormal) {
 					vertices.writeFloat(0);
@@ -105,7 +105,7 @@ package alternativa.engine3d.spriteset.util
 				vertices.writeFloat(0);
 				if ( requireUV) {
 					vertices.writeFloat(1);
-					vertices.writeFloat(0);
+					vertices.writeFloat(1);
 				}
 				if ( requireNormal) {
 					vertices.writeFloat(0);
@@ -125,7 +125,7 @@ package alternativa.engine3d.spriteset.util
 				vertices.writeFloat(0);
 				if ( requireUV) {
 					vertices.writeFloat(1);
-					vertices.writeFloat(vFlip);
+					vertices.writeFloat(0);
 				}
 				if ( requireNormal) {
 					vertices.writeFloat(0);
@@ -145,7 +145,7 @@ package alternativa.engine3d.spriteset.util
 				vertices.writeFloat(0);	
 				if ( requireUV) {
 					vertices.writeFloat(0);
-					vertices.writeFloat(vFlip);
+					vertices.writeFloat(0);
 				}
 				if (requireNormal) {
 					vertices.writeFloat(0);

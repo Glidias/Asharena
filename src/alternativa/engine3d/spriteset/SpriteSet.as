@@ -167,7 +167,7 @@ package alternativa.engine3d.spriteset
 			var spriteDataSize:int;
 			var i:int;
 			var numSprites:int = _numSprites;
-			var objRenderPriority:int = alwaysOnTop ? -1 : Renderer.NEXT_LAYER;
+			var objRenderPriority:int = alwaysOnTop ? Renderer.NEXT_LAYER :  -1;
 		
 			// setup defaults if required
 			if (geometry == null) {

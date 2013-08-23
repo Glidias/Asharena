@@ -8,6 +8,8 @@ package alternativa.engine3d.objects
 	/**
 	 * Heads up display Object3D gateway container for orthographic 2d projection. Only add this as a child of the current camera you're using!
 	 * Than, add all your 2D hud elements into this Hud2D container!
+	 * 
+	 * 
 	 * @author Glenn Ko
 	 */
 	public class Hud2D extends Object3D
@@ -21,6 +23,7 @@ package alternativa.engine3d.objects
 		private var nearClipping:Number;
 		private var farClipping:Number;
 		private var fov:Number;
+		
 		
 		public function Hud2D() 
 		{
@@ -43,6 +46,7 @@ package alternativa.engine3d.objects
 		
 		
 		override alternativa3d function calculateChildrenVisibility(camera:Camera3D):void {
+			
 		///*
 			if (!camera.orthographic) {
 				if (lastWidth != camera.view._width || lastHeight != camera.view._height || nearClipping != camera.nearClipping || farClipping != camera.farClipping || fov != camera.fov) {

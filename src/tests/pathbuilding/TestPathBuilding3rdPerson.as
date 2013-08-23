@@ -191,34 +191,35 @@ package tests.pathbuilding
 			
 			var font:ConsoleFont = new ConsoleFont();
 			var atlasMaterial:TextureAtlasMaterial = new TextureAtlasMaterial(font.bmpResource, null);
+			atlasMaterial.flags = (TextureAtlasMaterial.FLAG_MIPNONE | TextureAtlasMaterial.FLAG_PIXEL_NEAREST);
 			atlasMaterial.alphaThreshold = .99;
 		//	atlasMaterial.opaquePass
 		//addChild( new Bitmap(font.bmpResource.data));
 			var spriteSet:SpriteSet = new SpriteSet(233, true, atlasMaterial, font.sheet.width, font.sheet.height, 60,2)
 			spriteSet.randomisePositions(0, 1|2, stage.stageHeight*.5);
-			//spriteSet.alwaysOnTop = true;
+			spriteSet.alwaysOnTop = true;
 			
 			
 			var rect:Rectangle = new Rectangle();
 			var data:Vector.<Number> = spriteSet.spriteData;
-			var previewFontSpr:Sprite = new Sprite();
-			addChild(previewFontSpr);
-			previewFontSpr.graphics.lineStyle(0, 0xFF0000);
+		//	var previewFontSpr:Sprite = new Sprite();
+		//	addChild(previewFontSpr);
+			//previewFontSpr.graphics.lineStyle(0, 0xFF0000);
 			
 			for (var i:int = 0; i < data.length; i += 8) {
 				font.getRandomRect(rect);
 				data[i + 4] =  rect.x;
-				data[i + 5] = 1-rect.y - rect.height;
+				data[i + 5] = rect.y;
 				data[i + 6] =   rect.width;
 				data[i + 7] =  rect.height;
-				previewFontSpr.graphics.drawRect(rect.x*font.sheet.width, rect.y*font.sheet.height, rect.width*font.sheet.width, rect.height*font.sheet.height);
+			//	previewFontSpr.graphics.drawRect(rect.x*font.sheet.width, rect.y*font.sheet.height, rect.width*font.sheet.width, rect.height*font.sheet.height);
 				//if (rect.x > 1 || rect.y > 1 || rect.width > 1 || rect.height > 1 || rect.x < 0 || rect.y < 0 || rect.width < 0 || rect.height < 0) throw new Error("OUTTA BOUNDS:" +rect);
 			}
 			
 			//hud.addChild(spr);
 			//hud.addChild(spr2);
 			hud.addChild(spriteSet);
-			previewFontSpr.addChild( new Bitmap(font.sheet));
+			//previewFontSpr.addChild( new Bitmap(font.sheet));
 			
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		

@@ -49,34 +49,61 @@ package alternativa.engine3d.spriteset.materials {
 		private var cachedContext3D:Context3D;
 		private var programsCache:Dictionary;
 		private static var _transformProcedures:Dictionary = new Dictionary();
+		
+		//public static const MIP_LINEAR:String = "miplinear";
+		//public static const MIP_NONE:String = "nomip";
+		//public static const PIXEL_NEAREST:String = "nearest";
+		//public static const PIXEL_LINEAR:String = "miplinear";
+		//public var pixelSetting:String = PIXEL_LINEAR;
+		//public var mipSetting:String = MIP_LINEAR;
+		private static var diffuseProcedures:Vector.<Procedure> = new Vector.<Procedure>(8,true);
+		
+		public static const FLAG_PIXEL_NEAREST:uint = 2;
+		public static  const FLAG_MIPNONE:uint = 4;
+		public var flags:uint = 0;
 
 		/**
 		 * @private
 		 * Procedure for diffuse map with alpha channel
 		 */
-		static alternativa3d const getDiffuseProcedure:Procedure = new Procedure([
-			"#v0=vUV",
-			"#s0=sDiffuse",
-			"#c0=cThresholdAlpha",
-			"tex t0, v0, s0 <2d,nearest,repeat,nomip>",  //nearest,clamp,nomip  //linear,miplinear
-			"mul t0.w, t0.w, c0.w",
-			"mov o0, t0"
-		], "getDiffuseProcedure");
+		alternativa3d function getDiffuseProcedure():Procedure { 
+			var procedure:Procedure;
+			var key:uint = flags;
 
-		/**
-		 * @private
-		 * Procedure for diffuse with opacity map.
-		 */
-		static alternativa3d const getDiffuseOpacityProcedure:Procedure = new Procedure([
-			"#v0=vUV",
-			"#s0=sDiffuse",
-			"#s1=sOpacity",
-			"#c0=cThresholdAlpha",
-			"tex t0, v0, s0 <2d, nearest,repeat,nomip>",
-			"tex t1, v0, s1 <2d, nearest,repeat,nomip>",
-			"mul t0.w, t1.x, c0.w",
-			"mov o0, t0"
-		], "getDiffuseOpacityProcedure");
+			procedure = diffuseProcedures[key];
+			if (procedure!=null) return procedure;
+			
+			procedure=new Procedure([
+				"#v0=vUV",
+				"#s0=sDiffuse",
+				"#c0=cThresholdAlpha",
+				"tex t0, v0, s0 <2d,"+((flags & FLAG_PIXEL_NEAREST) ? "nearest" : "linear")+",repeat,"+((flags & FLAG_MIPNONE) ? "mipnone" : "miplinear")+">",  //nearest,repeat,nomip  //linear,repeat,miplinear
+				"mul t0.w, t0.w, c0.w",
+				"mov o0, t0"
+			], "getDiffuseProcedure");
+			return procedure;
+		}
+		
+		alternativa3d function getDiffuseOpacityProcedure():Procedure { 
+			var procedure:Procedure;
+			var key:uint = (1 | flags);
+			procedure = diffuseProcedures[key];
+			if (procedure!=null) return procedure;
+			
+			procedure=new Procedure([
+				"#v0=vUV",
+				"#s0=sDiffuse",
+				"#s1=sOpacity",
+				"#c0=cThresholdAlpha",
+				"tex t0, v0, s0 <2d,"+((flags & FLAG_PIXEL_NEAREST) ? "nearest" : "linear")+",repeat,"+((flags & FLAG_MIPNONE) ? "mipnone" : "miplinear")+">",
+				"tex t1, v0, s1 <2d,"+((flags & FLAG_PIXEL_NEAREST) ? "nearest" : "linear")+",repeat,"+((flags & FLAG_MIPNONE) ? "mipnone" : "miplinear")+">",
+				"mul t0.w, t1.x, c0.w",
+				"mov o0, t0"
+			], "getDiffuseOpacityProcedure");
+			return procedure;
+		}
+
+		
 
 		/**
 		 * @private
@@ -210,7 +237,7 @@ package alternativa.engine3d.spriteset.materials {
 
 				// Pixel shader
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
-				var outProcedure:Procedure = (opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure);
+				var outProcedure:Procedure = (opacityMap != null ? getDiffuseOpacityProcedure() : getDiffuseProcedure());
 				fragmentLinker.addProcedure(outProcedure);
 				if (alphaTest > 0) {
 					fragmentLinker.declareVariable("tColor");
@@ -242,9 +269,11 @@ package alternativa.engine3d.spriteset.materials {
 			res.compileFromArray([
 				"mov t2, c[a0.x].xyz",  // origin position in local coordinate space
 				
+				"mov t1, t2",  //dummy not needed if using latest flash player version
 				"add t1.x, a0.x, c3.w",  // CHANGED from original SpriteSet class
 				"mov t1, c[t1.x]",
 
+		
 				"mul t0.xyz, c2.xyz, i0.xxx",
 				"mul t0.xyz, t0.xyz, c3.xxx", // scale according to spriteset setting (right vector)
 				"mul t0.xyz, t0.xyz, t1.zzz",   // CHANGED from original SpriteSet class (scale by tileAtlas U height)
@@ -252,7 +281,7 @@ package alternativa.engine3d.spriteset.materials {
 				
 				"mul t0.xyz, c1.xyz, i0.yyy",
 				"mul t0.xyz, t0.xyz, c3.yyy",  // scale according to spriteset setting  (up vector)
-				"mul t0.xyz, t0.xyz, t1.www",   // CHANGED from original SpriteSet class (scale by tileAtlas V height)
+				"mul t0.xyz, t0.xyz, t1.www",   // CHANGED from original SpriteSet class (scale by tileAtlas V height)	
 				"add t2.xyz, t2.xyz, t0.xyz",
 				
 				"mov t2.w, i0.w",	
@@ -263,7 +292,9 @@ package alternativa.engine3d.spriteset.materials {
 				"#c1=up", 
 				"#c2=right",
 				"#c3=spriteSet"
-			]);
+				]);
+			
+			
 		
 			res.assignConstantsArray(maxSprites*NUM_REGISTERS_PER_SPR);
 		
