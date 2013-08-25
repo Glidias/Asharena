@@ -41,8 +41,9 @@ package alternativa.a3d.systems.text
 			var rect:Rectangle = RECT;
 			var count:int = 0;
 			var data:Vector.<Number> = spriteSet.spriteData;
-			var limit:int = ((startLetterIndex + bounds.length) << 3); // * 8;
-			for (var i:int = startLetterIndex; i < limit; i += 8) {
+			var offsetConstants:int = (spriteSet.NUM_REGISTERS_PER_SPR << 2);
+			var limit:int = ((startLetterIndex + bounds.length) *offsetConstants); 
+			for (var i:int = startLetterIndex; i < limit; i += offsetConstants) {
 				fontSheet.getRectangleAt( fontSheet.charRectIndices[referText.charCodeAt(count)], rect );  // Charcode could also be cached..
 				//font.getRandomRect(rect);
 				var aabb:AABB2 = bounds[count];	
@@ -66,9 +67,10 @@ package alternativa.a3d.systems.text
 			var rect:Rectangle = RECT;
 			var count:int = 0;
 			var data:Vector.<Number> = spriteSet.spriteData;
-			var limit:int = ((startLetterIndex + bounds.length) << 3); // * 8;
-			for (var i:int = startLetterIndex; i < limit; i += 8) {
-				fontSheet.getRectangleAt( fontSheet.charRectIndices[referText.charCodeAt(count)], rect );  // todo: don't use textToDisplay.charCodeAt 
+			var offsetConstants:int = (spriteSet.NUM_REGISTERS_PER_SPR << 2);
+			var limit:int = ((startLetterIndex + bounds.length) *offsetConstants); 
+			for (var i:int = startLetterIndex; i < limit; i += offsetConstants) {
+				fontSheet.getRectangleAt( fontSheet.charRectIndices[referText.charCodeAt(count)], rect );
 				//font.getRandomRect(rect);
 				var aabb:AABB2 = bounds[count];	
 				data[i] =  aabb.minX + (aabb.maxX - aabb.minX) * .5;

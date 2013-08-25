@@ -43,7 +43,7 @@ package alternativa.engine3d.spriteset.materials {
 	 * @see alternativa.engine3d.objects.Skin#divide()
 	 * @see alternativa.engine3d.core.VertexAttributes#TEXCOORDS
 	 */
-	public class TextureAtlasMaterial extends Material  implements IAtlasVertexMaterial  {  //
+	public class SpriteSheet8AnimMaterial extends Material  implements IAtlasVertexMaterial  {  //
 
 		private static var caches:Dictionary = new Dictionary(true);
 		private var cachedContext3D:Context3D;
@@ -57,12 +57,17 @@ package alternativa.engine3d.spriteset.materials {
 		//public var pixelSetting:String = PIXEL_LINEAR;
 		//public var mipSetting:String = MIP_LINEAR;
 		private static var diffuseProcedures:Vector.<Procedure> = new Vector.<Procedure>(8,true);
+
 		
 		public static const FLAG_PIXEL_NEAREST:uint = 2;
 		public static  const FLAG_MIPNONE:uint = 4;
 		public var flags:uint = 0;
 		
-		public var considerWHFlip:Boolean = false;
+		public var camForward:Vector3D = new Vector3D(0,0,1);
+		public var camRight:Vector3D = new Vector3D(1,0,0);
+		public var vSpacing:Number = 0;
+		public var firstSlope:Number = .2;
+		public var secondSlope:Number = .4;
 		
 
 		/**
@@ -134,52 +139,54 @@ package alternativa.engine3d.spriteset.materials {
 		 * @private
 		 * Pass UV to the fragment shader procedure
 		 */
-		///*
-		static alternativa3d const _passUVProcedure:Procedure = new Procedure(["#v0=vUV", "#a0=aUV", "#a1=joint", "#c1=spriteSet",
+		static alternativa3d const _passUVProcedure:Procedure = new Procedure(["#v0=vUV", "#a0=aUV", "#a1=joint", 
+			"#c1=spriteSet", "#c2=cCamForward", "#c3=cCamRight", "#c4=cSlopes",
+			
 			"add t1.w, c1.w, a1.x", 	// use offseted t1.w as +1 (c1.w) offset property from joint index to get texture atlas index
-			"mov t0, a0",				// prepare starting a0  uv coordinate variable into t0
+			"mov t0, a0",				// prepare starting a0  uv coordinate variable into t0  // (this step is redudenant for latest AGAL!)
+			
 			"mov t1, c[t1.w]",   		// grab texture atlas data for sprite 
+			
 			"mov t0.xy, t1.xy",         // use starting UV coordinates of atlas rect's x, and y accordignly
-			"mul t1.xy, a0.xy, t1.zw",  // multiple texture atlas rect's width and height against normalized a0 uv coordinates
 			
-			//"add t0.xy, t0.xy, t1.zw",  // offset starting UV coodtinates with rect width and height (if needed, based on normalized uv coordinates)
+			// Start sprite sheet rotation
+			"add t2.w, c3.w, a1.x",   	// now get the joint index register for sprite facing direction  (assume +2 c3.w offset)
+			"mov t2, c[t2.w]",		
 			
-			"add t0.xy, t0.xy, t1.xy",	
-			//"sub t1.w, c1.w, t1.w",
-		
 			
-		//	"add t0.x, t0.x, a0.x",
-		//	"add t0.y, t0.y, a0.y",
+			"mov t3, t2",	// we'll need the sprite direction vector later to compare against  camRight vector, so we save a copy if possible else need to requery!.
+			"dp3 t2.w, t2, c2",  		// get slope
+			"sge t2.x, t2.w, c4.z",		// get bit for if slope (dot product result) is higher than zero (to start from back-facing)
+			"mul t0.y, t0.y, t2.x",     // either use starting V offset for back facing, else start from front zero V coordinate
+			"sub t2.y, c4.w, t2.x",		// get flipped bit
+			"sub t2.x, t2.x, t2.y",		// subtract by flipped bit, so 1 will remain 1, but 0 will become -1
+			"mul t2.z, t2.x, c2.w",		// with 1 or -1 direction multiplier, apply it on the constant vSpacing to get -= spacingOffset
+			"abs t2.w, t2.w",		// now we get magnitude of the slope
+			
+			"slt t2.x, t2.w, c4.y",   // does slope magnitude exceed  second slope? If yes, subtact by spacingOFfset
+			"mul t2.y, t2.x, t2.z",	
+			"sub t0.y, t0.y, t2.y",	
+			
+			"slt t2.x, t2.w, c4.x",   // does slope magnitude exceed  first slope?  If yes, subtact by spacingOFfset
+			"mul t2.y, t2.x, t2.z",
+			"sub t0.y, t0.y, t2.y",
+			
+			// now we determine if we need to flip the normalized U coordinate (1 for flip, else 0 for no flip),
+			//    with t2.x exceed first slope as an included factor as well.
+			"dp3 t3.w, t3, c3",
+			"sge t3.x, t3.w, c4.z",  // if dot product sprite vector against camRIght is higher than zero, than may need to flip
+			"mul t3.x, t3.x, t2.x",   // check if t2.x exceeded as well...finalise by multiplying. 
+			
+			"mov t2, a0",			// save out normalized UV coordinate. begin flipping normalized U coordinate if required
+			"sub t2.x, t3.x, t2.x",  // flip using  (1- u). If not flipping, it's (0-u)=-u, 
+			"abs t2.x, t2.x",			// abs the result, so non flipped-negative case will still get back same U coordinae
+			//  End sprite sheet rotation
+			
+			
+			"mul t1.xy, t2.xy, t1.zw",  // multiple texture atlas rect's width and height against normalized a0 uv coordinates
+			"add t0.xy, t0.xy, t1.xy",	// add width/height offsets if any, to get final result
 			
 			"mov v0, t0"				// that's it!!
-		], 
-		"passUVProcedure");
-		//*/
-		
-		static alternativa3d const _passUVProcedureConsiderWHFlip:Procedure = new Procedure(["#v0=vUV", "#a0=aUV", "#a1=joint", "#c1=spriteSet",
-			"add t1.w, c1.w, a1.x", 	// use offseted t1.w as +1 (c1.w) offset property from joint index to get texture atlas index
-			"mov t0, a0",				// prepare starting a0  uv coordinate variable into t0
-			
-			
-			"mov t1, c[t1.w]",   		// grab texture atlas data for sprite 
-			"sub t0.x, c[a1.x].w, t0.x",  // consider horizontal flip flag  using joint's w property
-			"abs t0.x, t0.x",
-			
-			//"mov t0.xy, t1.xy",         // use starting UV coordinates of atlas rect's x, and y accordignly
-			//"mul t1.zw, t0.xy, t1.zw",  // multiple texture atlas rect's width and height against normalized a0 uv coordinates
-			"mul t1.z, t0.x, t1.z",
-			"mul t1.w, t0.y, t1.w",
-			//"add t0.xy, t0.xy, t1.zw",  // offset starting UV coodtinates with rect width and height (if needed, based on normalized uv coordinates)
-			
-			"add t1.xy, t1.xy, t1.zw",
-			"mov t1.zw, t0.zw",
-			//"sub t1.w, c1.w, t1.w",
-		
-			
-		//	"add t0.x, t0.x, a0.x",
-		//	"add t0.y, t0.y, a0.y",
-			
-			"mov v0, t1"				// that's it!!
 		], 
 		"passUVProcedure");
 
@@ -218,12 +225,12 @@ package alternativa.engine3d.spriteset.materials {
 		public var alpha:Number = 1;
 		
 		/**
-		 * Creates a new TextureAtlasMaterial instance.
+		 * Creates a new SpriteSheet8AnimMaterial instance.
 		 *
 		 * @param diffuseMap Diffuse map.
 		 * @param alpha Transparency.
 		 */
-		public function TextureAtlasMaterial(diffuseMap:TextureResource = null, opacityMap:TextureResource = null, alpha:Number = 1) {
+		public function SpriteSheet8AnimMaterial(diffuseMap:TextureResource = null, opacityMap:TextureResource = null, alpha:Number = 1) {
 			this.diffuseMap = diffuseMap;
 			this.opacityMap = opacityMap;
 			this.alpha = alpha;
@@ -250,9 +257,9 @@ package alternativa.engine3d.spriteset.materials {
 		 * @param alphaTest 0 - disabled, 1 - opaque, 2 - contours
 		 * @return
 		 */
-		private function getProgram(object:Object3D, programs:Vector.<TextureAtlasMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):TextureAtlasMaterialProgram {
+		private function getProgram(object:Object3D, programs:Vector.<SpriteSheet8AnimMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int):SpriteSheet8AnimMaterialProgram {
 			var key:int = (opacityMap != null ? 3 : 0) + alphaTest;
-			var program:TextureAtlasMaterialProgram = programs[key];
+			var program:SpriteSheet8AnimMaterialProgram = programs[key];
 			if (program == null) {
 				// Make program
 				// Vertex shader
@@ -265,7 +272,7 @@ package alternativa.engine3d.spriteset.materials {
 				}
 				vertexLinker.addProcedure(_projectProcedure);
 				vertexLinker.setInputParams(_projectProcedure, positionVar);
-				vertexLinker.addProcedure(considerWHFlip ? _passUVProcedureConsiderWHFlip : _passUVProcedure);
+				vertexLinker.addProcedure(_passUVProcedure);
 
 				// Pixel shader
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
@@ -282,15 +289,15 @@ package alternativa.engine3d.spriteset.materials {
 				}
 				fragmentLinker.varyings = vertexLinker.varyings;
 				
-				program = new TextureAtlasMaterialProgram(vertexLinker, fragmentLinker);
-
+				program = new SpriteSheet8AnimMaterialProgram(vertexLinker, fragmentLinker);
+				
 				program.upload(camera.context3D);
 				programs[key] = program;
 			}
 			return program;
 		}
 		
-		public function getAtlasTransformProcedure(maxSprites:int, NUM_REGISTERS_PER_SPR:int, viewAligned:Boolean = true, axis:Vector3D = null):Procedure {
+			public function getAtlasTransformProcedure(maxSprites:int, NUM_REGISTERS_PER_SPR:int, viewAligned:Boolean = true, axis:Vector3D = null):Procedure {
 		
 			var key:String = maxSprites + "_" + (maxSprites * NUM_REGISTERS_PER_SPR) + (viewAligned ? "_view" : axis!=null ? "_axis" : "_z");
 			var res:Procedure = _transformProcedures[key];
@@ -423,7 +430,7 @@ package alternativa.engine3d.spriteset.materials {
 			return res;
 		}
 		
-		private function getDrawUnit(program:TextureAtlasMaterialProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource):DrawUnit {
+		private function getDrawUnit(program:SpriteSheet8AnimMaterialProgram, camera:Camera3D, surface:Surface, geometry:Geometry, opacityMap:TextureResource):DrawUnit {
 			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
 			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
 
@@ -438,6 +445,9 @@ package alternativa.engine3d.spriteset.materials {
 			//Constants
 			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
 			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
+			drawUnit.setVertexConstantsFromNumbers(program.cCamForward, camForward.x, camForward.y, camForward.z, vSpacing);
+			drawUnit.setVertexConstantsFromNumbers(program.cCamRight, camRight.x, camRight.y, camRight.z, 2);
+			drawUnit.setVertexConstantsFromNumbers(program.cSlopes, firstSlope, secondSlope, 0, 1);
 			drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
 			// Textures
 			drawUnit.setTextureAt(program.sDiffuse, diffuseMap._texture);
@@ -469,13 +479,13 @@ package alternativa.engine3d.spriteset.materials {
 					caches[cachedContext3D] = programsCache;
 				}
 			}
-			var optionsPrograms:Vector.<TextureAtlasMaterialProgram> = programsCache[object.transformProcedure];
+			var optionsPrograms:Vector.<SpriteSheet8AnimMaterialProgram> = programsCache[object.transformProcedure];
 			if(optionsPrograms == null) {
-				optionsPrograms = new Vector.<TextureAtlasMaterialProgram>(6, true);
+				optionsPrograms = new Vector.<SpriteSheet8AnimMaterialProgram>(6, true);
 				programsCache[object.transformProcedure] = optionsPrograms;
 			}
 
-			var program:TextureAtlasMaterialProgram;
+			var program:SpriteSheet8AnimMaterialProgram;
 			var drawUnit:DrawUnit;
 			// Opaque pass
 			if (opaquePass && alphaThreshold <= alpha) {
@@ -515,7 +525,7 @@ package alternativa.engine3d.spriteset.materials {
 		 * @inheritDoc
 		 */
 		override public function clone():Material {
-			var res:TextureAtlasMaterial = new TextureAtlasMaterial(diffuseMap, opacityMap, alpha);
+			var res:SpriteSheet8AnimMaterial = new SpriteSheet8AnimMaterial(diffuseMap, opacityMap, alpha);
 			res.clonePropertiesFrom(this);
 			return res;
 		}
@@ -525,7 +535,7 @@ package alternativa.engine3d.spriteset.materials {
 		 */
 		override protected function clonePropertiesFrom(source:Material):void {
 			super.clonePropertiesFrom(source);
-			var tex:TextureAtlasMaterial = source as TextureAtlasMaterial;
+			var tex:SpriteSheet8AnimMaterial = source as SpriteSheet8AnimMaterial;
 			diffuseMap = tex.diffuseMap;
 			opacityMap = tex.opacityMap;
 			opaquePass = tex.opaquePass;
@@ -533,6 +543,12 @@ package alternativa.engine3d.spriteset.materials {
 			alphaThreshold = tex.alphaThreshold;
 			alpha = tex.alpha;
 			flags = tex.flags;
+			
+			camForward = tex.camForward.clone();
+			camRight = tex.camRight.clone();
+			firstSlope = tex.firstSlope;
+			secondSlope = tex.secondSlope;
+			vSpacing = tex.vSpacing;
 		}
 
 	}
@@ -543,7 +559,7 @@ import alternativa.engine3d.materials.compiler.Linker;
 
 import flash.display3D.Context3D;
 
-class TextureAtlasMaterialProgram extends ShaderProgram {
+class SpriteSheet8AnimMaterialProgram extends ShaderProgram {
 
 	public var aPosition:int = -1;
 	public var aUV:int = -1;
@@ -551,8 +567,11 @@ class TextureAtlasMaterialProgram extends ShaderProgram {
 	public var cThresholdAlpha:int = -1;
 	public var sDiffuse:int = -1;
 	public var sOpacity:int = -1;
+	public var cCamForward:int = -1;
+	public var cCamRight:int = -1;
+	public var cSlopes:int = -1;
 
-	public function TextureAtlasMaterialProgram(vertex:Linker, fragment:Linker) {
+	public function SpriteSheet8AnimMaterialProgram(vertex:Linker, fragment:Linker) {
 		super(vertex, fragment);
 	}
 
@@ -565,6 +584,16 @@ class TextureAtlasMaterialProgram extends ShaderProgram {
 		cThresholdAlpha = fragmentShader.findVariable("cThresholdAlpha");
 		sDiffuse = fragmentShader.findVariable("sDiffuse");
 		sOpacity = fragmentShader.findVariable("sOpacity");
+		
+		sDiffuse = fragmentShader.findVariable("sDiffuse");
+		sOpacity = fragmentShader.findVariable("sOpacity");
+		
+		cCamForward = vertexShader.findVariable("cCamForward");
+		cCamRight = vertexShader.findVariable("cCamRight");
+		cSlopes = vertexShader.findVariable("cSlopes");
+		if (cCamForward < 0 ) throw new Error("A:" + cCamForward);
+		if (cCamRight < 0 ) throw new Error("B:" + cCamRight);
+		if (cSlopes < 0 ) throw new Error("C:"+cSlopes);
 	}
 
 }

@@ -76,7 +76,7 @@ package alternativa.engine3d.spriteset
 	
 		private static var UP:Vector3D = new Vector3D(0, 0, 1);
 		
-		alternativa3d var axis:Vector3D;
+		public var axis:Vector3D;
 
 		/**
 		 *  Sets an arbituary normalized axis direction vector along a given direction for non-viewAligned option. The default setting is z-locked (0,0,1), but using
@@ -250,8 +250,13 @@ package alternativa.engine3d.spriteset
 		
 	
 		/**
-		 * Randomise positions of sprites of spriteData, assuming 1st register of each sprite refers to it's x,y,z position. Good for previewing spriteset.
-		 * @param   mask  (Optional) bitmask of x,y,z (1st,2nd and 3rd value) to set value to zero if mask hits.
+		 *  Randomise positions of sprites of spriteData, assuming 1st register of each sprite refers to it's x,y,z position. Good for previewing spriteset.
+		 * @param	mask		A bitmask to PREVENT randomisation, and assign maskValue instead. Mask bit for 1,2,4 for x,y,z respectively.
+		 * @param	maskValue	If mask hits, what value to set
+		 * @param	range		The diameter width range of random spread
+		 * @param	offsetX		
+		 * @param	offsetY
+		 * @param	offsetZ
 		 */
 		public function randomisePositions(mask:int = 0, maskValue:Number = 0, range:Number = 1200, offsetX:Number = 0, offsetY:Number = 0, offsetZ:Number = 0 ):void {
 			var multiplier:int = NUM_REGISTERS_PER_SPR * 4;

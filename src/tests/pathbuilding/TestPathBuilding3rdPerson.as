@@ -15,6 +15,7 @@ package tests.pathbuilding
 	import alternativa.engine3d.objects.Sprite3D;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.spriteset.materials.MaskColorAtlasMaterial;
+	import alternativa.engine3d.spriteset.materials.SpriteSheet8AnimMaterial;
 	import alternativa.engine3d.spriteset.materials.TextureAtlasMaterial;
 	import alternativa.engine3d.spriteset.SpriteSet;
 	import alternativa.engine3d.Template;
@@ -196,11 +197,13 @@ package tests.pathbuilding
 			
 			var font:ConsoleFont = new ConsoleFont();
 			var atlasMaterial:MaskColorAtlasMaterial = new MaskColorAtlasMaterial(font.bmpResource, null);
-			atlasMaterial.flags = (TextureAtlasMaterial.FLAG_MIPNONE | TextureAtlasMaterial.FLAG_PIXEL_NEAREST);
+			atlasMaterial.flags = (MaskColorAtlasMaterial.FLAG_MIPNONE | MaskColorAtlasMaterial.FLAG_PIXEL_NEAREST);
 			atlasMaterial.alphaThreshold = .99;
 		//	atlasMaterial.opaquePass
 		//addChild( new Bitmap(font.bmpResource.data));
-			var spriteSet:SpriteSet = new SpriteSet(233, true, atlasMaterial, font.sheet.width, font.sheet.height, 60,2)
+		var useRegisters:int = 120;// 116;
+		var numRegisters:int = 3;
+			var spriteSet:SpriteSet = new SpriteSet(233, true, atlasMaterial, font.sheet.width, font.sheet.height, useRegisters/numRegisters,numRegisters)
 		//	spriteSet.randomisePositions(0, 1|2, stage.stageHeight*.5);
 			spriteSet.alwaysOnTop = true;
 			

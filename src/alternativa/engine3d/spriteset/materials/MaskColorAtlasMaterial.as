@@ -188,9 +188,8 @@ package alternativa.engine3d.spriteset.materials {
 			
 			//"add t0.xy, t0.xy, t1.zw",  // offset starting UV coodtinates with rect width and height (if needed, based on normalized uv coordinates)
 			
-			"add t0.x, t0.x, t1.x",	
-			//"sub t1.w, c1.w, t1.w",
-			"add t0.y, t0.y, t1.y",
+			"add t0.xy, t0.xy, t1.xy",	
+	
 			
 		//	"add t0.x, t0.x, a0.x",
 		//	"add t0.y, t0.y, a0.y",

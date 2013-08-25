@@ -54,6 +54,13 @@ package util
 			}
 		}
 		
+		public static  function uploadResources(vec:Vector.<Resource>):void {
+			var i:int = vec.length;
+			while (--i > -1) {
+				vec[i].upload(context3D);
+			}
+		}
+		
 	}
 
 }
