@@ -35,7 +35,7 @@ package tests.ui.layout
 			
 			contRight.minWidth = 200 - 8;
 			contRight.minHeight = 32;
-			//contRight.anchor.left = 4;
+			contRight.anchor.left = 4;
 			contRight.anchor.right = 4;
 			contRight.anchor.top = 4;
 			contRight.anchor.bottom = 4;
@@ -43,30 +43,32 @@ package tests.ui.layout
 			contRight.anchor.leftAnchorDisplayObject = contCenter;
 			contRight.anchor.bottomAnchorDisplayObject = contBottom;
 			
-			contLeft.width = 200;
+			
+			contLeft.width = 254;
 			contLeft.anchor.left =4;
 			contLeft.anchor.right = 4;
 			contLeft.anchor.top = 4;
 			contLeft.anchor.bottom = 4;
+			//contLeft.minWidth = 200;
 			contLeft.anchor.rightAnchorDisplayObject = contCenter;
 			contLeft.anchor.bottomAnchorDisplayObject = contBottom;
 			contLeft.anchor.topAnchorDisplayObject = contTop;
 			
 	
-			contCenter.anchor.left = 4;
-			contCenter.anchor.right = 4;
+			//contCenter.anchor.left = 4;
+			//contCenter.anchor.right = 4;
 			contCenter.anchor.rightAnchorDisplayObject = contRight;
 			contCenter.anchor.leftAnchorDisplayObject = contLeft;
 			contCenter.minWidth = 300;
-			contCenter.minHeight = 300;
+			contCenter.minHeight = 200;
 			contCenter.anchor.top = 4;
 			contCenter.anchor.bottom = 4;
 			contCenter.anchor.bottomAnchorDisplayObject = contBottom;
 			contCenter.anchor.topAnchorDisplayObject = contTop;
+			contCenter.anchor.horizontalCenter = .5;
 			
-			
-			contTopLeft.height = 233;
-			contTopLeft.width = 250;
+			contTopLeft.height = 128;
+			contTopLeft.width = 128;
 			contTopLeft.anchor.top = 4;
 			contTopLeft.anchor.left = 4;
 			
@@ -77,7 +79,7 @@ package tests.ui.layout
 			
 			
 			contBottom.anchor.bottom = 4;
-			contBottom.height = 100;
+			contBottom.height = 40;
 			contBottom.anchor.left = 4;
 			contBottom.anchor.right = 4;
 			contBottom.anchor.topAnchorDisplayObject = contCenter;
@@ -107,7 +109,7 @@ package tests.ui.layout
 			}
 			
 			
-			onStageResize();
+			onStageResize();onStageResize();
 			
 		}
 		
