@@ -211,6 +211,8 @@ package alternativa.engine3d.spriteset
 						surface.numTriangles = (toUploadNumSprites << 1);
 					
 						surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objRenderPriority);
+				
+					//	if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure);
 					
 					}
 				}

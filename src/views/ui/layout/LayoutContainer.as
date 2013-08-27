@@ -1,5 +1,6 @@
 package views.ui.layout 
 {
+	import de.polygonal.motor.geom.primitive.AABB2;
 	import flash.display.Graphics;
 	import flash.display.Shape;
 	import flash.display.Sprite;
@@ -11,10 +12,10 @@ package views.ui.layout
 	 */
 	public class LayoutContainer extends Shape implements IFeathersControl, ILayoutDisplayObject
 	{
-		private var _minWidth:Number;
-		private var _maxWidth:Number;
-		private var _minHeight:Number;
-		private var _maxHeight:Number;
+		private var _minWidth:Number =0;
+		private var _maxWidth:Number =0;
+		private var _minHeight:Number=0;
+		private var _maxHeight:Number=0;
 		
 		public var anchor:AnchorLayoutData = new AnchorLayoutData();
 		static public const ILLEGAL_WIDTH_ERROR:String = "illegalWidthError";
@@ -60,8 +61,72 @@ package views.ui.layout
 			layoutData = anchor;
 		}
 		
+		public var validateAABB:AABB2 = new AABB2();
+		public function setupValidateAABB():void {
+			validateAABB.minX = x;
+			validateAABB.minY = y;
+			validateAABB.maxX = x + width;
+			validateAABB.maxY = y + height;
+		}
+		
+		public function validateAABBPhase1():void {
+			var valuer:Number;
+			var other:LayoutContainer;
+			if ( (other = anchor.leftAnchorDisplayObject as LayoutContainer) && isNaN(anchor.left) && !isNaN(valuer = other.anchor.right) ) {
+				
+				if (other.validateAABB.maxX + valuer >  validateAABB.minX) {
+					validateAABB.minX = other.validateAABB.maxX + valuer;
+					
+				}
+			}
+			
+			if ( (other = anchor.topAnchorDisplayObject as LayoutContainer) && isNaN(anchor.top) && !isNaN(valuer = other.anchor.bottom) ) {
+				if (other.validateAABB.maxY + valuer >  validateAABB.minY) validateAABB.minY = other.validateAABB.maxY + valuer;
+			}
+			
+			
+			if ( (other = anchor.rightAnchorDisplayObject as LayoutContainer) && isNaN(anchor.right) && !isNaN(valuer = other.anchor.left) ) {
+				if (other.validateAABB.minX - valuer <  validateAABB.maxX) validateAABB.maxX = other.validateAABB.minX + valuer;
+			}
+			
+			if ( (other = anchor.bottomAnchorDisplayObject as LayoutContainer) && isNaN(anchor.bottom) && !isNaN(valuer = other.anchor.top) ) {
+				if (other.validateAABB.minY - valuer <  validateAABB.maxY) validateAABB.maxY = other.validateAABB.minY + valuer;
+			}
+			
+			
+		}
+		
+		public function validateAABBPhase2():void {
+			
+			var other:LayoutContainer;
+			if ( (other = anchor.leftAnchorDisplayObject as LayoutContainer) && !isNaN(anchor.left)  ) {
+				validateAABB.minX = other.validateAABB.maxX + anchor.left;	
+			}
+			
+			if ( (other = anchor.rightAnchorDisplayObject as LayoutContainer) && !isNaN(anchor.right)  ) {
+				validateAABB.maxX = other.validateAABB.minX - anchor.right;	
+			}
+			
+			if ( (other = anchor.topAnchorDisplayObject as LayoutContainer) && !isNaN(anchor.top)  ) {
+				validateAABB.minY = other.validateAABB.maxY + anchor.top;	
+			}
+			if ( (other = anchor.bottomAnchorDisplayObject as LayoutContainer) && !isNaN(anchor.bottom)  ) {
+				validateAABB.maxY = other.validateAABB.minY - anchor.bottom;	
+			}
+		}
+		
+		public function drawValidateAABB():void {
+			var graphics:Graphics = this.graphics;
+			graphics.clear();
+			
+			
+			graphics.beginFill(0xFF0000, .3);
+			graphics.drawRect(validateAABB.minX-x, validateAABB.minY-y, validateAABB.maxX -x, validateAABB.maxY - y);
+		}
+		
 		override public function get width():Number {
-			return actualWidth;
+		
+			return actualWidth > _minWidth ? actualWidth : _minWidth;
 		}
 		override public function set width(value:Number):void
 		{
@@ -160,7 +225,7 @@ package views.ui.layout
 		
 		private function invalidate():void 
 		{
-		
+			return;
 			if (stage) {
 			
 				stage.addEventListener(Event.RENDER, onStageRender);	stage.invalidate();
@@ -175,7 +240,7 @@ package views.ui.layout
 		
 		
 		override public function get height():Number {
-			return actualHeight;
+			return actualHeight >= _minHeight ? actualHeight : _minHeight;
 		}
 		
 		override public function set height(value:Number):void
@@ -204,6 +269,7 @@ package views.ui.layout
 				
 		public function validate():void 
 		{
+			return;
 			var graphics:Graphics = this.graphics;
 			graphics.clear();
 			graphics.beginFill(0xFF0000, .3);

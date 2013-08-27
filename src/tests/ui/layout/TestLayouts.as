@@ -51,6 +51,7 @@ package tests.ui.layout
 			contLeft.anchor.rightAnchorDisplayObject = contCenter;
 			contLeft.anchor.bottomAnchorDisplayObject = contBottom;
 			contLeft.anchor.topAnchorDisplayObject = contTop;
+			
 	
 			contCenter.anchor.left = 4;
 			contCenter.anchor.right = 4;
@@ -63,19 +64,23 @@ package tests.ui.layout
 			contCenter.anchor.bottomAnchorDisplayObject = contBottom;
 			contCenter.anchor.topAnchorDisplayObject = contTop;
 			
+			
 			contTopLeft.height = 233;
 			contTopLeft.width = 250;
 			contTopLeft.anchor.top = 4;
 			contTopLeft.anchor.left = 4;
 			
 			contLeft.anchor.topAnchorDisplayObject = contTopLeft;
+		
+		
 			contTop.anchor.leftAnchorDisplayObject = contTopLeft;
+			
 			
 			contBottom.anchor.bottom = 4;
 			contBottom.height = 100;
 			contBottom.anchor.left = 4;
 			contBottom.anchor.right = 4;
-			
+			contBottom.anchor.topAnchorDisplayObject = contCenter;
 		
 			contTop.anchor.top = 4;
 			contTop.anchor.right = 4;
@@ -113,7 +118,25 @@ package tests.ui.layout
 			stageBounds.explicitHeight = stage.stageHeight;
 			
 			anchorLayout.layout(itemsToLayout, stageBounds);
+			var i:int = itemsToLayout.length;
+			while (--i > -1) {
+				(itemsToLayout[i] as LayoutContainer).setupValidateAABB();
+			}
 			
+			i  = itemsToLayout.length;
+			while (--i > -1) {
+				(itemsToLayout[i] as LayoutContainer).validateAABBPhase1();
+			}
+			
+			i  = itemsToLayout.length;
+			while (--i > -1) {
+				(itemsToLayout[i] as LayoutContainer).validateAABBPhase2();
+			}
+			
+			i  = itemsToLayout.length;
+			while (--i > -1) {
+				(itemsToLayout[i] as LayoutContainer).drawValidateAABB();
+			}
 		}
 		
 	}

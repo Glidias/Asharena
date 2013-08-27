@@ -206,7 +206,11 @@ package tests.pathbuilding
 			var spriteSet:SpriteSet = new SpriteSet(233, true, atlasMaterial, font.sheet.width, font.sheet.height, useRegisters/numRegisters,numRegisters)
 		//	spriteSet.randomisePositions(0, 1|2, stage.stageHeight*.5);
 			spriteSet.alwaysOnTop = true;
-			
+			spriteSet.useHandCursor = true;
+			spriteSet.mouseEnabled = true;
+			spriteSet.addEventListener(MouseEvent3D.CLICK, onSPrietSetClick);
+			//spriteSet.mouseChildren = true;
+			//spriteSet.mouseHandlingType = MouseEvent3D.
 			
 			var rect:Rectangle = new Rectangle();
 			var data:Vector.<Number> = spriteSet.spriteData;
@@ -228,6 +232,8 @@ package tests.pathbuilding
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		
 		}
+		
+		
 		
 		private function trim( s:String ):String
 {
