@@ -14,6 +14,8 @@ package alternativa.a3d.systems.text
 		
 		private var styles:Vector.<FontSettings>;
 	
+		private var head:Message;
+		private var tail:Message;
 		
 		//Settings
 		public var timeout:Number;
@@ -24,7 +26,9 @@ package alternativa.a3d.systems.text
 		
 		public function TextBoxChannel(styles:Vector.<FontSettings>, maxDisplayedItems:uint=5, timeout:Number=-1, vSpacing:Number=3) 
 		{
+			if (styles.length < 1) throw new Error("Please provide at least 1 style fontsetting!");
 			setStyles(styles);
+			if (maxDisplayedItems < 1) throw new Error("Max displayed Items should be higher than zero!");
 			this.maxDisplayedItems = maxDisplayedItems;
 			this.timeout = timeout;
 			this.countdown = timeout;
@@ -40,16 +44,43 @@ package alternativa.a3d.systems.text
 		alternativa3d var dirty:Boolean = false;
 		
 		public function appendMessage(val:String):void {
-		
-			dirty = true;
-		}
-		
-		public function appendSpanTagMessage(val:String):void {
+			var me:Message;
+			
+			displayedItems++;
+			if (displayedItems > maxDisplayedItems) {  // loop back
+				displayedItems = maxDisplayedItems;
+				tail.next = me = head;
+				head = me.next;
+				me.next = null;
+			}
+			else {		// append new message
+				if (head == null) {
+					head = tail = me = new Message();
+				}
+				else tail.next = me = new Message();
+			}
+			
+			me.str = val;
 			
 			dirty = true;
 		}
 		
-		private function refresh():void {
+		public function appendSpanTagMessage(val:String):void {
+			throw new Error("Not supported yet!");
+			dirty = true;
+		}
+		
+		public function refresh():void {
+			
+			dirty = false;
+			
+			// for now, just 1 style
+			var style:FontSettings = styles[0];
+			var data:Vector.<Number> = style.spriteSet.spriteData;
+			
+			for (var m:Message = head; m != null; m = m.next) {
+				
+			}
 			
 		}
 		
@@ -61,10 +92,18 @@ package alternativa.a3d.systems.text
 			}
 			if (countdown < 0) return;
 			
-			
-			
 		}
 		
 	}
 
+}
+
+class Message {
+	public var str:String;
+	public var span:Boolean = false;
+	public var next:Message;
+	
+	public function Message() {
+		
+	}
 }

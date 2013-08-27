@@ -2,11 +2,12 @@ package alternativa.a3d.systems.text
 {
 	import ash.core.Engine;
 	import ash.core.Entity;
+	import util.SpawnerBundle;
 	/**
 	 * ...
 	 * @author Glenn Ko
 	 */
-	public class TextSpawner 
+	public class TextSpawner extends SpawnerBundle
 	{
 		private var engine:Engine;
 		

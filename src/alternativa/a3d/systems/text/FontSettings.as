@@ -18,10 +18,11 @@ package alternativa.a3d.systems.text
 		public var material:MaskColorAtlasMaterial;
 		public var spriteSet:SpriteSet;
 		public var id:String;
-		//private var registerOffset:int = 4;
 		
 		alternativa3d var boundsCache:Array;
 		alternativa3d var referTextCache:String;
+		
+		alternativa3d var counter:int = 0; 	// for internal use only
 		
 		public function FontSettings(fontSheet:Fontsheet, material:MaskColorAtlasMaterial, spriteSet:SpriteSet, id:String="") 
 		{

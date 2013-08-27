@@ -36,6 +36,7 @@ package tests.pathbuilding
 	import flash.ui.Keyboard;
 	import input.KeyPoll;
 	import saboteur.spawners.JettySpawner;
+	import saboteur.spawners.SaboteurHud;
 	import saboteur.systems.PathBuilderSystem;
 	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
@@ -208,7 +209,7 @@ package tests.pathbuilding
 			spriteSet.alwaysOnTop = true;
 			spriteSet.useHandCursor = true;
 			spriteSet.mouseEnabled = true;
-			spriteSet.addEventListener(MouseEvent3D.CLICK, onSPrietSetClick);
+			
 			//spriteSet.mouseChildren = true;
 			//spriteSet.mouseHandlingType = MouseEvent3D.
 			
@@ -224,10 +225,15 @@ package tests.pathbuilding
 			TextMessageSystem;
 			TextSpawner;
 			
+			var hudAssets:SaboteurHud = new SaboteurHud(game.engine);
+			hudAssets.addToHud3D(hud);
+			
 			//hud.addChild(spr);
 			//hud.addChild(spr2);
 			hud.addChild(spriteSet);
 			//previewFontSpr.addChild( new Bitmap(font.sheet));
+			
+			
 			
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		
