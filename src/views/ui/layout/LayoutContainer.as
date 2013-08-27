@@ -62,6 +62,8 @@ package views.ui.layout
 		}
 		
 		public var validateAABB:AABB2 = new AABB2();
+		public var valid:Boolean = false;
+		
 		public function setupValidateAABB():void {
 			validateAABB.minX = x;
 			validateAABB.minY = y;
@@ -216,27 +218,22 @@ package views.ui.layout
 				if(canInvalidate)
 				{
 					this.invalidate();
+					
 				}
 			//	this.dispatchEventWith(FeathersEventType.RESIZE);
 			}
 			return resized;
 		}
 		
+
+		
 		
 		private function invalidate():void 
 		{
-			return;
-			if (stage) {
-			
-				stage.addEventListener(Event.RENDER, onStageRender);	stage.invalidate();
-			}
+			valid = false;
 		}
 		
-		private function onStageRender(e:Event):void 
-		{
-			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onStageRender);
-			validate();
-		}
+		
 		
 		
 		override public function get height():Number {
@@ -269,11 +266,7 @@ package views.ui.layout
 				
 		public function validate():void 
 		{
-			return;
-			var graphics:Graphics = this.graphics;
-			graphics.clear();
-			graphics.beginFill(0xFF0000, .3);
-			graphics.drawRect(0, 0, width, height);
+			valid = true;
 		}
 		
 		/* INTERFACE views.ui.layout.IFeathersControl */

@@ -590,6 +590,7 @@ package views.ui.layout
 						leftRightWidth -= (leftAnchorDisplayObject.x + leftAnchorDisplayObject.width);
 					}
 					item.width = leftRightWidth - right - left;
+					
 				}
 				else if(hasHorizontalCenterPosition)
 				{
