@@ -222,15 +222,23 @@ package tests.pathbuilding
 			var fontSetting:FontSettings = new FontSettings(font, atlasMaterial, spriteSet);
 			fontSetting.writeData(textToDisplay, 0, 0, 256, true, 0);
 
-			TextMessageSystem;
-			TextSpawner;
+			
 			
 			var hudAssets:SaboteurHud = new SaboteurHud(game.engine);
 			hudAssets.addToHud3D(hud);
 			
+			hudAssets.writeChatText("1. hello i am Glenn!!!");
+			hudAssets.writeChatText("2. helwarwar awa wawa wawawa aw rwa warwat awtwat awtwa twat watwa twat awtwatwatawrlo i am Glenn!!!");
+			hudAssets.writeChatText("3. helrlo i am Glenn!!!");
+			hudAssets.writeChatText("4. helrlo i am Glenn!!!");
+			hudAssets.writeChatText("5. helrlo i am Glenn!!!");
+			hudAssets.writeChatText("6. helrlo i am Glenn!!!");
+			hudAssets.writeChatText("7. helrlo i am Glenn!!!");
+			hudAssets.refreshChatText();
+			
 			//hud.addChild(spr);
 			//hud.addChild(spr2);
-			hud.addChild(spriteSet);
+			//hud.addChild(spriteSet);
 			//previewFontSpr.addChild( new Bitmap(font.sheet));
 			
 			

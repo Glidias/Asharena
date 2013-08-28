@@ -99,6 +99,13 @@ package saboteur.spawners
 			txt_tipsChannel.appendMessage(text);
 		}
 		
+		public function refreshChatText():void {
+			txt_chatChannel.refresh();
+		}
+		public function refreshTipText():void {
+			txt_tipsChannel.refresh();
+		}
+		
 		
 		
 		
@@ -127,6 +134,8 @@ package saboteur.spawners
 		private function getNewFontMaterial(color:uint):MaskColorAtlasMaterial {
 			var mat:MaskColorAtlasMaterial =  new MaskColorAtlasMaterial(consoleFont.bmpResource);
 			mat.color = color;
+			mat.alphaThreshold = .8;
+			mat.flags = (MaskColorAtlasMaterial.FLAG_MIPNONE | MaskColorAtlasMaterial.FLAG_PIXEL_NEAREST);
 			return mat;
 		}
 		

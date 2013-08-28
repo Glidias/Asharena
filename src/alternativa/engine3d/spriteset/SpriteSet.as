@@ -75,6 +75,7 @@ package alternativa.engine3d.spriteset
 		public var viewAlignedLockUp:Boolean = false;
 	
 		private static var UP:Vector3D = new Vector3D(0, 0, 1);
+
 		
 		public var axis:Vector3D;
 
@@ -100,7 +101,10 @@ package alternativa.engine3d.spriteset
 		  
 		/**
 		 * Constructor
-		 * @param	numSprites	The total number of sprites to render in this set
+		 * @param	numSprites	The total number of sprites to render in this set startibg from zero index. 
+		 * Will create the necessary editable spriteSetData of vector numbers that is adjustable for the end-user.
+		 * You can cap the amount of sprites to be rendered by setting the alternativa3d prperty _numSPrites;
+		 * or use the public property numSprites if you could potentially grow the number of sprite data in the spriteset
 		 * @param   viewAligned (Boolean) Whether to fully align sprites to camera screen orienation, or align to a locked axis (up - z) facing towards camera.
 		 * @param	material	Material to use for all sprites
 		 * @param	width		Default width (or scaling factor) of each sprite to use in world coordinate 
@@ -114,6 +118,7 @@ package alternativa.engine3d.spriteset
 		{
 			super();
 			
+		
 			this.geometry = geometry;
 			this.viewAligned = viewAligned;
 			
@@ -166,7 +171,7 @@ package alternativa.engine3d.spriteset
 		
 			var spriteDataSize:int;
 			var i:int;
-			var numSprites:int = _numSprites;  // TODO: use different reference
+			var numSprites:int = _numSprites;  
 			var objRenderPriority:int = alwaysOnTop ? Renderer.NEXT_LAYER :  -1;
 		
 			// setup defaults if required
@@ -280,8 +285,11 @@ package alternativa.engine3d.spriteset
 			spriteData.length  = ((value * NUM_REGISTERS_PER_SPR) << 2);
 			spriteData.fixed = true;
 			_numSprites = value;
+
 				
 		}
+		
+		
 		
 		/**
 		 * Will permanently render baked static sprite data information into a set of static batches, if total number of sprites to be drawn exceeds the batch size.

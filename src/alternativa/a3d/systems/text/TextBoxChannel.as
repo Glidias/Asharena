@@ -21,8 +21,10 @@ package alternativa.a3d.systems.text
 		public var timeout:Number;
 		public var vSpacing:Number;
 		// additional settings
-	
 		
+		
+		public var width:Number = 300;
+		public var centered:Boolean = false;
 		
 		public function TextBoxChannel(styles:Vector.<FontSettings>, maxDisplayedItems:uint=5, timeout:Number=-1, vSpacing:Number=3) 
 		{
@@ -32,7 +34,7 @@ package alternativa.a3d.systems.text
 			this.maxDisplayedItems = maxDisplayedItems;
 			this.timeout = timeout;
 			this.countdown = timeout;
-			this.vSpacing = 3;
+			this.vSpacing = 10;
 			
 		}
 		
@@ -55,10 +57,12 @@ package alternativa.a3d.systems.text
 			}
 			else {		// append new message
 				if (head == null) {
-					head = tail = me = new Message();
+					head = me = new Message();
 				}
 				else tail.next = me = new Message();
 			}
+			
+			tail = me;
 			
 			me.str = val;
 			
@@ -78,10 +82,34 @@ package alternativa.a3d.systems.text
 			var style:FontSettings = styles[0];
 			var data:Vector.<Number> = style.spriteSet.spriteData;
 			
-			for (var m:Message = head; m != null; m = m.next) {
-				
-			}
+		var arr:Array = [];
 			
+			var li:int = 0;
+			var mi:int = 0;
+			var heighter:Number = 0;
+			for (var m:Message = head; m != null; m = m.next) {
+				//m.str;
+				if (m.boundCache != null) {
+					style.boundsCache = m.boundCache;
+					style.referTextCache = m.referTextCache;
+					style.writeDataFromCache(0, heighter, centered, li);
+					
+				}
+				else style.writeData(m.str, 0, heighter, width, centered, li);
+				
+				li += style.boundsCache.length;
+				
+				m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
+				arr.push(m.boundHeight);
+				heighter += m.boundHeight + vSpacing;
+				m.boundCache = style.boundsCache;
+				m.referTextCache = style.referTextCache;
+				mi++;
+			}
+
+				//	throw new Error(arr);
+				style.spriteSet._numSprites = li;// ,
+		
 		}
 		
 		public function update(time:Number):void {
@@ -102,6 +130,10 @@ class Message {
 	public var str:String;
 	public var span:Boolean = false;
 	public var next:Message;
+	
+	public var boundCache:Array;
+	public var referTextCache:String;
+	public var boundHeight:Number;
 	
 	public function Message() {
 		

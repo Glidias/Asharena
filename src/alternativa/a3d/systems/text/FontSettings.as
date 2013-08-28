@@ -19,6 +19,8 @@ package alternativa.a3d.systems.text
 		public var spriteSet:SpriteSet;
 		public var id:String;
 		
+		alternativa3d var boundParagraph:AABB2 = new AABB2();
+		
 		alternativa3d var boundsCache:Array;
 		alternativa3d var referTextCache:String;
 		
@@ -43,7 +45,8 @@ package alternativa.a3d.systems.text
 			var count:int = 0;
 			var data:Vector.<Number> = spriteSet.spriteData;
 			var offsetConstants:int = (spriteSet.NUM_REGISTERS_PER_SPR << 2);
-			var limit:int = ((startLetterIndex + bounds.length) *offsetConstants); 
+			var limit:int = ((startLetterIndex + bounds.length) * offsetConstants); 
+			
 			for (var i:int = startLetterIndex; i < limit; i += offsetConstants) {
 				fontSheet.getRectangleAt( fontSheet.charRectIndices[referText.charCodeAt(count)], rect );  // Charcode could also be cached..
 				//font.getRandomRect(rect);
@@ -60,8 +63,10 @@ package alternativa.a3d.systems.text
 			
 		}
 		
-		public function writeData(str:String, x:Number = 0, y:Number = 0, maxWidth:Number = 2000, centered:Boolean = false, startLetterIndex:uint = 0):void {
-			str = fontSheet.fontV.getParagraph(str, x, y, maxWidth);
+		public function writeData(str:String, x:Number = 0, y:Number = 0, maxWidth:Number = 2000, centered:Boolean = false, startLetterIndex:int = 0):void {
+			str = fontSheet.fontV.getParagraph(str, x, y, maxWidth, boundParagraph);
+			fontSheet.fontV.getBound(str, x, y, centered, fontSheet.tight, boundParagraph);
+			
 			var bounds:Array = fontSheet.fontV.getIndividualBounds(str, x, y, centered, fontSheet.tight);
 			if (bounds.length > spriteSet._numSprites) spriteSet.numSprites = bounds.length;
 			var referText:String = str.replace( /\s/g, "");
@@ -69,20 +74,31 @@ package alternativa.a3d.systems.text
 			var count:int = 0;
 			var data:Vector.<Number> = spriteSet.spriteData;
 			var offsetConstants:int = (spriteSet.NUM_REGISTERS_PER_SPR << 2);
-			var limit:int = ((startLetterIndex + bounds.length) *offsetConstants); 
+			
+			startLetterIndex *= offsetConstants;
+			var limit:int = startLetterIndex +  bounds.length*offsetConstants; 
+			
+		
+			if (data.length < limit) {
+				data.fixed = false;
+				data.length = limit;
+				data.fixed = true;
+			}
+			
 			for (var i:int = startLetterIndex; i < limit; i += offsetConstants) {
 				fontSheet.getRectangleAt( fontSheet.charRectIndices[referText.charCodeAt(count)], rect );
 				//font.getRandomRect(rect);
-				var aabb:AABB2 = bounds[count];	
+				var aabb:AABB2 = bounds[count];
 				data[i] =  aabb.minX + (aabb.maxX - aabb.minX) * .5;
 				data[i + 1] =    (aabb.minY + (aabb.maxY-aabb.minY)*.5);
-				
+					
 				count++;
 				data[i + 4] =  rect.x;
 				data[i + 5] = rect.y;
 				data[i + 6] =   rect.width;
 				data[i + 7] =  rect.height;
 			}
+			
 			
 			boundsCache = bounds;
 			referTextCache = referText;
