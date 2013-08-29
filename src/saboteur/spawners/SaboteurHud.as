@@ -14,6 +14,11 @@ package saboteur.spawners
 	import alternativa.engine3d.spriteset.util.SpriteGeometryUtil;
 	import ash.core.Engine;
 	import assets.fonts.ConsoleFont;
+	import flash.display.Stage;
+	import flash.events.KeyboardEvent;
+	import flash.ui.Keyboard;
+	import input.KeyPoll;
+	import views.ui.text.TextLineInputter;
 
 	import util.SpawnerBundle;
 	/**
@@ -51,14 +56,35 @@ package saboteur.spawners
 		public var txt_chatChannel:TextBoxChannel;
 		public var txt_tipsChannel:TextBoxChannel;
 		
+		private var txt_chatInput:FontSettings;
+		private var chatTextInput:TextLineInputter;
+		private var keypollToDisable:KeyPoll;
+		private var chatInputWidth:Number = 300;
+		
 		static public const MAX_CHARS:int = 60;
 		private var consoleFont:ConsoleFont = new ConsoleFont();
 		
 		private var txtSpawner:TextSpawner;
+		private var _stage:Stage;
 		
-		public function SaboteurHud(engine:Engine) 
+		public function SaboteurHud(engine:Engine, stage:Stage, keypollToDisable:KeyPoll=null) 
 		{
+			chatTextInput = new TextLineInputter(stage);
+			this.keypollToDisable = keypollToDisable;
+			
 			txtSpawner = new TextSpawner(engine);
+			_stage = stage;
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, checkEnter);
+			
+			super();
+		}
+		
+		private function checkEnter(e:KeyboardEvent):void 
+		{
+			if (e.keyCode === Keyboard.ENTER && !chatTextInput.activated) {
+				
+				activateChatInput();
+			}
 		}
 		
 		
@@ -73,6 +99,24 @@ package saboteur.spawners
 		private function setupMinimapAndRadar():void 
 		{
 			
+		}
+		
+	
+		
+		private function activateChatInput():void {
+			chatTextInput.activate();
+			if (keypollToDisable != null) {
+				keypollToDisable.disable();
+			}
+			
+			//  this will automaticlaly write
+			txt_chatInput.writeFinalData("|", 0, 0, chatInputWidth, false, 0);
+		}
+		private function deactivateChatInput():void {
+			chatTextInput.deactivate();
+			if (keypollToDisable != null) {
+				keypollToDisable.enable();
+			}
 		}
 		
 		// Utility to bind layout AABBs against Object3D position or (Start Index position on SpriteData, with optional layouting sceheme with range or custom method ). 
@@ -90,6 +134,7 @@ package saboteur.spawners
 			obj.addChild(txt_tips.spriteSet);
 			obj.addChild(txt_numpad.spriteSet);
 			obj.addChild(txt_chat.spriteSet);
+			obj.addChild(txt_chatInput.spriteSet);
 		}
 		
 		public function writeChatText(text:String):void {
@@ -129,6 +174,35 @@ package saboteur.spawners
 			txt_chat = new FontSettings(consoleFont, mat , getNewTextSpriteSet(MAX_CHARS, mat, geom) );
 			txt_chatChannel = new TextBoxChannel(new <FontSettings>[txt_chat], 5, -1, 3);
 			
+			txt_chatInput = new FontSettings(consoleFont, mat , getNewTextSpriteSet(MAX_CHARS, mat, geom) );
+			
+			chatTextInput.onTextChange.add( onChatTextChange);
+			chatTextInput.onTextCommit.add( onChatTextCommit);
+			chatTextInput.onTextEscape.add( onChatTextESC);
+			
+		}
+		
+		private function onChatTextCommit(str:String):void 
+		{
+			if (str != "" ) { 
+				
+				txt_chatChannel.appendMessage(str);
+				txt_chatChannel.refresh();
+			}
+			txt_chatInput.writeFinalData("", 0, 0, chatInputWidth, false, 0);
+			deactivateChatInput();
+		}
+		
+		private function onChatTextESC(str:String):void 
+		{	
+			txt_chatInput.writeFinalData("", 0, 0, chatInputWidth, false, 0);
+			deactivateChatInput();
+		}
+		
+		private function onChatTextChange(str:String):void 
+		{
+			// todo: bind width to layout
+			txt_chatInput.writeFinalData(str+"|", 0, 0, chatInputWidth, false, 0);
 		}
 		
 		private function getNewFontMaterial(color:uint):MaskColorAtlasMaterial {

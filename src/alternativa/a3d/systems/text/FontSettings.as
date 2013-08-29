@@ -41,35 +41,54 @@ package alternativa.a3d.systems.text
 			var bounds:Array = boundsCache;
 			var referText:String = referTextCache;
 			
+
 			var rect:Rectangle = RECT;
 			var count:int = 0;
 			var data:Vector.<Number> = spriteSet.spriteData;
 			var offsetConstants:int = (spriteSet.NUM_REGISTERS_PER_SPR << 2);
-			var limit:int = ((startLetterIndex + bounds.length) * offsetConstants); 
+			
+			startLetterIndex *= offsetConstants;
+			var limit:int = startLetterIndex +  bounds.length*offsetConstants; 
+
 			
 			for (var i:int = startLetterIndex; i < limit; i += offsetConstants) {
-				fontSheet.getRectangleAt( fontSheet.charRectIndices[referText.charCodeAt(count)], rect );  // Charcode could also be cached..
+				fontSheet.getRectangleAt( fontSheet.charRectIndices[referText.charCodeAt(count)], rect );
 				//font.getRandomRect(rect);
-				var aabb:AABB2 = bounds[count];	
-				data[i] =  aabb.minX + (aabb.maxX - aabb.minX) * .5;
-				data[i + 1] =    (aabb.minY + (aabb.maxY-aabb.minY)*.5);
-				
+				var aabb:AABB2 = bounds[count];
+				data[i] =   x +aabb.minX + (aabb.maxX - aabb.minX) * .5;
+				data[i + 1] =  y+  (aabb.minY + (aabb.maxY-aabb.minY)*.5);
+					
 				count++;
 				data[i + 4] =  rect.x;
 				data[i + 5] = rect.y;
 				data[i + 6] =   rect.width;
 				data[i + 7] =  rect.height;
 			}
-			
+		}
+		
+		public function writeFinalData(str:String, x:Number = 0, y:Number = 0, maxWidth:Number = 2000, centered:Boolean = false, startLetterIndex:uint = 0):void {
+			writeData(str, x, y, maxWidth, centered, startLetterIndex);
+			if (boundsCache.length > spriteSet._numSprites) spriteSet.numSprites = boundsCache.length;
+			spriteSet._numSprites = boundsCache.length;
 		}
 		
 		public function writeData(str:String, x:Number = 0, y:Number = 0, maxWidth:Number = 2000, centered:Boolean = false, startLetterIndex:int = 0):void {
-			str = fontSheet.fontV.getParagraph(str, x, y, maxWidth, boundParagraph);
-			fontSheet.fontV.getBound(str, x, y, centered, fontSheet.tight, boundParagraph);
+			if (str === "") {
+				boundsCache = [];
+				referTextCache = "";
+				return;
+			}
+			str = fontSheet.fontV.getParagraph(str, 0, 0, maxWidth, boundParagraph);
+			fontSheet.fontV.getBound(str, 0, 0, centered, fontSheet.tight, boundParagraph);
 			
-			var bounds:Array = fontSheet.fontV.getIndividualBounds(str, x, y, centered, fontSheet.tight);
+			var bounds:Array = fontSheet.fontV.getIndividualBounds(str, 0, 0, centered, fontSheet.tight);
 			if (bounds.length > spriteSet._numSprites) spriteSet.numSprites = bounds.length;
 			var referText:String = str.replace( /\s/g, "");
+			if (referText === "") {
+				boundsCache = [];
+				referTextCache = "";
+				return;
+			}
 			var rect:Rectangle = RECT;
 			var count:int = 0;
 			var data:Vector.<Number> = spriteSet.spriteData;
@@ -89,8 +108,8 @@ package alternativa.a3d.systems.text
 				fontSheet.getRectangleAt( fontSheet.charRectIndices[referText.charCodeAt(count)], rect );
 				//font.getRandomRect(rect);
 				var aabb:AABB2 = bounds[count];
-				data[i] =  aabb.minX + (aabb.maxX - aabb.minX) * .5;
-				data[i + 1] =    (aabb.minY + (aabb.maxY-aabb.minY)*.5);
+				data[i] =  x + aabb.minX + (aabb.maxX - aabb.minX) * .5;
+				data[i + 1] =  y+  (aabb.minY + (aabb.maxY-aabb.minY)*.5);
 					
 				count++;
 				data[i + 4] =  rect.x;

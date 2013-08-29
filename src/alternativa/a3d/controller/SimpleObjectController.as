@@ -198,6 +198,13 @@ package alternativa.a3d.controller {
 			eventSource.removeEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 			eventSource.removeEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 			stopMouseLook();
+			 _up = false;
+			 _down = false;
+			 _forward = false;
+			 _back = false;
+			 _left = false;
+			 _right = false;
+			_accelerate = false;
 		}
 	
 		private function onMouseDown(e:MouseEvent):void {

@@ -54,6 +54,8 @@ package alternativa.a3d.systems.text
 				tail.next = me = head;
 				head = me.next;
 				me.next = null;
+				me.boundCache = null;
+				
 			}
 			else {		// append new message
 				if (head == null) {
@@ -82,7 +84,7 @@ package alternativa.a3d.systems.text
 			var style:FontSettings = styles[0];
 			var data:Vector.<Number> = style.spriteSet.spriteData;
 			
-		var arr:Array = [];
+		
 			
 			var li:int = 0;
 			var mi:int = 0;
@@ -95,15 +97,19 @@ package alternativa.a3d.systems.text
 					style.writeDataFromCache(0, heighter, centered, li);
 					
 				}
-				else style.writeData(m.str, 0, heighter, width, centered, li);
+				else {
+					style.writeData(m.str, 0, heighter, width, centered, li);
+					m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
+					m.boundCache = style.boundsCache;
+					m.referTextCache = style.referTextCache;
+				}
 				
 				li += style.boundsCache.length;
 				
-				m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
-				arr.push(m.boundHeight);
+			
+				//if (m.boundCache != null ) throw new Error("A");
 				heighter += m.boundHeight + vSpacing;
-				m.boundCache = style.boundsCache;
-				m.referTextCache = style.referTextCache;
+				
 				mi++;
 			}
 

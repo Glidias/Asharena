@@ -224,7 +224,7 @@ package tests.pathbuilding
 
 			
 			
-			var hudAssets:SaboteurHud = new SaboteurHud(game.engine);
+			var hudAssets:SaboteurHud = new SaboteurHud(game.engine, stage, game.keyPoll);
 			hudAssets.addToHud3D(hud);
 			
 			hudAssets.writeChatText("1. hello i am Glenn!!!");
@@ -243,7 +243,7 @@ package tests.pathbuilding
 			
 			
 			
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false,1);
 		
 		}
 		
@@ -259,12 +259,17 @@ package tests.pathbuilding
 		private var _isThirdPerson:Boolean = true;
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
-			if (e.keyCode === Keyboard.L) {
+			
+			if (e.keyCode === Keyboard.L && !game.keyPoll.isDown(Keyboard.L)) { // && !game.keyPoll.disabled
 				
 				_isThirdPerson = !_isThirdPerson;
 				game.gameStates.engineState.changeState(_isThirdPerson ? "thirdPerson" : "spectator");
+				//(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onKeyDown);
 			}
+			
 		}
+		
+	
 		
 		private function tick(time:Number):void {
 			game.engine.update(time);
