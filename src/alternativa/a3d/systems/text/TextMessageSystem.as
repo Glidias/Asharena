@@ -1,5 +1,7 @@
 package alternativa.a3d.systems.text 
 {
+	import ash.core.Engine;
+	import ash.core.NodeList;
 	import ash.core.System;
 	/**
 	 * A GPU accelerated text messaging display system for Alternativa3D using SpriteSets, MaskColorAtlasMaterials, and Fontsheets
@@ -15,10 +17,18 @@ package alternativa.a3d.systems.text
 		
 		}
 		
+		public var textMessageNodes:NodeList;
+		
+		override public function addToEngine(engine:Engine):void {
+			textMessageNodes = engine.getNodeList(TextMessageNode);
+			
+		}
 		
 		
 		override public function update(time:Number):void {
-			
+			for (var t:TextMessageNode = textMessageNodes.head as TextMessageNode; t != null; t = t.next as TextMessageNode) {
+				t.textBoxChannel.update(time);
+			}
 		}
 		
 	}
@@ -39,7 +49,7 @@ class TextMessageNode extends Node {
 	public static function _getComponents():ClassMap {
 		if(_components == null) {
 				_components = new ClassMap();
-				_components.set(TextMessageNode, "textBoxChannel");
+				_components.set(TextBoxChannel, "textBoxChannel");
 			
 		}
 			return _components;
@@ -58,7 +68,7 @@ class FadeMessageNode extends Node {
 	public static function _getComponents():ClassMap {
 		if(_components == null) {
 				_components = new ClassMap();
-				_components.set(FadeMessageNode, "txtMessage");
+				_components.set(FadeTextMessage, "txtMessage");
 			
 		}
 			return _components;

@@ -180,6 +180,9 @@ package saboteur.spawners
 			chatTextInput.onTextCommit.add( onChatTextCommit);
 			chatTextInput.onTextEscape.add( onChatTextESC);
 			
+			txtSpawner.addTextBoxChannel( txt_chatChannel);
+			txtSpawner.addTextBoxChannel( txt_tipsChannel);
+			
 		}
 		
 		private function onChatTextCommit(str:String):void 

@@ -24,6 +24,7 @@ package alternativa.a3d.systems.text
 		
 		public function addTextBoxChannel(textBoxChannel:TextBoxChannel):void {
 			var ent:Entity = new Entity();
+			
 			ent.add(textBoxChannel);
 			engine.addEntity(ent);
 		}
