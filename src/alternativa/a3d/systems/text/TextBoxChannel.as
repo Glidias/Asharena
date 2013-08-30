@@ -11,8 +11,10 @@ package alternativa.a3d.systems.text
 		
 		alternativa3d var maxDisplayedItems:uint;
 		public function setMaxDisplayedItems(val:uint):void {
-			// TODO: check if < than current,  cache maxList list
+			if (val === maxDisplayedItems) return;
 			maxDisplayedItems = val;
+			dirty = true;
+			dirtyFlags |= 1;
 			
 		}
 		alternativa3d var displayedItems:uint = 0;
@@ -63,7 +65,7 @@ package alternativa.a3d.systems.text
 		
 		public function rowsChangedNotify():void {
 			dirty = true;
-			dirtyFlags =  1;
+			dirtyFlags |=  1;
 		}
 		
 		
