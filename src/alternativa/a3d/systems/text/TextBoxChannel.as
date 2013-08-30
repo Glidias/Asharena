@@ -64,7 +64,7 @@ package alternativa.a3d.systems.text
 				head = me.next;
 				me.next = null;
 				me.boundCache = null;
-				
+				me.scrolling = false;
 				//me.numLinesCache = 0;
 			}
 			else {		// append new message
@@ -103,7 +103,7 @@ package alternativa.a3d.systems.text
 			var heighter:Number = 0;
 			
 			_numScrollingMsgs = 0;
-			
+			var spareLines:int = maxDisplayedItems - displayedItems;
 			for (m = head; m != null; m = m.next) {
 				//m.str;
 				m.charIndexCache = li;
@@ -111,22 +111,48 @@ package alternativa.a3d.systems.text
 				if (m.boundCache != null) {
 					style.boundsCache = m.boundCache;
 					style.referTextCache = m.referTextCache;
-					style.writeDataFromCache(0, heighter, centered, li, width);
 					
+					if (m.numLines > 1) {
+						spareLines -= m.numLines - 1;
+						if (!m.scrolling)	{
+							if (spareLines < 0) {  // convert paragraph to scrolling
+							_scrollMessages[_numScrollingMsgs++]  = m;
+							 m.scrolling = true;
+							 style.writeData(m.str, 0, heighter, 0, centered, li, width); 
+							 	m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
+								m.boundWidth = style.boundParagraph.maxX - style.boundParagraph.minX;
+								m.boundCache = style.boundsCache;
+								m.referTextCache = style.referTextCache;
+							}
+							else style.writeDataFromCache(0, heighter, centered, li, width);
+						}
+						else _scrollMessages[_numScrollingMsgs++]  = m;  // continue scrolling
+							
+					}
+					else style.writeDataFromCache(0, heighter, centered, li, width);
 				}
 				else {
 					//style.writeData(m.str, 0, heighter, 0, centered, li);  // line case
 					//style.writeData(m.str, 0, heighter, width, centered, li); 
 					
 					var checkPara:String = style.fontSheet.fontV.getParagraph(m.str, 0, heighter, width, style.boundParagraph);
-					if (checkPara.split("\n").length > 1) {
-						_scrollMessages[_numScrollingMsgs++]  = m;
+					m.numLines = checkPara.split("\n").length;
+					
+					if (m.numLines > 1) {
+						spareLines -= m.numLines - 1;
+						if (spareLines < 0) {
+							_scrollMessages[_numScrollingMsgs++]  = m;
+							m.scrolling = true;
+							 style.writeData(m.str, 0, heighter, 0, centered, li, width); 
+						}
+						else {
+							 style.writeData(checkPara, 0, heighter, 0, centered, li); 
+						}
 					}
-					style.writeData(m.str, 0, heighter, 0, centered, li, width);   // mask width case
+					else style.writeData(m.str, 0, heighter, 0, centered, li, width); 
 					m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 					m.boundWidth = style.boundParagraph.maxX - style.boundParagraph.minX;
 					m.boundCache = style.boundsCache;
-					
 					m.referTextCache = style.referTextCache;
 					
 				//	m.numLinesCache = style.numLinesCache
@@ -196,7 +222,10 @@ class Message {
 	public var boundHeight:Number;
 	public var boundWidth:Number;
 	
+	public var numLines:int;
+	
 	// for horizontal scolling items 
+	public var scrolling:Boolean = false;
 	public var charIndexCache:int;
 	public var yValueCache:Number;
 	public var startX:Number = 0;
