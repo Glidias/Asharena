@@ -19,6 +19,8 @@ package views.ui.text
 		public var autoClearOnCommit:Boolean = true;
 		public var autoClearOnEscape:Boolean = true;
 		
+		public var glyphRange:Array;
+		
 		public var string:String = "";
 		public function clear():void {
 			if (string === "") return;
@@ -69,7 +71,10 @@ package views.ui.text
 				return;
 			}
 			
-			var newStr:String = keyCode != Keyboard.BACKSPACE ?  string +  String.fromCharCode(kc) : (string != "" ? string.slice(0,string.length-1) : "");
+			
+		
+		//	throw new Error(String.fromCharCode(kc));
+			var newStr:String = keyCode != Keyboard.BACKSPACE ?  string +  (glyphRange!=null  ? glyphRange[kc] ? String.fromCharCode(kc) : ""  : String.fromCharCode(kc).toString() ) : (string != "" ? string.slice(0,string.length-1) : "");
 
 			if (newStr != string) {
 				string = newStr;

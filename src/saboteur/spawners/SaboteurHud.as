@@ -157,6 +157,8 @@ package saboteur.spawners
 		private function setupText():void 
 		{
 			consoleFont.bmpResource.upload(context3D);
+			chatTextInput.glyphRange = consoleFont.fontV._glyphRange;
+			
 			var geom:Geometry  = SpriteGeometryUtil.createNormalizedSpriteGeometry(MAX_CHARS, 0, 1, 1, 0, 0, 2);
 			geom.upload(context3D);
 			
@@ -168,11 +170,11 @@ package saboteur.spawners
 			
 			mat = getNewFontMaterial(0xDDEEAA);
 			txt_tips = new FontSettings(consoleFont, mat , getNewTextSpriteSet(MAX_CHARS, mat, geom) );
-			txt_tipsChannel = new TextBoxChannel(new <FontSettings>[txt_tips], 5, -1, 3);
+			txt_tipsChannel = new TextBoxChannel(new <FontSettings>[txt_tips], 5, 10, 3);
 			
 			mat = getNewFontMaterial(0xDDEEAA);
 			txt_chat = new FontSettings(consoleFont, mat , getNewTextSpriteSet(MAX_CHARS, mat, geom) );
-			txt_chatChannel = new TextBoxChannel(new <FontSettings>[txt_chat], 5, -1, 3);
+			txt_chatChannel = new TextBoxChannel(new <FontSettings>[txt_chat], 5, 10, 3);
 			
 			txt_chatInput = new FontSettings(consoleFont, mat , getNewTextSpriteSet(MAX_CHARS, mat, geom) );
 			

@@ -51,12 +51,13 @@ package alternativa.a3d.systems.text
 			startLetterIndex *= offsetConstants;
 			var limit:int = startLetterIndex +  bounds.length*offsetConstants; 
 		
+			/*
 			if (data.length < limit) {
 				data.fixed = false;
 				data.length = limit;
 				data.fixed = true;
 			}
-			
+			*/
 			
 
 			
@@ -77,8 +78,6 @@ package alternativa.a3d.systems.text
 				
 				data[i] =   tarX + (aabb.maxX - aabb.minX) * .5;
 				data[i + 1] =  y +  (aabb.minY + (aabb.maxY - aabb.minY) * .5);
-				
-				
 				data[i + 2] =  (tarX2 <= maskWidth && tarX >= 0 ) ? 0 : -1;
 					
 				count++;
@@ -102,11 +101,13 @@ package alternativa.a3d.systems.text
 			startLetterIndex *= offsetConstants;
 			var limit:int = startLetterIndex +  bounds.length*offsetConstants; 
 		
+			/*
 			if (data.length < limit) {
 				data.fixed = false;
 				data.length = limit;
 				data.fixed = true;
 			}
+			*/
 
 			
 			for (var i:int = startLetterIndex; i < limit; i += offsetConstants) {

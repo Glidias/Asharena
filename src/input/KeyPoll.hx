@@ -56,7 +56,10 @@ class KeyPoll implements IKeyPoll
 {
     private var states:Bytes;
     public var dispObj:DisplayObject;
-
+	private var disabled:Bool;
+	public inline function isDisabled():Bool {
+		return disabled;
+	}
     /**
      * Constructor
      *
@@ -73,6 +76,7 @@ class KeyPoll implements IKeyPoll
 	public inline function enable():Void
 	{
 		resetAllStates();
+		disabled = false;
 		dispObj.addEventListener(KeyboardEvent.KEY_DOWN, keyDownListener);
         dispObj.addEventListener(KeyboardEvent.KEY_UP, keyUpListener);
         dispObj.addEventListener(Event.ACTIVATE, activateListener);
@@ -81,6 +85,7 @@ class KeyPoll implements IKeyPoll
 	
 	public inline function disable():Void {
 		resetAllStates();
+		disabled = true;
 		dispObj.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownListener);
         dispObj.removeEventListener(KeyboardEvent.KEY_UP, keyUpListener);
         dispObj.removeEventListener(Event.ACTIVATE, activateListener);

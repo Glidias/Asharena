@@ -219,9 +219,7 @@ package tests.pathbuilding
 		//	var previewFontSpr:Sprite = new Sprite();
 		//	addChild(previewFontSpr);
 			//previewFontSpr.graphics.lineStyle(0, 0xFF0000);
-			var textToDisplay:String = "Hello world. The quick brown fox jumps over the lazy dog. w rawraw waraw awr awrawtawrawrawrawrawrw awr";
-			var fontSetting:FontSettings = new FontSettings(font, atlasMaterial, spriteSet);
-			fontSetting.writeData(textToDisplay, 0, 0, 256, true, 0);
+		
 
 			
 			
@@ -259,7 +257,7 @@ package tests.pathbuilding
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
 			
-			if (e.keyCode === Keyboard.L && !game.keyPoll.isDown(Keyboard.L)) { // && !game.keyPoll.disabled
+			if (e.keyCode === Keyboard.L &&  !game.keyPoll.disabled && !game.keyPoll.isDown(Keyboard.L)) { // && 
 				
 				_isThirdPerson = !_isThirdPerson;
 				game.gameStates.engineState.changeState(_isThirdPerson ? "thirdPerson" : "spectator");
