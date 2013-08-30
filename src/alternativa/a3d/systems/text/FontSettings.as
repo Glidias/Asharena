@@ -41,7 +41,7 @@ package alternativa.a3d.systems.text
 		alternativa3d function writeMarqueeDataFromCache(x:Number, y:Number, centered:Boolean , startLetterIndex:uint, maskWidth:Number, marqueeWidth:Number):void {
 			var bounds:Array = boundsCache;
 			var referText:String = referTextCache;
-			
+			x -= int(x/marqueeWidth)*marqueeWidth;
 
 			var rect:Rectangle = RECT;
 			var count:int = 0;
