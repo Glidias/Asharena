@@ -34,7 +34,7 @@ package views.ui.text
 		}
 		
 		public function activate():void {
-			_stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			_stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false,4);
 			_activated = true;
 		}
 		
@@ -53,6 +53,7 @@ package views.ui.text
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
+			e.stopImmediatePropagation();
 			var keyCode:uint = e.keyCode;
 			var kc:uint = e.charCode;
 			if (keyCode === Keyboard.ESCAPE) {
@@ -62,6 +63,8 @@ package views.ui.text
 				}
 				return;
 			}
+			var lastChar:String = string.charAt(string.length - 1);
+			if (keyCode === Keyboard.SPACE && ( !(lastChar) || lastChar=== " ")) return;
 			if (keyCode === Keyboard.ENTER || keyCode === Keyboard.NUMPAD_ENTER ) {
 				onTextCommit.dispatch(string);
 				if (autoClearOnCommit) { 

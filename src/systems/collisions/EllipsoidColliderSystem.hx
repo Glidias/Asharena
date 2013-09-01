@@ -30,7 +30,7 @@ class EllipsoidColliderSystem extends System
 	public function new(collidable:IECollidable, threshold:Float=0.001) 
 	{
 		super();
-		_collider =  new EllipsoidCollider(0, 0, 0, threshold);
+		_collider =  new EllipsoidCollider(0, 0, 0, threshold, true);
 		this.collidable = collidable;
 		
 		

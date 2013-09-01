@@ -104,10 +104,11 @@ package saboteur.spawners
 	
 		
 		private function activateChatInput():void {
-			chatTextInput.activate();
-			if (keypollToDisable != null) {
+					if (keypollToDisable != null) {
 				keypollToDisable.disable();
 			}
+			chatTextInput.activate();
+	
 			
 			//  this will automaticlaly write
 			txt_chatInput.writeFinalData("|", 0, 0, chatInputWidth, false, 0);
@@ -144,13 +145,14 @@ package saboteur.spawners
 			txt_tipsChannel.appendMessage(text);
 		}
 		
+		/*
 		public function refreshChatText():void {
 			txt_chatChannel.refresh();
 		}
 		public function refreshTipText():void {
 			txt_tipsChannel.refresh();
 		}
-		
+		*/
 		
 		
 		
@@ -163,16 +165,16 @@ package saboteur.spawners
 			geom.upload(context3D);
 			
 			
-			var mat:MaskColorAtlasMaterial;
+			var mat:Material;
 			
-			mat = getNewFontMaterial(0xDDEEAA);
+			mat = getNewDefaultFontMaterial(0xDDEEAA);
 			txt_numpad = new FontSettings(consoleFont, mat , getNewTextSpriteSet(10, mat, geom) );
 			
-			mat = getNewFontMaterial(0xDDEEAA);
+			mat = getNewDefaultFontMaterial(0xDDEEAA);
 			txt_tips = new FontSettings(consoleFont, mat , getNewTextSpriteSet(MAX_CHARS, mat, geom) );
 			txt_tipsChannel = new TextBoxChannel(new <FontSettings>[txt_tips], 5, 10, 3);
 			
-			mat = getNewFontMaterial(0xDDEEAA);
+			mat = getNewDefaultFontMaterial(0xDDEEAA);
 			txt_chat = new FontSettings(consoleFont, mat , getNewTextSpriteSet(MAX_CHARS, mat, geom) );
 			txt_chatChannel = new TextBoxChannel(new <FontSettings>[txt_chat], 5, 10, 3);
 			
@@ -192,7 +194,7 @@ package saboteur.spawners
 			if (str != "" ) { 
 				
 				txt_chatChannel.appendMessage(str);
-				txt_chatChannel.refresh();
+			//	txt_chatChannel.refresh();
 			}
 			txt_chatInput.writeFinalData("", 0, 0, chatInputWidth, false, 0);
 			deactivateChatInput();
@@ -215,6 +217,13 @@ package saboteur.spawners
 			mat.color = color;
 			mat.alphaThreshold = .8;
 			mat.flags = (MaskColorAtlasMaterial.FLAG_MIPNONE | MaskColorAtlasMaterial.FLAG_PIXEL_NEAREST);
+			return mat;
+		}
+		private function getNewDefaultFontMaterial(color:uint):TextureAtlasMaterial {
+			var mat:TextureAtlasMaterial =  new TextureAtlasMaterial(consoleFont.bmpResource);
+			
+			mat.alphaThreshold = .8;
+			mat.flags = (TextureAtlasMaterial.FLAG_MIPNONE | TextureAtlasMaterial.FLAG_PIXEL_NEAREST);
 			return mat;
 		}
 		

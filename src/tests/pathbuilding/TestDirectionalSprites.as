@@ -1,6 +1,7 @@
 package tests.pathbuilding 
 {
 	import alternativa.a3d.controller.SimpleFlyController;
+	import alternativa.a3d.controller.SimpleObjectController;
 	import alternativa.engine3d.effects.TextureAtlas;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
@@ -14,6 +15,7 @@ package tests.pathbuilding
 	import ash.tick.FrameTickProvider;
 	import flash.display.MovieClip;
 	import flash.geom.Vector3D;
+	import flash.utils.setTimeout;
 	import systems.collisions.EllipsoidCollider;
 	import systems.SystemPriorities;
 	import util.SpawnerBundle;
@@ -28,6 +30,7 @@ package tests.pathbuilding
 		private var game:TheGame;
 		private var ticker:FrameTickProvider;
 		private var sprite8Mat:*;
+		private var spectatorPerson:SimpleObjectController;
 		
 		
 		[Embed(source = "../../../resources/daggerfl/lich.png")]
@@ -54,17 +57,18 @@ package tests.pathbuilding
 			SpawnerBundle.context3D = _template3D.stage3D.context3D;
 			
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
-
-			
-			var spectatorPerson:SimpleFlyController =new SimpleFlyController( 
-						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
+/*
+			new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
 						null ,
+						*/
+			spectatorPerson =new SimpleObjectController( 
+						
 						stage, 
 						_template3D.camera, 
 						GameSettings.SPECTATOR_SPEED,
 						GameSettings.SPECTATOR_SPEED_SHIFT_MULT);
 			
-						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
+					//	game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
 		
 	
 			
@@ -138,33 +142,43 @@ package tests.pathbuilding
 			ticker.add(tick);
 			ticker.start();
 			
+		//	setTimeout(disable, 5000)
 			
-			
+		}
+		
+		private var _disabled:Boolean = false;
+		private function disable():void 
+		{
+			_disabled = true;
+			game.engine.removeSystem(spectatorPerson);
 		}
 		
 		private function tick(time:Number):void 
 		{
 			if (sprite8Mat is SpriteSheet8AnimMaterial) {
 				
-				var dir:Vector3D = new Vector3D();
-				_template3D.camera.calculateRay( new Vector3D(), dir, _template3D.camera.view.width * .5, _template3D.camera.view.height * .5);
-				dir.z = 0;
-				dir.normalize();
+			//	var dir:Vector3D = new Vector3D();
+			//	_template3D.camera.calculateRay( new Vector3D(), dir, _template3D.camera.view.width * .5, _template3D.camera.view.height * .5);
+			//	dir.z = 0;
+			//	dir.normalize();
 				
 				var spriteMat:SpriteSheet8AnimMaterial = sprite8Mat as SpriteSheet8AnimMaterial;
 				spriteMat.camForward.x = Math.cos(_template3D.camera.rotationZ);
 				spriteMat.camForward.y = Math.sin(_template3D.camera.rotationZ);
 				
-				spriteMat.camForward.x = dir.x;
-				spriteMat.camForward.y = dir.y;
 				
 				//spriteMat.camRight =  spriteMat.camForward.crossProduct(spriteMat.camR
-				spriteMat.camRight.x = dir.y;
-				spriteMat.camRight.y = -dir.x;
+				spriteMat.camRight.x = spriteMat.camForward.y;
+				spriteMat.camRight.y = -spriteMat.camForward.x;
 			}
 			
-
 			
+
+			if (_disabled) {
+				_template3D.camera.rotationZ += .01;
+					_template3D.camera.x += spriteMat.camForward.x;
+					_template3D.camera.y += spriteMat.camForward.y;
+			}
 			game.engine.update(time);
 			_template3D.render();
 		}

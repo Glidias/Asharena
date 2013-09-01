@@ -33,6 +33,7 @@ package tests.pathbuilding
 	import flash.events.IEventDispatcher;
 	import flash.events.KeyboardEvent;
 	import flash.geom.Rectangle;
+	import flash.system.System;
 	import flash.ui.Keyboard;
 	import input.KeyPoll;
 	import saboteur.spawners.JettySpawner;
@@ -263,7 +264,10 @@ package tests.pathbuilding
 				game.gameStates.engineState.changeState(_isThirdPerson ? "thirdPerson" : "spectator");
 				//(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onKeyDown);
 			}
-			
+			if (e.keyCode === Keyboard.F11) {
+				System.pauseForGCIfCollectionImminent();
+				
+			}
 		}
 		
 	

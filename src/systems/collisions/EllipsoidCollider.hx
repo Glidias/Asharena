@@ -98,10 +98,12 @@ package systems.collisions;
 		 * @param radiusY Ellipsoid radius along Y axis.
 		 * @param radiusZ Ellipsoid radius along Z axis.
 		 */
-		public function new(radiusX:Float, radiusY:Float, radiusZ:Float, threshold:Float=0.001) {
+		public function new(radiusX:Float, radiusY:Float, radiusZ:Float, threshold:Float=0.001, requireEvents:Bool=false) {
 			this.threshold = threshold;
 			
 			this.timestamp = 0;
+			
+			this.requireEvents = requireEvents;
 			
 			this.radiusX = radiusX;
 			this.radiusY = radiusY;
@@ -114,6 +116,8 @@ package systems.collisions;
 			cornerB = new Vector3D();
 			cornerC = new Vector3D();
 			cornerD = new Vector3D();
+			
+			resultVector = new Vector3D();
 			
 			collisionPoint = new Vector3D();
 			collisionPlane = new Vector3D();
@@ -474,7 +478,7 @@ package systems.collisions;
 			
 			collisions = null;
 			
-			var result:Vector3D;
+			//var result:Vector3D;
 			var t:Float;
 			if (numFaces > 0) {
 			//	var limit:Int = 50;  // Max tries before timing out
@@ -531,11 +535,13 @@ package systems.collisions;
 					resCollisionPlane.z = aby2*acx2 - abx2*acy2;
 					resCollisionPlane.normalize();
 					resCollisionPlane.w = resCollisionPoint.x*resCollisionPlane.x + resCollisionPoint.y*resCollisionPlane.y + resCollisionPoint.z*resCollisionPlane.z;
-						
-						var coll:CollisionEvent = CollisionEvent.GetAs3(resCollisionPoint, resCollisionPlane, resCollisionPlane.w, t, CollisionEvent.GEOMTYPE_POLYGON); 
-						coll.next = collisions;
-						collisions = coll;
-						
+					//	/*
+						if (requireEvents) {
+							var coll:CollisionEvent = CollisionEvent.GetAs3(resCollisionPoint, resCollisionPlane, resCollisionPlane.w, t, CollisionEvent.GEOMTYPE_POLYGON); 
+							coll.next = collisions;
+							collisions = coll;
+						}
+						//*/
 						// Offset destination point from behind collision plane by radius of the sphere over plane, along the normal
 						var offset:Float = radius + threshold + collisionPlane.w - dest.x*collisionPlane.x - dest.y*collisionPlane.y - dest.z*collisionPlane.z;
 						dest.x += collisionPlane.x*offset;
@@ -553,14 +559,23 @@ package systems.collisions;
 					} else break;
 				}
 				// Setting the coordinates
-				result = new Vector3D(matrix.a*dest.x + matrix.b*dest.y + matrix.c*dest.z + matrix.d, matrix.e*dest.x + matrix.f*dest.y + matrix.g*dest.z + matrix.h, matrix.i*dest.x + matrix.j*dest.y + matrix.k*dest.z + matrix.l);
+				//result = new Vector3D(matrix.a*dest.x + matrix.b*dest.y + matrix.c*dest.z + matrix.d, matrix.e*dest.x + matrix.f*dest.y + matrix.g*dest.z + matrix.h, matrix.i*dest.x + matrix.j*dest.y + matrix.k*dest.z + matrix.l);
+					resultVector.x = matrix.a * dest.x + matrix.b * dest.y + matrix.c * dest.z + matrix.d; 
+					resultVector.y = matrix.e * dest.x + matrix.f * dest.y + matrix.g * dest.z + matrix.h;
+					resultVector.z = matrix.i * dest.x + matrix.j * dest.y + matrix.k * dest.z + matrix.l;
 			} else {
-				result = new Vector3D(source.x + displacement.x, source.y + displacement.y, source.z + displacement.z);
+				resultVector.x = source.x  + displacement.x;
+				resultVector.y = source.y + displacement.y;
+				resultVector.z = source.z + displacement.z;
+				//result = new Vector3D(source.x + displacement.x, source.y + displacement.y, source.z + displacement.z);
 			}
 			
 			//return isNaN2(result.x) ? source.clone() : result;
-			return result;
+			return resultVector;
 		}
+		
+		private var resultVector:Vector3D;
+		private var requireEvents:Bool;
 		
 		private static inline function isNaN2(a:Float):Bool {
 return a != a;

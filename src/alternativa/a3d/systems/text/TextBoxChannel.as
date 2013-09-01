@@ -1,14 +1,26 @@
 package alternativa.a3d.systems.text 
 {
 	import alternativa.engine3d.alternativa3d;
+	import ash.core.NodeList;
+	import ash.signals.Signal1;
 	use namespace alternativa3d;
 	/**
-	 * A message alert container to hold transcient messages, also supports updating to scroll any scrolling marquee messages.
+	 * A message alert container to hold transcient/permanent messages, also supports updating to scroll any scrolling marquee messages.
 	 * @author Glenn Ko
 	 */
 	public class TextBoxChannel 
 	{
+
+		private var styles:Vector.<FontSettings>;
 		
+		private var head:Message;
+		private var tail:Message;
+		private var _numScrollingMsgs:int = 0;
+		private var _scrollMessages:Vector.<Message> = new Vector.<Message>();
+		alternativa3d var _heightOffset:Number;
+		public const onContentHeightChange:Signal1 = new Signal1();
+		
+		// Key settings
 		alternativa3d var maxDisplayedItems:uint;
 		public function setMaxDisplayedItems(val:uint):void {
 			if (val === maxDisplayedItems) return;
@@ -17,29 +29,30 @@ package alternativa.a3d.systems.text
 			dirtyFlags |= 1;
 			
 		}
+		
+		
 		alternativa3d var displayedItems:uint = 0;
 		alternativa3d var countdown:Number;
-		
-		private var styles:Vector.<FontSettings>;
-		
-		private var head:Message;
-		private var tail:Message;
-		private var _numScrollingMsgs:int = 0;
-		private var _scrollMessages:Vector.<Message> = new Vector.<Message>();
-		
-		//Settings
-		public var timeout:Number;
-		public var vSpacing:Number;
-		public var lineSpacing:Number = 4;
-		// additional settings
-		
-		
+		// More Settings
+		public var timeout:Number;   // the timeout before topmost message vanishes, set to negative value to have no timeout
+		public var vSpacing:Number;  // the spacing between messages
+		public var maskMinY:Number = -Number.MAX_VALUE;  // the negative y height value to conceal text above the chatbox..
+		public var enableMarquee:Boolean = true;  // whether to make paragraphs turn to single-lines, if not enough space to show no. of displayedItems
+		public var history:StringLog;   // whether to push messages into history log, this must be used to handle scrolling of data
+		public var dotMarqueeOffset:Number = 10;  // the ... marquee offset to the left
+		public var dotMarqueeOffsetRight:Number = 3;  // the ... marquee offset to the right
 		
 		public var width:Number = 200;
 		public var centered:Boolean = false;
 		
+		
+		
 		public function TextBoxChannel(styles:Vector.<FontSettings>, maxDisplayedItems:uint=5, timeout:Number=-1, vSpacing:Number=3) 
 		{
+		
+		//	timeout = -1;
+		//	maskMinY = (12 + vSpacing) * -maxDisplayedItems;
+		
 			if (styles.length < 1) throw new Error("Please provide at least 1 style fontsetting!");
 			setStyles(styles);
 			if (maxDisplayedItems < 1) throw new Error("Max displayed Items should be higher than zero!");
@@ -47,6 +60,7 @@ package alternativa.a3d.systems.text
 			this.timeout = timeout;
 			this.countdown = -1;
 			this.vSpacing = 10;
+			
 			
 		}
 		
@@ -76,7 +90,9 @@ package alternativa.a3d.systems.text
 			if (displayedItems > maxDisplayedItems) {  // loop back
 				displayedItems = maxDisplayedItems;
 				tail.next = me = head;
+				me.prev = tail;
 				head = me.next;
+				
 				me.next = null;
 				me.boundCache = null;
 				me.scrolling = 0;
@@ -90,12 +106,17 @@ package alternativa.a3d.systems.text
 				}
 				else tail.next = me = new Message();
 			}
-		//	me.prev = tail;
+			me.prev = tail;
 			
 			tail = me;
 			
 			me.str = val;
 			
+			if (history != null) {
+				
+				history.add(val); 
+			}
+
 			dirty = true;
 	
 			
@@ -117,7 +138,7 @@ package alternativa.a3d.systems.text
 			dirty = true;
 		}
 		
-		public function refresh():void {
+		private function refresh():void {
 			var i:int;
 			var m:Message;
 			
@@ -138,61 +159,83 @@ package alternativa.a3d.systems.text
 			var heighter:Number = 0;
 			
 			_numScrollingMsgs = 0;
-			var spareLines:int = maxDisplayedItems - displayedItems;
-			for (m = head; m != null; m = m.next) {
+			var spareLines:int = enableMarquee ?  maxDisplayedItems - displayedItems : 2147483647;
+			for (m = tail; m != null; m = m.prev) {
 				//m.str;
 				m.charIndexCache = li;
-				m.yValueCache = heighter;
-				if (m.boundCache != null) {
+				
+			//	 m.lastScrolling = 0;
+				 
+				if ( m.boundCache != null) {
 					style.boundsCache = m.boundCache;
 					style.referTextCache = m.referTextCache;
 					
 					if (m.numLines > 1) {
 						spareLines -= m.numLines - 1;
 						if (!m.scrolling)	{
+							
 							if (spareLines < 0) {  // convert paragraph to scrolling line
 							//	/*
 								_scrollMessages[_numScrollingMsgs++]  = m;
-							 m.scrolling = 1;
+								m.scrolling = 1;
+								style.fontSheet.fontV.getBound(m.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
+								m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
+								heighter -= m.boundHeight + vSpacing;
+								m.yValueCache = heighter;
+								style.writeData(m.str, 0, heighter, 0, centered, li, width, maskMinY); 
 							 
-							 style.writeData(m.str, 0, heighter, 0, centered, li, width); 
-							 	m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
+								
 								m.boundWidth = style.boundParagraph.maxX - style.boundParagraph.minX;
+								//m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 								m.boundCache = style.boundsCache;
 								m.referTextCache = style.referTextCache;
 								
 							//	*/
-								style.writeDataFromCache(0, heighter, centered, li, width); 
+							//	style.writeDataFromCache(0, heighter, centered, li, width); 
 							}
 							else  {
-								style.writeDataFromCache(0, heighter, centered, li, width); 
+									heighter -= m.boundHeight + vSpacing;
+									m.yValueCache = heighter;
+								style.writeDataFromCache(0, heighter, centered, li, width, maskMinY); 
 							}
 						}
 						else {
 							
 							if (spareLines >= 0)  { // convert scrolling line to paragraph
-								style.writeData(m.str, 0,heighter, width, centered, li); 
+								style.fontSheet.fontV.getBound(style.fontSheet.fontV.getParagraph(m.str, 0, 0, width, style.boundParagraph), 0, heighter, centered, style.fontSheet.tight, style.boundParagraph);
+							m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
+									heighter -= m.boundHeight + vSpacing;
+								m.yValueCache = heighter;
+								style.writeData(m.str, 0,heighter, width, centered, li, 1.79e+308, maskMinY); 
 								m.scrolling = 0;
-								m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
+								//m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 								m.boundWidth = style.boundParagraph.maxX - style.boundParagraph.minX;
+								
 								m.boundCache = style.boundsCache;
 							}
 							else {
-								style.writeDataFromCache(0, heighter, centered, li, width); 
+									heighter -= m.boundHeight + vSpacing;
+									m.yValueCache = heighter;
+									m.scrolling = 1;
+								style.writeDataFromCache(0, heighter, centered, li, width, maskMinY); 
 								_scrollMessages[_numScrollingMsgs++]  = m;  // continue scrolling
 							}
 						}
 							
 					}
 					else {  // continue displaying single line
-						style.writeDataFromCache(0, heighter, centered, li, width);
+							heighter -= m.boundHeight + vSpacing;
+						m.yValueCache = heighter;
+						style.writeDataFromCache(0, heighter, centered, li, width, maskMinY);
 					}
 				}
 				else {
 					//style.writeData(m.str, 0, heighter, 0, centered, li);  // line case
 					//style.writeData(m.str, 0, heighter, width, centered, li); 
 					
-					var checkPara:String = style.fontSheet.fontV.getParagraph(m.str, 0, heighter, width, style.boundParagraph);
+					var checkPara:String = style.fontSheet.fontV.getParagraph(m.str, 0, 0, width, style.boundParagraph);
+					
+				
 					m.numLines = checkPara.split("\n").length;
 					
 					if (m.numLines > 1) {
@@ -201,20 +244,33 @@ package alternativa.a3d.systems.text
 							_scrollMessages[_numScrollingMsgs++]  = m;
 							m.scrolling = 1;	
 							//if (m.startX != 0) throw new Error("SHOULD NOT BE!:"+m.startX);
-							//	m.startX  = 0;
-							 style.writeData(m.str, 0, heighter, 0, centered, li, width); 
+								m.startX  = width * .25;
+								style.fontSheet.fontV.getBound(m.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
+							m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
+							heighter -= m.boundHeight + vSpacing;
+							m.yValueCache = heighter;
+							 style.writeData(m.str, 0, heighter, 0, centered, li, width, maskMinY); 
+							
 						}
 						else {
-						
-							 style.writeData(checkPara, 0, heighter, width, centered, li); 
+							style.fontSheet.fontV.getBound(checkPara, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
+							m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
+							heighter -= m.boundHeight + vSpacing;
+							m.yValueCache = heighter;
+							 style.writeData(checkPara, 0, heighter, width, centered, li, 1.79e+308, maskMinY); 
 						}
 					}
 					else {   // display single line
-						style.writeData(m.str, 0, heighter, width, centered, li, width); 
+						style.fontSheet.fontV.getBound(m.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
+						m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
+						heighter -= m.boundHeight + vSpacing;
+						m.yValueCache = heighter;
+						style.writeData(m.str, 0, heighter, width, centered, li, width, maskMinY); 
 					
 					}
-					m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
+					
 					m.boundWidth = style.boundParagraph.maxX - style.boundParagraph.minX;
+					m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 					m.boundCache = style.boundsCache;
 					m.referTextCache = style.referTextCache;
 					
@@ -222,11 +278,11 @@ package alternativa.a3d.systems.text
 				}
 				
 				li += style.boundsCache.length;
-				
+			
 			
 				//if (m.boundCache != null ) throw new Error("A");
 				//heighter += m.boundHeight + (m.eom ? vSpacing : lineSpacing);  // line case
-				heighter += m.boundHeight + vSpacing;
+			
 				
 				mi++;
 				if (mi >= maxDisplayedItems) break;
@@ -234,19 +290,23 @@ package alternativa.a3d.systems.text
 
 				//	throw new Error(arr);
 				style.spriteSet._numSprites = li;// ,
-				
-				
+				_heightOffset = -heighter;
+				//style.spriteSet.y = _heightOffset;
 	
 				
+			
 				dirtyFlags = 0;
+				
+				
+				onContentHeightChange.dispatch(_heightOffset);
 		
 		}
 		
 		public function resetAllScrollingMessages():void {
 			for (var i:int = 0; i < _numScrollingMsgs; i++) {
 				var m:Message=_scrollMessages[i];
-				m.startX = 0;
-				m.scrolling = 1; 
+				m.startX = width * .25;
+				m.scrolling = 1;  
 			}
 		}
 		
@@ -278,33 +338,38 @@ package alternativa.a3d.systems.text
 					//throw new Error("A");
 					displayedItems--;
 					if (displayedItems==0) tail = null;
+					if (head.next) {
+						head.next.prev = null;
+					}
 					head = head.next;
+					
 					countdown = displayedItems > 0 ? timeout : -1;
 					dirty = true;
+					
 				//	*/
 				}
 				
 			}
 			
 			
-			
+			var wasDirty:Boolean = dirty;
 			if (dirty) {  // update buffer
 				refresh();
 			}
 			
 			dirtyFlags = 0;
 	
-			if (_numScrollingMsgs > 0) updateScrollingMsgs();
+			if (_numScrollingMsgs > 0) updateScrollingMsgs(time, wasDirty);  // temp disabled for now
 			
 		}
 		
-		private function updateScrollingMsgs():void 
+		private function updateScrollingMsgs(time:Number, wasDirty:Boolean):void 
 		{
 			var style:FontSettings = styles[0];
 			for (var i:int = 0; i < _numScrollingMsgs; i++) {
 				var m:Message = _scrollMessages[i];
 				if ((m.scrolling & 2)) continue;
-				m.startX -= .5;
+				m.startX -= .3;
 				style.boundsCache = m.boundCache;
 				style.referTextCache = m.referTextCache;
 	
@@ -314,9 +379,32 @@ package alternativa.a3d.systems.text
 					x = -limit;
 					m.scrolling = 2;
 				}
+				if (x > 0) x = 0;
 				style.writeMarqueeDataFromCache(x, m.yValueCache, centered, m.charIndexCache, width, m.boundWidth + 32);
 				
+				style.minXOffset = dotMarqueeOffset;
+				if (wasDirty) {
+			
+					m.dotCacheIndex = style.spriteSet._numSprites;
+					style.writeData("...",  -dotMarqueeOffset, m.yValueCache, 2000, false, style.spriteSet._numSprites);
+					style.writeData("...", width+dotMarqueeOffsetRight, m.yValueCache, 2000, false, style.spriteSet._numSprites+3);
+					style.spriteSet._numSprites += 6;
+			
+					
+				}
+		
+				style.setLetterZ( m.dotCacheIndex, 3, x < 0 ? 0 : -1);
+				style.setLetterZ( m.dotCacheIndex + 3, 3,  !(m.scrolling & 2) ? 0 : -1);
+				style.minXOffset = 0;
+				
+				
+				
 			}
+		}
+		
+		public function get heightOffset():Number 
+		{
+			return _heightOffset;
 		}
 		
 	}
@@ -327,7 +415,7 @@ class Message {
 	public var str:String;
 	public var span:Boolean = false;
 	public var next:Message;
-	//public var prev:Message;
+	public var prev:Message;
 	
 	public var boundCache:Array;
 	public var referTextCache:String;
@@ -337,10 +425,12 @@ class Message {
 	public var numLines:int;
 	
 	// for horizontal scolling items 
-	public var scrolling:int = 0;  // 0- not scrolling, 1- scrolling, 2- stopped scrolling
+	public var scrolling:int = 0;  // 0- not scrolling, 1- scrolling, 2- stopped scrolling, 4 - left , 8 - right
 	public var charIndexCache:int;
 	public var yValueCache:Number;
 	public var startX:Number = 0;
+//	public var lastScrolling:int = 0;
+	public var dotCacheIndex:uint;
 	
 	//public var numLinesCache:int;
 	//public var eom:Boolean = false; // line case end of message flag

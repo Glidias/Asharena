@@ -38,7 +38,18 @@ class MoveResult extends Vec3
 	}
 	
 	public inline function disposeCollisions():Void {
-		while ( collisions!=null) collisions = collisions.next;
+		//while ( collisions != null) collisions = collisions.next;
+	
+		if (collisions != null) {
+			var tail:CollisionEvent = collisions;
+			while (tail.next != null) {
+			    tail = tail.next;
+			}
+			tail.next = CollisionEvent.COLLECTOR;
+			CollisionEvent.COLLECTOR = collisions;
+			collisions = null;
+		}
+		
 	}
 	
 	

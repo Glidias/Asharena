@@ -299,11 +299,13 @@ package alternativa.a3d.controller {
 			}
 	
 			if (moved) {
-				var m:Matrix3D = new Matrix3D();
-				m.recompose(objectTransform);
-				_object.matrix = m;
+				//var m:Matrix3D = new Matrix3D();
+				_matrix.recompose(objectTransform);
+				_object.matrix = _matrix;
 			}
 		}
+		
+		private var _matrix:Matrix3D = new Matrix3D();
 	
 		/**
 		 * Sets object at given position.

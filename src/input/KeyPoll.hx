@@ -87,14 +87,14 @@ class KeyPoll implements IKeyPoll
 		resetAllStates();
 		disabled = true;
 		dispObj.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownListener);
-        dispObj.removeEventListener(KeyboardEvent.KEY_UP, keyUpListener);
+       // dispObj.removeEventListener(KeyboardEvent.KEY_UP, keyUpListener);
         dispObj.removeEventListener(Event.ACTIVATE, activateListener);
         dispObj.removeEventListener(Event.DEACTIVATE, deactivateListener);
 	}
 
     private function keyDownListener(ev:KeyboardEvent):Void
     {
-	
+		//if (disabled) return;   // 
         var pos:Int = ev.keyCode >>> 3;
         states.set(pos, states.get(pos) | 1 << (ev.keyCode & 7));
 		

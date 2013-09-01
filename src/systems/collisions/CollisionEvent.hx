@@ -31,7 +31,7 @@ class CollisionEvent
     public static inline var TOLERANCE_TRANSVERSE_DISPLACEMENT:Float = 1e-006;
     public static inline var TOLERANCE_QUADRATIC_DISCRIMINANT:Float = 1e-006;
 	
-	static var COLLECTOR:CollisionEvent = new CollisionEvent();
+	public static var COLLECTOR:CollisionEvent = new CollisionEvent();
 	public var next:CollisionEvent;
 	
 	public var thing:Entity;
@@ -54,7 +54,7 @@ class CollisionEvent
 		
 	// Pooling, linked list and disposal
 
-	public static inline  function Get(collision:Vec3, normal:Vec3, offset:Float, t:Float, geomtype:Int):CollisionEvent {
+	public static   function Get(collision:Vec3, normal:Vec3, offset:Float, t:Float, geomtype:Int):CollisionEvent {
 		var c:CollisionEvent = COLLECTOR!= null ? COLLECTOR : (COLLECTOR = new CollisionEvent());
 		COLLECTOR = COLLECTOR.next;
 		c.write(collision, normal, offset, t, geomtype);
@@ -62,7 +62,7 @@ class CollisionEvent
 		return c;
 	}
 	
-	public static inline  function GetAs3(pos:Vector3D, normal:Vector3D, offset:Float, t:Float, geomtype:Int):CollisionEvent {
+	public static   function GetAs3(pos:Vector3D, normal:Vector3D, offset:Float, t:Float, geomtype:Int):CollisionEvent {
 		var c:CollisionEvent = COLLECTOR!= null ? COLLECTOR : (COLLECTOR = new CollisionEvent());
 		COLLECTOR = COLLECTOR.next;
 	
