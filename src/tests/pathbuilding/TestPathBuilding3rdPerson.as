@@ -197,14 +197,14 @@ package tests.pathbuilding
 			spr2.useHandCursor = true;
 			spr2.z = 1;
 			
-			_template3D.viewBackgroundColor = 0xFFFFFF;
+			_template3D.viewBackgroundColor = 0xDDDDDD;
 			
 			var font:ConsoleFont = new ConsoleFont();
 			var atlasMaterial:MaskColorAtlasMaterial = new MaskColorAtlasMaterial(font.bmpResource, null);
 			atlasMaterial.flags = (MaskColorAtlasMaterial.FLAG_MIPNONE | MaskColorAtlasMaterial.FLAG_PIXEL_NEAREST);
 			atlasMaterial.alphaThreshold = .99;
 		//	atlasMaterial.opaquePass
-		//addChild( new Bitmap(font.bmpResource.data));
+		addChild( new Bitmap(font.bmpResource.data));
 		var useRegisters:int = 120;// 116;
 		var numRegisters:int = 3;
 			spriteSet = new SpriteSet(233, true, atlasMaterial, font.sheet.width, font.sheet.height, useRegisters/numRegisters,numRegisters)
@@ -222,8 +222,7 @@ package tests.pathbuilding
 		//	addChild(previewFontSpr);
 			//previewFontSpr.graphics.lineStyle(0, 0xFF0000);
 		
-
-			
+		
 			
 			hudAssets = new SaboteurHud(game.engine, stage, game.keyPoll);
 			hudAssets.addToHud3D(hud);
@@ -237,9 +236,9 @@ package tests.pathbuilding
 			hudAssets.txt_chatChannel.timeout = -1;
 		//	hudAssets.txt_chatChannel.setMaxDisplayedItemsTruncate(15);
 		//	hudAssets.txt_chatChannel.setShowItems(5);
-			hudAssets.txt_chatChannel.enableMarquee = true;
+			//hudAssets.txt_chatChannel.enableMarquee = true;
 			hudAssets.txt_chatChannel.history = new StringLog();
-			
+			hudAssets.txt_chatChannel.appendSpanTagMessage('The quick brown <span u="2">fox</span> jumps over the lazy dog. The <span u="1">quick brown fox</span> jumps over the lazy <span u="3">dog</span>. The <span u="1">quick brown fox</span> jumps over the lazy dog.');
 			//hud.addChild(spr);
 			//hud.addChild(spr2);
 			//hud.addChild(spriteSet);

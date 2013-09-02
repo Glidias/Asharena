@@ -45,7 +45,13 @@ package alternativa.a3d.systems.text
 		public var centered:Boolean = false;
 		
 		alternativa3d var showItems:uint  = 0;
-		public var lineSpacing:Number = 14;
+		public var lineSpacing:Number = 12;
+		public function setLineSpacingMask(value:Number):void {
+			lineSpacing = value;
+			maskMinY = (lineSpacing + vSpacing) * -maxDisplayedItems;
+			dirty = true;
+			dirtyFlags |= 1;
+		}
 		
 		public function setShowItems( amtItems:uint):void {
 			
@@ -91,6 +97,10 @@ package alternativa.a3d.systems.text
 				_lastScrollNode = null;
 				
 			}
+			else if ( history.nodeList.head === head.node) {
+				setMaxDisplayedItemsFromStartNode(maxDisplayedItems, head.node); 
+				return;
+			}
 			setMaxDisplayedItemsFromEndNode(maxDisplayedItems, lastRenderedHead); 
 			
 			
@@ -127,9 +137,6 @@ package alternativa.a3d.systems.text
 		maxDisplayedItems = amtItems;
 				
 
-				
-			
-			
 			
 			var style:FontSettings = styles[0];
 			var linesLeft:int = amtItems;
@@ -137,7 +144,7 @@ package alternativa.a3d.systems.text
 			var validCount:int = 0;
 
 			for (var n:StringNode = node; n != null; n = n.next as StringNode) {
-				var para:String = style.fontSheet.fontV.getParagraph(n.str, 0, 0, width, style.boundParagraph);
+				var para:String = style.fontSheet.fontV.getParagraph( (n.str.charAt(0) != "<" ? n.str : FontSettings.getPlainTextFromXMLString(n.str)), 0, 0, width, style.boundParagraph);
 				var paraSplit:Array= para.split("\n");
 				linesLeft -=  paraSplit.length;
 				if (linesLeft <= 0) {
@@ -153,6 +160,7 @@ package alternativa.a3d.systems.text
 			
 			
 			//, (history ? lastValidNode === history.nodeList.tail : false)
+		
 			setMaxDisplayedItemsFromEndNode(maxDisplayedItems, lastValidNode );
 			/*
 			if (linesLeft < 0) {
@@ -182,12 +190,14 @@ package alternativa.a3d.systems.text
 			dirtyFlags |= 1;
 			
 			var me:Message;
+			var linesLeft:int = maxDisplayedItems;
 			
 			if (!roundNext) {  // consider round previous case
 				
 				var style:FontSettings = styles[0];
-				var para:String = style.fontSheet.fontV.getParagraph(node.str, 0, 0, width, style.boundParagraph);
+				var para:String = style.fontSheet.fontV.getParagraph((node.str.charAt(0) != "<" ? node.str : FontSettings.getPlainTextFromXMLString(node.str)), 0, 0, width, style.boundParagraph);
 				var paraSplit:Array = para.split("\n");
+				linesLeft -= paraSplit.length;
 				if (paraSplit.length > amtItems) {
 					
 					paraSplit = paraSplit.slice(0, amtItems);
@@ -204,6 +214,7 @@ package alternativa.a3d.systems.text
 				}
 				
 			}
+		
 			
 			me = tail;
 			if (me == null) {
@@ -213,13 +224,15 @@ package alternativa.a3d.systems.text
 			var lastMe:Message = me;
 			me.node = node;
 			me.boundCache = null;
+			me.span = null;
+			me.plainText = null;
 			me.scrolling = 0;
 			me.startX  = 0;
 				
 			me = me.next;
 	
 			
-			var linesLeft:int = maxDisplayedItems
+			
 			var count:int = 1;
 			for (var n:StringNode = node.previous as StringNode; n != null; n = n.previous as StringNode) {
 				
@@ -229,6 +242,8 @@ package alternativa.a3d.systems.text
 			
 				me.node = n;
 				me.boundCache = null;
+				me.span = null;
+				me.plainText = null;
 				me.scrolling = 0;
 				me.startX  = 0;
 				lastMe.prev = me;
@@ -247,12 +262,11 @@ package alternativa.a3d.systems.text
 				// unlink entire chain before lastMe??
 			}
 			lastMe.prev = null;
-			
 		
 			 n = node.next as StringNode;
 			 if (n != null) {
 				// var appendCount:int = 0;
-				while ( count < amtItems) {
+				while ( n!=null && count < amtItems) {
 					
 					
 					//if (n != null) {
@@ -372,8 +386,10 @@ package alternativa.a3d.systems.text
 		}
 		
 		public function appendSpanTagMessage(val:String):void {
-			throw new Error("Not supported yet!");
-			dirty = true;
+			val = "<html>" + val + "</html>";
+			appendMessage(val);
+			//appendMessage(FontSettings.getPlainTextFromXMLString(val));
+			//tail.span = FontSettings.getCharSpanValues(val);
 		}
 		
 		private function refresh():void {
@@ -389,6 +405,7 @@ package alternativa.a3d.systems.text
 			if (dirtyFlags & 2) {
 					for (m = head; m != null; m = m.next) {
 						m.boundCache = null;
+						m.span = null;
 					}
 			}
 			
@@ -408,6 +425,7 @@ package alternativa.a3d.systems.text
 			//	 m.lastScrolling = 0;
 				 
 				if ( m.boundCache != null) {
+					var cacheText:String = m.plainText != null ? m.plainText : m.node.str;
 					style.boundsCache = m.boundCache;
 					style.referTextCache = m.referTextCache;
 					
@@ -419,11 +437,11 @@ package alternativa.a3d.systems.text
 							//	/*
 								_scrollMessages[_numScrollingMsgs++]  = m;
 								m.scrolling = 1;
-								style.fontSheet.fontV.getBound(m.node.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
+								style.fontSheet.fontV.getBound(cacheText, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
 								m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 								heighter -= m.boundHeight + vSpacing;
 								m.yValueCache = heighter;
-								style.writeData(m.node.str, 0, heighter, 0, centered, li, width, maskMinY); 
+								style.writeData(cacheText, 0, heighter, 0, centered, li, width, maskMinY); 
 							 
 								
 								m.boundWidth = style.boundParagraph.maxX - style.boundParagraph.minX;
@@ -443,11 +461,11 @@ package alternativa.a3d.systems.text
 						else {
 							
 							if (spareLines >= 0)  { // convert scrolling line to paragraph
-								style.fontSheet.fontV.getBound(style.fontSheet.fontV.getParagraph(m.node.str, 0, 0, width, style.boundParagraph), 0, heighter, centered, style.fontSheet.tight, style.boundParagraph);
+								style.fontSheet.fontV.getBound(style.fontSheet.fontV.getParagraph(cacheText, 0, 0, width, style.boundParagraph), 0, heighter, centered, style.fontSheet.tight, style.boundParagraph);
 							m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 									heighter -= m.boundHeight + vSpacing;
 								m.yValueCache = heighter;
-								style.writeData(m.node.str, 0,heighter, width, centered, li, 1.79e+308, maskMinY); 
+								style.writeData(cacheText, 0,heighter, width, centered, li, 1.79e+308, maskMinY); 
 								m.scrolling = 0;
 								//m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 								m.boundWidth = style.boundParagraph.maxX - style.boundParagraph.minX;
@@ -462,6 +480,7 @@ package alternativa.a3d.systems.text
 								_scrollMessages[_numScrollingMsgs++]  = m;  // continue scrolling
 							}
 						}
+						
 							
 					}
 					else {  // continue displaying single line
@@ -469,12 +488,18 @@ package alternativa.a3d.systems.text
 						m.yValueCache = heighter;
 						style.writeDataFromCache(0, heighter, centered, li, width, maskMinY);
 					}
+					if (m.span) style.writeSpanDataFromCache(m.span, li);
 				}
 				else {
 					//style.writeData(m.node.str, 0, heighter, 0, centered, li);  // line case
 					//style.writeData(m.node.str, 0, heighter, width, centered, li); 
-					
-					var checkPara:String = style.fontSheet.fontV.getParagraph(m.node.str, 0, 0, width, style.boundParagraph);
+					if (m.node.str.charAt(0) === "<") {
+						var xmlStr:String = m.node.str;
+						m.plainText = FontSettings.getPlainTextFromXMLString(xmlStr);
+						m.span = FontSettings.getCharSpanValues(xmlStr);
+					}
+					cacheText = m.plainText != null ? m.plainText : m.node.str;
+					var checkPara:String = style.fontSheet.fontV.getParagraph(cacheText, 0, 0, width, style.boundParagraph);
 					
 				
 					m.numLines = checkPara.split("\n").length;
@@ -486,11 +511,11 @@ package alternativa.a3d.systems.text
 							m.scrolling = 1;	
 							//if (m.startX != 0) throw new Error("SHOULD NOT BE!:"+m.startX);
 								m.startX  = width * .25;
-								style.fontSheet.fontV.getBound(m.node.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
+								style.fontSheet.fontV.getBound(cacheText, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
 							m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 							heighter -= m.boundHeight + vSpacing;
 							m.yValueCache = heighter;
-							 style.writeData(m.node.str, 0, heighter, 0, centered, li, width, maskMinY); 
+							 style.writeData(cacheText, 0, heighter, 0, centered, li, width, maskMinY); 
 							
 						}
 						else {
@@ -502,18 +527,23 @@ package alternativa.a3d.systems.text
 						}
 					}
 					else {   // display single line
-						style.fontSheet.fontV.getBound(m.node.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
+						style.fontSheet.fontV.getBound(cacheText, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
 						m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 						heighter -= m.boundHeight + vSpacing;
 						m.yValueCache = heighter;
-						style.writeData(m.node.str, 0, heighter, width, centered, li, width, maskMinY); 
+						style.writeData(cacheText, 0, heighter, width, centered, li, width, maskMinY); 
 					
 					}
+					
+					if (m.span) style.writeSpanDataFromCache(m.span, li);
+					
 					
 					m.boundWidth = style.boundParagraph.maxX - style.boundParagraph.minX;
 					m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 					m.boundCache = style.boundsCache;
 					m.referTextCache = style.referTextCache;
+					
+					
 					
 				//	m.numLinesCache = style.numLinesCache
 				}
@@ -662,7 +692,9 @@ import alternativa.a3d.systems.text.StringNode;
 class Message {
 	//public var str:String;
 	public var node:StringNode;
-	public var span:Boolean = false;
+	public var span:Vector.<uint>;
+	public var plainText:String; // used to write plainText first for span case
+	
 	public var next:Message;
 	public var prev:Message;
 	

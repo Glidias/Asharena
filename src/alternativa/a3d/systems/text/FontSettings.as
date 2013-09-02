@@ -89,12 +89,96 @@ package alternativa.a3d.systems.text
 				data[i + 2] =  (tarX2 <= maskWidth && tarX >= minX ) ? 0 : -1;
 					
 				count++;
-				data[i + 4] =  rect.x + uvx;
-				data[i + 5] = rect.y + uvy;
-				data[i + 6] =   rect.width;
-				data[i + 7] =  rect.height;
+			
 			}
 		}
+		
+		public static function getPlainTextFromXMLString(str:String):String {
+			var lastIgnoreWhite:Boolean = XML.ignoreWhitespace;
+			XML.ignoreWhitespace = false;
+			var xmlList:XMLList = XML(str).children();
+			var len:int = xmlList.length();
+			var str:String = "";
+			for (var i:int = 0; i < len; i++) {
+				str += xmlList[i].toString();
+			}
+			XML.ignoreWhitespace = lastIgnoreWhite;
+			return str;
+		}
+		
+		public static function getXMLCharListFromXMLString(str:String):XMLList {
+			var lastIgnoreWhite:Boolean = XML.ignoreWhitespace;
+			XML.ignoreWhitespace = true;
+			var xml:XML = XML(str);
+			var xmlList:XMLList = xml.children();
+			/*
+			for each(var node:XML in xmlList) {
+				if (node.children().length) node.setChildren(node.toString().replace( /\s/g, ""))
+				else node.replace(node.toString().replace( /\s/g, ""));
+			}
+			*/
+		
+			XML.ignoreWhitespace = lastIgnoreWhite;
+			return xmlList;
+		}
+		
+		//0x000FFFFF  - length mask
+		// 0x80000000 - sentinel bit to identify span
+		// 0x00F00000 - U mask
+		// 0x0F000000 - V mask
+		
+		public static function getCharSpanValues(str:String):Vector.<uint> {
+			var vec:Vector.<uint> = new Vector.<uint>();
+			var xmlList:XMLList = getXMLCharListFromXMLString(str);
+			var len:int = xmlList.length();
+			var val:uint = 0;
+			for (var i:int = 0; i < len; i++) {
+				var xml:XML = xmlList[i];
+				var str:String = xml.toString().replace( /\s/g, "");
+				if ( String(xml.name()) === "span") {
+					var u:uint = xml.@u != undefined ? uint(xml.@u) : 0;
+					var v:uint = xml.@v != undefined ? uint(xml.@v) : 0;
+					val = 0x80000000 | (u << 20) | (v << 24) |  str.length;
+				}
+				else val = str.length;
+				vec.push(val);
+			}
+			vec.fixed = true;
+			return vec;
+		}
+		
+		
+		
+		alternativa3d function writeSpanDataFromCache(cacheChars:Vector.<uint>,startLetterIndex:uint):void {
+			var len:int = cacheChars.length;
+			var li:int = startLetterIndex;
+			
+			var data:Vector.<Number> = spriteSet.spriteData;
+			var offsetConstants:int = (spriteSet.NUM_REGISTERS_PER_SPR << 2);
+			startLetterIndex *= offsetConstants;
+			
+			var uOffset:Number = fontSheet.uSpanOffset;
+			var vOffset:Number = fontSheet.vSpanOffset;
+			var i:int = startLetterIndex;
+		
+			for (var c:int = 0; c < len; c++) {
+				
+				var val:uint = cacheChars[c];
+				if ( (val & 0x80000000) ) {
+					var bbc:int = (val & 0x000FFFFF);
+					
+					var bi:int = i;
+					while(--bbc > -1) {
+						data[bi + 4] += ((val & 0x00F00000) >> 20) * uOffset;
+						data[bi + 5] += ((val & 0x0F000000) >> 24) * vOffset;
+						bi += offsetConstants;
+					}
+					i += (val & 0x000FFFFF) * offsetConstants;
+				}
+				else i += val * offsetConstants;
+			}
+		}
+		
 		
 		alternativa3d function writeDataFromCache(x:Number, y:Number, centered:Boolean , startLetterIndex:uint, maskWidth:Number, minimumY:Number):void {
 			_outsideBound = false;

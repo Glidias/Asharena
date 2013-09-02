@@ -64,6 +64,7 @@ package views.ui.text
 				return;
 			}
 			var lastChar:String = string.charAt(string.length - 1);
+			if ( string === "" && String.fromCharCode(kc) === "<") return;
 			if (keyCode === Keyboard.SPACE && ( !(lastChar) || lastChar=== " ")) return;
 			if (keyCode === Keyboard.ENTER || keyCode === Keyboard.NUMPAD_ENTER ) {
 				onTextCommit.dispatch(string);

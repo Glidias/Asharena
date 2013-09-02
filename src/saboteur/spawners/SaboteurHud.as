@@ -66,6 +66,8 @@ package saboteur.spawners
 		
 		private var txtSpawner:TextSpawner;
 		private var _stage:Stage;
+		public var playerName:String = "Player";
+		public var playerColor:uint = 2;
 		
 		public function SaboteurHud(engine:Engine, stage:Stage, keypollToDisable:KeyPoll=null) 
 		{
@@ -193,7 +195,7 @@ package saboteur.spawners
 		{
 			if (str != "" ) { 
 				
-				txt_chatChannel.appendMessage(str);
+				txt_chatChannel.appendSpanTagMessage('<span u="'+playerColor+'">'+ playerName+': </span><![CDATA['+str+']]>');
 			//	txt_chatChannel.refresh();
 			}
 			txt_chatInput.writeFinalData("", 0, 0, chatInputWidth, false, 0);

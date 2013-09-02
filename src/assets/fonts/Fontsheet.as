@@ -6,6 +6,7 @@ package assets.fonts
 	import flash.display.BitmapData;
 	import flash.geom.Matrix;
 	import flash.geom.Matrix3D;
+	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
@@ -27,15 +28,32 @@ package assets.fonts
 		public var fontV:VectorFont;
 		public var tight:Boolean = true;  // for now, this setting should not change!
 		
+		public var uSpanOffset:Number = 0;
+		public var vSpanOffset:Number = 0;
+		
 		public function Fontsheet() 
 		{
 			
 		}
 		
-		protected function init(texture:BitmapData, rectBytes:ByteArray):void {
+		protected function init(texture:BitmapData, rectBytes:ByteArray, duplicateColoring:Array=null, colorThreshold:uint=0xFF000001):void {
 			
 			if (fontV == null) throw new Error("Please define a vector font fontV variable before calling init()!");
 			charRectIndices = fontV.getCharSetIndices();
+			
+			if (duplicateColoring != null) {
+				var uLen:int = duplicateColoring.length;
+				var refer:BitmapData = texture;
+				texture = new BitmapData(refer.width * uLen, refer.height, true, 0); 
+				for (var u:int = 0; u < uLen; u++) {
+					//texture.copyPixels(refer, refer.rect, new Point(refer.width * u, 0));
+					texture.threshold(refer, refer.rect, new Point(refer.width * u, 0), ">=", colorThreshold, duplicateColoring[u], 0xFFFFFFFF, true );
+				//	texture.threshold(refer, refer.rect, new Point(refer.width * u, 0), "<", colorThreshold,0xFFFFFFFF, 0xFFFFFFFF, false );
+				}
+				
+				uSpanOffset  = refer.width != texture.width ? refer.width / texture.width : 0;
+				vSpanOffset =  refer.height != texture.height ? refer.height / texture.height : 0;
+			}
 			
 			sheet = texture;
 			
