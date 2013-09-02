@@ -9,19 +9,41 @@ package alternativa.a3d.systems.text
 	public class StringLog 
 	{
 		public var nodeList:NodeList = new NodeList();
-		
+		public var maxItems:int = int.MAX_VALUE;
+		public var count:int = 0;
 		public function StringLog() 
 		{
 			
 		}
 		
 		/**
-		 * Prepends string to list
+		 * Appends string to list, removing off head if maxItems exceeded
 		 * @param	str
 		 */
-		public function add(str:String):void 
+		public function add(str:String):StringNode 
 		{
-			nodeList.add( new StringNode(str) );
+			var me:StringNode;
+			nodeList.add( me = new StringNode(str) );
+			count++;
+			if (count > maxItems) {
+				count = maxItems;
+				nodeList.remove(nodeList.head);
+			}
+			return me;
+		}
+		
+		/**
+		 * Appends node to list, removing off head if maxItems exceeded
+		 * @param	node
+		 */
+		public function addNode(node:StringNode):void 
+		{
+			nodeList.add( node );
+			count++;
+			if (count > maxItems) {
+				count = maxItems;
+				nodeList.remove(nodeList.head);
+			}
 		}
 		
 		

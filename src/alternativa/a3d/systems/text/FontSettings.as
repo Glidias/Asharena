@@ -41,6 +41,7 @@ package alternativa.a3d.systems.text
 		
 		
 		private static const RECT:Rectangle = new Rectangle();
+		alternativa3d var _outsideBound:Boolean = false;
 		
 		alternativa3d function writeMarqueeDataFromCache(x:Number, y:Number, centered:Boolean , startLetterIndex:uint, maskWidth:Number, marqueeWidth:Number):void {
 			var bounds:Array = boundsCache;
@@ -96,6 +97,7 @@ package alternativa.a3d.systems.text
 		}
 		
 		alternativa3d function writeDataFromCache(x:Number, y:Number, centered:Boolean , startLetterIndex:uint, maskWidth:Number, minimumY:Number):void {
+			_outsideBound = false;
 			var bounds:Array = boundsCache;
 			var referText:String = referTextCache;
 			var minX:Number = centered ? -maskWidth*.5 : 0;
@@ -117,15 +119,17 @@ package alternativa.a3d.systems.text
 			}
 			//*/
 
-			
+			var outsideBound:Boolean = false;
 			for (var i:int = startLetterIndex; i < limit; i += offsetConstants) {
 				fontSheet.getRectangleAt( fontSheet.charRectIndices[referText.charCodeAt(count)], rect );
 				//font.getRandomRect(rect);
 				
 				var aabb:AABB2 = bounds[count];
+				var withinBounds:Boolean =  ( y + aabb.minY >= minimumY );
 				data[i] =   x +aabb.minX + (aabb.maxX - aabb.minX) * .5;
 				data[i + 1] =  y+  (aabb.minY + (aabb.maxY-aabb.minY)*.5);
-				data[i + 2] =  (x + aabb.maxX <= maskWidth && x+aabb.minX >= minX ) && ( y+aabb.minY >= minimumY ) ? 0 : -1;
+				data[i + 2] =   (x + aabb.maxX <= maskWidth && x + aabb.minX >= minX ) && withinBounds? 0 : -1;
+				outsideBound ||=  !withinBounds;
 					
 				count++;
 				data[i + 4] =  rect.x + uvx;
@@ -133,6 +137,8 @@ package alternativa.a3d.systems.text
 				data[i + 6] =   rect.width;
 				data[i + 7] =  rect.height;
 			}
+		
+			_outsideBound = outsideBound;
 		}
 		
 		public function writeFinalData(str:String, x:Number = 0, y:Number = 0, maxWidth:Number = 2000, centered:Boolean = false, startLetterIndex:uint = 0, minimumY:Number=-1.79e+308):void {
@@ -163,6 +169,7 @@ package alternativa.a3d.systems.text
 			
 			boundsCache = bounds;
 			referTextCache = referText;
+		
 		}
 		
 		
@@ -182,11 +189,13 @@ package alternativa.a3d.systems.text
 		
 		
 		public function writeData(str:String, x:Number = 0, y:Number = 0, maxWidth:Number = 2000, centered:Boolean = false, startLetterIndex:int = 0, maskWidth:Number=Number.MAX_VALUE, minimumY:Number=-1.79e+308):void {
+			_outsideBound = false;
 			if (str === "") {
 				boundsCache = [];
 				referTextCache = "";
 				return;
 			}
+		
 			var minX:Number = centered ? -maskWidth * .5 : 0;
 			minX -= minXOffset;
 			
@@ -219,14 +228,16 @@ package alternativa.a3d.systems.text
 				data.length = limit;
 				data.fixed = true;
 			}
-			
+			var outsideBound:Boolean = false;
 			for (var i:int = startLetterIndex; i < limit; i += offsetConstants) {
 				fontSheet.getRectangleAt( fontSheet.charRectIndices[referText.charCodeAt(count)], rect );
 				//font.getRandomRect(rect);
 				var aabb:AABB2 = bounds[count];
-				data[i] =  x + aabb.minX + (aabb.maxX - aabb.minX) * .5;
-				data[i + 1] =  y +  (aabb.minY + (aabb.maxY - aabb.minY) * .5);
-				data[i + 2] = (x + aabb.maxX <= maskWidth && x+aabb.minX >= minX ) && ( y+aabb.minY >=  minimumY ) ? 0 : -1;
+				var withinBounds:Boolean =  ( y + aabb.minY >= minimumY );
+				data[i] =   x +aabb.minX + (aabb.maxX - aabb.minX) * .5;
+				data[i + 1] =  y+  (aabb.minY + (aabb.maxY-aabb.minY)*.5);
+				data[i + 2] =  (x + aabb.maxX <= maskWidth && x + aabb.minX >= minX )  && withinBounds? 0 : -1;
+				outsideBound ||=  !withinBounds;
 				count++;
 				data[i + 4] =  rect.x + uvx;
 				data[i + 5] = rect.y + uvy;
@@ -237,6 +248,8 @@ package alternativa.a3d.systems.text
 			
 			boundsCache = bounds;
 			referTextCache = referText;
+			
+			_outsideBound = outsideBound;
 		}
 		
 	

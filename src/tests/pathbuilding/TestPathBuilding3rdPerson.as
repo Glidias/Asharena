@@ -4,6 +4,7 @@ package tests.pathbuilding
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.systems.text.FontSettings;
+	import alternativa.a3d.systems.text.StringLog;
 	import alternativa.a3d.systems.text.TextMessageSystem;
 	import alternativa.a3d.systems.text.TextSpawner;
 	import alternativa.engine3d.alternativa3d;
@@ -206,7 +207,7 @@ package tests.pathbuilding
 		//addChild( new Bitmap(font.bmpResource.data));
 		var useRegisters:int = 120;// 116;
 		var numRegisters:int = 3;
-			var spriteSet:SpriteSet = new SpriteSet(233, true, atlasMaterial, font.sheet.width, font.sheet.height, useRegisters/numRegisters,numRegisters)
+			spriteSet = new SpriteSet(233, true, atlasMaterial, font.sheet.width, font.sheet.height, useRegisters/numRegisters,numRegisters)
 		//	spriteSet.randomisePositions(0, 1|2, stage.stageHeight*.5);
 			spriteSet.alwaysOnTop = true;
 			spriteSet.useHandCursor = true;
@@ -224,15 +225,20 @@ package tests.pathbuilding
 
 			
 			
-			var hudAssets:SaboteurHud = new SaboteurHud(game.engine, stage, game.keyPoll);
+			hudAssets = new SaboteurHud(game.engine, stage, game.keyPoll);
 			hudAssets.addToHud3D(hud);
-			
+			spriteSet = hudAssets.txt_chat.spriteSet;
+			hudAssets.txt_chatChannel.onContentHeightChange.add(onChayHeightChange);
 			
 			/*
 			hudAssets.writeChatText("1. hello i am Glenn!!!");
 			hudAssets.writeChatText("2. helwarwar awaw rara uraruhawriah iruawrui awiraw raiur uaiwruiawr awrawawrawrwaaw wawa wawawa aw rwa warwat awtwat awtwa twat watwa twat awtwatwatawrlo i am Glenn!!!");
 			*/
-		
+			hudAssets.txt_chatChannel.timeout = -1;
+		//	hudAssets.txt_chatChannel.setMaxDisplayedItemsTruncate(15);
+		//	hudAssets.txt_chatChannel.setShowItems(5);
+			hudAssets.txt_chatChannel.enableMarquee = true;
+			hudAssets.txt_chatChannel.history = new StringLog();
 			
 			//hud.addChild(spr);
 			//hud.addChild(spr2);
@@ -245,6 +251,12 @@ package tests.pathbuilding
 		
 		}
 		
+		private function onChayHeightChange(height:Number, cropped:Boolean):void {
+			spriteSet.y = height;
+			
+
+		}
+		
 		
 		
 		private function trim( s:String ):String
@@ -255,14 +267,43 @@ package tests.pathbuilding
 		
 		
 		private var _isThirdPerson:Boolean = true;
+		private var spriteSet:SpriteSet;
+		private var hudAssets:SaboteurHud;
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
-			
-			if (e.keyCode === Keyboard.L &&  !game.keyPoll.disabled && !game.keyPoll.isDown(Keyboard.L)) { // && 
+			if (!game.keyPoll.disabled) {
+				if (e.keyCode === Keyboard.L &&   !game.keyPoll.isDown(Keyboard.L)) { // && 
+					
+					_isThirdPerson = !_isThirdPerson;
+					game.gameStates.engineState.changeState(_isThirdPerson ? "thirdPerson" : "spectator");
+					
+				}
 				
-				_isThirdPerson = !_isThirdPerson;
-				game.gameStates.engineState.changeState(_isThirdPerson ? "thirdPerson" : "spectator");
-				//(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onKeyDown);
+				if (e.keyCode === Keyboard.U &&   !game.keyPoll.isDown(Keyboard.U)) { // && 
+					/*
+					if (	hudAssets.txt_chatChannel.getShowItems() == 5) {
+						hudAssets.txt_chatChannel.setShowItems(12);
+					}
+					else hudAssets.txt_chatChannel.setShowItems(5);
+				*/
+				}
+				
+				if (e.keyCode === Keyboard.PAGE_UP &&   !game.keyPoll.isDown(Keyboard.PAGE_UP) ) {
+					hudAssets.txt_chatChannel.scrollUpHistory();
+				}
+				else if (e.keyCode === Keyboard.PAGE_DOWN &&   !game.keyPoll.isDown(Keyboard.PAGE_DOWN)) {
+					hudAssets.txt_chatChannel.scrollDownHistory();
+				}
+				
+				if (e.keyCode === Keyboard.BACKSLASH &&   !game.keyPoll.isDown(Keyboard.BACKSLASH)) { // && 
+					hudAssets.txt_chatChannel.resetAllScrollingMessages();
+					/*
+					if (	hudAssets.txt_chatChannel.getShowItems() == 5) {
+						hudAssets.txt_chatChannel.setShowItems(12);
+					}
+					else hudAssets.txt_chatChannel.setShowItems(5);
+				*/
+				}
 			}
 			if (e.keyCode === Keyboard.F11) {
 				System.pauseForGCIfCollectionImminent();

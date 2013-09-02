@@ -3,9 +3,12 @@ package alternativa.a3d.systems.text
 	import alternativa.engine3d.alternativa3d;
 	import ash.core.NodeList;
 	import ash.signals.Signal1;
+	import ash.signals.Signal2;
 	use namespace alternativa3d;
 	/**
-	 * A message alert container to hold transcient/permanent messages, also supports updating to scroll any scrolling marquee messages.
+	 * A message alert/text container to hold either transcient/permanent messages.
+	 * Also supports scrolling marquee messages and paginated scrolling.
+	 * 
 	 * @author Glenn Ko
 	 */
 	public class TextBoxChannel 
@@ -18,18 +21,14 @@ package alternativa.a3d.systems.text
 		private var _numScrollingMsgs:int = 0;
 		private var _scrollMessages:Vector.<Message> = new Vector.<Message>();
 		alternativa3d var _heightOffset:Number;
-		public const onContentHeightChange:Signal1 = new Signal1();
+		public const onContentHeightChange:Signal2 = new Signal2();
 		
 		// Key settings
 		alternativa3d var maxDisplayedItems:uint;
-		public function setMaxDisplayedItems(val:uint):void {
-			if (val === maxDisplayedItems) return;
-			maxDisplayedItems = val;
-			dirty = true;
-			dirtyFlags |= 1;
-			
-		}
-		
+
+		private var lastRenderedHead:StringNode;
+		private var lastRenderedTail:StringNode;
+		private var _lastScrollNode:StringNode;
 		
 		alternativa3d var displayedItems:uint = 0;
 		alternativa3d var countdown:Number;
@@ -37,7 +36,7 @@ package alternativa.a3d.systems.text
 		public var timeout:Number;   // the timeout before topmost message vanishes, set to negative value to have no timeout
 		public var vSpacing:Number;  // the spacing between messages
 		public var maskMinY:Number = -Number.MAX_VALUE;  // the negative y height value to conceal text above the chatbox..
-		public var enableMarquee:Boolean = true;  // whether to make paragraphs turn to single-lines, if not enough space to show no. of displayedItems
+		public var enableMarquee:Boolean = false;  // whether to make paragraphs turn to single-lines, if not enough space to show no. of displayedItems
 		public var history:StringLog;   // whether to push messages into history log, this must be used to handle scrolling of data
 		public var dotMarqueeOffset:Number = 10;  // the ... marquee offset to the left
 		public var dotMarqueeOffsetRight:Number = 3;  // the ... marquee offset to the right
@@ -45,13 +44,249 @@ package alternativa.a3d.systems.text
 		public var width:Number = 200;
 		public var centered:Boolean = false;
 		
+		alternativa3d var showItems:uint  = 0;
+		public var lineSpacing:Number = 14;
 		
+		public function setShowItems( amtItems:uint):void {
+			
+			if (amtItems > maxDisplayedItems) throw new Error("This method only allows setting of items below or equal the amount of maxItems. If you need to go beyond this, use setMaxDisplayedItemsAgainstHistory and provide a history log");
+			showItems = amtItems;
+			
+			maskMinY = (lineSpacing + vSpacing) * -amtItems;
+			
+			dirty = true;
+			dirtyFlags |= 1;
+		}
+		public function getShowItems():uint {
+			return showItems;
+		}
+		
+		// will truncate currently displayedItems data permanentnly to fit maxItems if needed
+		public function setMaxDisplayedItemsTruncate(maxItems:uint):void {
+			if (maxItems == 0) throw new Error("Invalid amount specified:" + maxItems);
+			if (maxItems < displayedItems) {
+				var i:int = displayedItems - maxItems;
+				while (--i > -1) {
+					displayedItems--;
+					if (displayedItems==0) tail = null;
+					if (head.next) {
+						head.next.prev = null;
+					}
+					head = head.next;
+				}
+			}
+			this.maxDisplayedItems = maxItems;
+			dirty = true;
+			dirtyFlags |= 1;
+		}
+		public function getMaxDisplayedItems():uint {
+			return maxDisplayedItems;
+		}
+		
+		public function scrollUpHistory():void {
+			if (lastRenderedHead === null) return;
+			if (_lastScrollNode != null) {
+				lastRenderedHead = _lastScrollNode.previous as StringNode;
+				if (lastRenderedHead === null) return;
+				_lastScrollNode = null;
+				
+			}
+			setMaxDisplayedItemsFromEndNode(maxDisplayedItems, lastRenderedHead); 
+			
+			
+		}
+		public function scrollDownHistory():void {
+			if (lastRenderedTail === null) return;
+			if (_lastScrollNode != null) {
+				lastRenderedTail = _lastScrollNode.next as StringNode;
+				if (lastRenderedTail === null) {
+					_lastScrollNode = null;
+					setMaxDisplayedItemsFromEndNode(maxDisplayedItems, history.nodeList.tail as StringNode, true); 
+					return;
+				}
+				_lastScrollNode = null;
+				
+			}
+			else if ( history.nodeList.tail === tail.node) return;
+			setMaxDisplayedItemsFromStartNode(maxDisplayedItems, lastRenderedTail); 
+			
+		}
+		
+		public function setMaxDisplayedItemsFromStartNode(amtItems:uint, node:StringNode):void {
+			_lastScrollNode = null;
+			// basically, scrolling down from startNode is more involved, since we need to track all of the last fully rendered items, 
+			// and than setMaxDisplayedItemsFromEndNode from there...
+			// if last rendered item isn't a fully rendered one, than we also need to append an additional semi-rendered item message after it
+			// based on the last rendered item but with truncated lines (without logging it to history!)
+			
+			if (node === history.nodeList.tail) {
+				setMaxDisplayedItemsFromEndNode(amtItems, node);
+				return;
+			}
+			
+		maxDisplayedItems = amtItems;
+				
+
+				
+			
+			
+			
+			var style:FontSettings = styles[0];
+			var linesLeft:int = amtItems;
+			var lastValidNode:StringNode;
+			var validCount:int = 0;
+
+			for (var n:StringNode = node; n != null; n = n.next as StringNode) {
+				var para:String = style.fontSheet.fontV.getParagraph(n.str, 0, 0, width, style.boundParagraph);
+				var paraSplit:Array= para.split("\n");
+				linesLeft -=  paraSplit.length;
+				if (linesLeft <= 0) {
+					//if (linesLeft == 0) {
+						lastValidNode = n; 
+						validCount++;
+					//}
+					break;
+				}
+				lastValidNode = n;
+				validCount++;
+			}
+			
+			
+			//, (history ? lastValidNode === history.nodeList.tail : false)
+			setMaxDisplayedItemsFromEndNode(maxDisplayedItems, lastValidNode );
+			/*
+			if (linesLeft < 0) {
+				while (linesLeft < 0) {
+					paraSplit.pop();
+					linesLeft++;
+				}
+				
+				var lastHistory:StringLog = history;
+				history = null;
+				appendMessage( paraSplit.join("\n") );
+				
+				history = lastHistory;
+			}
+			*/
+			
+			
+		
+		}
+		
+		public function setMaxDisplayedItemsFromEndNode(amtItems:uint, node:StringNode,  roundNext:Boolean=false):void { 
+			_lastScrollNode = null;
+			
+			maxDisplayedItems = amtItems;
+			maskMinY = (lineSpacing + vSpacing) * -amtItems;
+			dirty = true;
+			dirtyFlags |= 1;
+			
+			var me:Message;
+			
+			if (!roundNext) {  // consider round previous case
+				
+				var style:FontSettings = styles[0];
+				var para:String = style.fontSheet.fontV.getParagraph(node.str, 0, 0, width, style.boundParagraph);
+				var paraSplit:Array = para.split("\n");
+				if (paraSplit.length > amtItems) {
+					
+					paraSplit = paraSplit.slice(0, amtItems);
+					
+					// unlink entire linked list first? 
+					
+					
+					// create makeshift paraSplit node and display that only
+					me = new Message();
+					me.node = new StringNode(paraSplit.join("\n"));
+					head = tail =  me;
+					_lastScrollNode = node;
+					return;
+				}
+				
+			}
+			
+			me = tail;
+			if (me == null) {
+				me = new Message();
+				tail = me;
+			}
+			var lastMe:Message = me;
+			me.node = node;
+			me.boundCache = null;
+			me.scrolling = 0;
+			me.startX  = 0;
+				
+			me = me.next;
+	
+			
+			var linesLeft:int = maxDisplayedItems
+			var count:int = 1;
+			for (var n:StringNode = node.previous as StringNode; n != null; n = n.previous as StringNode) {
+				
+				if (count >= amtItems) break;
+				
+				if (me == null) me = new Message();
+			
+				me.node = n;
+				me.boundCache = null;
+				me.scrolling = 0;
+				me.startX  = 0;
+				lastMe.prev = me;
+				me.next = lastMe;
+				
+				lastMe = me;
+				me = me.prev;
+				count++;
+			}
+			
+			
+			
+			head = lastMe;
+			if (lastMe.prev != null) {
+				lastMe.prev.next = null;
+				// unlink entire chain before lastMe??
+			}
+			lastMe.prev = null;
+			
+		
+			 n = node.next as StringNode;
+			 if (n != null) {
+				// var appendCount:int = 0;
+				while ( count < amtItems) {
+					
+					
+					//if (n != null) {
+					//appendMessage("A:" + count);
+					tail.next = new Message();
+					tail.next.prev = tail;
+					tail.next.node = n;
+					tail = tail.next;
+					//}
+					n =  n.next as StringNode;
+					count++;
+					//appendCount++;
+				}
+				//throw new Error(appendCount + ", "+count);
+			 }
+			
+			
+			// some temporary debug checks atm
+			if (amtItems != 5) throw new Error("SJOUT NOT BE!"+amtItems);
+			count = 0;
+			for (var t:Message = tail; t != null; t = t.prev) {
+				count++;
+				if (count > amtItems) throw new Error("SHOULD NTO BE!");
+			}
+		}
 		
 		public function TextBoxChannel(styles:Vector.<FontSettings>, maxDisplayedItems:uint=5, timeout:Number=-1, vSpacing:Number=3) 
 		{
 		
-		//	timeout = -1;
-		//	maskMinY = (12 + vSpacing) * -maxDisplayedItems;
+			//	timeout = -1;
+			//lineSpacing = 14;
+			//maskMinY = (14 + vSpacing) * -maxDisplayedItems;
+			//throw new Error(maskMinY);
+			//maxDisplayedItems = 200;
 		
 			if (styles.length < 1) throw new Error("Please provide at least 1 style fontsetting!");
 			setStyles(styles);
@@ -85,6 +320,9 @@ package alternativa.a3d.systems.text
 		
 		public function appendMessage(val:String):void {
 			var me:Message;
+			if (history != null && tail!=null  && history.nodeList.tail != tail.node) {
+				setMaxDisplayedItemsFromEndNode(maxDisplayedItems, history.nodeList.tail as StringNode, true);
+			}
 			
 			displayedItems++;
 			if (displayedItems > maxDisplayedItems) {  // loop back
@@ -92,7 +330,7 @@ package alternativa.a3d.systems.text
 				tail.next = me = head;
 				me.prev = tail;
 				head = me.next;
-				
+				if (me.next != null) me.next.prev = null;
 				me.next = null;
 				me.boundCache = null;
 				me.scrolling = 0;
@@ -110,11 +348,11 @@ package alternativa.a3d.systems.text
 			
 			tail = me;
 			
-			me.str = val;
+			me.node  = new StringNode(val);
 			
 			if (history != null) {
 				
-				history.add(val); 
+				history.addNode(me.node); 
 			}
 
 			dirty = true;
@@ -159,9 +397,12 @@ package alternativa.a3d.systems.text
 			var heighter:Number = 0;
 			
 			_numScrollingMsgs = 0;
-			var spareLines:int = enableMarquee ?  maxDisplayedItems - displayedItems : 2147483647;
+			var spareLines:int = enableMarquee ?  (showItems != 0 ? showItems : maxDisplayedItems ) - displayedItems : 2147483647;
+			
+			lastRenderedTail = tail ? tail.node : null;
+			lastRenderedHead = null;
 			for (m = tail; m != null; m = m.prev) {
-				//m.str;
+				//m.node.str;
 				m.charIndexCache = li;
 				
 			//	 m.lastScrolling = 0;
@@ -178,11 +419,11 @@ package alternativa.a3d.systems.text
 							//	/*
 								_scrollMessages[_numScrollingMsgs++]  = m;
 								m.scrolling = 1;
-								style.fontSheet.fontV.getBound(m.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
+								style.fontSheet.fontV.getBound(m.node.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
 								m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 								heighter -= m.boundHeight + vSpacing;
 								m.yValueCache = heighter;
-								style.writeData(m.str, 0, heighter, 0, centered, li, width, maskMinY); 
+								style.writeData(m.node.str, 0, heighter, 0, centered, li, width, maskMinY); 
 							 
 								
 								m.boundWidth = style.boundParagraph.maxX - style.boundParagraph.minX;
@@ -202,11 +443,11 @@ package alternativa.a3d.systems.text
 						else {
 							
 							if (spareLines >= 0)  { // convert scrolling line to paragraph
-								style.fontSheet.fontV.getBound(style.fontSheet.fontV.getParagraph(m.str, 0, 0, width, style.boundParagraph), 0, heighter, centered, style.fontSheet.tight, style.boundParagraph);
+								style.fontSheet.fontV.getBound(style.fontSheet.fontV.getParagraph(m.node.str, 0, 0, width, style.boundParagraph), 0, heighter, centered, style.fontSheet.tight, style.boundParagraph);
 							m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 									heighter -= m.boundHeight + vSpacing;
 								m.yValueCache = heighter;
-								style.writeData(m.str, 0,heighter, width, centered, li, 1.79e+308, maskMinY); 
+								style.writeData(m.node.str, 0,heighter, width, centered, li, 1.79e+308, maskMinY); 
 								m.scrolling = 0;
 								//m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 								m.boundWidth = style.boundParagraph.maxX - style.boundParagraph.minX;
@@ -230,10 +471,10 @@ package alternativa.a3d.systems.text
 					}
 				}
 				else {
-					//style.writeData(m.str, 0, heighter, 0, centered, li);  // line case
-					//style.writeData(m.str, 0, heighter, width, centered, li); 
+					//style.writeData(m.node.str, 0, heighter, 0, centered, li);  // line case
+					//style.writeData(m.node.str, 0, heighter, width, centered, li); 
 					
-					var checkPara:String = style.fontSheet.fontV.getParagraph(m.str, 0, 0, width, style.boundParagraph);
+					var checkPara:String = style.fontSheet.fontV.getParagraph(m.node.str, 0, 0, width, style.boundParagraph);
 					
 				
 					m.numLines = checkPara.split("\n").length;
@@ -245,11 +486,11 @@ package alternativa.a3d.systems.text
 							m.scrolling = 1;	
 							//if (m.startX != 0) throw new Error("SHOULD NOT BE!:"+m.startX);
 								m.startX  = width * .25;
-								style.fontSheet.fontV.getBound(m.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
+								style.fontSheet.fontV.getBound(m.node.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
 							m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 							heighter -= m.boundHeight + vSpacing;
 							m.yValueCache = heighter;
-							 style.writeData(m.str, 0, heighter, 0, centered, li, width, maskMinY); 
+							 style.writeData(m.node.str, 0, heighter, 0, centered, li, width, maskMinY); 
 							
 						}
 						else {
@@ -261,11 +502,11 @@ package alternativa.a3d.systems.text
 						}
 					}
 					else {   // display single line
-						style.fontSheet.fontV.getBound(m.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
+						style.fontSheet.fontV.getBound(m.node.str, 0, 0, centered, style.fontSheet.tight, style.boundParagraph);
 						m.boundHeight = style.boundParagraph.maxY - style.boundParagraph.minY;
 						heighter -= m.boundHeight + vSpacing;
 						m.yValueCache = heighter;
-						style.writeData(m.str, 0, heighter, width, centered, li, width, maskMinY); 
+						style.writeData(m.node.str, 0, heighter, width, centered, li, width, maskMinY); 
 					
 					}
 					
@@ -285,8 +526,12 @@ package alternativa.a3d.systems.text
 			
 				
 				mi++;
-				if (mi >= maxDisplayedItems) break;
+				lastRenderedHead = m.node;
+				if (style._outsideBound) break;  // mi >= maxDisplayedItems || 
+				//if ( mi >= maxDisplayedItems) break;
 			}
+			
+			
 
 				//	throw new Error(arr);
 				style.spriteSet._numSprites = li;// ,
@@ -297,15 +542,14 @@ package alternativa.a3d.systems.text
 			
 				dirtyFlags = 0;
 				
-				
-				onContentHeightChange.dispatch(_heightOffset);
+				onContentHeightChange.dispatch(style._outsideBound ? -maskMinY - vSpacing : _heightOffset, style._outsideBound);
 		
 		}
 		
 		public function resetAllScrollingMessages():void {
 			for (var i:int = 0; i < _numScrollingMsgs; i++) {
 				var m:Message=_scrollMessages[i];
-				m.startX = width * .25;
+				m.startX = width * .25 * .5;
 				m.scrolling = 1;  
 			}
 		}
@@ -407,12 +651,17 @@ package alternativa.a3d.systems.text
 			return _heightOffset;
 		}
 		
+		
+		
 	}
 
 }
 
+import alternativa.a3d.systems.text.StringNode;
+
 class Message {
-	public var str:String;
+	//public var str:String;
+	public var node:StringNode;
 	public var span:Boolean = false;
 	public var next:Message;
 	public var prev:Message;

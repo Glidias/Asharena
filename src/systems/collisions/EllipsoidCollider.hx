@@ -571,15 +571,17 @@ package systems.collisions;
 			}
 			
 			//return isNaN2(result.x) ? source.clone() : result;
-			return resultVector;
+			
+			//if (isNaN2(resultVector.x)) trace("INVALID:"+resultVector);
+			return isNaN2(resultVector.x) ? source.clone() : resultVector;
 		}
 		
 		private var resultVector:Vector3D;
 		private var requireEvents:Bool;
 		
 		private static inline function isNaN2(a:Float):Bool {
-return a != a;
-}
+			return a != a;
+		}
 		
 	
 	//	*/
