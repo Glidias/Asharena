@@ -1,12 +1,16 @@
 package saboteur.spawners 
 {
 	import alternativa.a3d.systems.text.FontSettings;
+	import alternativa.a3d.systems.text.StringLog;
 	import alternativa.a3d.systems.text.TextBoxChannel;
 	import alternativa.a3d.systems.text.TextSpawner;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.TextureMaterial;
+	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.objects.MeshSet;
+	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.spriteset.materials.MaskColorAtlasMaterial;
 	import alternativa.engine3d.spriteset.materials.TextureAtlasMaterial;
@@ -14,12 +18,18 @@ package saboteur.spawners
 	import alternativa.engine3d.spriteset.util.SpriteGeometryUtil;
 	import ash.core.Engine;
 	import assets.fonts.ConsoleFont;
+	import de.polygonal.core.event._Observable.Bind;
 	import flash.display.Stage;
 	import flash.events.KeyboardEvent;
 	import flash.ui.Keyboard;
 	import input.KeyPoll;
+	import saboteur.ui.SaboteurHUDLayout;
+	import views.ui.hud.BindLayoutObjCenterScale;
+	import views.ui.hud.BindLayoutTextBox;
 	import views.ui.text.TextLineInputter;
-
+	import alternativa.engine3d.alternativa3d;
+	use namespace alternativa3d;
+	
 	import util.SpawnerBundle;
 	/**
 	 * Consolidating all stuff for HuD and determining number of draw calls used for it
@@ -30,7 +40,7 @@ package saboteur.spawners
 		public var minimapMaterial:TextureMaterial;  // minimap texture
 		public var radarMaterial:TextureMaterial;  // circle masked
 		
-		public var bgOverlayFillMaterial:FillMaterial= new FillMaterial(0x666666, .4);
+		//public var bgOverlayFillMaterial:FillMaterial= new FillMaterial(0x666666, .4);
 		public var radar_endPointDead:FillMaterial= new FillMaterial(0xFF0000, 1);
 		public var radar_endPointAvailable:FillMaterial= new FillMaterial(0xFF0000, 1);
 		
@@ -49,12 +59,23 @@ package saboteur.spawners
 		public var toolsSpriteSet:SpriteSet;
 		public var tools:TextureAtlasMaterial; //
 	
+		// The overlays
+		
+		public var overlays:MeshSet;
+		private var overlayRoot:Object3D = new Object3D();
+		
 		// The differnet font settings
 		public var txt_numpad:FontSettings;  // these can be baked 1-10, or even put to skin!
 		public var txt_chat:FontSettings;	// dynamic text
 		public var txt_tips:FontSettings;
+		
 		public var txt_chatChannel:TextBoxChannel;
+		private var layout_chatChannel:BindLayoutTextBox;
+		private var overlay_chatChannel:BindLayoutObjCenterScale;
+		
 		public var txt_tipsChannel:TextBoxChannel;
+		private var overlay_tipsChannel:BindLayoutObjCenterScale;
+		//private var layout_tipsChannel:BindLayoutTextBox;
 		
 		private var txt_chatInput:FontSettings;
 		private var chatTextInput:TextLineInputter;
@@ -69,11 +90,16 @@ package saboteur.spawners
 		public var playerName:String = "Player";
 		public var playerColor:uint = 2;
 		
+		private var layout:SaboteurHUDLayout;
+		
 		public function SaboteurHud(engine:Engine, stage:Stage, keypollToDisable:KeyPoll=null) 
 		{
 			chatTextInput = new TextLineInputter(stage);
 			this.keypollToDisable = keypollToDisable;
+			normPlane.rotationX = Math.PI;
 			
+			layout = new SaboteurHUDLayout(stage);
+			//stage.addChild(layout);
 			txtSpawner = new TextSpawner(engine);
 			_stage = stage;
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, checkEnter);
@@ -91,9 +117,15 @@ package saboteur.spawners
 		
 		
 		override protected function init():void {
-			setupTools();  
+			setupTools(); 
+			
 			setupText();
 			setupMinimapAndRadar();
+			normPlane.geometry.upload(context3D);
+			overlays = new MeshSet(overlayRoot);  // TODO: use MeshSetClonesContainer instead
+			overlays.setMaterialToAllSurfaces( overlayMaterial);
+			//throw new Error(overlays._surfaces.length);
+			overlays.geometry.upload(context3D);
 			
 			super.init();
 		}
@@ -101,6 +133,14 @@ package saboteur.spawners
 		private function setupMinimapAndRadar():void 
 		{
 			
+		}
+		
+		
+		public var overlayMaterial:FillMaterial = new FillMaterial(0x000000, .25);
+		private var normPlane:Plane = new Plane(1,1,1,1,false,false,overlayMaterial, overlayMaterial);
+		
+		private function getOverlay():Object3D {
+			return overlayRoot.addChild( normPlane.clone() );
 		}
 		
 	
@@ -128,6 +168,10 @@ package saboteur.spawners
 		}
 		
 		public function addToHud3D(obj:Object3D):void {
+			
+			// overlays
+			
+			obj.addChild(overlays);
 			// tools
 			
 			// minimap and radar
@@ -175,10 +219,26 @@ package saboteur.spawners
 			mat = getNewDefaultFontMaterial(0xDDEEAA);
 			txt_tips = new FontSettings(consoleFont, mat , getNewTextSpriteSet(MAX_CHARS, mat, geom) );
 			txt_tipsChannel = new TextBoxChannel(new <FontSettings>[txt_tips], 5, 10, 3);
+			//overlay_tipsChannel = new BindLayoutObjCenterScale(layout.contLeft.validateAABB, getOverlay());
+			//layout.onLayoutUpdate.add(overlay_tipsChannel.update);
+			
+			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contMiddleLeft.validateAABB, getOverlay()).update);
+			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopLeft.validateAABB, getOverlay()).update);
+			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, getOverlay()).update);
+			//layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contRight.validateAABB, getOverlay()).update);
+			//layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contLeft.validateAABB, getOverlay()).update);
 			
 			mat = getNewDefaultFontMaterial(0xDDEEAA);
 			txt_chat = new FontSettings(consoleFont, mat , getNewTextSpriteSet(MAX_CHARS, mat, geom) );
 			txt_chatChannel = new TextBoxChannel(new <FontSettings>[txt_chat], 5, 10, 3);
+			txt_chatChannel.timeout = -1;
+			txt_chatChannel.history = new StringLog();
+			txt_chatChannel.lineSpacing = 10.2;
+			txt_chatChannel.vSpacing = 4;
+			layout_chatChannel = new BindLayoutTextBox(layout.contTop.validateAABB, txt_chatChannel.styles[0].spriteSet, txt_chatChannel, 8, 4, 0, 0);
+			layout.onLayoutUpdate.add(layout_chatChannel.update);
+		//	overlay_chatChannel = new BindLayoutObjCenterScale(layout.contTop.validateAABB, getOverlay());
+		//		layout.onLayoutUpdate.add(overlay_chatChannel.update);
 			
 			txt_chatInput = new FontSettings(consoleFont, mat , getNewTextSpriteSet(MAX_CHARS, mat, geom) );
 			

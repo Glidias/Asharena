@@ -118,6 +118,18 @@ package views.ui.layout
 		}
 		
 		public function drawValidateAABB():void {
+			var t:Number;
+			if (_maxWidth != 0) {
+				t = validateAABB.maxX - validateAABB.minX;
+				if (t > _maxWidth) validateAABB.maxX -= t - maxWidth;
+			}
+			if (_maxHeight != 0) {
+				t = validateAABB.maxY - validateAABB.minY;
+				if (t > _maxHeight) validateAABB.maxY -= t - _maxHeight;
+			}
+			
+			if (!stage) return;
+			
 			var graphics:Graphics = this.graphics;
 			graphics.clear();
 			

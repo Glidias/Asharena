@@ -14,7 +14,7 @@ package alternativa.a3d.systems.text
 	public class TextBoxChannel 
 	{
 
-		private var styles:Vector.<FontSettings>;
+		public var styles:Vector.<FontSettings>;
 		
 		private var head:Message;
 		private var tail:Message;
@@ -669,6 +669,13 @@ package alternativa.a3d.systems.text
 	
 			if (_numScrollingMsgs > 0) updateScrollingMsgs(time, wasDirty);  // temp disabled for now
 			
+		}
+		
+		public function setWidth(val:Number):void 
+		{
+			width = val;
+			dirty = true;
+			dirtyFlags |= 2;
 		}
 		
 		private function updateScrollingMsgs(time:Number, wasDirty:Boolean):void 
