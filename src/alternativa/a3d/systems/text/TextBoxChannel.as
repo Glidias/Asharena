@@ -29,6 +29,7 @@ package alternativa.a3d.systems.text
 		private var lastRenderedHead:StringNode;
 		private var lastRenderedTail:StringNode;
 		private var _lastScrollNode:StringNode;
+		private var paraSplit:Array;
 		
 		alternativa3d var displayedItems:uint = 0;
 		alternativa3d var countdown:Number;
@@ -54,17 +55,28 @@ package alternativa.a3d.systems.text
 		}
 		
 		public function setShowItems( amtItems:uint):void {
+			dirty = true;
+			dirtyFlags |= 1;
 			
+			if (history != null) {  // the history version of this
+				showItems = 0
+				if (lastRenderedTail != null) {
+					setMaxDisplayedItemsFromEndNode(amtItems, lastRenderedTail, lastRenderedTail === history.nodeList.tail);
+				}
+				else maxDisplayedItems = amtItems;
+				return;
+			}
+			
+			// the non history version of this involves capping the current display show amount
 			if (amtItems > maxDisplayedItems) throw new Error("This method only allows setting of items below or equal the amount of maxItems. If you need to go beyond this, use setMaxDisplayedItemsAgainstHistory and provide a history log");
 			showItems = amtItems;
 			
 			maskMinY = (lineSpacing + vSpacing) * -amtItems;
 			
-			dirty = true;
-			dirtyFlags |= 1;
+			
 		}
 		public function getShowItems():uint {
-			return showItems;
+			return history ? maxDisplayedItems : showItems;
 		}
 		
 		// will truncate currently displayedItems data permanentnly to fit maxItems if needed
@@ -90,7 +102,7 @@ package alternativa.a3d.systems.text
 		}
 		
 		public function scrollUpHistory():void {
-			if (lastRenderedHead === null) return;
+			if (lastRenderedHead === null || !history) return;
 			if (_lastScrollNode != null) {
 				lastRenderedHead = _lastScrollNode.previous as StringNode;
 				if (lastRenderedHead === null) return;
@@ -106,7 +118,7 @@ package alternativa.a3d.systems.text
 			
 		}
 		public function scrollDownHistory():void {
-			if (lastRenderedTail === null) return;
+			if (lastRenderedTail === null || !history) return;
 			if (_lastScrollNode != null) {
 				lastRenderedTail = _lastScrollNode.next as StringNode;
 				if (lastRenderedTail === null) {
@@ -114,12 +126,20 @@ package alternativa.a3d.systems.text
 					setMaxDisplayedItemsFromEndNode(maxDisplayedItems, history.nodeList.tail as StringNode, true); 
 					return;
 				}
+				
 				_lastScrollNode = null;
 				
 			}
-			else if ( history.nodeList.tail === tail.node) return;
+			else if ( history.nodeList.tail === tail.node) {
+				setMaxDisplayedItemsFromEndNode(maxDisplayedItems, tail.node, true); 
+				return;
+			}
 			setMaxDisplayedItemsFromStartNode(maxDisplayedItems, lastRenderedTail); 
 			
+		}
+		
+		public function scrollEndHistory():void {
+			if (history && history.nodeList.tail) setMaxDisplayedItemsFromEndNode(maxDisplayedItems, history.nodeList.tail as StringNode, true);
 		}
 		
 		public function setMaxDisplayedItemsFromStartNode(amtItems:uint, node:StringNode):void {
@@ -129,10 +149,12 @@ package alternativa.a3d.systems.text
 			// if last rendered item isn't a fully rendered one, than we also need to append an additional semi-rendered item message after it
 			// based on the last rendered item but with truncated lines (without logging it to history!)
 			
+			/*
 			if (node === history.nodeList.tail) {
 				setMaxDisplayedItemsFromEndNode(amtItems, node);
 				return;
 			}
+			*/
 			
 		maxDisplayedItems = amtItems;
 				
@@ -161,7 +183,7 @@ package alternativa.a3d.systems.text
 			
 			//, (history ? lastValidNode === history.nodeList.tail : false)
 		
-			setMaxDisplayedItemsFromEndNode(maxDisplayedItems, lastValidNode );
+			setMaxDisplayedItemsFromEndNode(maxDisplayedItems, lastValidNode, lastValidNode === history.nodeList.tail );
 			/*
 			if (linesLeft < 0) {
 				while (linesLeft < 0) {
@@ -176,12 +198,13 @@ package alternativa.a3d.systems.text
 				history = lastHistory;
 			}
 			*/
-			
+			if (head.node === tail.node) _lastScrollNode = head.node;
 			
 		
 		}
 		
 		public function setMaxDisplayedItemsFromEndNode(amtItems:uint, node:StringNode,  roundNext:Boolean=false):void { 
+			var para:String;
 			_lastScrollNode = null;
 			
 			maxDisplayedItems = amtItems;
@@ -191,14 +214,16 @@ package alternativa.a3d.systems.text
 			
 			var me:Message;
 			var linesLeft:int = maxDisplayedItems;
+			var style:FontSettings = styles[0];
 			
-			if (!roundNext) {  // consider round previous case
+			//if (!roundNext) {  // consider round previous case
 				
-				var style:FontSettings = styles[0];
-				var para:String = style.fontSheet.fontV.getParagraph((node.str.charAt(0) != "<" ? node.str : FontSettings.getPlainTextFromXMLString(node.str)), 0, 0, width, style.boundParagraph);
-				var paraSplit:Array = para.split("\n");
-				linesLeft -= paraSplit.length;
-				if (paraSplit.length > amtItems) {
+				
+				para = style.fontSheet.fontV.getParagraph((node.str.charAt(0) != "<" ? node.str : FontSettings.getPlainTextFromXMLString(node.str)), 0, 0, width, style.boundParagraph);
+				paraSplit = para.split("\n");
+				linesLeft -= roundNext ? 1 : paraSplit.length;
+				/*		// NOTE: this doesn't work properly with span text, if paragraph exceeds maximum amount of lines available, it'll still always use marquee
+				if (false && !roundNext && paraSplit.length > amtItems) {
 					
 					paraSplit = paraSplit.slice(0, amtItems);
 					
@@ -212,8 +237,10 @@ package alternativa.a3d.systems.text
 					_lastScrollNode = node;
 					return;
 				}
+				*/
 				
-			}
+			//}
+			
 		
 			
 			me = tail;
@@ -233,10 +260,17 @@ package alternativa.a3d.systems.text
 	
 			
 			
-			var count:int = 1;
+			
 			for (var n:StringNode = node.previous as StringNode; n != null; n = n.previous as StringNode) {
 				
-				if (count >= amtItems) break;
+				
+				
+				//if (count >= amtItems) break;
+				
+				para= style.fontSheet.fontV.getParagraph((n.str.charAt(0) != "<" ? n.str : FontSettings.getPlainTextFromXMLString(n.str)), 0, 0, width, style.boundParagraph);
+				paraSplit= para.split("\n");
+				linesLeft -= roundNext ? 1 : paraSplit.length;
+				if (linesLeft < 0) break;
 				
 				if (me == null) me = new Message();
 			
@@ -251,7 +285,7 @@ package alternativa.a3d.systems.text
 				
 				lastMe = me;
 				me = me.prev;
-				count++;
+			
 			}
 			
 			
@@ -263,12 +297,17 @@ package alternativa.a3d.systems.text
 			}
 			lastMe.prev = null;
 		
+			if (roundNext) return;
+			
 			 n = node.next as StringNode;
 			 if (n != null) {
 				// var appendCount:int = 0;
-				while ( n!=null && count < amtItems) {
+				while ( n!=null && linesLeft > 0) {
 					
-					
+						para= style.fontSheet.fontV.getParagraph((n.str.charAt(0) != "<" ? n.str : FontSettings.getPlainTextFromXMLString(n.str)), 0, 0, width, style.boundParagraph);
+					paraSplit= para.split("\n");
+					linesLeft -= paraSplit.length;
+					if (linesLeft < 0) break;
 					//if (n != null) {
 					//appendMessage("A:" + count);
 					tail.next = new Message();
@@ -277,20 +316,14 @@ package alternativa.a3d.systems.text
 					tail = tail.next;
 					//}
 					n =  n.next as StringNode;
-					count++;
+					//count++;
 					//appendCount++;
 				}
 				//throw new Error(appendCount + ", "+count);
 			 }
 			
+			if (head.node === tail.node) _lastScrollNode = head.node;
 			
-			// some temporary debug checks atm
-			if (amtItems != 5) throw new Error("SJOUT NOT BE!"+amtItems);
-			count = 0;
-			for (var t:Message = tail; t != null; t = t.prev) {
-				count++;
-				if (count > amtItems) throw new Error("SHOULD NTO BE!");
-			}
 		}
 		
 		public function TextBoxChannel(styles:Vector.<FontSettings>, maxDisplayedItems:uint=5, timeout:Number=-1, vSpacing:Number=3) 
@@ -334,7 +367,8 @@ package alternativa.a3d.systems.text
 		
 		public function appendMessage(val:String):void {
 			var me:Message;
-			if (history != null && tail!=null  && history.nodeList.tail != tail.node) {
+			if (history != null && tail != null  && history.nodeList.tail != tail.node) {
+				_lastScrollNode = null;
 				setMaxDisplayedItemsFromEndNode(maxDisplayedItems, history.nodeList.tail as StringNode, true);
 			}
 			
@@ -433,7 +467,7 @@ package alternativa.a3d.systems.text
 						spareLines -= m.numLines - 1;
 						if (!m.scrolling)	{
 							
-							if (spareLines < 0) {  // convert paragraph to scrolling line
+							if (spareLines < 0 || m.numLines > maxDisplayedItems) {  // convert paragraph to scrolling line
 							//	/*
 								_scrollMessages[_numScrollingMsgs++]  = m;
 								m.scrolling = 1;
@@ -506,7 +540,7 @@ package alternativa.a3d.systems.text
 					
 					if (m.numLines > 1) {
 						spareLines -= m.numLines - 1;
-						if (spareLines < 0) {
+						if (spareLines < 0 || m.numLines > maxDisplayedItems) {
 							_scrollMessages[_numScrollingMsgs++]  = m;
 							m.scrolling = 1;	
 							//if (m.startX != 0) throw new Error("SHOULD NOT BE!:"+m.startX);

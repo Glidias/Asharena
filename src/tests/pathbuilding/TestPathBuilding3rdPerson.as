@@ -204,7 +204,7 @@ package tests.pathbuilding
 			atlasMaterial.flags = (MaskColorAtlasMaterial.FLAG_MIPNONE | MaskColorAtlasMaterial.FLAG_PIXEL_NEAREST);
 			atlasMaterial.alphaThreshold = .99;
 		//	atlasMaterial.opaquePass
-		addChild( new Bitmap(font.bmpResource.data));
+	//	addChild( new Bitmap(font.bmpResource.data));
 		var useRegisters:int = 120;// 116;
 		var numRegisters:int = 3;
 			spriteSet = new SpriteSet(233, true, atlasMaterial, font.sheet.width, font.sheet.height, useRegisters/numRegisters,numRegisters)
@@ -279,12 +279,12 @@ package tests.pathbuilding
 				}
 				
 				if (e.keyCode === Keyboard.U &&   !game.keyPoll.isDown(Keyboard.U)) { // && 
-					/*
+					
 					if (	hudAssets.txt_chatChannel.getShowItems() == 5) {
 						hudAssets.txt_chatChannel.setShowItems(12);
 					}
 					else hudAssets.txt_chatChannel.setShowItems(5);
-				*/
+				
 				}
 				
 				if (e.keyCode === Keyboard.PAGE_UP &&   !game.keyPoll.isDown(Keyboard.PAGE_UP) ) {
@@ -292,6 +292,9 @@ package tests.pathbuilding
 				}
 				else if (e.keyCode === Keyboard.PAGE_DOWN &&   !game.keyPoll.isDown(Keyboard.PAGE_DOWN)) {
 					hudAssets.txt_chatChannel.scrollDownHistory();
+				}
+				else if  (e.keyCode === Keyboard.END &&   !game.keyPoll.isDown(Keyboard.END)) {
+					hudAssets.txt_chatChannel.scrollEndHistory();
 				}
 				
 				if (e.keyCode === Keyboard.BACKSLASH &&   !game.keyPoll.isDown(Keyboard.BACKSLASH)) { // && 
