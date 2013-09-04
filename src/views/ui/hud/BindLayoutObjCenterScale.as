@@ -12,11 +12,13 @@ package views.ui.hud
 	{
 		private var aabb:AABB2;
 		private var obj:Object3D;
+		public var includeScale:Boolean;
 		
-		public function BindLayoutObjCenterScale(aabb:AABB2, obj:Object3D) 
+		public function BindLayoutObjCenterScale(aabb:AABB2, obj:Object3D, includeScale:Boolean=true) 
 		{
 			this.obj = obj;
 			this.aabb = aabb;
+			this.includeScale = includeScale;
 			
 		}
 		
@@ -24,8 +26,10 @@ package views.ui.hud
 			
 			var x:Number = aabb.maxX - aabb.minX;
 			var y:Number = aabb.maxY - aabb.minY;
-			obj._scaleX = x;
-			obj._scaleY = y;
+			if (includeScale) {
+				obj._scaleX = x;
+				obj._scaleY = y;
+			}
 			
 			x *= .5;
 			y *= .5;

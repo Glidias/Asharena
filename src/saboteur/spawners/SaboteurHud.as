@@ -5,11 +5,15 @@ package saboteur.spawners
 	import alternativa.a3d.systems.text.TextBoxChannel;
 	import alternativa.a3d.systems.text.TextSpawner;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.materials.FillCircleMaterial;
 	import alternativa.engine3d.materials.FillMaterial;
+	import alternativa.engine3d.materials.Grid2DMaterial;
 	import alternativa.engine3d.materials.Material;
+	import alternativa.engine3d.materials.RadarGrid2DMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.MeshSet;
+	import alternativa.engine3d.objects.Sprite3D;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.spriteset.materials.MaskColorAtlasMaterial;
@@ -19,8 +23,10 @@ package saboteur.spawners
 	import ash.core.Engine;
 	import assets.fonts.ConsoleFont;
 	import de.polygonal.core.event._Observable.Bind;
+	import flash.display.Sprite;
 	import flash.display.Stage;
 	import flash.events.KeyboardEvent;
+	import flash.geom.Vector3D;
 	import flash.ui.Keyboard;
 	import input.KeyPoll;
 	import saboteur.ui.SaboteurHUDLayout;
@@ -37,8 +43,12 @@ package saboteur.spawners
 	 */
 	public class SaboteurHud extends SpawnerBundle
 	{
+		// Radar and minimap stuff
 		public var minimapMaterial:TextureMaterial;  // minimap texture
 		public var radarMaterial:TextureMaterial;  // circle masked
+		private var radarGridMaterial:RadarGrid2DMaterial; 
+		private var radarBgMaterial:FillCircleMaterial; 
+		private var radarGridSprite:Sprite3D;
 		
 		//public var bgOverlayFillMaterial:FillMaterial= new FillMaterial(0x666666, .4);
 		public var radar_endPointDead:FillMaterial= new FillMaterial(0xFF0000, 1);
@@ -92,6 +102,8 @@ package saboteur.spawners
 		
 		private var layout:SaboteurHUDLayout;
 		
+
+		
 		public function SaboteurHud(engine:Engine, stage:Stage, keypollToDisable:KeyPoll=null) 
 		{
 			chatTextInput = new TextLineInputter(stage);
@@ -132,12 +144,37 @@ package saboteur.spawners
 		
 		private function setupMinimapAndRadar():void 
 		{
+			radarGridMaterial = new RadarGrid2DMaterial(0x000000, .999, 32 * .5, 48 * .5);
 			
+			radarGridMaterial.gridCoordinates.width =  16;
+			radarGridMaterial.gridCoordinates.height = radarGridMaterial.gridSquareWidth/radarGridMaterial.gridSquareHeight * (radarGridMaterial.gridCoordinates.width);
+			
+			
+			
+			radarGridMaterial.lineThickness = .51;
+			radarGridSprite = new Sprite3D(radarGridMaterial.gridCoordinates.width * radarGridMaterial.gridSquareWidth, radarGridMaterial.gridCoordinates.height * radarGridMaterial.gridSquareHeight, radarGridMaterial);
+			//	uploadResources(radarGridSprite.getResources());
+			radarGridSprite.z = 0;
+		
+			radarGridSprite.scaleX = .5;
+			radarGridSprite.scaleY = .5;
+			var layouterRadar:BindLayoutObjCenterScale;
+			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, radarGridSprite, false).update);
+			//new BindLayoutObjCenterScale(, radarGridSprite, false)
+			radarGridSprite.rotation = 24;
+			
+			
+			radarBgMaterial = new FillCircleMaterial(0xFFFFFF, .8);
+			radarGridBg = new Sprite3D(radarGridSprite.width, radarGridSprite.height, radarBgMaterial);
+			radarGridBg.matrix = radarGridSprite.matrix;
+			radarGridBg.z = .1;
+			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, radarGridBg, false).update);
 		}
 		
 		
 		public var overlayMaterial:FillMaterial = new FillMaterial(0x000000, .25);
 		private var normPlane:Plane = new Plane(1,1,1,1,false,false,overlayMaterial, overlayMaterial);
+		private var radarGridBg:Sprite3D;
 		
 		private function getOverlay():Object3D {
 			return overlayRoot.addChild( normPlane.clone() );
@@ -175,13 +212,15 @@ package saboteur.spawners
 			// tools
 			
 			// minimap and radar
-			
+			obj.addChild(radarGridSprite);
+			obj.addChild(radarGridBg);
 			
 			// text
 			obj.addChild(txt_tips.spriteSet);
 			obj.addChild(txt_numpad.spriteSet);
 			obj.addChild(txt_chat.spriteSet);
 			obj.addChild(txt_chatInput.spriteSet);
+			
 		}
 		
 		public function writeChatText(text:String):void {
@@ -224,7 +263,7 @@ package saboteur.spawners
 			
 			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contMiddleLeft.validateAABB, getOverlay()).update);
 			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopLeft.validateAABB, getOverlay()).update);
-			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, getOverlay()).update);
+			//layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, getOverlay()).update);
 			//layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contRight.validateAABB, getOverlay()).update);
 			//layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contLeft.validateAABB, getOverlay()).update);
 			
@@ -238,7 +277,7 @@ package saboteur.spawners
 			layout_chatChannel = new BindLayoutTextBox(layout.contTop.validateAABB, txt_chatChannel.styles[0].spriteSet, txt_chatChannel, 8, 4, 0, 0);
 			layout.onLayoutUpdate.add(layout_chatChannel.update);
 		//	overlay_chatChannel = new BindLayoutObjCenterScale(layout.contTop.validateAABB, getOverlay());
-		//		layout.onLayoutUpdate.add(overlay_chatChannel.update);
+		//	layout.onLayoutUpdate.add(overlay_chatChannel.update);
 			
 			txt_chatInput = new FontSettings(consoleFont, mat , getNewTextSpriteSet(MAX_CHARS, mat, geom) );
 			
@@ -276,6 +315,7 @@ package saboteur.spawners
 		
 		private function getNewFontMaterial(color:uint):MaskColorAtlasMaterial {
 			var mat:MaskColorAtlasMaterial =  new MaskColorAtlasMaterial(consoleFont.bmpResource);
+			mat.transparentPass = false;
 			mat.color = color;
 			mat.alphaThreshold = .8;
 			mat.flags = (MaskColorAtlasMaterial.FLAG_MIPNONE | MaskColorAtlasMaterial.FLAG_PIXEL_NEAREST);
@@ -283,8 +323,8 @@ package saboteur.spawners
 		}
 		private function getNewDefaultFontMaterial(color:uint):TextureAtlasMaterial {
 			var mat:TextureAtlasMaterial =  new TextureAtlasMaterial(consoleFont.bmpResource);
-			
-			mat.alphaThreshold = .8;
+			//mat.transparentPass = false;
+			mat.alphaThreshold =.8;
 			mat.flags = (TextureAtlasMaterial.FLAG_MIPNONE | TextureAtlasMaterial.FLAG_PIXEL_NEAREST);
 			return mat;
 		}
