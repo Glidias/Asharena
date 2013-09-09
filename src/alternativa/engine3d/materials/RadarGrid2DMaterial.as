@@ -67,23 +67,25 @@ package alternativa.engine3d.materials {
 			"frc t0.z, t0.x",
 			"sub t0.w, c2.w, t0.z",
 			
-			
-			
+			//"sge t1.x, t0.z, c2.x", "sub t1.x, c2.w, t1.x",
 			"slt t1.x, t0.z, c2.x",
+			//"sge t1.y, t0.w, c2.x", "sub t1.y, c2.w, t1.y",
 			"slt t1.y, t0.w, c2.x",
 			"add t1.w, t1.w, t1.x",
-			"add t1.w, t1.w, t1.y",
+			//"add t1.w, t1.w, t1.y",		//TODO: remove unnecessary complement
 			
 			"frc t0.z, t0.y",
 			"sub t0.w, c2.w, t0.z",
 			
-			"slt t1.x, t0.z, c2.x",
-			"slt t1.y, t0.w, c2.x",
+			//"sge t1.x, t0.z, c2.y", "sub t1.x, c2.w, t1.x",
+			"slt t1.x, t0.z, c2.y",
+			//"sge t1.y, t0.w, c2.y", "sub t1.y, c2.w, t1.y",
+			"slt t1.y, t0.w, c2.y",
 			"add t1.w, t1.w, t1.x",
-			"add t1.w, t1.w, t1.y",
+			//"add t1.w, t1.w, t1.y", 	//TODO: remove unnecessary complement
 			
 			"sat t1.w, t1.w",
-			
+			//"mov t1.w, c2.w",	
 			
 						
 			"sub t0, v0, c3",                                                                               // subtract uv coordinates from center point to get difference vector
@@ -96,7 +98,7 @@ package alternativa.engine3d.materials {
 					
 					//"sat t0.x, t0.x",
 					
-                      //"sge t0.x, t0.x, c2.z",      // use this to avoid shading    
+                     // "sge t0.x, t0.x, c2.z",      // use this to avoid shading    
 					  
 					  "mul t1.w, t1.w, t0.x",
 					 
@@ -128,11 +130,13 @@ package alternativa.engine3d.materials {
 		public var lineThickness:Number = 1;
 		public var gridSquareWidth:Number; 
 		public var gridSquareHeight:Number;
+		public var threshold:Number=0.0001;  // pixel threshold
 		public var clipRadius:Number =Number.MAX_VALUE;
 		
 		
 		// Values in grid/UV coordinates to determine how many repeats the grid squares have, and any offset of UV.
 		public var gridCoordinates:Rectangle = new Rectangle(0, 0, 4, 4);  // in normalized grid square coordinates, x,y,width,height
+		
 		
 		
 		/**
@@ -220,13 +224,14 @@ package alternativa.engine3d.materials {
 			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
 			drawUnit.setFragmentConstantsFromNumbers(program.cColor, red, green, blue, alpha);
 			drawUnit.setFragmentConstantsFromNumbers(program.cGridUV, gridCoordinates.x, gridCoordinates.y, gridCoordinates.width, gridCoordinates.height);
-			drawUnit.setFragmentConstantsFromNumbers(program.cGridPx,  lineThickness/(gridSquareWidth*object._scaleX), lineThickness/(gridSquareHeight*object._scaleY), 0, 1);
+			drawUnit.setFragmentConstantsFromNumbers(program.cGridPx,  (lineThickness*2+threshold)/(gridSquareWidth), (lineThickness*2+threshold)/(gridSquareHeight), 0, 1);
 			//drawUnit.setFragmentConstantsFromNumbers(program.cHalf, gridCoordinates.x + .5 * gridCoordinates.width, gridCoordinates.y + .5 * gridCoordinates.height, clipRadius/gridSquareWidth*gridCoordinates.width, clipRadius/gridSquareHeight*gridCoordinates.height);
 			//throw 
 			drawUnit.setFragmentConstantsFromNumbers(program.cHalf,  .5 ,  .5, 0, 1);
 			//gridCoordinates.width * gridSquareWidth;
 			//gridCoordinates.height * gridSquareHeight;
 			
+			objectRenderPriority = Renderer.NEXT_LAYER;  // enforce always on top?
 			
 			// Send to render
 			if (alpha < 1) {

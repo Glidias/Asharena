@@ -3,6 +3,7 @@ package tests.ui
 	import alternativa.a3d.collisions.CollisionBoundNode;
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
+	import alternativa.a3d.systems.radar.RadarMinimapSystem;
 	import alternativa.a3d.systems.text.FontSettings;
 	import alternativa.a3d.systems.text.StringLog;
 	import alternativa.a3d.systems.text.TextMessageSystem;
@@ -26,6 +27,7 @@ package tests.ui
 	import assets.fonts.ConsoleFont;
 	import com.bit101.components.ComboBox;
 	import components.Pos;
+	import components.Rot;
 	import de.polygonal.motor.geom.primitive.AABB2;
 	import flash.display.Bitmap;
 	import flash.display.MovieClip;
@@ -88,7 +90,7 @@ package tests.ui
 	
 			addChild( _template3D = new MainView3D() );
 			_template3D.onViewCreate.add(onReady3D);
-		//	addChild(uiLayer);
+			addChild(uiLayer);
 				
 			
 			_template3D.visible = false;
@@ -133,7 +135,7 @@ package tests.ui
 			//game.engine.addSystem(pathBuilder, SystemPriorities.postRender );
 			pathBuilder.signalBuildableChange.add( onBuildStateChange);
 			var canBuildIndicator:CanBuildIndicator = new CanBuildIndicator();
-		//	addChild(canBuildIndicator);
+			addChild(canBuildIndicator);
 			pathBuilder.onEndPointStateChange.add(canBuildIndicator.setCanBuild);
 			
 			
@@ -191,6 +193,8 @@ package tests.ui
 			hudAssets = new SaboteurHud(game.engine, stage, game.keyPoll);
 			hudAssets.addToHud3D(hud);
 			spriteSet = hudAssets.txt_chat.spriteSet;
+			
+			game.engine.addSystem(new RadarMinimapSystem(hudAssets.radarGridHolder, arenaSpawner.currentPlayerEntity.get(Rot) as Rot, _template3D.camera), SystemPriorities.preRender);
 			
 			/*
 			hudAssets.writeChatText("1. hello i am Glenn!!!");

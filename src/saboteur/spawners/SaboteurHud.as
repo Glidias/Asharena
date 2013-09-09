@@ -5,6 +5,7 @@ package saboteur.spawners
 	import alternativa.a3d.systems.text.TextBoxChannel;
 	import alternativa.a3d.systems.text.TextSpawner;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.FillCircleMaterial;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.Grid2DMaterial;
@@ -22,7 +23,7 @@ package saboteur.spawners
 	import alternativa.engine3d.spriteset.util.SpriteGeometryUtil;
 	import ash.core.Engine;
 	import assets.fonts.ConsoleFont;
-	import de.polygonal.core.event._Observable.Bind;
+	import de.polygonal.core.event._Observable.Bind; 
 	import flash.display.Sprite;
 	import flash.display.Stage;
 	import flash.events.KeyboardEvent;
@@ -48,7 +49,7 @@ package saboteur.spawners
 		public var radarMaterial:TextureMaterial;  // circle masked
 		private var radarGridMaterial:RadarGrid2DMaterial; 
 		private var radarBgMaterial:FillCircleMaterial; 
-		private var radarGridSprite:Sprite3D;
+		private var radarGridSprite:Object3D;
 		
 		//public var bgOverlayFillMaterial:FillMaterial= new FillMaterial(0x666666, .4);
 		public var radar_endPointDead:FillMaterial= new FillMaterial(0xFF0000, 1);
@@ -133,6 +134,8 @@ package saboteur.spawners
 			
 			setupText();
 			setupMinimapAndRadar();
+			spriteGeometry.upload(context3D);
+			
 			normPlane.geometry.upload(context3D);
 			overlays = new MeshSet(overlayRoot);  // TODO: use MeshSetClonesContainer instead
 			overlays.setMaterialToAllSurfaces( overlayMaterial);
@@ -144,37 +147,69 @@ package saboteur.spawners
 		
 		private function setupMinimapAndRadar():void 
 		{
-			radarGridMaterial = new RadarGrid2DMaterial(0x000000, .999, 32 * .5, 48 * .5);
+			radarGridHolder = new Object3D();
+			radarGridMaterial = new RadarGrid2DMaterial(0x000000, .99999, 32 * .5, 48 * .5);
 			
 			radarGridMaterial.gridCoordinates.width =  16;
 			radarGridMaterial.gridCoordinates.height = radarGridMaterial.gridSquareWidth/radarGridMaterial.gridSquareHeight * (radarGridMaterial.gridCoordinates.width);
+				
 			
 			
-			
-			radarGridMaterial.lineThickness = .51;
-			radarGridSprite = new Sprite3D(radarGridMaterial.gridCoordinates.width * radarGridMaterial.gridSquareWidth, radarGridMaterial.gridCoordinates.height * radarGridMaterial.gridSquareHeight, radarGridMaterial);
-			//	uploadResources(radarGridSprite.getResources());
-			radarGridSprite.z = 0;
+			radarGridMaterial.lineThickness = 1;
+			var rw:Number;
+			var rh:Number;
+			radarGridSprite = getNormalSpritePlane(radarGridMaterial, rw=radarGridMaterial.gridCoordinates.width * radarGridMaterial.gridSquareWidth, rh=radarGridMaterial.gridCoordinates.height * radarGridMaterial.gridSquareHeight); // new Sprite3D(radarGridMaterial.gridCoordinates.width * radarGridMaterial.gridSquareWidth, radarGridMaterial.gridCoordinates.height * radarGridMaterial.gridSquareHeight, radarGridMaterial);
 		
-			radarGridSprite.scaleX = .5;
-			radarGridSprite.scaleY = .5;
-			var layouterRadar:BindLayoutObjCenterScale;
-			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, radarGridSprite, false).update);
+			//	uploadResources(radarGridSprite.getResources());
+			radarGridSprite.z = -.01;
+		//	radarGridHolder.addChild( new Sprite3D(rw, rh, radarGridMaterial));
+		
+			
+			//var layouterRadar:BindLayoutObjCenterScale;
+			//layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, radarGridSprite, false).update);
 			//new BindLayoutObjCenterScale(, radarGridSprite, false)
-			radarGridSprite.rotation = 24;
 			
 			
-			radarBgMaterial = new FillCircleMaterial(0xFFFFFF, .8);
-			radarGridBg = new Sprite3D(radarGridSprite.width, radarGridSprite.height, radarBgMaterial);
-			radarGridBg.matrix = radarGridSprite.matrix;
-			radarGridBg.z = .1;
-			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, radarGridBg, false).update);
+			
+			radarBgMaterial = new FillCircleMaterial(0xFFFFFF, 1);
+			radarGridBg = getNormalSpritePlane(radarBgMaterial, rw, rh);
+			
+			radarGridBg.z = 0;
+
+			
+			radarGridHolder.scaleX = .7;
+			radarGridHolder.scaleY = .7;
+
+			radarGridHolder.addChild(radarGridBg);
+			radarGridHolder.addChild(radarGridSprite);
+			radarGridHolder.rotationX = Math.PI;
+			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, radarGridHolder, false).update);
+		}
+		
+		private function getNormalPlane(mat:Material, scaleX:Number,scaleY:Number):Mesh {
+			var mesh:Mesh = normPlane.clone() as Mesh;
+			mesh.setMaterialToAllSurfaces(mat);
+			mesh.scaleX = scaleX;
+			mesh.scaleY = scaleY;
+			return mesh;
 		}
 		
 		
+		private var spriteGeometry:Geometry = SpriteGeometryUtil.createNormalizedSpriteGeometry(1, 0, 1, .5);
+		private function getNormalSpritePlane(mat:Material, scaleX:Number, scaleY:Number):Mesh {
+			var mesh:Mesh = new Mesh();
+			mesh.geometry = spriteGeometry;
+			mesh.scaleX = scaleX;
+			mesh.scaleY = scaleY;
+			//mesh.rotationX = Math.PI;
+			mesh.addSurface(mat, 0, 2);
+			return mesh;
+		}
+		
 		public var overlayMaterial:FillMaterial = new FillMaterial(0x000000, .25);
 		private var normPlane:Plane = new Plane(1,1,1,1,false,false,overlayMaterial, overlayMaterial);
-		private var radarGridBg:Sprite3D;
+		private var radarGridBg:Mesh;
+		public var radarGridHolder:Object3D;
 		
 		private function getOverlay():Object3D {
 			return overlayRoot.addChild( normPlane.clone() );
@@ -212,8 +247,9 @@ package saboteur.spawners
 			// tools
 			
 			// minimap and radar
-			obj.addChild(radarGridSprite);
-			obj.addChild(radarGridBg);
+		//	obj.addChild(radarGridSprite);
+			obj.addChild(radarGridHolder);
+			//obj.addChild(radarGridSprite);
 			
 			// text
 			obj.addChild(txt_tips.spriteSet);
@@ -261,8 +297,8 @@ package saboteur.spawners
 			//overlay_tipsChannel = new BindLayoutObjCenterScale(layout.contLeft.validateAABB, getOverlay());
 			//layout.onLayoutUpdate.add(overlay_tipsChannel.update);
 			
-			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contMiddleLeft.validateAABB, getOverlay()).update);
-			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopLeft.validateAABB, getOverlay()).update);
+			//layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contMiddleLeft.validateAABB, getOverlay()).update);
+			//layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopLeft.validateAABB, getOverlay()).update);
 			//layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, getOverlay()).update);
 			//layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contRight.validateAABB, getOverlay()).update);
 			//layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contLeft.validateAABB, getOverlay()).update);
