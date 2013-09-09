@@ -297,6 +297,13 @@ package saboteur.util
 				}
 			}
 			
+			public static function visJetty3DByValue(pathUtil:SaboteurPathUtil, obj:Object3D, value:uint):void {
+				
+				for (var c:Object3D = obj.childrenList; c != null; c = c.next) {
+				  c.visible = pathUtil.visJetty(value, c.name);
+				}
+			}
+			
 			private function visJetty3DByValueRecursive(obj:Object3D, value:uint):void {
 			
 				//if (obj is Mesh) (obj as Mesh).setMaterialToAllSurfaces(new FillMaterial(0xFF0000));

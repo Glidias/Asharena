@@ -51,6 +51,7 @@ package alternativa.engine3d.objects
 			if (!camera.orthographic) {
 				if (lastWidth != camera.view._width || lastHeight != camera.view._height || nearClipping != camera.nearClipping || farClipping != camera.farClipping || fov != camera.fov) {
 					lastWidth = camera.view._width;
+					
 					lastHeight = camera.view._height;
 					nearClipping = camera.nearClipping;
 					farClipping = camera.farClipping;
@@ -61,6 +62,8 @@ package alternativa.engine3d.objects
 					orthoCamera.calculateProjection(lastWidth, lastHeight);
 					orthoCamera.renderer = camera.renderer;
 					orthoCamera.view = camera.view;
+					orthoCamera.context3D = camera.context3D;
+					orthoCamera.context3DProperties  = camera.context3DProperties;
 					orthoCamera.calculateFrustum(cameraToLocalTransform);
 				}
 	

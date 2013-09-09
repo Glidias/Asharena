@@ -1,6 +1,7 @@
 package saboteur.spawners 
 {
 	import alternativa.engine3d.core.BoundBox;
+	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.loaders.ParserA3D;
@@ -21,6 +22,7 @@ package saboteur.spawners
 	import components.Pos;
 	import flash.display.BitmapData;
 	import flash.display.Sprite;
+	import flash.display.Stage3D;
 	import flash.display3D.Context3D;
 	import saboteur.util.CardinalVectors;
 	import saboteur.util.GameBuilder3D;
@@ -100,6 +102,62 @@ package saboteur.spawners
 			
 			 
 			super.init();
+		}
+		
+		public function createBlueprintSheet(camera:Camera3D, stage3D:Stage3D, hud:Object3D):BitmapData {
+		
+		
+			var pathUtil:SaboteurPathUtil = SaboteurPathUtil.getInstance();
+			var combinations:Vector.<uint> = pathUtil.combinations;
+			var len:int = combinations.length;
+			var y:int = 0;
+			var x:int = 0;
+			var rowLimit:int = 8;
+			var boundBox:BoundBox = genesis.boundBox;
+			var w:Number = boundBox.maxX * 2;
+			var h:Number = boundBox.maxY * 2;
+			var xOffset:Number = w * .5;
+			var yOffset:Number = h * .5;
+		
+			var cont:Object3D = new Object3D();
+			hud.addChild(cont);
+			// testing
+			cloned = genesis.clone();
+			cont.addChild(cloned);
+			
+			var lastWidth:Number = camera.view.width;
+			var lastHeight:Number = camera.view.height;
+			var lastParent:Object3D = camera._parent;
+			if (lastParent != null) lastParent.removeChild(camera);
+			//camera.view.backgroundAlpha
+			var lastBackgroundAlpha:Number = camera.view.backgroundAlpha;
+		//	camera.view.backgroundAlpha = 0;
+			camera.view.renderToBitmap = true;
+		
+			camera.render(stage3D);
+			camera.view.backgroundAlpha = lastBackgroundAlpha;
+			var snapshot:BitmapData = camera.view.canvas.clone();
+			camera.view.renderToBitmap = false;
+			hud.removeChild(cont);
+			
+			camera.view.width = lastWidth;
+			camera.view.height = lastHeight;
+			if (lastParent != null) lastParent.addChild(camera);
+			return snapshot;
+			
+			for (var i:int = 0; i < len; i++) {
+				var value:uint = combinations[i];
+				var cloned:Object3D = genesis.clone();
+				x++;
+				if (x > rowLimit) {
+					x = 0;
+					y++;
+				}
+				GameBuilder3D.visJetty3DByValue(pathUtil, cloned, value);
+			}
+			
+			return null;
+			
 		}
 		
 		private function setMaterialToCont(mat:Material, cont:Object3D):void 

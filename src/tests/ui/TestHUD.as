@@ -3,7 +3,7 @@ package tests.ui
 	import alternativa.a3d.collisions.CollisionBoundNode;
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
-	import alternativa.a3d.systems.radar.RadarMinimapSystem;
+	//import alternativa.a3d.systems.radar.RadarMinimapSystem;
 	import alternativa.a3d.systems.text.FontSettings;
 	import alternativa.a3d.systems.text.StringLog;
 	import alternativa.a3d.systems.text.TextMessageSystem;
@@ -182,10 +182,13 @@ package tests.ui
 			ticker.add(tick);
 			ticker.start();
 			
-			var hud:Hud2D;
+		
 			//_template3D.camera.orthographic = true;
 			_template3D.camera.addChild( hud = new Hud2D() );
 			hud.z = 1.1;
+			
+			
+		
 		
 			
 			_template3D.viewBackgroundColor = 0xDDDDDD;
@@ -194,7 +197,9 @@ package tests.ui
 			hudAssets.addToHud3D(hud);
 			spriteSet = hudAssets.txt_chat.spriteSet;
 			
-			game.engine.addSystem(new RadarMinimapSystem(hudAssets.radarGridHolder, arenaSpawner.currentPlayerEntity.get(Rot) as Rot, _template3D.camera), SystemPriorities.preRender);
+			
+			
+			//game.engine.addSystem(new RadarMinimapSystem(hudAssets.radarGridHolder, arenaSpawner.currentPlayerEntity.get(Rot) as Rot, _template3D.camera), SystemPriorities.preRender);
 			
 			/*
 			hudAssets.writeChatText("1. hello i am Glenn!!!");
@@ -212,7 +217,9 @@ package tests.ui
 			//previewFontSpr.addChild( new Bitmap(font.sheet));
 			
 			
-			
+				//_template3D.camera.render(_template3D.stage3D);
+				
+		
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false,1);
 		
 		}
@@ -231,8 +238,10 @@ package tests.ui
 		private var _isThirdPerson:Boolean = true;
 		private var spriteSet:SpriteSet;
 		private var hudAssets:SaboteurHud;
+		private var hud:Hud2D;
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
+					addChild( new Bitmap( jettySpawner.createBlueprintSheet(_template3D.camera, _template3D.stage3D, hud) ) );
 			if (!game.keyPoll.disabled) {
 				if (e.keyCode === Keyboard.L &&   !game.keyPoll.isDown(Keyboard.L)) { // && 
 					
