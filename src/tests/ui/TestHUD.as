@@ -3,7 +3,7 @@ package tests.ui
 	import alternativa.a3d.collisions.CollisionBoundNode;
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
-	//import alternativa.a3d.systems.radar.RadarMinimapSystem;
+	import alternativa.a3d.systems.radar.RadarMinimapSystem;
 	import alternativa.a3d.systems.text.FontSettings;
 	import alternativa.a3d.systems.text.StringLog;
 	import alternativa.a3d.systems.text.TextMessageSystem;
@@ -187,6 +187,8 @@ package tests.ui
 			_template3D.camera.addChild( hud = new Hud2D() );
 			hud.z = 1.1;
 			
+			jettySpawner.createBlueprintSheet(_template3D.camera, _template3D.stage3D, hud)
+				//addChild( new Bitmap(  ) );
 			
 		
 		
@@ -199,7 +201,7 @@ package tests.ui
 			
 			
 			
-			//game.engine.addSystem(new RadarMinimapSystem(hudAssets.radarGridHolder, arenaSpawner.currentPlayerEntity.get(Rot) as Rot, _template3D.camera), SystemPriorities.preRender);
+			game.engine.addSystem(new RadarMinimapSystem(hudAssets.radarGridHolder, arenaSpawner.currentPlayerEntity.get(Rot) as Rot, _template3D.camera), SystemPriorities.preRender);
 			
 			/*
 			hudAssets.writeChatText("1. hello i am Glenn!!!");
@@ -241,7 +243,7 @@ package tests.ui
 		private var hud:Hud2D;
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
-					addChild( new Bitmap( jettySpawner.createBlueprintSheet(_template3D.camera, _template3D.stage3D, hud) ) );
+				
 			if (!game.keyPoll.disabled) {
 				if (e.keyCode === Keyboard.L &&   !game.keyPoll.isDown(Keyboard.L)) { // && 
 					

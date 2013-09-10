@@ -243,6 +243,16 @@ package saboteur.util
 			}
 		}
 		
+		public static function setMaterialToCont(mat:Material, cont:Object3D):void 
+		{
+			for (var c:Object3D = cont.childrenList; c != null; c = c.next) {
+				var mesh:Mesh = c as Mesh;
+				if (mesh != null) {
+					mesh.setMaterialToAllSurfaces(mat);
+				}
+			}
+		}
+		
 		public function updateFloorPosition(ge:int, gs:int, buildToValidity:Boolean):int 
 			{
 					gridEast = ge;

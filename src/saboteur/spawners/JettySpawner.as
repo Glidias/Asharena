@@ -24,6 +24,7 @@ package saboteur.spawners
 	import flash.display.Sprite;
 	import flash.display.Stage3D;
 	import flash.display3D.Context3D;
+	import flash.utils.ByteArray;
 	import saboteur.util.CardinalVectors;
 	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
@@ -104,6 +105,9 @@ package saboteur.spawners
 			super.init();
 		}
 		
+		
+		public static const H:Number = 24.24136702238381;  // upon 32
+		
 		public function createBlueprintSheet(camera:Camera3D, stage3D:Stage3D, hud:Object3D):BitmapData {
 		
 		
@@ -116,22 +120,63 @@ package saboteur.spawners
 			var boundBox:BoundBox = genesis.boundBox;
 			var w:Number = boundBox.maxX * 2;
 			var h:Number = boundBox.maxY * 2;
-			var xOffset:Number = w * .5;
-			var yOffset:Number = h * .5;
+		
 		
 			var cont:Object3D = new Object3D();
 			hud.addChild(cont);
 			// testing
-			cloned = genesis.clone();
-			cont.addChild(cloned);
+			var cloned:Object3D = genesis.clone();
+			//cont.addChild(cloned);
+			GameBuilder3D.setMaterialToCont(new TextureMaterial(diffuse), cloned);
+	
+			
+			cloned.scaleX =  32 / w;
+			cloned.scaleY = cloned.scaleX;
+			//	(cloned.getChildAt(0)).setMaterialToAllSurfaces( new FillMaterial(0xFF0000) );
+			
+			w = 32;
+			h *= cloned.scaleX;
+			var xOffset:Number = -128+ w * .5;
+			var yOffset:Number = -128+ h * .5;
+			
+			//throw new Error(xOffset + ", " + yOffset + ", "+boundBox.maxX + ", "+boundBox.maxY);
+	
+			//camera.view.backgroundAlpha
+			
+			//throw new Error( h);
+			
+			
+			for (var i:int = 0; i < len; i++) {
+				var value:uint = combinations[i];
+				
+				
+				
+				var child:Object3D = cloned.clone();
+				cont.addChild(child);
+				child.x = xOffset + x * w;
+				child.y = yOffset + y * w;
+			
+				GameBuilder3D.visJetty3DByValue(pathUtil, child, value);
+				x++;
+				if (x >= rowLimit) {
+					x = 0;
+					y++;
+				}
+				
+			}
 			
 			var lastWidth:Number = camera.view.width;
 			var lastHeight:Number = camera.view.height;
+			camera.view.width = 256;
+			camera.view.height = 256;
 			var lastParent:Object3D = camera._parent;
 			if (lastParent != null) lastParent.removeChild(camera);
-			//camera.view.backgroundAlpha
-			var lastBackgroundAlpha:Number = camera.view.backgroundAlpha;
-		//	camera.view.backgroundAlpha = 0;
+			
+			
+				var lastBackgroundAlpha:Number = camera.view.backgroundAlpha;
+			camera.view.backgroundAlpha = 0;
+		//	camera.view.backgroundColor  = 0xFF000000;
+	//	camera.view.opaqueBackground = false;
 			camera.view.renderToBitmap = true;
 		
 			camera.render(stage3D);
@@ -140,25 +185,22 @@ package saboteur.spawners
 			camera.view.renderToBitmap = false;
 			hud.removeChild(cont);
 			
+			
+			
 			camera.view.width = lastWidth;
 			camera.view.height = lastHeight;
 			if (lastParent != null) lastParent.addChild(camera);
+			
+		//	var bytes:ByteArray = new ByteArray();
+		//	bytes.encode();
+			var diffuser:BitmapTextureResource = new BitmapTextureResource(snapshot);
+			diffuser.upload(context3D);
+			minimapMaterial = new TextureMaterial(diffuser);
 			return snapshot;
 			
-			for (var i:int = 0; i < len; i++) {
-				var value:uint = combinations[i];
-				var cloned:Object3D = genesis.clone();
-				x++;
-				if (x > rowLimit) {
-					x = 0;
-					y++;
-				}
-				GameBuilder3D.visJetty3DByValue(pathUtil, cloned, value);
-			}
-			
-			return null;
-			
 		}
+		
+		public var minimapMaterial:TextureMaterial;
 		
 		private function setMaterialToCont(mat:Material, cont:Object3D):void 
 		{
