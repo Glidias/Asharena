@@ -71,6 +71,8 @@ package alternativa.engine3d.objects {
 		private var _options:int;
 		private var _perBatchClones:int;
 		
+		protected var constantsPerMesh:int =0;
+		
 		/**
 		 * Whether to attempt to pack all meshes tightly in the output buffer for ensuring the least amount of drawcalls possible (this could result in slightly larger geometry buffer size)
 		 */
@@ -89,6 +91,8 @@ package alternativa.engine3d.objects {
 		 * @param 	flags			(Optional)  THe clone packing option bitflags to optimize drawcalls (see FLAG_ constants)
 		 */
 		public function MeshSetClonesContainer(root:Object3D, material:Material, meshesPerSurface:uint = 0, cloneClass:Class = null, flags:int = 1) {
+			if (constantsPerMesh  == 0) constantsPerMesh = 3;
+			
 			this.root = root;
 			this.cloneClass = cloneClass != null ? cloneClass : CLONE_CLASS;
 			this.meshesPerSurface = meshesPerSurface > 0 ? meshesPerSurface : MESHES_PER_SURFACE;
@@ -195,13 +199,13 @@ package alternativa.engine3d.objects {
 			// paste joint attribute values with offsets
 			var jointIndices:Vector.<Number> = geometry.getAttributeValues(ATTRIBUTE);
 			len = protoJointIndices.length;
-			var duplicateMultiplier:Number = _numMeshes * 3;
+			var duplicateMultiplier:Number = _numMeshes * constantsPerMesh;
 			var totalLen:int = jointIndices.length;
 			for (i = len; i < totalLen; i += len) {
 				for (u = i; u < i+len; u++) {
 					jointIndices[u] += duplicateMultiplier;
 				}
-				duplicateMultiplier+= _numMeshes * 3;
+				duplicateMultiplier+= _numMeshes * constantsPerMesh;
 			}
 			geometry.setAttributeValues(ATTRIBUTE, jointIndices);
 			
@@ -329,7 +333,7 @@ package alternativa.engine3d.objects {
 	
 	
 			var offsetNumMeshes:int = _offsetNumMeshes;
-			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cVars"), offsetNumMeshes*3, 0, 0, 1);
+			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cVars"), offsetNumMeshes*constantsPerMesh, 0, 0, 1);
 			var count:int = 0;
 			
 				
@@ -339,7 +343,7 @@ package alternativa.engine3d.objects {
 				for (var m:int = offsetNumMeshes; m < meshesLen; m++) {
 					var mesh:Mesh = meshes[m];			
 					triCount += mesh.geometry.numTriangles;
-					drawUnit.setVertexConstantsFromTransform(count * 3, mesh.localToGlobalTransform);
+					drawUnit.setVertexConstantsFromTransform(count * constantsPerMesh, mesh.localToGlobalTransform);
 					count++;
 					offsetNumMeshes = 0;
 				}
@@ -353,7 +357,7 @@ package alternativa.engine3d.objects {
 				for (m = 0; m < _addNumMeshes; m++) {
 					mesh = meshes[m];			
 					triCount += mesh.geometry.numTriangles;
-					drawUnit.setVertexConstantsFromTransform(count * 3, mesh.localToGlobalTransform);
+					drawUnit.setVertexConstantsFromTransform(count * constantsPerMesh, mesh.localToGlobalTransform);
 					count++;
 				}
 				
@@ -593,7 +597,7 @@ package alternativa.engine3d.objects {
 					for (var k:int = 0; k < attribtuesLength; k++) {
 						var attr:int = attributes[k];
 						if (attr == ATTRIBUTE) {
-							destStream.data.writeFloat(index*3);
+							destStream.data.writeFloat(index*constantsPerMesh);
 							continue;
 						}
 						if (attr != prev) {
@@ -666,7 +670,7 @@ package alternativa.engine3d.objects {
 			if (res != null) return res;
 			res = _transformProcedures[numMeshes] = new Procedure(null, "MeshSetTransformProcedure");
 			res.compileFromArray(["#a0=joint", "#c1=cVars", "sub t0, a0.x, c1.x", "m34 o0.xyz, i0, c[t0.x]", "mov o0.w, i0.w"]);
-			res.assignConstantsArray(numMeshes*3);
+			res.assignConstantsArray(numMeshes*constantsPerMesh);
 			return res;
 		}
 
