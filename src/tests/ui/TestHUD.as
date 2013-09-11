@@ -30,6 +30,7 @@ package tests.ui
 	import components.Rot;
 	import de.polygonal.motor.geom.primitive.AABB2;
 	import flash.display.Bitmap;
+	import flash.display.BitmapData;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -138,27 +139,6 @@ package tests.ui
 			addChild(canBuildIndicator);
 			pathBuilder.onEndPointStateChange.add(canBuildIndicator.setCanBuild);
 			
-			
-	
-			
-			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
-
-
-			if (game.colliderSystem) {
-				
-				game.colliderSystem.collidable = (ent.get(GameBuilder3D) as GameBuilder3D).collisionGraph;
-				game.colliderSystem._collider.threshold = 0.0001;
-			}
-			
-			spectatorPerson =new SimpleFlyController( 
-						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
-						(ent.get(GameBuilder3D) as GameBuilder3D).collisionGraph ,
-						stage, 
-						_template3D.camera, 
-						GameSettings.SPECTATOR_SPEED,
-						GameSettings.SPECTATOR_SPEED_SHIFT_MULT);
-			
-						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
 		
 	
 			thirdPerson = new ThirdPersonController(stage, _template3D.camera, new Object3D(), arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity);
@@ -187,40 +167,49 @@ package tests.ui
 			_template3D.camera.addChild( hud = new Hud2D() );
 			hud.z = 1.1;
 			
-			jettySpawner.createBlueprintSheet(_template3D.camera, _template3D.stage3D, hud)
-				//addChild( new Bitmap(  ) );
-			
-		
-		
+	
+
 			
 			_template3D.viewBackgroundColor = 0xDDDDDD;
 	
 			hudAssets = new SaboteurHud(game.engine, stage, game.keyPoll);
-			hudAssets.addToHud3D(hud);
+			
 			spriteSet = hudAssets.txt_chat.spriteSet;
 			
-			
-			
-			game.engine.addSystem(new RadarMinimapSystem(hudAssets.radarGridHolder, arenaSpawner.currentPlayerEntity.get(Rot) as Rot, _template3D.camera), SystemPriorities.preRender);
-			
-			/*
-			hudAssets.writeChatText("1. hello i am Glenn!!!");
-			hudAssets.writeChatText("2. helwarwar awaw rara uraruhawriah iruawrui awiraw raiur uaiwruiawr awrawawrawrwaaw wawa wawawa aw rwa warwat awtwat awtwa twat watwa twat awtwatwatawrlo i am Glenn!!!");
-			*/
-		
-		//	hudAssets.txt_chatChannel.setMaxDisplayedItemsTruncate(15);
-		//	hudAssets.txt_chatChannel.setShowItems(5);
-			//hudAssets.txt_chatChannel.enableMarquee = true;
-			
-			hudAssets.txt_chatChannel.appendSpanTagMessage('The quick brown <span u="2">fox</span> jumps over the lazy dog. The <span u="1">quick brown fox</span> jumps over the lazy <span u="3">dog</span>. The <span u="1">quick brown fox</span> jumps over the lazy dog.');
-			//hud.addChild(spr);
-			//hud.addChild(spr2);
-			//hud.addChild(spriteSet);
-			//previewFontSpr.addChild( new Bitmap(font.sheet));
-			
-			
-				//_template3D.camera.render(_template3D.stage3D);
+				var bitmapData:BitmapData = jettySpawner.createBlueprintSheet(_template3D.camera, _template3D.stage3D, hud);
+				//addChild( new Bitmap(bitmapData));
+				jettySpawner.minimap.createJettyAt(0, 0, SaboteurPathUtil.getInstance().getIndexByValue(63) );
+				jettySpawner.minimap.addToContainer( hudAssets.radarGridHolder);
 				
+			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
+
+	
+			if (game.colliderSystem) {
+				
+				game.colliderSystem.collidable = (ent.get(GameBuilder3D) as GameBuilder3D).collisionGraph;
+				game.colliderSystem._collider.threshold = 0.0001;
+			}
+			
+			
+			
+			spectatorPerson =new SimpleFlyController( 
+						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
+						(ent.get(GameBuilder3D) as GameBuilder3D).collisionGraph ,
+						stage, 
+						_template3D.camera, 
+						GameSettings.SPECTATOR_SPEED,
+						GameSettings.SPECTATOR_SPEED_SHIFT_MULT);
+			
+						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
+						
+						var radarSystem:RadarMinimapSystem;
+			game.engine.addSystem(radarSystem = new RadarMinimapSystem(hudAssets.radarHolder, arenaSpawner.currentPlayerEntity.get(Rot) as Rot,  _template3D.camera, hudAssets.radarGridHolder, arenaSpawner.currentPlayerEntity.get(Pos) as Pos, _template3D.camera, hudAssets.radarGridMaterial.gridCoordinates), SystemPriorities.preRender);
+		//	radarSystem.worldToMiniScale = hudAssets.minimap.pixelToMinimapScale.x;  // should this be a MinimapModel ??
+			
+			hudAssets.addToHud3D(hud);
+			hudAssets.txt_chatChannel.appendSpanTagMessage('The quick brown <span u="2">fox</span> jumps over the lazy dog. The <span u="1">quick brown fox</span> jumps over the lazy <span u="3">dog</span>. The <span u="1">quick brown fox</span> jumps over the lazy dog.');
+		
+	
 		
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false,1);
 		

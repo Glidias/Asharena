@@ -31,6 +31,7 @@ package saboteur.spawners
 	import flash.ui.Keyboard;
 	import input.KeyPoll;
 	import saboteur.ui.SaboteurHUDLayout;
+	import saboteur.views.SaboteurMinimap;
 	import views.ui.hud.BindLayoutObjCenterScale;
 	import views.ui.hud.BindLayoutTextBox;
 	import views.ui.text.TextLineInputter;
@@ -47,7 +48,7 @@ package saboteur.spawners
 		// Radar and minimap stuff
 		public var minimapMaterial:TextureMaterial;  // minimap texture
 		public var radarMaterial:TextureMaterial;  // circle masked
-		private var radarGridMaterial:RadarGrid2DMaterial; 
+		public var radarGridMaterial:RadarGrid2DMaterial; 
 		private var radarBgMaterial:FillCircleMaterial; 
 		private var radarGridSprite:Object3D;
 		
@@ -103,6 +104,8 @@ package saboteur.spawners
 		
 		private var layout:SaboteurHUDLayout;
 		
+		public var minimap:SaboteurMinimap;
+		
 
 		
 		public function SaboteurHud(engine:Engine, stage:Stage, keypollToDisable:KeyPoll=null) 
@@ -147,8 +150,10 @@ package saboteur.spawners
 		
 		private function setupMinimapAndRadar():void 
 		{
+			radarHolder = new Object3D();
 			radarGridHolder = new Object3D();
-			radarGridMaterial = new RadarGrid2DMaterial(0x000000, .99999, 32 * .5, 48 * .5);
+			radarHolder.addChild(radarGridHolder);
+			radarGridMaterial = new RadarGrid2DMaterial(0x000000, .99999, 32 * .5, JettySpawner.H * .5);
 			
 			radarGridMaterial.gridCoordinates.width =  16;
 			radarGridMaterial.gridCoordinates.height = radarGridMaterial.gridSquareWidth/radarGridMaterial.gridSquareHeight * (radarGridMaterial.gridCoordinates.width);
@@ -177,13 +182,16 @@ package saboteur.spawners
 			radarGridBg.z = 0;
 
 			
-			radarGridHolder.scaleX = .7;
-			radarGridHolder.scaleY = .7;
+			radarHolder.scaleX = .7;
+			radarHolder.scaleY = .7;
 
-			radarGridHolder.addChild(radarGridBg);
-			radarGridHolder.addChild(radarGridSprite);
-			radarGridHolder.rotationX = Math.PI;
-			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, radarGridHolder, false).update);
+			radarHolder.addChild(radarGridBg);
+			radarHolder.addChild(radarGridSprite);
+			radarHolder.rotationX = Math.PI;
+			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, radarHolder, false).update);
+			
+			
+			//minimap = new SaboteurMinimap(
 		}
 		
 		private function getNormalPlane(mat:Material, scaleX:Number,scaleY:Number):Mesh {
@@ -209,6 +217,7 @@ package saboteur.spawners
 		public var overlayMaterial:FillMaterial = new FillMaterial(0x000000, .25);
 		private var normPlane:Plane = new Plane(1,1,1,1,false,false,overlayMaterial, overlayMaterial);
 		private var radarGridBg:Mesh;
+		public var radarHolder:Object3D;
 		public var radarGridHolder:Object3D;
 		
 		private function getOverlay():Object3D {
@@ -248,7 +257,7 @@ package saboteur.spawners
 			
 			// minimap and radar
 		//	obj.addChild(radarGridSprite);
-			obj.addChild(radarGridHolder);
+			obj.addChild(radarHolder);
 			//obj.addChild(radarGridSprite);
 			
 			// text

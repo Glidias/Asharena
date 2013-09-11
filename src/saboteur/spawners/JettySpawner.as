@@ -15,6 +15,7 @@ package saboteur.spawners
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.BitmapTextureResource;
+	import alternativa.engine3d.spriteset.materials.TextureAtlasMaterial;
 	import alternativa.engine3d.utils.Object3DUtils;
 	import ash.core.Engine;
 	import ash.core.Entity;
@@ -24,10 +25,12 @@ package saboteur.spawners
 	import flash.display.Sprite;
 	import flash.display.Stage3D;
 	import flash.display3D.Context3D;
+	import flash.geom.Point;
 	import flash.utils.ByteArray;
 	import saboteur.util.CardinalVectors;
 	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
+	import saboteur.views.SaboteurMinimap;
 	import util.SpawnerBundle;
 	import alternativa.engine3d.alternativa3d;
 	use namespace alternativa3d;
@@ -47,7 +50,7 @@ package saboteur.spawners
 		private var collision:Object3D;
 		private var _floor:Plane;
 		public var diffuse:BitmapTextureResource;
-
+		public var minimap:SaboteurMinimap;
 
 		public function JettySpawner() 
 		{
@@ -195,12 +198,14 @@ package saboteur.spawners
 		//	bytes.encode();
 			var diffuser:BitmapTextureResource = new BitmapTextureResource(snapshot);
 			diffuser.upload(context3D);
-			minimapMaterial = new TextureMaterial(diffuser);
+			if (minimap == null) {
+				minimap = new SaboteurMinimap( new TextureAtlasMaterial(diffuser), 8, new Point(32, H), new Point(cloned.scaleX, cloned.scaleY) );
+				minimap.upload(context3D);
+			}
 			return snapshot;
 			
 		}
-		
-		public var minimapMaterial:TextureMaterial;
+
 		
 		private function setMaterialToCont(mat:Material, cont:Object3D):void 
 		{

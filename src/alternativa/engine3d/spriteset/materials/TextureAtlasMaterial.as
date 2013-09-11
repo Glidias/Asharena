@@ -437,6 +437,7 @@ package alternativa.engine3d.spriteset.materials {
 			drawUnit.setVertexBufferAt(program.aUV, uvBuffer, geometry._attributesOffsets[VertexAttributes.TEXCOORDS[0]], VertexAttributes.FORMATS[VertexAttributes.TEXCOORDS[0]]);
 			//Constants
 			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
+			
 			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
 			drawUnit.setFragmentConstantsFromNumbers(program.cThresholdAlpha, alphaThreshold, 0, 0, alpha);
 			// Textures
@@ -452,13 +453,16 @@ package alternativa.engine3d.spriteset.materials {
 		 */
 		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean, objectRenderPriority:int = -1):void {
 			var object:Object3D = surface.object;
-			
+		
 			// Buffers
 			var positionBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.POSITION);
 			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
 			
 			// Check validity
-			if (positionBuffer == null || uvBuffer == null || diffuseMap == null || diffuseMap._texture == null || opacityMap != null && opacityMap._texture == null) return;
+			if (positionBuffer == null || uvBuffer == null || diffuseMap == null || diffuseMap._texture == null || opacityMap != null && opacityMap._texture == null) {
+				throw new Error("No dependency::"+object + ", "+positionBuffer + ", "+uvBuffer + ", "+diffuseMap + ", "+geometry.numTriangles);
+				return;
+			}
 			
 			// Refresh program cache for this context
 			if (camera.context3D != cachedContext3D) {

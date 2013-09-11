@@ -50,7 +50,7 @@ package alternativa.engine3d.objects {
 		private static var _transformProcedures:Dictionary = new Dictionary();
 		private static var _deltaTransformProcedures:Dictionary = new Dictionary();
 		
-		private var _material:Material;
+		protected var _material:Material;
 
 		private var meshesPerSurface:uint;
 		alternativa3d var clones:Vector.<MeshSetClone> = new Vector.<MeshSetClone>();
@@ -71,7 +71,8 @@ package alternativa.engine3d.objects {
 		private var _options:int;
 		private var _perBatchClones:int;
 		
-		protected var constantsPerMesh:int =0;
+		protected var constantsPerMesh:int = 0;
+		public var objectRenderPriority:int = -1;
 		
 		/**
 		 * Whether to attempt to pack all meshes tightly in the output buffer for ensuring the least amount of drawcalls possible (this could result in slightly larger geometry buffer size)
@@ -327,7 +328,7 @@ package alternativa.engine3d.objects {
          */
 		alternativa3d override function setTransformConstants(drawUnit:DrawUnit, surface:Surface, vertexShader:Linker, camera:Camera3D):void {
 			drawUnit.setVertexBufferAt(vertexShader.getVariableIndex("joint"), geometry.getVertexBuffer(ATTRIBUTE), geometry._attributesOffsets[ATTRIBUTE], Context3DVertexBufferFormat.FLOAT_1);
-			
+		
 			var meshesLen:int = surfaceMeshes[_curSurfaceIndex].length;
 			var limit:int = _curCloneIndex + _curBatchCount;
 	
@@ -343,7 +344,7 @@ package alternativa.engine3d.objects {
 				for (var m:int = offsetNumMeshes; m < meshesLen; m++) {
 					var mesh:Mesh = meshes[m];			
 					triCount += mesh.geometry.numTriangles;
-					drawUnit.setVertexConstantsFromTransform(count * constantsPerMesh, mesh.localToGlobalTransform);
+					setupMesh(drawUnit, i, count * constantsPerMesh, mesh); // hook method for extendability
 					count++;
 					offsetNumMeshes = 0;
 				}
@@ -357,7 +358,7 @@ package alternativa.engine3d.objects {
 				for (m = 0; m < _addNumMeshes; m++) {
 					mesh = meshes[m];			
 					triCount += mesh.geometry.numTriangles;
-					drawUnit.setVertexConstantsFromTransform(count * constantsPerMesh, mesh.localToGlobalTransform);
+					setupMesh(drawUnit, -1, count * constantsPerMesh, mesh); // hook method for extendability
 					count++;
 				}
 				
@@ -365,6 +366,10 @@ package alternativa.engine3d.objects {
 					surface.numTriangles = triCount;
 				}
 					
+		}
+		
+		protected function setupMesh(drawUnit:DrawUnit, cloneIndex:int, firstRegister:int, mesh:Mesh):void { // hook method for extendability
+			drawUnit.setVertexConstantsFromTransform(firstRegister, mesh.localToGlobalTransform);
 		}
 
 		private function calculateMeshesTransforms(root:Object3D):void {		
@@ -445,8 +450,8 @@ package alternativa.engine3d.objects {
 					_curBatchCount = _curBatchCount > minClonesPerBatch ? minClonesPerBatch : _curBatchCount;
 					
 					outputSurface.numTriangles = surface.numTriangles * _curBatchCount - lastNumAddTriangles + addNumTriangles;
-					
-					_material.collectDraws(camera, outputSurface, geometry, lights, lightsLength, useShadow);
+				
+					_material.collectDraws(camera, outputSurface, geometry, lights, lightsLength, useShadow, objectRenderPriority);
 				//	traceStr += "\n"+  (surfaceMeshesLen * _curBatchCount-_offsetNumMeshes) + "," + addNumMeshes +  " , " + _offsetNumMeshes + ": "+ _curCloneIndex + ", "+_curBatchCount + " | "+outputSurface.indexBegin + " + "+outputSurface.numTriangles + ", "+surface.numTriangles + " >> " +addNumTriangles;
 		
 					lastNumAddTriangles = addNumTriangles;
@@ -611,7 +616,6 @@ package alternativa.engine3d.objects {
 
 			}
 			geometry._numVertices += geom._numVertices;
-
 		}
 
 		private function compareAttribtues(destStream:VertexStream, sourceStream:VertexStream):Boolean {
