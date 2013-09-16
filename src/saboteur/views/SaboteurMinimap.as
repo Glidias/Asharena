@@ -77,7 +77,7 @@ package saboteur.views
 			if (buildModel == null) return;
 		
 			var buildId:int;
-			if (!builder._floor.visible || (buildId=buildModel.getCurBuildID()) < 0) {
+			if (!builder.blueprint.visible || (buildId=buildModel.getCurBuildID()) < 0) {
 				deactivateFloorBlueprintPosition();
 				return;
 			}

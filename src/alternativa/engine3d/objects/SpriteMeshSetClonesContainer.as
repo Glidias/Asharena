@@ -43,7 +43,7 @@ package alternativa.engine3d.objects
 		}
 		override protected function setupMesh(drawUnit:DrawUnit, cloneIndex:int, firstRegister:int, mesh:Mesh):void {
 			drawUnit.setVertexConstantsFromTransform(firstRegister, mesh.localToGlobalTransform);
-			var sprMeshSetClone:SpriteMeshSetClone  = clones[cloneIndex] as SpriteMeshSetClone;
+			var sprMeshSetClone:SpriteMeshSetClone  = visibleClones[cloneIndex] as SpriteMeshSetClone;
 			drawUnit.setVertexConstantsFromNumbers(firstRegister + 3, 
 			sprMeshSetClone.u
 			,sprMeshSetClone.v
