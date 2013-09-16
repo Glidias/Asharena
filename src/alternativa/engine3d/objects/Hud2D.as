@@ -53,8 +53,8 @@ package alternativa.engine3d.objects
 					lastWidth = camera.view._width;
 					
 					lastHeight = camera.view._height;
-					nearClipping = camera.nearClipping;
-					farClipping = camera.farClipping;
+					nearClipping =camera.nearClipping;
+					farClipping =  camera.farClipping;
 					fov = camera.fov;
 					orthoCamera.fov = fov;
 					orthoCamera.nearClipping = nearClipping;

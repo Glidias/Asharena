@@ -15,6 +15,35 @@ public class CardinalVectors {
 		
 	}
 	
+	public function setupEastSouth(e:Vector3D, s:Vector3D):void {
+		east.x = e.x;
+		east.y = e.y;
+		east.z = e.z;
+		
+		south.x = s.x;
+		south.y = s.y;
+		south.z = s.z;
+		
+		west.x = -e.x;
+		west.y = -e.y;
+		west.z = -e.z;
+		
+		north.x = -s.x;
+		north.y = -s.y;
+		north.z = -s.z;
+	}
+	
+	public function clone():CardinalVectors {
+		var me:CardinalVectors = new CardinalVectors();
+		me.east  = east.clone();
+		me.north = north.clone();
+		me.west = west.clone();
+		me.south = south.clone();
+		return me;
+	}
+	
+	
+	
 	public function transform(vec:Vector3D, obj:Object3D, distance:Number):void {
 		obj.x += vec.x * distance;
 		obj.y += vec.y * distance;

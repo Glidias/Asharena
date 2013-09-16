@@ -23,9 +23,11 @@ package alternativa.a3d.systems.radar
 		private var pos:Pos;
 		
 		public var worldToMiniScale:Number = 1;
+	
 		
 		private var posObj:Object3D;
 		private var posMap:Object3D;
+		
 		private var gridCoordinates:Rectangle;
 		private var gridWidthH:Number = 16;
 		private var gridHeightH:Number =16;
@@ -41,8 +43,9 @@ package alternativa.a3d.systems.radar
 			gridHeightH = height*.5;
 		}
 		
-		public function RadarMinimapSystem(rotateMap:Object3D=null, rot:Rot=null, rotObj:Object3D=null, posMap:Object3D=null, pos:Pos=null, posObj:Object3D=null, gridCoordinates:Rectangle=null, gridPixels:Point=null) 
+		public function RadarMinimapSystem(worldToMiniScale:Number, rotateMap:Object3D=null, rot:Rot=null, rotObj:Object3D=null, posMap:Object3D=null, pos:Pos=null, posObj:Object3D=null, gridCoordinates:Rectangle=null, gridPixels:Point=null) 
 		{
+			this.worldToMiniScale = worldToMiniScale;
 			this.gridCoordinates = gridCoordinates;
 			this.posMap = posMap;
 			this.posObj = posObj;
@@ -50,11 +53,12 @@ package alternativa.a3d.systems.radar
 			this.rotObj = rotObj;
 			this.rot = rot;
 			this.rotateMap = rotateMap;
-
+			
 		}
 		
 		
 		override public function update(time:Number):void {
+			
 			if (rot != null) {
 				rotateMap._rotationZ =rot.z;
 				rotateMap.transformChanged = true;
@@ -113,6 +117,10 @@ import alternativa.a3d.systems.radar.RadarComponent;
 class BlipNode {
 	public var pos:Pos;
 	public var rad:RadarComponent;
+	
+	public function BlipNode() {
+		
+	}
 	
 	private static var _components:ClassMap;
 	

@@ -8,12 +8,14 @@ package saboteur.systems
 	import ash.core.System;
 	import ash.signals.Signal0;
 	import ash.signals.Signal1;
+	import ash.signals.Signal2;
 	import components.ActionIntSignal;
 	import components.ActionUIntSignal;
 	import components.DirectionVectors;
 	import components.Pos;
 	import flash.geom.Point;
 	import flash.geom.Vector3D;
+	import saboteur.models.IBuildModel;
 	import saboteur.util.CardinalVectors;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.alternativa3d;
@@ -38,7 +40,7 @@ package saboteur.systems
 	 * 
 	 * @author Glenn Ko
 	 */
-	public class PathBuilderSystem extends System
+	public class PathBuilderSystem extends System implements IBuildModel
 	{
 		/**
 		 * Build distance ratio in relation to current grid east/south width to indicate how near to edge required
@@ -57,6 +59,11 @@ package saboteur.systems
 		
 		public function setBuildIndex(index:uint):void {
 			setBuildId(  SaboteurPathUtil.getInstance().getValueByIndex(index) );
+		}
+		
+		public function getCurBuilder():GameBuilder3D {
+			if (nodeList == null) throw new Error("not yet added to engine yet!");
+			return nodeList.head ? (nodeList.head as PathBuildingNode).builder : null;
 		}
 		
 		private var camera:Camera3D;
@@ -86,6 +93,11 @@ package saboteur.systems
 		public var signalBuildableChange:Signal1 = new Signal1();
 		private var pathUtil:SaboteurPathUtil = SaboteurPathUtil.getInstance();
 
+		public const onBuildFailed:Signal0= new Signal0();
+		public const onBuildSucceeded:Signal2 = new Signal2();
+		
+		public const onDelFailed:Signal0= new Signal0();
+		public const onDelSucceeded:Signal1 = new Signal1();
 		
 		public var buildToValidity:Boolean=false;  // set this to true to use traditional boardgame saboteur rules where spatial position of videogame player avatar doesn't matter
 		
@@ -100,15 +112,32 @@ package saboteur.systems
 		public function attemptDel():void 
 		{
 			var head:PathBuildingNode = nodeList.head as PathBuildingNode;
-			if (head == null) return;
-			if (_lastResult === SaboteurPathUtil.RESULT_OCCUPIED) head.builder.attemptRemove();
+			if (head == null) {
+				onDelFailed.dispatch();
+				return;
+			}
+			if (_lastResult === SaboteurPathUtil.RESULT_OCCUPIED) {
+				if (head.builder.attemptRemove()) {
+					onDelSucceeded.dispatch(head.builder)
+				}
+				else onDelFailed.dispatch();
+			}
 		}
 			
 		public function attemptBuild():void {
 			var head:PathBuildingNode = nodeList.head as PathBuildingNode;
-			if (head == null) return;
-			if (_lastResult != SaboteurPathUtil.RESULT_VALID) return;
-			head.builder.attemptBuild();
+			if (head == null) {
+				onBuildFailed.dispatch();
+				return;
+			}
+			if (_lastResult != SaboteurPathUtil.RESULT_VALID) {
+				onBuildFailed.dispatch();
+				return;
+			}
+			if (head.builder.attemptBuild()) {
+				onBuildSucceeded.dispatch(curBuildId, head.builder);
+			}
+			else onBuildFailed.dispatch();
 		}
 		
 		override public function addToEngine(engine:Engine):void {
@@ -125,6 +154,7 @@ package saboteur.systems
 		
 		private function onNodeAdded(node:PathBuildingNode):void 
 		{
+			node.builder.cardinal = node.cardinalVectors;  // sync cardinal  vectors
 			if (node === nodeList.head) validateVis();
 			
 			//camera.debug = true;

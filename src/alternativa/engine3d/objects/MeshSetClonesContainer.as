@@ -55,6 +55,9 @@ package alternativa.engine3d.objects {
 		private var meshesPerSurface:uint;
 		alternativa3d var clones:Vector.<MeshSetClone> = new Vector.<MeshSetClone>();
 		alternativa3d var numClones:int = 0;
+		protected var visibleClones:Vector.<MeshSetClone>;
+		protected var visibleClonesCollection:Vector.<MeshSetClone> = new Vector.<MeshSetClone>();
+		protected var numVisibleClones:int;
 		
 		public static var CLONE_CLASS:Class = MeshSetClone;
 		alternativa3d var cloneClass:Class;
@@ -73,6 +76,9 @@ package alternativa.engine3d.objects {
 		
 		protected var constantsPerMesh:int = 0;
 		public var objectRenderPriority:int = -1;
+		
+		public var culler:IMeshSetCloneCuller;
+		
 		
 		/**
 		 * Whether to attempt to pack all meshes tightly in the output buffer for ensuring the least amount of drawcalls possible (this could result in slightly larger geometry buffer size)
@@ -286,14 +292,8 @@ package alternativa.engine3d.objects {
 		
 		public function removeClone(cloneItem:MeshSetClone):void {
 			if (cloneItem.index < 0) throw new Error("Clone item seems to already be removed!");
-			 
-			clones[cloneItem.index] = null;  // nulling reference isn't necessary if pooling clones
-			if (cloneItem.index < --numClones) {  
-				clones[numClones] = null;  // nulling reference isn't necessary if pooling clones
-				clones[cloneItem.index] = clones[numClones];
-			}
+			clones[cloneItem.index] = cloneItem.index < --numClones ? clones[numClones] : null;		
 			cloneItem.index = -1;
-			
 		}
 		alternativa3d function addCloneQuick(cloneItem:MeshSetClone):void {
 			cloneItem.index = numClones;
@@ -301,22 +301,26 @@ package alternativa.engine3d.objects {
 		}
 		
 		alternativa3d function removeCloneQuick(cloneItem:MeshSetClone):void {
-			clones[cloneItem.index] = null;  // nulling reference isn't necessary if pooling clones
-			if (cloneItem.index < --numClones) {
-				clones[numClones] = null;  // nulling reference isn't necessary if pooling clones
-				clones[cloneItem.index] = clones[numClones];
-			}
+			clones[cloneItem.index] = cloneItem.index < --numClones ? clones[numClones] : null;		
 			cloneItem.index = -1;
 		}
+		
+		
+		public function purgeClones():void {
+			
+		}
+
 		
         /**
          * @private
          */
 		alternativa3d override function calculateVisibility(camera:Camera3D):void {
 			super.alternativa3d::calculateVisibility(camera);
-			var i:int = numClones;
+			numVisibleClones = culler != null ? culler.cull(numClones, clones, visibleClonesCollection) : numClones;
+			visibleClones = culler != null ? visibleClonesCollection : clones;
+			var i:int = numVisibleClones;
 			while (--i > -1) {
-				var root:Object3D = clones[i].root;
+				var root:Object3D = visibleClones[i].root;
 				if (root.transformChanged) root.composeTransforms();
 				root.localToGlobalTransform.copy(root.transform);
 				calculateMeshesTransforms(root);
@@ -340,7 +344,7 @@ package alternativa.engine3d.objects {
 				
 				var triCount:int = 0;
 			for (var i:int = _curCloneIndex; i < limit; i++) {
-				var meshes:Vector.<Mesh> = clones[i].surfaceMeshes[_curSurfaceIndex];
+				var meshes:Vector.<Mesh> = visibleClones[i].surfaceMeshes[_curSurfaceIndex];
 				for (var m:int = offsetNumMeshes; m < meshesLen; m++) {
 					var mesh:Mesh = meshes[m];			
 					triCount += mesh.geometry.numTriangles;
@@ -353,8 +357,8 @@ package alternativa.engine3d.objects {
 		
 			// handle pack-fill spill over if any
 
-			if (i  >= numClones) return;
-				meshes = clones[i].surfaceMeshes[_curSurfaceIndex];
+			if (i  >= numVisibleClones) return;
+				meshes = visibleClones[i].surfaceMeshes[_curSurfaceIndex];
 				for (m = 0; m < _addNumMeshes; m++) {
 					mesh = meshes[m];			
 					triCount += mesh.geometry.numTriangles;
@@ -394,7 +398,7 @@ package alternativa.engine3d.objects {
 			var addNumMeshes:int;
 			if (geometry == null) return;
 			
-			var totalClones:int = numClones;
+			var totalClones:int = numVisibleClones;
 			if (totalClones == 0) return;
 		
 			

@@ -1,5 +1,6 @@
 package saboteur.spawners 
 {
+	import alternativa.a3d.cullers.CircleRadiusCuller;
 	import alternativa.a3d.systems.text.FontSettings;
 	import alternativa.a3d.systems.text.StringLog;
 	import alternativa.a3d.systems.text.TextBoxChannel;
@@ -7,6 +8,7 @@ package saboteur.spawners
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.FillCircleMaterial;
+	import alternativa.engine3d.materials.FillHudMaterial;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.Grid2DMaterial;
 	import alternativa.engine3d.materials.Material;
@@ -75,6 +77,8 @@ package saboteur.spawners
 		
 		public var overlays:MeshSet;
 		private var overlayRoot:Object3D = new Object3D();
+		
+		public var circleRadarCuller:CircleRadiusCuller;
 		
 		// The differnet font settings
 		public var txt_numpad:FontSettings;  // these can be baked 1-10, or even put to skin!
@@ -184,13 +188,21 @@ package saboteur.spawners
 			
 			radarHolder.scaleX = .5;
 			radarHolder.scaleY = .5;
+			
+			
 
 			radarHolder.addChild(radarGridBg);
 			radarHolder.addChild(radarGridSprite);
 			radarHolder.rotationX = Math.PI;
 			layout.onLayoutUpdate.add(new BindLayoutObjCenterScale(layout.contTopRight.validateAABB, radarHolder, false).update);
 			
+			circleRadarCuller = new CircleRadiusCuller(rw*.5, radarGridHolder);
 			
+			
+			radarBlueprintOverlay = getNormalSpritePlane(new FillHudMaterial(0xFF0000, 1), radarGridMaterial.gridSquareWidth, radarGridMaterial.gridSquareHeight);
+			radarBlueprintOverlay.z = 0;
+			radarBlueprintOverlay.visible = true;
+			radarGridHolder.addChild(radarBlueprintOverlay);
 			//minimap = new SaboteurMinimap(
 		}
 		
@@ -217,6 +229,7 @@ package saboteur.spawners
 		public var overlayMaterial:FillMaterial = new FillMaterial(0x000000, .25);
 		private var normPlane:Plane = new Plane(1,1,1,1,false,false,overlayMaterial, overlayMaterial);
 		private var radarGridBg:Mesh;
+		public var radarBlueprintOverlay:Mesh;
 		public var radarHolder:Object3D;
 		public var radarGridHolder:Object3D;
 		

@@ -59,6 +59,12 @@ package saboteur.util
 		alternativa3d var gridSouthWidth:Number = 1;
 		alternativa3d var gridEastWidth_i:Number = 1;
 		alternativa3d var gridSouthWidth_i:Number = 1;
+		public function get floorGridEast():int {
+			return gridEast;
+		}
+		public function get floorGridSouth():int {
+			return gridSouth;
+		}
 		
 		alternativa3d var _floor:Object3D;
 		public var collisionScene:Object3D;
@@ -383,18 +389,23 @@ package saboteur.util
 			}
 			
 			
-			public function attemptBuild():void 
+			public function attemptBuild():Boolean 
 			{
 				if (getCurBuildableResult() === SaboteurPathUtil.RESULT_VALID) {
 					buildAt(gridEast, gridSouth, _value);
+					return true;
 				}
+				return false;
 			}
 			
-			public function attemptRemove():void 
+			public function attemptRemove():Boolean 
 			{
 				if (getCurBuildableResult() === SaboteurPathUtil.RESULT_OCCUPIED) {
 					removeAt(gridEast, gridSouth);
+					return true;
 				}
+				
+				return false;
 			}
 			
 			

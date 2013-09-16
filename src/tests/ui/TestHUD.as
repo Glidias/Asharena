@@ -132,7 +132,7 @@ package tests.ui
 			
 			var pathBuilder:PathBuilderSystem = new PathBuilderSystem(_template3D.camera);
 			 
-			game.gameStates.thirdPerson.addInstance(pathBuilder).withPriority(SystemPriorities.postRender);
+			game.gameStates.thirdPerson.addInstance(pathBuilder).withPriority(SystemPriorities.render);
 			//game.engine.addSystem(pathBuilder, SystemPriorities.postRender );
 			pathBuilder.signalBuildableChange.add( onBuildStateChange);
 			var canBuildIndicator:CanBuildIndicator = new CanBuildIndicator();
@@ -149,7 +149,7 @@ package tests.ui
 			game.engine.addSystem(new TextMessageSystem(), SystemPriorities.render );
 			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(122, true) ).withPriority(SystemPriorities.resolveCollisions);
 			
-			game.gameStates.engineState.changeState("thirdPerson");
+			
 		
 			
 			
@@ -181,10 +181,16 @@ package tests.ui
 				GameBuilder3D
 				jettySpawner.minimap.createJettyAt(0, 0, SaboteurPathUtil.getInstance().getIndexByValue(63) );
 				jettySpawner.minimap.addToContainer( hudAssets.radarGridHolder);
+				jettySpawner.minimap.setCuller(hudAssets.circleRadarCuller);
 				
 			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
 
-	
+			pathBuilder.onBuildSucceeded.add(jettySpawner.minimap.createJettyWithBuilder);
+			pathBuilder.onDelSucceeded.add(jettySpawner.minimap.removeJettyWithBuilder);
+			
+		
+			
+			
 			if (game.colliderSystem) {
 				
 				game.colliderSystem.collidable = (ent.get(GameBuilder3D) as GameBuilder3D).collisionGraph;
@@ -204,13 +210,20 @@ package tests.ui
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
 						
 						var radarSystem:RadarMinimapSystem;
-			game.engine.addSystem(radarSystem = new RadarMinimapSystem(hudAssets.radarHolder, arenaSpawner.currentPlayerEntity.get(Rot) as Rot,  _template3D.camera, hudAssets.radarGridHolder, arenaSpawner.currentPlayerEntity.get(Pos) as Pos, _template3D.camera, hudAssets.radarGridMaterial.gridCoordinates), SystemPriorities.preRender);
-			radarSystem.worldToMiniScale = 1 / JettySpawner.SPAWN_SCALE * jettySpawner.minimap.pixelToMinimapScale;  // should this be a MinimapModel ??
+						
+			game.engine.addSystem(radarSystem = new RadarMinimapSystem( 1 / JettySpawner.SPAWN_SCALE * jettySpawner.minimap.pixelToMinimapScale, hudAssets.radarHolder, arenaSpawner.currentPlayerEntity.get(Rot) as Rot,  _template3D.camera, hudAssets.radarGridHolder, arenaSpawner.currentPlayerEntity.get(Pos) as Pos, _template3D.camera, hudAssets.radarGridMaterial.gridCoordinates), SystemPriorities.preRender);
 			radarSystem.setGridPixels(32, JettySpawner.H);
+			
+			
+			game.gameStates.thirdPerson.addInstance(jettySpawner.minimap).withPriority(SystemPriorities.postRender);
+			
+			
 			hudAssets.addToHud3D(hud);
 			hudAssets.txt_chatChannel.appendSpanTagMessage('The quick brown <span u="2">fox</span> jumps over the lazy dog. The <span u="1">quick brown fox</span> jumps over the lazy <span u="3">dog</span>. The <span u="1">quick brown fox</span> jumps over the lazy dog.');
 		
-	
+		
+			game.gameStates.engineState.changeState("thirdPerson");
+			jettySpawner.minimap.setupBuildModelAndView(pathBuilder, pathBuilder.getCurBuilder(), hudAssets.radarBlueprintOverlay);  //
 		
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false,1);
 		

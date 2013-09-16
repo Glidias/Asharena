@@ -25,7 +25,10 @@ package saboteur.spawners
 	import flash.display.Sprite;
 	import flash.display.Stage3D;
 	import flash.display3D.Context3D;
+	import flash.geom.ColorTransform;
+	import flash.geom.Matrix;
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	import flash.utils.ByteArray;
 	import saboteur.util.CardinalVectors;
 	import saboteur.util.GameBuilder3D;
@@ -155,6 +158,7 @@ package saboteur.spawners
 				
 				
 				var child:Object3D = cloned.clone();
+				child.scaleY = -1;
 				cont.addChild(child);
 				child.x = xOffset + x * w;
 				child.y = yOffset + y * w;
@@ -184,7 +188,12 @@ package saboteur.spawners
 		
 			camera.render(stage3D);
 			camera.view.backgroundAlpha = lastBackgroundAlpha;
-			var snapshot:BitmapData = camera.view.canvas.clone();
+			var snapshot:BitmapData = new BitmapData(camera.view.canvas.width, camera.view.canvas.height * 2, true, 0);
+			//camera.view.canvas.clone();
+			
+			snapshot.draw(camera.view);
+			snapshot.fillRect(new Rectangle(0, snapshot.height*.5, snapshot.width, snapshot.height * .5), 0xFFCCCCCC );
+			snapshot.draw(camera.view, new Matrix(1, 0, 0, 1, 0, camera.view.canvas.height), new ColorTransform(1,1,1,1), null, null, false );
 			camera.view.renderToBitmap = false;
 			hud.removeChild(cont);
 			
