@@ -153,14 +153,14 @@ package saboteur.spawners
 			radarHolder = new Object3D();
 			radarGridHolder = new Object3D();
 			radarHolder.addChild(radarGridHolder);
-			radarGridMaterial = new RadarGrid2DMaterial(0x000000, .99999, 32 * .5, JettySpawner.H * .5);
+			radarGridMaterial = new RadarGrid2DMaterial(0x000000, .99999, 32, JettySpawner.H );
 			
-			radarGridMaterial.gridCoordinates.width =  16;
+			radarGridMaterial.gridCoordinates.width =  12;
 			radarGridMaterial.gridCoordinates.height = radarGridMaterial.gridSquareWidth/radarGridMaterial.gridSquareHeight * (radarGridMaterial.gridCoordinates.width);
 				
 			
 			
-			radarGridMaterial.lineThickness = 1;
+			radarGridMaterial.lineThickness = 1.0;
 			var rw:Number;
 			var rh:Number;
 			radarGridSprite = getNormalSpritePlane(radarGridMaterial, rw=radarGridMaterial.gridCoordinates.width * radarGridMaterial.gridSquareWidth, rh=radarGridMaterial.gridCoordinates.height * radarGridMaterial.gridSquareHeight); // new Sprite3D(radarGridMaterial.gridCoordinates.width * radarGridMaterial.gridSquareWidth, radarGridMaterial.gridCoordinates.height * radarGridMaterial.gridSquareHeight, radarGridMaterial);
@@ -182,8 +182,8 @@ package saboteur.spawners
 			radarGridBg.z = 0;
 
 			
-			radarHolder.scaleX = .7;
-			radarHolder.scaleY = .7;
+			radarHolder.scaleX = .5;
+			radarHolder.scaleY = .5;
 
 			radarHolder.addChild(radarGridBg);
 			radarHolder.addChild(radarGridSprite);

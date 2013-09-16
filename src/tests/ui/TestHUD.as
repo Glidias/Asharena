@@ -177,7 +177,8 @@ package tests.ui
 			spriteSet = hudAssets.txt_chat.spriteSet;
 			
 				var bitmapData:BitmapData = jettySpawner.createBlueprintSheet(_template3D.camera, _template3D.stage3D, hud);
-				//addChild( new Bitmap(bitmapData));
+			//	addChild( new Bitmap(bitmapData));
+				GameBuilder3D
 				jettySpawner.minimap.createJettyAt(0, 0, SaboteurPathUtil.getInstance().getIndexByValue(63) );
 				jettySpawner.minimap.addToContainer( hudAssets.radarGridHolder);
 				
@@ -204,8 +205,8 @@ package tests.ui
 						
 						var radarSystem:RadarMinimapSystem;
 			game.engine.addSystem(radarSystem = new RadarMinimapSystem(hudAssets.radarHolder, arenaSpawner.currentPlayerEntity.get(Rot) as Rot,  _template3D.camera, hudAssets.radarGridHolder, arenaSpawner.currentPlayerEntity.get(Pos) as Pos, _template3D.camera, hudAssets.radarGridMaterial.gridCoordinates), SystemPriorities.preRender);
-		//	radarSystem.worldToMiniScale = hudAssets.minimap.pixelToMinimapScale.x;  // should this be a MinimapModel ??
-			
+			radarSystem.worldToMiniScale = 1 / JettySpawner.SPAWN_SCALE * jettySpawner.minimap.pixelToMinimapScale;  // should this be a MinimapModel ??
+			radarSystem.setGridPixels(32, JettySpawner.H);
 			hudAssets.addToHud3D(hud);
 			hudAssets.txt_chatChannel.appendSpanTagMessage('The quick brown <span u="2">fox</span> jumps over the lazy dog. The <span u="1">quick brown fox</span> jumps over the lazy <span u="3">dog</span>. The <span u="1">quick brown fox</span> jumps over the lazy dog.');
 		

@@ -199,7 +199,7 @@ package saboteur.spawners
 			var diffuser:BitmapTextureResource = new BitmapTextureResource(snapshot);
 			diffuser.upload(context3D);
 			if (minimap == null) {
-				minimap = new SaboteurMinimap( new TextureAtlasMaterial(diffuser), 8, new Point(32, H), new Point(cloned.scaleX, cloned.scaleY) );
+				minimap = new SaboteurMinimap( new TextureAtlasMaterial(diffuser), 8, new Point(32, H), cloned.scaleX );
 				minimap.upload(context3D);
 			}
 			return snapshot;

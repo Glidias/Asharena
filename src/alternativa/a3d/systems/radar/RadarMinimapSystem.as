@@ -7,6 +7,7 @@ package alternativa.a3d.systems.radar
 	import components.Pos;
 	import components.Rot;
 	import alternativa.engine3d.alternativa3d;
+	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	use namespace alternativa3d;
 	
@@ -26,8 +27,21 @@ package alternativa.a3d.systems.radar
 		private var posObj:Object3D;
 		private var posMap:Object3D;
 		private var gridCoordinates:Rectangle;
+		private var gridWidthH:Number = 16;
+		private var gridHeightH:Number =16;
+		private var gridPx:Number = 1/32;
+		private var gridPy:Number = 1 / 32;
 		
-		public function RadarMinimapSystem(rotateMap:Object3D=null, rot:Rot=null, rotObj:Object3D=null, posMap:Object3D=null, pos:Pos=null, posObj:Object3D=null, gridCoordinates:Rectangle=null) 
+	
+		
+		public function setGridPixels(width:Number, height:Number):void {
+			gridPx=1 / width;
+			gridPy = 1 / height;
+			gridWidthH = width*.5;
+			gridHeightH = height*.5;
+		}
+		
+		public function RadarMinimapSystem(rotateMap:Object3D=null, rot:Rot=null, rotObj:Object3D=null, posMap:Object3D=null, pos:Pos=null, posObj:Object3D=null, gridCoordinates:Rectangle=null, gridPixels:Point=null) 
 		{
 			this.gridCoordinates = gridCoordinates;
 			this.posMap = posMap;
@@ -38,6 +52,8 @@ package alternativa.a3d.systems.radar
 			this.rotateMap = rotateMap;
 
 		}
+		
+		
 		override public function update(time:Number):void {
 			if (rot != null) {
 				rotateMap._rotationZ =rot.z;
@@ -59,9 +75,27 @@ package alternativa.a3d.systems.radar
 				posMap.transformChanged = true;
 			}
 			
-			
+			var px:Number;
+			var py:Number;
 			if (gridCoordinates != null) {
-				
+				if (pos != null) {
+				//	gridCoordinates.x
+					px = (pos.x  * worldToMiniScale - gridWidthH) * gridPx;
+					py = (pos.y * -worldToMiniScale - gridHeightH )* gridPy;
+					px -= int(px);
+					py -= int(py);
+					gridCoordinates.x = px;
+					gridCoordinates.y = py;
+				}
+				else if (posObj != null) {
+					
+					px = (posObj._x  * worldToMiniScale - gridWidthH) * gridPx;
+					py = (posObj._y * -worldToMiniScale - gridHeightH )* gridPy;
+					px -= int(px);
+					py -= int(py);
+					gridCoordinates.x = px;
+					gridCoordinates.y = py;
+				}
 			}
 		}
 		
@@ -71,10 +105,25 @@ package alternativa.a3d.systems.radar
 
 import alternativa.engine3d.core.Object3D;
 import alternativa.engine3d.objects.Sprite3D;
+import ash.ClassMap;
 import components.Pos;
 import components.Rot;
+import alternativa.a3d.systems.radar.RadarComponent;
 
 class BlipNode {
+	public var pos:Pos;
+	public var rad:RadarComponent;
 	
+	private static var _components:ClassMap;
+	
+	public static function _getComponents():ClassMap {
+		if(_components == null) {
+				_components = new ClassMap();
+				_components.set(Pos, "pos");
+				_components.set(RadarComponent, "rad");
+			
+		}
+			return _components;
+	}
 }
 

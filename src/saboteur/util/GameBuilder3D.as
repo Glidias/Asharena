@@ -107,7 +107,7 @@ package saboteur.util
 		
 			
 			_value = pathUtil.getValue( SaboteurPathUtil.EAST | SaboteurPathUtil.NORTH | SaboteurPathUtil.WEST | SaboteurPathUtil.SOUTH, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL);
-			
+	
 			refreshValue();
 			
 			setup();

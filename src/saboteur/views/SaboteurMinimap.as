@@ -29,13 +29,13 @@ package saboteur.views
 		private var jettySheetWidth:int;
 		private var jettySheetHeight:int;
 		private var jettyTileSize:Point;
-		public var pixelToMinimapScale:Point;
+		public var pixelToMinimapScale:Number;
 		
-		public function SaboteurMinimap(jettyMaterial:TextureAtlasMaterial, jettyColumns:int, jettyTileSize:Point, pixelToMinimapScale:Point) 
+		public function SaboteurMinimap(jettyMaterial:TextureAtlasMaterial, jettyColumns:int, jettyTileSize:Point, pixelToMinimapScale:Number) 
 		{
 			this.pixelToMinimapScale = pixelToMinimapScale;
 			this.jettyTileSize = jettyTileSize;
-		//	jettyMaterial.alphaThreshold = 0.99;
+			//jettyMaterial.alphaThreshold = 0.99;
 			var bmpData:BitmapData = (jettyMaterial.diffuseMap as BitmapTextureResource).data;
 			jettySheetWidth = bmpData.width;
 			jettySheetHeight = bmpData.height;
@@ -47,19 +47,23 @@ package saboteur.views
 		}
 		
 		public function createJettyAt(x:int, y:int, index:int):SpriteMeshSetClone {
+		//jettyTileSize.y = 28;
 			var spr:SpriteMeshSetClone = jettySet.createClone() as SpriteMeshSetClone;
 			var rowIndex:int = int(index / jettyColumns);
-			var colIndex:int = index - rowIndex;
-			spr.root.x = x * jettyTileSize.x + .5 *jettyTileSize.x;
-			spr.root.y = y * jettyTileSize.y + .5 * jettyTileSize.y;
-			spr.root.scaleX = jettyTileSize.x *.5;
-			spr.root.scaleY = jettyTileSize.y*.5;
+			var colIndex:int = index - rowIndex*jettyColumns;
+			spr.root.x = x * jettyTileSize.x ;
+			spr.root.y = y * jettyTileSize.y-2;
+			spr.root.scaleX =  jettyTileSize.x ;
+			spr.root.scaleY = jettyTileSize.y;
+		
 					//	spr.root.rotationX = Math.PI;
-			spr.u= (jettyTileSize.x * colIndex ) / jettySheetWidth;
-			spr.v= (jettyTileSize.y * rowIndex ) / jettySheetHeight;
+				//	/*
+			spr.u = (jettyTileSize.x * colIndex ) / jettySheetWidth;
+			spr.v =(jettyTileSize.x * rowIndex ) / jettySheetHeight;
 			spr.uw = jettyTileSize.x / jettySheetWidth;
 			spr.vw = jettyTileSize.y / jettySheetHeight;
-
+		//	*/
+	//	throw new Error(jettyTileSize);
 			jettySet.addClone(spr);
 			return spr;
 		}
