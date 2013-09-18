@@ -152,6 +152,8 @@ package alternativa.a3d.collisions
 			}
 			if (!intersects) return;
 			
+
+			// parent's localToGlobalTransofrm, child.transform
 			localToGlobalTransform.combine(collider.inverseMatrix, transform); 
 				
 			if (collidable) collidable.collectGeometryAndTransforms(collider, localToGlobalTransform);

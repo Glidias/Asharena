@@ -87,8 +87,8 @@ package saboteur.views
 			//blueprint.root._x = builder.blueprint._x * minimapModel.worldToMiniScale;
 			//blueprint.root._y = builder.blueprint._y * minimapModel.worldToMiniScale;
 			
-			var fromX:Number = builder.startScene._x;
-			var fromY:Number = builder.startScene._y;
+			var fromX:Number = builder.startScene._x + builder.startOffsetX;
+			var fromY:Number = builder.startScene._y + builder.startOffsetY;
 			var x:int = builder.floorGridEast;
 			var y:int = builder.floorGridSouth;
 			var cardinal:CardinalVectors = builder.cardinal;
@@ -155,7 +155,7 @@ package saboteur.views
 		public function createJettyWithBuilder(value:uint, builder:GameBuilder3D):void {
 			var buildDict:Dictionary = builders[builder];
 			if (buildDict == null) buildDict = builders[builder] = new Dictionary();
-			buildDict[pathUtil.getGridKey( builder.floorGridEast, builder.floorGridSouth)] = createJettyAt(builder.floorGridEast, builder.floorGridSouth, pathUtil.getIndexByValue(value), builder.cardinal, builder.startScene.x, builder.startScene.y);
+			buildDict[pathUtil.getGridKey( builder.floorGridEast, builder.floorGridSouth)] = createJettyAt(builder.floorGridEast, builder.floorGridSouth, pathUtil.getIndexByValue(value), builder.cardinal, builder.startScene.x+builder.startOffsetX, builder.startScene.y+builder.startOffsetY);
 		}
 		
 		public function removeJettyWithBuilder(builder:GameBuilder3D):void {

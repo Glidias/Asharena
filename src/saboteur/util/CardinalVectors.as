@@ -64,6 +64,17 @@ public class CardinalVectors {
 		return val;
 	}
 	
+	public function syncNorthWest():void 
+	{
+		west.x = -east.x;
+		west.y = -east.y;
+		west.z = -east.z;
+		
+		north.x = -south.x;
+		north.y = -south.y;
+		north.z = -south.z;
+	}
+	
 }
 
 }

@@ -148,7 +148,7 @@ package tests.ui
 			
 		
 			game.engine.addSystem(new TextMessageSystem(), SystemPriorities.render );
-			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(122, true) ).withPriority(SystemPriorities.resolveCollisions);
+			//game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(122, true) ).withPriority(SystemPriorities.resolveCollisions);
 			
 			BVHCuller;
 		
@@ -195,7 +195,7 @@ package tests.ui
 			if (game.colliderSystem) {
 				
 				game.colliderSystem.collidable = (ent.get(GameBuilder3D) as GameBuilder3D).collisionGraph;
-				game.colliderSystem._collider.threshold = 0.0001;
+				game.colliderSystem._collider.threshold = 0.00001;
 			}
 			
 			

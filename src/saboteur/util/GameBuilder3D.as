@@ -8,6 +8,7 @@ package saboteur.util
 	import alternativa.a3d.collisions.CollisionUtil;
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.loaders.TexturesLoader;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.Material;
@@ -41,7 +42,7 @@ package saboteur.util
 		
 		public static const CARDINAL_VECTORS:CardinalVectors = new CardinalVectors();
 		public var cardinal:CardinalVectors;
-		
+		private var localCardinal:CardinalVectors;
 	
 		public var editorMat:FillMaterial;
 		
@@ -79,11 +80,44 @@ package saboteur.util
 		public var showOccupied:Boolean = false;
 		public var pathGraph:SaboteurGraph;
 		
-		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane) {
+		alternativa3d var startOffsetX:Number;
+		alternativa3d var startOffsetY:Number;
+		
+		private var startOffsetXLocal:Number;
+		private var startOffsetYLocal :Number;
+		
+		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane, startOffsetX:Number = 0, startOffsetY:Number = 0) {
+		
+			// PathBuilderSystem raycasting wrong when including BOTH position and rotation offsets
+			/*
+			startOffsetX = 555;
+			startOffsetY = 113;
+			startScene.x = 344;
+			startScene.y = 244;
+			*/
+			// CollisionGraphNode bound tests wrong when rotation offset is included!
+			startScene.rotationZ = Math.PI;// * .37;
+		//	startScene.rotationX= Math.PI*.15;
+			
+			this.startOffsetX = startOffsetX;
+			this.startOffsetY = startOffsetY;
+			
+			startOffsetXLocal = startOffsetX / startScene._scaleX;
+			startOffsetYLocal = startOffsetY / startScene._scaleY;
 
+			localCardinal = CARDINAL_VECTORS;
+			cardinal = new CardinalVectors();   //  global coordinate space cardinal vectors based off startScene's rotationZ!
+			var startSceneMatrix:Matrix3D = startScene.matrix;
 			
+			cardinal.east = startSceneMatrix.deltaTransformVector(cardinal.east);
+			cardinal.south = startSceneMatrix.deltaTransformVector(cardinal.south);
+			cardinal.east.normalize();
+			cardinal.south.normalize();
 			
-			cardinal = CARDINAL_VECTORS;
+			cardinal.syncNorthWest();
+			//var eastGlobal:Vector3D = new Vector3D( Math.cos( startScene._rotationZ), Math.sin(startScene._rotationZ), 0);
+			//cardinal.setupEastSouth( eastGlobal, new Vector3D(eastGlobal.y, eastGlobal.x) );
+			
 			pathUtil =  SaboteurPathUtil.getInstance();
 			pathGraph = new SaboteurGraph();
 		
@@ -92,12 +126,26 @@ package saboteur.util
 			this.applyMaterial = applyMaterial;
 			
 			this.collision = collision;
+			collision.x = startOffsetXLocal;
+			collision.y = startOffsetYLocal;
 			this.genesis = genesis;
 			this.startScene = startScene;
 			this.blueprint = blueprint;
 			
 			collisionScene = new Object3D();
-			collisionScene.matrix = startScene.matrix;
+			//collisionScene.matrix = startSceneMatrix;
+			collisionScene._x = startScene._x;
+			collisionScene._y = startScene._y;
+			collisionScene._z = startScene._z;
+			
+			collisionScene._rotationX = startScene._rotationX;
+			collisionScene._rotationY = startScene._rotationY;
+			collisionScene._rotationZ = startScene._rotationZ;
+	
+			collisionScene._scaleX = startScene._scaleX;
+			collisionScene._scaleY = startScene._scaleY;
+			collisionScene._scaleZ = startScene._scaleZ;
+			
 			collisionScene.composeTransforms();
 			collisionScene.boundBox = null;
 			
@@ -110,7 +158,9 @@ package saboteur.util
 				_floor = floor;
 			this.startScene.addChild(genesis);
 			this.startScene.addChild(blueprint);
-		
+			genesis.x = startOffsetXLocal;
+			genesis.y = startOffsetYLocal;
+			
 			
 			_value = pathUtil.getValue( SaboteurPathUtil.EAST | SaboteurPathUtil.NORTH | SaboteurPathUtil.WEST | SaboteurPathUtil.SOUTH, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL);
 	
@@ -119,6 +169,8 @@ package saboteur.util
 			setup();
 			
 		}
+		
+	
 		
 		public function setBlueprintVis(val:Boolean):void {
 			blueprint.visible = val;
@@ -154,8 +206,8 @@ package saboteur.util
 				collisionGraph._prepend(_boundGridBoxConvex3D);
 				
 			
-			gridEastWidth  =cardinal.getDist(cardinal.east, _gridSquareBound, 1);
-			gridSouthWidth = cardinal.getDist(cardinal.south, _gridSquareBound, 1);
+			gridEastWidth  =localCardinal.getDist(localCardinal.east, _gridSquareBound, 1);
+			gridSouthWidth = localCardinal.getDist(localCardinal.south, _gridSquareBound, 1);
 			minSquareBuildDistance = gridEastWidth * gridEastWidth + gridSouthWidth * gridSouthWidth;
 
 				
@@ -169,6 +221,7 @@ package saboteur.util
 			pathGraph.recalculateEndpoints();
 			
 			pathUtil.buildAt(buildDict, gridEast, gridSouth, _value  ); 
+			
 			buildCollidablesAt( gridEast, gridSouth, collision, _value );	
 			//buildAt(1, 1, 63);
 		}
@@ -196,8 +249,8 @@ package saboteur.util
 					var newBuilding:Object3D = genesis.clone();  // should be genesis or blueprint and re-apply material? depends...for now, just use genesis!
 					startScene.addChild( newBuilding);
 					visJetty3DByValue(newBuilding, value);
-					cardinal.transform(cardinal.east, newBuilding, cardinal.getDist(cardinal.east, _gridSquareBound)* gridEast );
-					cardinal.transform(cardinal.south, newBuilding, cardinal.getDist(cardinal.south, _gridSquareBound) * gridSouth );
+					localCardinal.transform(localCardinal.east, newBuilding, localCardinal.getDist(localCardinal.east, _gridSquareBound)* gridEast );
+					localCardinal.transform(localCardinal.south, newBuilding, localCardinal.getDist(localCardinal.south, _gridSquareBound) * gridSouth );
 					
 					var collisionBuilding:Object3D = collision; // .clone();
 					collisionBuilding._x = newBuilding._x;
@@ -219,8 +272,8 @@ package saboteur.util
 		
 			visJetty3DByValueRecursive(refer, value);
 			
-			cardinal.transform(cardinal.east, refer, cardinal.getDist(cardinal.east, _gridSquareBound)* gridEast );
-			cardinal.transform(cardinal.south, refer, cardinal.getDist(cardinal.south, _gridSquareBound) * gridSouth );
+			localCardinal.transform(localCardinal.east, refer, localCardinal.getDist(localCardinal.east, _gridSquareBound)* gridEast );
+			localCardinal.transform(localCardinal.south, refer, localCardinal.getDist(localCardinal.south, _gridSquareBound) * gridSouth );
 			collisionGraph.addChild( CollisionUtil.getCollisionGraph(refer) );
 
 	
@@ -268,10 +321,10 @@ package saboteur.util
 					var eastD:Number = gridEastWidth * ge;
 					var southD:Number = gridSouthWidth * gs;
 					
-					_floor._x = eastD * cardinal.east.x;
-					_floor._y = eastD * cardinal.east.y;
-					_floor._x += southD * cardinal.south.x;
-					_floor._y += southD * cardinal.south.y;
+					_floor._x = eastD * localCardinal.east.x + startOffsetXLocal;
+					_floor._y = eastD * localCardinal.east.y + startOffsetYLocal;
+					_floor._x += southD * localCardinal.south.x;
+					_floor._y += southD * localCardinal.south.y;
 					
 					blueprint._x = _floor._x;
 					blueprint._y = _floor._y;
@@ -292,10 +345,10 @@ package saboteur.util
 					var eastD:Number = gridEastWidth * ge;
 					var southD:Number = gridSouthWidth * gs;
 					
-					_floor._x = eastD * cardinal.east.x;
-					_floor._y = eastD * cardinal.east.y;
-					_floor._x += southD * cardinal.south.x;
-					_floor._y += southD * cardinal.south.y;
+					_floor._x = eastD * localCardinal.east.x + startOffsetXLocal;
+					_floor._y = eastD * localCardinal.east.y + startOffsetYLocal;
+					_floor._x += southD * localCardinal.south.x;
+					_floor._y += southD * localCardinal.south.y;
 					
 					blueprint._x = _floor._x;
 					blueprint._y = _floor._y;

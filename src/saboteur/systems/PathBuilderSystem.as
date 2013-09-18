@@ -15,6 +15,7 @@ package saboteur.systems
 	import components.Pos;
 	import flash.geom.Point;
 	import flash.geom.Vector3D;
+	import haxe.Log;
 	import saboteur.models.IBuildModel;
 	import saboteur.util.CardinalVectors;
 	import alternativa.engine3d.core.Camera3D;
@@ -154,7 +155,6 @@ package saboteur.systems
 		
 		private function onNodeAdded(node:PathBuildingNode):void 
 		{
-			node.builder.cardinal = node.cardinalVectors;  // sync cardinal  vectors
 			if (node === nodeList.head) validateVis();
 			
 			//camera.debug = true;
@@ -182,8 +182,9 @@ package saboteur.systems
 			var curBuild:PathBuildingNode = nodeList.head as PathBuildingNode;
 			if (curBuild == null) return;
 			
-			var cardinal:CardinalVectors = curBuild.cardinalVectors;
+			
 			var builder:GameBuilder3D = curBuild.builder;
+			var cardinal:CardinalVectors = builder.cardinal;
 			
 			var eastVal:Number;
 			var southVal:Number;
@@ -196,8 +197,8 @@ package saboteur.systems
 				
 				
 				if (fromPos != null) {
-					origin.x = fromPos.x - builder.startScene._x;
-					origin.y = fromPos.y - builder.startScene._y;
+					origin.x = fromPos.x - builder.startScene._x - builder.startOffsetX;
+					origin.y = fromPos.y - builder.startScene._y - builder.startOffsetY;
 					origin.z = fromPos.z - builder.startScene._z;
 					origin.x /= builder.startScene._scaleX;
 					origin.y /= builder.startScene._scaleY;
@@ -230,8 +231,8 @@ package saboteur.systems
 					gs = Math.round(southVal * builder.gridSouthWidth_i);
 				}
 				else if (camera != null) {
-					origin.x = camera._x - builder.startScene._x;
-					origin.y = camera._y - builder.startScene._y;
+					origin.x = camera._x - builder.startScene._x - builder.startOffsetX;
+					origin.y = camera._y - builder.startScene._y - builder.startOffsetY;
 					origin.z = camera._z - builder.startScene._z;
 					origin.x /= builder.startScene._scaleX;
 					origin.y /= builder.startScene._scaleY;
@@ -266,16 +267,18 @@ package saboteur.systems
 
 				if (fromDirection == null) {
 					if (fromPos == null) {   // calculate ray manually from camera screen center
+						
 						camera.calculateRay(origin, direction, camera.view._width * .5, camera.view._height * .5);
 					}
 					else {  // cast ray from camera position through origin position
-						direction.x =   origin.x - (camera._x+ builder.startScene._x)/builder.startScene._scaleX;
-						direction.y =  origin.y -(camera._y +builder.startScene._y)/builder.startScene._scaleY;
-						direction.z = origin.z -(camera._z +builder.startScene._z)/builder.startScene._scaleZ;
+						direction.x =   fromPos.x - camera._x;
+						direction.y =  fromPos.y -camera._y;
+						direction.z = fromPos.z -camera._z;
 						direction.normalize();
 					}
 				}
 				else {
+					
 					direction.x = fromDirection.forward.x;
 					direction.y = fromDirection.forward.y;
 					direction.z = fromDirection.forward.z;
@@ -413,7 +416,6 @@ import saboteur.util.GameBuilder3D;
 
 class PathBuildingNode extends Node {
 	public var builder:GameBuilder3D;
-	public var cardinalVectors:CardinalVectors;
 	//public var playerPos:Pos;
 	
 	public function PathBuildingNode() {
@@ -426,7 +428,6 @@ class PathBuildingNode extends Node {
 		if(_components == null) {
 				_components = new ash.ClassMap();
 				_components.set(GameBuilder3D, "builder");
-				_components.set(CardinalVectors, "cardinalVectors");
 				//_components.set(Camera3D, "camera");
 			}
 			return _components;
