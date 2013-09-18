@@ -108,9 +108,7 @@ package saboteur.spawners
 		
 		private var layout:SaboteurHUDLayout;
 		
-		public var minimap:SaboteurMinimap;
-		
-
+	
 		
 		public function SaboteurHud(engine:Engine, stage:Stage, keypollToDisable:KeyPoll=null) 
 		{

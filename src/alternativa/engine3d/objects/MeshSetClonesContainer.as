@@ -35,7 +35,7 @@ package alternativa.engine3d.objects {
 	
 	 // TODO: SkinSetClonesContainer...yea!!
 	 
-	public class MeshSetClonesContainer extends Mesh {
+	public class MeshSetClonesContainer extends Mesh implements IMeshSetClonesContainer {
 		private var root:Object3D;
 
 		private static const ATTRIBUTE:uint = 20;
@@ -284,17 +284,18 @@ package alternativa.engine3d.objects {
 		}
 		
 		public function addClone(cloneItem:MeshSetClone):void {
-			if (cloneItem.index >= 0) throw new Error("Clone item seems to already belong to a container or wasn't freshly created/removed!!");  
+			//if (cloneItem.index >= 0) throw new Error("Clone item seems to already belong to a container or wasn't freshly created/removed!!");  
 			
 			cloneItem.index = numClones;
 			clones[numClones++] = cloneItem;
 		}
 		
 		public function removeClone(cloneItem:MeshSetClone):void {
-			if (cloneItem.index < 0) throw new Error("Clone item seems to already be removed!");
+		//	if (cloneItem.index < 0) throw new Error("Clone item seems to already be removed!");
 			clones[cloneItem.index] = cloneItem.index < --numClones ? clones[numClones] : null;		
 			cloneItem.index = -1;
 		}
+		/*
 		alternativa3d function addCloneQuick(cloneItem:MeshSetClone):void {
 			cloneItem.index = numClones;
 			clones[numClones++] = cloneItem;
@@ -304,6 +305,7 @@ package alternativa.engine3d.objects {
 			clones[cloneItem.index] = cloneItem.index < --numClones ? clones[numClones] : null;		
 			cloneItem.index = -1;
 		}
+		*/
 		
 		
 		public function purgeClones():void {
@@ -316,7 +318,7 @@ package alternativa.engine3d.objects {
          */
 		alternativa3d override function calculateVisibility(camera:Camera3D):void {
 			super.alternativa3d::calculateVisibility(camera);
-			numVisibleClones = culler != null ? culler.cull(numClones, clones, visibleClonesCollection) : numClones;
+			numVisibleClones = culler != null ? culler.cull(numClones, clones, visibleClonesCollection, camera, this) : numClones;
 			visibleClones = culler != null ? visibleClonesCollection : clones;
 			var i:int = numVisibleClones;
 			while (--i > -1) {

@@ -3,6 +3,7 @@ package tests.ui
 	import alternativa.a3d.collisions.CollisionBoundNode;
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
+	import alternativa.a3d.cullers.BVHCuller;
 	import alternativa.a3d.systems.radar.RadarMinimapSystem;
 	import alternativa.a3d.systems.text.FontSettings;
 	import alternativa.a3d.systems.text.StringLog;
@@ -149,7 +150,7 @@ package tests.ui
 			game.engine.addSystem(new TextMessageSystem(), SystemPriorities.render );
 			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(122, true) ).withPriority(SystemPriorities.resolveCollisions);
 			
-			
+			BVHCuller;
 		
 			
 			
@@ -293,6 +294,7 @@ package tests.ui
 	
 		
 		private function tick(time:Number):void {
+			
 			game.engine.update(time);
 			_template3D.render();
 		}

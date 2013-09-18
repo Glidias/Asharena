@@ -1,6 +1,8 @@
 package alternativa.a3d.cullers 
 {
 	import alternativa.engine3d.core.BoundBox;
+	import alternativa.engine3d.core.Camera3D;
+	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.objects.IMeshSetCloneCuller;
 	import alternativa.engine3d.objects.MeshSetClone;
 	import de.polygonal.motor.geom.primitive.AABB2;
@@ -19,7 +21,7 @@ package alternativa.a3d.cullers
 		
 		/* INTERFACE alternativa.engine3d.objects.IMeshSetCloneCuller */
 		
-		public function cull(numClones:int, clones:Vector.<MeshSetClone>, collector:Vector.<MeshSetClone>):int 
+		public function cull(numClones:int, clones:Vector.<MeshSetClone>, collector:Vector.<MeshSetClone>, camera:Camera3D, object:Object3D):int 
 		{
 			var count:int = 0;
 			for (var i:int = 0; i < numClones; i++ ) {

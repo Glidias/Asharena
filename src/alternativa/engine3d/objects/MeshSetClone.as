@@ -13,7 +13,7 @@ package alternativa.engine3d.objects
 		public var root:Object3D;
 		public var surfaceMeshes:Vector.<Vector.<Mesh>>;
 		alternativa3d var index:int;
-
+	
 		
 		public function MeshSetClone() 
 		{

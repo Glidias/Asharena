@@ -1,5 +1,6 @@
 package saboteur.views 
 {
+	import alternativa.a3d.cullers.BVHCuller;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Renderer;
 	import alternativa.engine3d.materials.FillHudMaterial;
@@ -53,6 +54,7 @@ package saboteur.views
 		private var buildModel:IBuildModel;
 		private var builder:GameBuilder3D;
 		
+
 		public function setupBuildModelAndView(model:IBuildModel, builder3:GameBuilder3D,  blueprintColorFloor:Mesh=null):void  {
 			if (blueprint == null) {
 				blueprint = jettySet.createClone() as SpriteMeshSetClone;
@@ -118,7 +120,7 @@ package saboteur.views
 		public function activateFloorBlueprintPosition():void {
 			
 			if (blueprint.index < 0) {
-				jettySet.addCloneQuick(blueprint);
+				jettySet.addClone(blueprint);
 				
 			}
 			blueprintColorFloor.visible = true;
@@ -126,7 +128,7 @@ package saboteur.views
 		
 		public function deactivateFloorBlueprintPosition():void {
 			if (blueprint.index >= 0) {
-				jettySet.removeCloneQuick(blueprint);
+				jettySet.removeClone(blueprint);
 			}
 			blueprintColorFloor.visible = false;
 		}
@@ -162,6 +164,7 @@ package saboteur.views
 			jettySet.removeClone(buildDict[key]);
 			delete buildDict[key];
 		}
+		
 		
 		
 		public function createJettyAt(x:int, y:int, index:int, cardinal:CardinalVectors=null, fromX:Number=0, fromY:Number=0 ):SpriteMeshSetClone {
