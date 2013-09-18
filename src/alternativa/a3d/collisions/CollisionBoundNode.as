@@ -5,6 +5,7 @@ package alternativa.a3d.collisions
 	import alternativa.engine3d.objects.Mesh;
 	import components.Transform3D;
 	import flash.utils.Dictionary;
+//	import haxe.Log;
 	import systems.collisions.EllipsoidCollider;
 	import systems.collisions.IECollidable;
 	import alternativa.engine3d.alternativa3d;
@@ -30,7 +31,7 @@ package alternativa.a3d.collisions
 		
 		alternativa3d var boundBox:BoundBox;  
 		//alternativa3d var object:Object3D; //Alternativa3d debugging
-		
+		public static var PADD:Number = 2;
 		
 		public function CollisionBoundNode() 
 		{
@@ -62,10 +63,25 @@ package alternativa.a3d.collisions
 		}
 		*/
 		
+
+		
 		alternativa3d function setup(object:Object3D, collidable:ITCollidable):void {
 			//this.object = object; // Alternativa3d debugging
-			
-			boundBox = object.boundBox;
+
+			boundBox =  object.boundBox;
+		//	/*
+			if (boundBox != null && PADD!=0) {
+				boundBox = boundBox.clone();
+				var padd:Number = PADD;  // conservative padd just in case...
+				boundBox.minX -= padd;
+				boundBox.minY -= padd;
+				boundBox.minZ -= padd;
+				
+					boundBox.maxX += padd;
+				boundBox.maxY += padd;
+				boundBox.maxZ += padd;
+			}
+			//*/
 			if (object.transformChanged) {
 				object.composeTransforms();
 			}
@@ -163,6 +179,8 @@ package alternativa.a3d.collisions
 		
 		///*  // inlinable visitor/visitor-succeeded method
 		
+		//	public var debug:Boolean = false;
+		//public var debugCount:int = 0;
 		alternativa3d function visitChildren(collider:EllipsoidCollider):void {
 			for (var child:CollisionBoundNode = childrenList; child != null; child = child.next) {		
 				//if (!child.object.visible) continue;
@@ -174,15 +192,18 @@ package alternativa.a3d.collisions
 					collider.calculateSphere(child.globalToLocalTransform);
 					intersects = child.boundBox.checkSphere(collider.sphere);
 				}
+				
 				// Adding the geometry of self content
 				if (intersects) {
 					// Calculating matrix for converting from local coordinates to callider coordinates
 					child.localToGlobalTransform.combine(localToGlobalTransform, child.transform);
 					if (child.collidable) child.collidable.collectGeometryAndTransforms(collider, child.localToGlobalTransform);
+					if (child.childrenList != null) child.visitChildren(collider);		
 					
 				}
+				//if (debug) Log.trace("intersects?" + intersects + ", "+(debugCount++));
 				// Check for children
-				if (child.childrenList != null) child.visitChildren(collider);		
+				
 			}
 		}
 

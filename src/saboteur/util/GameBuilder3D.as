@@ -22,6 +22,7 @@ package saboteur.util
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
 	import alternativa.engine3d.alternativa3d;
+	import haxe.Log;
 	use namespace alternativa3d;
 
 	/**
@@ -259,7 +260,8 @@ package saboteur.util
 					visJetty3DByValueRecursive(collisionBuilding, value);
 					
 					var node:CollisionBoundNode;
-					collisionGraph.addChild( node= CollisionUtil.getCollisionGraph(collisionBuilding) );
+					collisionGraph.addChild( node = CollisionUtil.getCollisionGraph(collisionBuilding) );
+				//		node.debug = true;
 					//collisionScene.addChild(collisionBuilding);
 					
 					build3DGrid[pathUtil.getGridKey(gridEast, gridSouth)] =  new BuildPayload3D(newBuilding, node);
@@ -275,8 +277,8 @@ package saboteur.util
 			localCardinal.transform(localCardinal.east, refer, localCardinal.getDist(localCardinal.east, _gridSquareBound)* gridEast );
 			localCardinal.transform(localCardinal.south, refer, localCardinal.getDist(localCardinal.south, _gridSquareBound) * gridSouth );
 			collisionGraph.addChild( CollisionUtil.getCollisionGraph(refer) );
-
-	
+		
+			
 		}
 		
 			public function tryBuild(buildToValidity:Boolean):void 
