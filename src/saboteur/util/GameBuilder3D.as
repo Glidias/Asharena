@@ -81,35 +81,40 @@ package saboteur.util
 		public var showOccupied:Boolean = false;
 		public var pathGraph:SaboteurGraph;
 		
-		alternativa3d var startOffsetX:Number;
-		alternativa3d var startOffsetY:Number;
+		//alternativa3d var startOffsetX:Number;
+		//alternativa3d var startOffsetY:Number;
 		
-		private var startOffsetXLocal:Number;
-		private var startOffsetYLocal :Number;
+		//private var startOffsetXLocal:Number;
+		//private var startOffsetYLocal :Number;
 		
-		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane, startOffsetX:Number = 0, startOffsetY:Number = 0) {
+		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane) {
 		
 			// PathBuilderSystem raycasting wrong when including BOTH position and rotation offsets
-			/*
-			startOffsetX = 555;
-			startOffsetY = 113;
-			startScene.x = 344;
-			startScene.y = 244;
-			*/
+			///*
+			//startOffsetX = 555;
+			//startOffsetY = 313;
+		//	startScene.x = 444;
+		//	startScene.y = 344;
+		//	*/
 			// CollisionGraphNode bound tests wrong when rotation offset is included!
-			startScene.rotationZ = Math.PI;// * .37;
-		//	startScene.rotationX= Math.PI*.15;
+			//startScene.rotationZ = Math.PI * .37;
+		//	startScene.rotationX= Math.PI*.15;  // currenty rotation on other axes ont supported
 			
-			this.startOffsetX = startOffsetX;
-			this.startOffsetY = startOffsetY;
+			//this.startOffsetX = startOffsetX;
+			//this.startOffsetY = startOffsetY;
 			
-			startOffsetXLocal = startOffsetX / startScene._scaleX;
-			startOffsetYLocal = startOffsetY / startScene._scaleY;
-
+			var startSceneMatrix:Matrix3D = startScene.matrix;
+			/*
+			var matrixer:Matrix3D =startSceneMatrix.clone();
+			matrixer.invert();
+			var localStartOffset:Vector3D =matrixer.deltaTransformVector( new Vector3D(startOffsetX, startOffsetY, 0) );
+			startOffsetXLocal = localStartOffset.x;// startOffsetX / startScene._scaleX;
+			startOffsetYLocal = localStartOffset.y ;// startOffsetY / startScene._scaleY;
+			*/
+			
 			localCardinal = CARDINAL_VECTORS;
 			cardinal = new CardinalVectors();   //  global coordinate space cardinal vectors based off startScene's rotationZ!
-			var startSceneMatrix:Matrix3D = startScene.matrix;
-			
+						
 			cardinal.east = startSceneMatrix.deltaTransformVector(cardinal.east);
 			cardinal.south = startSceneMatrix.deltaTransformVector(cardinal.south);
 			cardinal.east.normalize();
@@ -127,8 +132,8 @@ package saboteur.util
 			this.applyMaterial = applyMaterial;
 			
 			this.collision = collision;
-			collision.x = startOffsetXLocal;
-			collision.y = startOffsetYLocal;
+			collision.x = 0;// startOffsetXLocal;
+			collision.y = 0;// startOffsetYLocal;
 			this.genesis = genesis;
 			this.startScene = startScene;
 			this.blueprint = blueprint;
@@ -159,8 +164,7 @@ package saboteur.util
 				_floor = floor;
 			this.startScene.addChild(genesis);
 			this.startScene.addChild(blueprint);
-			genesis.x = startOffsetXLocal;
-			genesis.y = startOffsetYLocal;
+			
 			
 			
 			_value = pathUtil.getValue( SaboteurPathUtil.EAST | SaboteurPathUtil.NORTH | SaboteurPathUtil.WEST | SaboteurPathUtil.SOUTH, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL);
@@ -323,8 +327,8 @@ package saboteur.util
 					var eastD:Number = gridEastWidth * ge;
 					var southD:Number = gridSouthWidth * gs;
 					
-					_floor._x = eastD * localCardinal.east.x + startOffsetXLocal;
-					_floor._y = eastD * localCardinal.east.y + startOffsetYLocal;
+					_floor._x = eastD * localCardinal.east.x;
+					_floor._y = eastD * localCardinal.east.y;
 					_floor._x += southD * localCardinal.south.x;
 					_floor._y += southD * localCardinal.south.y;
 					
@@ -347,8 +351,8 @@ package saboteur.util
 					var eastD:Number = gridEastWidth * ge;
 					var southD:Number = gridSouthWidth * gs;
 					
-					_floor._x = eastD * localCardinal.east.x + startOffsetXLocal;
-					_floor._y = eastD * localCardinal.east.y + startOffsetYLocal;
+					_floor._x = eastD * localCardinal.east.x;
+					_floor._y = eastD * localCardinal.east.y;
 					_floor._x += southD * localCardinal.south.x;
 					_floor._y += southD * localCardinal.south.y;
 					

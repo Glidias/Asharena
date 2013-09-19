@@ -148,7 +148,7 @@ package tests.ui
 			
 		
 			game.engine.addSystem(new TextMessageSystem(), SystemPriorities.render );
-			//game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(122, true) ).withPriority(SystemPriorities.resolveCollisions);
+			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(122, true) ).withPriority(SystemPriorities.resolveCollisions);
 			
 			BVHCuller;
 		

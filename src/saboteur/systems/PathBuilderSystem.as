@@ -197,8 +197,8 @@ package saboteur.systems
 				
 				
 				if (fromPos != null) {
-					origin.x = fromPos.x - builder.startScene._x - builder.startOffsetX;
-					origin.y = fromPos.y - builder.startScene._y - builder.startOffsetY;
+					origin.x = fromPos.x - builder.startScene._x;
+					origin.y = fromPos.y - builder.startScene._y;
 					origin.z = fromPos.z - builder.startScene._z;
 					origin.x /= builder.startScene._scaleX;
 					origin.y /= builder.startScene._scaleY;
@@ -231,8 +231,8 @@ package saboteur.systems
 					gs = Math.round(southVal * builder.gridSouthWidth_i);
 				}
 				else if (camera != null) {
-					origin.x = camera._x - builder.startScene._x - builder.startOffsetX;
-					origin.y = camera._y - builder.startScene._y - builder.startOffsetY;
+					origin.x = camera._x - builder.startScene._x;
+					origin.y = camera._y - builder.startScene._y;
 					origin.z = camera._z - builder.startScene._z;
 					origin.x /= builder.startScene._scaleX;
 					origin.y /= builder.startScene._scaleY;
@@ -331,9 +331,11 @@ package saboteur.systems
 						southOffset = ds < 0 ? -1 : 1;
 						eastOffset = 0;
 					}
+					
 					origin.x += direction.x;
 					origin.y += direction.y;
 					origin.z += direction.z;
+				
 					// bound Z hit check if you wish to include it in
 					//if (origin.z < builder._gridSquareBound.minZ || origin.z > builder._gridSquareBound.maxZ) {
 						// hide building gizmo
@@ -365,8 +367,7 @@ package saboteur.systems
 						return;
 					}
 					
-					// TODO: fix this calculation
-					if (false && (xt < yt ?  de < 0 ? xt - int(xt) : int(xt) + 1 - xt :  ds < 0 ? yt - int(yt) : int(yt) + 1 - yt) > (xt < yt ? buildDistRatio.x : buildDistRatio.y)  ) {  
+					if ( xt < yt ?   xt - int(xt) > buildDistRatio.x  :   yt - int(yt) > buildDistRatio.y ) {  
 						result = builder.updateFloorPosition(ge , gs,buildToValidity );
 						if (result === SaboteurPathUtil.RESULT_VALID) {
 							builder.editorMat.color = GameBuilder3D.COLOR_OUTSIDE;
