@@ -97,7 +97,7 @@ package saboteur.util
 			//startScene.y = 344;
 			//	*/
 			// CollisionGraphNode bound tests wrong when rotation offset is included!
-			startScene.rotationZ = Math.PI * .37;
+			//startScene.rotationZ = Math.PI * .37;
 		//	startScene.rotationX= Math.PI*.15;  // currenty rotation on other axes NOT supported
 			
 			//this.startOffsetX = startOffsetX;
