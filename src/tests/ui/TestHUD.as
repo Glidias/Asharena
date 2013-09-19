@@ -180,12 +180,14 @@ package tests.ui
 				var bitmapData:BitmapData = jettySpawner.createBlueprintSheet(_template3D.camera, _template3D.stage3D, hud);
 			//	addChild( new Bitmap(bitmapData));
 				GameBuilder3D
-				jettySpawner.minimap.createJettyAt(0, 0, SaboteurPathUtil.getInstance().getIndexByValue(63) );
+				//jettySpawner.minimap.createJettyAt(0, 0, SaboteurPathUtil.getInstance().getIndexByValue(63),  );
+				
 				jettySpawner.minimap.addToContainer( hudAssets.radarGridHolder);
 				jettySpawner.minimap.setCuller(hudAssets.circleRadarCuller);
 				
 			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
 
+			jettySpawner.minimap.createJettyWithBuilder(63, (ent.get(GameBuilder3D) as GameBuilder3D) );
 			pathBuilder.onBuildSucceeded.add(jettySpawner.minimap.createJettyWithBuilder);
 			pathBuilder.onDelSucceeded.add(jettySpawner.minimap.removeJettyWithBuilder);
 			

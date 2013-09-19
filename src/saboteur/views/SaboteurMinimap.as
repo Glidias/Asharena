@@ -17,8 +17,10 @@ package saboteur.views
 	import flash.display.BitmapData;
 	import flash.display3D.Context3D;
 	import flash.geom.Point;
+	import flash.geom.Vector3D;
 	import flash.utils.Dictionary;
 	import saboteur.models.IBuildModel;
+	import saboteur.spawners.JettySpawner;
 	import saboteur.util.CardinalVectors;
 	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
@@ -53,8 +55,10 @@ package saboteur.views
 		private var blueprintMaterial:FillHudMaterial;
 		private var buildModel:IBuildModel;
 		private var builder:GameBuilder3D;
+		private var _scal:Number = 1;
+		private var offsetGridPlaceVector:Vector3D = new Vector3D(0, -2,0);
+		private var offsetDeltaPlaceVector:Vector3D = new Vector3D(0, -2, 0);
 		
-
 		public function setupBuildModelAndView(model:IBuildModel, builder3:GameBuilder3D,  blueprintColorFloor:Mesh=null):void  {
 			if (blueprint == null) {
 				blueprint = jettySet.createClone() as SpriteMeshSetClone;
@@ -73,6 +77,36 @@ package saboteur.views
 			this.blueprintColorFloor = blueprintColorFloor || DUMMY;
 			buildModel = model;
 			builder = builder3;
+			
+			var scal:Number = pixelToMinimapScale/JettySpawner.SPAWN_SCALE;  // TODO: tie jettySet to custom parent 
+			jettySet._x = builder3.startScene._x * scal;
+			jettySet._y =  builder3.startScene._y * scal;
+			jettySet._rotationZ = builder3.startScene._rotationZ;
+			jettySet.transformChanged = true;
+			//blueprintColorFloor._rotationZ 
+			blueprintColorFloor._rotationZ = jettySet._rotationZ;
+			
+			_scal = scal;
+			
+			offsetDeltaPlaceVector = builder3.startScene.matrix.deltaTransformVector(offsetGridPlaceVector);
+			offsetDeltaPlaceVector.normalize();
+			offsetDeltaPlaceVector.scaleBy(offsetGridPlaceVector.length);
+			
+		}
+		
+		public function setPixelToMinimapScale(val:Number):void {
+			pixelToMinimapScale = val;
+			var scal:Number = pixelToMinimapScale / JettySpawner.SPAWN_SCALE;
+			_scal = scal;
+			if (builder) {   // TODO: tie jettySet to custom parent 
+				
+				jettySet._x = builder.startScene._x * scal;
+				jettySet._y =  builder.startScene._y * scal;
+				jettySet.transformChanged = true;
+				
+			}
+			
+			
 		}
 		
 		override public function update(time:Number):void {
@@ -87,26 +121,33 @@ package saboteur.views
 			//blueprint.root._x = builder.blueprint._x * minimapModel.worldToMiniScale;
 			//blueprint.root._y = builder.blueprint._y * minimapModel.worldToMiniScale;
 			
-			var fromX:Number = builder.startScene._x;
-			var fromY:Number = builder.startScene._y;
+
 			var x:int = builder.floorGridEast;
 			var y:int = builder.floorGridSouth;
-			var cardinal:CardinalVectors = builder.cardinal;
+			var cardinal:CardinalVectors = DEFAULT_CARDINAL;// builder.cardinal;
 			var dx:Number =  x * cardinal.east.x + y * cardinal.east.y;
 			var dy:Number =  x * cardinal.south.x + y * cardinal.south.y;
-			blueprint.root._x =fromX+ dx * jettyTileSize.x;
-			blueprint.root._y = fromY + dy * jettyTileSize.y - 2;
-			
+			blueprint.root._x = dx * jettyTileSize.x + offsetGridPlaceVector.x;
+			blueprint.root._y =  dy * jettyTileSize.y + offsetGridPlaceVector.y;
 			blueprint.root.transformChanged = true;
+			
+			
 			var index:int = pathUtil.getIndexByValue(buildId);
 			var rowIndex:int = int(index / jettyColumns);
 			var colIndex:int = index - rowIndex * jettyColumns;
 			
+			
 			blueprint.u = (jettyTileSize.x * colIndex ) / jettySheetWidth;
 			blueprint.v = .5+ (jettyTileSize.x * rowIndex ) / jettySheetHeight;
 			
-			blueprintColorFloor._x = blueprint.root._x;// builder.blueprint.x;
-			blueprintColorFloor._y = blueprint.root._y;// builder.blueprint.y;
+			
+			// global cardinal coordinates for blueprint floor
+			cardinal= builder.cardinal;
+			dx =  x * cardinal.east.x + y * cardinal.east.y;
+			dy =  x * cardinal.south.x + y * cardinal.south.y;
+			
+			blueprintColorFloor._x = builder.startScene._x*_scal + dx * jettyTileSize.x +offsetDeltaPlaceVector.x;// builder.blueprint.x;
+			blueprintColorFloor._y = builder.startScene._y*_scal + dy * jettyTileSize.y +offsetDeltaPlaceVector.y;// builder.blueprint.y;
 			blueprintColorFloor.transformChanged = true;
 			
 			if (blueprintMaterial != null ) {
@@ -155,7 +196,7 @@ package saboteur.views
 		public function createJettyWithBuilder(value:uint, builder:GameBuilder3D):void {
 			var buildDict:Dictionary = builders[builder];
 			if (buildDict == null) buildDict = builders[builder] = new Dictionary();
-			buildDict[pathUtil.getGridKey( builder.floorGridEast, builder.floorGridSouth)] = createJettyAt(builder.floorGridEast, builder.floorGridSouth, pathUtil.getIndexByValue(value), builder.cardinal, builder.startScene.x, builder.startScene.y);
+			buildDict[pathUtil.getGridKey( builder.floorGridEast, builder.floorGridSouth)] = createJettyAt(builder.floorGridEast, builder.floorGridSouth, pathUtil.getIndexByValue(value), DEFAULT_CARDINAL, builder.startScene.x, builder.startScene.y);
 		}
 		
 		public function removeJettyWithBuilder(builder:GameBuilder3D):void {
@@ -169,17 +210,19 @@ package saboteur.views
 		
 		public function createJettyAt(x:int, y:int, index:int, cardinal:CardinalVectors=null, fromX:Number=0, fromY:Number=0 ):SpriteMeshSetClone {
 		//jettyTileSize.y = 28;
-
+			
 			cardinal = cardinal || DEFAULT_CARDINAL;
 			var spr:SpriteMeshSetClone = jettySet.createClone() as SpriteMeshSetClone;
 			var rowIndex:int = int(index / jettyColumns);
 			var colIndex:int = index - rowIndex * jettyColumns;
 			var dx:Number =  x * cardinal.east.x + y * cardinal.east.y;
 			var dy:Number =  x * cardinal.south.x + y * cardinal.south.y;
-			spr.root.x =fromX+ dx * jettyTileSize.x;
-			spr.root.y =fromY+ dy * jettyTileSize.y-2;
+			spr.root.x = dx * jettyTileSize.x + offsetGridPlaceVector.x;
+			spr.root.y = dy * jettyTileSize.y + offsetGridPlaceVector.y;
 			spr.root.scaleX =  jettyTileSize.x ;
 			spr.root.scaleY = jettyTileSize.y;
+			
+			
 			//spr.root.rotationZ = Math.PI;
 		
 				//	spr.root.rotationX = Math.PI;

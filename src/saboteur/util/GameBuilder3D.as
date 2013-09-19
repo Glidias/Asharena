@@ -93,8 +93,8 @@ package saboteur.util
 			///*
 			//startOffsetX = 555;
 			//startOffsetY = 313;
-		//	startScene.x = 444;
-		//	startScene.y = 344;
+			//startScene.x = 444;
+			//startScene.y = 344;
 		//	*/
 			// CollisionGraphNode bound tests wrong when rotation offset is included!
 			//startScene.rotationZ = Math.PI * .37;
