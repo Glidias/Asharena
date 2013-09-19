@@ -299,6 +299,14 @@ package alternativa.engine3d.objects {
 			clones[numClones++] = cloneItem;
 		}
 		
+		public function addCloneWithCuller(cloneItem:MeshSetClone):void {
+			(culler is IMeshSetClonesContainer) ? (culler as IMeshSetClonesContainer).addClone(cloneItem) : addClone(cloneItem);
+		}
+		
+		public function removeCloneWithCuller(cloneItem:MeshSetClone):void {
+			(culler is IMeshSetClonesContainer) ? (culler as IMeshSetClonesContainer).addClone(cloneItem) : removeClone(cloneItem);
+		}
+		
 		public function removeClone(cloneItem:MeshSetClone):void {
 		//	if (cloneItem.index < 0) throw new Error("Clone item seems to already be removed!");
 			clones[cloneItem.index] = cloneItem.index < --numClones ? clones[numClones] : null;		

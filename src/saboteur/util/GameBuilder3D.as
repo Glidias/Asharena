@@ -6,6 +6,7 @@ package saboteur.util
 	 */
 	import alternativa.a3d.collisions.CollisionBoundNode;
 	import alternativa.a3d.collisions.CollisionUtil;
+	import alternativa.a3d.cullers.BVHCuller;
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Transform3D;
@@ -14,6 +15,7 @@ package saboteur.util
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.MeshSetClone;
+	import alternativa.engine3d.objects.MeshSetClonesContainer;
 	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.ExternalTextureResource;
@@ -81,14 +83,43 @@ package saboteur.util
 		public var showOccupied:Boolean = false;
 		public var pathGraph:SaboteurGraph;
 		
+
+		private static var MESH_SETS:Object = { };
+		public static function addMeshSetsToScene(scene:Object3D, sampleBlueprint:Object3D, material:Material):void {
+			var meshSet:MeshSetClonesContainer;
+			const meshSetHash:Object = MESH_SETS;
+		
+			for (var c:Object3D = sampleBlueprint.childrenList; c != null; c = c.next) {
+				var mesh:Mesh = c as Mesh;
+				if (mesh != null) {
+					meshSetHash[c.name] = meshSet = new MeshSetClonesContainer( mesh, material);
+				//	meshSet.culler = new BVHCuller(meshSet);
+			
+				}
+			}
+			
+			//var count:int = 0;
+			for (var prop:String in meshSetHash) {
+				scene.addChild(meshSetHash[prop]);
+				//	count++;
+			}
+			//throw new Error(count + " meshsets.");
+		}
+		
+		
+		
 		//alternativa3d var startOffsetX:Number;
 		//alternativa3d var startOffsetY:Number;
 		
 		//private var startOffsetXLocal:Number;
 		//private var startOffsetYLocal :Number;
 		
+		
 		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane) {
 		
+			// TODO: remove genesis and newBuildings from startScene! Add them to MeshSet
+			// TODO: test MeshSet culler implementation
+			
 			// PathBuilderSystem raycasting wrong when including BOTH position and rotation offsets
 			///*
 			//startOffsetX = 555;

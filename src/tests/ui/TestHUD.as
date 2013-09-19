@@ -184,7 +184,9 @@ package tests.ui
 				
 				jettySpawner.minimap.addToContainer( hudAssets.radarGridHolder);
 				jettySpawner.minimap.setCuller(hudAssets.circleRadarCuller);
+			
 				
+			
 			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
 
 			jettySpawner.minimap.createJettyWithBuilder(63, (ent.get(GameBuilder3D) as GameBuilder3D) );

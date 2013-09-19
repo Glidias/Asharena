@@ -54,6 +54,11 @@ package saboteur.spawners
 		private var _floor:Plane;
 		public var diffuse:BitmapTextureResource;
 		public var minimap:SaboteurMinimap;
+		
+		public function get jettyMaterial():Material {
+			return injectMaterial;
+		}
+		
 
 		public function JettySpawner() 
 		{
@@ -107,6 +112,7 @@ package saboteur.spawners
 			uploadResources(collision.getResources(true));
 			uploadResources(rootCont.getResources(true, null));
 			
+	
 			 
 			super.init();
 		}
@@ -226,8 +232,14 @@ package saboteur.spawners
 			}
 		}
 		
+		private var firstSpawn:Boolean = true;
 	
 		public function spawn(engine:Engine, scene:Object3D, pos:Pos=null, rayDir:DirectionVectors=null):Entity {
+			
+			if (firstSpawn) {
+				GameBuilder3D.addMeshSetsToScene(scene, blueprint, jettyMaterial);
+				firstSpawn = false;
+			}
 			
 			var root:Object3D = scene.addChild(new Object3D());
 			root._scaleX = root._scaleY = root._scaleZ =  SPAWN_SCALE;
