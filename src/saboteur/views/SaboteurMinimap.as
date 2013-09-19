@@ -59,6 +59,8 @@ package saboteur.views
 		private var offsetGridPlaceVector:Vector3D = new Vector3D(0, -2,0);
 		private var offsetDeltaPlaceVector:Vector3D = new Vector3D(0, -2, 0);
 		
+		private var jettySetParents:Dictionary = new Dictionary();
+		
 		public function setupBuildModelAndView(model:IBuildModel, builder3:GameBuilder3D,  blueprintColorFloor:Mesh=null):void  {
 			if (blueprint == null) {
 				blueprint = jettySet.createClone() as SpriteMeshSetClone;
@@ -78,19 +80,17 @@ package saboteur.views
 			buildModel = model;
 			builder = builder3;
 			
-			var scal:Number = pixelToMinimapScale/JettySpawner.SPAWN_SCALE;  // TODO: tie jettySet to custom parent 
-			jettySet._x = builder3.startScene._x * scal;
-			jettySet._y =  builder3.startScene._y * scal;
-			jettySet._rotationZ = builder3.startScene._rotationZ;
-			jettySet.transformChanged = true;
-			//blueprintColorFloor._rotationZ 
-			blueprintColorFloor._rotationZ = jettySet._rotationZ;
 			
-			_scal = scal;
+			blueprint.root._parent = getSprParentContainerOf(builder3.startScene);
+			
+			blueprintColorFloor._rotationZ =builder3.startScene._rotationZ;
+			
 			
 			offsetDeltaPlaceVector = builder3.startScene.matrix.deltaTransformVector(offsetGridPlaceVector);
 			offsetDeltaPlaceVector.normalize();
 			offsetDeltaPlaceVector.scaleBy(offsetGridPlaceVector.length);
+			
+			_scal =  pixelToMinimapScale / JettySpawner.SPAWN_SCALE;
 			
 		}
 		
@@ -98,15 +98,12 @@ package saboteur.views
 			pixelToMinimapScale = val;
 			var scal:Number = pixelToMinimapScale / JettySpawner.SPAWN_SCALE;
 			_scal = scal;
-			if (builder) {   // TODO: tie jettySet to custom parent 
-				
-				jettySet._x = builder.startScene._x * scal;
-				jettySet._y =  builder.startScene._y * scal;
-				jettySet.transformChanged = true;
-				
-			}
-			
-			
+			for (var key:* in  jettySetParents) {
+				var p:Object3D = jettySetParents[key];
+				p._x =  builder.startScene._x * scal;
+				p._y =  builder.startScene._y * scal;
+				p.composeTransforms();
+			}	
 		}
 		
 		override public function update(time:Number):void {
@@ -196,7 +193,32 @@ package saboteur.views
 		public function createJettyWithBuilder(value:uint, builder:GameBuilder3D):void {
 			var buildDict:Dictionary = builders[builder];
 			if (buildDict == null) buildDict = builders[builder] = new Dictionary();
-			buildDict[pathUtil.getGridKey( builder.floorGridEast, builder.floorGridSouth)] = createJettyAt(builder.floorGridEast, builder.floorGridSouth, pathUtil.getIndexByValue(value), DEFAULT_CARDINAL, builder.startScene.x, builder.startScene.y);
+			var parentCont:Object3D = getSprParentContainerOf(builder.startScene);
+			var cloned:SpriteMeshSetClone;
+			buildDict[pathUtil.getGridKey( builder.floorGridEast, builder.floorGridSouth)] = cloned = createJettyAt(builder.floorGridEast, builder.floorGridSouth, pathUtil.getIndexByValue(value), DEFAULT_CARDINAL, builder.startScene.x, builder.startScene.y);
+			
+			cloned.root._parent = parentCont;
+		}
+		
+		private function getSprParentContainerOf(startScene:Object3D):Object3D {
+			var parentCont:Object3D = jettySetParents[startScene];
+			if (!parentCont) {
+				jettySetParents[startScene]  =  parentCont=getMatchingContainer(startScene);  // lazy init builder container, assumed doesn't move..
+			}
+			return parentCont;
+		}
+		
+		private function getMatchingContainer(startScene:Object3D):Object3D 
+		{
+			var obj:Object3D = new Object3D();
+			
+			var scal:Number = pixelToMinimapScale/JettySpawner.SPAWN_SCALE;  // TODO: tie jettySet to custom parent 
+			obj._x = startScene._x * scal;
+			obj._y =  startScene._y * scal;
+			obj._rotationZ = startScene._rotationZ;
+			obj.composeTransforms();
+			
+			return obj;
 		}
 		
 		public function removeJettyWithBuilder(builder:GameBuilder3D):void {
@@ -208,7 +230,7 @@ package saboteur.views
 		
 		
 		
-		public function createJettyAt(x:int, y:int, index:int, cardinal:CardinalVectors=null, fromX:Number=0, fromY:Number=0 ):SpriteMeshSetClone {
+		private function createJettyAt(x:int, y:int, index:int, cardinal:CardinalVectors=null, fromX:Number=0, fromY:Number=0 ):SpriteMeshSetClone {
 		//jettyTileSize.y = 28;
 			
 			cardinal = cardinal || DEFAULT_CARDINAL;

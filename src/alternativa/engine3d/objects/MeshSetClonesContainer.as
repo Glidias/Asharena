@@ -79,6 +79,8 @@ package alternativa.engine3d.objects {
 		
 		public var culler:IMeshSetCloneCuller;
 		
+		//public var parentList:Object3D = new Object3D();
+		
 		
 		/**
 		 * Whether to attempt to pack all meshes tightly in the output buffer for ensuring the least amount of drawcalls possible (this could result in slightly larger geometry buffer size)
@@ -266,6 +268,13 @@ package alternativa.engine3d.objects {
 			
 			cloneItem.surfaceMeshes = surfaceMeshes.concat();
 			var len:int = cloneItem.surfaceMeshes.length;
+			
+			/*
+			for (var p:Object3D = parentList.childrenList; p != null; p = p.next) {
+				if (p.transformChanged) p.composeTransforms();
+			}
+			*/
+			
 			for (var i:int = 0; i < len; i++) {
 				cloneItem.surfaceMeshes[i]= cloneItem.surfaceMeshes[i].concat();
 			}
@@ -324,7 +333,10 @@ package alternativa.engine3d.objects {
 			while (--i > -1) {
 				var root:Object3D = visibleClones[i].root;
 				if (root.transformChanged) root.composeTransforms();
-				root.localToGlobalTransform.copy(root.transform);
+				
+				if (root._parent == null) root.localToGlobalTransform.copy(root.transform);
+				else root.localToGlobalTransform.combine(root._parent.transform, root.transform);
+				
 				calculateMeshesTransforms(root);
 			}
 		}
