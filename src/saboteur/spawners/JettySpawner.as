@@ -1,5 +1,6 @@
 package saboteur.spawners 
 {
+	import alternativa.a3d.collisions.CollisionBoundNode;
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
@@ -233,23 +234,31 @@ package saboteur.spawners
 		}
 		
 		private var firstSpawn:Boolean = true;
+		//public var collisionRoot:CollisionBoundNode = new CollisionBoundNode();
 	
 		public function spawn(engine:Engine, scene:Object3D, pos:Pos=null, rayDir:DirectionVectors=null):Entity {
-			
-			if (firstSpawn) {
-				GameBuilder3D.addMeshSetsToScene(scene, genesis, jettyMaterial,context3D);
-				firstSpawn = false;
-			}
-			
 			var root:Object3D = scene.addChild(new Object3D());
 			root._scaleX = root._scaleY = root._scaleZ =  SPAWN_SCALE;
 			
+			
+			
+			if (firstSpawn) {
+				GameBuilder3D.addMeshSetsToScene(scene, genesis, jettyMaterial, root, context3D);
+				firstSpawn = false;
+			}
+			
+			
+			
 			var gameBuilder:GameBuilder3D = new GameBuilder3D(root, genesis, blueprint, collision, injectMaterial, editorMat, _floor);
+			
+			//collisionRoot.addChild(gameBuilder.collisionGraph);
+			
 			var cardinal:CardinalVectors = new CardinalVectors();
 			var entity:Entity = new Entity().add(cardinal).add(gameBuilder);
 			if (pos != null) entity.add(pos, Pos);
 			if (rayDir != null) entity.add(rayDir, DirectionVectors);
 			engine.addEntity(entity);
+			
 			return entity;
 		}
 		

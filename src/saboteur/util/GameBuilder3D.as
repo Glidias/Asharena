@@ -10,6 +10,7 @@ package saboteur.util
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Transform3D;
+	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.loaders.TexturesLoader;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.Material;
@@ -22,6 +23,7 @@ package saboteur.util
 	import alternativa.engine3d.utils.Object3DUtils;
 	import flash.display3D.Context3D;
 	import flash.geom.Matrix3D;
+	import flash.geom.Transform;
 	import flash.geom.Vector3D;
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
@@ -85,26 +87,63 @@ package saboteur.util
 		public var showOccupied:Boolean = false;
 		public var pathGraph:SaboteurGraph;
 		
+		private static function checkIdentityRotScale(obj:Object3D):void {
+			if (obj._rotationX != 0 || obj._rotationZ != 0 || obj._rotationY != 0 || obj._scaleX != 1 || obj._scaleY != 1 || obj._scaleZ != 1) throw new Error("not normalized Rot scale meshes!:" + (new Vector3D(obj._rotationX, obj._rotationY, obj._rotationZ) ));
+		}
 		
 		
+		private static function globalizeMesh(mesh:Mesh):void {
+			if (mesh.transformChanged) mesh.composeTransforms();
+			var vertices:Vector.<Number> = mesh.geometry.getAttributeValues(VertexAttributes.POSITION);
+			var len:int = vertices.length;
+			var t:Transform3D = mesh.transform;
+			for (var i:int = 0; i < len; i += 3) {
+				var x:Number = vertices[i];
+				var y:Number = vertices[i+1];
+				var z:Number = vertices[i + 2];
+				vertices[i] = t.a * x + t.b * y + t.c * z + t.d;
+				vertices[i+1] = t.e * x + t.f * y + t.g * z + t.h;
+				vertices[i+2] = t.i * x + t.j * y + t.k * z + t.l;
+				
+			}
+			
+			mesh._x = 0;
+			mesh._y = 0;
+			mesh._z = 0;
+			mesh._rotationX = 0;
+			mesh._rotationY = 0;
+			mesh._rotationZ = 0;
+				mesh._scaleX = 1;
+			mesh._scaleY = 1;
+			mesh._scaleZ = 1;
+			
+			mesh.composeTransforms();
+			
+			
+			mesh.geometry.setAttributeValues(VertexAttributes.POSITION, vertices);
+			
+			mesh.boundBox = Object3DUtils.calculateHierarchyBoundBox(mesh);
+		}
 
 		private static var MESH_SETS:Object = { };
-		public static function addMeshSetsToScene(scene:Object3D, sampleBlueprint:Object3D, material:Material, context3D:Context3D):void {
+		public static function addMeshSetsToScene(scene:Object3D, sampleBlueprint:Object3D, material:Material, startScene:Object3D, context3D:Context3D):void {
 			var meshSet:MeshSetClonesContainer;
 			const meshSetHash:Object = MESH_SETS;
+			//checkIdentityRotScale(scene);
 			
+
 			
 		
 			for (var c:Object3D = sampleBlueprint.childrenList; c != null; c = c.next) {
 				var mesh:Mesh = c as Mesh;
 				if (mesh != null) {
+					mesh = mesh.clone() as Mesh;	
+					globalizeMesh(mesh);
 					meshSetHash[c.name] = meshSet = new MeshSetClonesContainer( mesh, material);
 					meshSet.name = c.name + "_meshset";
 					meshSet.geometry.upload(context3D);
-					if (mesh.boundBox == null) {
-						 mesh.boundBox = Object3DUtils.calculateHierarchyBoundBox(mesh);
-					}
 					meshSet.culler = new BVHCuller(meshSet);  
+					//meshSet.culler = new BoundingBoxCuller();
 				}
 			}
 			
@@ -128,7 +167,7 @@ package saboteur.util
 		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane) {
 		
 		
-			// TODO:  MeshSet BVHculler implementation doesn't seem to do any form of culling
+			// TODO: somehow, some of the railing collisions are missing!
 			
 			// PathBuilderSystem raycasting wrong when including BOTH position and rotation offsets
 			///*
@@ -152,6 +191,8 @@ package saboteur.util
 			startOffsetXLocal = localStartOffset.x;// startOffsetX / startScene._scaleX;
 			startOffsetYLocal = localStartOffset.y ;// startOffsetY / startScene._scaleY;
 			*/
+			
+			startScene.composeTransforms();
 			
 			localCardinal = CARDINAL_VECTORS;
 			cardinal = new CardinalVectors();   //  global coordinate space cardinal vectors based off startScene's rotationZ!

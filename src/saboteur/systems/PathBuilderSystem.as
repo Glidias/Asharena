@@ -1,5 +1,6 @@
 package saboteur.systems 
 {
+	import alternativa.a3d.collisions.CollisionBoundNode;
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Debug;
 	import alternativa.engine3d.core.Object3D;
@@ -101,6 +102,8 @@ package saboteur.systems
 		public const onDelSucceeded:Signal1 = new Signal1();
 		
 		public var buildToValidity:Boolean=false;  // set this to true to use traditional boardgame saboteur rules where spatial position of videogame player avatar doesn't matter
+		
+		
 		
 		public function PathBuilderSystem(camera:Camera3D=null) 
 		{

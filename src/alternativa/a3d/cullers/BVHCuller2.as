@@ -1,6 +1,5 @@
 package alternativa.a3d.cullers 
 {
-	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.CullingPlane;
 	import alternativa.engine3d.core.Object3D;
@@ -13,11 +12,15 @@ package alternativa.a3d.cullers
 	use namespace alternativa3d;
 	
 	/**
-	 * Bounding volume hierachy ( in the form of hierachical bounding boxes)
-	 *
+	 * Bounding volume hierachy v2 ( in the form of hierachical bounding boxes). WIP variant cancelled but might be considered
+	 * later considered in the future. This culler version allows to handle culling against multiple rotated parent containers more accruately, since aabbs won't  be axis-aligned under rotated parents (ie. expanded rotated AABB with wasted space).  But since BVH supports intersecting aabbs and 3d culling on hardware can afford to be conservative , this isn't necessary in most cases.
+	 * 
+	 * Note, however, tis version might still be good for longish-type of objects! However, i'm currently culling relatively 
+	 * square-shaped object bounds, so the amount of wasted space is minimal.
+	 * 
 	 * @author Glenn Ko
 	 */
-	public class BVHCuller implements IMeshSetCloneCuller, IMeshSetClonesContainer
+	public class BVHCuller2 implements IMeshSetCloneCuller, IMeshSetClonesContainer
 	{
 		private var proxy:IMeshSetClonesContainer;
 		public var tree:DynamicBVTree;
@@ -25,7 +28,7 @@ package alternativa.a3d.cullers
 		
 		public var parentTrees:Dictionary = new Dictionary();  // assosiate Object3D key parents with new DynamicBVTrees
 		
-		public function BVHCuller(proxy:IMeshSetClonesContainer) 
+		public function BVHCuller2(proxy:IMeshSetClonesContainer) 
 		{
 			this.proxy = proxy;
 			tree = new DynamicBVTree();
@@ -40,7 +43,7 @@ package alternativa.a3d.cullers
 		
 		public function cull(numClones:int, clones:Vector.<MeshSetClone>, collector:Vector.<MeshSetClone>, camera:Camera3D, object:Object3D):int 
 		{
-			camera.calculateFrustum( object.cameraToLocalTransform);
+			
 			_frustum = camera.frustum;
 			
 			var ni:int = 0;
@@ -53,6 +56,7 @@ package alternativa.a3d.cullers
 			node = tree.root;
 			
 			if (node != null) {
+				camera.calculateFrustum( object.cameraToLocalTransform);
 				nodeAABB = node.aabb;
 				node.culling = cullingInFrustum(63, nodeAABB.minX, nodeAABB.minY, nodeAABB.minZ, nodeAABB.maxX, nodeAABB.maxY, nodeAABB.maxZ);
 				if (node.culling>=0) nodeStack[ni++] = node;
@@ -61,7 +65,6 @@ package alternativa.a3d.cullers
 			while ( --ni > -1) {
 				node = nodeStack[ni];
 				if (node.proxy) {
-					if (node.proxy.index < 0) throw new Error("SHould no longer be in tree!");
 					collector[count++] = node.proxy;
 				}
 				
@@ -79,6 +82,45 @@ package alternativa.a3d.cullers
 				}
 				
 			}
+			
+			// repeat procedure for other axis-aligned spaces
+			for (var keyParent:* in parentTrees) {
+				var kParent:Object3D = keyParent;
+				var kTree:DynamicBVTree = parentTrees[kParent];
+				if (kParent.transformChanged) kParent.composeTransforms();
+				node = kTree.root;
+				
+				ni = 0;
+				if (node != null) {
+					// TODO: calculate cameraToLocalTransform for kParent
+					// get camera to local transform
+					camera.calculateFrustum(kParent.cameraToLocalTransform);
+					nodeAABB = node.aabb;
+					node.culling = cullingInFrustum(63, nodeAABB.minX, nodeAABB.minY, nodeAABB.minZ, nodeAABB.maxX, nodeAABB.maxY, nodeAABB.maxZ);
+					if (node.culling >= 0) nodeStack[ni++] = node;
+					
+					while ( --ni > -1) {
+						node = nodeStack[ni];
+						if (node.proxy) {
+							collector[count++] = node.proxy;
+						}
+						
+						if ( (cNode=node.child1) != null ) {
+							nodeAABB = cNode.aabb;
+							cNode.culling = cullingInFrustum(node.culling, nodeAABB.minX, nodeAABB.minY, nodeAABB.minZ, nodeAABB.maxX, nodeAABB.maxY, nodeAABB.maxZ);
+							if (cNode.culling >= 0) nodeStack[ni++] = cNode;
+						}
+						if ( (cNode=node.child2) != null) {
+							nodeAABB = cNode.aabb;
+							cNode.culling = cullingInFrustum(node.culling, nodeAABB.minX, nodeAABB.minY, nodeAABB.minZ, nodeAABB.maxX, nodeAABB.maxY, nodeAABB.maxZ);
+							if (cNode.culling >= 0) nodeStack[ni++] = cNode;
+						}
+					
+					}
+				}
+		
+			}
+	
 			
 			
 			return count;
@@ -137,202 +179,42 @@ package alternativa.a3d.cullers
 		/* INTERFACE alternativa.engine3d.objects.IMeshSetClonesContainer */
 		
 		private var cloneNodeDict:Dictionary = new Dictionary();
-		private var result:BoundBox = new BoundBox();
 		
-		private function calculateNewBounds(bound:BoundBox, obj:Object3D, parentTransform:Transform3D, result:BoundBox):void {	
-			var x:Number;
-			var y:Number;
-			var z:Number;
-			
-			var maxValue:Number =  Number.MAX_VALUE;
-			var rx:Number;
-			var ry:Number;
-			var rz:Number;
-			
-			result.maxX = -maxValue;
-			result.maxY = -maxValue;
-			result.maxZ = -maxValue;
-			result.minX = maxValue;
-			result.minY = maxValue;
-			result.minZ = maxValue;
-			
-			// all min
-			x = bound.minX + obj._x;
-			y = bound.minY + obj._y;
-			z = bound.minZ + obj._z;
-			rx= parentTransform.a * x + parentTransform.b * y  +  parentTransform.c*z+ parentTransform.d;
-			ry = parentTransform.e * x + parentTransform.f * y +  parentTransform.g * z + parentTransform.h;
-			rz= parentTransform.i * x + parentTransform.j * y +  parentTransform.k*z + parentTransform.l;
-			if (rx > result.maxX) result.maxX = rx;
-			if (rx < result.minX) result.minX = rx;
-			if (ry > result.maxY) result.maxY = ry;
-			if (ry < result.minY) result.minY = ry;
-			if (rz > result.maxZ) result.maxZ = rz;
-			if (rz < result.minZ) result.minZ = rz;
-			
-			// max1 x3
-			x = bound.maxX + obj._x;
-			y = bound.minY + obj._y;
-			z = bound.minZ + obj._z;
-				rx= parentTransform.a * x + parentTransform.b * y  +  parentTransform.c*z+ parentTransform.d;
-			ry = parentTransform.e * x + parentTransform.f * y +  parentTransform.g * z + parentTransform.h;
-			rz= parentTransform.i * x + parentTransform.j * y +  parentTransform.k*z + parentTransform.l;
-			if (rx > result.maxX) result.maxX = rx;
-			if (rx < result.minX) result.minX = rx;
-			if (ry > result.maxY) result.maxY = ry;
-			if (ry < result.minY) result.minY = ry;
-			if (rz > result.maxZ) result.maxZ = rz;
-			if (rz < result.minZ) result.minZ = rz;
-			
-			
-			x = bound.minX + obj._x;
-			y = bound.maxY + obj._y;
-			z = bound.minZ + obj._z;
-				rx= parentTransform.a * x + parentTransform.b * y  +  parentTransform.c*z+ parentTransform.d;
-			ry = parentTransform.e * x + parentTransform.f * y +  parentTransform.g * z + parentTransform.h;
-			rz= parentTransform.i * x + parentTransform.j * y +  parentTransform.k*z + parentTransform.l;
-			if (rx > result.maxX) result.maxX = rx;
-			if (rx < result.minX) result.minX = rx;
-			if (ry > result.maxY) result.maxY = ry;
-			if (ry < result.minY) result.minY = ry;
-			if (rz > result.maxZ) result.maxZ = rz;
-			if (rz < result.minZ) result.minZ = rz;
-			
-			
-			x = bound.minX + obj._x;
-			y = bound.minY + obj._y;
-			z = bound.maxZ + obj._z;
-				rx= parentTransform.a * x + parentTransform.b * y  +  parentTransform.c*z+ parentTransform.d;
-			ry = parentTransform.e * x + parentTransform.f * y +  parentTransform.g * z + parentTransform.h;
-			rz= parentTransform.i * x + parentTransform.j * y +  parentTransform.k*z + parentTransform.l;
-			if (rx > result.maxX) result.maxX = rx;
-			if (rx < result.minX) result.minX = rx;
-			if (ry > result.maxY) result.maxY = ry;
-			if (ry < result.minY) result.minY = ry;
-			if (rz > result.maxZ) result.maxZ = rz;
-			if (rz < result.minZ) result.minZ = rz;
-			
-			
-			// max2 x3
-			x = bound.maxX + obj._x;
-			y = bound.maxY + obj._y;
-			z = bound.minZ + obj._z;
-				rx= parentTransform.a * x + parentTransform.b * y  +  parentTransform.c*z+ parentTransform.d;
-			ry = parentTransform.e * x + parentTransform.f * y +  parentTransform.g * z + parentTransform.h;
-			rz= parentTransform.i * x + parentTransform.j * y +  parentTransform.k*z + parentTransform.l;
-			if (rx > result.maxX) result.maxX = rx;
-			if (rx < result.minX) result.minX = rx;
-			if (ry > result.maxY) result.maxY = ry;
-			if (ry < result.minY) result.minY = ry;
-			if (rz > result.maxZ) result.maxZ = rz;
-			if (rz < result.minZ) result.minZ = rz;
-			
-			x = bound.minX + obj._x;
-			y = bound.maxY + obj._y;
-			z = bound.maxZ + obj._z;
-				rx= parentTransform.a * x + parentTransform.b * y  +  parentTransform.c*z+ parentTransform.d;
-			ry = parentTransform.e * x + parentTransform.f * y +  parentTransform.g * z + parentTransform.h;
-			rz= parentTransform.i * x + parentTransform.j * y +  parentTransform.k*z + parentTransform.l;
-			if (rx > result.maxX) result.maxX = rx;
-			if (rx < result.minX) result.minX = rx;
-			if (ry > result.maxY) result.maxY = ry;
-			if (ry < result.minY) result.minY = ry;
-			if (rz > result.maxZ) result.maxZ = rz;
-			if (rz < result.minZ) result.minZ = rz;
-			
-			x = bound.maxX + obj._x;
-			y = bound.minY + obj._y;
-			z = bound.maxZ + obj._z;
-				rx= parentTransform.a * x + parentTransform.b * y  +  parentTransform.c*z+ parentTransform.d;
-			ry = parentTransform.e * x + parentTransform.f * y +  parentTransform.g * z + parentTransform.h;
-			rz= parentTransform.i * x + parentTransform.j * y +  parentTransform.k*z + parentTransform.l;
-			if (rx > result.maxX) result.maxX = rx;
-			if (rx < result.minX) result.minX = rx;
-			if (ry > result.maxY) result.maxY = ry;
-			if (ry < result.minY) result.minY = ry;
-			if (rz > result.maxZ) result.maxZ = rz;
-			if (rz < result.minZ) result.minZ = rz;
-			
-			// all max
-			x = bound.maxX + obj._x;
-			y = bound.maxY + obj._y;
-			z = bound.maxZ + obj._z;
-			rx= parentTransform.a * x + parentTransform.b * y  +  parentTransform.c*z+ parentTransform.d;
-			ry = parentTransform.e * x + parentTransform.f * y +  parentTransform.g * z + parentTransform.h;
-			rz= parentTransform.i * x + parentTransform.j * y +  parentTransform.k*z + parentTransform.l;
-		
-			if (rx > result.maxX) result.maxX = rx;
-			if (rx < result.minX) result.minX = rx;
-			if (ry > result.maxY) result.maxY = ry;
-			if (ry < result.minY) result.minY = ry;
-			if (rz > result.maxZ) result.maxZ = rz;
-			if (rz < result.minZ) result.minZ = rz;
+		private function getTreeFromParent(parent:Object3D):DynamicBVTree {
+			var t:DynamicBVTree = parentTrees[parent];
+			if (t == null) {
+				t = new DynamicBVTree();
+				parentTrees[parent] = t;
+			}
+			return t;
 		}
 		
 		public function addClone(cloneItem:MeshSetClone):void 
 		{
-			var maxZ:Number;
-			var maxY:Number;
-			var maxX:Number;
-			var minZ:Number;
-			var minY:Number;
-			var minX:Number;
 			proxy.addClone(cloneItem);
+			
+			var noParent:Boolean = cloneItem.root._parent == null;
+			var tree:DynamicBVTree = gotParent ? this.tree : getTreeFromParent(cloneItem.root._parent);
+			
 			var node:DynamicBVTreeNode = new DynamicBVTreeNode();
 			node.proxy = cloneItem;
+			
+			// this assumes root isn't rotated/scaled
+			var minX:Number = cloneItem.root.boundBox.minX + cloneItem.root._x;
+			var minY:Number = cloneItem.root.boundBox.minY + cloneItem.root._y;
+			var minZ:Number = cloneItem.root.boundBox.minZ + cloneItem.root._z;
 		
-					
-					
-			var parentTransform:Transform3D = null;
-			var parent:Object3D = cloneItem.root._parent;
-			if (parent != null) parentTransform = cloneItem.root._parent.transform;
+			var maxX:Number = cloneItem.root.boundBox.maxX + cloneItem.root._x;
+			var maxY:Number = cloneItem.root.boundBox.maxY + cloneItem.root._y;
+			var maxZ:Number = cloneItem.root.boundBox.maxZ+ cloneItem.root._z;
 			
-			
-			if (parentTransform != null) {  // TODO: need to check if there is rotation for parent object3D, and if so, expand AABB accordingly.
-				//if (parent.transformChanged) parent.composeTransforms();
-				if (parent._rotationX != 0  || parent._rotationY != 0 || parent._rotationZ != 0) {
-
-					calculateNewBounds(cloneItem.root.boundBox, cloneItem.root, parentTransform, result);
-				
-					node.aabb.minX = result.minX;
-					node.aabb.minY = result.minY;
-					node.aabb.minZ =result.minZ;
-					
-					node.aabb.maxX = result.maxX;
-					node.aabb.maxY = result.maxY;
-					node.aabb.maxZ = result.maxZ;
-					
-				}
-				else {
-				
-			
-				// assumes cloneItme.root is identity rotation and scale!  So only need to offset translation!
-					minX = cloneItem.root.boundBox.minX + cloneItem.root._x;
-					minY =  cloneItem.root.boundBox.minY+ cloneItem.root._y;
-					minZ =  cloneItem.root.boundBox.minZ + cloneItem.root._z;
-				
-					maxX =  cloneItem.root.boundBox.maxX + cloneItem.root._x;
-					maxY =  cloneItem.root.boundBox.maxY + cloneItem.root._y;
-					maxZ =  cloneItem.root.boundBox.maxZ + cloneItem.root._z;
-					
-					node.aabb.minX =parentTransform.a * minX + parentTransform.b * minY  +  parentTransform.c*minZ+ parentTransform.d;
-					node.aabb.minY = parentTransform.e * minX + parentTransform.f * minY +  parentTransform.g * minZ + parentTransform.h;
-					node.aabb.minZ = parentTransform.i * minX + parentTransform.j * minY +  parentTransform.k*minZ + parentTransform.l;
-					
-					node.aabb.maxX =parentTransform.a * maxX + parentTransform.b * maxY  +  parentTransform.c*maxZ+ parentTransform.d;
-					node.aabb.maxY = parentTransform.e * maxX + parentTransform.f * maxY + parentTransform.c*maxZ+ parentTransform.h;
-					node.aabb.maxZ = parentTransform.i * maxX + parentTransform.j * maxY + parentTransform.k * maxZ +  parentTransform.l;
-				}
-			}
-			else {
-				node.aabb.minX = minX;
-				node.aabb.minY = minY;
-				node.aabb.maxX = maxX;
-				node.aabb.maxY = maxY;
-				node.aabb.minZ = minZ;
-				node.aabb.maxZ = maxZ;
-			}
-			
+			node.aabb.minX = minX;
+			node.aabb.minY = minY;
+			node.aabb.maxX = maxX;
+			node.aabb.maxY = maxY;
+			node.aabb.minZ = minZ;
+			node.aabb.maxZ = maxZ;
+		
 			tree.insertLeaf( node );
 			cloneNodeDict[cloneItem] = node;
 		}
