@@ -59,16 +59,22 @@ package alternativa.a3d.cullers
 			
 			while ( --ni > -1) {
 				node = nodeStack[ni];
+				if (node.proxy) {
+					if (node.proxy.index < 0) throw new Error("SHould no longer be in tree!");
+					collector[count++] = node.proxy;
+				}
 				
 				if ( (cNode=node.child1) != null ) {
 					nodeAABB = cNode.aabb;
 					cNode.culling = cullingInFrustum(node.culling, nodeAABB.minX, nodeAABB.minY, minZ, nodeAABB.maxX, nodeAABB.maxY, maxZ);
-					if (cNode.culling>=0) nodeStack[ni++] = cNode;
+					if (cNode.culling >= 0) nodeStack[ni++] = cNode;
+					//else throw new Error("culled!");
 				}
 				if ( (cNode=node.child2) != null) {
 					nodeAABB = cNode.aabb;
 					cNode.culling = cullingInFrustum(node.culling, nodeAABB.minX, nodeAABB.minY, minZ, nodeAABB.maxX, nodeAABB.maxY, maxZ);
-					if (cNode.culling>=0) nodeStack[ni++] = cNode;
+					if (cNode.culling >= 0) nodeStack[ni++] = cNode;
+					//else throw new Error("culled!");
 				}
 				
 			}
@@ -147,6 +153,7 @@ package alternativa.a3d.cullers
 		public function removeClone(cloneItem:MeshSetClone):void 
 		{
 			proxy.removeClone(cloneItem);
+			if (cloneItem.index >= 0) throw new Error("SHOULD NOT BE!");
 			tree.deleteLeaf(cloneNodeDict[cloneItem]);
 			delete cloneNodeDict[cloneItem];
 		}

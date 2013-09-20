@@ -19,6 +19,7 @@ package alternativa.engine3d.objects {
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
+	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.protocol.codec.primitive.UIntCodec;
 	import flash.utils.ByteArray;
@@ -304,14 +305,22 @@ package alternativa.engine3d.objects {
 		}
 		
 		public function removeCloneWithCuller(cloneItem:MeshSetClone):void {
-			(culler is IMeshSetClonesContainer) ? (culler as IMeshSetClonesContainer).addClone(cloneItem) : removeClone(cloneItem);
+			(culler is IMeshSetClonesContainer) ? (culler as IMeshSetClonesContainer).removeClone(cloneItem) : removeClone(cloneItem);
 		}
 		
 		public function removeClone(cloneItem:MeshSetClone):void {
 		//	if (cloneItem.index < 0) throw new Error("Clone item seems to already be removed!");
-			clones[cloneItem.index] = cloneItem.index < --numClones ? clones[numClones] : null;		
+			numClones--;
+			//if (clones[cloneItem.index] !== cloneItem) throw new Error("Mismatch! " + clones[cloneItem.index].index + ", " + cloneItem.index);
+			var tail:MeshSetClone = clones[numClones];
+			 clones[numClones] = null;
+			if (tail!=cloneItem) {  // popback
+				clones[cloneItem.index] =   tail;  
+				tail.index = cloneItem.index;
+			}
 			cloneItem.index = -1;
 		}
+		
 		/*
 		alternativa3d function addCloneQuick(cloneItem:MeshSetClone):void {
 			cloneItem.index = numClones;
@@ -421,6 +430,7 @@ package alternativa.engine3d.objects {
 			if (geometry == null) return;
 			
 			var totalClones:int = numVisibleClones;
+		
 			if (totalClones == 0) return;
 		
 			

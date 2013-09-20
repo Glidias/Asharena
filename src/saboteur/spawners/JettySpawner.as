@@ -237,7 +237,7 @@ package saboteur.spawners
 		public function spawn(engine:Engine, scene:Object3D, pos:Pos=null, rayDir:DirectionVectors=null):Entity {
 			
 			if (firstSpawn) {
-				GameBuilder3D.addMeshSetsToScene(scene, blueprint, jettyMaterial);
+				GameBuilder3D.addMeshSetsToScene(scene, genesis, jettyMaterial,context3D);
 				firstSpawn = false;
 			}
 			

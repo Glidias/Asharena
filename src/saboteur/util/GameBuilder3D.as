@@ -19,6 +19,8 @@ package saboteur.util
 	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.ExternalTextureResource;
+	import alternativa.engine3d.utils.Object3DUtils;
+	import flash.display3D.Context3D;
 	import flash.geom.Matrix3D;
 	import flash.geom.Vector3D;
 	import flash.utils.Dictionary;
@@ -83,18 +85,26 @@ package saboteur.util
 		public var showOccupied:Boolean = false;
 		public var pathGraph:SaboteurGraph;
 		
+		
+		
 
 		private static var MESH_SETS:Object = { };
-		public static function addMeshSetsToScene(scene:Object3D, sampleBlueprint:Object3D, material:Material):void {
+		public static function addMeshSetsToScene(scene:Object3D, sampleBlueprint:Object3D, material:Material, context3D:Context3D):void {
 			var meshSet:MeshSetClonesContainer;
 			const meshSetHash:Object = MESH_SETS;
+			
+			
 		
 			for (var c:Object3D = sampleBlueprint.childrenList; c != null; c = c.next) {
 				var mesh:Mesh = c as Mesh;
 				if (mesh != null) {
 					meshSetHash[c.name] = meshSet = new MeshSetClonesContainer( mesh, material);
-				//	meshSet.culler = new BVHCuller(meshSet);
-			
+					meshSet.name = c.name + "_meshset";
+					meshSet.geometry.upload(context3D);
+					if (mesh.boundBox == null) {
+						 mesh.boundBox = Object3DUtils.calculateHierarchyBoundBox(mesh);
+					}
+					meshSet.culler = new BVHCuller(meshSet);  
 				}
 			}
 			
@@ -117,8 +127,8 @@ package saboteur.util
 		
 		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane) {
 		
-			// TODO: remove genesis and newBuildings from startScene! Add them to MeshSet
-			// TODO: test MeshSet culler implementation
+		
+			// TODO:  MeshSet BVHculler implementation doesn't seem to do any form of culling
 			
 			// PathBuilderSystem raycasting wrong when including BOTH position and rotation offsets
 			///*
@@ -127,9 +137,9 @@ package saboteur.util
 			//startScene.x = 444;
 			//startScene.y = 344;
 			//	*/
-			// CollisionGraphNode bound tests wrong when rotation offset is included!
+			// TODO: Circle radius culling for radar not accruate with rotation!!
 			//startScene.rotationZ = Math.PI * .37;
-		//	startScene.rotationX= Math.PI*.15;  // currenty rotation on other axes NOT supported
+			//	startScene.rotationX= Math.PI*.15;  // currenty rotation on other axes NOT supported
 			
 			//this.startOffsetX = startOffsetX;
 			//this.startOffsetY = startOffsetY;
@@ -166,6 +176,8 @@ package saboteur.util
 			collision.x = 0;// startOffsetXLocal;
 			collision.y = 0;// startOffsetYLocal;
 			this.genesis = genesis;
+			genesis._x = 0;
+			genesis._y = 0;
 			this.startScene = startScene;
 			this.blueprint = blueprint;
 			
@@ -193,8 +205,9 @@ package saboteur.util
 			
 			blueprint.visible = false;
 				_floor = floor;
-			this.startScene.addChild(genesis);
+			//this.startScene.addChild(genesis);
 			this.startScene.addChild(blueprint);
+		
 			
 			
 			
@@ -203,7 +216,29 @@ package saboteur.util
 			refreshValue();
 			
 			setup();
+				addRenderable(genesis);
+		}
+		
+		private function addRenderable(obj:Object3D):Vector.<MeshSetClone> {
+			var meshSets:Object = MESH_SETS;
+			var meshSetClones:Vector.<MeshSetClone> = new Vector.<MeshSetClone>();
+			for (var c:Object3D = obj.childrenList; c != null; c = c.next) {
+				if (c.visible) {
+					var cont:MeshSetClonesContainer = meshSets[c.name];
+					var cloned:MeshSetClone = cont.createClone();
+					cloned.root._x += blueprint._x;
+					cloned.root._y += blueprint._y;
+					cloned.root._z += blueprint._z;
+					cloned.root.transformChanged = true;
+					cloned.root._parent = startScene;
+					meshSetClones.push(cloned);
+					cont.addCloneWithCuller( cloned );
+					//startScene.addChild(obj);
+					
+				}
+			}
 			
+			return meshSetClones;
 		}
 		
 	
@@ -269,7 +304,8 @@ package saboteur.util
 			var payload:BuildPayload3D = build3DGrid[key];	
 			if (payload == null) return false;
 			collisionGraph.removeChild(payload.collisionNode);
-			startScene.removeChild(payload.object);
+			//startScene.removeChild(payload.object);
+			payload.clearObjects(MESH_SETS);
 			
 			delete buildDict[key];
 			delete build3DGrid[key];
@@ -282,9 +318,10 @@ package saboteur.util
 		{
 			
 				pathUtil.buildAt(buildDict, gridEast, gridSouth, value  );
-					var newBuilding:Object3D = genesis.clone();  // should be genesis or blueprint and re-apply material? depends...for now, just use genesis!
-					startScene.addChild( newBuilding);
+					var newBuilding:Object3D =genesis;  // should be genesis or blueprint and re-apply material? depends...for now, just use genesis!
+					
 					visJetty3DByValue(newBuilding, value);
+					
 					localCardinal.transform(localCardinal.east, newBuilding, localCardinal.getDist(localCardinal.east, _gridSquareBound)* gridEast );
 					localCardinal.transform(localCardinal.south, newBuilding, localCardinal.getDist(localCardinal.south, _gridSquareBound) * gridSouth );
 					
@@ -293,13 +330,15 @@ package saboteur.util
 					collisionBuilding._y = newBuilding._y;
 					collisionBuilding.transformChanged = true;
 					visJetty3DByValueRecursive(collisionBuilding, value);
+					var renderableClones:Vector.<MeshSetClone> = addRenderable( newBuilding);
+					
 					
 					var node:CollisionBoundNode;
 					collisionGraph.addChild( node = CollisionUtil.getCollisionGraph(collisionBuilding) );
 				//		node.debug = true;
 					//collisionScene.addChild(collisionBuilding);
 					
-					build3DGrid[pathUtil.getGridKey(gridEast, gridSouth)] =  new BuildPayload3D(newBuilding, node);
+					build3DGrid[pathUtil.getGridKey(gridEast, gridSouth)] =  new BuildPayload3D(renderableClones, node);
 					
 					pathGraph.addNode(gridEast, gridSouth, _value);
 					pathGraph.recalculateEndpoints();
@@ -527,14 +566,24 @@ package saboteur.util
 }
 import alternativa.a3d.collisions.CollisionBoundNode;
 import alternativa.engine3d.core.Object3D;
+import alternativa.engine3d.objects.MeshSetClone;
+import alternativa.engine3d.objects.MeshSetClonesContainer;
 
 class BuildPayload3D {
-	public var object:Object3D
+	public var objects:Vector.<MeshSetClone>
 	public var collisionNode:CollisionBoundNode;
-	public function BuildPayload3D(object:Object3D, collisionNode:CollisionBoundNode) {
+	public function BuildPayload3D(objects:Vector.<MeshSetClone>, collisionNode:CollisionBoundNode) {
 		this.collisionNode = collisionNode;
-		this.object = object;
+		this.objects = objects;
 		
+	}
+	
+	public function clearObjects(contHash:Object):void {
+		var i:int = objects.length;
+		while (--i > -1) {
+			var c:MeshSetClone = objects[i];
+			(contHash[c.root.name] as MeshSetClonesContainer).removeCloneWithCuller(c);
+		}
 	}
 
 }
