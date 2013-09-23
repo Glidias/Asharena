@@ -165,18 +165,14 @@ package saboteur.util
 		
 		
 		public function GameBuilder3D(startScene:Object3D, genesis:Object3D, blueprint:Object3D, collision:Object3D, applyMaterial:Material, editorMat:FillMaterial, floor:Plane) {
-		
-		
-			// TODO: somehow, some of the railing collisions are missing!
 			
 			// PathBuilderSystem raycasting wrong when including BOTH position and rotation offsets
 			///*
 			//startOffsetX = 555;
 			//startOffsetY = 313;
-			//startScene.x = 444;
-			//startScene.y = 344;
+			//startScene.x = 644;
+			//startScene.y = 444;
 			//	*/
-			// TODO: Circle radius culling for radar not accruate with rotation!!
 			//startScene.rotationZ = Math.PI * .37;
 			//	startScene.rotationX= Math.PI*.15;  // currenty rotation on other axes NOT supported
 			
@@ -360,13 +356,14 @@ package saboteur.util
 			
 				pathUtil.buildAt(buildDict, gridEast, gridSouth, value  );
 					var newBuilding:Object3D =genesis;  // should be genesis or blueprint and re-apply material? depends...for now, just use genesis!
-					
+					newBuilding._x = 0;
+					newBuilding._y = 0;
 					visJetty3DByValue(newBuilding, value);
 					
 					localCardinal.transform(localCardinal.east, newBuilding, localCardinal.getDist(localCardinal.east, _gridSquareBound)* gridEast );
 					localCardinal.transform(localCardinal.south, newBuilding, localCardinal.getDist(localCardinal.south, _gridSquareBound) * gridSouth );
 					
-					var collisionBuilding:Object3D = collision; // .clone();
+					var collisionBuilding:Object3D = collision;
 					collisionBuilding._x = newBuilding._x;
 					collisionBuilding._y = newBuilding._y;
 					collisionBuilding.transformChanged = true;

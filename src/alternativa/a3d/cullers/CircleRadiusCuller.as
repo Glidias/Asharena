@@ -2,6 +2,7 @@ package alternativa.a3d.cullers
 {
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.objects.IMeshSetCloneCuller;
 	import alternativa.engine3d.objects.MeshSetClone;
 	import alternativa.engine3d.alternativa3d;
@@ -35,8 +36,22 @@ package alternativa.a3d.cullers
 			
 			for (var i:int = 0; i < numClones; i++ ) {
 				var candidate:MeshSetClone = clones[i];
-				var x:Number = offsetObj._x + candidate.root._x;
-				var y:Number = offsetObj._y + candidate.root._y;
+				var x:Number;
+				var y:Number;
+				var root:Object3D = candidate.root;
+				if (root._parent != null) {
+					var t:Transform3D = root._parent.transform;
+					x = t.a * root._x + t.b * root._y  + t.d;
+					y = t.e * root._x + t.f * root._y  + t.h;
+					x += offsetObj._x;
+					y += offsetObj._y;
+				}
+				else {
+					x = offsetObj._x + root._x;
+					y = offsetObj._y + root._y;;
+				}
+				
+			
 				if (x * x + y * y > squaredRadius) continue;
 				collector[count++] = candidate;
 			}
