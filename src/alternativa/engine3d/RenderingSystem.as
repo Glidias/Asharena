@@ -23,11 +23,11 @@ package alternativa.engine3d
 		
 	
 		override public function onAddedNode(node:RenderNode):void {
-			scene.addChild( node.object );
+			if (!node.object._parent) scene.addChild( node.object );
 		}
 		
 		override public function onRemovedNode(node:RenderNode):void {
-			scene.removeChild( node.object);
+			if (node.object._parent === scene) scene.removeChild( node.object);
 		}
 	
 		override public function update(time:Number):void {

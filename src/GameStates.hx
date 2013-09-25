@@ -14,6 +14,8 @@ import systems.movement.QPhysicsSystem;
 import systems.movement.SurfaceMovementSystem;
 import systems.player.PlayerControlActionSystem;
 import systems.player.PlayerJumpSystem;
+import systems.sensors.RadialSensorSystem;
+
 import systems.SystemPriorities;
 
 /**
@@ -22,6 +24,7 @@ import systems.SystemPriorities;
  */
 class GameStates
 {
+	public var radialSensorSystem:RadialSensorSystem;
 	
 	public var engineState:EngineStateMachine;
 	public var thirdPerson:EngineState;
@@ -53,9 +56,9 @@ class GameStates
 		thirdPerson.addSingleton( SurfaceMovementSystem  ).withPriority( SystemPriorities.stateMachines);
 		thirdPerson.addInstance( new PlayerControlActionSystem(keyPoll) ).withPriority(SystemPriorities.stateMachines);
 		thirdPerson.addSingleton( AnimationSystem  ).withPriority( SystemPriorities.animate);
+		radialSensorSystem = new RadialSensorSystem();
+		thirdPerson.addInstance(radialSensorSystem).withPriority(SystemPriorities.stateMachines);
 		engineState.addState("thirdPerson", thirdPerson);
-
-		
 		
 		
 		spectator = new EngineState();
