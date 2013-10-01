@@ -41,9 +41,12 @@ package tests.ui
 	import flash.system.System;
 	import flash.ui.Keyboard;
 	import input.KeyPoll;
+	import saboteur.models.PlayerInventory;
 	import saboteur.spawners.JettySpawner;
 	import saboteur.spawners.SaboteurHud;
 	import saboteur.systems.PathBuilderSystem;
+	import saboteur.systems.PlayerInventoryControls;
+	import saboteur.systems.PlayerInventorySystem;
 	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
 	import spawners.arena.GladiatorBundle;
@@ -194,7 +197,9 @@ package tests.ui
 			pathBuilder.onDelSucceeded.add(jettySpawner.minimap.removeJettyWithBuilder);
 			
 		
-			
+			PlayerInventory;
+			PlayerInventorySystem;
+			PlayerInventoryControls;
 			
 			if (game.colliderSystem) {
 				
