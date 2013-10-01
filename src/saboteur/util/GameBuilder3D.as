@@ -168,16 +168,12 @@ package saboteur.util
 			
 			// PathBuilderSystem raycasting wrong when including BOTH position and rotation offsets
 			///*
-			//startOffsetX = 555;
-			//startOffsetY = 313;
-			//startScene.x = 644;
-			//startScene.y = 444;
+			//startScene.x = Math.random()*999;
+			//startScene.y = Math.random()*999;
 			//	*/
-			//startScene.rotationZ = Math.PI * .37;
-			//	startScene.rotationX= Math.PI*.15;  // currenty rotation on other axes NOT supported
-			
-			//this.startOffsetX = startOffsetX;
-			//this.startOffsetY = startOffsetY;
+			//startScene.rotationZ = Math.random()*Math.PI;
+						//	startScene.rotationX= Math.PI*.15;  // currenty rotation on other axes NOT supported
+
 			
 			var startSceneMatrix:Matrix3D = startScene.matrix;
 			/*

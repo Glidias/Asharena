@@ -52,7 +52,7 @@ package saboteur.spawners
 		public var radarMaterial:TextureMaterial;  // circle masked
 		public var radarGridMaterial:RadarGrid2DMaterial; 
 		private var radarBgMaterial:FillCircleMaterial; 
-		private var radarGridSprite:Object3D;
+		public var radarGridSprite:Object3D;
 		
 		//public var bgOverlayFillMaterial:FillMaterial= new FillMaterial(0x666666, .4);
 		public var radar_endPointDead:FillMaterial= new FillMaterial(0xFF0000, 1);
