@@ -6,6 +6,7 @@ package saboteur.spawners
 	import alternativa.a3d.systems.text.TextBoxChannel;
 	import alternativa.a3d.systems.text.TextSpawner;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.Renderer;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.FillCircleMaterial;
 	import alternativa.engine3d.materials.FillHudMaterial;
@@ -16,8 +17,12 @@ package saboteur.spawners
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.MeshSet;
+	import alternativa.engine3d.objects.MeshSetClonesContainer;
 	import alternativa.engine3d.objects.Sprite3D;
+	import alternativa.engine3d.objects.SpriteMeshSetClone;
+	import alternativa.engine3d.objects.SpriteMeshSetClonesContainer;
 	import alternativa.engine3d.primitives.Plane;
+	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.spriteset.materials.MaskColorAtlasMaterial;
 	import alternativa.engine3d.spriteset.materials.TextureAtlasMaterial;
@@ -26,6 +31,7 @@ package saboteur.spawners
 	import ash.core.Engine;
 	import assets.fonts.ConsoleFont;
 	import de.polygonal.core.event._Observable.Bind; 
+	import flash.display.BitmapData;
 	import flash.display.Sprite;
 	import flash.display.Stage;
 	import flash.events.KeyboardEvent;
@@ -59,9 +65,8 @@ package saboteur.spawners
 		public var radar_endPointAvailable:FillMaterial= new FillMaterial(0xFF0000, 1);
 		
 		private var material_icon_canBuild:FillMaterial = new FillMaterial(0xFF0000, 1);
-		public function setBuildState(state:int):void {
-			
-		}
+
+		
 		
 		// Possible to combine both texture atlases....for single Spriteset, for now, keep it seperate for easy development
 		
@@ -70,8 +75,8 @@ package saboteur.spawners
 		public var skins:TextureAtlasMaterial;  // a texture atlas for the entire skinned UI 
 		
 		// Icons for HuD
-		public var toolsSpriteSet:SpriteSet;
-		public var tools:TextureAtlasMaterial; //
+		public var hudMeshSet:SpriteMeshSetClonesContainer;
+		public var hudMeshMaterial:TextureAtlasMaterial; //
 	
 		// The overlays
 		
@@ -109,18 +114,16 @@ package saboteur.spawners
 		private var layout:SaboteurHUDLayout;
 		
 	
+		private var stage:Stage;
+	
 		
 		public function SaboteurHud(engine:Engine, stage:Stage, keypollToDisable:KeyPoll=null) 
 		{
-			chatTextInput = new TextLineInputter(stage);
-			this.keypollToDisable = keypollToDisable;
-			normPlane.rotationX = Math.PI;
+			this.engine = engine;
+			this.stage = stage;
 			
-			layout = new SaboteurHUDLayout(stage);
-			//stage.addChild(layout);
-			txtSpawner = new TextSpawner(engine);
-			_stage = stage;
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, checkEnter);
+			ASSETS = [SaboteurHudAssets];
+
 			
 			super();
 		}
@@ -133,8 +136,23 @@ package saboteur.spawners
 			}
 		}
 		
+		private function myInit():void {
+			chatTextInput = new TextLineInputter(stage);
+			this.keypollToDisable = keypollToDisable;
+			normPlane.rotationX = Math.PI;
+			
+			layout = new SaboteurHUDLayout(stage);
+			//stage.addChild(layout);
+			txtSpawner = new TextSpawner(engine);
+			_stage = stage;
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, checkEnter);
+		}
 		
 		override protected function init():void {
+			myInit();
+			
+			setupHudAssets();
+			
 			setupTools(); 
 			
 			setupText();
@@ -148,6 +166,37 @@ package saboteur.spawners
 			overlays.geometry.upload(context3D);
 			
 			super.init();
+		}
+		
+		private function setupHudAssets():void 
+		{
+			hudBmpData =  new SaboteurHudAssets.$_SHEET().bitmapData;
+			var hudResource:BitmapTextureResource = new BitmapTextureResource(hudBmpData);
+			hudResource.upload(context3D);
+			
+			hudMeshMaterial = new TextureAtlasMaterial(hudResource);// null, 1);
+			hudMeshMaterial.flags = TextureAtlasMaterial.FLAG_MIPNONE;  // | TextureAtlasMaterial.FLAG_PIXEL_NEAREST
+		
+			hudMeshSet = new SpriteMeshSetClonesContainer(hudMeshMaterial);
+			hudMeshSet.objectRenderPriority = Renderer.NEXT_LAYER;
+			hudMeshSet.name = "hud";
+			hudMeshSet.geometry.upload(context3D);
+			var sprClone:SpriteMeshSetClone;
+			
+			sprClone = hudMeshSet.createClone() as SpriteMeshSetClone;
+
+			hudMeshSet.addClone( createHudSprite(7/8,0, 1/8, 1/8) );
+		}
+		
+		private function createHudSprite(u:Number, v:Number, uw:Number, vw:Number):SpriteMeshSetClone {
+			var sprClone:SpriteMeshSetClone = hudMeshSet.createClone() as SpriteMeshSetClone;
+			sprClone.u = u;
+			sprClone.v = v;
+			sprClone.uw = uw;
+			sprClone.vw = vw;
+			sprClone.root.scaleX = uw * hudBmpData.width;
+			sprClone.root.scaleY = vw * hudBmpData.height;
+			return sprClone;
 		}
 		
 		private function setupMinimapAndRadar():void 
@@ -226,7 +275,10 @@ package saboteur.spawners
 		
 		public var overlayMaterial:FillMaterial = new FillMaterial(0x000000, .25);
 		private var normPlane:Plane = new Plane(1,1,1,1,false,false,overlayMaterial, overlayMaterial);
+
+		private var engine:Engine;
 		private var radarGridBg:Mesh;
+		private var hudBmpData:BitmapData;
 		public var radarBlueprintOverlay:Mesh;
 		public var radarHolder:Object3D;
 		public var radarGridHolder:Object3D;
@@ -269,6 +321,7 @@ package saboteur.spawners
 			// minimap and radar
 		//	obj.addChild(radarGridSprite);
 			obj.addChild(radarHolder);
+			obj.addChild(hudMeshSet);
 			//obj.addChild(radarGridSprite);
 			
 			// text
@@ -276,6 +329,8 @@ package saboteur.spawners
 			obj.addChild(txt_numpad.spriteSet);
 			obj.addChild(txt_chat.spriteSet);
 			obj.addChild(txt_chatInput.spriteSet);
+			
+			
 			
 		}
 		

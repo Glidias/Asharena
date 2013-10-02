@@ -43,6 +43,7 @@ package tests.ui
 	import input.KeyPoll;
 	import saboteur.models.PlayerInventory;
 	import saboteur.spawners.JettySpawner;
+	import saboteur.spawners.PickupItemSpawner;
 	import saboteur.spawners.SaboteurHud;
 	import saboteur.systems.PathBuilderSystem;
 	import saboteur.systems.PlayerInventoryControls;
@@ -112,8 +113,11 @@ package tests.ui
 			
 			gladiatorBundle = new GladiatorBundle(arenaSpawner = new ArenaSpawner(game.engine));
 			jettySpawner = new JettySpawner();
-				
-			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[gladiatorBundle, jettySpawner]);
+			
+			hudAssets = new SaboteurHud(game.engine, stage, game.keyPoll);
+			pickupSpawner = new PickupItemSpawner(game.engine);
+			
+			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[gladiatorBundle, jettySpawner, hudAssets, pickupSpawner]);
 			bundleLoader.progressSignal.add( _preloader.setProgress );
 			bundleLoader.loadBeginSignal.add( _preloader.setLabel );
 		}
@@ -176,7 +180,7 @@ package tests.ui
 			
 			_template3D.viewBackgroundColor = 0xDDDDDD;
 	
-			hudAssets = new SaboteurHud(game.engine, stage, game.keyPoll);
+		
 			
 			spriteSet = hudAssets.txt_chat.spriteSet;
 			
@@ -254,6 +258,7 @@ package tests.ui
 		private var spriteSet:SpriteSet;
 		private var hudAssets:SaboteurHud;
 		private var hud:Hud2D;
+		private var pickupSpawner:PickupItemSpawner;
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
 				

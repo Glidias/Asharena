@@ -459,8 +459,9 @@ package alternativa.engine3d.spriteset.materials {
 			var uvBuffer:VertexBuffer3D = geometry.getVertexBuffer(VertexAttributes.TEXCOORDS[0]);
 			
 			// Check validity
+	
 			if (positionBuffer == null || uvBuffer == null || diffuseMap == null || diffuseMap._texture == null || opacityMap != null && opacityMap._texture == null) {
-				throw new Error("No dependency::"+object + ", "+positionBuffer + ", "+uvBuffer + ", "+diffuseMap + ", "+geometry.numTriangles);
+				throw new Error("No dependency::"+object + ", "+positionBuffer + ", "+uvBuffer + ", "+diffuseMap + ", "+geometry.numTriangles + ", "+object + " -> make sure uploaded geometry!");
 				return;
 			}
 			

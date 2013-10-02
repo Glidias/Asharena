@@ -28,7 +28,8 @@ package alternativa.engine3d.objects
 		{
 			_material = material;
 			if (MESH == null) {
-				MESH = createMeshGeometry();	
+				MESH = createMeshGeometry();
+			
 			}
 			constantsPerMesh = 4;
 			if (meshesPerSurface == 0) meshesPerSurface = 30;
