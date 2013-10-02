@@ -184,18 +184,35 @@ package saboteur.spawners
 			var sprClone:SpriteMeshSetClone;
 			
 			sprClone = hudMeshSet.createClone() as SpriteMeshSetClone;
-
-			hudMeshSet.addClone( createHudSprite(7/8,0, 1/8, 1/8) );
+			
+			
+			createItemSlots();
+			
 		}
 		
-		private function createHudSprite(u:Number, v:Number, uw:Number, vw:Number):SpriteMeshSetClone {
+		private function createItemSlots():void {
+			var u:Number = 7 / 8;
+			var v:Number = 0;
+			var w:Number = 1 / 8;
+			var size:Number = w * hudBmpData.width
+			for (var x:int = 0; x < 3; x++) {
+				for (var y:int = 0; y < 3; y++) {
+					hudMeshSet.addClone(createHudSprite(u, v, w, w, x * size, y * size));
+				}
+			}
+		}
+		
+		private function createHudSprite(u:Number, v:Number, uw:Number, vw:Number, x:Number=0, y:Number=0 ):SpriteMeshSetClone {
 			var sprClone:SpriteMeshSetClone = hudMeshSet.createClone() as SpriteMeshSetClone;
 			sprClone.u = u;
 			sprClone.v = v;
 			sprClone.uw = uw;
 			sprClone.vw = vw;
-			sprClone.root.scaleX = uw * hudBmpData.width;
-			sprClone.root.scaleY = vw * hudBmpData.height;
+			sprClone.root._scaleX = uw * hudBmpData.width;
+			sprClone.root._scaleY = vw * hudBmpData.height;
+			sprClone.root._rotationX = Math.PI;
+			sprClone.root._x = x;
+			sprClone.root._y = y;
 			return sprClone;
 		}
 		

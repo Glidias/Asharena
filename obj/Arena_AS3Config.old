@@ -16,7 +16,7 @@
     </define>
     <define append="true">
       <name>CONFIG::timeStamp</name>
-      <value>'8/30/2013'</value>
+      <value>'10/2/2013'</value>
     </define>
     <define append="true">
       <name>CONFIG::air</name>
@@ -60,12 +60,12 @@
     </library-path>
   </compiler>
   <file-specs>
-    <path-element>D:\Git\Asharena\src\tests\pathbuilding\TestPathBuilding3rdPerson.as</path-element>
+    <path-element>D:\Git\Asharena\src\tests\ui\TestHUD.as</path-element>
   </file-specs>
   <default-background-color>#FFFFFF</default-background-color>
   <default-frame-rate>60</default-frame-rate>
   <default-size>
-    <width>512</width>
-    <height>384</height>
+    <width>800</width>
+    <height>600</height>
   </default-size>
 </flex-config>
