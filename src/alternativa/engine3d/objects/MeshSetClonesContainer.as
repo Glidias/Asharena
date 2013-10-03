@@ -352,7 +352,10 @@ package alternativa.engine3d.objects {
 				if (root.transformChanged) root.composeTransforms();
 				
 				if (root._parent == null) root.localToGlobalTransform.copy(root.transform);
-				else root.localToGlobalTransform.combine(root._parent.transform, root.transform);
+				else {
+					if (root._parent.transformChanged) root._parent.composeTransforms();
+					root.localToGlobalTransform.combine(root._parent.transform, root.transform);
+				}
 				
 				calculateMeshesTransforms(root);
 			}
