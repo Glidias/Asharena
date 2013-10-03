@@ -14,6 +14,8 @@ package saboteur.models
 		public static const CATEGORY_AFFECT_OTHERS_POSITIVE:int = 3;
 		public static const CATEGORY_AFFECT_OTHERS_NEGATIVE:int = 4;
 		public static const CATEGORY_AFFECT_ENVIRONMENT:int = 5;
+		
+		
 
 		public var numItems:int = 0;
 		

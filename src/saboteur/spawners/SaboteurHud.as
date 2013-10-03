@@ -116,7 +116,25 @@ package saboteur.spawners
 		
 	
 		private var stage:Stage;
-	
+		
+		private var itemSlots:Vector.<SpriteMeshSetClone> = new Vector.<SpriteMeshSetClone>();
+		
+
+		public const BOX_EMPTY:Vector.<Number> = new <Number>[7/8, 0, 1/8, 1/8];
+		public const BOX_GRAY:Vector.<Number> = new <Number>[1/8, 0, 1/8, 1/8];
+		public const BOX_BLUE:Vector.<Number> = new <Number>[2/8, 0, 1/8, 1/8];
+		public const BOX_RED:Vector.<Number> = new <Number>[3/8, 0, 1/8, 1/8];
+		public const BOX_GREEN:Vector.<Number> = new <Number>[4/8, 0, 1/8, 1/8];
+		public const BOX_PURPLE:Vector.<Number> = new <Number>[5/8, 0, 1/8, 1/8];
+		public const BOX_YELLOW:Vector.<Number> = new <Number>[6/8, 0, 1/8, 1/8];
+		public const CATEGORIES:Vector.<Vector.<Number>> = new <Vector.<Number>>[null, BOX_BLUE, BOX_RED, BOX_GREEN, BOX_PURPLE, BOX_YELLOW];
+		
+		
+		public static const BOX_DARKGRAY:Vector.<Number> = new <Number>[7/8, 1/8, 1/8, 1/8];
+		public static const BOX_BRIGHT:Vector.<Number> = new <Number>[7/8, 2/8, 1/8, 1/8];
+		public static const BOX_WHITE:Vector.<Number> = new <Number>[1/8, 1/8, 1/8, 1/8];
+
+		
 		
 		public function SaboteurHud(engine:Engine, stage:Stage, keypollToDisable:KeyPoll=null) 
 		{
@@ -131,10 +149,53 @@ package saboteur.spawners
 		
 		private function checkEnter(e:KeyboardEvent):void 
 		{
-			if (e.keyCode === Keyboard.ENTER && !chatTextInput.activated) {
+			if (chatTextInput.activated) return; 
+			var cc:uint = e.charCode;
+			if (e.keyCode === Keyboard.ENTER ) {   // temP??
 				
 				activateChatInput();
 			}
+			else if (  cc >= 49 && cc < 58) {  // temp
+				tryActivateSlot(cc-49);
+			}
+		}
+		
+		private function tryActivateSlot(slotIndex:int):void 
+		{
+			//setSlot(slotIndex, false, slotIndex);
+			
+		
+		}
+		
+		public function setSlot(slotIndex:int, activated:Boolean, category:int):void {
+			var targetBox:Vector.<Number>;
+			var hudSprite:SpriteMeshSetClone = itemSlots[slotIndex];
+
+			if (activated) {
+				if (category != 0) {
+					targetBox = CATEGORIES[category];
+					hudSprite.u = targetBox[0];
+					hudSprite.v = targetBox[1] + targetBox[3];
+				}
+				else {
+					targetBox = BOX_BRIGHT;
+					hudSprite.u = targetBox[0];
+					hudSprite.v = targetBox[1]; 
+				}
+			}
+			else {
+				if (category != 0) {
+					targetBox = CATEGORIES[category];
+					hudSprite.u = targetBox[0];
+					hudSprite.v = targetBox[1] ;
+				}
+				else {
+					targetBox = BOX_GRAY;
+					hudSprite.u = targetBox[0];
+					hudSprite.v = targetBox[1]; 
+				}
+			}
+			
 		}
 		
 		private function myInit():void {
@@ -176,6 +237,8 @@ package saboteur.spawners
 			hudResource.upload(context3D);
 			
 			hudMeshMaterial = new TextureAtlasMaterial(hudResource);// null, 1);
+			hudMeshMaterial.alphaThreshold = .9;
+			
 			hudMeshMaterial.flags = TextureAtlasMaterial.FLAG_MIPNONE;  // | TextureAtlasMaterial.FLAG_PIXEL_NEAREST
 		
 			hudMeshSet = new SpriteMeshSetClonesContainer(hudMeshMaterial);
@@ -200,9 +263,9 @@ package saboteur.spawners
 			layout.onLayoutUpdate.add(layout_topLeft.update);
 			
 			
-			var u:Number = 7 / 8;
-			var v:Number = 0;
-			var w:Number = 1 / 8;
+			var u:Number = BOX_DARKGRAY[0];
+			var v:Number = BOX_DARKGRAY[1];
+			var w:Number =BOX_DARKGRAY[2];
 			var size:Number = w * hudBmpData.width
 			var hudSprite:SpriteMeshSetClone = createHudSprite(u, v, w, w, 5 + size, 2 + size * .5);
 			
@@ -212,13 +275,28 @@ package saboteur.spawners
 			hudSprite.root._scaleY *= .85;
 			hudMeshSet.addClone(hudSprite);
 			
+			
+			// Build indicator
+			var bottomRight:Object3D = new Object3D();
+			layout_bottomRight = new BindDockPin(bottomRight, BindDockPin.BOTTOM, BindDockPin.RIGHT);
+			layout.onLayoutUpdate.add(layout_bottomRight.update);
+			hudSprite = createHudSprite(23 / hudBmpData.width, 33 / hudBmpData.height, 40 / hudBmpData.width, 55 / hudBmpData.height);
+			hudSprite.root._x -= 10;
+			hudSprite.root._y -= 10;
+			hudSprite.root._parent = bottomRight;
+			hudMeshSet.addClone(hudSprite);
+			
 		}
 		
 		private function createItemSlots():Object3D {
+			var w:Number;
+			var v:Number;
+			var u:Number;
 			var parenter:Object3D = new Object3D();
-			var u:Number = 7 / 8;
-			var v:Number = 0;
-			var w:Number = 1 / 8;
+			var itemDefaultBox:Vector.<Number> = BOX_DARKGRAY;
+			u = itemDefaultBox[0];
+			v = itemDefaultBox[1];
+			w = itemDefaultBox[2];
 			
 			var size:Number = w * hudBmpData.width
 			for (var y:int = 0; y > -3; y--) {
@@ -226,10 +304,15 @@ package saboteur.spawners
 					var hudSprite:SpriteMeshSetClone = createHudSprite(u, v, w, w, size*.5+ 10+ x * size, -10  -size*1.5+ y * size);
 					hudSprite.root._parent = parenter;
 					hudMeshSet.addClone(hudSprite);
+					itemSlots.push(hudSprite);
 				}
 			}
 			
 			
+			itemDefaultBox = BOX_EMPTY;
+			u = itemDefaultBox[0];
+			v = itemDefaultBox[1];
+			w = itemDefaultBox[2];
 
 			hudSprite =  createHudSprite(u, v, w, w, size * .5 + 10 , -10   -size*1.5 + size);
 			hudSprite.root._parent = parenter;
@@ -373,6 +456,7 @@ package saboteur.spawners
 		private var hudBmpData:BitmapData;
 		private var layout_hudItems:BindDockPin;
 		private var layout_topLeft:BindDockPin;
+		private var layout_bottomRight:BindDockPin;
 		public var radarBlueprintOverlay:Mesh;
 		public var radarHolder:Object3D;
 		public var radarGridHolder:Object3D;

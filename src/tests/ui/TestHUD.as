@@ -4,6 +4,8 @@ package tests.ui
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.cullers.BVHCuller;
+	import alternativa.a3d.rayorcollide.TerrainITCollide;
+	import alternativa.a3d.rayorcollide.TerrainRaycastImpl;
 	import alternativa.a3d.systems.radar.RadarMinimapSystem;
 	import alternativa.a3d.systems.text.FontSettings;
 	import alternativa.a3d.systems.text.StringLog;
@@ -47,7 +49,6 @@ package tests.ui
 	import saboteur.spawners.SaboteurHud;
 	import saboteur.systems.PathBuilderSystem;
 	import saboteur.systems.PlayerInventoryControls;
-	import saboteur.systems.PlayerInventorySystem;
 	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
 	import spawners.arena.GladiatorBundle;
@@ -202,7 +203,6 @@ package tests.ui
 			
 		
 			PlayerInventory;
-			PlayerInventorySystem;
 			PlayerInventoryControls;
 			
 			if (game.colliderSystem) {
@@ -211,7 +211,8 @@ package tests.ui
 				game.colliderSystem._collider.threshold = 0.00001;
 			}
 			
-			
+			TerrainITCollide;
+			TerrainRaycastImpl;
 			
 			spectatorPerson =new SimpleFlyController( 
 						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 

@@ -7,7 +7,7 @@ package saboteur.spawners
 	 */
 	public class SaboteurHudAssets extends Sprite
 	{
-		//[Embed(source="../../../resources/hud/buttonsicons.png")]
+	//	[Embed(source="../../../resources/hud/buttonsicons.png")]
 		public static var $_SHEET:Class;
 		
 		public function SaboteurHudAssets() 
