@@ -133,6 +133,8 @@ package saboteur.spawners
 		public static const BOX_DARKGRAY:Vector.<Number> = new <Number>[7/8, 1/8, 1/8, 1/8];
 		public static const BOX_BRIGHT:Vector.<Number> = new <Number>[7/8, 2/8, 1/8, 1/8];
 		public static const BOX_WHITE:Vector.<Number> = new <Number>[1/8, 1/8, 1/8, 1/8];
+		
+		private var hudTextSettings:FontSettings;
 
 		
 		
@@ -212,12 +214,12 @@ package saboteur.spawners
 		
 		override protected function init():void {
 			myInit();
-			
+			setupText();
 			setupHudAssets();
 			
 			setupTools(); 
 			
-			setupText();
+			
 			setupMinimapAndRadar();
 			spriteGeometry.upload(context3D);
 			
@@ -285,6 +287,19 @@ package saboteur.spawners
 			hudSprite.root._y -= 10;
 			hudSprite.root._parent = bottomRight;
 			hudMeshSet.addClone(hudSprite);
+			
+			
+			// Text 
+			var mat:Material = getNewDefaultFontMaterial(0xDDEEAA);
+
+			var blHudTextSpriteSet:SpriteSet;
+			hudTextSettings = new FontSettings(consoleFont, mat, blHudTextSpriteSet = getNewTextSpriteSet(12, mat, _textGeometry ), "hudtext" );
+			blHudTextSpriteSet.alwaysOnTop = true;
+			
+			layout_bottomLeftText = new BindDockPin(blHudTextSpriteSet, BindDockPin.BOTTOM, BindDockPin.LEFT);
+			layout.onLayoutUpdate.add(layout_bottomLeftText.update);
+			
+			hudTextSettings.writeData("1", 30, -30);
 			
 		}
 		
@@ -457,6 +472,8 @@ package saboteur.spawners
 		private var layout_hudItems:BindDockPin;
 		private var layout_topLeft:BindDockPin;
 		private var layout_bottomRight:BindDockPin;
+		private var _textGeometry:Geometry;
+		private var layout_bottomLeftText:BindDockPin;
 		public var radarBlueprintOverlay:Mesh;
 		public var radarHolder:Object3D;
 		public var radarGridHolder:Object3D;
@@ -492,6 +509,7 @@ package saboteur.spawners
 		public function addToHud3D(obj:Object3D):void {
 			
 			// overlays
+			obj.addChild(hudTextSettings.spriteSet);
 			
 			obj.addChild(overlays);
 			// tools
@@ -536,6 +554,7 @@ package saboteur.spawners
 			chatTextInput.glyphRange = consoleFont.fontV._glyphRange;
 			
 			var geom:Geometry  = SpriteGeometryUtil.createNormalizedSpriteGeometry(MAX_CHARS, 0, 1, 1, 0, 0, 2);
+			_textGeometry = geom;
 			geom.upload(context3D);
 			
 			
