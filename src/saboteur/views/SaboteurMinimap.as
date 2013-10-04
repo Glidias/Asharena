@@ -41,7 +41,7 @@ package saboteur.views
 		public var jettyColumns:int;
 		
 		private var pathUtil:SaboteurPathUtil = SaboteurPathUtil.getInstance();
-		private var jettyMaterial:TextureAtlasMaterial;
+		public var jettyMaterial:TextureAtlasMaterial;
 		private var jettySheetWidth:int;
 		private var jettySheetHeight:int;
 		private var jettyTileSize:Point;
@@ -173,6 +173,7 @@ package saboteur.views
 		
 		public function SaboteurMinimap(jettyMaterial:TextureAtlasMaterial, jettyColumns:int, jettyTileSize:Point, pixelToMinimapScale:Number) 
 		{
+			this.jettyMaterial = jettyMaterial;
 			this.pixelToMinimapScale = pixelToMinimapScale;
 			this.jettyTileSize = jettyTileSize;
 		//	jettyMaterial.alphaThreshold = 0.99;
@@ -228,6 +229,19 @@ package saboteur.views
 			delete buildDict[key];
 		}
 		
+
+	
+		public function setSprJettyUVCoordinatesAndSizeByIndex(index:int, spr:SpriteMeshSetClone):void {
+			
+			var rowIndex:int = int(index / jettyColumns);
+			var colIndex:int = index - rowIndex * jettyColumns; 
+			spr.u = (jettyTileSize.x * colIndex ) / jettySheetWidth;
+			spr.v = (jettyTileSize.x * rowIndex ) / jettySheetHeight;
+			spr.uw = jettyTileSize.x / jettySheetWidth;
+			spr.vw = jettyTileSize.y / jettySheetHeight;
+			spr.root.scaleX =  jettyTileSize.x ;
+			spr.root.scaleY = jettyTileSize.y;
+		}
 		
 		
 		private function createJettyAt(x:int, y:int, index:int, cardinal:CardinalVectors=null, fromX:Number=0, fromY:Number=0 ):SpriteMeshSetClone {

@@ -97,7 +97,7 @@ package tests.ui
 	
 			addChild( _template3D = new MainView3D() );
 			_template3D.onViewCreate.add(onReady3D);
-			addChild(uiLayer);
+		//	addChild(uiLayer);
 				
 			
 			_template3D.visible = false;
@@ -202,8 +202,9 @@ package tests.ui
 			pathBuilder.onDelSucceeded.add(jettySpawner.minimap.removeJettyWithBuilder);
 			
 		
-			PlayerInventory;
-			PlayerInventoryControls;
+
+			var playerControls:PlayerInventoryControls = new PlayerInventoryControls(game.keyPoll, new PlayerInventory(), hudAssets, pathBuilder, jettySpawner.minimap, stage);
+			game.gameStates.thirdPerson.addInstance(playerControls).withPriority(SystemPriorities.preRender);
 			
 			if (game.colliderSystem) {
 				

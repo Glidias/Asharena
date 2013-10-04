@@ -50,7 +50,7 @@ package saboteur.systems
 		 */
 		public var buildDistRatio:Point =  new Point(.5, .5);
 		
-		private var curBuildId:int = 63; // -1;
+		private var curBuildId:int = -1; // -1;  // 63
 		public function setBuildId(val:int):void  {
 			curBuildId = val;
 			validateVis();
@@ -128,20 +128,22 @@ package saboteur.systems
 			}
 		}
 			
-		public function attemptBuild():void {
+		public function attemptBuild():Boolean {
 			var head:PathBuildingNode = nodeList.head as PathBuildingNode;
 			if (head == null) {
 				onBuildFailed.dispatch();
-				return;
+				return false;
 			}
 			if (_lastResult != SaboteurPathUtil.RESULT_VALID) {
 				onBuildFailed.dispatch();
-				return;
+				return false;
 			}
 			if (head.builder.attemptBuild()) {
 				onBuildSucceeded.dispatch(curBuildId, head.builder);
+				return true;
 			}
 			else onBuildFailed.dispatch();
+			return false;
 		}
 		
 		override public function addToEngine(engine:Engine):void {

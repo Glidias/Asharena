@@ -12,6 +12,8 @@ package saboteur.models
 		
 		function getCurBuildID():int;
 		
+		function attemptBuild():Boolean;
+		
 	}
 	
 }

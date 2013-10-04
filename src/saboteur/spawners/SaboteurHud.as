@@ -35,9 +35,11 @@ package saboteur.spawners
 	import flash.display.Sprite;
 	import flash.display.Stage;
 	import flash.events.KeyboardEvent;
+	import flash.geom.Point;
 	import flash.geom.Vector3D;
 	import flash.ui.Keyboard;
 	import input.KeyPoll;
+	import saboteur.models.PlayerInventory;
 	import saboteur.ui.SaboteurHUDLayout;
 	import saboteur.views.SaboteurMinimap;
 	import views.ui.hud.BindDockPin;
@@ -118,7 +120,8 @@ package saboteur.spawners
 		private var stage:Stage;
 		
 		private var itemSlots:Vector.<SpriteMeshSetClone> = new Vector.<SpriteMeshSetClone>();
-		
+		private var itemSet:SpriteMeshSetClonesContainer = new SpriteMeshSetClonesContainer(new Material());
+		private var itemSetSlots:Vector.<SpriteMeshSetClone> = new Vector.<SpriteMeshSetClone>(9,true);
 
 		public const BOX_EMPTY:Vector.<Number> = new <Number>[7/8, 0, 1/8, 1/8];
 		public const BOX_GRAY:Vector.<Number> = new <Number>[1/8, 0, 1/8, 1/8];
@@ -127,15 +130,15 @@ package saboteur.spawners
 		public const BOX_GREEN:Vector.<Number> = new <Number>[4/8, 0, 1/8, 1/8];
 		public const BOX_PURPLE:Vector.<Number> = new <Number>[5/8, 0, 1/8, 1/8];
 		public const BOX_YELLOW:Vector.<Number> = new <Number>[6/8, 0, 1/8, 1/8];
-		public const CATEGORIES:Vector.<Vector.<Number>> = new <Vector.<Number>>[null, BOX_BLUE, BOX_RED, BOX_GREEN, BOX_PURPLE, BOX_YELLOW];
+		public const CATEGORIES:Vector.<Vector.<Number>> = new <Vector.<Number>>[null, BOX_GRAY, BOX_BLUE, BOX_RED, BOX_GREEN, BOX_PURPLE, BOX_YELLOW];
 		
 		
 		public static const BOX_DARKGRAY:Vector.<Number> = new <Number>[7/8, 1/8, 1/8, 1/8];
 		public static const BOX_BRIGHT:Vector.<Number> = new <Number>[7/8, 2/8, 1/8, 1/8];
 		public static const BOX_WHITE:Vector.<Number> = new <Number>[1/8, 1/8, 1/8, 1/8];
+		static public const ITEM_CUBE_SIZE:Number = 64;
 		
 		private var hudTextSettings:FontSettings;
-
 		
 		
 		public function SaboteurHud(engine:Engine, stage:Stage, keypollToDisable:KeyPoll=null) 
@@ -149,6 +152,24 @@ package saboteur.spawners
 			super();
 		}
 		
+		public function setupItemTextureSet(pathSheet:TextureAtlasMaterial, minimap:SaboteurMinimap):void {  
+		// later: to include action sheet icons or something
+
+			var atlasMaterial:TextureAtlasMaterial = pathSheet.clone() as TextureAtlasMaterial;
+		var myBmpData:BitmapData = 	(atlasMaterial.diffuseMap as BitmapTextureResource).data;
+		myBmpData = myBmpData.clone();
+		myBmpData.threshold(myBmpData, myBmpData.rect, new Point(), "==", 0, 0xFFEEEEEE);
+		atlasMaterial.diffuseMap = new BitmapTextureResource(myBmpData);
+		atlasMaterial.diffuseMap.upload(context3D);
+			atlasMaterial.alphaThreshold = .9;
+			atlasMaterial.flags = TextureAtlasMaterial.FLAG_MIPNONE | TextureAtlasMaterial.FLAG_PIXEL_NEAREST;
+			this.minimap = minimap;
+			itemSet.material = atlasMaterial;
+		
+		}
+		
+		
+		
 		private function checkEnter(e:KeyboardEvent):void 
 		{
 			if (chatTextInput.activated) return; 
@@ -157,24 +178,14 @@ package saboteur.spawners
 				
 				activateChatInput();
 			}
-			else if (  cc >= 49 && cc < 58) {  // temp
-				tryActivateSlot(cc-49);
-			}
-		}
-		
-		private function tryActivateSlot(slotIndex:int):void 
-		{
-			//setSlot(slotIndex, false, slotIndex);
-			
-		
 		}
 		
 		public function setSlot(slotIndex:int, activated:Boolean, category:int):void {
 			var targetBox:Vector.<Number>;
 			var hudSprite:SpriteMeshSetClone = itemSlots[slotIndex];
-
+			
 			if (activated) {
-				if (category != 0) {
+				if (category > 1) {
 					targetBox = CATEGORIES[category];
 					hudSprite.u = targetBox[0];
 					hudSprite.v = targetBox[1] + targetBox[3];
@@ -192,7 +203,7 @@ package saboteur.spawners
 					hudSprite.v = targetBox[1] ;
 				}
 				else {
-					targetBox = BOX_GRAY;
+					targetBox = BOX_DARKGRAY;
 					hudSprite.u = targetBox[0];
 					hudSprite.v = targetBox[1]; 
 				}
@@ -224,6 +235,7 @@ package saboteur.spawners
 			spriteGeometry.upload(context3D);
 			
 			normPlane.geometry.upload(context3D);
+			itemSet.geometry.upload(context3D);
 			
 			overlays = new MeshSet(overlayRoot);  // TODO: use MeshSetClonesContainer instead
 			overlays.setMaterialToAllSurfaces( overlayMaterial);
@@ -258,6 +270,7 @@ package saboteur.spawners
 			mainItemHud.scaleY = .75;
 			layout_hudItems =  new BindDockPin(mainItemHud, BindDockPin.BOTTOM, BindDockPin.LEFT);
 			layout.onLayoutUpdate.add(layout_hudItems.update);
+			_mainItemHud = mainItemHud;
 			//layout_hudItems.minCenterY = 480 * .5;
 
 			
@@ -344,6 +357,8 @@ package saboteur.spawners
 			v = itemDefaultBox[1];
 			w = itemDefaultBox[2];
 			
+			
+			
 			var size:Number = w * hudBmpData.width
 			for (var y:int = 0; y > -3; y--) {
 				for (var x:int = 0; x < 3; x++) {
@@ -353,6 +368,7 @@ package saboteur.spawners
 					itemSlots.push(hudSprite);
 				}
 			}
+			itemSlots.fixed = true;
 			
 			
 			itemDefaultBox = BOX_EMPTY;
@@ -398,10 +414,75 @@ package saboteur.spawners
 			hudSprite = createHudSprite(0,0,size  / hudBmpData.width, size * 4 / hudBmpData.height, size * 0 + 10 + size*.5 , -10   -size*6  );
 			hudSprite.root._parent = parenter;
 			hudMeshSet.addClone(hudSprite);
+			_healthBars = hudSprite;
 			
-			
+			// 
 			return parenter;
 		}
+		
+		public function syncWithInventory(inventory:PlayerInventory):void {  var itemSetSpr:SpriteMeshSetClone;
+		// helper method to sync view with inventory model, also needs minimap dependency atm (for now)!
+			var capacity:int = inventory.getCapacity();
+			var itemHudSprite:SpriteMeshSetClone;
+			
+			for (var i:int = 0; i < capacity; i++) {
+				itemHudSprite = itemSlots[i];
+				if (itemHudSprite.index < 0) {
+					hudMeshSet.addClone(itemHudSprite);
+				}
+				
+				var category:int = inventory.itemSlotCategories[i];
+				setSlot(i, false, category);
+				if (category != 0) { // got item, ensure it's correct icon representation
+					itemSetSpr = itemSetSlots[i] || (itemSetSlots[i] = itemSet.getNewSprite());
+					
+					if (category != PlayerInventory.CATEGORY_PATH) {  // item category
+						inventory.itemSlots[i] - inventory.numPathCards;
+					}
+					else {  // path category
+						minimap.setSprJettyUVCoordinatesAndSizeByIndex(  inventory.pathUtil.getIndexByValue( inventory.getPathValueAtSlot(i) ), itemSetSpr );
+						itemSetSpr.root._x = itemSlots[i].root._x;
+						itemSetSpr.root._y =  itemSlots[i].root._y;
+						itemSetSpr.root._scaleX *= 1.25;
+						itemSetSpr.root._scaleY *= 1.25;
+						itemSetSpr.root._parent = _mainItemHud;
+						itemSetSpr.root._rotationZ = Math.PI*.5;
+					}
+					itemSetSpr.root._rotationX = Math.PI;
+					if (itemSetSpr.index < 0) {
+						itemSet.addClone(itemSetSpr);
+					}
+				}
+				else {
+					itemSetSpr = itemSetSlots[i];
+					if (itemSetSpr != null && itemSetSpr.index  >= 0) {
+						itemSet.removeClone(itemSetSpr);
+					}
+				}
+			}
+			
+			var endIndex:int = i;
+			while (i < 9) {
+				itemHudSprite = itemSlots[i];
+				if (itemHudSprite.index >= 0) {
+					hudMeshSet.removeClone(itemHudSprite);
+				}
+				
+				i++;
+			}
+			
+			var size:Number = ITEM_CUBE_SIZE;
+			var numRows:int = Math.ceil(capacity / 3);
+			_healthBars.root._y = -10 - numRows*size - size*3;
+			_healthBars.root.transformChanged = true;
+			
+			
+			hudTextSettings.setLetterZ(0, endIndex, 0);
+			if (endIndex < 9) {
+				hudTextSettings.setLetterZ(endIndex, 9 - endIndex, -1);
+			}
+		}
+		
 		
 		private function createHudSprite(u:Number, v:Number, uw:Number, vw:Number, x:Number = 0, y:Number = 0 ):SpriteMeshSetClone {
 
@@ -506,6 +587,9 @@ package saboteur.spawners
 		private var _textGeometry:Geometry;
 		private var layout_bottomLeftText:BindDockPin;
 		private var layout_bottomRightOverlay:BindDockPin;
+		private var minimap:SaboteurMinimap;
+		private var _healthBars:SpriteMeshSetClone;
+		private var _mainItemHud:Object3D;
 		public var radarBlueprintOverlay:Mesh;
 		public var radarHolder:Object3D;
 		public var radarGridHolder:Object3D;
@@ -542,6 +626,8 @@ package saboteur.spawners
 			
 			// overlays
 			obj.addChild(hudTextSettings.spriteSet);
+			obj.addChild(itemSet); 
+			itemSet.objectRenderPriority = Renderer.NEXT_LAYER;
 			
 			obj.addChild(overlays);
 			// tools

@@ -125,6 +125,7 @@ package alternativa.engine3d.objects {
 			}
 		}
 		
+		
 		private function duplicateGeometry():void 
 		{
 			var totalAllowedFloored:int = (_options & FLAG_CLONESURFACES) ? getMaxPossibleDuplicatesForAllSurfaces() : meshesPerSurface / _numMeshes;
@@ -734,6 +735,11 @@ package alternativa.engine3d.objects {
 		{
 			_material = value;
 			outputSurface.material = value;
+		}
+		
+		override public function setMaterialToAllSurfaces(mat:Material):void {
+			super.setMaterialToAllSurfaces(mat);
+			material = mat;
 		}
 		
 		public function get minClonesPerBatch():int 

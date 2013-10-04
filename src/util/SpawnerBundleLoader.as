@@ -101,8 +101,9 @@ package util
 			  for each ( var atom:XML in variables )
 				{		
 					var componentClass : Class = classe[atom.@name.toString()];			
-					if (componentClass == null) throw new Error("COuld not find classe!"+currentLoadItem.targetInstance);
-					me[atom.@name.toString()] = componentClass;
+					if (componentClass == null) throw new Error("COuld not find classe!" + currentLoadItem.targetInstance);
+					var prop:String = atom.@name.toString();
+					if (me[prop]==null) me[prop] = componentClass;
 				
 					
 				}

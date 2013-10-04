@@ -53,6 +53,12 @@ package alternativa.engine3d.objects
 	
 		}
 		
+		public function getNewSprite():SpriteMeshSetClone {
+			var me:SpriteMeshSetClone =  createClone() as SpriteMeshSetClone;
+			me.root.transformChanged = true;
+			return me;
+		}
+		
 		
 		private function createMeshGeometry():Mesh 
 		{
