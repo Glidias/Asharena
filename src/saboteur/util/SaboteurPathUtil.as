@@ -108,6 +108,44 @@ package saboteur.util
 			return RESULT_VALID;
 		}
 		
+		public function getFlipValue(val:uint):uint {
+			//var referVal:uint = val;
+			
+			var edge:uint = getEdgeValue(val);
+			var arcs:uint = getArcValue(val);
+			
+			
+			// flip arcs
+			
+			var temp:Boolean;
+			
+			
+			// north east to south west
+			/*
+			temp = (arcs & NORTHEAST) !=0;
+			arcs &= ~NORTHEAST;
+			arcs |= (arcs & SOUTHWEST) ? NORTHEAST : 0;
+			arcs &= ~SOUTHWEST;
+			arcs |= temp ? SOUTHWEST : 0;
+			
+			// north west to south east
+			temp = (arcs & NORTHWEST) !=0;
+			arcs &= ~NORTHWEST;
+			arcs |= (arcs & SOUTHEAST) ? NORTHWEST : 0;
+			arcs &= ~SOUTHEAST;
+			arcs |= temp ? SOUTHEAST : 0;
+			
+			
+			// update arcs into new value
+			val &= ~ARC_MASK;  // clear entire arcs
+			val |= (arcs << ARC_SHIFT);
+			
+			*/
+			
+			
+			return val;
+		}
+		
 		private function getTailEndArcVal(val:Array):uint {
 			
 			return (val[val.length - 1] & ARC_MASK) >> ARC_SHIFT;

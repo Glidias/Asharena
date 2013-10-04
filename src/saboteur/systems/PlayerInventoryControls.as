@@ -68,11 +68,25 @@ package saboteur.systems
 		private function executeSwitch():void 
 		{
 			if (inventory.itemSlotCategories[equipedSlot] === PlayerInventory.CATEGORY_PATH) {
-				
+				attemptPathCardFlip();
 			}
 			else {
 				
 			}
+		}
+		
+		private function attemptPathCardFlip():void 
+		{
+			var lastIndex:uint =  inventory.itemSlots[equipedSlot];
+			var val:uint = inventory.pathUtil.getFlipValue( inventory.pathUtil.getValueByIndex(lastIndex) );
+			buildModel.setBuildId( val );
+			var index:int = inventory.pathUtil.getIndexByValue(val);
+			if (index < 0) {
+				return;
+				throw new Error("SHOUld not be!");
+				
+			}
+			inventory.itemSlots[equipedSlot] = index;
 		}
 		
 		private function executeEquipSlot():void 
@@ -97,7 +111,7 @@ package saboteur.systems
 		private function trySetSlot(slotIndex:int):void 
 		{
 			if (slotIndex === equipedSlot) {
-				unequip();
+				executeSwitch();
 				return;
 			}
 			if (slotIndex >= inventory.getCapacity()) {
