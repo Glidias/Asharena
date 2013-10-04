@@ -21,6 +21,9 @@ package views.ui.hud
 		
 		public var minCenterX:Number = 0;
 		public var minCenterY:Number = 0;
+		
+		public var offsetX:Number = 0;
+		public var offsetY:Number = 0;
 
 		
 		
@@ -35,8 +38,8 @@ package views.ui.hud
 		public function update(centerX:Number, centerY:Number):void {
 			centerX = centerX < minCenterX ? minCenterX+(minCenterX-centerX) : centerX;
 			centerY = centerY < minCenterY ? minCenterY+(minCenterY-centerY) : centerY;
-			obj._x = centerX * horizontalOffset;
-			obj._y = centerY * verticalOffset;
+			obj._x = centerX * horizontalOffset + offsetX;
+			obj._y = centerY * verticalOffset + offsetY;
 			obj.transformChanged = true;
 		}
 		

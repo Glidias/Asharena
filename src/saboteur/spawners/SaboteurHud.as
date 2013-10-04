@@ -224,6 +224,7 @@ package saboteur.spawners
 			spriteGeometry.upload(context3D);
 			
 			normPlane.geometry.upload(context3D);
+			
 			overlays = new MeshSet(overlayRoot);  // TODO: use MeshSetClonesContainer instead
 			overlays.setMaterialToAllSurfaces( overlayMaterial);
 			//throw new Error(overlays._surfaces.length);
@@ -282,12 +283,20 @@ package saboteur.spawners
 			var bottomRight:Object3D = new Object3D();
 			layout_bottomRight = new BindDockPin(bottomRight, BindDockPin.BOTTOM, BindDockPin.RIGHT);
 			layout.onLayoutUpdate.add(layout_bottomRight.update);
-			hudSprite = createHudSprite(23 / hudBmpData.width, 33 / hudBmpData.height, 40 / hudBmpData.width, 55 / hudBmpData.height);
-			hudSprite.root._x -= 10;
-			hudSprite.root._y -= 10;
+			hudSprite = createHudSprite(18 / hudBmpData.width, 411 / hudBmpData.height, 23 / hudBmpData.width, 39 / hudBmpData.height);
+			hudSprite.root._x -= 52;
+			hudSprite.root._y -= 42;
 			hudSprite.root._parent = bottomRight;
 			hudMeshSet.addClone(hudSprite);
 			
+			layout_bottomRightOverlay = new  BindDockPin(bottomRight = getOverlay(), BindDockPin.BOTTOM, BindDockPin.RIGHT);
+			layout.onLayoutUpdate.add(layout_bottomRightOverlay.update);
+			bottomRight._scaleX = 50;
+			bottomRight._scaleY = 46;
+			layout_bottomRightOverlay.offsetX = -52;
+			layout_bottomRightOverlay.offsetY = -42;
+			
+			// TODO: numbers and icons for build indicator
 			
 			// Text 
 			var mat:Material = getNewDefaultFontMaterial(0xDDEEAA);
@@ -299,8 +308,30 @@ package saboteur.spawners
 			layout_bottomLeftText = new BindDockPin(blHudTextSpriteSet, BindDockPin.BOTTOM, BindDockPin.LEFT);
 			layout.onLayoutUpdate.add(layout_bottomLeftText.update);
 			
-			hudTextSettings.writeData("1", 30, -30);
+			size *= .75;
+			/*
+			hudTextSettings.writeData("1",  size * 1 - 4,  -size-16, 2000, false,0);
+			hudTextSettings.writeData("2",  size * 2 - 4,  -size-16, 2000, false, 1);
 			
+			hudTextSettings.writeData("3",  size * 3 - 4,  -size-16,2000, false,2);
+			hudTextSettings.writeData("4",  size * 1 - 4,  -size*2-16,2000, false,3);
+			hudTextSettings.writeData("5",  size * 2 - 4,  -size*2-16,2000, false,4);
+		hudTextSettings.writeData("6",  size * 3 - 4,  -size*2-16,2000, false,5);
+			hudTextSettings.writeData("7",  size * 1 - 4,  -size*3-16,2000, false,6);
+			hudTextSettings.writeData("8",  size * 2 - 4,  -size*3-16,2000, false,7);
+			hudTextSettings.writeData("9",  size * 3 - 4,  -size * 3 - 16, 2000, false, 8);
+			
+			
+			hudTextSettings.writeData("F",  size * 3 - 10,  -16, 2000, false, 9);
+			hudTextSettings.writeData("R",  size * 3 - 10,  -38, 2000, false, 10);
+			
+			
+			*/
+			hudTextSettings.spriteSet.numSprites = 11;
+			hudTextSettings.spriteSet.spriteData = new <Number>[45, -67.49996002197265, 0, 0, 0.03515625, 0.1484375, 0.0078125, 0.0703125, 94.49996398925781, -67.49996002197265, 0, 0, 0.046875, 0.1484375, 0.013671875, 0.0703125, 142.49996398925782, -67.49996002197265, 0, 0, 0.064453125, 0.1484375, 0.013671875, 0.0703125, 46.499960021972655, -115.49996002197265, 0, 0, 0.08203125, 0.1484375, 0.013671875, 0.0703125, 94.49996002197265, -115.49996002197265, 0, 0, 0.099609375, 0.1484375, 0.013671875, 0.0703125, 142.49996002197267, -115.49996002197265, 0, 0, 0.1171875, 0.1484375, 0.013671875, 0.0703125, 46.499960021972655, -163.49996002197267, 0, 0, 0.134765625, 0.1484375, 0.013671875, 0.0703125, 94.49996002197265, -163.49996002197267, 0, 0, 0.15234375, 0.1484375, 0.013671875, 0.0703125, 142.49996398925782, -163.49996002197267, 0, 0, 0.169921875, 0.1484375, 0.013671875, 0.0703125, 136.49996002197267, -19.499960021972655, 0, 0, 0.171875, 0.25, 0.013671875, 0.0703125, 136.49996002197267, -41.499960021972655, 0, 0, 0.169921875, 0.3515625, 0.013671875, 0.0703125];
+			//throw new Error(hudTextSettings.spriteSet.spriteData);
+			
+
 		}
 		
 		private function createItemSlots():Object3D {
@@ -474,6 +505,7 @@ package saboteur.spawners
 		private var layout_bottomRight:BindDockPin;
 		private var _textGeometry:Geometry;
 		private var layout_bottomLeftText:BindDockPin;
+		private var layout_bottomRightOverlay:BindDockPin;
 		public var radarBlueprintOverlay:Mesh;
 		public var radarHolder:Object3D;
 		public var radarGridHolder:Object3D;
