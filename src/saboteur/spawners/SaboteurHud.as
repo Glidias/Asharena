@@ -335,8 +335,8 @@ package saboteur.spawners
 			hudTextSettings.writeData("9",  size * 3 - 4,  -size * 3 - 16, 2000, false, 8);
 			
 			
-			hudTextSettings.writeData("Fa1",  size * 3 - 10,  -16, 2000, false, 9);
-			hudTextSettings.writeData("Rb",  size * 3 - 10,  -38, 2000, false, 12);
+			hudTextSettings.writeData("F",  size * 3 - 10,  -16, 2000, false, 9);
+			hudTextSettings.writeData("R",  size * 3 - 10,  -38, 2000, false, 10);
 			
 			
 			//*/
@@ -347,7 +347,7 @@ package saboteur.spawners
 			var str:String;
 			
 			
-			var c:int = 14;
+			var c:int = 11;
 			
 			
 			//str = "B2";
