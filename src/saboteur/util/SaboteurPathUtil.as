@@ -54,6 +54,10 @@ package saboteur.util
 		public static const RESULT_VALID:int = 1;  
 		public static const RESULT_OCCUPIED:int = -2;  
 		
+		
+		
+		
+		
 		public function getValidResult(buildDict:Dictionary, east:int, south:int, value:uint, pathGraph:SaboteurGraph):int {
 			if (buildDict[getGridKey(east, south)] != null) return RESULT_OCCUPIED;
 			var toNorth:uint = getGridKey(east, south - 1);
@@ -108,39 +112,26 @@ package saboteur.util
 			return RESULT_VALID;
 		}
 		
+		private function flip4Bits(c:uint):uint {  // flip 1st half and 2nd half 
+			return (((c & 12) >> 2) | ((c & 3) << 2));
+		}
+		
 		public function getFlipValue(val:uint):uint {
 			//var referVal:uint = val;
 			
 			var edge:uint = getEdgeValue(val);
 			var arcs:uint = getArcValue(val);
 			
+			edge = flip4Bits(edge);
 			
-			// flip arcs
+		//	/*
+			var arcHorizVert:uint = arcs & 3;
+			arcs = (arcs >> 2);
+			arcs = flip4Bits(arcs);
+			arcs = (arcs << 2) | arcHorizVert;
 			
-			var temp:Boolean;
-			
-			
-			// north east to south west
-			/*
-			temp = (arcs & NORTHEAST) !=0;
-			arcs &= ~NORTHEAST;
-			arcs |= (arcs & SOUTHWEST) ? NORTHEAST : 0;
-			arcs &= ~SOUTHWEST;
-			arcs |= temp ? SOUTHWEST : 0;
-			
-			// north west to south east
-			temp = (arcs & NORTHWEST) !=0;
-			arcs &= ~NORTHWEST;
-			arcs |= (arcs & SOUTHEAST) ? NORTHWEST : 0;
-			arcs &= ~SOUTHEAST;
-			arcs |= temp ? SOUTHEAST : 0;
-			
-			
-			// update arcs into new value
-			val &= ~ARC_MASK;  // clear entire arcs
-			val |= (arcs << ARC_SHIFT);
-			
-			*/
+		//	*/
+			val = getValue(edge, arcs);
 			
 			
 			return val;

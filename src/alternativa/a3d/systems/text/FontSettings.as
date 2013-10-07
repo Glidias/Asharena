@@ -309,8 +309,8 @@ package alternativa.a3d.systems.text
 		
 			if (data.length < limit) {
 				data.fixed = false;
-				data.length = limit;
-				data.fixed = true;
+			//	data.length = limit;
+				//data.fixed = true;
 			}
 			var outsideBound:Boolean = false;
 			for (var i:int = startLetterIndex; i < limit; i += offsetConstants) {

@@ -56,13 +56,14 @@ package saboteur.systems
 					executeEquipSlot();
 				}
 				else if (kc === Keyboard.R && !keypoll.isDown(Keyboard.R) ) {
-					executeSwitch();
+					unequip();
 				}
 			}
 			else if (kc === Keyboard.J && !keypoll.isDown(Keyboard.J)) {
 				inventory.assignRandomPaths();
 				hud.syncWithInventory(inventory);
 			}
+			
 		}
 		
 		private function executeSwitch():void 
@@ -82,7 +83,7 @@ package saboteur.systems
 			buildModel.setBuildId( val );
 			var index:int = inventory.pathUtil.getIndexByValue(val);
 			if (index < 0) {
-				return;
+			
 				throw new Error("SHOUld not be!");
 				
 			}
