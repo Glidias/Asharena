@@ -35,6 +35,7 @@ package saboteur.spawners
 	import flash.display.Sprite;
 	import flash.display.Stage;
 	import flash.events.KeyboardEvent;
+	import flash.geom.Matrix3D;
 	import flash.geom.Point;
 	import flash.geom.Vector3D;
 	import flash.ui.Keyboard;
@@ -184,6 +185,8 @@ package saboteur.spawners
 			var targetBox:Vector.<Number>;
 			var hudSprite:SpriteMeshSetClone = itemSlots[slotIndex];
 			
+			
+			
 			if (activated) {
 				if (category > 1) {
 					targetBox = CATEGORIES[category];
@@ -195,6 +198,7 @@ package saboteur.spawners
 					hudSprite.u = targetBox[0];
 					hudSprite.v = targetBox[1]; 
 				}
+				
 			}
 			else {
 				if (category != 0) {
@@ -207,7 +211,9 @@ package saboteur.spawners
 					hudSprite.u = targetBox[0];
 					hudSprite.v = targetBox[1]; 
 				}
+				
 			}
+			setActivated(activated, true);
 			
 		}
 		
@@ -338,7 +344,6 @@ package saboteur.spawners
 			hudTextSettings.writeData("F",  size * 3 - 10,  -16, 2000, false, 9);
 			hudTextSettings.writeData("R",  size * 3 - 10,  -38, 2000, false, 10);
 			
-			
 			//*/
 			
 			//hudTextSettings.spriteSet.spriteData = new <Number>[45, -67.49996002197265, 0, 0, 0.03515625, 0.1484375, 0.0078125, 0.0703125, 94.49996398925781, -67.49996002197265, 0, 0, 0.046875, 0.1484375, 0.013671875, 0.0703125, 142.49996398925782, -67.49996002197265, 0, 0, 0.064453125, 0.1484375, 0.013671875, 0.0703125, 46.499960021972655, -115.49996002197265, 0, 0, 0.08203125, 0.1484375, 0.013671875, 0.0703125, 94.49996002197265, -115.49996002197265, 0, 0, 0.099609375, 0.1484375, 0.013671875, 0.0703125, 142.49996002197267, -115.49996002197265, 0, 0, 0.1171875, 0.1484375, 0.013671875, 0.0703125, 46.499960021972655, -163.49996002197267, 0, 0, 0.134765625, 0.1484375, 0.013671875, 0.0703125, 94.49996002197265, -163.49996002197267, 0, 0, 0.15234375, 0.1484375, 0.013671875, 0.0703125, 142.49996398925782, -163.49996002197267, 0, 0, 0.169921875, 0.1484375, 0.013671875, 0.0703125, 136.49996002197267, -19.499960021972655, 0, 0, 0.171875, 0.25, 0.013671875, 0.0703125, 136.49996002197267, -41.499960021972655, 0, 0, 0.169921875, 0.3515625, 0.013671875, 0.0703125];
@@ -347,25 +352,62 @@ package saboteur.spawners
 			var str:String;
 			
 			
-			var c:int = 11;
+			var c:int = _startHudWordIndex = 11 ;
+			
+			var wordLen:int;
+			var totalWordLen:int = 0;
 			
 			
-			//str = "B2";
-		//	hudTextSettings.writeData(str, 30, -40, 2000, false, c);
-			//c +=  str.length;
-		
 			
-			/*
-			str = "Exit";
-			hudTextSettings.writeData(str, 100, -40, 2000, false, c);
-			c +=  str.length;
-			*/
+			str = "Build -";
+			hudTextSettings.writeData(str, 130, -17, 2000, false, c);
+			hudTextSettings.shiftLetterPositions(c, hudTextSettings.boundsCache.length, -hudTextSettings.boundParagraph.get_intervalX(), 0);
+			c +=  (wordLen=hudTextSettings.boundsCache.length);
+			hudWordIndices.push(totalWordLen + _startHudWordIndex);
+			hudWordLengths.push(wordLen);
+			totalWordLen += wordLen;
 			
+			
+			str = "Activate -";
+			hudTextSettings.writeData(str, 130, -17, 2000, false, c);
+			hudTextSettings.shiftLetterPositions(c, hudTextSettings.boundsCache.length, -hudTextSettings.boundParagraph.get_intervalX(), 0);
+			c +=  (wordLen = hudTextSettings.boundsCache.length);
+			hudWordIndices.push(totalWordLen + _startHudWordIndex);
+			hudWordLengths.push(wordLen);
+			totalWordLen += wordLen;
+			
+			
+			
+			///*
+			str = "Exit -";
+			hudTextSettings.writeData(str, 130, -38, 2000, false, c);
+			hudTextSettings.shiftLetterPositions(c, hudTextSettings.boundsCache.length, -hudTextSettings.boundParagraph.get_intervalX(), 0);
+			c += (wordLen=hudTextSettings.boundsCache.length);
+			hudWordIndices.push(totalWordLen + _startHudWordIndex);
+			hudWordLengths.push(wordLen);
+			totalWordLen += wordLen;
+			
+			//*/
+			
+			totalHudWordLengths = totalWordLen;
 			
 			hudTextSettings.spriteSet._numSprites = c;
+			
+			setActivated(false);
 			//throw new Error(hudTextSettings.spriteSet.spriteData);
 			
 		}
+		
+		
+		public static const HUD_TEXT_BUILD:int = 0;
+		public static const HUD_TEXT_ACTIVATE:int = 1;
+		public static const HUD_START_LETTER_INDEX:int = 9;
+		public static const HUD_LETTER_AMOUNT:int = 2;
+		private var hudWordIndices:Vector.<int> = new Vector.<int>();
+		private var hudWordLengths:Vector.<int> = new Vector.<int>();
+		private var totalHudWordLengths:int;
+		private var _startHudWordIndex:int;
+		
 		
 		private function createItemSlots():Object3D {
 			var w:Number;
@@ -499,12 +541,18 @@ package saboteur.spawners
 			
 			hudTextSettings.setLetterZ(0, endIndex, 0);
 			if (endIndex < 9) {
-			//	hudTextSettings.setLetterZ(endIndex, 9 - endIndex, -1);
+				hudTextSettings.setLetterZ(endIndex, 9 - endIndex, -1);
 			}
 			
-			//	hudTextSettings.setLetterZ(9, 1, -1);
+			//hudTextSettings.setLetterZ(9, 1, -1);
 			//hudTextSettings.setLetterZ(10, 1, -1);
 			
+		}
+		
+		private function setActivated(activated:Boolean, isPath:Boolean=false):void {
+			hudTextSettings.setLetterZ(_startHudWordIndex, totalHudWordLengths, activated ? 0 : -1);
+			hudTextSettings.setLetterZ(HUD_START_LETTER_INDEX, HUD_LETTER_AMOUNT,activated ? 0 : -1);
+			if (activated) hudTextSettings.setLetterZ( hudWordIndices[isPath ? HUD_TEXT_ACTIVATE : HUD_TEXT_BUILD] , hudWordLengths[isPath ? HUD_TEXT_ACTIVATE : HUD_TEXT_BUILD], -1);		
 		}
 		
 		

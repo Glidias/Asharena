@@ -271,6 +271,19 @@ package alternativa.a3d.systems.text
 			}
 		}
 		
+		public function shiftLetterPositions(startLetterIndex:int, amountLetters:int, x:Number = 0, y:Number = 0):void {
+			var data:Vector.<Number> = spriteSet.spriteData;
+			var offsetConstants:int = (spriteSet.NUM_REGISTERS_PER_SPR << 2);
+			
+			startLetterIndex *= offsetConstants;
+			var limit:int = startLetterIndex +  amountLetters * offsetConstants; 
+			
+			for (var i:int = startLetterIndex; i < limit; i+=offsetConstants) {
+				data[i] += x;
+				data[i + 1] += y;
+			}
+		}
+		
 		
 		public function writeData(str:String, x:Number = 0, y:Number = 0, maxWidth:Number = 2000, centered:Boolean = false, startLetterIndex:int = 0, maskWidth:Number=Number.MAX_VALUE, minimumY:Number=-1.79e+308):void {
 			_outsideBound = false;
@@ -291,7 +304,7 @@ package alternativa.a3d.systems.text
 			fontSheet.fontV.getBound(str, 0, 0, centered, fontSheet.tight, boundParagraph);
 			
 			var bounds:Array = fontSheet.fontV.getIndividualBounds(str, 0, 0, centered, fontSheet.tight);
-			if (bounds.length > spriteSet._numSprites) spriteSet.numSprites = bounds.length;
+			//if (bounds.length > spriteSet._numSprites) spriteSet.numSprites = bounds.length;
 			var referText:String = str.replace( /\s/g, "");
 			if (referText === "") {
 				boundsCache = [];
