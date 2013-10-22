@@ -1,0 +1,80 @@
+For visible distance to horizon based on height above sea level
+h=1.5m height = 4.4 Km
+h=5m height = 8 Km
+h=10m height = 11.3Km
+h=20m height = 16 Km
+h=30m height = 19.5 Km
+
+Main seafaring app (live streaming of terrain, procedural generation/loading while ship is moving): to support visible distances beyond 4 to 8 km at lowest detail and progressive detail at visible distances of up to 4 or 8 km, depending on terrain resolution. The higher the altitude (not applicable for sea-level Ships), the greater the visible distance, but potentially less detail required for terrain, thus it may be possible for airbourne fly-bys to work just as well. However, Im considering ground/close-to-ground cases here. Since there is no hard-disk streaming available, Tier 2 processes can't be precomputed and saved to disk, and is most likely going to be loaded off the server or procedurally generated on-the-fly. It is assumed vessals won't be so fast moving.
+
+1) Any potentially visible island regions around the Ship is off-loaded  into Tier 1 queue. Tier 1 queue will than handle the generation of island blueprints and syncing with Main application to immediately produce the lowest-res faraway view 3d model of the island.  This happens can happen at a distance greater than the 4 to 8 km progressive square box region loader.
+
+Once an island is processed, immediately callback to Main to sync data immediately. Provide a momentary loading indicator and than a message saying that an island is spotted in the distance before continuining.
+
+If somehow, the Ship manages to get close to the island fast enough before Tier 2 processes can resonably complete itself at required LOD (ie. height detail sync requirements below + minumum propset tiles distance + (minimum Tier2A required distance. if applciable) ), than a loading overlay message will be shown as well with a temporary pausing of the game, to ensure all the required the processes under Tier 2 are met. For non-strict case, this should happen only if you teleport or zip fast into the island, which is seldom the case.
+
+Because different height LODs are streamed in to the Main Terrain engine asyncronously, there are some changes in order to meet this appraoch. (Instaed of the precomputed terrain file setup approach as done earlier.)
+
+Tier 2 terrain height detail sync requirements:
+	1) Non strict (2x2 128x128 sized tiles around Ship at highest detail). (Changes required to terrain engine) Requires use of additional skirts instead of edge level-1 difference stitching. Any additional post-load upgrade LODs are done on-demand prioritizing current viewing terrain Update situation as well.
+	2) Strict and Restrict (Minimal change to terrain engine). Everything must be filled according to minimum LOD Tree. This also acts as a maximum LOD Tree. Any Additional post-loads upgrade LODs are done as last priority and doesn't affect how deep the detail level a terrain can recurse in. 128x128 sized quadtree level grid detail lookup to adjust cap maximum recurse detail level. This means certain 2d distances beyond half a kilometer (or a full kilometer depending on terrain resolution) CANNOT use certain higher LODs regardless, even if the geometry there is quite detailed and bumpy. Thus the 2D distances beyond .5/1 kilometer will ALWAYS have their LODs capped somehow regardless. If this is not sufficient in terms of visual fidelity, consider increasing initial 4x4 squares to 8x8 squares for Minimum & Maximum LOD tree, but this would probably increase sync load times significantly.
+	3) Strict.  (Changes required to terrain engine)  Everything must be filled according to minimum LOD Tree. But no maximum LOD tree is imposed and it all depends on what quadtree child nodes are already loaded in. Requires use of additional skirts instead of edge level-1 difference stitching.  Any additional post-load upgrade LODs are done on-demand prioritizing current viewing Update situation as well.
+
+	Try option 2 first. But Option 2 and 3 will probably cause a longer load time.. (2-15 seconds to load in heights). However, since it takes quite a signifincant time to run along 250 meters (or 500 meters) before such an option executes, chances are most of the height detail would already be post-loaded within the span of 250-500 meters running distance. (48 seconds on longship boat of 10 knots). (5 seconds on modern cruiseship speed). Since it's just a viking longship boat we're talkign about here, theres more than enough time to post-load subsequent LODs.
+	
+
+[[[ Tier 1  (queue)
+Worker #1: Island Blueprint generator: (ASync)
+ - Heightmap lowest res to HeightMapData
+ - (Biome tile map / RGB Splat map) / & Color map
+ - Biome map
+ - Sea Boolean Quadtree
+Estimated time: Around 8 - 15 seconds per island
+
+ Main: (Sync)
+- Once blueprint formed from Worker #1,
+1) Form island lowest res visible (32x32) without detailed textures (RGB Splat Map /& Color Map):
+	 - Heightmap lowest res sample (32x32) from lowest res HeightMapData + Noise
+	 - Normalmap lowest res from above
+	 - Single quad tree node for QuadTreePage with accompanying required material (upload to Stage3D if needed)
+A) Pass Biome tilemap to Worker #A if required
+2) Pass HeightMapData lowest res to Worker #2 if required
+3) Pass Biome map to Worker #3 if required
+
+Depending on the size of the island, can consider doing this syncronously instead of off - loading the process, particularly if off - loading takes up more net CPU time overall.
+Estimated time:  <=1 seconds per island
+
+_______________________
+Tier 2
+
+- Once tile texture map from Worker #A is completed, (if applicable)
+1) Form material from tile texture map and upload to Stage3D
+Estimated time:  <=.15 seconds per island
+
+- Once res level is ready under Worker #2
+  1) Transfer/create quadtree data for level
+  2) Update heightmap Data to higher resolution
+Estimated time:  <=.15 seconds per island
+
+- Once prop layout is ready under Worker #3
+  1) Form rendering tree per 128x128 tile under rendering grid
+Estimated time:  <=.15 seconds per island
+
+
+[[[ TIER 2 workerSet per island
+
+Worker #A: Island tile map generator: (ASync)
+ - Biome tile map ->  Biome tile Texture map.
+ Estimated time: >.6 - 30 seconds per island 
+
+Worker #2: Heightmap + Normal map expander priority stack (ASync)  Expands out terrain height detail over 128x128 tiled regions
+ - Apply noise to (expanded) heightmap data
+ - Create normal map from above
+ - Place above assets into stack for uploading into Main on-demand
+Estimated time: 2 sec - 7 minute per island
+
+Worker #3: Island prop generator  priority stack  (ASync)
+ - Create 128x128 tile layouting of props
+Estimated time: .5 sec - 1 minute per island
+
+]]]
