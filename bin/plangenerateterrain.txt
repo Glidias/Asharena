@@ -1,3 +1,16 @@
+Roadmap TODO:
+_____________________
+1) Changes to TerrainLOD to support Tier 1
+2) Tier 1 Worker #1 + Response (Island explorer 3D. Always views each island region in extremely low-detailed 32x32 patches always)
+3) Changes to TerrainLOD to support Tier 2
+4) Tier 2 Worker #2 + Response (standard height detail + normal terrain generation)
+5) Tier 2 Worker #3 + Response (layouting of props within highest LOD radius)
+6) Tier 2 Worker #3 + Response (layouting of LOD props for lowest LOD)
+7) Tier 2 Worker #A + Response (not needed if biome tilemap isn't used)
+
+Real-life visible distances:
+______________________________________
+
 For visible distance to horizon based on height above sea level
 h=1.5m height = 4.4 Km
 h=5m height = 8 Km
@@ -5,22 +18,65 @@ h=10m height = 11.3Km
 h=20m height = 16 Km
 h=30m height = 19.5 Km
 
-Main seafaring app (live streaming of terrain, procedural generation/loading while ship is moving): to support visible distances beyond 4 to 8 km at lowest detail and progressive detail at visible distances of up to 4 or 8 km, depending on terrain resolution. The higher the altitude (not applicable for sea-level Ships), the greater the visible distance, but potentially less detail required for terrain, thus it may be possible for airbourne fly-bys to work just as well. However, Im considering ground/close-to-ground cases here. Since there is no hard-disk streaming available, Tier 2 processes can't be precomputed and saved to disk, and is most likely going to be loaded off the server or procedurally generated on-the-fly. It is assumed vessals won't be so fast moving.
+__________________
 
-1) Any potentially visible island regions around the Ship is off-loaded  into Tier 1 queue. Tier 1 queue will than handle the generation of island blueprints and syncing with Main application to immediately produce the lowest-res faraway view 3d model of the island.  This happens can happen at a distance greater than the 4 to 8 km progressive square box region loader.
+Minimum/Maximum LOD Tree
+_________________________
+Default distances and their LOD reduction caps.
+http://wonderfl.net/c/k9HO
+
+128x128-32x32 tiles covers 128x128 - Detail no cap (~0-500 meters)
+
+128x128-32x32 tiles covers 256x256 - Detail -1 cap (~500m-2.5km)
+
+128x128-32x32 tiles covers 512x512 Deatil -2 cap (2.5km-3.5km)
+
+128x128-32x32 tiles covers 1024x1024 - Detail -3 cap (>=3.5 km).
+
+32x32 tiles covers whatever distance. Always uses lowest LOD. (> 5.5km )
+
+Anything below 500 meters map distance will always render at full detail. Anything above 500 meters in map distance can potentially be rendered at slightly reduced LOD detail as shown above. Anything above 5.5km MUST be rendered at lowest LOD no matter what.
+
+Estimated TerrainLOD draw calls: Minimum 32 paged draw calls at average case + some additional draw calls for close-by higher LOD areas and faraway islands at lowest LOD, with frustum culling included.
+
+
+Changes to TerrainLOD engine for above to support Tier 1:
+-----------------------------------------
+1) QuadTreePage needs to have setting to cap detail level recursion at certain maximum LOD prior to recursing in.
+
+2) IQuadTreePageCuller implementation to support culling over list of available pages at lowest resolution. Check that QuadTreePage can start at lowest resolution. No need to update QuadTreePage because QuadTreePage has no children! Minimum LOD cap level should be set to QuadTreePage such that nothing is being done.
+
+
+Changes to TerrainLOD engine for above to support Tier 2:
+-----------------------------------------
+
+1) QuadSquareChunk::Update() Check, when lookup current neighbor. If no neighbor found for current level grid, than vertex at opposite end shoudl always be disabled. This will allow the edge to always stitch to higher +1 level by default. This should rely on a different implementation to use beyond the current default "uniform grid" approach.
+
+2) TerrainLOD needs the IQuadTreePageCuller implementation to support culling over minimum/maximum LOD tree instead, but uses it's own class and storage system to store it's own list of QuadTreePages across different minimum/maximum LOD trees. Remove the uniform grid of QuadSquarePages assumption.
+
+
+Main seafaring app (live streaming of terrain, procedural generation/loading while ship is moving): to support visible distances beyond 5.5km at lowest detail and progressive detail at visible distances of up to 5.5km (or double of it depending on terrain resolution). The higher the altitude (not applicable for sea-level Ships), the greater the visible distance, but potentially less detail required for terrain, thus it may be possible for airbourne fly-bys to work just as well. However, Im considering ground/close-to-ground cases here. Since there is no hard-disk streaming available, Tier 2 processes can't be precomputed and saved to disk, and is most likely going to be loaded off the server or procedurally generated on-the-fly. It is assumed vessals won't be so fast moving. Even tall ship vessals that can provide a visible distance beyond 5.5km would normally see extremely low detailed islands at such distances.
+
+
+1) Any potentially visible island regions around the Ship is off-loaded  into Tier 1 queue. Tier 1 queue will than handle the generation of island blueprints and syncing with Main application to immediately produce the lowest-res faraway view 3d model of the island.  This happens can happen at a distance greater than the 5.5km progressive square box region loader..
 
 Once an island is processed, immediately callback to Main to sync data immediately. Provide a momentary loading indicator and than a message saying that an island is spotted in the distance before continuining.
 
-If somehow, the Ship manages to get close to the island fast enough before Tier 2 processes can resonably complete itself at required LOD (ie. height detail sync requirements below + minumum propset tiles distance + (minimum Tier2A required distance. if applciable) ), than a loading overlay message will be shown as well with a temporary pausing of the game, to ensure all the required the processes under Tier 2 are met. For non-strict case, this should happen only if you teleport or zip fast into the island, which is seldom the case.
+If somehow, the Ship manages to get close to the island fast enough before Tier 2 processes can resonably complete itself at required LOD (ie. height detail sync requirements below + minumum propset tiles distance + (minimum Tier2A required distance. if applciable) ), than a loading overlay message will be shown as well with a temporary pausing of the game, to ensure all the required the processes under Tier 2 are met.
+
+__________________
 
 Because different height LODs are streamed in to the Main Terrain engine asyncronously, there are some changes in order to meet this appraoch. (Instaed of the precomputed terrain file setup approach as done earlier.)
 
 Tier 2 terrain height detail sync requirements:
-	1) Non strict (2x2 128x128 sized tiles around Ship at highest detail). (Changes required to terrain engine) Requires use of additional skirts instead of edge level-1 difference stitching. Any additional post-load upgrade LODs are done on-demand prioritizing current viewing terrain Update situation as well.
-	2) Strict and Restrict (Minimal change to terrain engine). Everything must be filled according to minimum LOD Tree. This also acts as a maximum LOD Tree. Any Additional post-loads upgrade LODs are done as last priority and doesn't affect how deep the detail level a terrain can recurse in. 128x128 sized quadtree level grid detail lookup to adjust cap maximum recurse detail level. This means certain 2d distances beyond half a kilometer (or a full kilometer depending on terrain resolution) CANNOT use certain higher LODs regardless, even if the geometry there is quite detailed and bumpy. Thus the 2D distances beyond .5/1 kilometer will ALWAYS have their LODs capped somehow regardless. If this is not sufficient in terms of visual fidelity, consider increasing initial 4x4 squares to 8x8 squares for Minimum & Maximum LOD tree, but this would probably increase sync load times significantly.
-	3) Strict.  (Changes required to terrain engine)  Everything must be filled according to minimum LOD Tree. But no maximum LOD tree is imposed and it all depends on what quadtree child nodes are already loaded in. Requires use of additional skirts instead of edge level-1 difference stitching.  Any additional post-load upgrade LODs are done on-demand prioritizing current viewing Update situation as well.
-
-	Try option 2 first. But Option 2 and 3 will probably cause a longer load time.. (2-15 seconds to load in heights). However, since it takes quite a signifincant time to run along 250 meters (or 500 meters) before such an option executes, chances are most of the height detail would already be post-loaded within the span of 250-500 meters running distance. (48 seconds on longship boat of 10 knots). (5 seconds on modern cruiseship speed). Since it's just a viking longship boat we're talkign about here, theres more than enough time to post-load subsequent LODs.
+	
+	1) Strict and Restrict (Minimal change to terrain engine). Everything must be filled according to minimum LOD Tree. This also acts as a maximum LOD Tree. Any Additional post-loads upgrade LODs are done as last priority and doesn't affect how deep the current detail level a terrain can recurse in except prevent the need for future preloads if it's alraedy loaded prior beforehand. 128x128 sized quadtree level grid detail lookup to adjust cap maximum recurse detail level. This means certain 2d distances beyond half a kilometer (or a full kilometer depending on terrain resolution) CANNOT use certain higher LODs regardless, even if the geometry there is quite detailed and bumpy. Thus the 2D distances beyond .5/1 kilometer will ALWAYS have their LODs capped somehow regardless. 
+	
+	This will take (2-15 seconds to load in heights). However, since it takes quite a signifincant time to run along 250 meters (or 500 meters) before such an option executes, chances are most of the height detail would already be post-loaded within the span of 250-500 meters running distance. (48 seconds on longship boat of 10 knots). (5 seconds on modern cruiseship speed). Since it's just a viking longship boat we're talkign about here, theres more than enough time to post-load subsequent LODs.
+	
+	_____________________________
+	
+Because of minimum LOD tree being used, current TerrainLOD class must be changed slightly to instead of using an assumed uniform regular grid of terrain QuadTreePages, to  use a minimum LOD grid of terrain QuadTreePage. One can still used the "gridPagesVector" to store the listings of all quadtreepages, however, need an additional pointer called "visibleGridPagesVector" and a counter called "numVisibleGridPages" and a external IQuadTreePageCuller method call that can be used to determine provide a list of visible grid pages to render (thus no longer restricted to grid assumption with the "pagesAcross" variable). With IQuadTreePageCuller, this can support multiple culling implementations of QuadTreePages, with varying positions/sizes of QuadTreePages that lie on the same altitude plane. This is also used to cull against raycasting operations and operations against EllipsoidCollider sphere. This is outlined briefly in "Changes to TerrainLOD engine for above to support Tier 2" in 2)  earlier.
 	
 
 [[[ Tier 1  (queue)
@@ -51,13 +107,33 @@ Tier 2
 1) Form material from tile texture map and upload to Stage3D
 Estimated time:  <=.15 seconds per island
 
+**
+
 - Once res level is ready under Worker #2
   1) Transfer/create quadtree data for level
   2) Update heightmap Data to higher resolution
+  
 Estimated time:  <=.15 seconds per island
 
+**
+
 - Once prop layout is ready under Worker #3
-  1) Form rendering tree per 128x128 tile under rendering grid
+  1) Form rendering tree per 128x128/256x256 tile under rendering grid
+  2) Update transforms for meshes in MeshSetClonesContainer, or/and pre-generate Stage3D geometry and upload?????
+High LOD MeshSetClonesContainer per-prop geometry.
+Low LOD Stage3D pre-uploaded combined props geometry over Minimum LOD Tree node.
+(128x128) grid ( 500 meter visibility worth of high detailed prop geometry)
+Level minus 0  - MeshSetClonesContainer
+Level minus 1  -  Mesh LOD Level minus 1
+Level minus 2 -  Mesh LOD Level minus 2
+Level minus 3 - Mesh LOD Level minus 3  (Estimtaed +12 paged draw calls)
+(256x256) grid ( 1 kilometer visibility worth of prop geometry)
+Level minus 0  - MeshSetClonesContainer
+Level minus 1  - MeshSetClonesContainer
+Level minus 2 -  Mesh LOD Level minus 1
+Level minus 3 -  Mesh LOD Level minus 2   (Estimtaed +8 paged draw calls)
+
+  
 Estimated time:  <=.15 seconds per island
 
 
@@ -71,7 +147,7 @@ Worker #2: Heightmap + Normal map expander priority stack (ASync)  Expands out t
  - Apply noise to (expanded) heightmap data
  - Create normal map from above
  - Place above assets into stack for uploading into Main on-demand
-Estimated time: 2 sec - 7 minute per island
+Estimated time:5 sec - 2 minute per island . Could be much longer for country-sized islands.
 
 Worker #3: Island prop generator  priority stack  (ASync)
  - Create 128x128 tile layouting of props

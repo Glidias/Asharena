@@ -6,6 +6,7 @@ package tests
 	import flash.display.MovieClip;
 	import systems.collisions.EllipsoidCollider;
 	import systems.SystemPriorities;
+	import util.SpawnerBundle;
 	import views.engine3d.MainView3D;
 	/**
 	 * ...
@@ -33,6 +34,8 @@ package tests
 		
 		private function onReady3D():void 
 		{
+			SpawnerBundle.context3D = _template3D.stage3D.context3D;
+			
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 
 			

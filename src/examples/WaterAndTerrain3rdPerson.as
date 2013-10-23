@@ -343,8 +343,8 @@ package examples
 			
 			// TerrainLOD
 			terrainLOD = new TerrainLOD();
-			terrainLOD.scaleX = 2;
-			terrainLOD.scaleY = 2;
+		//	terrainLOD.scaleX = 2;
+			//terrainLOD.scaleY = 2;
 			terrainLOD.setUpdateRadius(512);
 			//terrainLOD.debug = true;
 			terrainLOD.detail = START_LOD;

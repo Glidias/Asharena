@@ -75,7 +75,7 @@ package
 			spawnerBundle = new GladiatorBundle(arenaSpawner);
 			new SpawnerBundleLoader(stage, begin, new <SpawnerBundle>[spawnerBundle]);
 			
-			begin();
+			//begin();
 		}
 		
 		private function begin():void 

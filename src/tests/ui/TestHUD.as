@@ -125,7 +125,7 @@ package tests.ui
 		
 		private function onSpawnerBundleLoaded():void 
 		{
-		//		game.gameStates.engineState.changeState("thirdPerson");
+			//game.gameStates.engineState.changeState("thirdPerson");
 				
 			_template3D.visible = true;
 			removeChild(_preloader);			
