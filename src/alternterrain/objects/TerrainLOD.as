@@ -178,11 +178,6 @@ package alternterrain.objects
 			
 			
 		}
-				
-		// METHOD 3 (not yet available)
-		public var gridPagesHash:Dictionary;  //  optional dictionary hash for larger worlds 
-		
-		
 		
 		// METHOD 3
 		public var tree:QuadTreePage;
@@ -451,14 +446,16 @@ package alternterrain.objects
 			var stride:int = _data32PerVertex;
 			// based on requirements, could access a different vertex upload
 			var heightData:Vector.<int> = heightMap.Data;
+	
 			var xorg:int = square.xorg;
-			var zorg:int = square.zorg;
+			var zorg:int =  square.zorg;
 			var hXOrigin:int = heightMap.XOrigin;
 			var hZOrigin:int = heightMap.ZOrigin;
 			xorg -= hXOrigin;  // need to check if this is correct
 			zorg -= hZOrigin;
 			xorg /= tileSize;
 			zorg /= tileSize;
+		
 			
 			var limit:int = (((1 << square.Level) << 1) >> tileShift);  // numbr of tiles
 			
@@ -548,16 +545,24 @@ package alternterrain.objects
 	
 		
 	
-		public static function installQuadChunkFromHeightmap(heightMap:HeightMapInfo, offsetX:int=0, offsetY:int=0, tileSize:int=256, sampleSize:int=0):QuadChunkCornerData {
+		public static function installQuadChunkFromHeightmap(heightMap:HeightMapInfo, offsetX:int=0, offsetY:int=0, tileSize:int=256, sampleSize:int=0, classe:Class=null):QuadChunkCornerData {
 			var rootData:QuadCornerData = QuadCornerData.createRoot(offsetX, offsetY, sampleSize == 0 ? (tileSize * (heightMap.XSize-1)) : sampleSize, false); 
 			rootData.Square.AddHeightMap(rootData, heightMap);
 
-			var cd:QuadChunkCornerData = new QuadChunkCornerData();
+			var cd:QuadChunkCornerData = classe==null ? new QuadChunkCornerData() : new classe();
 			cd.Level = rootData.Level;
 			cd.xorg = rootData.xorg;
 			cd.zorg = rootData.zorg;
 			cd.Square =  rootData.Square.GetQuadSquareChunk( rootData, rootData.Square.RecomputeErrorAndLighting(rootData)  ); 
 			return cd; 
+		}
+		
+		public static function installQuadTreePageFromHeightMap(heightMap:HeightMapInfo, offsetX:int = 0, offsetY:int = 0, tileSize:int = 256, sampleSize:int = 0, material:Material=null):QuadTreePage {
+			var rootData:QuadTreePage = installQuadChunkFromHeightmap(heightMap, offsetX, offsetY, tileSize, sampleSize, QuadTreePage) as QuadTreePage;
+			rootData.heightMap = heightMap;
+			rootData.material = material;
+
+			return rootData; 
 		}
 		
 		private var _setupContext:Context3D;
@@ -794,8 +799,8 @@ package alternterrain.objects
 				QuadSquareChunk.LOD_LVL_MIN = lodLvlMin;
 				
 				quadOrderTable = QUAD_ORDER2;
-				
-				
+				var tx:Number;
+				var ty:Number;
 				var tz:Number;
 				
 				_cameraPos.x = cameraToLocalTransform.d;
@@ -846,13 +851,12 @@ package alternterrain.objects
 					
 					
 					// Get 8 frustum corners clamped to terrain bounds in 2 dimensions for iterating throuhg a limited set of quad-trees on the grid (note, some flickering issues atm.)
-					///*
+					/*
 					var minX:Number = Number.MAX_VALUE;
 					var minY:Number = Number.MAX_VALUE;
 					var maxX:Number = -Number.MAX_VALUE;
 					var maxY:Number = -Number.MAX_VALUE;
-					var tx:Number;
-					var ty:Number;
+				
 					tx = cameraToLocalTransform.a * -1 + cameraToLocalTransform.b * -1 + cameraToLocalTransform.c*camera.farClipping + cameraToLocalTransform.d;
 					ty = cameraToLocalTransform.e * -1 + cameraToLocalTransform.f * -1 + cameraToLocalTransform.g * camera.farClipping + cameraToLocalTransform.h; //ty *= -1;
 					tx = tx < boundBox.minX ? boundBox.minX : tx > boundBox.maxX ? boundBox.maxX : tx;
@@ -945,17 +949,18 @@ package alternterrain.objects
 							}
 						}
 					}
-					//*/
+					*/
 					
-					/*  // Blindly iterate through all quad tree pages in grid
+					///*  // Blindly iterate through all quad tree pages in grid. 
 					i = gridPagesVector.length;
 					while ( --i > -1) {
+						
 						var cd:QuadTreePage;
 						_currentPage = cd = gridPagesVector[i];
 						var c:QuadSquareChunk = cd.Square;
 						var curCulling:int;
 						if  ( (curCulling > 0 ? (curCulling = cullingInFrustum(culling, cd.xorg , cd.zorg, c.MinY, cd.xorg + full, cd.zorg + full, c.MaxY)) : 0) >=0 ) {
-							
+					
 							mySurface.material = !debug ? cd.material : _debugMaterial;
 							myLODMaterial = mySurface.material as ILODTerrainMaterial;
 							QuadChunkCornerData.BI = 0;
@@ -964,7 +969,7 @@ package alternterrain.objects
 							drawQuad(cd, camera, lights, lightsLength, useShadow, curCulling);
 						}
 					}
-					*/
+					//*/
 					
 					QuadChunkCornerData.BI = 0;
 				}
