@@ -68,10 +68,10 @@ package alternterrain.objects
 		public static var PROTO_32:GeometryResult;
 		
 		// pooled chunk state buffers
-		private static var chunkPool:TerrainChunkStateList = new TerrainChunkStateList();  // changed to static
-		private static var activeChunks:TerrainChunkStateList = new TerrainChunkStateList();
-		private static var drawnChunks:int = 0;
-		private static var lastDrawnChunks:int = 0;
+		private var chunkPool:TerrainChunkStateList = new TerrainChunkStateList();  // BENCHMARK: changed to non/static. 
+		private var activeChunks:TerrainChunkStateList = new TerrainChunkStateList();
+		private var drawnChunks:int = 0;
+		private var lastDrawnChunks:int = 0;
 		// lookup buffers
 		private var tilingUVBuffers:Vector.<VertexBuffer3D>;
 		alternativa3d static var indexBuffers:Vector.<IndexBuffer3D>;
