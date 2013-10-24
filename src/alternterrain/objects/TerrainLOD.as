@@ -68,13 +68,13 @@ package alternterrain.objects
 		public static var PROTO_32:GeometryResult;
 		
 		// pooled chunk state buffers
-		private var chunkPool:TerrainChunkStateList = new TerrainChunkStateList();
-		private var activeChunks:TerrainChunkStateList = new TerrainChunkStateList();
-		private var drawnChunks:int = 0;
-		private var lastDrawnChunks:int = 0;
+		private static var chunkPool:TerrainChunkStateList = new TerrainChunkStateList();  // changed to static
+		private static var activeChunks:TerrainChunkStateList = new TerrainChunkStateList();
+		private static var drawnChunks:int = 0;
+		private static var lastDrawnChunks:int = 0;
 		// lookup buffers
 		private var tilingUVBuffers:Vector.<VertexBuffer3D>;
-		alternativa3d var indexBuffers:Vector.<IndexBuffer3D>;
+		alternativa3d static var indexBuffers:Vector.<IndexBuffer3D>;
 		
 		private var _uvAttribOffset:int = 0;
 		private var _defaultUVStream:VertexStream = null;  
@@ -82,8 +82,8 @@ package alternterrain.objects
 		
 		private var _cameraPos:Vector3D = new Vector3D();
 		private var _lastUpdateCameraPos:Vector3D = new Vector3D();
-		private var numTrianglesLookup:Vector.<int>;
-		private var indexSideLookup:Vector.<int> = new Vector.<int>(16, true);
+		private static var numTrianglesLookup:Vector.<int>;
+		private static var indexSideLookup:Vector.<int> = new Vector.<int>(16, true);
 		private var cornerMask:Vector.<int>;
 		
 	//	public var _sampleRect:Rectangle = new Rectangle();
@@ -182,7 +182,7 @@ package alternterrain.objects
 		// METHOD 3
 		public var tree:QuadTreePage;
 		
-		public var detail:Number = 100;
+		public var detail:Number = 5;
 		
 		
 		public function loadSinglePage(context3D:Context3D, page:QuadTreePage, material:Material, uvTileSize:int=0, requirements:int=-1, tileSize:int=256):void {
@@ -475,7 +475,7 @@ package alternterrain.objects
 			var yi:int;
 			var y:int;
 			var x:int;
-			
+
 			// We assume position offset is always zero and always made available!
 			// TODO: consider Only Z case...
 			yi = 0;
@@ -536,7 +536,7 @@ package alternterrain.objects
 		{
 			if (PROTO_32 == null) PROTO_32 = TerrainGeomTools.createLODTerrainChunkForMesh(PATCHES_ACROSS, patchSize);
 			//var indexLookup:Vector.<int>
-			setupIndexBuffers(context3D, PROTO_32.indexLookup, PATCHES_ACROSS);
+			if (indexBuffers == null) setupIndexBuffers(context3D, PROTO_32.indexLookup, PATCHES_ACROSS);
 		
 			_vertexUpload = new Vector.<Number>();
 			
@@ -1120,7 +1120,7 @@ package alternterrain.objects
 			// TODO: collects all dynamic geometry on-the-fly within a bounding sphere radius! Sphere is assumed to be in local coordinate space
 			public function setupCollisionGeometry(sphere:Vector3D, vertices:Vector.<Number>, indices:Vector.<uint>, vi:int = 0, ii:int = 0):void {
 				numCollisionTriangles = 0;
-
+		
 				if (tree != null ) {
 						_currentPage = tree;
 						collectTrisForTree2D(tree, sphere, vertices, indices, vi, ii);		
@@ -1383,8 +1383,8 @@ package alternterrain.objects
 					var dyi:int; // direction of the y-intersection
 					var t:Number;
 					
-					var xorg:Number = _currentPage.xorg - hm.XOrigin;
-					var zorg:Number = _currentPage.zorg - hm.ZOrigin;
+					var xorg:Number = _currentPage.xorg;
+					var zorg:Number = _currentPage.zorg;
 	
 					var fullC:int = (1 << cd.Level) << 1;
 					var P_ACROSS:int = fullC >> tileShift;
@@ -1598,11 +1598,12 @@ package alternterrain.objects
 				
 				private function checkHitPatch(result:RayIntersectionData, hm:HeightMapInfo, xi:int, yi:int, zVal:Number, origin:Vector3D, direction:Vector3D):Boolean 
 				{
+				
 					// highestPoint bound early reject
 					var highestPoint:Number = hm.Data[xi + yi * hm.RowWidth]; // nw
 				
-					var cxorg:Number = _currentPage.xorg;
-					var czorg:Number = _currentPage.zorg;
+					var cxorg:Number = _currentPage.heightMap.XOrigin;
+					var czorg:Number = _currentPage.heightMap.ZOrigin;
 					
 					var hp:Number;
 					_patchHeights[2] = highestPoint;   // 0*3+2
@@ -1675,9 +1676,12 @@ package alternterrain.objects
 			private function collectTrisForTree2D(tree:QuadTreePage, sphere:Vector3D, vertices:Vector.<Number>, indices:Vector.<uint>, vi:int, ii:int):void {
 				var hm:HeightMapInfo = tree.heightMap;
 				var radius:Number = sphere.w;
+						var hxorg:Number = hm.XOrigin;
+					var hzorg:Number = hm.ZOrigin;
+					
 				radius = radius < (tileSize>>1) ? (tileSize>>1) : radius;
-				var startX:int = (sphere.x - radius - tree.xorg -hm.XOrigin)  * tileSizeInv - 1;
-				var startY:int = (-(sphere.y - radius) - tree.zorg - hm.ZOrigin) * tileSizeInv - 1;
+				var startX:int = (sphere.x - radius - hxorg)  * tileSizeInv - 1;
+				var startY:int = (-(sphere.y - radius) - hzorg) * tileSizeInv - 1;
 				var data:Vector.<int> = hm.Data;
 				var len:int = radius * 2 * tileSizeInv + 2;
 				var xtmax:int = startX + len;
@@ -1686,8 +1690,7 @@ package alternterrain.objects
 				var xi:int;
 					var whichFan:Vector.<int>;
 					var RowWidth:int = hm.RowWidth;
-					var cxorg:Number = _currentPage.xorg;
-					var czorg:Number = _currentPage.zorg;
+			
 					
 					var ax:Number; 
 					var ay:Number; 
@@ -1713,19 +1716,19 @@ package alternterrain.objects
 					
 					whichFan = (xi & 1) != (yi & 1) ? TRI_ORDER_TRUE : TRI_ORDER_FALSE;
 					
-					ax = (_patchHeights[whichFan[0] * 3] + xi) *tileSize + cxorg;
-					ay = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + czorg; 
+					ax = (_patchHeights[whichFan[0] * 3] + xi) * tileSize + hxorg;
+					ay = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + hzorg; 
 					ay *= -1;
 					az = _patchHeights[whichFan[0] * 3 + 2];
 					
 					 
-					bx=  (_patchHeights[whichFan[1] * 3] + xi) * tileSize+ cxorg; 
-					by = (_patchHeights[whichFan[1] * 3 + 1] + yi) * tileSize+ czorg;  
+					bx=  (_patchHeights[whichFan[1] * 3] + xi) * tileSize+hxorg;
+					by = (_patchHeights[whichFan[1] * 3 + 1] + yi) * tileSize+ hzorg;   
 					by *= -1;
 					bz=_patchHeights[whichFan[1] * 3 + 2];
 					   
-					cx= (_patchHeights[whichFan[2] * 3] + xi) *tileSize + cxorg;
-					cy =	(_patchHeights[whichFan[2] * 3 + 1] + yi) * tileSize+ czorg;  
+					cx= (_patchHeights[whichFan[2] * 3] + xi) *tileSize + hxorg;
+					cy =	(_patchHeights[whichFan[2] * 3 + 1] + yi) * tileSize+ hzorg; 
 					cy *= -1;
 					cz = _patchHeights[whichFan[2] * 3 + 2];
 					
@@ -1747,18 +1750,18 @@ package alternterrain.objects
 					numCollisionTriangles++;
 					
 					
-					ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + cxorg;
-					ay = (_patchHeights[whichFan[3] * 3 + 1] + yi) * tileSize + czorg; 
+					ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + hxorg;
+					ay = (_patchHeights[whichFan[3] * 3 + 1] + yi) * tileSize + hzorg; 
 					ay *= -1;
 					az= _patchHeights[whichFan[3] * 3 + 2];
 					 
-					bx=  (_patchHeights[whichFan[4] * 3] + xi) * tileSize + cxorg;
-					by = (_patchHeights[whichFan[4] * 3 + 1] + yi) * tileSize+ czorg; 
+					bx=  (_patchHeights[whichFan[4] * 3] + xi) * tileSize + hxorg;
+					by = (_patchHeights[whichFan[4] * 3 + 1] + yi) * tileSize+ hzorg; 
 					by *= -1;
 					bz=_patchHeights[whichFan[4] * 3 + 2];
 					   
-					cx= (_patchHeights[whichFan[5] * 3] + xi) *tileSize + cxorg;
-					cy =	(_patchHeights[whichFan[5] * 3 + 1] + yi) * tileSize+ czorg;  
+					cx= (_patchHeights[whichFan[5] * 3] + xi) *tileSize + hxorg;
+					cy =	(_patchHeights[whichFan[5] * 3 + 1] + yi) * tileSize+ hzorg;  
 					cy *= -1;
 					cz = _patchHeights[whichFan[5] * 3 + 2];
 					

@@ -1,12 +1,12 @@
-Roadmap TODO:
+Roadmap TODO for Longboat traveling:
 _____________________
-1) Changes to TerrainLOD to support Tier 1
-2) Tier 1 Worker #1 + Response (Island explorer 3D. Always views each island region in extremely low-detailed 32x32 patches always)
-3) Changes to TerrainLOD to support Tier 2
-4) Tier 2 Worker #2 + Response (standard height detail + normal terrain generation)
-5) Tier 2 Worker #3 + Response (layouting of props within highest LOD radius)
-6) Tier 2 Worker #3 + Response (layouting of LOD props for lowest LOD)
-7) Tier 2 Worker #A + Response (not needed if biome tilemap isn't used)
+1) Changes to TerrainLOD to support Tier 1. Terrain pieces can now be arbituarily positioned within TerrainLOD instance (but each piece neither scaled nor sampled at a different from default resolution). (DONE)
+2) Tier 1 Worker #1 + Response (Island explorer 3D. Always views each island region in extremely low-detailed 32x32 meshes always. Individual mesh Geometry sets uploaded, pooled, and updated on the fly accordingly...)
+3) Tier 2 Worker #2 + Response (standard height detail + normal terrain generation across 4 TerrainLOD setups)
+3a) Seaming between different TerrainLODs: QuadSquareChunk::Update() Check, when lookup current neighbor for grid. If no neighbor found for current level grid, than vertex at opposite end shoudl always be disabled. This will allow the edge to always stitch to higher +1 level by default. 
+4) Tier 2 Worker #3 + Response (layouting of props within highest LOD radius)
+5) Tier 2 Worker #3 + Response (layouting of LOD props for lowest LOD)
+6) Tier 2 Worker #A + Response (not needed if biome tilemap isn't used)
 
 Real-life visible distances:
 ______________________________________
@@ -25,34 +25,23 @@ _________________________
 Default distances and their LOD reduction caps.
 http://wonderfl.net/c/k9HO
 
-128x128-32x32 tiles covers 128x128 - Detail no cap (~0-500 meters)
+1) 128x128-32x32 tiles covers 128x128 - Detail no cap (~0-500 meters)  (scale x1)
+2) 128x128-32x32 tiles covers 256x256 - Detail -1 cap (~500m-2.5km)     (scale x2)
+3) 128x128-32x32 tiles covers 512x512 Deatil -2 cap (2.5km-3.5km)       (scale x4)
+4) 128x128-32x32 tiles covers 1024x1024 - Detail -3 cap (>=3.5 km).      (scale x8)
 
-128x128-32x32 tiles covers 256x256 - Detail -1 cap (~500m-2.5km)
-
-128x128-32x32 tiles covers 512x512 Deatil -2 cap (2.5km-3.5km)
-
-128x128-32x32 tiles covers 1024x1024 - Detail -3 cap (>=3.5 km).
-
-32x32 tiles covers whatever distance. Always uses lowest LOD. (> 5.5km )
+5) 32x32 tiles covers whatever distance. Always uses lowest LOD. (> 5.5km ) (scale unknown. Raycasting and Collision detection NOT available at this distance!)
 
 Anything below 500 meters map distance will always render at full detail. Anything above 500 meters in map distance can potentially be rendered at slightly reduced LOD detail as shown above. Anything above 5.5km MUST be rendered at lowest LOD no matter what.
 
 Estimated TerrainLOD draw calls: Minimum 32 paged draw calls at average case + some additional draw calls for close-by higher LOD areas and faraway islands at lowest LOD, with frustum culling included.
 
-
-Changes to TerrainLOD engine for above to support Tier 1:
------------------------------------------
-1) QuadTreePage needs to have setting to cap detail level recursion at certain maximum LOD prior to recursing in.
-
-2) IQuadTreePageCuller implementation to support culling over list of available pages at lowest resolution. Check that QuadTreePage can start at lowest resolution. No need to update QuadTreePage because QuadTreePage has no children! Minimum LOD cap level should be set to QuadTreePage such that nothing is being done.
+To support the above, you need 4 TerrainLOD instances, each scaled accordingly to match the 4 lod scale distance. Additional Terrain Meshes (32x32 patches) or TerrainLODs are created on the-fly with geometry uploaded (needed for Mesh) to stage3D for each  faraway island!
 
 
-Changes to TerrainLOD engine for above to support Tier 2:
------------------------------------------
-
-1) QuadSquareChunk::Update() Check, when lookup current neighbor. If no neighbor found for current level grid, than vertex at opposite end shoudl always be disabled. This will allow the edge to always stitch to higher +1 level by default. This should rely on a different implementation to use beyond the current default "uniform grid" approach.
-
-2) TerrainLOD needs the IQuadTreePageCuller implementation to support culling over minimum/maximum LOD tree instead, but uses it's own class and storage system to store it's own list of QuadTreePages across different minimum/maximum LOD trees. Remove the uniform grid of QuadSquarePages assumption.
+Optional (optimizaional) changes to support Tier 2.
+-------------------------------------------------------
+2) TerrainLOD needs the IQuadTreePageCuller implementation to support culling over minimum/maximum LOD tree instead, but uses it's own class and storage system to store it's own list of QuadTreePages across different minimum/maximum LOD trees.
 
 
 Main seafaring app (live streaming of terrain, procedural generation/loading while ship is moving): to support visible distances beyond 5.5km at lowest detail and progressive detail at visible distances of up to 5.5km (or double of it depending on terrain resolution). The higher the altitude (not applicable for sea-level Ships), the greater the visible distance, but potentially less detail required for terrain, thus it may be possible for airbourne fly-bys to work just as well. However, Im considering ground/close-to-ground cases here. Since there is no hard-disk streaming available, Tier 2 processes can't be precomputed and saved to disk, and is most likely going to be loaded off the server or procedurally generated on-the-fly. It is assumed vessals won't be so fast moving. Even tall ship vessals that can provide a visible distance beyond 5.5km would normally see extremely low detailed islands at such distances.

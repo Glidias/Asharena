@@ -367,9 +367,16 @@ package examples
 			standardMaterial.waterMode = 1;
 			//standardMaterial.tileSize = 512;
 			standardMaterial.pageSize = _loadedPage.heightMap.RowWidth - 1;
-		
+			_loadedPage.xorg += 555 * 256 - 256;
+			_loadedPage.zorg += 155*256 - 256;
+			_loadedPage.heightMap.XOrigin = _loadedPage.xorg;
+			_loadedPage.heightMap.ZOrigin = _loadedPage.zorg;
+		//	_loadedPage.heightMap.Scale += 1;
+		//	_loadedPage.Level+=1;
 
-			terrainLOD.loadSinglePage(stage3D.context3D, _loadedPage, standardMaterial);  //new FillMaterial(0xFF0000, 1)
+			terrainLOD.loadSinglePage(stage3D.context3D, _loadedPage, standardMaterial, 0, -1, 256);  //new FillMaterial(0xFF0000, 1)
+			
+		
 			var hWidth:Number = terrainLOD.boundBox.maxX * .5;
 			terrainLOD.x -= hWidth;
 			terrainLOD.y += hWidth;

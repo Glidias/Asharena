@@ -19,16 +19,16 @@ package tests.islands
 	import util.SpawnerBundle;
 	import views.engine3d.MainView3D;
 	/**
-	 * Testing 4 arbituarily positioned "islands" within 1 TerrainLOD instance!
+	 * Testing multiple terrain lod instances
 	 * @author Glidias
 	 */
-	public class TestLowResIslands extends MovieClip 
+	public class MultipleTerrainLODs extends MovieClip 
 	{
 		private var _template3D:MainView3D;
 		private var game:TheGame;
 		private var ticker:FrameTickProvider;
 		
-		public function TestLowResIslands() 
+		public function MultipleTerrainLODs() 
 		{
 			haxe.initSwc(this);
 		
@@ -78,7 +78,7 @@ package tests.islands
 		
 		private var tCount:int = 0;
 	
-		private function getQuadTreePage(x:Number,y:Number):QuadTreePage {
+		private function getQuadTreePage():TerrainLOD {
 			var hm:HeightMapInfo = new HeightMapInfo();
 			var bmpSize:int = 129;
 			var bmpData:BitmapData =  new BitmapData(bmpSize, bmpSize, false, 0);
@@ -88,21 +88,23 @@ package tests.islands
 			//if ( (bmpData.getPixel(0, 0) & 0x0000FF) != (bmpData.getPixel(bmpSize-1, 0) & 0x0000FF) ) throw new Error("A:"+(bmpData.getPixel(0, 0) & 0x0000FF) + ", "+(bmpData.getPixel(bmpSize-1, 0)&0x0000FF));
 			hm.setFromBmpData(bmpData, bmpSize*1.3, -bmpSize*1.3*255);
 			var chlid:DisplayObject = addChild( new Bitmap(bmpData));
-			chlid.x = tCount++ * bmpSize;
+			chlid.x = tCount* bmpSize;
 					
 			var p:QuadTreePage =  TerrainLOD.installQuadTreePageFromHeightMap(hm, 0, 0, 256, 0);
-			p.Level = QuadSquareChunk.LOD_LVL_MIN;
+			//p.Level = QuadSquareChunk.LOD_LVL_MIN;
 			
-		//	p.Level+=SCALE_UP_OFFSET;   // this tells the size of the QuadSquareChunk in world units
-		//	p.heightMap.Scale+=SCALE_UP_OFFSET;  // this can be used to adjust Maximum LOD cap to be displayed from base default 8 value.
 			
-			//x += Math.random() * 13644;
-			//y += Math.random() * 13644;
-			p.xorg = x;
-			p.zorg = y;
-			hm.XOrigin = x;
-			hm.ZOrigin = y;
-			return p;
+		
+			var t:TerrainLOD = new TerrainLOD();
+			
+			t.loadSinglePage(SpawnerBundle.context3D, p, new FillMaterial(0xFF0000));
+			t.boundBox = null;
+			t.debug = true;
+			_template3D.scene.addChild(t);
+			t.x = tCount * (bmpSize-1) * 256;
+			tCount++;
+			
+			return t;
 		}
 		
 		private static const SCALE_UP_OFFSET:int = 0;
@@ -113,14 +115,9 @@ package tests.islands
 			
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 
-			
-	
-			var t:TerrainLOD = new TerrainLOD();
-			var size:Number = (32 * 256)  * (1<<SCALE_UP_OFFSET) +  4512;
-			t.loadGridOfPages(SpawnerBundle.context3D, new <QuadTreePage>[getQuadTreePage(0,0),getQuadTreePage(size,0),getQuadTreePage(0,size),getQuadTreePage(size,size)], new FillMaterial(0xFF0000) );
-			t.boundBox = null;
-			t.debug = true;
-			_template3D.scene.addChild(t);
+getQuadTreePage();
+getQuadTreePage();
+getQuadTreePage();
 			
 			var spectatorPerson:SimpleFlyController =new SimpleFlyController( 
 						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
