@@ -366,10 +366,10 @@ package terraingen.expander
 					_serialList.addCommand( new Func(disposeBitmapDataSamples) );
 					
 				}
-				if (_useBoxFilter) _serialList.addCommand( new Func(_heightMap.BoxFilterHeightMap), new Wait(.3) );
+				if (_useBoxFilter) _serialList.addCommand( new Func(_heightMap.BoxFilterHeightMap), new Wait(.05) );
 				
 				injectSampleProcessesFromHeightmap();
-				_serialList.addCommand( new Wait(.5), new Func(finaliseHeightMap) );
+				_serialList.addCommand( new Wait(.05), new Func(finaliseHeightMap) );
 				
 				// sample from heightmap and run terrain process on it
 			}
@@ -476,18 +476,18 @@ package terraingen.expander
 						if (samplePhase.is3x3) {
 							_serialList.addCommand(
 								new Func(_sample3x3.copyData, [x * _sampleSize-_sampleSize, y * _sampleSize - _sampleSize, _sample3x3.XSize, _sample3x3.ZSize, _heightMap], null, "sample3x3.copyData" ),
-								new Wait(.3),
+								new Wait(.05),
 								new Func( _terrainProcessor.process3By3Sample, [_sample3x3, samplePhase.phase], null, "process3By3Sample" ) ,
-								new Wait(.3),
+								new Wait(.05),
 								new Func(copyBackSampledData3x3, [x,y,samplesAcrossX, samplesAcrossY], null, "copyBackSampledData3x3:"+x+","+y)
 							);
 						}
 						else {
 							_serialList.addCommand(
 								new Func(_sample1x1.copyData, [x * _sampleSize, y * _sampleSize, _sample1x1.XSize, _sample1x1.ZSize, _heightMap], null, "sample1x1.copyData"),
-							    new Wait(.3),
+							    new Wait(.05),
 								new Func( _terrainProcessor.process1By1Sample, [_sample1x1, samplePhase.phase]) ,
-								new Wait(.3),
+								new Wait(.05),
 								new Func(copyBackSampledData1x1, [x,y,samplesAcrossX, samplesAcrossY], null, "copyBackSampledData1x1:"+x+","+y)
 							);
 							
@@ -499,24 +499,28 @@ package terraingen.expander
 				}
 			}
 			
-			_serialList.addCommand( new Func(cloneHeightmapForPreprocessing) );
 			
-			// 3x3 POST PROCESSING operations useful for smoothing operations. It supplies the 3x3 heightmap as input, but updates 1x1 in the middle only.
-			for (  y = 0; y < samplesAcrossY; y++) {
-				for ( x = 0; x < samplesAcrossX; x++) {
-					
-					//if (pLen != 0) {
-						_serialList.addCommand( new Func(setTerrainProcessesData, [x,y, _sample3x3], null, "setTerrainProcessesData" ) );
-					//	}
+			if (_terrainProcessor.doPostProcessing()) {
+			
+				_serialList.addCommand( new Func(cloneHeightmapForPreprocessing) );
 				
-					_serialList.addCommand(
-								new Func(copyDataForSample, [_sample3x3, x * _sampleSize-_sampleSize, y * _sampleSize - _sampleSize, _sample3x3.XSize, _sample3x3.ZSize, null, true], null, "sample3x3.copyData" ),
-								new Wait(.3),
-								new Func( _terrainProcessor.postProcess3By3Sample, [_sample3x3], null, "postProcess3By3Sample" ) ,
-								new Wait(.3),
-								new Func(copyBackSampledData1x1with3x3, [x,y,samplesAcrossX, samplesAcrossY], null, "postCopyBack:"+x+","+y)
-							);
-							
+				// 3x3 POST PROCESSING operations useful for smoothing operations. It supplies the 3x3 heightmap as input, but updates 1x1 in the middle only.
+				for (  y = 0; y < samplesAcrossY; y++) {
+					for ( x = 0; x < samplesAcrossX; x++) {
+						
+						//if (pLen != 0) {
+							_serialList.addCommand( new Func(setTerrainProcessesData, [x,y, _sample3x3], null, "setTerrainProcessesData" ) );
+						//	}
+					
+						_serialList.addCommand(
+									new Func(copyDataForSample, [_sample3x3, x * _sampleSize-_sampleSize, y * _sampleSize - _sampleSize, _sample3x3.XSize, _sample3x3.ZSize, null, true], null, "sample3x3.copyData" ),
+									new Wait(.05),
+									new Func( _terrainProcessor.postProcess3By3Sample, [_sample3x3], null, "postProcess3By3Sample" ) ,
+									new Wait(.05),
+									new Func(copyBackSampledData1x1with3x3, [x,y,samplesAcrossX, samplesAcrossY], null, "postCopyBack:"+x+","+y)
+								);
+								
+					}
 				}
 			}
 		}
@@ -611,7 +615,7 @@ package terraingen.expander
 				//	_pageBmpdata.draw( bmd, mat, null, null, null, true);
 					( sync ? _serialList.addCommand : _serialList.insertCommand )( new Func(_pageBmpdata.draw, [bmd, mat, null, null, null, true]),
 										new Func( copyPixelsFromBmpDataToHeightMap, [x * _pageSize, y * _pageSize] ),
-										new Wait(.3) );
+										new Wait(.1) );
 					
 				}
 			}

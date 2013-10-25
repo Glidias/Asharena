@@ -21,7 +21,7 @@ package terraingen.island  {
   import de.polygonal.math.PM_PRNG;
 
   
-  public class mapgen2 extends Sprite {
+  public class MapGenArena extends EventDispatcher {
     static public var SIZE:int = 512;
 	static public var PREVIEW_SIZE:int = 512;
     static public var EXPORT_SIZE:int = 512;
@@ -154,34 +154,28 @@ package terraingen.island  {
 	public static const COMPLETED:String = "COMPLEETED";
 
 	[SWF(width="800", height="600", frameRate=60)]
-    public function mapgen2() {
+    public function MapGenArena() {
 	
 
-    addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+    
     }
-	
-	public function onAddedToStage(e:Event=null):void 
-	{
-		removeEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
-		
-		
-		  stage.scaleMode = 'noScale';
-      stage.align = 'TL';
-	  
-	  scaleX = SIZE > 512 ? .5 : 1;
-	  scaleY = SIZE > 512 ? .5 : 1;
 
-      addChild(noiseLayer);
+	public function start():void 
+	{
+
+		
+  
+	
       noiseLayer.bitmapData.noise(555, 128-10, 128+10, 7, true);
       noiseLayer.blendMode = BlendMode.HARDLIGHT;
 
       controls.x = SIZE;
-      addChild(controls);
+     // addChild(controls);
 
-      addExportButtons();
-      addViewButtons();
-      addGenerateButtons();
-      addMiscLabels();
+     // addExportButtons();
+    //  addViewButtons();
+    //  addGenerateButtons();
+    //  addMiscLabels();
 	  
 	  
 
@@ -225,16 +219,7 @@ package terraingen.island  {
 	}
 
     
-    public function graphicsReset():void {
-      triangles3d = [];
-      graphics.clear();
-      graphics.beginFill(0xbbbbaa);
-      graphics.drawRect(0, 0, 2000, 2000);
-      graphics.endFill();
-      graphics.beginFill(displayColors.OCEAN);
-      graphics.drawRect(0, 0, SIZE, SIZE);
-      graphics.endFill();
-    }
+   
 
     
     public function go(type:String):void {
@@ -293,25 +278,22 @@ package terraingen.island  {
     private function _onEnterFrame(e:Event):void {
       (_guiQueue.shift()[1])();
       if (_guiQueue.length == 0) {
-        stage.removeEventListener(Event.ENTER_FRAME, _onEnterFrame);
-        statusBar.text = "";
-      } else {
-        statusBar.text = _guiQueue[0][0];
-      }
+		// end process OnEnterFrame
+      } 
     }
 
     public function cancelCommands():void {
       if (_guiQueue.length != 0) {
-        stage.removeEventListener(Event.ENTER_FRAME, _onEnterFrame);
-        statusBar.text = "";
+      
+      
         _guiQueue = [];
       }
     }
 
     public function commandExecute(status:String, command:Function):void {
       if (_guiQueue.length == 0) {
-        statusBar.text = status;
-        stage.addEventListener(Event.ENTER_FRAME, _onEnterFrame);
+     
+			//start listening for process _onEnterFrame
       }
       _guiQueue.push([status, command]);
     }

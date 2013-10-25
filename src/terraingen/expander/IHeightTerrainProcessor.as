@@ -20,8 +20,11 @@ package terraingen.expander
 		function getSamplePhases():Vector.<Boolean>;  // an	array of boolean values in order indicating the type of processes (true for 3x3, false for 1x1) for each sample. If left null, defaults to [true,false] , which means process3x3(hm,0) will occur first, than process1x1(hm,0).
 													   // for example, if using custom sample phases of [true,false,true], you'll get process3x3(hm,0), process1x1(hm,0), process3x3(hm,1)
 													   
-													   
+		
+		function doPostProcessing():Boolean; // return true in order to allow post processing by 3x3 sample
 		function postProcess3By3Sample(hm:HeightMapInfo):void;  // This function is always called for post-processing pass (such as smoothing across the entire board) , once all above per-sample processes (often those which adjusts heights) are done. The post-processing is a 3x3 sample.
+		
+		
 									
 	}
 

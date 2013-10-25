@@ -4,7 +4,7 @@
   <output>
     <movie outputType="Application" />
     <movie input="" />
-    <movie path="bin\ArenaAS3.swf" />
+    <movie path="bin\islandworker.swf" />
     <movie fps="60" />
     <movie width="640" />
     <movie height="480" />
@@ -78,7 +78,7 @@
   </library>
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
-    <compile path="src\tests\islands\IslandWorkers.as" />
+    <compile path="src\ArenaIslandWorker.as" />
   </compileTargets>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>
