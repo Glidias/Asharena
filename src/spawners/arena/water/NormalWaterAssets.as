@@ -7,8 +7,8 @@ package spawners.arena.water
 	 */
 	public class NormalWaterAssets extends Sprite
 	{
-		[Embed(source="../../../../resources/water/normal1.png")]
-		public static const NORMAL:Class;
+	//	[Embed(source="../../../../resources/water/normal1.png")]
+		public static var NORMAL:Class;
 		
 		public function NormalWaterAssets() 
 		{

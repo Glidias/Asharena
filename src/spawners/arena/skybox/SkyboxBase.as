@@ -28,6 +28,7 @@ package spawners.arena.skybox
 		override protected function init():void {
 			// Skybox
 			// create skybox textures
+			
 			var topres:BitmapTextureResource = new BitmapTextureResource(new assetClasse.SBTop().bitmapData);			
 			var top:TextureMaterial = new TextureMaterial(topres);
 			var bottomres:BitmapTextureResource = new BitmapTextureResource(new assetClasse.SBBottom().bitmapData);
