@@ -167,7 +167,10 @@ package arena.systems.islands {
 			*/
 		
 				removeChild(_mapGen);
+					dispatchEvent(new Event(Event.COMPLETE));
+					
 				_mapGen = null;
+			
 		}
 		
 		private var _mapGen:mapgen2;
@@ -409,6 +412,7 @@ package arena.systems.islands {
 		}
 		
 		private static const BM_SIZE_SMALL:Number = 64;
+		static public const INIT_ZONE:String = "initZone";
 		
 
 		private var bitmapData:BitmapData = new BitmapData(BM_SIZE_SMALL, BM_SIZE_SMALL, false, 0);
