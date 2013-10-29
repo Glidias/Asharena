@@ -115,7 +115,7 @@ package
 				lastMapGen = mapGen;
 				var elevationBytes:ByteArray = mapGen.makeExport("elevation");
 					LogTracer.log("ISLADN EXPORT GENERATED");
-				channels.islandInitedChannel.send([elevationBytes, 0]);  // send required island information from it's mapgen blueprint instance
+				channels.islandInitedChannel.send(0);  // send required island information from it's mapgen blueprint instance
 			}
 			catch (e:Error) {
 				channels.sendError(e);

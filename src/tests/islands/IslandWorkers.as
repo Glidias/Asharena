@@ -99,15 +99,13 @@ package tests.islands
 		   // ... (not shown)
 			channels = new IslandChannels();
 			channels.initPrimordial(bgWorker);
+			LogTracer.log = channels.doTrace;
 			 channels.islandInitedChannel.addEventListener(Event.CHANNEL_MESSAGE, onChannelIslandRecieved);
 		    
 			bgWorker.start();
 			
 			setTimeout(requestZone, 1000);
-			
-			LogTracer.log = channels.doTrace;
 
-			
 		 }
 		 
 		

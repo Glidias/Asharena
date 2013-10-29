@@ -3,9 +3,10 @@ package arena.systems.islands
 	import flash.events.Event;
 	import flash.system.MessageChannel;
 	import flash.system.Worker;
+	import flash.utils.ByteArray;
 	import flash.utils.getDefinitionByName;
 	/**
-	 * ...
+	 * Cross-communication between IslandGen worker and Main application
 	 * @author Glenn Ko
 	 */
 	public class IslandChannels 
@@ -17,6 +18,18 @@ package arena.systems.islands
 		public var toMainErrorChannel:MessageChannel;  // to notify main
 		public var toMainTraceChannel:MessageChannel;  // to notify main
 		
+		public var workerByteArray:ByteArray;   // edit from worker, readonly from main
+		
+		// event codes
+		// Tier 1
+		public static const INITED_BLUEPRINT_HEIGHT:int = 0;	 // low-res height data (33x33)
+		public static const INITED_BLUEPRINT_COLOR:int = 1;  	 // low-res color texture map ( <= 1024x1024 )
+		
+		// Tier 2
+		public static const INITED_DETAIL_SPLAT:int = 2; 	 // detail rgb splat map. SplatTexureMaterial to be created on Main  
+		public static const INITED_DETAIL_BIOMETILES:int = 3;  // detail tile map. TileAtlasTextureMaterial to be created on Main  (<= 1024x1024 )
+		public static const INITED_DETAIL_HEIGHT:int = 4; // detail height map   (<= 129x129 ) // naively recalculated for the different TerrainLODs
+	
 		public function IslandChannels() 
 		{
 			
@@ -28,6 +41,11 @@ package arena.systems.islands
 			worker.setSharedProperty("islandInitedChannel", islandInitedChannel = worker.createMessageChannel(Worker.current));
 			worker.setSharedProperty("toMainErrorChannel", toMainErrorChannel = worker.createMessageChannel(Worker.current));
 			worker.setSharedProperty("toMainTraceChannel", toMainTraceChannel = worker.createMessageChannel(Worker.current));
+			
+			workerByteArray = new ByteArray();
+			workerByteArray.shareable = true;
+			worker.setSharedProperty("workerByteArray", workerByteArray);
+			
 			
 			toMainErrorChannel.addEventListener(Event.CHANNEL_MESSAGE, onErrorReceived);
 			toMainTraceChannel.addEventListener(Event.CHANNEL_MESSAGE, onTraceReceived);
@@ -50,6 +68,7 @@ package arena.systems.islands
 			islandInitedChannel = Worker.current.getSharedProperty("islandInitedChannel");
 			toMainErrorChannel = Worker.current.getSharedProperty("toMainErrorChannel");
 			toMainTraceChannel = Worker.current.getSharedProperty("toMainTraceChannel");
+			workerByteArray = Worker.current.getSharedProperty("workerByteArray");
 		}
 		
 		public function sendTrace(str:Object):void {
