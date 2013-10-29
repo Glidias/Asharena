@@ -3,10 +3,20 @@ package tests.islands
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.RenderingSystem;
+	import arena.systems.islands.IslandChannels;
 	import arena.systems.islands.IslandGeneration;
 	import ash.tick.FrameTickProvider;
 	import flash.display.MovieClip;
+	import flash.events.Event;
+	import flash.system.MessageChannel;
+	import flash.system.WorkerDomain;
 	import flash.system.WorkerState;
+	import flash.utils.ByteArray;
+	import flash.utils.getDefinitionByName;
+	import flash.utils.setTimeout;
+	import util.LogTracer;
+	//import haxe.Log;
+	import spawners.arena.IslandGenWorker;
 	import spawners.arena.skybox.ClearBlueSkyAssets;
 	import spawners.arena.skybox.SkyboxBase;
 	import spawners.arena.water.NormalWaterAssets;
@@ -15,6 +25,7 @@ package tests.islands
 	import systems.SystemPriorities;
 	import terraingen.island.MapGenArena;
 	import util.SpawnerBundle;
+	import util.SpawnerBundleA;
 	import util.SpawnerBundleLoader;
 	import views.engine3d.MainView3D;
 	import views.ui.bit101.PreloaderBar;
@@ -34,8 +45,19 @@ package tests.islands
 		private var _water:WaterBase;
 		private var _skybox:SkyboxBase;
 		
+
+	
+		
+		
+		private var hideFromReflection:Vector.<Object3D> = null;// new Vector.<Object3D>();
+		private var bgWorker:Worker;
+		private var channels:IslandChannels;
+		
+		
+		
 		public function IslandWorkers() 
 		{
+		//	haxe
 			haxe.initSwc(this);
 		
 			game = new TheGame(stage);
@@ -54,12 +76,70 @@ package tests.islands
 			_skybox = new SkyboxBase(ClearBlueSkyAssets, _template3D.camera.farClipping*10);
 			_water = new WaterBase(NormalWaterAssets);
 			
-			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[_skybox, _water]);
+			
+			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[_skybox, _water, new SpawnerBundleA([IslandGenWorker])]);
 			bundleLoader.progressSignal.add( _preloader.setProgress );
 			bundleLoader.loadBeginSignal.add( _preloader.setLabel );
 			
 			
+			
+			
 		}
+		 private function createWorker():void
+		 {
+		   // create the background worker
+		   var workerBytes:ByteArray = IslandGenWorker.BYTES;
+		   bgWorker = WorkerDomain.current.createWorker(workerBytes);
+		 
+		   // listen for worker state changes to know when the worker is running
+		   bgWorker.addEventListener(Event.WORKER_STATE, workerStateHandler);
+		   
+		   // set up communication between workers using 
+		   // setSharedProperty(), createMessageChannel(), etc.
+		   // ... (not shown)
+			channels = new IslandChannels();
+			channels.initPrimordial(bgWorker);
+			 channels.islandInitedChannel.addEventListener(Event.CHANNEL_MESSAGE, onChannelIslandRecieved);
+		    
+			bgWorker.start();
+			
+			setTimeout(requestZone, 1000);
+			
+			LogTracer.log = channels.doTrace;
+
+			
+		 }
+		 
+		
+		 
+		 private function workerStateHandler(e:Event):void 
+		 {
+		//	throw new Error( bgWorker.state + ", " + Worker.isSupported);
+		 }
+		 
+		 private function requestZone():void 
+		 {
+			
+			 channels.initZoneChannel.send([0,0]);
+			
+			  setTimeout(requestWorkerIsland, 1000);
+		 }
+		 
+		
+		 
+		 private function requestWorkerIsland():void {
+			 
+			channels.initIslandChannel.send(0);
+			
+		 }
+		 
+		 
+		 
+		 private function onChannelIslandRecieved(e:Event):void 
+		 {
+			var data:Array = channels.islandInitedChannel.receive();
+			LogTracer.log(data);
+		 }
 		
 		private function onSpawnerBundleLoaded():void 
 		{
@@ -90,15 +170,16 @@ package tests.islands
 			game.engine.addSystem( spectatorPerson, SystemPriorities.postRender ) ;
 			
 			
-			
+			createWorker();
 
 			
 			ticker = new FrameTickProvider(stage);
 			ticker.add(tick);
 			ticker.start();
+			
+			
 		}
-		
-		private var hideFromReflection:Vector.<Object3D> = null;// new Vector.<Object3D>();
+
 		
 		private function tick(time:Number):void 
 		{

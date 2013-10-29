@@ -10,6 +10,7 @@ package arena.systems.islands {
 	import com.bit101.components.VBox;
 	import de.polygonal.math.PM_PRNG;
 	import terraingen.island.mapgen2;
+	import util.LogTracer;
 	//import de.polygonal.math.PM_PRNG;
     import flash.display.Bitmap;
     import flash.display.BitmapData;
@@ -77,6 +78,42 @@ package arena.systems.islands {
 		  
         }
 		
+		public function findAnyIslandNode():KDNode {
+			si  = 1;
+		
+			var curLevel:int;
+			searchStack[0] = rootNode;
+			searchStackLevels[0] = 0;
+			
+			var node:KDNode  = null;
+			
+			while (si > 0) {
+				node = searchStack[--si];
+				curLevel = searchStackLevels[si];
+				
+				if  ( (node.flags & 1)  ) {
+					foundLevel = curLevel;
+					return node;
+				}
+				
+			
+			if (node.positive && (node.flags & KDNode.FLAG_SLAVE) == 0) {
+				searchStack[si] = node.positive;
+				searchStackLevels[si] = curLevel + (node.splitDownLevel() ?  1 : 0);
+				si++;
+			}
+				if (node.negative) {
+					searchStack[si] = node.negative;
+					searchStackLevels[si] = curLevel + (node.splitDownLevel() ?  1 : 0);
+					si++;
+				}
+			
+		
+			}
+			return null;
+			
+		}
+		
 
 		
 		private var foundLevel:int;
@@ -118,15 +155,14 @@ package arena.systems.islands {
 		public function generateNode(node:KDNode):void 
 		{
 			
-
+				LogTracer.log("generateNode:: is island seeded?:"+node.isSeeded());
 				if (node.isSeeded()) {
 					if (_mapGen && _mapGen.parent) {
 						removeChild(_mapGen);
 					}
 					
-			
-					hitAreas.mouseChildren = false;
-					hitAreas.mouseEnabled = false;
+					
+		
 					mapgen2.PREVIEW_SIZE = getShortSide(foundLevel);  
 					mapgen2.SIZE = 1024;
 					mapgen2.islandSeedInitial = node.seed+"-1";
@@ -137,7 +173,7 @@ package arena.systems.islands {
 					_mapGen.addEventListener(mapgen2.COMPLETED, onMapGenCompleted);
 
 				
-					addChild(_mapGen);
+					addChild(_mapGen);	LogTracer.log("ISLADN GENERATING ");
 					_mapGen.scaleX = .25;
 					_mapGen.scaleY = .25;
 					
@@ -166,8 +202,9 @@ package arena.systems.islands {
 		
 			*/
 		
+			dispatchEvent(new Event(Event.COMPLETE));
 				removeChild(_mapGen);
-					dispatchEvent(new Event(Event.COMPLETE));
+					
 					
 				_mapGen = null;
 			
@@ -472,9 +509,8 @@ package arena.systems.islands {
 		private var searchStackLevels:Vector.<int> = new Vector.<int>();
 		private var si:int = 0;
 		
-		private var hitAreas:Sprite;
-		private var cont:Sprite;
-		private var vBox:VBox;
+		
+		
 
 		private var previewBmps:Vector.<BitmapData> = new Vector.<BitmapData>();
 		private function disposePreviewBmps():void {
@@ -704,6 +740,11 @@ package arena.systems.islands {
             }
             return [hue, saturation, brightness];
         }
+		
+		public function get mapGen():mapgen2 
+		{
+			return _mapGen;
+		}
     }    
 }
 import flash.display.Sprite;

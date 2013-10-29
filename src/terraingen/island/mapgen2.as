@@ -19,6 +19,7 @@ package terraingen.island  {
   import flash.net.FileReference;
   import flash.system.System;
   import de.polygonal.math.PM_PRNG;
+  import util.LogTracer;
 
   
   public class mapgen2 extends Sprite {
@@ -162,6 +163,8 @@ package terraingen.island  {
 	
 	public function onAddedToStage(e:Event=null):void 
 	{
+		
+	
 		removeEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
 		
 		
@@ -295,6 +298,7 @@ package terraingen.island  {
       if (_guiQueue.length == 0) {
         stage.removeEventListener(Event.ENTER_FRAME, _onEnterFrame);
         statusBar.text = "";
+		dispatchEvent(new Event(COMPLETED));
       } else {
         statusBar.text = _guiQueue[0][0];
       }
