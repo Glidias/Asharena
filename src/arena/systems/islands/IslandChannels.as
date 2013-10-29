@@ -18,7 +18,7 @@ package arena.systems.islands
 		public var toMainErrorChannel:MessageChannel;  // to notify main
 		public var toMainTraceChannel:MessageChannel;  // to notify main
 		
-		public var workerByteArray:ByteArray;   // edit from worker, readonly from main
+		public var workerByteArray:ByteArray;   // edit from worker, read-only from main
 		
 		// event codes
 		// Tier 1
@@ -26,9 +26,13 @@ package arena.systems.islands
 		public static const INITED_BLUEPRINT_COLOR:int = 1;  	 // low-res color texture map ( <= 1024x1024 )
 		
 		// Tier 2
-		public static const INITED_DETAIL_SPLAT:int = 2; 	 // detail rgb splat map. SplatTexureMaterial to be created on Main  
-		public static const INITED_DETAIL_BIOMETILES:int = 3;  // detail tile map. TileAtlasTextureMaterial to be created on Main  (<= 1024x1024 )
-		public static const INITED_DETAIL_HEIGHT:int = 4; // detail height map   (<= 129x129 ) // naively recalculated for the different TerrainLODs
+		public static const INITED_DETAIL_HEIGHT:int = 2; // detail height map   (<= 129x129 ) // naively recalculated for the different TerrainLODs
+		
+		public static const INITED_DETAIL_SPLAT:int = 3; 	 // detail rgb splat map. SplatTexureMaterial to be created on Main   (>= 128x128 combined sample from 128x128 grid worker samples )
+		public static const INITED_DETAIL_BIOMETILES:int = 4;  // detail tile map. TileAtlasTextureMaterial to be created on Main (>= 128x128 combined sample from 128x128 grid worker samples )
+
+		public static const INITED_DETAIL_PROPS:int = 5; // closed-ranged detail props per region  (MeshSetClonesContainer) positions.
+		public static const INITED_FARAWAY_PROPS:int = 6; // faraway low-LOD combined props per region  (for Main to upload combined low-detailed mesh geometry data for large faraway regions)
 	
 		public function IslandChannels() 
 		{
