@@ -1,0 +1,62 @@
+___________
+
+Zone change: Zone create on Worker
+
+Position change: Remove away any existing islands that lie outside the range from Main, ie. any islands that belong to zones that wilil be removed/recyclebin-cached. Pass position to Worker to check for new islands. It is assumed that the islands are removed from Main should not be requested to be recreated from Worker since they are using the same rules from the same reference position! Tier 1 lowres data and blueprints would be asummed to be removed from the Worker side as well if it goes outisde.
+
+Island Create on Worker -> (might/might not happen)
+Receive island on Main ( island stringId, unique float Id, zone TL origin position, position of island node in relation to zone TL origin) 
+
+_________________
+
+Minimum LOD Tree position change:  Update grid reference of 3D QuadTreePages on Main, removing away/caching them. Than, given list of "NOT YET LOADED" QuadTreePages atm, send request bytearray batch using grid position key of zone + level index, for each "NOT YET LOADED" QuadTreePage. 
+Receive island segment on Main ( grid position key of zone, level index ): respond by updating height data if if needed in currently viewed Minimim LOD Tree, or caching it to be potentially used later when minimum LOD tree changes.
+
+
+Worker side will queue/prioiritize requests for generating island stuff, but also determine given new list, what requests to unqueue (ie. abort) and what should remain/prioritize. Everything form Tier 1 and Tier 2 except for zone requests are queued, since zone requests don't need any call back to Main and the logic (model-data/response) for zones can be completely handled from the Worker itself. However, zone requests will obviously cause new islands to be queued implicitly to be generated, and given the current distance the generated island is from reference position, may/may not dispatch the faraway island to Main (if it's far away enough). But if it's too far, it'll cache the generated island on Worker side.  Main side is responsible for removing any faraway island that lies within MinimumLODTree box (when it changes it's position) and outside the global visible range (when camera Position changes). 
+
+Can the global visible eye distance be larger than MinimumLOD Tree distance? If yes, than faraway islands potentailly can be dispatched.
+
+
+What do the Worker(s) do?
+---------------------------
+
+0) Island zones to generate/remove in response to Zone Changes (potentailly visible islands). This is a syncronous process on Worker side that stores the island zones in Worker memory.
+1) Island blueprints to generate in response to Position Changes.
+2) Island low-res data to create from blueprints or island & blueprint&low-res data s to remove, in response to Position Changes. 
+The above two are asynrconous processes on Worker side except for removal, which also contains the island blueprints and lowres data in memory.
+3) Island detail data to create from low res data in response to MinimumLODTree Changes. Another asyncronois process. Once generated, detail data is sent to Main and no information is no longer "remembered" on the Worker itself. Main is responsible for caching and dealing with requests per grid position key of zone.
+
+
+Assuming there is only 1 worker swf. (as reccomended to avoid too heavy an app)
+---------------------------------------------
+Priority goes somewhat from nearest distance to furthest: Thus,
+0, 3, 1, 2
+
+If at anytime a process of 3 cannot be completed because 1,2 isn't available, than 1,2 is priroitized before that process.
+
+For example, when MinimimLODTree changes, certain processes of 1,2 per island within tree zone (Tier 1) will be prioritized if they aren't completed yet. Than, the island's specific 3 process will execute (Tier 2).
+
+Tier 0 - Island zones (Step 0)
+Tier 1 - Island blueprints and low-res data (Step 1 and 2)
+Tier 2 - Island details (Step 3 onwards)
+
+The worker simply contains a JobQueue, with various Jobs that are prioritized in respones to the events triggered from the Main application. Some jobs, depending on the situation, require a response from Main in order to continue resuming, while others will autoamtically continue without having for Main to respond..
+
+___________
+
+Glossary:
+
+Zone change: When zone visibilty regions TL origin shifts, or number of zone samples changes. This results obviously in the generation/removal of new zones (from Worker side).
+
+Position change: When moving over a particular distance from current position pivot. This can result in the generation of new islands (from Worker Side) and the removing of old islands (from Main side).
+
+Minimum LOD Tree position change: When minimum LOD grid shifts. This can result in the generation of new TerrainLOD QuadTreePages (from Worker Side), and the removing of old TerrainLOD QuadTreePages (from Main Side)
+
+
+________________________________________
+
+grid position key of zone: (Number) Floating point
+[zoneIndex].[treeGridPositionFractional]
+
+treeGridPositionFractional = gridSquareIndex / NumberOfGridSquaresInTree;

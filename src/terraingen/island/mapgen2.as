@@ -26,6 +26,7 @@ package terraingen.island  {
     static public var SIZE:int = 512;
 	static public var PREVIEW_SIZE:int = 512;
     static public var EXPORT_SIZE:int = 512;
+		public var savedSeed:String;
 	
     static public var displayColors:Object = {
       // Features
@@ -157,8 +158,8 @@ package terraingen.island  {
 	[SWF(width="800", height="600", frameRate=60)]
     public function mapgen2() {
 	
-
-    addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+		savedSeed = islandSeedInitial;
+		addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
     }
 	
 	public function onAddedToStage(e:Event=null):void 
@@ -181,6 +182,10 @@ package terraingen.island  {
       controls.x = SIZE;
       addChild(controls);
 
+	  // TODO: hide visuals
+	  
+	  
+	  
       addExportButtons();
       addViewButtons();
       addGenerateButtons();
@@ -1012,6 +1017,7 @@ package terraingen.island  {
     };
 
     static public var exportMoistureColors:Object = {
+
       OCEAN: 0xff,
       GRADIENT_LOW: 0x00,
       GRADIENT_HIGH: 0xff
@@ -1021,11 +1027,11 @@ package terraingen.island  {
     // This function draws to a bitmap and copies that data into the
     // three export byte arrays.  The layer parameter should be one of
     // 'elevation', 'moisture', 'overrides'.
-    public function makeExport(layer:String, exportSize:int = 0, compress:Boolean=true):ByteArray {
+    public function makeExport(layer:String, exportSize:int = 0, compress:Boolean=true, exportData:ByteArray=null):ByteArray {
 		exportSize = exportSize != 0 ? exportSize : EXPORT_SIZE;
       var exportBitmap:BitmapData = new BitmapData(exportSize, exportSize);
       var exportGraphics:Shape = new Shape();
-      var exportData:ByteArray = new ByteArray();
+		if (exportData == null) exportData = new ByteArray();
       
       var m:Matrix = new Matrix();
       m.scale(exportSize / SIZE, exportSize / SIZE);

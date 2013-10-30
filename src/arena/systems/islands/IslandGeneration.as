@@ -152,20 +152,30 @@ package arena.systems.islands {
 			return null;
 		}
 		
+		
 		public function generateNode(node:KDNode):void 
 		{
 			
 				LogTracer.log("generateNode:: is island seeded?:"+node.isSeeded());
 				if (node.isSeeded()) {
-					if (_mapGen && _mapGen.parent) {
+					
+					generateIslandSeed(node.seed+"-1");
+					
+				}
+		
+		}
+		
+		public function generateIslandSeed(seed:String):void 
+		{
+			if (_mapGen && _mapGen.parent) {
 						removeChild(_mapGen);
 					}
 					
 					
-		
-					mapgen2.PREVIEW_SIZE = getShortSide(foundLevel);  
+			// TODO: Determine appopiate size for generation!
+					//mapgen2.PREVIEW_SIZE = getShortSide(foundLevel);    // not needed for this offline case
 					mapgen2.SIZE = 1024;
-					mapgen2.islandSeedInitial = node.seed+"-1";
+					mapgen2.islandSeedInitial = seed;
 					_mapGen = new mapgen2();
 					_mapGen.visible = false;
 					_mapGen.mouseChildren = false;
@@ -173,12 +183,9 @@ package arena.systems.islands {
 					_mapGen.addEventListener(mapgen2.COMPLETED, onMapGenCompleted);
 
 				
-					addChild(_mapGen);	LogTracer.log("ISLADN GENERATING ");
+					addChild(_mapGen);	LogTracer.log("ISLADN GENERATING");
 					_mapGen.scaleX = .25;
 					_mapGen.scaleY = .25;
-					
-				}
-		
 		}
 		
 		private function onMapGenCompleted(e:Event):void 

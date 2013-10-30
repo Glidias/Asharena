@@ -7,6 +7,7 @@ package
 	import flash.system.MessageChannel;
 	import flash.system.Worker;
 	import flash.utils.ByteArray;
+	import flash.utils.setTimeout;
 	import spawners.arena.IslandGenWorker;
 	import terraingen.island.mapgen2;
 	import util.LogTracer;
@@ -64,18 +65,24 @@ package
 			
 			addChild(islandGen);
 		
-			
-			
-			
 		}
 		
 		private function onIslandInitHandler(e:Event):void 
 		{
 			try {
 			
-				channels.initIslandChannel.receive();
-			
-				requestAnyIsland();
+				var requestCode:* = channels.initIslandChannel.receive();
+				
+				if (requestCode is String) {
+					islandGen.generateIslandSeed(requestCode);
+				}
+				else if (requestCode === IslandChannels.INITED_BLUEPRINT_HEIGHT) {
+					requestAnyIsland();  //
+				}
+				else if (requestCode === IslandChannels.INITED_BLUEPRINT_COLOR) {
+					onIslandGenerated2();
+				}
+				 
 			}
 			catch (e:Error) {
 				channels.sendError(e);
@@ -99,12 +106,9 @@ package
 		}
 		
 		private function requestAnyIsland():void {
-
 			var obj:* = islandGen.findAnyIslandNode();
 						LogTracer.log("REQUEST ISLAND:"+obj);
 			if (obj) islandGen.generateNode(obj);
-			
-			
 		}
 		
 		
@@ -113,15 +117,52 @@ package
 			try {
 				var mapGen:mapgen2 = islandGen.mapGen;
 				lastMapGen = mapGen;
-				var elevationBytes:ByteArray = mapGen.makeExport("elevation");
-					LogTracer.log("ISLADN EXPORT GENERATED");
-				channels.islandInitedChannel.send(0);  // send required island information from it's mapgen blueprint instance
+				channels.workerByteArray.position  = 0;
+				channels.workerByteArray.length = 0;
+				channels.workerParamsArray.position = 0;
+				channels.workerParamsArray.writeUTF( mapGen.savedSeed);
+				channels.workerParamsArray.position = 0;
+				
+				
+				var elevationBytes:ByteArray = mapGen.makeExport("elevation", 0, false, channels.workerByteArray );
+				LogTracer.log("ISLADN EXPORT GENERATED: INITED_BLUEPRINT_HEIGHT:" + channels.workerByteArray.length + " bytes.");
+				elevationBytes.position = 0;
+				channels.islandInitedChannel.send(IslandChannels.INITED_BLUEPRINT_HEIGHT);  // send required island information from it's mapgen blueprint instance
+				
+		
 			}
 			catch (e:Error) {
 				channels.sendError(e);
 				
 			}
 			
+			
+			
+			
+		}
+		
+		public function onIslandGenerated2():void {
+			try {
+			
+				var mapGen:mapgen2 = lastMapGen;
+				
+				channels.workerByteArray.position  = 0;
+				channels.workerByteArray.length = 0;
+				
+				channels.workerParamsArray.position = 0;
+				channels.workerParamsArray.writeUTF( mapGen.savedSeed);
+				
+				
+				var elevationBytes:ByteArray = mapGen.makeExport("biomediffuse", 0, false, channels.workerByteArray );
+					LogTracer.log("ISLADN EXPORT GENERATED: INITED_BLUEPRINT_COLOR:" + channels.workerByteArray.length + " bytes." );
+				elevationBytes.position  = 0;
+				channels.islandInitedChannel.send(IslandChannels.INITED_BLUEPRINT_COLOR);  // send required island information from it's mapgen blueprint instance
+				
+			
+			}
+			catch (e:Error) {
+				channels.sendError(e);
+			}
 			
 		}
 		

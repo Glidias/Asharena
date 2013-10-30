@@ -4,6 +4,7 @@ package tests.islands
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.RenderingSystem;
 	import arena.systems.islands.IslandChannels;
+	import arena.systems.islands.IslandExploreSystem;
 	import arena.systems.islands.IslandGeneration;
 	import ash.tick.FrameTickProvider;
 	import flash.display.MovieClip;
@@ -34,7 +35,7 @@ package tests.islands
 	 * Generate out island Meshes procedurally with/without AS3 Workers while traveling around. Using AS3 Workers allows islands to be generated seamelssly WITHOUT having to pause-load/freeze the game performance.
 	 * @author Glidias
 	 */
-	public class IslandWorkers extends MovieClip 
+	public class IslandWorkerSystemTest extends MovieClip 
 	{
 		private var _template3D:MainView3D;
 		private var game:TheGame;
@@ -46,11 +47,10 @@ package tests.islands
 		private var _skybox:SkyboxBase;
 		
 		private var hideFromReflection:Vector.<Object3D> = null;// new Vector.<Object3D>();
-		private var bgWorker:Worker;
-		private var channels:IslandChannels;
+	
 		
 		
-		public function IslandWorkers() 
+		public function IslandWorkerSystemTest() 
 		{
 		//	haxe
 			haxe.initSwc(this);
@@ -80,95 +80,18 @@ package tests.islands
 			
 			
 		}
-		 private function createWorker():void
-		 {
-		   // create the background worker
-		   var workerBytes:ByteArray = IslandGenWorker.BYTES;
-		   bgWorker = WorkerDomain.current.createWorker(workerBytes);
-		 
-		   // listen for worker state changes to know when the worker is running
-		   bgWorker.addEventListener(Event.WORKER_STATE, workerStateHandler);
-		   
-		   // set up communication between workers using 
-		   // setSharedProperty(), createMessageChannel(), etc.
-		   // ... (not shown)
-			channels = new IslandChannels();
-			channels.initPrimordial(bgWorker);
-			LogTracer.log = channels.doTrace;
-			 channels.islandInitedChannel.addEventListener(Event.CHANNEL_MESSAGE, onChannelIslandRecieved);
-		    
-			bgWorker.start();
-			
-			setTimeout(requestZone, 1000);
+		
 
-		 }
-		 
 		
-		 
-		 private function workerStateHandler(e:Event):void 
-		 {
-		//	throw new Error( bgWorker.state + ", " + Worker.isSupported);
-		 }
-		 
-		 private function requestZone():void 
-		 {
 			
-			 channels.initZoneChannel.send([0,0]);
-			
-			  setTimeout(requestWorkerIsland, 1000);
-		 }
-		 
 		
-		 
-		 private function requestWorkerIsland():void {
-			 
-			channels.initIslandChannel.send(242414+"-"+1);
-			
-		 }
-		 
-		  private function requestWorkerIslandColors():void {
-			 
-			channels.initIslandChannel.send(IslandChannels.INITED_BLUEPRINT_COLOR);
-			
-		 }
-		 
-		 
-		 
-		 private function onChannelIslandRecieved(e:Event):void 
-		 {
-			var notifyCode:int = channels.islandInitedChannel.receive();
-			channels.receiveParams();
-			
-			if (notifyCode === IslandChannels.INITED_BLUEPRINT_HEIGHT) {
-				LogTracer.log("Received bytes:" + channels.workerByteArray.length);
-				LogTracer.log("Received params:" + channels.workerParamsArray.readUTF());
-				// Set up new hardcoded Terrain Mesh heights and add island to scene if island is faraway enough
-				// Otherwise, if island is close enough, call to sample it accordignly!
-				
-				//	setTimeout(requestWorkerIslandColors, 700);
-				requestWorkerIslandColors();
-			}
-			else if (notifyCode === IslandChannels.INITED_BLUEPRINT_COLOR) {
-				// Apply material to currently active terrain mesh that was previously added to scene
-				
-				LogTracer.log("Received bytes:" + channels.workerByteArray.length);
-					LogTracer.log("Received params:" + channels.workerParamsArray.readUTF());
-				// Set up mesh
-			}
-			else if (notifyCode === IslandChannels.INITED_DETAIL_HEIGHT) {
-				
-			}
-			
-			
-			
-		 }
 		
 		private function onSpawnerBundleLoaded():void 
 		{
 			removeChild(_preloader);			
 			_template3D.visible = true;
 			
-			IslandGeneration;
+			
 		
 			
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
@@ -191,9 +114,8 @@ package tests.islands
 			
 			game.engine.addSystem( spectatorPerson, SystemPriorities.postRender ) ;
 			
-			
-			createWorker();
 
+			IslandExploreSystem;
 			
 			ticker = new FrameTickProvider(stage);
 			ticker.add(tick);
