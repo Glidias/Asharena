@@ -20,6 +20,7 @@ package arena.systems.islands
 		public var toMainErrorChannel:MessageChannel;  // to notify main
 		public var toMainTraceChannel:MessageChannel;  // to notify main
 		
+		public var mainParamsArray:ByteArray; // edit from Main. read-only from worker
 		
 		public var workerByteArray:ByteArray;   // edit from worker, read-only from main (Payload raw numerical data or object data)
 		public var workerParamsArray:ByteArray; // edit from worker, read-only from main (Parameters of all types)
@@ -79,6 +80,10 @@ package arena.systems.islands
 			worker.setSharedProperty("workerByteArray", workerByteArray);
 			worker.setSharedProperty("workerParamsArray", workerParamsArray);
 			
+			mainParamsArray = new wByteArray();
+			mainParamsArray.shareable = true;
+			worker.setSharedProperty("mainParamsArray", mainParamsArray);
+			
 			
 			toMainErrorChannel.addEventListener(Event.CHANNEL_MESSAGE, onErrorReceived);
 			toMainTraceChannel.addEventListener(Event.CHANNEL_MESSAGE, onTraceReceived);
@@ -103,6 +108,7 @@ package arena.systems.islands
 			toMainTraceChannel = Worker.current.getSharedProperty("toMainTraceChannel");
 			workerByteArray = Worker.current.getSharedProperty("workerByteArray");
 			workerParamsArray = Worker.current.getSharedProperty("workerParamsArray");
+			mainParamsArray = Worker.current.getSharedProperty("mainParamsArray");
 			
 			zoneDistance = Worker.current.getSharedProperty("zoneDistance");
 			minLODTreeLevels = Worker.current.getSharedProperty("minLODTreeLevels");

@@ -86,6 +86,15 @@ package
 			
 				var requestCode:* = channels.initIslandChannel.receive();
 				
+				// Job queue deployment
+				if (requestCode === IslandChannels.ON_POSITION_CHANGE) {
+					handlePositionChange();
+				}
+				else if (requestCode === IslandChannels.ON_LODTREE_CHANGE) {
+					handleLODChange();
+				}
+				
+				///*  // For testing
 				if (requestCode is String) {
 					islandGen.generateIslandSeed(requestCode);
 				}
@@ -95,11 +104,22 @@ package
 				else if (requestCode === IslandChannels.INITED_BLUEPRINT_COLOR) {
 					onIslandGenerated2();
 				}
+				//*/
 				 
 			}
 			catch (e:Error) {
 				channels.sendError(e);
 			}
+		}
+		
+		private function handleLODChange():void 
+		{
+			
+		}
+		
+		private function handlePositionChange():void 
+		{
+			
 		}
 		
 		public function onZoneInitHandler(e:Event):void {
