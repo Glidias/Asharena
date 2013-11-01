@@ -26,6 +26,10 @@ package arena.systems.islands
 		
 		public static const CHARSET:String = 'iso-8859-1';
 		
+		// codes to notify worker to do work!
+		public static const ON_POSITION_CHANGE:int = -1;    // notify a position change for updating surrounding zones and potentially visbile islands! 
+		public static const ON_LODTREE_CHANGE:int = -2;  	// request LOD segments accordingly
+		
 		// event codes in order of execution
 		// Tier 1
 		public static const INITED_BLUEPRINT_HEIGHT:int = 0;	 // low-res height data (33x33)

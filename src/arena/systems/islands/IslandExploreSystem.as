@@ -7,6 +7,7 @@ package arena.systems.islands
 	import flash.system.Worker;
 	import flash.system.WorkerDomain;
 	import flash.utils.ByteArray;
+	import flash.utils.Dictionary;
 	import spawners.arena.IslandGenWorker;
 	import util.LogTracer;
 	/**
@@ -17,18 +18,29 @@ package arena.systems.islands
 	{
 		private var bgWorker:Worker;
 		private var channels:IslandChannels;
+		private var camera:Camera3D;
 
 		public var position:Pos;
 		
+		private var quadTreePageDict:Dictionary = new Dictionary();
+		private var numQuadTreePages:int = 0
 		
-		
-		public function IslandExploreSystem(position:Pos=null) 
+		/**
+		 * @param   camera		Camera reference to determine what LOD to use.
+		 * @param	position	Reference position to determine what zones and islands regions gets spotted while traveling
+		 */
+		public function IslandExploreSystem(camera:Camera3D, position:Pos=null) 
 		{
+			this.camera = camera;
 			this.position = position || (new Pos());  
 		}
 		
 		override public function update(time:Number):void {
-			// poll position
+			// poll position change to ask worker to check for zones and thus potentially visible islands
+			
+			
+			// poll camera position constantly for a change in minimum LOD tree, fill with dummy QuadTreePages, than send area segment requests to worker if minimum LOD tree chnages.
+			
 		}
 		
 		private function createWorker():void

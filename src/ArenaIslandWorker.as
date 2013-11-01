@@ -2,12 +2,19 @@ package
 {
 	import arena.systems.islands.IslandChannels;
 	import arena.systems.islands.IslandGeneration;
+	import arena.systems.islands.jobs.CreateIslandResource;
+	import arena.systems.islands.jobs.IsleJob;
+	import de.polygonal.ds.LinkedQueue;
+	import de.polygonal.ds.Prioritizable;
+	import de.polygonal.ds.PriorityQueue;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.system.MessageChannel;
 	import flash.system.Worker;
 	import flash.utils.ByteArray;
 	import flash.utils.setTimeout;
+	import hashds.ds.DLMixList_arena_systems_islands_jobs_IsleJob;
+	import jp.progression.commands.lists.SerialList;
 	import spawners.arena.IslandGenWorker;
 	import terraingen.island.mapgen2;
 	import util.LogTracer;
@@ -21,10 +28,10 @@ package
 		private var islandGen:IslandGeneration;
 		private var channels:IslandChannels;
 		
-	
-
 		// TIER 2
 		//private var ; // to notify main
+		
+		private var jobQueue:DLMixList_arena_systems_islands_jobs_IsleJob;
 		
 		public function ArenaIslandWorker() 
 		{
@@ -52,6 +59,7 @@ package
 			
 			LogTracer.log = channels.sendTrace;
 			
+			jobQueue = new DLMixList_arena_systems_islands_jobs_IsleJob();
 			
 			// TIER 1
 		
@@ -60,11 +68,16 @@ package
 			
 			
 			
+				
 			islandGen = new IslandGeneration();
 			islandGen.addEventListener(Event.COMPLETE, onIslandGenerated);
 			
 			addChild(islandGen);
+			
+			
 		
+		
+
 		}
 		
 		private function onIslandInitHandler(e:Event):void 
