@@ -9,7 +9,7 @@ package tests.islands
 	public class GridExplore extends Sprite
 	{
 		public const GRID_SIZE:Number = 32;
-		public const RADIUS:Number = 1.5;
+		public const RADIUS:Number = .25;
 		
 		public function GridExplore() 
 		{

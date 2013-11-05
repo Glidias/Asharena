@@ -196,10 +196,7 @@ package terraingen.island  {
       map = new Map(SIZE);
       go(islandType);
       
-      render3dTimer.addEventListener(TimerEvent.TIMER, function (e:TimerEvent):void {
-          // TODO: don't draw this while the map is being built
-          drawMap(mapMode);
-        });
+    
     }
 
     
@@ -312,7 +309,7 @@ package terraingen.island  {
     public function cancelCommands():void {
       if (_guiQueue.length != 0) {
         stage.removeEventListener(Event.ENTER_FRAME, _onEnterFrame);
-        statusBar.text = "";
+      //  statusBar.text = "";
         _guiQueue = [];
       }
     }
@@ -506,6 +503,10 @@ package terraingen.island  {
       fillFunction();
       graphics.endFill();
     }
+	
+	public function stop():void {
+		render3dTimer.stop();
+	}
     
 
     // Draw the map in the current map mode
@@ -1108,6 +1109,80 @@ package terraingen.island  {
 		  
 	 if (compress) exportData.compress();
       return exportData;
+    }
+	
+	
+	 public function makeBitmapDataExport(layer:String, exportSize:int = 0):BitmapData {
+		exportSize = exportSize != 0 ? exportSize : EXPORT_SIZE;
+      var exportBitmap:BitmapData = new BitmapData(exportSize, exportSize);
+      var exportGraphics:Shape = new Shape();
+		
+      
+      var m:Matrix = new Matrix();
+      m.scale(exportSize / SIZE, exportSize / SIZE);
+
+	  
+      if (layer == 'overrides') {
+        renderPolygons(exportGraphics.graphics, exportOverrideColors, null, null);
+        renderRoads(exportGraphics.graphics, exportOverrideColors);
+        renderEdges(exportGraphics.graphics, exportOverrideColors);
+        renderBridges(exportGraphics.graphics, exportOverrideColors);
+
+        stage.quality = 'low';
+        exportBitmap.draw(exportGraphics, m);
+        stage.quality = 'best';
+
+        // Mark the polygon centers in the export bitmap
+        for each (var p:Center in map.centers) {
+            if (!p.ocean) {
+              var r:Point = new Point(Math.floor(p.point.x * exportSize/SIZE),
+                                    Math.floor(p.point.y * exportSize/SIZE));
+              exportBitmap.setPixel(r.x, r.y,
+                                    exportBitmap.getPixel(r.x, r.y)
+                                    | (roads.roadConnections[p]?
+                                       exportOverrideColors.POLYGON_CENTER_SAFE
+                                       : exportOverrideColors.POLYGON_CENTER));
+            }
+          }
+        
+      
+      } else if (layer == 'elevation') {
+        renderPolygons(exportGraphics.graphics, exportElevationColors, 'elevation', null);
+        exportBitmap.draw(exportGraphics, m);
+
+      } else if (layer == 'moisture') {
+        renderPolygons(exportGraphics.graphics, exportMoistureColors, 'moisture', null);
+        exportBitmap.draw(exportGraphics, m);
+     
+      }
+	  else if (layer == 'biometiles') {
+		  renderPolygons(exportGraphics.graphics, exportDisplayColors, null, null);
+		  stage.quality = 'low';
+        exportBitmap.draw(exportGraphics, m);
+        stage.quality = 'best';
+ 
+		
+	
+	  }
+	  else if (layer === 'biomediffuse') {
+		    renderPolygons(exportGraphics.graphics, displayColors, null, colorWithSmoothColors);
+			exportBitmap.draw(exportGraphics, m);
+			
+			//	exportBitmap.applyFilter( exportBitmap, exportBitmap.rect, new Point(), new BlurFilter(4, 4, 4) );
+				exportBitmap.draw(noiseLayer, null, noiseLayer.transform.colorTransform, noiseLayer.blendMode, null, false);
+				//exportBitmap.applyFilter( exportBitmap, exportBitmap.rect, new Point(), new BlurFilter(1, 1, 4) );
+				//addChild( new Bitmap(exportBitmap));
+		
+	  }
+	  else if (layer === 'slopes') {
+		 renderPolygons(exportGraphics.graphics, {}, null, colorWithSlope, 0x808080);
+        exportBitmap.draw(exportGraphics, m);
+		exportBitmap.applyFilter( exportBitmap, exportBitmap.rect, new Point(), new BlurFilter(4, 4, 4) );
+		//addChild( new Bitmap(exportBitmap));
+		 
+	  }
+	
+      return exportBitmap;
     }
 
 

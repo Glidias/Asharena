@@ -35,6 +35,23 @@ class DLMixList<T:IDLMixNode<T>> implements haxe.rtti.Generic
                 
         }
 		
+		 public function append2( node : T, t:T ) : Void
+        {
+                // we assume node is fresh and not part of any list
+                if( head!=null )
+                {
+                    tail.next = node;
+					node.prev = tail;
+					tail = t;
+                }
+                else
+                {
+                        head = node;
+                        tail = t;
+                }
+                
+        }
+		
 		 public function prepend( node : T ) : Void
         {
                 // we assume node is fresh and not part of any list
@@ -46,6 +63,23 @@ class DLMixList<T:IDLMixNode<T>> implements haxe.rtti.Generic
                 {
                      head = node;
                      tail = node;
+                }
+                
+        }
+		
+		 public function prepend2( node : T, t:T ) : Void
+        {
+                // we assume node is fresh and not part of any list
+                if( head!=null )
+                {
+                    t.next = head;
+					head.prev = t;
+					head = node;
+                }
+                else
+                {
+                     head = node;
+                     tail = t;
                 }
                 
         }

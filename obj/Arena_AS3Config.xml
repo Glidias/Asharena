@@ -16,7 +16,7 @@
     </define>
     <define append="true">
       <name>CONFIG::timeStamp</name>
-      <value>'10/25/2013'</value>
+      <value>'11/5/2013'</value>
     </define>
     <define append="true">
       <name>CONFIG::air</name>
@@ -51,16 +51,16 @@
     </source-path>
     <library-path append="true">
       <path-element>D:\Git\Asharena\lib\Alternativa3D.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\asharena.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\marchingsquares.swc</path-element>
       <path-element>D:\Git\Asharena\lib\Progression4.swc</path-element>
+      <path-element>D:\Git\Asharena\lib\asharena.swc</path-element>
       <path-element>D:\Git\Asharena\lib\ds.swc</path-element>
       <path-element>D:\Git\Asharena\lib\dsai.swc</path-element>
+      <path-element>D:\Git\Asharena\lib\marchingsquares.swc</path-element>
       <path-element>D:\Git\Asharena\lib\fonts.swc</path-element>
     </library-path>
   </compiler>
   <file-specs>
-    <path-element>D:\Git\Asharena\src\tests\islands\IslandWorkers.as</path-element>
+    <path-element>D:\Git\Asharena\src\tests\islands\TestMouseIslandGen.as</path-element>
   </file-specs>
   <default-background-color>#FFFFFF</default-background-color>
   <default-frame-rate>60</default-frame-rate>

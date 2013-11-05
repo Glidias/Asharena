@@ -6,6 +6,7 @@ package arena.systems.islands {
 	import alternterrainxtras.msa.MathUtils;
 	import alternterrainxtras.msa.Perlin;
 	import alternterrainxtras.msa.Smoothing;
+	import ash.signals.Signal0;
 	import com.bit101.components.NumericStepper;
 	import com.bit101.components.VBox;
 	import de.polygonal.math.PM_PRNG;
@@ -48,9 +49,11 @@ package arena.systems.islands {
         private var imageData:BitmapData;
        
 		public var seed:uint;
+		
 
 
-		private var rootNode:KDNode;
+
+		public var rootNode:KDNode;
 		private var prng:PM_PRNG;
 		
 		private var seededNodeDict:Dictionary = new Dictionary();
@@ -73,6 +76,9 @@ package arena.systems.islands {
         public function IslandGeneration():void 
         {
 			prng = new PM_PRNG();
+			MAX = PM_PRNG.MAX;
+			SQ_DIM = Math.sqrt(MAX);
+			RADIUS = SQ_DIM * .5;
 			
            loadComplete();
 		  
@@ -156,7 +162,7 @@ package arena.systems.islands {
 		public function generateNode(node:KDNode):void 
 		{
 			
-				LogTracer.log("generateNode:: is island seeded?:"+node.isSeeded());
+				//LogTracer.log("generateNode:: is island seeded?:"+node.isSeeded());
 				if (node.isSeeded()) {
 					
 					generateIslandSeed(node.seed+"-1");
@@ -165,7 +171,22 @@ package arena.systems.islands {
 		
 		}
 		
-		public function generateIslandSeed(seed:String):void 
+		public var size:int = 1024;
+		
+		public function cancel():void {
+	
+						
+			
+					if (_mapGen) {
+						_mapGen.removeEventListener(mapgen2.COMPLETED, onMapGenCompleted);
+						_mapGen.cancelCommands();
+						
+						removeChild(_mapGen);
+						_mapGen = null;
+					}
+		}
+		
+		public function generateIslandSeed(seed:String, genSize:int=0):mapgen2 
 		{
 			if (_mapGen && _mapGen.parent) {
 						removeChild(_mapGen);
@@ -174,7 +195,9 @@ package arena.systems.islands {
 					
 			// TODO: Determine appopiate size for generation!
 					//mapgen2.PREVIEW_SIZE = getShortSide(foundLevel);    // not needed for this offline case
-					mapgen2.SIZE = 1024;
+					mapgen2.SIZE = genSize != 0 ? genSize :  size;
+					mapgen2.EXPORT_SIZE = size;
+					
 					mapgen2.islandSeedInitial = seed;
 					_mapGen = new mapgen2();
 					_mapGen.visible = false;
@@ -183,9 +206,11 @@ package arena.systems.islands {
 					_mapGen.addEventListener(mapgen2.COMPLETED, onMapGenCompleted);
 
 				
-					addChild(_mapGen);	LogTracer.log("ISLADN GENERATING");
+					addChild(_mapGen);
 					_mapGen.scaleX = .25;
 					_mapGen.scaleY = .25;
+					
+				return _mapGen;
 		}
 		
 		private function onMapGenCompleted(e:Event):void 
@@ -209,7 +234,9 @@ package arena.systems.islands {
 		
 			*/
 		
-			dispatchEvent(new Event(Event.COMPLETE));
+			dispatchEvent(new Event(Event.COMPLETE));  // TODO: depecirate this dispatch
+			onComplete.dispatch();
+			
 				removeChild(_mapGen);
 					
 					
@@ -220,6 +247,10 @@ package arena.systems.islands {
 		private var _mapGen:mapgen2;
 		
 		
+		public function getSeed(x:int, y:int):uint {
+		
+			return ( (y +RADIUS)*SQ_DIM + x+RADIUS);
+		}
 
         
         public function init(setX:Number = 0, setY:Number=0 ):void 
@@ -227,7 +258,7 @@ package arena.systems.islands {
        
 		 
 		
-		
+		seededNodes = new Vector.<KDNode>();
 		seededNodeDict = new Dictionary();
 		
 		   var p:RectanglePiece = new RectanglePiece();
@@ -243,10 +274,8 @@ package arena.systems.islands {
 		  tx = setX; 
 		   ty = setY;
 		   
-		     var max:int = PM_PRNG.MAX;
-			var sqDim:int = Math.sqrt(max);
-			var radius:int = sqDim * .5;
-			seed = ( (ty +radius)*sqDim + tx+radius);
+
+			seed = ( (ty +RADIUS)*SQ_DIM + tx+RADIUS);
 			
 			if (seed == 0) seed = 1;
 			prng.setSeed( seed);
@@ -287,7 +316,7 @@ package arena.systems.islands {
 					mult = (1 /shortSide );
 					nodeIndex = OFFSETS[curLevel] + (node.boundMinY * mult) * (1 << curLevel) + (node.boundMinX * mult);
 					seededNodeDict[  nodeIndex ] = node;
-				
+					seededNodes.push(node);
 					seededNodeDict[node] = curLevel +"|"+nodeIndex+"|"+node.boundMinY+"|"+node.boundMinX + "| "+getShortSide(curLevel); 
 					
 					continue;
@@ -455,7 +484,8 @@ package arena.systems.islands {
 			}
 		}
 		
-		private static const BM_SIZE_SMALL:Number = 64;
+		public static const BM_SIZE_SMALL:Number = 64;
+		public static const BM_SIZE_SMALL_I:Number = 1/BM_SIZE_SMALL;
 		static public const INIT_ZONE:String = "initZone";
 		
 
@@ -520,6 +550,12 @@ package arena.systems.islands {
 		
 
 		private var previewBmps:Vector.<BitmapData> = new Vector.<BitmapData>();
+		private var MAX:int;
+		private var SQ_DIM:int;
+		private var RADIUS:int;
+		public var seededNodes:Vector.<KDNode>;
+		public var onComplete:Signal0 = new Signal0();
+		
 		private function disposePreviewBmps():void {
 			var i:int = previewBmps.length;
 			while (--i > -1) {
@@ -755,7 +791,7 @@ package arena.systems.islands {
     }    
 }
 import flash.display.Sprite;
-
+import arena.systems.islands.KDNode;
     
     class RectanglePiece 
     {
@@ -789,79 +825,7 @@ import flash.display.Sprite;
 		}
     }
 
-	class KDNode
-	{
-		public var positive:KDNode;
-		public var negative:KDNode;
-		public var boundMinX:Number;
-		public var boundMaxX:Number;
-		
-		public var boundMinY:Number;
-		public var boundMaxY:Number;
-		
-		
-		
-		
-		
-		public var seed:uint;
-		public var flags:int;
-		public static const FLAG_SEEDED:int = 1;
-		public static const FLAG_VERTICAL:int = 2;
-		public static const FLAG_CONSIDERSEED:int = 4;
-		public static const FLAG_SLAVE:int = 8;   
-		
-		public var offset:int;
-		
-		public function setSeed(val:uint):void {
-			flags |= FLAG_SEEDED;
-			seed = val;
-		}
-		public function isSeeded():Boolean {
-			return flags & FLAG_SEEDED;
-		}
-		public function get vertical():Boolean {
-			return flags & FLAG_VERTICAL;
-		}
-		public function set vertical(val:Boolean):void {
-			if (val) flags |= FLAG_VERTICAL
-			else flags &= ~FLAG_VERTICAL;
-		}
-		
-			
-		
-		
-		
-		public function getMeasuredShortSide():Number {
-			return isRectangle() === 1 ? boundMaxY - boundMinY :  boundMaxX - boundMinX; 
-		}
-		
-		public function splitDownLevel():Boolean {
-			return flags & FLAG_VERTICAL;
-		}
-		
-		
-		
-		public function isRectangle():int {  
-			return boundMaxY - boundMinY == boundMaxX - boundMinX ? 0 : boundMaxY - boundMinY < boundMaxX - boundMinX ? 1 : 2;
-		}
-		
-		public function KDNode() {
-			flags  = 0;
-			offset = 0;
-		}
-		
-		public function transferSeedTo(node:KDNode):uint 
-		{
-			
-			node.setSeed(seed);
-			flags &= ~FLAG_SEEDED;
-			flags &= ~FLAG_CONSIDERSEED;
-			
-			return seed;
-		}
-		
-		
-	}
+
 	
 	class HitArea extends Sprite {
 		public var node:KDNode;

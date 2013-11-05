@@ -7,11 +7,14 @@ package tests.islands
 	import arena.systems.islands.IslandExploreSystem;
 	import arena.systems.islands.IslandGeneration;
 	import ash.tick.FrameTickProvider;
+	import flash.display.BitmapData;
 	import flash.display.MovieClip;
 	import flash.events.Event;
 	import flash.system.MessageChannel;
 	import flash.system.WorkerDomain;
 	import flash.system.WorkerState;
+	import flash.text.TextField;
+	import flash.text.TextFieldType;
 	import flash.utils.ByteArray;
 	import flash.utils.getDefinitionByName;
 	import flash.utils.setTimeout;
@@ -53,7 +56,9 @@ package tests.islands
 		public function IslandWorkerSystemTest() 
 		{
 		//	haxe
+		
 			haxe.initSwc(this);
+			
 		
 			game = new TheGame(stage);
 	
@@ -66,6 +71,7 @@ package tests.islands
 		
 		private function onReady3D():void 
 		{
+			
 			SpawnerBundle.context3D = _template3D.stage3D.context3D;
 			
 			_skybox = new SkyboxBase(ClearBlueSkyAssets, _template3D.camera.farClipping*10);
@@ -75,22 +81,15 @@ package tests.islands
 			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[_skybox, _water, new SpawnerBundleA([IslandGenWorker])]);
 			bundleLoader.progressSignal.add( _preloader.setProgress );
 			bundleLoader.loadBeginSignal.add( _preloader.setLabel );
-			
-			
-			
-			
-		}
-		
 
-		
-			
-		
+		}
 		
 		private function onSpawnerBundleLoaded():void 
 		{
 			removeChild(_preloader);			
 			_template3D.visible = true;
 			
+		
 			
 		
 			
@@ -114,8 +113,12 @@ package tests.islands
 			
 			game.engine.addSystem( spectatorPerson, SystemPriorities.postRender ) ;
 			
+		var exploreSystem:IslandExploreSystem = new IslandExploreSystem(_template3D.camera, null, 8192, 256);
+		exploreSystem.zoneVisDistance = .25;
+			game.engine.addSystem(exploreSystem, SystemPriorities.postRender);
+			
+		
 
-			IslandExploreSystem;
 			
 			ticker = new FrameTickProvider(stage);
 			ticker.add(tick);

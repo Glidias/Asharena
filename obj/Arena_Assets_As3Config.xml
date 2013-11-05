@@ -16,7 +16,7 @@
     </define>
     <define append="true">
       <name>CONFIG::timeStamp</name>
-      <value>'8/21/2013'</value>
+      <value>'10/29/2013'</value>
     </define>
     <define append="true">
       <name>CONFIG::air</name>
@@ -59,7 +59,7 @@
     </library-path>
   </compiler>
   <file-specs>
-    <path-element>D:\Git\Asharena\src\spawners\arena\GladiatorialAnims.as</path-element>
+    <path-element>D:\Git\Asharena\src\spawners\arena\IslandGenWorker.as</path-element>
   </file-specs>
   <default-background-color>#FFFFFF</default-background-color>
   <default-frame-rate>60</default-frame-rate>

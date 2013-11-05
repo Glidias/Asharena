@@ -15,8 +15,8 @@ package arena.systems.islands.jobs
 		
 		public var heightMap:BitmapData;  // grayscale heightmap
 		
-		public var minHeight:int;  // the starting minimum "zero" height value
-		public var heightMult:Number;  // height multiplier for grayScaleHeight
+		public var minHeight:int = 0;  // the starting minimum "zero" height value
+		public var heightMult:Number = 64;  // height multiplier for grayScaleHeight
 		public var scaleRatio:Number = 1; // xy scale ratio multiplier. Ratio value indicates tile resolution, smaller ratios means each byte covers more tiles.
 		
 	
@@ -68,6 +68,10 @@ package arena.systems.islands.jobs
 		public function IslandResource() 
 		{
 			
+		}
+		
+		public function dispose():void {
+			heightMap.dispose();
 		}
 		
 	}

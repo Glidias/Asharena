@@ -12,8 +12,9 @@ package arena.systems.islands
 	public class IslandChannels 
 	{
 		public var doTrace:Function;
-		public var initZoneChannel:MessageChannel;      // to listen from main
-		public var initIslandChannel:MessageChannel;  // to listen from main
+		public var initZoneChannel:MessageChannel;      // to listen from worker, dispatched from main
+		public var initIslandChannel:MessageChannel;  // to listen from worker, dispatched from main
+		public var mainResponseDone:MessageChannel; // to listen from worker, dispatched from main
 		
 		public var islandInitedChannel:MessageChannel;  // to notify main
 		
@@ -24,6 +25,8 @@ package arena.systems.islands
 		
 		public var workerByteArray:ByteArray;   // edit from worker, read-only from main (Payload raw numerical data or object data)
 		public var workerParamsArray:ByteArray; // edit from worker, read-only from main (Parameters of all types)
+		
+		
 		
 		public static const CHARSET:String = 'iso-8859-1';
 		
@@ -50,6 +53,9 @@ package arena.systems.islands
 		public var minLODTreeLevels:int;
 		public var minLODTreeTileDistance:int;
 		
+		public var zoneTileDistance:int;
+		public var maxIslandTileDistance:int;
+		
 		public function IslandChannels() 
 		{
 			
@@ -61,14 +67,18 @@ package arena.systems.islands
 		}
 		
 		
-		public function initPrimordial(worker:Worker, zoneDistance:Number=1.5, minLODTreeLevels:int=4, minLODTreeTileDistance:int=128):void {
+		public function initPrimordial(worker:Worker, zoneTileDistance:int, maxIslandTileDistance:int, zoneDistance:Number=1, minLODTreeLevels:int=4, minLODTreeTileDistance:int=128):void {
 			worker.setSharedProperty("initZoneChannel", initZoneChannel=Worker.current.createMessageChannel(worker) );
-			worker.setSharedProperty("initIslandChannel", initIslandChannel=Worker.current.createMessageChannel(worker));
+			worker.setSharedProperty("initIslandChannel", initIslandChannel = Worker.current.createMessageChannel(worker));
+			worker.setSharedProperty("mainResponseDone", mainResponseDone = Worker.current.createMessageChannel(worker));
 			worker.setSharedProperty("islandInitedChannel", islandInitedChannel = worker.createMessageChannel(Worker.current));
 			worker.setSharedProperty("toMainErrorChannel", toMainErrorChannel = worker.createMessageChannel(Worker.current));
 			worker.setSharedProperty("toMainTraceChannel", toMainTraceChannel = worker.createMessageChannel(Worker.current));
 			
-			worker.setSharedProperty("zoneDistance", this.zoneDistance=zoneDistance);
+			
+			worker.setSharedProperty("zoneDistance", this.zoneDistance = zoneDistance);
+			worker.setSharedProperty("zoneTileDistance", this.zoneTileDistance = zoneTileDistance);
+			worker.setSharedProperty("maxIslandTileDistance", this.maxIslandTileDistance=maxIslandTileDistance);
 			worker.setSharedProperty("minLODTreeLevels",this.minLODTreeLevels= minLODTreeLevels);
 			worker.setSharedProperty("minLODTreeTileDistance", this.minLODTreeTileDistance=minLODTreeTileDistance );
 			
@@ -80,7 +90,7 @@ package arena.systems.islands
 			worker.setSharedProperty("workerByteArray", workerByteArray);
 			worker.setSharedProperty("workerParamsArray", workerParamsArray);
 			
-			mainParamsArray = new wByteArray();
+			mainParamsArray = new ByteArray();
 			mainParamsArray.shareable = true;
 			worker.setSharedProperty("mainParamsArray", mainParamsArray);
 			
@@ -104,6 +114,7 @@ package arena.systems.islands
 			initZoneChannel = Worker.current.getSharedProperty("initZoneChannel");
 			initIslandChannel = Worker.current.getSharedProperty("initIslandChannel");
 			islandInitedChannel = Worker.current.getSharedProperty("islandInitedChannel");
+			mainResponseDone = Worker.current.getSharedProperty("mainResponseDone");
 			toMainErrorChannel = Worker.current.getSharedProperty("toMainErrorChannel");
 			toMainTraceChannel = Worker.current.getSharedProperty("toMainTraceChannel");
 			workerByteArray = Worker.current.getSharedProperty("workerByteArray");
@@ -111,6 +122,9 @@ package arena.systems.islands
 			mainParamsArray = Worker.current.getSharedProperty("mainParamsArray");
 			
 			zoneDistance = Worker.current.getSharedProperty("zoneDistance");
+			zoneTileDistance = Worker.current.getSharedProperty("zoneTileDistance");
+			maxIslandTileDistance = Worker.current.getSharedProperty("maxIslandTileDistance");
+			
 			minLODTreeLevels = Worker.current.getSharedProperty("minLODTreeLevels");
 			minLODTreeTileDistance = Worker.current.getSharedProperty("minLODTreeTileDistance");
 		}
