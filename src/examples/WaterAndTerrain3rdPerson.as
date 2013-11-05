@@ -301,8 +301,9 @@ package examples
 			
 			var groundTextureResource:BitmapTextureResource = new BitmapTextureResource(new Ground().bitmapData);
 			var ground:TextureMaterial = new TextureMaterial(groundTextureResource);
+			var uvScaler:Number = 16;
 			var uvs:Vector.<Number> = new <Number>[
-				0,30,0,0,30,30,30,0 
+				0,32*uvScaler,0,0,32*uvScaler,32*uvScaler,32*uvScaler,0 
 			];
 			
 			// Reflective plane

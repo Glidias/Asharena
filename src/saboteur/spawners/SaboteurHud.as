@@ -230,6 +230,7 @@ package saboteur.spawners
 		}
 		
 		override protected function init():void {
+
 			myInit();
 			setupText();
 			setupHudAssets();
@@ -695,7 +696,7 @@ package saboteur.spawners
 		}
 		
 		public function addToHud3D(obj:Object3D):void {
-			
+
 			// overlays
 			obj.addChild(hudTextSettings.spriteSet);
 			obj.addChild(itemSet); 

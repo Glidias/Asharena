@@ -42,6 +42,7 @@ package tests.islands
 	{
 		static public const DISTANCE:Number = 8192;// * .25;
 		static public const FAR_CLIP_DIST:Number = 512*5;
+		static private const VIS_DIST:Number = .25;
 		private var _template3D:MainView3D;
 		private var game:TheGame;
 		private var ticker:FrameTickProvider;
@@ -109,8 +110,8 @@ package tests.islands
 						null ,
 						stage, 
 						_template3D.camera, 
-						GameSettings.SPECTATOR_SPEED*3,
-						GameSettings.SPECTATOR_SPEED_SHIFT_MULT*3);
+						25*512*256/60/60,
+						4);
 			
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
 		
@@ -119,7 +120,7 @@ package tests.islands
 			game.engine.addSystem( spectatorPerson, SystemPriorities.postRender ) ;
 			
 		var exploreSystem:IslandExploreSystem = new IslandExploreSystem(_template3D.camera, null, dist, 256);
-		exploreSystem.zoneVisDistance = .25;
+		exploreSystem.zoneVisDistance = VIS_DIST;
 			game.engine.addSystem(exploreSystem, SystemPriorities.postRender);
 			
 		

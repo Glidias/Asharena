@@ -220,7 +220,7 @@ package tests.ui
 						(ent.get(GameBuilder3D) as GameBuilder3D).collisionGraph ,
 						stage, 
 						_template3D.camera, 
-						GameSettings.SPECTATOR_SPEED,
+							30*512*256/60/60, //GameSettings.SPECTATOR_SPEED,
 						GameSettings.SPECTATOR_SPEED_SHIFT_MULT);
 			
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);

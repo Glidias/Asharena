@@ -105,8 +105,8 @@ package tests.pathbuilding
 			
 			gladiatorBundle = new GladiatorBundle(arenaSpawner = new ArenaSpawner(game.engine));
 			jettySpawner = new JettySpawner();
-				
-			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[gladiatorBundle, jettySpawner]);
+			hudAssets = new SaboteurHud(game.engine, stage, game.keyPoll);
+			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[gladiatorBundle, jettySpawner, hudAssets]);
 			bundleLoader.progressSignal.add( _preloader.setProgress );
 			bundleLoader.loadBeginSignal.add( _preloader.setLabel );
 		}
@@ -153,7 +153,7 @@ package tests.pathbuilding
 						(ent.get(GameBuilder3D) as GameBuilder3D).collisionGraph ,
 						stage, 
 						_template3D.camera, 
-						GameSettings.SPECTATOR_SPEED,
+						60*512/60/60, //GameSettings.SPECTATOR_SPEED,
 						GameSettings.SPECTATOR_SPEED_SHIFT_MULT);
 			
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
@@ -224,7 +224,7 @@ package tests.pathbuilding
 		
 		
 			
-			hudAssets = new SaboteurHud(game.engine, stage, game.keyPoll);
+			
 			hudAssets.addToHud3D(hud);
 			spriteSet = hudAssets.txt_chat.spriteSet;
 			hudAssets.txt_chatChannel.onContentHeightChange.add(onChayHeightChange);
