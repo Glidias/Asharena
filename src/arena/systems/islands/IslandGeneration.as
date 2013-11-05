@@ -286,10 +286,26 @@ package arena.systems.islands {
 			while (onEnterFrame()) { };
 			
 			cleanupTree();
-		
+			finaliseTree();
 			
 			
         }
+		
+		private function finaliseTree():void {
+			si  = 1;
+	
+			searchStack[0] = rootNode;
+			
+
+			while (si > 0) {
+				var node:KDNode = searchStack[--si];
+			
+				if (node.positive && !(node.flags & KDNode.FLAG_SLAVE)) searchStack[si++] = node.positive;
+				if (node.negative) searchStack[si++] = node.negative;			
+				if ( node.flags & 1 ) seededNodes.push(node);
+						
+			}
+		}
 		
 		
 		private function cleanupTree():void 
@@ -316,7 +332,7 @@ package arena.systems.islands {
 					mult = (1 /shortSide );
 					nodeIndex = OFFSETS[curLevel] + (node.boundMinY * mult) * (1 << curLevel) + (node.boundMinX * mult);
 					seededNodeDict[  nodeIndex ] = node;
-					seededNodes.push(node);
+					
 					seededNodeDict[node] = curLevel +"|"+nodeIndex+"|"+node.boundMinY+"|"+node.boundMinX + "| "+getShortSide(curLevel); 
 					
 					continue;

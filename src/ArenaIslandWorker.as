@@ -16,6 +16,7 @@ package
 	import flash.system.MessageChannel;
 	import flash.system.Worker;
 	import flash.utils.ByteArray;
+	import flash.utils.clearTimeout;
 	import flash.utils.Dictionary;
 	import flash.utils.setTimeout;
 	import hashds.ds.DLMixList_arena_systems_islands_jobs_IsleJob;
@@ -151,17 +152,18 @@ package
 	
 
 		
-		private function attemptStartNewCurJob():void {
+		private function attemptStartNewCurJob():void { 
+			clearTimeout(_curTimeout);
 			var job:IsleJob;
 			job = jobQueue.head;
 			if (job != null) {
-				if (job is CreateIslandResource) (job as CreateIslandResource).zone.createIslandJobs.remove(job);
+		
 				jobQueue.remove(job);
 				_curRunningJob = job;
 				job.next = null;
 				job.prev = null;
-				preExecuteJob(job);
 				_jobRunning = true;
+				preExecuteJob(job);
 			}
 			else {
 				_jobRunning = false;
@@ -170,16 +172,29 @@ package
 		}
 		
 		
-		private function preExecuteJob(job:IsleJob):void   // handle any specific special cases for specific job types
+		private function preExecuteJob(job:IsleJob):void   // handle any specific special cases for specific job types, only called from attemptStartNewCurJob
 		{
 			
 			var classe:Class = Object(job).constructor;
 			LogTracer.log("Starting job:"+job);
 			
-						//if (classe === CreateIslandResource) {
-						//}
-						//else
-			if (classe === SampleScaledHeight) {
+			if (classe === CreateIslandResource) {
+				
+				// if job is outside visual range....consider adding it to defered list instead, or just replacing it at the tail
+				if (false) {
+					//jobQueue.append(job);
+					LogTracer.log("Defering CreateIslandResource");
+					_jobRunning = false;
+					_curRunningJob = null;
+					setTimeoutToResumeNewJob( 200); // avoid unnecessary recursion by setting timeout instead
+					return;
+				}
+				else {
+					(job as CreateIslandResource).zone.createIslandJobs.remove(job);	
+				}
+			
+			}
+			else if (classe === SampleScaledHeight) {
 				// consider if sampleScaledHeight has all IslandResource dependencies parsed, else lookup releavant CreateIslandResource to prioritize to jobQueue.head and recall attemptStartNewCurJob!!
 				
 				//attemptStartNewCurJob();
@@ -190,6 +205,13 @@ package
 			
 			job.execute();
 			
+		}
+		
+		private var _curTimeout:uint = 0;
+
+		private function setTimeoutToResumeNewJob(delay:Number):void {
+			clearTimeout(_curTimeout);
+			_curTimeout = setTimeout( resumeNewJob, delay);
 		}
 		
 		private function onJobFinished(job:IsleJob):void {
@@ -206,7 +228,7 @@ package
 					
 				}
 				else {
-					setTimeout( resumeNewJob, 300);
+					setTimeoutToResumeNewJob(  300);
 				
 				}
 			}
@@ -215,7 +237,7 @@ package
 				
 			}
 			else { // can do a default setTimeout to resumeNewJob
-				setTimeout( resumeNewJob, 300);
+				setTimeoutToResumeNewJob(  300);
 			}
 		}
 		
