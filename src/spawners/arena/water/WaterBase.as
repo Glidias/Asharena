@@ -31,10 +31,11 @@ package spawners.arena.water
 
 			var normalRes:BitmapTextureResource = new BitmapTextureResource(new assetClasse.NORMAL().bitmapData);
 			waterMaterial = new WaterMaterial(normalRes, normalRes);
+			var scaler:Number = 8 * 3;
 			waterMaterial.forceRenderPriority = Renderer.SKY + 1;
-			plane = new Plane(2048 * 256, 2048 * 256, 1, 1, false, false, null, waterMaterial);
+			plane = new Plane(1024 * 256 * scaler, 1024 * 256* scaler, 1, 1, false, false, null, waterMaterial);
 				var uvs:Vector.<Number> = new <Number>[
-				0,30,0,0,30,30,30,0 
+				0,30* scaler,0,0,30* scaler,30* scaler,30* scaler,0 
 			];
 			//plane.rotationX = Math.PI  * .5;
 			plane.geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0], uvs);			

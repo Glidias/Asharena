@@ -40,6 +40,8 @@ package tests.islands
 	 */
 	public class IslandWorkerSystemTest extends MovieClip 
 	{
+		static public const DISTANCE:Number = 8192;// * .25;
+		static public const FAR_CLIP_DIST:Number = 512*5;
 		private var _template3D:MainView3D;
 		private var game:TheGame;
 		private var ticker:FrameTickProvider;
@@ -74,6 +76,7 @@ package tests.islands
 			
 			SpawnerBundle.context3D = _template3D.stage3D.context3D;
 			
+				_template3D.camera.farClipping = FAR_CLIP_DIST*256;
 			_skybox = new SkyboxBase(ClearBlueSkyAssets, _template3D.camera.farClipping*10);
 			_water = new WaterBase(NormalWaterAssets);
 			
@@ -97,15 +100,17 @@ package tests.islands
 			_water.addToScene(_template3D.scene);
 				_skybox.addToScene(_template3D.scene);
 			
+				var dist:Number = DISTANCE;
 			_template3D.camera.z = 120;	
+		
 				
 			var spectatorPerson:SimpleFlyController =new SimpleFlyController( 
 						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
 						null ,
 						stage, 
 						_template3D.camera, 
-						GameSettings.SPECTATOR_SPEED,
-						GameSettings.SPECTATOR_SPEED_SHIFT_MULT);
+						GameSettings.SPECTATOR_SPEED*3,
+						GameSettings.SPECTATOR_SPEED_SHIFT_MULT*3);
 			
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
 		
@@ -113,7 +118,7 @@ package tests.islands
 			
 			game.engine.addSystem( spectatorPerson, SystemPriorities.postRender ) ;
 			
-		var exploreSystem:IslandExploreSystem = new IslandExploreSystem(_template3D.camera, null, 8192, 256);
+		var exploreSystem:IslandExploreSystem = new IslandExploreSystem(_template3D.camera, null, dist, 256);
 		exploreSystem.zoneVisDistance = .25;
 			game.engine.addSystem(exploreSystem, SystemPriorities.postRender);
 			

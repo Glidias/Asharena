@@ -26,6 +26,8 @@ package arena.systems.islands.jobs
 		public var node:KDNode;
 		private var id:String;
 		
+		public var pending:Boolean = false;
+		
 		public function toString():String {
 			return "{[CreateIslandResource:" + zone.x + "," + zone.y + "]" + id + "}";
 		

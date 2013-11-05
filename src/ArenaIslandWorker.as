@@ -38,6 +38,8 @@ package
 		// TIER 2
 		//private var ; // to notify main
 		
+		private var pendingJobQueue:DLMixList_arena_systems_islands_jobs_IsleJob;
+		
 		private var jobQueue:DLMixList_arena_systems_islands_jobs_IsleJob;
 		private var jobInsertion:DMixPriorityList_arena_systems_islands_jobs_IsleJob;
 		
@@ -82,7 +84,9 @@ package
 			jobInsertion = new DMixPriorityList_arena_systems_islands_jobs_IsleJob();
 			IsleJob.ON_COMPLETE.add(onJobFinished);
 			_jobRunning = false;
-
+			
+			pendingJobQueue = new DLMixList_arena_systems_islands_jobs_IsleJob();
+			
 			
 			
 			
@@ -157,7 +161,7 @@ package
 			var job:IsleJob;
 			job = jobQueue.head;
 			if (job != null) {
-		
+				
 				jobQueue.remove(job);
 				_curRunningJob = job;
 				job.next = null;
@@ -179,6 +183,14 @@ package
 			LogTracer.log("Starting job:"+job);
 			
 			if (classe === CreateIslandResource) {
+				if ( (job as CreateIslandResource).pending  ) {
+					
+					throw new Error("SHOULD NOT BE!111");
+				}
+				if ( (job as CreateIslandResource).index == -1  ) {
+					
+					throw new Error("SHOULD NOT BE!222");
+				}
 				
 				// if job is outside visual range....consider adding it to defered list instead, or just replacing it at the tail
 				if (false) {
@@ -305,7 +317,22 @@ package
 			var yD:int = Math.ceil(maxY);
 			var job:CreateIslandResource;
 			
-			if (zoneRect.x != xi || zoneRect.y != yi || zoneRect.maxX != xD || zoneRect.maxY != yD) {  // if zoneRect has changed..
+			///*
+			for (job = pendingJobQueue.head as CreateIslandResource; job != null; job = nextJob) {
+				var nextJob:CreateIslandResource = job.next as CreateIslandResource;
+				if (job.zone.x + job.node.boundMaxX * IslandGeneration.BM_SIZE_SMALL_I < minX ||  job.zone.y + job.node.boundMaxY * IslandGeneration.BM_SIZE_SMALL_I < minY || job.zone.x + job.node.boundMinX * IslandGeneration.BM_SIZE_SMALL_I > maxX || job.zone.y + job.node.boundMinY * IslandGeneration.BM_SIZE_SMALL_I > maxY) {
+					continue;
+				}
+				pendingJobQueue.remove(job);
+				job.pending = false;
+				job.next = null;
+				job.prev = null;
+				jobQueue.append(job);
+			}
+			//*/
+			
+			if (zoneRect.x != xi || zoneRect.y != yi || zoneRect.maxX != xD || zoneRect.maxY != yD) {
+				// if zoneRect has changed..
 				LogTracer.log("Zoning has changed!");
 				// update current zoneRect to new zoneRect
 				zoneRect.x = xi;
@@ -321,12 +348,13 @@ package
 				var jobsToRemove:Array = [];
 				for (key in zoneHash) {
 					zone = zoneHash[key];
-					if ( zone.x >= xD || zone.y >= yD || zone.x + 1  <= xi || zone.y + 1  <= yi ) {
+					if ( zone.x >= xD || zone.y >= yD || zone.x + RADIUS  <= xi || zone.y + RADIUS  <= yi ) {
 						//LogTracer.log("Removing zone...:" + zone);
 						var len:int = zone.createIslandJobs.len;
 						
 						for (var i:int = 0; i < len; i++) {
 							job = zone.createIslandJobs.vec[i] as CreateIslandResource;
+							
 							if (job.resource.heightMap == null) { // not yet parsed,
 								if (_jobRunning && job=== _curRunningJob) {  // job is currently running outside jobQueue and needs to be cancelled 
 									LogTracer.log("Cancelling current job!:"+job);
@@ -334,9 +362,9 @@ package
 									_jobRunning = false;
 									_curRunningJob = null;
 								}
-								else {		// job is still pending in jobQueue
+								else {		// job is still pending in jobQueue or pendingJobQueue
 									jobsToRemove.push(job);
-									jobQueue.remove(job );
+									(job.pending ? pendingJobQueue : jobQueue).remove(job );
 								}
 							}
 							else {		// already parsed, no longer in jobQueue
@@ -374,10 +402,20 @@ package
 								job = new CreateIslandResource();
 								job.zone = zone;
 								job.node = node;
+								
 								//LogTracer.log("Adding island to generate: "+node.seed);
 								job.init(new IslandResource(), node.seed + "-1");
-								job.priority = getDist(x, y, zone, node);
-								jobInsertion.add(job); // insertion sort by priority distance
+								
+								if (job.zone.x + job.node.boundMaxX * IslandGeneration.BM_SIZE_SMALL_I < minX ||  job.zone.y + job.node.boundMaxY * IslandGeneration.BM_SIZE_SMALL_I < minY || job.zone.x + job.node.boundMinX * IslandGeneration.BM_SIZE_SMALL_I > maxX || job.zone.y + job.node.boundMinY * IslandGeneration.BM_SIZE_SMALL_I > maxY) {
+									job.pending = true;
+									pendingJobQueue.append(job);
+									//LogTracer.log("Pending job:" + job);
+								}
+								else {
+									//LogTracer.log("Inserting job:" + job);
+									job.priority = getDist(x, y, zone, node);
+									jobInsertion.add(job); // insertion sort by priority distance
+								}
 								zone.createIslandJobs.push(job);
 							}
 							
@@ -396,10 +434,9 @@ package
 				}
 				//
 				
-				if (!_jobRunning) attemptStartNewCurJob();
-				
-	
+
 			}
+			if (!_jobRunning && jobQueue.head) attemptStartNewCurJob();
 		}
 		
 	//	
