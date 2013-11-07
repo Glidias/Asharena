@@ -10,6 +10,7 @@ package tests.islands
 	import flash.display.BitmapData;
 	import flash.display.MovieClip;
 	import flash.events.Event;
+	import flash.system.ApplicationDomain;
 	import flash.system.MessageChannel;
 	import flash.system.WorkerDomain;
 	import flash.system.WorkerState;
@@ -34,6 +35,7 @@ package tests.islands
 	import views.engine3d.MainView3D;
 	import views.ui.bit101.PreloaderBar;
 	import flash.system.Worker;
+	
 	/**
 	 * Generate out island Meshes procedurally with/without AS3 Workers while traveling around. Using AS3 Workers allows islands to be generated seamelssly WITHOUT having to pause-load/freeze the game performance.
 	 * @author Glidias
@@ -53,6 +55,7 @@ package tests.islands
 		private var _skybox:SkyboxBase;
 		
 		private var hideFromReflection:Vector.<Object3D> = null;// new Vector.<Object3D>();
+		private var spectatorPerson:SimpleFlyController;
 	
 		
 		
@@ -61,8 +64,7 @@ package tests.islands
 		//	haxe
 		
 			haxe.initSwc(this);
-			
-		
+
 			game = new TheGame(stage);
 	
 			addChild( _template3D = new MainView3D() );
@@ -105,7 +107,7 @@ package tests.islands
 			_template3D.camera.z = 120;	
 		
 				
-			var spectatorPerson:SimpleFlyController =new SimpleFlyController( 
+			spectatorPerson =new SimpleFlyController( 
 						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
 						null ,
 						stage, 
@@ -115,7 +117,7 @@ package tests.islands
 			
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
 		
-	
+
 			
 			game.engine.addSystem( spectatorPerson, SystemPriorities.postRender ) ;
 			
@@ -129,6 +131,8 @@ package tests.islands
 			ticker = new FrameTickProvider(stage);
 			ticker.add(tick);
 			ticker.start();
+		
+			
 			
 			
 		}

@@ -5,6 +5,7 @@
 package terraingen.island  {
   import alternsector.utils.mapping.MarchingSquaresPackage;
    import flash.filters.BlurFilter;
+   import hashds.ds.alchemy.GrayscaleMap;
    import terraingen.island.graph.*;
   import flash.Boot;
   import flash.ui.Keyboard;
@@ -1023,6 +1024,26 @@ package terraingen.island  {
       GRADIENT_LOW: 0x00,
       GRADIENT_HIGH: 0xff
     };
+	
+		public function makeHeightExport(exportSize:int = 0):GrayscaleMap {
+			var grayscale:GrayscaleMap = new GrayscaleMap();
+			grayscale.init(exportSize+1, exportSize+1);
+				var exportSize:int = grayscale.width;
+			  var exportBitmap:BitmapData = new BitmapData(exportSize, exportSize);
+			  var exportGraphics:Shape = new Shape();
+		
+			  
+			  var m:Matrix = new Matrix();
+			  m.scale(exportSize / SIZE, exportSize / SIZE);
+			  
+			renderPolygons(exportGraphics.graphics, exportElevationColors, 'elevation', null);
+			exportBitmap.draw(exportGraphics, m);
+			
+			grayscale.setFromBitmapData(exportBitmap);
+			
+			return grayscale;
+
+		}
       
     
     // This function draws to a bitmap and copies that data into the

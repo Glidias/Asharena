@@ -120,6 +120,15 @@ package alternterrain.objects
 		private var _vOffsets:Vector.<int>;
 		private var _vDistances:Vector.<int>;
 		
+		private var culler:ICuller;
+		public static const CULL_NONE:int = 0;
+		public static const CULL_WATER:int = 1;
+		public static const CULL_FULL:int = 2;
+		public function setupUpdateCullingMode(mode:int):void {
+			culler = mode === CULL_NONE ? new NoCulling() : mode === CULL_WATER ?  new WaterClipCulling(this) : this;
+		}
+		
+		
 		public var waterLevel:Number = -Number.MAX_VALUE;
 		
 		public var rayData:RayIntersectionData;
@@ -670,6 +679,8 @@ package alternterrain.objects
 		 */
 		public function TerrainLOD() 
 		{
+			culler = this;
+			
 			rayData = new RayIntersectionData();
 			rayData.object = this;
 			rayData.point = new Vector3D();
@@ -733,9 +744,11 @@ package alternterrain.objects
 		
 		public function cullingInFrustum(culling:int, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number):int 
 		{
-			
+				
+				
 				if (maxZ < waterLevel) return -1;		
 				
+
 				var frustum:CullingPlane = _frustum;
 				var temp:Number = minY;
 				minY = -maxY;
@@ -836,7 +849,7 @@ package alternterrain.objects
 					_currentPage = tree;
 					if (doUpdate) {
 						QuadChunkCornerData.BI = 0;
-						 tree.Square.Update(tree, _cameraPos, detail, this , culling);  
+						 tree.Square.Update(tree, _cameraPos, detail, culler , culling);  
 						QuadChunkCornerData.BI = 0;
 					}
 					drawQuad(tree, camera, lights, lightsLength, useShadow, culling);
@@ -942,7 +955,7 @@ package alternterrain.objects
 								myLODMaterial = mySurface.material as ILODTerrainMaterial;
 								if (doUpdate) {
 									QuadChunkCornerData.BI = 0;
-									c.Update(cd, _cameraPos, detail, this , curCulling); 
+									c.Update(cd, _cameraPos, detail, culler , curCulling); 
 									QuadChunkCornerData.BI = 0;
 								}
 								drawQuad(cd, camera, lights, lightsLength, useShadow, curCulling);
@@ -964,7 +977,7 @@ package alternterrain.objects
 							mySurface.material = !debug ? cd.material : _debugMaterial;
 							myLODMaterial = mySurface.material as ILODTerrainMaterial;
 							QuadChunkCornerData.BI = 0;
-							c.Update(cd, _cameraPos, detail, this , curCulling); 
+							c.Update(cd, _cameraPos, detail, culler , curCulling); 
 							QuadChunkCornerData.BI = 0;
 							drawQuad(cd, camera, lights, lightsLength, useShadow, curCulling);
 						}
@@ -2126,5 +2139,35 @@ package alternterrain.objects
 		}
 		
 	}
+
+}
+import alternterrain.core.ICuller;
+import alternterrain.objects.TerrainLOD;
+
+class NoCulling implements ICuller {
+	public function NoCulling() {
+		
+	}
+	
+		public function cullingInFrustum(culling:int, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number):int 
+		{
+			return 0;
+		
+		}
+}
+
+
+class WaterClipCulling implements ICuller {
+	private var terrainLOD:TerrainLOD;
+	public function WaterClipCulling(terrainLOD:TerrainLOD) {
+		this.terrainLOD = terrainLOD;
+		
+	}
+	public function cullingInFrustum(culling:int, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number):int 
+		{
+			return -1;
+		
+		}
+		
 
 }

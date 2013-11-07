@@ -33,6 +33,7 @@ package arena.systems.islands
 		
 		private var zoneSize:Number;
 		private var zoneSizeDiv:Number;
+		private var maxLowResSample:int = 1024;
 		public var zoneVisDistance:Number =.25;
 		
 		/**
@@ -108,7 +109,7 @@ package arena.systems.islands
 		   // setSharedProperty(), createMessageChannel(), etc.
 		   // ... (not shown)
 			channels = new IslandChannels();
-			channels.initPrimordial(bgWorker, zoneSize, 512, zoneVisDistance);
+			channels.initPrimordial(bgWorker, zoneSize, maxLowResSample, zoneVisDistance);
 			LogTracer.log = channels.doTrace;
 			 channels.islandInitedChannel.addEventListener(Event.CHANNEL_MESSAGE, onChannelIslandRecieved);
 		    

@@ -346,7 +346,8 @@ package examples
 			terrainLOD = new TerrainLOD();
 		//	terrainLOD.scaleX = 2;
 			//terrainLOD.scaleY = 2;
-			terrainLOD.setUpdateRadius(512);
+			terrainLOD.setUpdateRadius(256);
+			terrainLOD.setupUpdateCullingMode(TerrainLOD.CULL_NONE);
 			//terrainLOD.debug = true;
 			terrainLOD.detail = START_LOD;
 			terrainLOD.waterLevel = waterLevel;

@@ -311,11 +311,12 @@ package
 			var maxY:Number =  y + RADIUS;
 			
 			// determine any possible new zones to set up
-			var xi:int = int(minX);
-			var yi:int = int(minY);
+			var xi:int = Math.floor(minX);
+			var yi:int = Math.floor(minY);
 			var xD:int= Math.ceil(maxX);  
 			var yD:int = Math.ceil(maxY);
 			var job:CreateIslandResource;
+			
 			
 			///*
 			for (job = pendingJobQueue.head as CreateIslandResource; job != null; job = nextJob) {
@@ -327,6 +328,7 @@ package
 				job.pending = false;
 				job.next = null;
 				job.prev = null;
+				LogTracer.log("Out of view island added:" + job);
 				jobQueue.append(job);
 			}
 			//*/
@@ -388,6 +390,7 @@ package
 						
 						seed = islandGen.getSeed(xii, yii);
 						zone = zoneHash[seed];
+						
 						if (!zone) {
 							
 							zone = new KDZone(); // instantly set up a zone tree
@@ -409,7 +412,7 @@ package
 								if (job.zone.x + job.node.boundMaxX * IslandGeneration.BM_SIZE_SMALL_I < minX ||  job.zone.y + job.node.boundMaxY * IslandGeneration.BM_SIZE_SMALL_I < minY || job.zone.x + job.node.boundMinX * IslandGeneration.BM_SIZE_SMALL_I > maxX || job.zone.y + job.node.boundMinY * IslandGeneration.BM_SIZE_SMALL_I > maxY) {
 									job.pending = true;
 									pendingJobQueue.append(job);
-									//LogTracer.log("Pending job:" + job);
+									//LogTracer.log("Pending job:" + job + ", "+job.getLocation(IslandGeneration.BM_SIZE_SMALL_I) + " ::: "+[x,y]);
 								}
 								else {
 									//LogTracer.log("Inserting job:" + job);

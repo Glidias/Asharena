@@ -1,0 +1,4 @@
+-swf ../lib/hashds-alchemy.swc
+-swf-version 10
+-main hashds.HashDSMainAlchemy
+-D alchemy

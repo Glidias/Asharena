@@ -6,6 +6,8 @@ package arena.systems.islands.jobs
 	import de.polygonal.ds.PriorityQueue;
 	import flash.events.Event;
 	import flash.events.IEventDispatcher;
+	import flash.utils.ByteArray;
+	import hashds.ds.alchemy.GrayscaleMap;
 	import jp.progression.commands.Command;
 	import jp.progression.commands.lists.SerialList;
 	import terraingen.island.mapgen2;
@@ -40,6 +42,10 @@ package arena.systems.islands.jobs
 			//async = true;
 		}
 		
+		public function getLocation(scaler:Number):Array {
+			return [zone.x+node.boundMinX*scaler, zone.y+node.boundMinY*scaler, zone.x + node.boundMaxX*scaler, zone.y + node.boundMaxY*scaler];
+		}
+		
 		public function init(resource:IslandResource, id:String):void {
 			this.resource = resource;
 			this.id = id;
@@ -58,7 +64,11 @@ package arena.systems.islands.jobs
 		private function onGeneratorCompleted():void 
 		{
 			//generate grayscale Heightmap into resource and other relavant entiteis
-			resource.heightMap = GENERATOR.mapGen.makeBitmapDataExport("heightmap");
+			//resource.heightMap = GENERATOR.mapGen.makeBitmapDataExport("elevation");
+			resource.heightMap = GENERATOR.mapGen.makeHeightExport();
+		//	 var bytes:ByteArray = GENERATOR.mapGen.makeHeightExport("heightmap", 0,false);
+		
+			
 			ON_COMPLETE.dispatch(this);
 		}
 		

@@ -2,6 +2,7 @@ package arena.systems.islands.jobs
 {
 	import flash.display.BitmapData;
 	import flash.utils.ByteArray;
+	import hashds.ds.alchemy.GrayscaleMap;
 	/**
 	 * This island resource is generated from it's mapgen2 blueprint. It is saved under a KDNode reference.
 	 * @author Glenn Ko
@@ -13,7 +14,8 @@ package arena.systems.islands.jobs
 		public var vAcross:int;  // the number of unique height vertex values across for the grayScaleHeight
 		*/
 		
-		public var heightMap:BitmapData;  // grayscale heightmap
+		//public var heightMap:BitmapData;  // grayscale heightmap
+		public var heightMap:GrayscaleMap;  // grayscale heightmap
 		
 		public var minHeight:int = 0;  // the starting minimum "zero" height value
 		public var heightMult:Number = 64;  // height multiplier for grayScaleHeight
@@ -72,6 +74,7 @@ package arena.systems.islands.jobs
 		
 		public function dispose():void {
 			heightMap.dispose();
+			heightMap = null;
 		}
 		
 	}
