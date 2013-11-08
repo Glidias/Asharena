@@ -31,15 +31,19 @@ package spawners.arena.water
 
 			var normalRes:BitmapTextureResource = new BitmapTextureResource(new assetClasse.NORMAL().bitmapData);
 			waterMaterial = new WaterMaterial(normalRes, normalRes);
-			var scaler:Number = 8;
-			var uvScaler:Number = 8;
-			waterMaterial.forceRenderPriority = Renderer.SKY + 1;
-			plane = new Plane(2048 * 256 * scaler, 2048 * 256* scaler, 1, 1, false, false, null, waterMaterial);
-				var uvs:Vector.<Number> = new <Number>[
-				0,32* scaler*uvScaler,0,0,32* scaler*uvScaler,32* scaler*uvScaler,32* scaler*uvScaler,0 
-			];
-			//plane.rotationX = Math.PI  * .5;
-			plane.geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0], uvs);			
+			var scaler:Number = 1;
+			var uvScaler:Number = 16;
+	
+			
+			// Reflective plane
+
+			plane = new Plane(2048 * 256, 2048 * 256, 64, 64, false, false, null, waterMaterial);
+			var uvs:Vector.<Number>= plane.geometry.getAttributeValues(VertexAttributes.TEXCOORDS[0]);
+			for (var i:int = 0; i < uvs.length; i++) {
+				uvs[i] *= uvScaler * 32;
+			}
+			 plane.geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0],uvs);	
+			
 			uploadResources(plane.getResources());
 			
 			super.init();

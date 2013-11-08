@@ -293,6 +293,7 @@ package examples
 			rightres.upload(stage3D.context3D);
 			frontres.upload(stage3D.context3D);
 			backres.upload(stage3D.context3D);		
+			camera.nearClipping = 1;
 			var fogMat:FillMaterial = new FillMaterial(settings.viewBackgroundColor);
 			//sb = new SkyBox(camera.farClipping * 10, fogMat, fogMat, fogMat, fogMat, fogMat, fogMat, 0.005);  //left,right,front,back,bottom,top
 			sb = new SkyBox(camera.farClipping*10, left,right,front,back,bottom,top,0.005);
@@ -301,16 +302,20 @@ package examples
 			
 			var groundTextureResource:BitmapTextureResource = new BitmapTextureResource(new Ground().bitmapData);
 			var ground:TextureMaterial = new TextureMaterial(groundTextureResource);
-			var uvScaler:Number = 16;
-			var uvs:Vector.<Number> = new <Number>[
-				0,32*uvScaler,0,0,32*uvScaler,32*uvScaler,32*uvScaler,0 
-			];
+			var uvScaler:Number = 32;
+	
 			
 			// Reflective plane
 			var normalRes:BitmapTextureResource = new BitmapTextureResource(new Normal1().bitmapData);
 			waterMaterial = new WaterMaterial(normalRes, normalRes);
-			plane = new Plane(2048*256, 2048*256, 1, 1, false, false, null, waterMaterial);
-			plane.geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0], uvs);			
+			plane = new Plane(2048 * 256, 2048 * 256, 64, 64, false, false, null, waterMaterial);
+			var uvs:Vector.<Number>= plane.geometry.getAttributeValues(VertexAttributes.TEXCOORDS[0]);
+			for (var i:int = 0; i < uvs.length; i++) {
+				uvs[i] *= uvScaler * 32;
+			}
+			 plane.geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0],uvs);	
+			
+			
 			plane.z = waterLevel;
 			uploadResources(plane.getResources());
 			scene.addChild(plane);			
@@ -452,9 +457,9 @@ package examples
 		// todo: some custom culling method to make up for absence of clipping planes?
 		private var hideFromReflection:Vector.<Object3D> = new Vector.<Object3D>();
 		
-		public var _baseWaterLevelOscillate:Number =  80;
+		public var _baseWaterLevelOscillate:Number =  10;
 		public var _baseWaterLevel:Number = waterLevel;// -20000 + _baseWaterLevelOscillate;
-		public var _waterSpeed:Number = 0;// 2.0 * .001;
+		public var _waterSpeed:Number =  2.0 * .001;
 		public var clipReflection:Boolean = true;
 		public var teapotMaterial:VertexLightZClipMaterial;
 		private var _lastTime:int = -1;
@@ -463,7 +468,6 @@ package examples
 		public function render():void
 		{
 			var curTime:int = getTimer();
-			
 			
 			//optionsWindow.title = String(new Vector3D(camera.x, camera.y, camera.z));
 			
@@ -476,6 +480,8 @@ package examples
 			
 			thirdPerson.followAzimuth = _orbitKeyDown ? false : true;
 			 thirdPerson.update();
+			 
+			// plane.rotationZ += .005*.04;
 			//teapot.rotationZ -= 0.02;
 			
 			//teapotContainer.rotationZ = camera.rotationZ + .5* Math.PI;
@@ -483,6 +489,8 @@ package examples
 		//	teapotContainer.z = camera.z;
 		//	teapotContainer.y = camera.y;
 			
+			
+		//	plane.rotationZ += .003;
 			
 				if (_lastTime < 0) _lastTime = curTime;
 			var timeElapsed:int = curTime - _lastTime;

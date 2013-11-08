@@ -112,7 +112,7 @@ package tests.islands
 						null ,
 						stage, 
 						_template3D.camera, 
-						25*512*256/60/60,
+						27*512*256/60/60,
 						4);
 			
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
