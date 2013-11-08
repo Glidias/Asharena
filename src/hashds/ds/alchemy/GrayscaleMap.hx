@@ -26,10 +26,54 @@ class GrayscaleMap
 		this.height = height;
 	}
 	
+		public static function createFromBitmapData(data:BitmapData):GrayscaleMap {
+		var map:GrayscaleMap = new GrayscaleMap();
+		map.init(data.width, data.height);
+		
+		for (y in 0...map.height) {
+			for (x in 0...map.width) {
+				map.setPixel(x, y, data.getPixel(x,y) & 0xFF);
+			}
+		}
+		return map;
+	}
+	
+	public function toBitmapDataFlash():BitmapData {
+		var data:BitmapData = new BitmapData(width, height, false, 0);
+		for (y in 0...height) {
+			for (x in 0...width) {
+				data.setPixel(x, y, getPixel(x,y));
+			}
+		}
+		return data;
+	}
+	
+	
+	public function previewUpscaled(scale:Int = 2):BitmapData {
+		var newMap:GrayscaleMap = new GrayscaleMap();
+		newMap.init(width * scale, height * scale);
+		
+			var rec:Float = 1 / scale;
+			samplePixelsTo(newMap.mem, 0, 0, rec, width, height, 0, 0, width * scale);
+		/*
+		if (scale != 1) {
+		
+		}
+		else {
+		*/
+		//	copyPixelsTo(newMap.mem, 0, 0, width, height, 0, 0, width * scale);
+		//}
+		//newMap.fill(0xFF0000);
+		return newMap.toBitmapDataFlash();
+		
+	}
+	
+	
 	
 	// Retreieve height data directly for writing into bytearray buffer!
-		public inline function getPixel(ix:Int, iz:Int):Int {
-			return mem.get(ix + iz * width); 
+		public inline function getPixel(ix:Int, iz:Int):UInt {
+			var byte:Int = mem.get(ix + iz * width);
+			return 0xFF000000 | (byte << 16) | (byte << 8) | byte;
 		}
 		
 		public inline function getPixelWithHeightScale(ix:Int, iz:Int, heightScale:Int):Int {
@@ -101,7 +145,11 @@ class GrayscaleMap
 		public inline function samplePixelsTo(result:ByteMemory, ix:Float, iy:Float, ratio:Float, iwidth:Float, iheight:Float,dx:Int, dy:Int, dWidth:Int):Void {
 			iwidth += ix;
 			iheight += iy;
+			var startX:Float = ix;
+			var startDX:Int = dx;
 			while (iy < iheight) {
+				ix = startX;
+				dx = startDX;
 				while (ix < iwidth) {
 					result.set(dx + dy * dWidth , sample(ix,iy) );
 					ix += ratio;
@@ -115,7 +163,11 @@ class GrayscaleMap
 		public inline function samplePixelsTo2(result:IntMemory, ix:Float, iy:Float, ratio:Float, iwidth:Float, iheight:Float,dx:Int, dy:Int, dWidth:Int, scale:Int, base:Int):Void {
 			iwidth += ix;
 			iheight += iy;
+			var startX:Float = ix;
+			var startDX:Int = dx;
 			while (iy < iheight) {
+				ix = startX;
+				dx = startDX;
 				while (ix < iwidth) {
 					result.set(dx + dy * dWidth , sample(ix,iy,scale,base) );
 					ix += ratio;
@@ -129,7 +181,11 @@ class GrayscaleMap
 		public inline function samplePixelsTo3(result:ShortMemory, ix:Float, iy:Float, ratio:Float, iwidth:Float, iheight:Float,dx:Int, dy:Int, dWidth:Int, scale:Int, base:Int):Void {
 			iwidth += ix;
 			iheight += iy;
+						var startX:Float = ix;
+			var startDX:Int = dx;
 			while (iy < iheight) {
+				ix = startX;
+				dx = startDX;
 				while (ix < iwidth) {
 					result.set(dx + dy * dWidth , sample(ix,iy,scale,base) );
 					ix += ratio;
@@ -154,11 +210,19 @@ class GrayscaleMap
 		// between sample points are bilinearly interpolated from surrounding points.
 		// xxx deal with edges: either force to 0 or over-size the query region....
 		{
+			
+			return getPixel(round(x), round(z));  // naive roundoff sampling
+			
+		
+		
+			
+			
+			/*
+			
 			// Break coordinates into grid-relative coords (ix,iz) and remainder (rx,rz).
 			var xi:Int = Std.int(x);
 			var zi:Int = Std.int(z);
-		
-		
+			
 			if (xi < 0 || xi > width-1 || zi < 0 || zi > height-1) {  // debug code
 				
 				if (xi < 0) xi  = 0;
@@ -182,6 +246,8 @@ class GrayscaleMap
 
 			return round( (s00 * (1-fx) + s01 * fx) * (1-fz) +
 				(s10 * (1-fx) + s11 * fx) * fz );
+				
+				*/
 		}
 		
 		 /**

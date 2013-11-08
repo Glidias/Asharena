@@ -67,6 +67,7 @@ class ByteMemory extends MemoryAccess
 		
 		#if alchemy
 		while (min <= max) output.writeByte(flash.Memory.getByte(min++));
+		
 		#else
 		for (i in 0...(max - min) + 1) output.writeByte(input.get(min + i));
 		#end
@@ -307,6 +308,7 @@ class ByteMemory extends MemoryAccess
 	 */
 	public function new(size:Int, name = "?")
 	{
+	
 		super(this.size = size, name);
 		
 		#if !alchemy
@@ -317,6 +319,8 @@ class ByteMemory extends MemoryAccess
 			_data = haxe.io.Bytes.alloc(size);
 			#end
 		#end
+		
+		
 	}
 	
 	#if !alchemy
@@ -442,6 +446,7 @@ class ByteMemory extends MemoryAccess
 	{
 		#if alchemy
 		flash.Memory.setByte(getAddr(i), x);
+		
 		#else
 			#if flash9
 			_data[i] = x;

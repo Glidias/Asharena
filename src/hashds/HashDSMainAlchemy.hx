@@ -1,5 +1,6 @@
 package hashds;
 
+import de.polygonal.ds.mem.MemoryManager;
 import hashds.ds.alchemy.AlchemyUtil;
 import hashds.ds.alchemy.ColorMap;
 import hashds.ds.alchemy.FullColorMap;
@@ -21,6 +22,10 @@ class HashDSMainAlchemy
 		ShortHeightMap;
 		ColorMap;
 		AlchemyUtil;
+		
+		#if alchemy
+		MemoryManager;
+		#end
 
 	}
 	

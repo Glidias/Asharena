@@ -31,7 +31,6 @@ package de.polygonal.ds.mem;
 
 import de.polygonal.ds.error.Assert.assert;
 import de.polygonal.ds.Bits;
-import flash.utils.ByteArray;
 
 private typedef MemoryAccessFriend =
 {
@@ -45,7 +44,6 @@ private typedef MemoryAccessFriend =
  */
 class MemoryManager
 {
-	public static var DEFAULT_BYTEARRAY:ByteArray;
 	static var _instance:MemoryManager = null;
 	inline public static function get():MemoryManager
 	{
@@ -90,8 +88,6 @@ class MemoryManager
 	 * The default value is 0.25 seconds.
 	 */
 	public static var AUTO_RECLAIM_INTERVAL = 0.25;
-
-	
 	#end
 	
 	/**
@@ -265,8 +261,6 @@ class MemoryManager
 	
 	var _changed:Bool;
 	
-
-	
 	function new()
 	{
 		#if debug
@@ -285,25 +279,19 @@ class MemoryManager
 		_segmentList.expandRight(_bytesTotal);
 		
 		#if alchemy
-			if (DEFAULT_BYTEARRAY != null) {
-				_bytes = DEFAULT_BYTEARRAY;
-				flash.Memory.select(_bytes);
-			}
-			else {
-				_bytes =new flash.utils.ByteArray();
-				#if flash10
-				var tmp = new Array<Int>();
-				for (i in 0...1024) tmp[i] = flash.Memory.getByte(i);
-				_bytes.length = _bytesRaw + _bytesTotal;
-				flash.Memory.select(null);
-				flash.Memory.select(_bytes);
-				for (i in 0...1024) flash.Memory.setByte(i, tmp[i]);
-				#elseif cpp
-				_bytes.setLength(_bytesRaw + _bytesTotal);
-				flash.Memory.select(null);
-				flash.Memory.select(_bytes);
-				#end
-			}
+			_bytes = new flash.utils.ByteArray();
+			#if flash10
+			var tmp = new Array<Int>();
+			for (i in 0...1024) tmp[i] = flash.Memory.getByte(i);
+			_bytes.length = _bytesRaw + _bytesTotal;
+			flash.Memory.select(null);
+			flash.Memory.select(_bytes);
+			for (i in 0...1024) flash.Memory.setByte(i, tmp[i]);
+			#elseif cpp
+			_bytes.setLength(_bytesRaw + _bytesTotal);
+			flash.Memory.select(null);
+			flash.Memory.select(_bytes);
+			#end
 		#end
 		
 		if (RESERVE_BYTES > 0) _grow(RESERVE_BYTES);
@@ -577,15 +565,11 @@ class MemoryManager
 		var requiredBytes   = maxBuckets << _blockSizeShift;
 		var freeSpace       = requiredBytes - _bytesTotal;
 		var rawOffset       = _bytesRaw;
-		
+		//throw "" + rawOffset + ", "+requiredBytes + ", "+_bytesTotal;
 		#if alchemy
-		
-		_bytes.length = rawOffset + requiredBytes;
-		flash.Memory.select(_bytes);
-		
-		/* //copy "raw" bytes to the start of the byte array while "data" bytes go to the end of the byte array
-		#if flash
+		//copy "raw" bytes to the start of the byte array while "data" bytes go to the end of the byte array
 		var copy = new flash.utils.ByteArray();
+		#if flash
 		copy.length = rawOffset + requiredBytes;
 		for (i in 0..._bytesRaw) copy[i] = flash.Memory.getByte(i);
 		for (i in 0..._bytesTotal) copy[rawOffset + freeSpace + i] = flash.Memory.getByte(rawOffset + i);
@@ -594,13 +578,19 @@ class MemoryManager
 		for (i in 0..._bytesRaw) copy.__set(i, flash.Memory.getByte(i));
 		for (i in 0..._bytesTotal) copy.__set(rawOffset + freeSpace + i, flash.Memory.getByte(rawOffset + i));
 		#end
+		
+		// keep same byte reference?
+		/*
+		_bytes.length = copy.length;
+		_bytes.writeBytes(copy, 0, copy.length);
+		copy = _bytes;
+		*/
+		
 		//register bytes
-		flash.Memory.select(null);
+		//flash.Memory.select(null);
 		flash.Memory.select(copy);
 		_bytes = copy;
-		*/
 		#end
-		
 		
 		_bytesTotal = requiredBytes;
 		
@@ -655,11 +645,8 @@ class MemoryManager
 		
 		//copy "raw" bytes to the start of the byte array while "data" bytes go to the end of the byte array
 		#if alchemy
-		_bytes.length = rawOffset + _bytesTotal;
-		flash.Memory.select(_bytes);
-
-		/*
 		var copy = new flash.utils.ByteArray();
+		
 			#if flash
 			copy.length = rawOffset + _bytesTotal;
 			for (i in 0..._bytesRaw) copy[i] = _bytes[i];
@@ -674,8 +661,6 @@ class MemoryManager
 		flash.Memory.select(null);
 		flash.Memory.select(copy);
 		_bytes = copy;
-		*/
-		
 		#end
 		
 		_segmentList.shrinkLeft(freeSpaceBefore);
