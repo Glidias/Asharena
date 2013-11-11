@@ -1,6 +1,7 @@
 package arena.systems.islands 
 {
 	import alternativa.engine3d.core.Camera3D;
+	import alternterrain.util.TerrainLODTreeUtil;
 	import ash.core.Engine;
 	import ash.core.System;
 	import components.Pos;
@@ -34,7 +35,9 @@ package arena.systems.islands
 		private var zoneSize:Number;
 		private var zoneSizeDiv:Number;
 		private var maxLowResSample:int = 1024;
-		public var zoneVisDistance:Number =.25;
+		public var zoneVisDistance:Number = .25;
+		
+		private var treeUtil:TerrainLODTreeUtil = new TerrainLODTreeUtil();
 		
 		/**
 		 * @param   camera		Camera reference to determine what LOD to use.
@@ -92,7 +95,18 @@ package arena.systems.islands
 				//LogTracer.log(x * zoneSizeDiv + ", " + y * zoneSizeDiv);
 			}
 			
-			// poll camera position constantly for a change in minimum LOD tree, fill with dummy QuadTreePages, than send area segment requests to worker if minimum LOD tree chnages.
+
+			// natively use rounded off camera position x/y to determine center position of 2x2 boundingSpaceGrid and thus it's TL location.
+			
+		
+		
+			// If boundingSpaceGridCenter/TL location change, the camera position - boundingSpaceGrid TL location and that's it and readjust world item positions + camera to fit that. Can consider, at this stage, to remove off any items out of view. 
+			
+			// Now, with the relative camera positsion, call TerrainLODTreeUtil.update(). With any drawn items, update the list of QuadTreePages accordingly across all levels with the TL origin,  determining the zone positions of each quadTreePage to send to worker for processing.
+			
+		
+			
+			
 			
 		}
 		

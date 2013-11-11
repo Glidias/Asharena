@@ -100,8 +100,8 @@ package tests.islands
 			//y += Math.random() * 13644;
 			p.xorg = x;
 			p.zorg = y;
-			hm.XOrigin = x;
-			hm.ZOrigin = y;
+			hm.XOrigin = 0;
+			hm.ZOrigin = 0;
 			return p;
 		}
 		
@@ -116,7 +116,7 @@ package tests.islands
 			
 	
 			var t:TerrainLOD = new TerrainLOD();
-			var size:Number = (32 * 256)  * (1<<SCALE_UP_OFFSET) +  4512;
+			var size:Number = (32 * 256)  * (1<<SCALE_UP_OFFSET);
 			t.loadGridOfPages(SpawnerBundle.context3D, new <QuadTreePage>[getQuadTreePage(0,0),getQuadTreePage(size,0),getQuadTreePage(0,size),getQuadTreePage(size,size)], new FillMaterial(0xFF0000) );
 			t.boundBox = null;
 			t.debug = true;
