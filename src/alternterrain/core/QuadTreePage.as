@@ -3,6 +3,7 @@ package alternterrain.core
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.objects.Surface;
+	import alternterrain.objects.TerrainLOD;
 	import flash.utils.ByteArray;
 	import flash.utils.IDataInput;
 	import flash.utils.IDataOutput;
@@ -28,6 +29,26 @@ package alternterrain.core
 		
 		public function QuadTreePage() 
 		{
+			
+		}
+		
+		public function clonePage():QuadTreePage {
+			var me:QuadTreePage = new QuadTreePage();
+			me.clonePropertiesFrom(this);
+			return me;
+		}
+		
+		 public function clonePropertiesFrom(ref:QuadTreePage):void {		
+			material = ref.material;
+			requirements = ref.requirements;
+			heightMap = ref.heightMap.clone();
+			uvTileSize = ref.uvTileSize;
+			Parent = ref.Parent;
+			Square = ref.Square;
+			xorg = ref.xorg;
+			zorg = ref.zorg;
+			Level = ref.Level;
+			ChildIndex = ref.ChildIndex;
 			
 		}
 		
@@ -71,9 +92,22 @@ package alternterrain.core
 			if (!QuadCornerData.isBase2(size)) throw new Error("Size isn't base 2!" + size);
 			size >>= 1;
 			quadRoot.Level = Math.round( Math.log(Number(size)) * Math.LOG2E );
-			
 			return quadRoot;
 		}
+		
+		public static function createFlat(x:int, y:int, numTiles:int, tileSize:int = 256):QuadTreePage {
+			var root:QuadTreePage = create(x, y, numTiles * tileSize);
+			root.heightMap = HeightMapInfo.createFlat(numTiles, tileSize);
+			
+			root.Level = QuadSquareChunk.LOD_LVL_MIN;
+			root.Square = new QuadSquareChunk();
+			root.Square.MinY = 0;
+			root.Square.MaxY = 0;
+			root.Square.error = 0;
+			return root;
+		}
+		
+		
 		
 	
 		

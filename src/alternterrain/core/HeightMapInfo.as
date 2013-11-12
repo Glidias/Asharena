@@ -283,6 +283,17 @@ package alternterrain.core
 			return Math.pow(2, Math.round( Math.log(val) * Math.LOG2E) ) == val;
 		}
 		
+		public static function createFlat(patchesAcross:int, tileSize:int=256):HeightMapInfo {
+			var me:HeightMapInfo = new HeightMapInfo();
+			me.Scale = Math.round( Math.log(Number(tileSize) ) * Math.LOG2E);
+			var RowWidth:int;
+			me.RowWidth = RowWidth = patchesAcross + 1;
+			me.XSize = RowWidth;
+			me.ZSize = RowWidth;
+			me.Data = new Vector.<int>(RowWidth * RowWidth, true);
+			return me;
+		}
+		
 		public function setFromByteArray(byteArray:ByteArray, heightMult:Number, patchesAcross:int, heightMin:int=0, tileSize:int=256):void 
 		{
 			if (!isBase2(tileSize)) throw new Error("Tile size isn't base 2!");

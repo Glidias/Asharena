@@ -28,7 +28,7 @@ package tests.islands
 			graphics.beginFill(0xDDDDDD, 1);
 			graphics.drawRect(0, 0, 512, 512);
 			
-			graphics.lineStyle(null, 0xFFFFFF);
+			graphics.lineStyle(0, 0xFFFFFF);
 			graphics.moveTo(256, 0);
 			graphics.lineTo(256, 512);
 			
@@ -47,9 +47,10 @@ package tests.islands
 		{
 			var shape:Shape = treeUtil.previewShape;
 		//	shape.x = -stage.stageWidth * .5;
+		//	shape.x = -stage.stageWidth * .5;
 		//	shape.y =  -stage.stageHeight * .5;
 		
-			field.text =(shape.mouseX/treeUtil.boundingSpace.width*2) + "::"+ ( Math.round( shape.mouseX/treeUtil.boundingSpace.width*2)==1 && Math.round(shape.mouseY/treeUtil.boundingSpace.height*2)==1 ? "within bounds" : "outside bounds need to shift" );
+			field.text = Math.floor(Math.round(shape.mouseX/(treeUtil.boundingSpace.width*.5)))+ "::"+ ( Math.round( shape.mouseX/treeUtil.boundingSpace.width*2)==1 && Math.round(shape.mouseY/treeUtil.boundingSpace.height*2)==1 ? "within bounds" : "outside bounds need to shift" );
 			
 			treeUtil.update( shape.mouseX , shape.mouseY );
 			

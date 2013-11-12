@@ -104,6 +104,8 @@ package tests.islands
 			t.x = tCount * (bmpSize-1) * 256;
 			tCount++;
 			
+			
+			
 			return t;
 		}
 		

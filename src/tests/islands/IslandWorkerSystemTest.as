@@ -3,6 +3,8 @@ package tests.islands
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.RenderingSystem;
+	import alternterrain.objects.HierarchicalTerrainLOD;
+	import alternterrain.objects.TerrainLOD;
 	import arena.systems.islands.IslandChannels;
 	import arena.systems.islands.IslandExploreSystem;
 	import arena.systems.islands.IslandGeneration;
@@ -121,10 +123,13 @@ package tests.islands
 			
 			game.engine.addSystem( spectatorPerson, SystemPriorities.postRender ) ;
 			
-		var exploreSystem:IslandExploreSystem = new IslandExploreSystem(_template3D.camera, null, dist, 256);
+			var terrainLOD:HierarchicalTerrainLOD  = new HierarchicalTerrainLOD();
+			terrainLOD.setupPages(SpawnerBundle.context3D, 128, 0);
+		var exploreSystem:IslandExploreSystem = new IslandExploreSystem(_template3D.camera, null, dist, 256, terrainLOD);
 		exploreSystem.zoneVisDistance = VIS_DIST;
 			game.engine.addSystem(exploreSystem, SystemPriorities.postRender);
 			
+			_template3D.scene.addChild(terrainLOD);
 		
 
 			

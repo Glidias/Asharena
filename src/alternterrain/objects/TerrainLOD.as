@@ -114,7 +114,7 @@ package alternterrain.objects
 		// METHOD 1  
 		// A grid of quad tree pages to render
 		public var gridPagesVector:Vector.<QuadTreePage>;  // dense array method 
-		private var _pagesAcross:int;
+		//private var _pagesAcross:int;
 		
 		
 		private var _vOffsets:Vector.<int>;
@@ -141,6 +141,12 @@ package alternterrain.objects
 			_squaredDistUpdate = a * a + b * b;
 		}
 		
+		
+		public function loadNull(context3D:Context3D, samplePage:QuadTreePage, tileSize:int=256, uvTileSize:int=0):void {
+			setupPreliminaries(context3D, samplePage, samplePage.requirements, tileSize, uvTileSize);
+			
+			setupPostliminaries(context3D, samplePage.requirements, tileSize, uvTileSize, samplePage.Level);
+		}
 
 		/**
 		 * 
@@ -151,13 +157,14 @@ package alternterrain.objects
 			
 			var minZ:Number = Number.MAX_VALUE;
 			var maxZ:Number = -Number.MAX_VALUE;
-			_pagesAcross = Math.sqrt(pages.length);
+			//_pagesAcross = Math.sqrt(pages.length);
 			var len:int =  pages.length;
 			for (var i:int = 0; i < len; i++) {
 				var p:QuadTreePage = pages[i];
 				p.uvTileSize = uvTileSize;
 				p.material = material;
 				p.requirements = requirements;
+
 				if (p.Square.MinY < minZ) minZ = p.Square.MinY;
 				if (p.Square.MaxY > maxZ) maxZ = p.Square.MaxY;
 			}
@@ -176,12 +183,12 @@ package alternterrain.objects
 			boundBox.minY = -p.zorg - ((1 << p.Level) << 1);
 			
 			gridPagesVector = pages;
-			///*
+			/*  .. TODO: Refactor
 			QuadSquareChunk.QUADTREE_GRID = new Grid_QuadChunkCornerData();
 			QuadSquareChunk.QUADTREE_GRID.vec = gridPagesVector;
 		
 			QuadSquareChunk.QUADTREE_GRID.cols = _pagesAcross;
-			//*/
+			*/
 			setupPostliminaries(context3D, requirements, tileSize, uvTileSize, pages[0].Level);
 			
 			
@@ -275,7 +282,7 @@ package alternterrain.objects
 						}
 				}
 			}
-			
+		
 			setupGeometry(requirements);  
 			if (repeatUV) setupRepeatingUVs(context3D, uvTileSize, rootLevel);
 			else if (injectUV) {
@@ -589,7 +596,7 @@ package alternterrain.objects
 			TerrainGeomTools.writeInnerIndicesToByteArray(patchesAcross, indexLookup, byteArray);
 			var startEdgesPosition:int = byteArray.position;
 			
-			TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, byteArray, 0);  
+			TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, byteArray, 0);   
 			buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 			indexBuffers[count] = buffer;
 			numTrianglesLookup[count] = (byteArray.length >> 1) / 3; 
