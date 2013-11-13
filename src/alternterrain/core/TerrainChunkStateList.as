@@ -14,19 +14,33 @@ package alternterrain.core
 
 			public function append( entity : TerrainChunkState ) : void  // enqueue
 			{
-				entity.parent = this;
-				if( head )
-				{
-					tail.next = entity;
-					entity.prev = tail;
-					entity.next = null;
-					tail = entity;
-				}
-				else
-				{	
-					head = tail = entity;
-					entity.next = entity.prev = null;
-				}
+				//try {
+					entity.parent = this;
+					if( head )
+					{
+				
+						tail.next = entity;
+						entity.prev = tail;
+						entity.next = null;
+						tail = entity;
+					}
+					else
+					{	
+						head = tail = entity;
+						entity.next = entity.prev = null;
+					}
+				//}
+				//catch (e:Error) {
+				//	throw new Error("WRW:"+e.message);
+				//}
+				
+			}
+			
+			
+			
+			public function validate(msg:String):void {
+				if (head != null && head.next == null && head != tail) throw new Error("WRONG: Head doesn't match tail when head.next is null" + msg + " : " + head + ", " + tail );
+				if (head && tail == null) throw new Error("WRONG2_headTail:"+msg + " : "+head + ", "+tail );
 			}
 			
 			public function allocate(amt:int, numVertices:int, data32PerVertex:int, context:Context3D):void {
@@ -68,11 +82,14 @@ package alternterrain.core
 				head = head.next;
 				if ( tail == entity) tail = null;
 				if (entity.next) entity.next.prev =  null;
+				entity.parent = null;
 				return entity;
 			}
 
 			public function remove( entity : TerrainChunkState ) : void
 			{
+				
+				
 				if ( head == entity)
 				{
 				head = head.next;
@@ -94,6 +111,7 @@ package alternterrain.core
 				entity.parent = null;
 				entity.next = null;
 				entity.prev = null;
+				
 				// N.B. Don't set node.next and node.prev to null because that will break the list iteration if node is the current node in the iteration.
 			}
 

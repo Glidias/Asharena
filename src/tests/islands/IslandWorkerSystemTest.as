@@ -106,8 +106,11 @@ package tests.islands
 				_skybox.addToScene(_template3D.scene);
 			
 				var dist:Number = DISTANCE;
-			_template3D.camera.z = 120;	
-		
+			_template3D.camera.z = 128+72;	
+			_template3D.camera.x = 0;	
+			_template3D.camera.y = 0;	
+		//	_template3D.camera.x = 64 * 256;
+	//	_template3D.camera.y = 64 * 256;
 				
 			spectatorPerson =new SimpleFlyController( 
 						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
@@ -115,7 +118,7 @@ package tests.islands
 						stage, 
 						_template3D.camera, 
 						27*512*256/60/60,
-						4);
+						34);
 			
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
 		
@@ -130,7 +133,9 @@ package tests.islands
 			game.engine.addSystem(exploreSystem, SystemPriorities.postRender);
 			
 			_template3D.scene.addChild(terrainLOD);
+			terrainLOD.z = 14;
 		
+			addChild(exploreSystem.debugShape);
 
 			
 			ticker = new FrameTickProvider(stage);

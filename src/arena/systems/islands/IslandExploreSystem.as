@@ -1,6 +1,9 @@
 package arena.systems.islands 
 {
 	import alternativa.engine3d.core.Camera3D;
+	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.materials.FillMaterial;
+	import alternterrain.core.QuadSquareChunk;
 	import alternterrain.core.QuadTreePage;
 	import alternterrain.objects.HierarchicalTerrainLOD;
 	import alternterrain.objects.TerrainLOD;
@@ -8,6 +11,7 @@ package arena.systems.islands
 	import ash.core.Engine;
 	import ash.core.System;
 	import components.Pos;
+	import flash.display.Shape;
 	import flash.display3D.Context3D;
 	import flash.events.Event;
 	import flash.geom.Vector3D;
@@ -54,8 +58,12 @@ package arena.systems.islands
 		
 		private var terrainLOD:HierarchicalTerrainLOD;// the list of TerrainLODs and their respective QuadTreePages
 		public var loadedPages:Vector.<QuadTreePage>;  // the hierGridArray of loaded QuadTreePages across all levels. This needs to be reshuffled to match new TL location if needed.
+		public var pooledPages:Vector.<QuadTreePage>;
+		public var lenPooledPages:int = 0;
 		
+		private var lodDrawIndices:Vector.<Vector.<int>>;
 		private var sampleQuadTreePage:QuadTreePage;
+		private var previewMats:Vector.<FillMaterial>;
 		
 		
 		
@@ -79,14 +87,20 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 3) receive zone+level key from Worker, create/retreive from pool QuadTreePage at hier grid array position and push into HierTerrainLOD array for rendering if applciable (this shuld be applicaable for high priority on demand requests), so long as the position is found in stateLookup bitmapData slot. Update QuadTreePage height data, quadSquare data, and material information accordingly.
 ))
 */
+
+		public var debugShape:Shape = new Shape();
 		
 		
 		/**
 		 * @param   camera		Camera reference to determine what LOD to use.
 		 * @param	position	Reference position to determine what zones and islands regions gets spotted while traveling
 		 */
-		public function IslandExploreSystem(camera:Camera3D, position:Pos=null, zoneSize:Number = 2048, tileSize:Number=256, terrainLOD:HierarchicalTerrainLOD=null) 
+		public function IslandExploreSystem(camera:Camera3D, position:Pos=null, zoneSize:Number = 2048, tileSize:Number=256, terrainLOD:HierarchicalTerrainLOD=null, sceneTransform:Object3D=null) 
 		{
+			this.sceneTransform = sceneTransform;
+			QuadSquareChunk.registerClassAliases();
+			
+			this.tileSize = tileSize;
 			this.camera = camera;
 			autoFollowCam = position == null; 
 			this.position = position || (new Pos());  
@@ -98,13 +112,50 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			
 			this.terrainLOD = terrainLOD;
 			loadedPages = new Vector.<QuadTreePage>(treeUtil.loaderAmount, true);
+			pooledPages = new Vector.<QuadTreePage>();
 			sampleQuadTreePage = QuadTreePage.createFlat(0, 0, 128);
 			
 			if (terrainLOD == null) {
-				terrainLOD = new HierarchicalTerrainLOD();  // create a dummy terrainLOD privately
-				
+				this.terrainLOD = new HierarchicalTerrainLOD();  // create a dummy terrainLOD privately
 			}
 			
+			setupDrawIndices();
+			
+			clearTerrainLOD();
+			
+			setupPreviewMats();
+		}
+		
+		private function setupDrawIndices():void 
+		{
+			lodDrawIndices = new Vector.<Vector.<int>>();
+			for (var i:int = 0; i < terrainLOD.lods.length; i++) {
+				lodDrawIndices[i] = new Vector.<int>();
+			}
+		}
+		
+
+		
+		private var tileSize:Number;
+		private var sceneTransform:Object3D;
+		private static const PREVIEW_COLORS:Vector.<uint> = new <uint>[0xDDEEFF,0xFF0000, 0x00FF00, 0x0000FF];
+		
+		private function setupPreviewMats():void 
+		{
+			previewMats = new Vector.<FillMaterial>();
+			var len:int = PREVIEW_COLORS.length;
+			for ( var i:int = 0; i < len; i++) {
+				previewMats.push( new FillMaterial(PREVIEW_COLORS[i], .4) );
+			}
+		}
+		
+		private function clearTerrainLOD():void 
+		{
+
+			for (var i:int = 0; i < terrainLOD.lods.length; i++) {  // reset
+				terrainLOD.lods[i].gridPagesVector = new Vector.<QuadTreePage>();
+				terrainLOD.lods[i].visible = false;
+			}
 		}
 		
 		override public function addToEngine(engine:Engine):void {
@@ -160,9 +211,10 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			var cy:Number = -camera._y;
 			x = cx*tileMult + treeUtilOffsetX * wd;
 			y = cy*tileMult + treeUtilOffsetY * hd;
-			x = Math.round( x / wd );
+			x = Math.round( x / wd );  // get top left
 			y = Math.round( y / hd );
-			
+			x--;
+			y--;
 			var refPositionChanged:Boolean = false;
 			if (lastTreeX != x || lastTreeY != y) {
 			// If boundingSpaceGridCenter/TL location change, the camera position - boundingSpaceGrid TL location and that's it and readjust world item positions + camera to fit that. Can consider, at this stage, to remove off any items out of view. 
@@ -176,7 +228,20 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 				}
 				lastTreeX = x;
 				lastTreeY = y;
+				
+				
+				if (sceneTransform == null) { // terrain follow camera
+					terrainLOD.x = -(cx - x*wd*tileSize);
+					terrainLOD.y = (cy - y*hd*tileSize);
+				}
+				else {
+					camera.x =  cx  - x*wd* tileSize;
+					camera.y = cy  - y*hd* tileSize;
+				}
+				
+				
 				refPositionChanged = true;
+				
 				
 				LogTracer.log("Update tree util reference:");
 			}
@@ -184,12 +249,9 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			// get actual world coordinates of rounded off TL location for treeUtil
 				x *= wd;
 				y *= hd;
-				x -= wd;
-				y -= hd;
 				if ( treeUtil.update(cx * tileMult - x, cy * tileMult - y, refPositionChanged) ) { // (for now, assume camera isn't re-translated...)
 					
-					
-					
+	
 					LogTracer.log("Tree update:" + (lastTreeX) + ", " + (lastTreeY) + ", " + [camera._x * tileMult - x, camera._y * tileMult - y] + " ::: " + treeUtil.levelNumSquares);
 					
 					resolveLODTreeState();
@@ -197,38 +259,110 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			
 		}
 		
+		
+		
+		private function createDummyPage(level:int):QuadTreePage {
+			var page:QuadTreePage = lenPooledPages > 0 ? pooledPages[--lenPooledPages] : sampleQuadTreePage.clonePage();
+			page.material = previewMats[level];
+			return page; 
+		}
+		
+		//public var debugResolved:Boolean = false;
 		private function resolveLODTreeState():void 
 		{
+			//if (debugResolved) return;
+			//debugResolved = true;
+			
 			var len:int = treeUtil.levelNumSquares.length;
 			var count:int = 0;
+			
+			//debugShape.graphics.clear();
+			//debugShape.graphics.beginFill(0xFF0000, .5);
+			//debugShape.graphics.lineStyle(1, 0);
+			
+			
+			
+			var size:int = treeUtil.smallestSquareSize * tileSize;
+			//var debugCount:int =  0;
 			var data:Vector.<int> = treeUtil.indices;
 			for (var level:int = 0; level < len; level++) {
-				var sqCount:int = treeUtil.levelNumSquares[level];
+				var sqCount:int;
 				var lvlOffset:int =  treeUtil.loaderOffsets[level];
-				for (var u:int; u < sqCount; u++) {
+				var numColumns:int = (treeUtil.boundWidth >> level);
+				var lod:TerrainLOD = terrainLOD.lods[level];
+				var lastDraws:Vector.<int> = lodDrawIndices[level];
+				var u:int;
+				var page:QuadTreePage;
+				var pageLen:int = lod.gridPagesVector.length;
+				
+				sqCount = lastDraws.length;
+				for ( u = 0 ; u < sqCount; u++) {   // remove currently viewed pages
+					var indexer:int =  lastDraws[u];
+					if (treeUtil.drawBits.get(indexer ) == 0 ) {
+						page = loadedPages[indexer]; 
+						if (page != null) {
+							loadedPages[indexer] = null;
+							pooledPages[lenPooledPages++] = page;
+							if (page.index >= 0) {
+								lod.removePage(page, pageLen);  // TODO: Importatn! Recycle any chunk states within page tree if available.
+								pageLen--;
+								lod.flushPage(page);
+							}
+						}	
+					}
+				}
+				lod.gridPagesVector.length = pageLen;
+				
+				
+				sqCount = treeUtil.levelNumSquares[level];   // add necessary pages
+				lastDraws.length = sqCount;
+				for (u=0; u < sqCount; u++) {
 					// (create)/request/reference QuadTreePages to later set into terrainLOD 
 					
 					var xi:int = data[count++];
 					var yi:int = data[count++];
-					
+					//if (level !=2) continue;
+					lastDraws[u] = indexer= lvlOffset + yi * numColumns + xi;
 					// reference - (if available in loadedPages cache)
-					//loadedPages[yi*
+					page = loadedPages[indexer];
+		
 					
-					// (create) testing phase only
+					if (page== null) {  	// (create) testing phase only / or request - actual worker generation
+						// (create)
+						page = createDummyPage(level);
+						loadedPages[lvlOffset + yi * numColumns + xi] = page;
+					}
+					//else {
+					//  ensure page is added to render list
+						if (page.index < 0) {
+							lod.addPage(page);
+						}
+						// ensure page is positioned correctly		
+						page.xorg  = (xi * size);
+						page.zorg =  (yi * size);
+						page.heightMap.XOrigin = page.xorg;
+						page.heightMap.ZOrigin = page.zorg;
+					//}
 					
 					
-					// request  - actual worker generation
+	
+					//debugShape.graphics.drawRect(xi*(8<<level), yi*(8<<level), (8<<level),(8<<level));
+					
 				}
-			}
-			
-			//
-			//if (terrainLOD != null) {  // readjust the render list to match given reference/create list!
 				
-			//}
+				//throw new Error(data);
+				// debugging
+				lod.visible = lod.gridPagesVector.length != 0;  // this isn't needed for none (create) case.
+				//lod.debug = true;
+				//debugCount+=lod.gridPagesVector.length;
+				//break;
+			}//
+			
 		}
 		
 		private function reshuffle(x:int, y:int):void 
 		{
+			LogTracer.log("Reshuffling!");
 			var toShuffle:Vector.<QuadTreePage> = loadedPages.concat();
 			var len:int = loadedPages.length;
 			for (var i:int = 0; i < len; i++) {
@@ -237,6 +371,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			}
 			
 			// check NE
+
 		}
 		
 		private function createWorker():void

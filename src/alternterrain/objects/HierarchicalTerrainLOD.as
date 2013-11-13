@@ -16,7 +16,7 @@ package alternterrain.objects
 	{
 		public var lods:Vector.<TerrainLOD>;
 		
-		private static const PREVIEW_COLORS:Vector.<uint> = new <uint>[0xDDEEFF,0xFF0000, 0x00FF00, 0x0000FF];
+	
 		static private const NUM_LEVELS:int = 4;
 		
 		
@@ -37,10 +37,9 @@ package alternterrain.objects
 		}
 		
 		public function setupPages(context3D:Context3D,  numTiles:int, requirements:int=0, uvTileSize:int=0, tileSize:int = 256):void { 
-			var dummyQuadTreePage:QuadTreePage = QuadTreePage.create(0, 0, numTiles*tileSize);
-			//QuadTreePage.createFlat(0, 0,numTiles, tileSize);
+			var dummyQuadTreePage:QuadTreePage = QuadTreePage.createFlat(0, 0,numTiles, tileSize);
+			//
 			//QuadTreePage.create(0, 0, numTiles*tileSize);
-			
 			
 			dummyQuadTreePage.requirements = requirements;
 			dummyQuadTreePage.uvTileSize = uvTileSize;

@@ -1,6 +1,8 @@
 package alternterrain.core 
 {
 	import flash.geom.Vector3D;
+	import flash.net.registerClassAlias;
+	import flash.utils.ByteArray;
 	import flash.utils.IDataInput;
 	import flash.utils.IDataOutput;
 	import flash.utils.IExternalizable;
@@ -68,6 +70,16 @@ package alternterrain.core
 					Child[i] = null;
 				}
 			}
+		}
+		
+		private static const CLONE_BYTES:ByteArray = new ByteArray();
+		public function clone():QuadSquareChunk {
+			var cloned:QuadSquareChunk = new QuadSquareChunk();
+			CLONE_BYTES.position = 0;
+			writeExternal(CLONE_BYTES);
+			CLONE_BYTES.position = 0;
+			cloned.readExternal(CLONE_BYTES);
+			return cloned;
 		}
 		
 		
@@ -435,7 +447,6 @@ public	function UpdateAux(cd:QuadChunkCornerData, camera:Vector3D, CenterError:N
 	
 
 	// set culling value
-	
 	BlockUpdateCount++;	//xxxxx
 
 	var	half:int = 1 << cd.Level;
@@ -479,7 +490,7 @@ public	function UpdateAux(cd:QuadChunkCornerData, camera:Vector3D, CenterError:N
 		
 		// Recurse into child quadrants as necessary.
 		var	q:QuadChunkCornerData; 
-			
+
 		if (EnabledFlags & 32) {
 			SetupCornerData(q = QuadChunkCornerData.create(), cd, 1);
 			s = Child[1]; 
@@ -577,6 +588,11 @@ public	function UpdateAux(cd:QuadChunkCornerData, camera:Vector3D, CenterError:N
 			output.writeObject(Child[3]);
 		}
 		else output.writeBoolean(false);
+	}
+	
+	public static function registerClassAliases():void {
+		registerClassAlias("QuadSquareChunk", QuadSquareChunk);
+
 	}
 
 

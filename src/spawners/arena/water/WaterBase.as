@@ -31,6 +31,7 @@ package spawners.arena.water
 
 			var normalRes:BitmapTextureResource = new BitmapTextureResource(new assetClasse.NORMAL().bitmapData);
 			waterMaterial = new WaterMaterial(normalRes, normalRes);
+			waterMaterial.forceRenderPriority =  Renderer.SKY + 1;
 			var scaler:Number = 1;
 			var uvScaler:Number = 16;
 	

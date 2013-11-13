@@ -326,6 +326,19 @@ package alternterrain.core
 		}
 		
 	
+		public function setFlat(numTilesAcross:int, tileSize:int=256):void {
+			Scale = Math.round( Math.log(Number(tileSize) ) * Math.LOG2E );
+			var vertX:int = numTilesAcross + 1;
+			RowWidth = vertX;
+			XSize = vertX;
+			ZSize = vertX;
+			if (Data == null) {
+				Data = new Vector.<int>( (vertX) * (vertX), true);
+			}
+			else {
+				flatten();
+			}
+		}
 		
 		public function setFromBmpData(bmpData:BitmapData, heightMult:Number, heightMin:int=0, tileSize:int=256):void 
 		{

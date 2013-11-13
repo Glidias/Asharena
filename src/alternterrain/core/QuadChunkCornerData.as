@@ -59,7 +59,8 @@ package alternterrain.core
 		//	return this;
 			var result:QuadChunkCornerData = new QuadChunkCornerData();
 			result.Parent = Parent;
-			result.Square = Square;
+			result.Square = Square.clone();
+			if (result.Parent) result.Parent.Square = result.Square;
 			result.xorg = xorg;
 			result.zorg = zorg;
 			result.Level = Level;

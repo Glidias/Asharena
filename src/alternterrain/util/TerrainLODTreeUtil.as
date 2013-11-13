@@ -1,6 +1,7 @@
 package alternterrain.util 
 {
 	import alternterrain.objects.HierarchicalTerrainLOD;
+	import de.polygonal.ds.mem.BitMemory;
 	import flash.display.BitmapData;
 	import flash.display.Graphics;
 	import flash.display.Shape;
@@ -30,14 +31,15 @@ package alternterrain.util
 		
 		 static private const ORIGIN:Point = new Point();
         
-        private var levelPxOffsets:Vector.<int> = new Vector.<int>();
+        public var levelPxOffsets:Vector.<int> = new Vector.<int>();
 		   public var loaderOffsets:Vector.<int> = new Vector.<int>();
 		   public var loaderAmount:int;
 		   
 		  private var gridLookup:BitmapData;
-		  private var boundWidth:Number;
-		  private var boundHeight:Number;
+		  public var boundWidth:int;
+		  public var boundHeight:int;
 		   private var rectFiller:Rectangle = new Rectangle();
+		   public var drawBits:BitMemory;
 		   
 		   public var previewShape:Shape = new Shape();
 		   
@@ -85,6 +87,8 @@ package alternterrain.util
           
             boundWidth = Math.floor(boundingSpace.width) / smallestSquareSize;
             boundHeight =  Math.floor(boundingSpace.height) / smallestSquareSize;
+			
+	
             while (qSize < QUERY_SIZE ) {
                 
                 qSize *= 2;
@@ -102,7 +106,8 @@ package alternterrain.util
 			levelPxOffsets.fixed = true;
 			loaderOffsets.fixed = true;
 
-			 loaderAmount = count2 + boundWidth*boundHeight;
+			 loaderAmount = count2 + boundWidth * boundHeight;
+			 drawBits = new BitMemory(loaderAmount);
 		}
 		
 		public function get graphics():Graphics {
@@ -136,6 +141,7 @@ package alternterrain.util
            // lastStatelookup.copyPixels(stateLookup, stateLookup.rect, ORIGIN);
           //  previewChangeState.fillRect(previewChangeState.rect, 0);
           //  stateLookup.fillRect(stateLookup.rect, 0);
+		  drawBits.clrAll();
             
             var rect:Rectangle;
             
@@ -182,7 +188,6 @@ package alternterrain.util
 		private function drawOntoGrid(sampleRegion:Rectangle, gridSize:int, level:int):void {
     
           
-            
             var xLimit:int = Math.ceil( (sampleRegion.x+sampleRegion.width)  / gridSize );
             var yLimit:int = Math.ceil( (sampleRegion.y + sampleRegion.height)  / gridSize );
             var parentGridSize:int = gridSize * 2;
@@ -197,10 +202,12 @@ package alternterrain.util
             rectFiller.height = gridSize / smallestSquareSize;
             
                 var levelPxOffset:int = levelPxOffsets[level];
-                
+                  var loaderOffsets:int = loaderOffsets[level];
+				    var cols:int = (boundWidth >> level);
         
             var randColor:uint = 0xFF + (level + 1);// * (65535/8);
-            
+            var rx:int;
+			var ry:int;
             var gotParent:Boolean = parentGridSize <= QUERY_SIZE;
             
             for (var yi:int =  yStart; yi < yLimit; yi++) {
@@ -224,9 +231,10 @@ package alternterrain.util
                          gridLookup.fillRect(rectFiller, randColor);
 						 
 						 levelNumSquares[level]++;
-						 indices[totalIndices++] = xi + levelPxOffset;
-						indices[totalIndices++] = yi;
+						 indices[totalIndices++] = rx = xi;
+						indices[totalIndices++] = ry = yi;
                         //    stateLookup.setPixel(xi+levelPxOffset, yi, 0xFF0000);
+						drawBits.set(loaderOffsets + ry * cols + rx);
                         
                         if (gotParent) {
                             if (gridSize == smallestSquareSize) graphics.lineStyle(1, 0xFF0000, 1)
@@ -254,8 +262,9 @@ package alternterrain.util
                                     graphics.beginFill(0xFF0000, .2);
                                     graphics.drawRect(xii + offset6[result] * gridSize,   yii + (offset6[result + 1]) * gridSize, gridSize, gridSize);
 									levelNumSquares[level]++;
-									indices[totalIndices++] = xi + offset6[result];
-									indices[totalIndices++] = yi + offset6[result+1];
+									indices[totalIndices++] =rx= xi + offset6[result];
+									indices[totalIndices++] = ry=yi + offset6[result + 1];
+									drawBits.set(loaderOffsets + ry * cols + rx);
                         //            stateLookup.setPixel(xi+ levelPxOffset+offset6[result], yi+ offset6[result+1], 0xFF0000);
                                 }
                 
@@ -266,8 +275,9 @@ package alternterrain.util
                                     graphics.beginFill(0xFF0000, .2);
                                     graphics.drawRect(xii + offset6[result + 2] * gridSize, yii + (offset6[result + 3]) * gridSize, gridSize, gridSize);
 									levelNumSquares[level]++;
-									indices[totalIndices++] = xi + offset6[result + 2];
-									indices[totalIndices++] = yi + offset6[result + 3];
+									indices[totalIndices++] =rx= xi + offset6[result + 2];
+									indices[totalIndices++] = ry = yi + offset6[result + 3];
+									drawBits.set(loaderOffsets + ry * cols + rx);
 									
                            //         stateLookup.setPixel(xi+ levelPxOffset+offset6[result+2], yi+ offset6[result+3], 0xFF0000);
                                 }
@@ -278,8 +288,9 @@ package alternterrain.util
                                     gridLookup.fillRect(rectFiller, randColor);
                                     graphics.beginFill(0xFF0000, .2);  graphics.drawRect(xii + offset6[result + 4] * gridSize,  yii + offset6[result + 5] * gridSize, gridSize, gridSize);
 									levelNumSquares[level]++;
-									indices[totalIndices++] = xi + offset6[result+4];
-									indices[totalIndices++] = yi + offset6[result+5];
+									indices[totalIndices++] =rx= xi + offset6[result+4];
+									indices[totalIndices++] = ry = yi + offset6[result + 5];
+									drawBits.set(loaderOffsets + ry * cols + rx);
                             //      stateLookup.setPixel(xi+ levelPxOffset+offset6[result+4], yi+ offset6[result+5], 0xFF0000);
                                     
                                 }

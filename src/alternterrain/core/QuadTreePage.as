@@ -27,6 +27,8 @@ package alternterrain.core
 		public var uvTileSize:int = 0;
 		//public var normals:NormMapInfo;   // todo: depeciate!
 		
+		public var index:int = -1;
+		
 		public function QuadTreePage() 
 		{
 			
@@ -44,7 +46,8 @@ package alternterrain.core
 			heightMap = ref.heightMap.clone();
 			uvTileSize = ref.uvTileSize;
 			Parent = ref.Parent;
-			Square = ref.Square;
+			Square = ref.Square.clone();
+			if (Parent) Parent.Square = Square;
 			xorg = ref.xorg;
 			zorg = ref.zorg;
 			Level = ref.Level;
@@ -96,14 +99,11 @@ package alternterrain.core
 		}
 		
 		public static function createFlat(x:int, y:int, numTiles:int, tileSize:int = 256):QuadTreePage {
-			var root:QuadTreePage = create(x, y, numTiles * tileSize);
-			root.heightMap = HeightMapInfo.createFlat(numTiles, tileSize);
 			
-			root.Level = QuadSquareChunk.LOD_LVL_MIN;
-			root.Square = new QuadSquareChunk();
-			root.Square.MinY = 0;
-			root.Square.MaxY = 0;
-			root.Square.error = 0;
+			var heightMap:HeightMapInfo = HeightMapInfo.createFlat(numTiles, tileSize);
+			var root:QuadTreePage = TerrainLOD.installQuadTreePageFromHeightMap(heightMap, 0, 0, 256, 0);
+
+
 			return root;
 		}
 		

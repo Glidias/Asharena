@@ -86,12 +86,14 @@ package tests.islands
 			bmpData.perlinNoise(bmpSize, bmpSize, 4, stich ? 0  : Math.random()*44444, stich, true, 7, true);
 			if (stich) stitchBmpData(bmpData);
 			//if ( (bmpData.getPixel(0, 0) & 0x0000FF) != (bmpData.getPixel(bmpSize-1, 0) & 0x0000FF) ) throw new Error("A:"+(bmpData.getPixel(0, 0) & 0x0000FF) + ", "+(bmpData.getPixel(bmpSize-1, 0)&0x0000FF));
-			hm.setFromBmpData(bmpData, bmpSize*1.3, -bmpSize*1.3*255);
+			
+			hm.setFromBmpData(bmpData, bmpSize * 1.3, -bmpSize * 1.3 * 255);
+			//hm.setFlat(128);
 			var chlid:DisplayObject = addChild( new Bitmap(bmpData));
 			chlid.x = tCount++ * bmpSize;
 					
 			var p:QuadTreePage =  TerrainLOD.installQuadTreePageFromHeightMap(hm, 0, 0, 256, 0);
-			p.Level = QuadSquareChunk.LOD_LVL_MIN;
+			
 			
 		//	p.Level+=SCALE_UP_OFFSET;   // this tells the size of the QuadSquareChunk in world units
 		//	p.heightMap.Scale+=SCALE_UP_OFFSET;  // this can be used to adjust Maximum LOD cap to be displayed from base default 8 value.
@@ -100,8 +102,10 @@ package tests.islands
 			//y += Math.random() * 13644;
 			p.xorg = x;
 			p.zorg = y;
-			hm.XOrigin = 0;
-			hm.ZOrigin = 0;
+			hm.XOrigin = p.xorg;
+			hm.ZOrigin = p.zorg;
+			
+			p.material = new FillMaterial(0xFF0000);
 			return p;
 		}
 		
@@ -116,8 +120,10 @@ package tests.islands
 			
 	
 			var t:TerrainLOD = new TerrainLOD();
-			var size:Number = (32 * 256)  * (1<<SCALE_UP_OFFSET);
-			t.loadGridOfPages(SpawnerBundle.context3D, new <QuadTreePage>[getQuadTreePage(0,0),getQuadTreePage(size,0),getQuadTreePage(0,size),getQuadTreePage(size,size)], new FillMaterial(0xFF0000) );
+			var size:Number = (128 * 256);
+			t.loadNull(SpawnerBundle.context3D, getQuadTreePage(0, 0));
+			//t.loadGridOfPages(SpawnerBundle.context3D, new <QuadTreePage>[getQuadTreePage(0,0),getQuadTreePage(size,0),getQuadTreePage(0,size),getQuadTreePage(size,size)], new FillMaterial(0xFF0000) );
+			t.gridPagesVector = new <QuadTreePage>[getQuadTreePage(0,0),getQuadTreePage(size,0),getQuadTreePage(0,size),getQuadTreePage(size,size)];
 			t.boundBox = null;
 			t.debug = true;
 			_template3D.scene.addChild(t);
