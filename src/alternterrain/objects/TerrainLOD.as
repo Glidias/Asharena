@@ -1127,7 +1127,7 @@ package alternterrain.objects
 				}
 				
 
-				if (h != null) {  // that means still got excess chunks at head that can be pooled
+				if (lastH != null && h != null) {  // that means still got excess chunks at head that can be pooled
 					h.next = null;    // append inactive state tail to pool
 					
 					var inactiveH:TerrainChunkState = activeChunks.head;  
@@ -1162,7 +1162,7 @@ package alternterrain.objects
 						
 						//*/
 						
-						/*  // dunno why the above doesnt work
+						/*  // dunno why the below doesnt work
 						if (chunkPool.tail) {
 							chunkPool.tail.next = inactiveH;
 							inactiveH.prev = chunkPool.tail;
