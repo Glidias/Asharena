@@ -20,8 +20,12 @@ package
 	import ash.core.Entity;
 	import components.Rot;
 	import examples.WaterAndTerrain3rdPerson;
+	import flash.events.KeyboardEvent;
+	import flash.ui.Keyboard;
+	import flash.utils.getDefinitionByName;
 	import spawners.arena.GladiatorBundle;
 	import util.geom.Geometry;
+	import util.LogTracer;
 	import util.SpawnerBundle;
 	import util.SpawnerBundleLoader;
 
@@ -61,7 +65,7 @@ package
 			
 			_view.addEventListener(Event.COMPLETE, onViewInitialized);
 			
-					
+			LogTracer.log = getDefinitionByName("haxe::Log").trace;
 			Boot.getTrace().blendMode = "invert";
 			stage.addChild( Boot.getTrace() );
 		}
@@ -74,6 +78,7 @@ package
 			
 			spawnerBundle = new GladiatorBundle(arenaSpawner);
 			new SpawnerBundleLoader(stage, begin, new <SpawnerBundle>[spawnerBundle]);
+			
 			
 			//begin();
 		}
@@ -88,7 +93,15 @@ package
 			arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage).add(keyPoll);
 			_view.inject(arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Pos) as Pos,  arenaSpawner.currentPlayerEntity.get(Rot) as Rot, arenaSpawner.currentPlayerSkin,spawnerBundle.textureMat);
 			
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			startGame();
+		}
+		
+		private function onKeyDown(e:KeyboardEvent):void 
+		{
+			if (e.keyCode === Keyboard.P) {
+				LogTracer.log( _view.terrainLOD.getTotalStats() );
+			}
 		}
 	
 		
@@ -108,7 +121,13 @@ package
 			gameStates.engineState.changeState( "thirdPerson");
 				
 			// Setup rendering system
+			ticker.add(enterFrame);
 			ticker.start();	
+		}
+		
+		private function enterFrame(time:Number):void 
+		{
+			//LogTracer.log( _view.terrainLOD.getTotalStats() );
 		}
 
 		

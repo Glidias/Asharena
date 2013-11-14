@@ -118,6 +118,7 @@ package alternterrain.util
 		public var offsetX:Number = 0;
 		public var offsetY:Number = 0;
 		
+		
 		public function update(mx:int, my:int, forceUpdate:Boolean=false):Boolean {
 		    
           //  if (mx < 0) mx = 0;
@@ -151,8 +152,9 @@ package alternterrain.util
          
 			// preview query box
 			graphics.lineStyle(0, 0xFF0000, 1); 
-           graphics.drawRect(rect.x, rect.y, rect.width, rect.height);
 
+           graphics.drawRect(rect.x, rect.y, rect.width, rect.height);
+			//if (rect.x + rect.width > boundingSpace.width) throw new Error("EXCEEDED!");
 		   
            graphics.lineStyle(0, 0, 1);
             

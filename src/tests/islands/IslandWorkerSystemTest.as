@@ -1,6 +1,7 @@
 package tests.islands 
 {
 	import alternativa.a3d.controller.SimpleFlyController;
+	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.RenderingSystem;
 	import alternterrain.objects.HierarchicalTerrainLOD;
@@ -12,12 +13,14 @@ package tests.islands
 	import flash.display.BitmapData;
 	import flash.display.MovieClip;
 	import flash.events.Event;
+	import flash.events.KeyboardEvent;
 	import flash.system.ApplicationDomain;
 	import flash.system.MessageChannel;
 	import flash.system.WorkerDomain;
 	import flash.system.WorkerState;
 	import flash.text.TextField;
 	import flash.text.TextFieldType;
+	import flash.ui.Keyboard;
 	import flash.utils.ByteArray;
 	import flash.utils.getDefinitionByName;
 	import flash.utils.setTimeout;
@@ -42,10 +45,12 @@ package tests.islands
 	 * Generate out island Meshes procedurally with/without AS3 Workers while traveling around. Using AS3 Workers allows islands to be generated seamelssly WITHOUT having to pause-load/freeze the game performance.
 	 * @author Glidias
 	 */
+	[SWF(width='512',height='512',backgroundColor='#ffffff',frameRate='60')]
 	public class IslandWorkerSystemTest extends MovieClip 
 	{
 		static public const DISTANCE:Number = 8192;// * .25;
 		static public const FAR_CLIP_DIST:Number = 512*5;
+		static public const ZONE_SIZE:Number = DISTANCE * 256;
 		static private const VIS_DIST:Number = .25;
 		private var _template3D:MainView3D;
 		private var game:TheGame;
@@ -58,6 +63,7 @@ package tests.islands
 		
 		private var hideFromReflection:Vector.<Object3D> = null;// new Vector.<Object3D>();
 		private var spectatorPerson:SimpleFlyController;
+		private var terrainLOD:HierarchicalTerrainLOD;
 	
 		
 		
@@ -74,6 +80,7 @@ package tests.islands
 			
 			_template3D.visible = false;
 			addChild(_preloader);
+		
 		}
 		
 		private function onReady3D():void 
@@ -98,17 +105,20 @@ package tests.islands
 			_template3D.visible = true;
 			
 		
-			
+			int.MAX_VALUE
 		
 			
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
-			_water.addToScene(_template3D.scene);
-				_skybox.addToScene(_template3D.scene);
-			
+		
+			//5252710400
+			_template3D.viewBackgroundColor = 0xFFFFFF;
 				var dist:Number = DISTANCE;
 			_template3D.camera.z = 128+72;	
-			_template3D.camera.x = 0;	
+			_template3D.camera.x = 0;// 971610521;// 97161052160;	
 			_template3D.camera.y = 0;	
+			
+		//	_template3D.scene.x = Math.sqrt(int.MAX_VALUE);
+
 		//	_template3D.camera.x = 64 * 256;
 	//	_template3D.camera.y = 64 * 256;
 				
@@ -126,13 +136,17 @@ package tests.islands
 			
 			game.engine.addSystem( spectatorPerson, SystemPriorities.postRender ) ;
 			
-			var terrainLOD:HierarchicalTerrainLOD  = new HierarchicalTerrainLOD();
+			terrainLOD  = new HierarchicalTerrainLOD();
 			terrainLOD.setupPages(SpawnerBundle.context3D, 128, 0);
 		var exploreSystem:IslandExploreSystem = new IslandExploreSystem(_template3D.camera, null, dist, 256, terrainLOD);
 		exploreSystem.zoneVisDistance = VIS_DIST;
-			game.engine.addSystem(exploreSystem, SystemPriorities.postRender);
+			game.engine.addSystem(exploreSystem, SystemPriorities.preRender);
 			
 			_template3D.scene.addChild(terrainLOD);
+			_water.addToScene(_template3D.scene, 0);
+			//	_skybox.addToScene(terrainLOD);
+				
+				
 			terrainLOD.z = 14;
 		
 			addChild(exploreSystem.debugShape);
@@ -142,18 +156,25 @@ package tests.islands
 			ticker.add(tick);
 			ticker.start();
 		
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			
 			
-			
+		}
+		
+		private function onKeyDown(e:KeyboardEvent):void 
+		{
+			if (e.keyCode === Keyboard.P) {
+				LogTracer.log(terrainLOD.getTotalStats());
+			}
 		}
 
 		
 		private function tick(time:Number):void 
 		{
 			game.engine.update(time);
+			var camera:Camera3D = _template3D.camera;
+	
 			
-
-
 			_template3D.camera.startTimer();
 
 			// adjust offseted waterlevels

@@ -50,9 +50,10 @@ package spawners.arena.water
 			super.init();
 		}
 		
-		public function addToScene(scene:Object3D):void {
+		public function addToScene(scene:Object3D,depth:int=-1):void {
 			// Reflective plane
-			scene.addChild(plane);			
+			if (depth < 0) scene.addChild(plane)
+			else scene.addChildAt(plane,depth);
 			
 		}
 

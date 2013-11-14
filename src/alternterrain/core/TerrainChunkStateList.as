@@ -14,6 +14,7 @@ package alternterrain.core
 
 			public function append( entity : TerrainChunkState ) : void  // enqueue
 			{
+					
 				//try {
 					entity.parent = this;
 					if( head )
@@ -33,6 +34,39 @@ package alternterrain.core
 				//catch (e:Error) {
 				//	throw new Error("WRW:"+e.message);
 				//}
+					validate("")
+			}
+			
+
+			
+			public function appendList( entity : TerrainChunkState, lastEntity:TerrainChunkState ) : void  // enqueue
+			{
+					for (var e:TerrainChunkState = entity; e != null; e = e.next) {
+						e.parent = this;
+					}
+				//try {
+					//entity.parent = this;
+					
+					if( head )
+					{
+				
+						tail.next = entity;
+						entity.prev = tail;
+						
+						tail = lastEntity;
+					}
+					else
+					{	
+						head  = entity;
+						tail = lastEntity;
+					}
+					//validate("");
+				//}
+				//catch (e:Error) {
+				//	throw new Error("WRW:"+e.message);
+				//}
+				
+				
 				
 			}
 			
@@ -40,7 +74,8 @@ package alternterrain.core
 			
 			public function validate(msg:String):void {
 				if (head != null && head.next == null && head != tail) throw new Error("WRONG: Head doesn't match tail when head.next is null" + msg + " : " + head + ", " + tail );
-				if (head && tail == null) throw new Error("WRONG2_headTail:"+msg + " : "+head + ", "+tail );
+				if (head && tail == null) throw new Error("WRONG2_headTail:" + msg + " : " + head + ", " + tail );
+				if (head && head ===tail && head.next) throw new Error("Both head tail is same but why got head.next??" );
 			}
 			
 			public function allocate(amt:int, numVertices:int, data32PerVertex:int, context:Context3D):void {
@@ -78,17 +113,35 @@ package alternterrain.core
 			
 			public function getAvailable():TerrainChunkState { // dequeue from head (FIFO queue)
 				var entity:TerrainChunkState = head;
-				if (entity == null) return null;
+
+				if (entity == null) {
+					
+					return null;
+				}
+
+				
 				head = head.next;
-				if ( tail == entity) tail = null;
-				if (entity.next) entity.next.prev =  null;
+				if (head) {
+					head.prev = null
+			
+				}
+				
+				if ( tail	=== entity) tail = null;
+				
+			
+				
+				//if (entity.next) entity.next.prev =  null;
+				entity.next = null;
 				entity.parent = null;
+			//	validate("");
+				
 				return entity;
 			}
 
 			public function remove( entity : TerrainChunkState ) : void
 			{
 				
+
 				
 				if ( head == entity)
 				{
@@ -112,6 +165,8 @@ package alternterrain.core
 				entity.next = null;
 				entity.prev = null;
 				
+		
+				//validate("")
 				// N.B. Don't set node.next and node.prev to null because that will break the list iteration if node is the current node in the iteration.
 			}
 

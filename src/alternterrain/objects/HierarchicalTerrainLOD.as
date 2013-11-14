@@ -54,6 +54,19 @@ package alternterrain.objects
 			}
 		}
 		
+		public function getTotalStats():String {
+			var newly_instantiated:int = 0;
+			var pool_retrieved:int = 0;
+			var cached_retrieved:int = 0;
+			for (var i:int = 0; i < NUM_LEVELS; i++) {
+				var t:TerrainLOD = lods[i];
+				newly_instantiated +=t.newly_instantiated ;
+				pool_retrieved += t.pool_retrieved;
+				cached_retrieved += t.cached_retrieved;
+			}
+			return newly_instantiated + ", " + pool_retrieved + ", " + cached_retrieved;
+		}
+		
 		
 		
 		

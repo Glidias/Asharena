@@ -21,6 +21,9 @@ package alternativa.a3d.controller {
 	import flash.geom.Vector3D;
 	import flash.ui.Keyboard;
 	import flash.utils.getTimer;
+	
+	import alternativa.engine3d.alternativa3d;
+	use namespace alternativa3d;
 
 	/**
 	 * Controller for <code>Object3D</code>. Allow to handle the object with a keyboard and mouse.
@@ -266,9 +269,11 @@ package alternativa.a3d.controller {
 	
 			
 			if (frameTime > 0.1) frameTime = 0.1;
-	
+			
+			
 			var moved:Boolean = false;
-	
+			if (object && object.transformChanged) updateObjectTransform();
+			
 			if (mouseLook) {
 				var dx:Number = eventSource.mouseX - mousePoint.x;
 				var dy:Number = eventSource.mouseY - mousePoint.y;

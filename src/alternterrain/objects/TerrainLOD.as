@@ -72,6 +72,10 @@ package alternterrain.objects
 		private var activeChunks:TerrainChunkStateList = new TerrainChunkStateList();
 		private var drawnChunks:int = 0;
 		private var lastDrawnChunks:int = 0;
+		public var newly_instantiated:int = 0;
+		public var pool_retrieved:int = 0;
+		public var cached_retrieved:int = 0;
+		
 		// lookup buffers
 		private var tilingUVBuffers:Vector.<VertexBuffer3D>;
 		alternativa3d static var indexBuffers:Vector.<IndexBuffer3D>;
@@ -719,6 +723,11 @@ package alternterrain.objects
 			//mySurface.numTriangles = PATCHES_ACROSS * 2;
 		}
 		
+		public function getTotalStats():String {
+			
+			return newly_instantiated + ", " + pool_retrieved + ", " + cached_retrieved;
+		}
+		
 		alternativa3d function addPage(page:QuadTreePage):void {
 			page.index = gridPagesVector.length;
 			gridPagesVector[page.index] = page;
@@ -847,6 +856,10 @@ package alternterrain.objects
 				
 		
 				drawnChunks = 0;
+				newly_instantiated = 0 ;
+				cached_retrieved = 0;
+				pool_retrieved = 0;
+				
 
 			
 				var i:int;
@@ -1030,173 +1043,15 @@ package alternterrain.objects
 					QuadChunkCornerData.BI = 0;
 				}
 				
-				// Append unused chunks back to pool for potential re-using
-				/*
-				i = drawnChunks - lastDrawnChunks;
-				var head:TerrainChunkState;
-				var h:TerrainChunkState = head = activeChunks.head;
-				var lastH:TerrainChunkState;
 				
-				// iterate through the last of all chunks which are no longer active
-				while (--i > -1) {
-					if (h == null) break;
-					lastH = h;
-					h = h.next;
+				///*
+				if (activeChunks.head) {
+					chunkPool.appendList( activeChunks.head, activeChunks.tail );
+					activeChunks.head = null;
+					activeChunks.tail = null;
 				}
+			//	*/
 				
-				if (lastH != null) {     // unhook from active chunks
-					if (lastH.next) { 
-						lastH.next.prev = null;
-						activeChunks.head = lastH.next;
-						if (activeChunks.head.next == null) activeChunks.tail = activeChunks.head;
-						lastH.next = null;
-						
-					}
-					else {
-						activeChunks.head = null;
-						activeChunks.tail = null;
-					}
-					
-					if (chunkPool.tail) {  // append to pooled chunks
-						head.prev = chunkPool.tail;
-						chunkPool.tail.next = head;
-					}
-					else {
-						chunkPool.head = head;
-						chunkPool.tail = head;
-					}
-				}		
-			
-				*/
-			
-				/*
-				i = lastDrawnChunks - drawnChunks;
-				var head:TerrainChunkState;
-				var h:TerrainChunkState = head = activeChunks.head;
-				var lastH:TerrainChunkState;
-				
-				// iterate through the list of chunks from head 
-				while (--i > -1) {
-					if (h == null) break;
-					lastH = h;
-					//h.parent = chunkPool;
-					h = h.next;
-				}
-				
-				if (lastH != null) {   
-					if (lastH.next) {   // truncate activeChunk list
-						
-						lastH.next.prev = null;
-						activeChunks.head = lastH.next;
-						if (activeChunks.head.next == null) {
-							 throw new Error("SHOULd not happen2222...");
-							//activeChunks.tail = activeChunks.head;
-						}
-						lastH.next = null;
-								
-						if (chunkPool.tail) {  // append to chunkPool
-							head.prev = chunkPool.tail;
-							chunkPool.tail.next = head;
-						}
-						else {
-							chunkPool.head = head;
-							chunkPool.tail = head;
-						}
-					}
-					else {
-						//throw new Error("SHOULD NOT HAPPEN!");
-						activeChunks.head = null;
-						activeChunks.tail = null;
-					}
-					
-					
-				}		
-				*/
-				//try {			
-				var h:TerrainChunkState = activeChunks.tail;
-
-				i = drawnChunks;
-				var lastH:TerrainChunkState = null;
-				while ( --i > -1) {  // iterate backwards through all drawn cunks
-					
-					if ( h.next != lastH) throw new Error("A:Should be doublly linked!" + ", "+h.next + ", "+lastH + (activeChunks.tail === h)); // debug assert
-					lastH = h;
-					h = h.prev;
-					if (h == null) break;
-					
-				}
-				
-
-				if (lastH != null && h != null) {  // that means still got excess chunks at head that can be pooled
-					h.next = null;    // append inactive state tail to pool
-					
-					var inactiveH:TerrainChunkState = activeChunks.head;  
-					
-					if (lastH != null) {   // unhook last active  chunks
-						activeChunks.head = lastH;  
-						if (lastH.prev) lastH.prev.next = null;
-						lastH.prev = null;
-						
-						activeChunks.validate("b::"+drawnChunks); // debug assert
-					}
-					else {  // debug assert
-						throw new Error("SHOULD NOT HAPPEN!");
-						activeChunks.head = null;
-						activeChunks.tail = null;
-						activeChunks.validate("c:"); 
-					}
-					
-					
-						if (inactiveH === activeChunks.head) throw new Error("SHOULD NOT BE"); // debug assert
-						
-						///*
-						while (inactiveH != null) {
-							
-							var nextH:TerrainChunkState = inactiveH.next;
-							chunkPool.append(inactiveH);
-							lastH = inactiveH;
-							inactiveH = nextH;
-						}
-						
-						//if (lastH != h) throw new Error("SHOULD NOT AAAAA!");
-						
-						//*/
-						
-						/*  // dunno why the below doesnt work
-						if (chunkPool.tail) {
-							chunkPool.tail.next = inactiveH;
-							inactiveH.prev = chunkPool.tail;
-							chunkPool.tail = inactiveH;
-						}
-						else {
-							chunkPool.head = inactiveH;
-							chunkPool.tail = h;
-						}
-						
-						
-						while (inactiveH != null) {
-							inactiveH.parent = chunkPool;
-							//lastH = inactiveH;
-							inactiveH = inactiveH.next;
-						}
-						*/
-						
-						
-					
-				}
-			
-				
-				chunkPool.validate("1"); // debug assert
-				activeChunks.validate("2"); // debug assert
-				
-				
-				//}
-					//catch (e:Error) {
-					//	throw new Error("NULL REF");
-					//}
-				
-				
-				lastDrawnChunks = drawnChunks;	
 		}
 		
 
@@ -2170,6 +2025,7 @@ package alternterrain.objects
 					return true;
 				}
 				
+				
 				alternativa3d function flushPage(cd:QuadChunkCornerData):void   // returns all vertex buffer chunk states under page back to pool
 				{
 					const stackStart:int =  QuadChunkCornerData.BI;
@@ -2183,7 +2039,7 @@ package alternterrain.objects
 						var sq:QuadSquareChunk = cd.Square;
 						if (sq.state != null) {
 						
-							if (sq.state.parent != chunkPool) {
+							if (sq.state.parent != chunkPool) { // this case will not happena anymore, can depeciate
 								if (sq.state.parent) {
 									sq.state.parent.remove(sq.state);
 					
@@ -2223,7 +2079,10 @@ package alternterrain.objects
 					var id:int = cd.Parent != null ? indexSideLookup[((cd.Parent.Square.EnabledFlags & 0xF) | cornerMask[cd.ChildIndex])]  : 0;
 						state = s.state;   
 					if (state == null) {
+						pool_retrieved += chunkPool.head != null ? 1 : 0;  // tracking
+						newly_instantiated += chunkPool.head != null ? 0 : 1;  // tracking
 						 state =  chunkPool.getAvailable() || getNewChunkState(camera.context3D);
+						
 						 if (state.square != null)  state.square.state = null;  // this means that the square is from pool!
 						 state.square = s;
 						 s.state = state;
@@ -2231,8 +2090,10 @@ package alternterrain.objects
 						sampleHeights(_currentPage.requirements, _currentPage.heightMap, cd);
 						state.vertexBuffer.uploadFromVector(_vertexUpload, 0, NUM_VERTICES);
 					}
-					else if (state.parent == null) throw new Error("shoudl noooot beee!");  // debug assert
-					
+					else {
+						cached_retrieved += chunkPool.head != null ? 1 : 0; // tracking
+						//if (state.parent != chunkPool) throw new Error("SHULD NOT BE!");  
+					}
 					
 					/*
 					else if ( state.enabledFlags != s.EnabledFlags ) {  
@@ -2250,7 +2111,9 @@ package alternterrain.objects
 					mySurface.material.collectDraws( camera, mySurface, myGeometry, lights, lightsLength, useShadow);
 		
 					
-					if (state.parent) state.parent.remove(state);  // assumed state.parent can be either pooled or active chunks, doesn't matter...
+					if (state.parent) {
+						state.parent.remove(state);  //  state.parent will always be avialble for cached_retrieved case, since pooling mechanism works by always appending 
+					}
 					activeChunks.append(state);
 					
 					drawnChunks++;

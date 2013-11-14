@@ -14,6 +14,7 @@ package arena.systems.islands
 	import flash.display.Shape;
 	import flash.display3D.Context3D;
 	import flash.events.Event;
+	import flash.geom.Point;
 	import flash.geom.Vector3D;
 	import flash.system.Worker;
 	import flash.system.WorkerDomain;
@@ -64,6 +65,8 @@ package arena.systems.islands
 		private var lodDrawIndices:Vector.<Vector.<int>>;
 		private var sampleQuadTreePage:QuadTreePage;
 		private var previewMats:Vector.<FillMaterial>;
+		
+		public var startZonePosition:Point =  new Point(0,0);
 		
 		
 		
@@ -124,6 +127,8 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			clearTerrainLOD();
 			
 			setupPreviewMats();
+			
+			//terrainLOD.visible = false;
 		}
 		
 		private function setupDrawIndices():void 
@@ -138,7 +143,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 		
 		private var tileSize:Number;
 		private var sceneTransform:Object3D;
-		private static const PREVIEW_COLORS:Vector.<uint> = new <uint>[0xDDEEFF,0xFF0000, 0x00FF00, 0x0000FF];
+		private static const PREVIEW_COLORS:Vector.<uint> = new <uint>[0x44EEFF,0xFF0000, 0x00FF00, 0x0000FF];
 		
 		private function setupPreviewMats():void 
 		{
@@ -173,19 +178,23 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 		}
 
 		
-
 		
 		override public function update(time:Number):void {
+			var cy:Number;
+			var cx:Number;
+			var hd:Number;
+			var wd:Number;
 			// poll 2d position change to ask worker to check for zones and thus potentially visible islands
 			
 			if (autoFollowCam) {
 				position.x = camera._x;
 				position.y = camera._y;
 			//	position.z = camera.z;
-			
 			}
 			var x:Number = position.x - lastX;
 			var y:Number = position.y - lastY;
+			
+			
 			
 			if (x * x + y * y < _squaredDistUpdate ) return;
 			
@@ -201,58 +210,76 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 				channels.initIslandChannel.send(IslandChannels.ON_POSITION_CHANGE);
 				//LogTracer.log(x * zoneSizeDiv + ", " + y * zoneSizeDiv);
 			
-			
-
+	
+			// determine if camera position needs to be resetted and "startZonePosition" needs to be readjusted.
+			wd =  treeUtil.boundingSpace.width * tileSize * .5;
+			hd =  treeUtil.boundingSpace.height * tileSize * .5;
+			var hWrap:Boolean = Math.abs(camera._x) >= wd;
+			var vWrap:Boolean = Math.abs(camera._y) >= hd;
+			if (  hWrap || vWrap ) {
+				LogTracer.log("Resetting startZonePosition:"+(camera._x) + ", "+camera._y + [startZonePosition.x + ", "+startZonePosition.y]);
+				if (hWrap) {
+					startZonePosition.x += camera._x / wd;  // offset relatively
+					camera._x %= wd;
+					camera.transformChanged = true;
+				
+				
+				}
+				if (vWrap) {
+					startZonePosition.y += camera._y / hd;
+					camera._y %= hd;
+					camera.transformChanged = true;
+				}
+				
+			}
+		
 			// natively use rounded off camera position x/y to determine center position of 2x2 boundingSpaceGrid and thus it's TL location.
-			var wd:Number = treeUtil.boundingSpace.width * .5;
-			var hd:Number = treeUtil.boundingSpace.height * .5;
-			var tileMult:Number = 1 / 256;
-			var cx:Number = camera._x;
-			var cy:Number = -camera._y;
-			x = cx*tileMult + treeUtilOffsetX * wd;
-			y = cy*tileMult + treeUtilOffsetY * hd;
-			x = Math.round( x / wd );  // get top left
-			y = Math.round( y / hd );
+			wd = treeUtil.boundingSpace.width * .5;
+			hd = treeUtil.boundingSpace.height * .5;
+			var tileMult:Number = 1 / tileSize;
+	
+			cx =  (camera._x);
+			cy =  -(camera._y);
+			x = Math.floor(cx * tileMult);
+			y = Math.floor(cy * tileMult);
+			x = Math.round( x / wd ) + treeUtilOffsetX;  // get top left
+			y = Math.round( y / hd ) + treeUtilOffsetY;
 			x--;
 			y--;
+			
+			var lx:int = Math.floor( x +startZonePosition.x);
+			var ly:int = Math.floor( y +startZonePosition.y);
+			
 			var refPositionChanged:Boolean = false;
-			if (lastTreeX != x || lastTreeY != y) {
+			if (lastTreeX != lx || lastTreeY != ly) {
 			// If boundingSpaceGridCenter/TL location change, the camera position - boundingSpaceGrid TL location and that's it and readjust world item positions + camera to fit that. Can consider, at this stage, to remove off any items out of view. 
 			
 			// Now, with the relative camera positsion, call TerrainLODTreeUtil.update(). With any drawn items, update the list of QuadTreePages accordingly across all levels with the TL origin,  determining the zone positions of each quadTreePage to send to worker for processing.	
-				//treeUtilOffsetX = x;
-				//treeUtilOffsetY = y;
+			
 			
 				if (lastTreeX != int.MIN_VALUE && lastTreeY != int.MIN_VALUE) {
 					reshuffle(x, y);
 				}
-				lastTreeX = x;
-				lastTreeY = y;
+				lastTreeX = lx;
+				lastTreeY = ly;
+
 				
+				LogTracer.log("Update tree util reference:"+[lx,ly]);
 				
-				if (sceneTransform == null) { // terrain follow camera
-					terrainLOD.x = -(cx - x*wd*tileSize);
-					terrainLOD.y = (cy - y*hd*tileSize);
-				}
-				else {
-					camera.x =  cx  - x*wd* tileSize;
-					camera.y = cy  - y*hd* tileSize;
-				}
-				
-				
+			
+				terrainLOD.x =  x*wd*tileSize;
+				terrainLOD.y =  -y*hd*tileSize;
+	
 				refPositionChanged = true;
-				
-				
-				LogTracer.log("Update tree util reference:");
+
 			}
 			
-			// get actual world coordinates of rounded off TL location for treeUtil
-				x *= wd;
-				y *= hd;
-				if ( treeUtil.update(cx * tileMult - x, cy * tileMult - y, refPositionChanged) ) { // (for now, assume camera isn't re-translated...)
+			// get actual tile coordinates of rounded off TL location for treeUtil
+
+				if ( treeUtil.update((camera._x - terrainLOD.x) *tileMult, -(camera._y - terrainLOD.y)*tileMult, refPositionChanged) ) { // (for now, assume camera isn't re-translated...)
 					
 	
-					LogTracer.log("Tree update:" + (lastTreeX) + ", " + (lastTreeY) + ", " + [camera._x * tileMult - x, camera._y * tileMult - y] + " ::: " + treeUtil.levelNumSquares);
+				//	LogTracer.log("Tree update:" );
 					
 					resolveLODTreeState();
 				}
@@ -276,10 +303,10 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			var len:int = treeUtil.levelNumSquares.length;
 			var count:int = 0;
 			
-			//debugShape.graphics.clear();
-			//debugShape.graphics.beginFill(0xFF0000, .5);
-			//debugShape.graphics.lineStyle(1, 0);
-			
+			debugShape.graphics.clear();
+			debugShape.graphics.beginFill(0xFF0000, .5);
+			debugShape.graphics.lineStyle(1, 0);
+
 			
 			
 			var size:int = treeUtil.smallestSquareSize * tileSize;
@@ -346,7 +373,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 					
 					
 	
-					//debugShape.graphics.drawRect(xi*(8<<level), yi*(8<<level), (8<<level),(8<<level));
+					debugShape.graphics.drawRect(xi*(8<<level), yi*(8<<level), (8<<level),(8<<level));
 					
 				}
 				
@@ -363,6 +390,8 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 		private function reshuffle(x:int, y:int):void 
 		{
 			LogTracer.log("Reshuffling!");
+			return;
+			
 			var toShuffle:Vector.<QuadTreePage> = loadedPages.concat();
 			var len:int = loadedPages.length;
 			for (var i:int = 0; i < len; i++) {
