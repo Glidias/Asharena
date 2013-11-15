@@ -16,6 +16,8 @@ package eu.nekobit.alternativa3d.materials
 	import alternativa.engine3d.resources.Geometry;
 	import eu.nekobit.alternativa3d.resources.RawTextureResource;
 	import alternativa.engine3d.resources.TextureResource;
+	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	
 	import avmplus.getQualifiedClassName;
 	
@@ -171,6 +173,9 @@ package eu.nekobit.alternativa3d.materials
 			this.normalMap2 = normalMap2;
 		}
 		
+		private var _followCamera:Boolean = false;
+		private var lastCameraPos:Rectangle;
+		
 		/*---------------------------
 		Public methods
 		---------------------------*/	
@@ -188,6 +193,43 @@ package eu.nekobit.alternativa3d.materials
 			if(object == null || camera == null || stage3D == null)
 			{
 				return;
+			}
+			
+			var ox:Number = 0;
+			var oy:Number = 0;
+			
+			
+			if (_followCamera ) {
+				if  (camera.transformChanged) {
+					object._x = camera._x;
+					object._y = camera._y;
+					object.transformChanged = true;
+				}
+				if (lastCameraPos != null) {
+					/*
+					ox = (lastCameraPos.x- camera._x) / lastCameraPos.width;
+					oy = (lastCameraPos.y - camera._y) / lastCameraPos.width;
+			
+					ox %= lastCameraPos.height;
+					oy %= lastCameraPos.height;
+					lastCameraPos.x = camera._x;
+					lastCameraPos.y = camera._y;
+					
+					*/
+					// 1048576 - sizeOfPlane
+					// 1024  -   uvScale (ie. number of repeats)
+					var value:Number = 1/1048576;
+					ox = camera._x * value;
+					oy = camera._y * value;
+					
+					
+				//	ox %= lastCameraPos.height;
+				//	oy %= lastCameraPos.height;
+				}
+				else {
+					lastCameraPos = new Rectangle(camera._x, camera._y, 1024, 1/128);
+					
+				}
 			}
 			
 			/*-----------------------
@@ -281,16 +323,30 @@ package eu.nekobit.alternativa3d.materials
 			/*-----------------------
 			Handle texture animation
 			-----------------------*/
+
+			
 			
 			// Calculate UV offset for bump maps
 			var timeNow:uint = getTimer();
 			var timeDelta:Number = (timeNow - lastTime) / 1000;
 			
-			currOffset1.x += UVScrollSpeedX1 * timeDelta;
-			currOffset1.y += UVScrollSpeedY1 * timeDelta;
-			
-			currOffset2.x += UVScrollSpeedX2 * timeDelta;
-			currOffset2.y += UVScrollSpeedY2 * timeDelta;
+			if (!followCamera) {  // temp for now, followCamera case NOT using scrolling water UVs for now...
+				currOffset1.x += UVScrollSpeedX1 * timeDelta;
+				currOffset1.y += UVScrollSpeedY1 * timeDelta;
+				currOffset1.x += ox;
+				currOffset1.y += oy;
+
+				currOffset2.x += UVScrollSpeedX2 * timeDelta;
+				currOffset2.y += UVScrollSpeedY2 * timeDelta;
+				currOffset2.x += ox;
+				currOffset2.y += oy;
+			}
+			else {  // TODO: try to fix this followcamera operation to match based off camera position
+				currOffset1.x = ox;
+				currOffset1.y = oy;
+				currOffset2.x = ox;
+				currOffset2.y = oy;
+			}
 			
 			// Offset 1
 			if(Math.abs(currOffset1.x) > UVScaleFactor1)
@@ -303,6 +359,8 @@ package eu.nekobit.alternativa3d.materials
 				currOffset2.x = 0;			
 			if(Math.abs(currOffset2.y) > UVScaleFactor2)
 				currOffset2.y = 0;		
+				
+	
 			
 			lastTime = timeNow;			
 		}
@@ -866,6 +924,16 @@ package eu.nekobit.alternativa3d.materials
 				
 				"mov o0, t1"
 			], "fragmentProcedure");
+			
+			public function get followCamera():Boolean 
+			{
+				return _followCamera;
+			}
+			
+			public function set followCamera(value:Boolean):void 
+			{
+				_followCamera = value;
+			}
 	}
 }
 

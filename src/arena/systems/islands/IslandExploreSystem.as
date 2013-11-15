@@ -52,8 +52,6 @@ package arena.systems.islands
 		public var zoneVisDistance:Number = .25;
 		
 		private var treeUtil:TerrainLODTreeUtil = new TerrainLODTreeUtil();
-		private var treeUtilOffsetX:int = 0;
-		private var treeUtilOffsetY:int = 0;
 		private var lastTreeX:int = int.MIN_VALUE;
 		private var lastTreeY:int = int.MIN_VALUE;
 		
@@ -71,6 +69,16 @@ package arena.systems.islands
 		
 		
 		/*
+		 
+		SPECS:
+		 * HierTreeRegion: (16 km by 16km)
+			 Hiertree travel threshold update distance: 8km (half of above)
+			Bucket: (8km by 8km)
+			  Bucket travel threshold update distance: 4km (half of above)
+		 * Zone: (16km by 16km)
+			  Sample: (250m by 250m  to  2km by 2km (or higher)..at varying LODs.)
+		 * Tile (2m by 2m or higher ..at varying LODs)
+
 		 1) terrainlodTreeUtil.update() -> creates hier grid array of quadTreePages -> list of drawn indices + levels
 1a) For always available case, create from list of drawn indices as new QuadTreePage(s) into hier grid array (if not yet inside) and into HierTerrainLOD array and set lengths accoridngly. (avakilble case)
 
@@ -98,9 +106,9 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 		 * @param   camera		Camera reference to determine what LOD to use.
 		 * @param	position	Reference position to determine what zones and islands regions gets spotted while traveling
 		 */
-		public function IslandExploreSystem(camera:Camera3D, position:Pos=null, zoneSize:Number = 2048, tileSize:Number=256, terrainLOD:HierarchicalTerrainLOD=null, sceneTransform:Object3D=null) 
+		public function IslandExploreSystem(camera:Camera3D, position:Pos=null, zoneSize:Number = 2048, tileSize:Number=256, terrainLOD:HierarchicalTerrainLOD=null) 
 		{
-			this.sceneTransform = sceneTransform;
+			//this.waterPlane = waterPlane || (new Object3D());
 			QuadSquareChunk.registerClassAliases();
 			
 			this.tileSize = tileSize;
@@ -142,7 +150,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 
 		
 		private var tileSize:Number;
-		private var sceneTransform:Object3D;
+		//private var waterPlane:Object3D;
 		private static const PREVIEW_COLORS:Vector.<uint> = new <uint>[0x44EEFF,0xFF0000, 0x00FF00, 0x0000FF];
 		
 		private function setupPreviewMats():void 
@@ -193,45 +201,55 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			}
 			var x:Number = position.x - lastX;
 			var y:Number = position.y - lastY;
-			
-			
+	
 			
 			if (x * x + y * y < _squaredDistUpdate ) return;
 			
-			// distance threshold met to request for world update
-				x = position.x;
-				y = position.y;
-				lastX = x;
-				lastY = y;
-				//throw new Error(y*zoneSizeDiv);
-				channels.mainParamsArray.position = 0;
-				channels.mainParamsArray.writeFloat(x*zoneSizeDiv);
-				channels.mainParamsArray.writeFloat(y*zoneSizeDiv);
-				channels.initIslandChannel.send(IslandChannels.ON_POSITION_CHANGE);
-				//LogTracer.log(x * zoneSizeDiv + ", " + y * zoneSizeDiv);
 			
-	
 			// determine if camera position needs to be resetted and "startZonePosition" needs to be readjusted.
-			wd =  treeUtil.boundingSpace.width * tileSize * .5;
-			hd =  treeUtil.boundingSpace.height * tileSize * .5;
+			wd =  treeUtil.boundingSpace.width * tileSize * .5; 
+			hd =  treeUtil.boundingSpace.height * tileSize *.5; 
+
 			var hWrap:Boolean = Math.abs(camera._x) >= wd;
 			var vWrap:Boolean = Math.abs(camera._y) >= hd;
 			if (  hWrap || vWrap ) {
-				LogTracer.log("Resetting startZonePosition:"+(camera._x) + ", "+camera._y + [startZonePosition.x + ", "+startZonePosition.y]);
+				
 				if (hWrap) {
-					startZonePosition.x += camera._x / wd;  // offset relatively
+					if (Math.floor(camera._x / wd) >= 2) throw new Error("SHOU>LD NOT ECCEED WD");
+					startZonePosition.x += Math.floor(camera._x / wd);  // offset relatively
 					camera._x %= wd;
 					camera.transformChanged = true;
 				
 				
 				}
 				if (vWrap) {
-					startZonePosition.y += camera._y / hd;
+						if (Math.floor(camera._y / hd) >= 2) throw new Error("SHOU>LD NOT ECCEED  HD");
+					startZonePosition.y -= Math.floor(camera._y / hd);
 					camera._y %= hd;
 					camera.transformChanged = true;
 				}
-				
+				LogTracer.log("Resetting startZonePosition bucket offsets:"+(startZonePosition.x*2) + ", "+(startZonePosition.y*2));
 			}
+			
+			
+			// Send workd update
+				// distance threshold met to request for world update
+					if (autoFollowCam) {
+					position.x = camera._x;
+					position.y = camera._y;
+				//	position.z = camera.z;
+				}
+				x = position.x;
+				y = position.y;
+				lastX = x;
+				lastY = y;
+				//throw new Error(y*zoneSizeDiv);
+				channels.mainParamsArray.position = 0;
+				channels.mainParamsArray.writeFloat(x*zoneSizeDiv + startZonePosition.x*2);
+				channels.mainParamsArray.writeFloat(y*zoneSizeDiv + startZonePosition.y*2);
+				channels.initIslandChannel.send(IslandChannels.ON_POSITION_CHANGE);
+				//LogTracer.log("Sending center zone request:"+(x * zoneSizeDiv+startZonePosition.x) + ", " + (y * zoneSizeDiv+startZonePosition.y));
+			
 		
 			// natively use rounded off camera position x/y to determine center position of 2x2 boundingSpaceGrid and thus it's TL location.
 			wd = treeUtil.boundingSpace.width * .5;
@@ -240,15 +258,15 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 	
 			cx =  (camera._x);
 			cy =  -(camera._y);
-			x = Math.floor(cx * tileMult);
-			y = Math.floor(cy * tileMult);
-			x = Math.round( x / wd ) + treeUtilOffsetX;  // get top left
-			y = Math.round( y / hd ) + treeUtilOffsetY;
-			x--;
-			y--;
+			x = Math.round(cx * tileMult);
+			y = Math.round(cy * tileMult);
+			x = Math.round( x / wd );  // get top left
+			y = Math.round( y / hd );
 			
-			var lx:int = Math.floor( x +startZonePosition.x);
-			var ly:int = Math.floor( y +startZonePosition.y);
+			
+			var lx:int = Math.floor( x )  +startZonePosition.x*2;
+			var ly:int = Math.floor( y ) + startZonePosition.y * 2;
+			
 			
 			var refPositionChanged:Boolean = false;
 			if (lastTreeX != lx || lastTreeY != ly) {
@@ -256,23 +274,27 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			
 			// Now, with the relative camera positsion, call TerrainLODTreeUtil.update(). With any drawn items, update the list of QuadTreePages accordingly across all levels with the TL origin,  determining the zone positions of each quadTreePage to send to worker for processing.	
 			
-			
+				x--;
+				y--;
 				if (lastTreeX != int.MIN_VALUE && lastTreeY != int.MIN_VALUE) {
 					reshuffle(x, y);
 				}
 				lastTreeX = lx;
 				lastTreeY = ly;
 
+				LogTracer.log("Tree update:" + [lx, ly]);
 				
-				LogTracer.log("Update tree util reference:"+[lx,ly]);
 				
 			
 				terrainLOD.x =  x*wd*tileSize;
-				terrainLOD.y =  -y*hd*tileSize;
+				terrainLOD.y =  -y * hd * tileSize;
+				//waterPlane.x = terrainLOD._x + wd*tileSize;
+				//waterPlane.y = terrainLOD._y - hd*tileSize;
 	
 				refPositionChanged = true;
 
 			}
+			else if (hWrap || vWrap) LogTracer.log(" !!! SHOULD  NOT not be! Should reshuffle tree due to change!:"+[lastTreeX,lastTreeY,lx,ly]);
 			
 			// get actual tile coordinates of rounded off TL location for treeUtil
 
@@ -379,7 +401,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 				
 				//throw new Error(data);
 				// debugging
-				lod.visible = lod.gridPagesVector.length != 0;  // this isn't needed for none (create) case.
+				//lod.visible = lod.gridPagesVector.length != 0;  // this isn't needed for none (create) case.
 				//lod.debug = true;
 				//debugCount+=lod.gridPagesVector.length;
 				//break;

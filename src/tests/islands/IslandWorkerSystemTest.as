@@ -42,14 +42,16 @@ package tests.islands
 	import flash.system.Worker;
 	
 	/**
-	 * Generate out island Meshes procedurally with/without AS3 Workers while traveling around. Using AS3 Workers allows islands to be generated seamelssly WITHOUT having to pause-load/freeze the game performance.
+	 * 1) Infinite traveling coordinates (to avoid "farlands problem") by resetting position in relation to HierTreeRegion size.
+	 * 2) 4 Level of TerrainLOD arranged hierahically at 4 levels of LOD scales.
+	 * 3) Generate out terrain procedurally with/without AS3 Workers while traveling around. Using AS3 Workers allows islands and their terrain to be generated seamelssly WITHOUT having to pause-load/freeze the game performance. Sample terrain at varying LOD scales to generate on the fly.
 	 * @author Glidias
 	 */
 	[SWF(width='512',height='512',backgroundColor='#ffffff',frameRate='60')]
 	public class IslandWorkerSystemTest extends MovieClip 
 	{
 		static public const DISTANCE:Number = 8192;// * .25;
-		static public const FAR_CLIP_DIST:Number = 512*5;
+		static public const FAR_CLIP_DIST:Number = 512*8;
 		static public const ZONE_SIZE:Number = DISTANCE * 256;
 		static private const VIS_DIST:Number = .25;
 		private var _template3D:MainView3D;
@@ -103,7 +105,7 @@ package tests.islands
 		{
 			removeChild(_preloader);			
 			_template3D.visible = true;
-			
+			_water.waterMaterial.followCamera = true;
 		
 			int.MAX_VALUE
 		
@@ -144,12 +146,12 @@ package tests.islands
 			
 			_template3D.scene.addChild(terrainLOD);
 			_water.addToScene(_template3D.scene, 0);
-			//	_skybox.addToScene(terrainLOD);
+				_skybox.addToScene(terrainLOD);
 				
 				
 			terrainLOD.z = 14;
 		
-			addChild(exploreSystem.debugShape);
+		//	addChild(exploreSystem.debugShape);
 
 			
 			ticker = new FrameTickProvider(stage);
@@ -166,6 +168,10 @@ package tests.islands
 			if (e.keyCode === Keyboard.P) {
 				LogTracer.log(terrainLOD.getTotalStats());
 			}
+			else if (e.keyCode === Keyboard.L) {
+				spectatorPerson.maxPitch = -Math.PI*.5;
+				spectatorPerson.minPitch = -Math.PI*.5;
+			}
 		}
 
 		
@@ -173,7 +179,8 @@ package tests.islands
 		{
 			game.engine.update(time);
 			var camera:Camera3D = _template3D.camera;
-	
+			
+		
 			
 			_template3D.camera.startTimer();
 

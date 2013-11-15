@@ -31,17 +31,21 @@ package spawners.arena.water
 
 			var normalRes:BitmapTextureResource = new BitmapTextureResource(new assetClasse.NORMAL().bitmapData);
 			waterMaterial = new WaterMaterial(normalRes, normalRes);
-			waterMaterial.forceRenderPriority =  Renderer.SKY + 1;
-			var scaler:Number = 1;
+			waterMaterial.forceRenderPriority =  Renderer.SKY ;
+		
 			var uvScaler:Number = 16;
 	
 			
-			// Reflective plane
+			// distanceTravelled / (size of plane / numberOfRepeats)
+			
 
-			plane = new Plane(2048 * 256, 2048 * 256, 64, 64, false, false, null, waterMaterial);
+			
+			// Reflective plane
+			var scaler:Number = 2;
+			plane = new Plane(2048 * 256 * scaler, 2048 * 256* scaler, 64, 64, false, false, null, waterMaterial);
 			var uvs:Vector.<Number>= plane.geometry.getAttributeValues(VertexAttributes.TEXCOORDS[0]);
 			for (var i:int = 0; i < uvs.length; i++) {
-				uvs[i] *= uvScaler * 32;
+				uvs[i] *= uvScaler * 32* scaler;
 			}
 			 plane.geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0],uvs);	
 			
