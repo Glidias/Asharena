@@ -294,9 +294,10 @@ package examples
 			frontres.upload(stage3D.context3D);
 			backres.upload(stage3D.context3D);		
 			camera.nearClipping = 1;
+			camera.farClipping = 524288 * 2;
 			var fogMat:FillMaterial = new FillMaterial(settings.viewBackgroundColor);
 			//sb = new SkyBox(camera.farClipping * 10, fogMat, fogMat, fogMat, fogMat, fogMat, fogMat, 0.005);  //left,right,front,back,bottom,top
-			sb = new SkyBox(camera.farClipping*10, left,right,front,back,bottom,top,0.005);
+			sb = new SkyBox(8192*256*2, left,right,front,back,bottom,top,0.005);
 			sb.geometry.upload(stage3D.context3D);
 			scene.addChild(sb);
 			
@@ -308,7 +309,9 @@ package examples
 			// Reflective plane
 			var normalRes:BitmapTextureResource = new BitmapTextureResource(new Normal1().bitmapData);
 			waterMaterial = new WaterMaterial(normalRes, normalRes);
-			plane = new Plane(2048 * 256, 2048 * 256, 64, 64, false, false, null, waterMaterial);
+		var scaler:Number = 4;
+			waterMaterial.setFollowCamera(  waterMaterial.getUVOffsetScaling(2048 * 256*scaler, uvScaler * 32) );
+			plane = new Plane(2048 * 256*scaler, 2048 * 256*scaler, 64, 64, false, false, null, waterMaterial);
 			var uvs:Vector.<Number>= plane.geometry.getAttributeValues(VertexAttributes.TEXCOORDS[0]);
 			for (var i:int = 0; i < uvs.length; i++) {
 				uvs[i] *= uvScaler * 32;

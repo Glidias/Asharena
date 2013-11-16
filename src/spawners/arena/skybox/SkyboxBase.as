@@ -1,10 +1,13 @@
 package spawners.arena.skybox 
 {
+	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.objects.SkyBox;
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import flash.display.Scene;
 	import util.SpawnerBundle;
+	import alternativa.engine3d.alternativa3d;
+	use namespace alternativa3d;
 	/**
 	 * ...
 	 * @author Glenn Ko
@@ -58,6 +61,15 @@ package spawners.arena.skybox
 		public function addToScene(scene:Object, distance:Number = 0):void {
 			
 			scene.addChild(skybox);
+		}
+		
+		public function update(camera:Object3D):void 
+		{
+			if (camera.transformChanged) {
+				skybox._x = camera._x;
+				skybox._y = camera._y;
+				skybox.transformChanged = true;
+			}
 		}
 		
 		

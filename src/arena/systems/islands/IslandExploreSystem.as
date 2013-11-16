@@ -11,6 +11,7 @@ package arena.systems.islands
 	import ash.core.Engine;
 	import ash.core.System;
 	import components.Pos;
+	import eu.nekobit.alternativa3d.materials.WaterMaterial;
 	import flash.display.Shape;
 	import flash.display3D.Context3D;
 	import flash.events.Event;
@@ -106,8 +107,9 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 		 * @param   camera		Camera reference to determine what LOD to use.
 		 * @param	position	Reference position to determine what zones and islands regions gets spotted while traveling
 		 */
-		public function IslandExploreSystem(camera:Camera3D, position:Pos=null, zoneSize:Number = 2048, tileSize:Number=256, terrainLOD:HierarchicalTerrainLOD=null) 
+		public function IslandExploreSystem(camera:Camera3D, position:Pos=null, zoneSize:Number = 2048, tileSize:Number=256, terrainLOD:HierarchicalTerrainLOD=null, waterMaterial:WaterMaterial=null) 
 		{
+			this.waterMaterial = waterMaterial;
 			//this.waterPlane = waterPlane || (new Object3D());
 			QuadSquareChunk.registerClassAliases();
 			
@@ -151,6 +153,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 		
 		private var tileSize:Number;
 		//private var waterPlane:Object3D;
+		private var waterMaterial:WaterMaterial;
 		private static const PREVIEW_COLORS:Vector.<uint> = new <uint>[0x44EEFF,0xFF0000, 0x00FF00, 0x0000FF];
 		
 		private function setupPreviewMats():void 
@@ -213,6 +216,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			var hWrap:Boolean = Math.abs(camera._x) >= wd;
 			var vWrap:Boolean = Math.abs(camera._y) >= hd;
 			if (  hWrap || vWrap ) {
+	
 				
 				if (hWrap) {
 					if (Math.floor(camera._x / wd) >= 2) throw new Error("SHOU>LD NOT ECCEED WD");
@@ -228,6 +232,12 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 					camera._y %= hd;
 					camera.transformChanged = true;
 				}
+							
+				if (waterMaterial != null) {
+					waterMaterial.syncFollowCamera(camera);
+				
+				}
+
 				LogTracer.log("Resetting startZonePosition bucket offsets:"+(startZonePosition.x*2) + ", "+(startZonePosition.y*2));
 			}
 			

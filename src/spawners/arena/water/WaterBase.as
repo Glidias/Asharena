@@ -18,8 +18,10 @@ package spawners.arena.water
 		public var waterMaterial:WaterMaterial;
 		public var plane:Plane;
 		
-
-		
+		public static var SCALER:Number = 4;
+		public static var SIZE:Number = 2048 * 256 * SCALER;
+		public static var SEGMENTS:int = 64;
+		public static var UV_SCALER:Number = 16 * 32 * SCALER;
 		public function WaterBase(assetClasse:Class) 
 		{
 			this.assetClasse = assetClasse;
@@ -35,18 +37,16 @@ package spawners.arena.water
 			waterMaterial = new WaterMaterial(normalRes, normalRes);
 			waterMaterial.forceRenderPriority =  Renderer.SKY ;
 		
-			var uvScaler:Number = 16;
-	
 			
 			// distanceTravelled / (size of plane / numberOfRepeats)
 			
 			
 			
 			// Reflective plane
-			var scaler:Number = 2;
-			var size:Number = 2048 * 256 * scaler;
-			var uvScale:Number = uvScaler * 32 * scaler;
-			plane = new Plane(size, size, 64, 64, false, false, null, waterMaterial);
+			var scaler:Number = SCALER;
+			var size:Number = SIZE;
+			var uvScale:Number = UV_SCALER;
+			plane = new Plane(size, size, SEGMENTS, SEGMENTS, false, false, null, waterMaterial);
 			var uvs:Vector.<Number>= plane.geometry.getAttributeValues(VertexAttributes.TEXCOORDS[0]);
 			for (var i:int = 0; i < uvs.length; i++) {
 				uvs[i] *= uvScale;

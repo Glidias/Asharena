@@ -158,11 +158,29 @@ package eu.nekobit.alternativa3d.materials
 		private var currOffset1:Vector3D = new Vector3D();
 		private var currOffset2:Vector3D = new Vector3D();
 		
+		private var originU:Number = 0;
+		private var originV:Number = 0;
+		private var originCameraX:Number = 0;
+		private var originCameraY:Number = 0;
+		public function syncFollowCamera(camera:Object3D):void {
+			originU = offsetU;
+			originV = offsetV;
+			originCameraX = camera._x;
+			originCameraY = camera._y;
+		}
 		private var offsetU:Number = 0;
 		private var offsetV:Number = 0;
 		private var uOffsetScaling:Number = 1;
 		private var vOffsetScaling:Number=1;
-		private var followCamera:Boolean = false;
+		public var followCamera:Boolean = false;
+		public function resetOffsetUVs():void {
+			offsetU = 0;
+			offsetV = 0;
+		}
+		
+		public function getUVOffsetScaling(size:Number, uvOffsetScaling:Number):Number {
+			return (1 / size) * uvOffsetScaling;
+		}
 		
 		/**
 		 * Sets up water plane to follow camera and offset UVs to simulate camera movement.
@@ -171,6 +189,8 @@ package eu.nekobit.alternativa3d.materials
 		 * @param	vOffsetScaling	 Formula:   1/heightOfPlaneInWorldCoords * planeVCoordinateScale
 		 */
 		public function setFollowCamera(uOffsetScaling:Number, vOffsetScaling:Number = 0):void {
+			offsetU = 0;
+			offsetV = 0;
 			this.vOffsetScaling = vOffsetScaling != 0 ? vOffsetScaling : uOffsetScaling;
 			this.uOffsetScaling = uOffsetScaling;
 			followCamera = true;
@@ -225,8 +245,8 @@ package eu.nekobit.alternativa3d.materials
 					object._y = camera._y;
 					object.transformChanged = true;
 				}
-				offsetU = camera._x * uOffsetScaling;
-				offsetV = -camera._y * vOffsetScaling;
+				offsetU = (camera._x-originCameraX) * uOffsetScaling;
+				offsetV = (camera._y-originCameraY) * -vOffsetScaling;
 			}
 			
 			/*-----------------------
@@ -596,7 +616,7 @@ package eu.nekobit.alternativa3d.materials
 			// Set bump offset (#1, #2)
 			drawUnit.setVertexConstantsFromNumbers(program.cBumpOffset12, currOffset1.x, currOffset1.y, currOffset2.x, currOffset2.y);
 			// Set bump scale factors (#1, #2, #3, #4)
-			drawUnit.setVertexConstantsFromNumbers(program.cBumpScaleFactors1234, UVScaleFactor1, UVScaleFactor2, offsetU, offsetV);
+			drawUnit.setVertexConstantsFromNumbers(program.cBumpScaleFactors1234, UVScaleFactor1, UVScaleFactor2, originU+offsetU, originV+offsetV);
 			
 			// Set fragment constants
 			

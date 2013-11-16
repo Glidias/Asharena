@@ -91,9 +91,9 @@ package tests.islands
 			SpawnerBundle.context3D = _template3D.stage3D.context3D;
 			
 				_template3D.camera.farClipping = FAR_CLIP_DIST*256;
-			_skybox = new SkyboxBase(ClearBlueSkyAssets, _template3D.camera.farClipping*10);
+		
 			_water = new WaterBase(NormalWaterAssets);
-			
+			_skybox = new SkyboxBase(ClearBlueSkyAssets, WaterBase.SIZE);
 			
 			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[_skybox, _water, new SpawnerBundleA([IslandGenWorker])]);
 			bundleLoader.progressSignal.add( _preloader.setProgress );
@@ -106,6 +106,7 @@ package tests.islands
 			removeChild(_preloader);			
 			_template3D.visible = true;
 			_water.setupFollowCamera();
+		
 		
 			int.MAX_VALUE
 		
@@ -140,13 +141,13 @@ package tests.islands
 			
 			terrainLOD  = new HierarchicalTerrainLOD();
 			terrainLOD.setupPages(SpawnerBundle.context3D, 128, 0);
-		var exploreSystem:IslandExploreSystem = new IslandExploreSystem(_template3D.camera, null, dist, 256, terrainLOD);
+		var exploreSystem:IslandExploreSystem = new IslandExploreSystem(_template3D.camera, null, dist, 256, terrainLOD, _water.waterMaterial);
 		exploreSystem.zoneVisDistance = VIS_DIST;
 			game.engine.addSystem(exploreSystem, SystemPriorities.preRender);
 			
 			_template3D.scene.addChild(terrainLOD);
-			_water.addToScene(_template3D.scene, 0);
-				_skybox.addToScene(terrainLOD);
+			_water.addToScene(_template3D.scene);
+				_skybox.addToScene(_template3D.scene);
 				
 				
 			terrainLOD.z = 14;
@@ -180,12 +181,12 @@ package tests.islands
 			game.engine.update(time);
 			var camera:Camera3D = _template3D.camera;
 			
-		
+				_skybox.update(_template3D.camera);
 			
 			_template3D.camera.startTimer();
 
 			// adjust offseted waterlevels
-
+	
 			_water.waterMaterial.update(_template3D.stage3D, _template3D.camera, _water.plane, hideFromReflection);
 			_template3D.camera.stopTimer();
 
