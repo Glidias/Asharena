@@ -158,6 +158,28 @@ package eu.nekobit.alternativa3d.materials
 		private var currOffset1:Vector3D = new Vector3D();
 		private var currOffset2:Vector3D = new Vector3D();
 		
+		private var offsetU:Number = 0;
+		private var offsetV:Number = 0;
+		private var uOffsetScaling:Number = 1;
+		private var vOffsetScaling:Number=1;
+		private var followCamera:Boolean = false;
+		
+		/**
+		 * Sets up water plane to follow camera and offset UVs to simulate camera movement.
+		 * This allows for an infinitely scrolling water plane, good for oceans.
+		 * @param	uOffsetScaling	 Formula:   1/widthOfPlaneInWorldCoords * planeUCoordinateScale
+		 * @param	vOffsetScaling	 Formula:   1/heightOfPlaneInWorldCoords * planeVCoordinateScale
+		 */
+		public function setFollowCamera(uOffsetScaling:Number, vOffsetScaling:Number = 0):void {
+			this.vOffsetScaling = vOffsetScaling != 0 ? vOffsetScaling : uOffsetScaling;
+			this.uOffsetScaling = uOffsetScaling;
+			followCamera = true;
+		}
+		public function unsetFollowCamera():void {
+			followCamera = false;
+		}
+
+		
 		/**
 		 * Creates a new instance of thismaterial. One instance of this material can be used to generate water only on one object.
 		 * The target object should be panar and have a surface normal (in global space) (0,0,1) for all vertices. Call update methods to update material state.
@@ -173,8 +195,7 @@ package eu.nekobit.alternativa3d.materials
 			this.normalMap2 = normalMap2;
 		}
 		
-		private var _followCamera:Boolean = false;
-		private var lastCameraPos:Rectangle;
+
 		
 		/*---------------------------
 		Public methods
@@ -195,41 +216,17 @@ package eu.nekobit.alternativa3d.materials
 				return;
 			}
 			
-			var ox:Number = 0;
-			var oy:Number = 0;
 			
 			
-			if (_followCamera ) {
-				if  (camera.transformChanged) {
+			
+			if (followCamera  ) {
+				if (object._x != camera._x || object._y != camera._y) {
 					object._x = camera._x;
 					object._y = camera._y;
 					object.transformChanged = true;
 				}
-				if (lastCameraPos != null) {
-					/*
-					ox = (lastCameraPos.x- camera._x) / lastCameraPos.width;
-					oy = (lastCameraPos.y - camera._y) / lastCameraPos.width;
-			
-					ox %= lastCameraPos.height;
-					oy %= lastCameraPos.height;
-					lastCameraPos.x = camera._x;
-					lastCameraPos.y = camera._y;
-					
-					*/
-					// 1048576 - sizeOfPlane
-					// 1024  -   uvScale (ie. number of repeats)
-					var value:Number = 1/1048576;
-					ox = camera._x * value;
-					oy = camera._y * value;
-					
-					
-				//	ox %= lastCameraPos.height;
-				//	oy %= lastCameraPos.height;
-				}
-				else {
-					lastCameraPos = new Rectangle(camera._x, camera._y, 1024, 1/128);
-					
-				}
+				offsetU = camera._x * uOffsetScaling;
+				offsetV = -camera._y * vOffsetScaling;
 			}
 			
 			/*-----------------------
@@ -330,23 +327,15 @@ package eu.nekobit.alternativa3d.materials
 			var timeNow:uint = getTimer();
 			var timeDelta:Number = (timeNow - lastTime) / 1000;
 			
-			if (!followCamera) {  // temp for now, followCamera case NOT using scrolling water UVs for now...
-				currOffset1.x += UVScrollSpeedX1 * timeDelta;
-				currOffset1.y += UVScrollSpeedY1 * timeDelta;
-				currOffset1.x += ox;
-				currOffset1.y += oy;
+		
+			currOffset1.x += UVScrollSpeedX1 * timeDelta;
+			currOffset1.y += UVScrollSpeedY1 * timeDelta;
 
-				currOffset2.x += UVScrollSpeedX2 * timeDelta;
-				currOffset2.y += UVScrollSpeedY2 * timeDelta;
-				currOffset2.x += ox;
-				currOffset2.y += oy;
-			}
-			else {  // TODO: try to fix this followcamera operation to match based off camera position
-				currOffset1.x = ox;
-				currOffset1.y = oy;
-				currOffset2.x = ox;
-				currOffset2.y = oy;
-			}
+
+			currOffset2.x += UVScrollSpeedX2 * timeDelta;
+			currOffset2.y += UVScrollSpeedY2 * timeDelta;
+
+
 			
 			// Offset 1
 			if(Math.abs(currOffset1.x) > UVScaleFactor1)
@@ -360,6 +349,7 @@ package eu.nekobit.alternativa3d.materials
 			if(Math.abs(currOffset2.y) > UVScaleFactor2)
 				currOffset2.y = 0;		
 				
+		
 	
 			
 			lastTime = timeNow;			
@@ -606,7 +596,7 @@ package eu.nekobit.alternativa3d.materials
 			// Set bump offset (#1, #2)
 			drawUnit.setVertexConstantsFromNumbers(program.cBumpOffset12, currOffset1.x, currOffset1.y, currOffset2.x, currOffset2.y);
 			// Set bump scale factors (#1, #2, #3, #4)
-			drawUnit.setVertexConstantsFromNumbers(program.cBumpScaleFactors1234, UVScaleFactor1, UVScaleFactor2, 0, 0);
+			drawUnit.setVertexConstantsFromNumbers(program.cBumpScaleFactors1234, UVScaleFactor1, UVScaleFactor2, offsetU, offsetV);
 			
 			// Set fragment constants
 			
@@ -732,12 +722,14 @@ package eu.nekobit.alternativa3d.materials
 				
 				// Offset/scale normal map UV coords #1, move to v1
 				"mov t1 a1",
+				"add t1.xy, t1.xy, c2.zw",
 				"div t1.xyxy t1.xyxy c2.xxxx",
 				"add t1.xy t1.xy c1.xy",
 				"mov v1 t1",
 				
 				// Offset/scale normal map UV coords #2, move to v3
 				"mov t1 a1",
+				"add t1.xy, t1.xy, c2.zw",
 				"div t1.xyxy t1.xyxy c2.yyyy",
 				"add t1.xy t1.xy c1.zw",
 				"mov v3 t1",
@@ -925,15 +917,7 @@ package eu.nekobit.alternativa3d.materials
 				"mov o0, t1"
 			], "fragmentProcedure");
 			
-			public function get followCamera():Boolean 
-			{
-				return _followCamera;
-			}
 			
-			public function set followCamera(value:Boolean):void 
-			{
-				_followCamera = value;
-			}
 	}
 }
 

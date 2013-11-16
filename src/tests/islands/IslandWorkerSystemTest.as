@@ -105,7 +105,7 @@ package tests.islands
 		{
 			removeChild(_preloader);			
 			_template3D.visible = true;
-			_water.waterMaterial.followCamera = true;
+			_water.setupFollowCamera();
 		
 			int.MAX_VALUE
 		

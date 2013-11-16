@@ -27,6 +27,8 @@ package spawners.arena.water
 			super();
 		}
 		
+		private var uvFollowOffsetScale:Number = 1;
+		
 		override protected function init():void {
 
 			var normalRes:BitmapTextureResource = new BitmapTextureResource(new assetClasse.NORMAL().bitmapData);
@@ -38,17 +40,21 @@ package spawners.arena.water
 			
 			// distanceTravelled / (size of plane / numberOfRepeats)
 			
-
+			
 			
 			// Reflective plane
 			var scaler:Number = 2;
-			plane = new Plane(2048 * 256 * scaler, 2048 * 256* scaler, 64, 64, false, false, null, waterMaterial);
+			var size:Number = 2048 * 256 * scaler;
+			var uvScale:Number = uvScaler * 32 * scaler;
+			plane = new Plane(size, size, 64, 64, false, false, null, waterMaterial);
 			var uvs:Vector.<Number>= plane.geometry.getAttributeValues(VertexAttributes.TEXCOORDS[0]);
 			for (var i:int = 0; i < uvs.length; i++) {
-				uvs[i] *= uvScaler * 32* scaler;
+				uvs[i] *= uvScale;
 			}
 			 plane.geometry.setAttributeValues(VertexAttributes.TEXCOORDS[0],uvs);	
 			
+			 uvFollowOffsetScale = 1/size * uvScale;
+			 
 			uploadResources(plane.getResources());
 			
 			super.init();
@@ -59,6 +65,11 @@ package spawners.arena.water
 			if (depth < 0) scene.addChild(plane)
 			else scene.addChildAt(plane,depth);
 			
+		}
+		
+		public function setupFollowCamera():void 
+		{
+			waterMaterial.setFollowCamera(uvFollowOffsetScale);
 		}
 
 	}
