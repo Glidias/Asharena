@@ -40,6 +40,7 @@ package arena.systems.islands.jobs
 		{
 			super();
 			//async = true;
+			
 		}
 		
 		public function getLocation(scaler:Number):Array {
@@ -49,6 +50,7 @@ package arena.systems.islands.jobs
 		public function init(resource:IslandResource, id:String):void {
 			this.resource = resource;
 			this.id = id;
+			
 		}
 		
 		
@@ -59,26 +61,43 @@ package arena.systems.islands.jobs
 			GENERATOR.size = node.getMeasuredShortSide() * IslandGeneration.BM_SIZE_SMALL_I * ZONE_TILE_LENGTH;
 			if (GENERATOR.size > MAX_GENERATE_TILE_LENGTH) GENERATOR.size = MAX_GENERATE_TILE_LENGTH;
 			GENERATOR.generateIslandSeed(id, GENERATOR.size < 128 ? 128 : 0 );
+			
 		}
 		
 		private function onGeneratorCompleted():void 
 		{
-			//generate grayscale Heightmap into resource and other relavant entiteis
-			//resource.heightMap = GENERATOR.mapGen.makeBitmapDataExport("elevation");
-			resource.heightMap = GENERATOR.mapGen.makeHeightExport();
-		//	 var bytes:ByteArray = GENERATOR.mapGen.makeHeightExport("heightmap", 0,false);
-		
+			//try {
 			
+			// unbind references
+			node.job = null;
+			node.islandResource = resource;
+
+				resource.heightMap = GENERATOR.mapGen.makeHeightExport();
 			ON_COMPLETE.dispatch(this);
+			//}
+			//catch (e:Error) {
+			//	LogTracer.error(e);
+			
+			
+			
+			//}
 		}
 		
 		override public function cancel():void {
+			
 			GENERATOR.onComplete.remove(onGeneratorCompleted);
 			GENERATOR.cancel();
 		}
 		
 		override public function dispose():void {
+			node.job = null;
+			node.islandResource = null;
+			
+			
 			resource.dispose();
+			resource = null;
+			
+			zone = null;
 		}
 	
 		

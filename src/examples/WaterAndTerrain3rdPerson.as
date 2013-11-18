@@ -109,7 +109,7 @@ package examples
 		[Embed(source="assets/myterrain.tre", mimeType="application/octet-stream")]
 		private var TERRAIN_DATA:Class;
 		
-		[Embed(source="assets/myterrain_normal.jpg")]
+		[Embed(source="assets/myterrain_normal_rough.jpg")]
 		private var NORMAL_MAP:Class;
 		
 		[Embed(source="assets/edgeblend_mist.png")]

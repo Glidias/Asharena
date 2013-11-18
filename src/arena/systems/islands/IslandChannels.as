@@ -21,6 +21,7 @@ package arena.systems.islands
 		public var toMainErrorChannel:MessageChannel;  // to notify main
 		public var toMainTraceChannel:MessageChannel;  // to notify main
 		
+		public var mainByteArray:ByteArray; // edit from Main. read-only from worker
 		public var mainParamsArray:ByteArray; // edit from Main. read-only from worker
 		
 		public var workerByteArray:ByteArray;   // edit from worker, read-only from main (Payload raw numerical data or object data)
@@ -90,9 +91,13 @@ package arena.systems.islands
 			worker.setSharedProperty("workerByteArray", workerByteArray);
 			worker.setSharedProperty("workerParamsArray", workerParamsArray);
 			
+			
 			mainParamsArray = new ByteArray();
 			mainParamsArray.shareable = true;
+			mainByteArray = new ByteArray();
+			mainByteArray.shareable = true;
 			worker.setSharedProperty("mainParamsArray", mainParamsArray);
+			worker.setSharedProperty("mainByteArray", mainByteArray);
 			
 			
 			toMainErrorChannel.addEventListener(Event.CHANNEL_MESSAGE, onErrorReceived);
@@ -120,6 +125,7 @@ package arena.systems.islands
 			workerByteArray = Worker.current.getSharedProperty("workerByteArray");
 			workerParamsArray = Worker.current.getSharedProperty("workerParamsArray");
 			mainParamsArray = Worker.current.getSharedProperty("mainParamsArray");
+			mainByteArray = Worker.current.getSharedProperty("mainByteArray");
 			
 			zoneDistance = Worker.current.getSharedProperty("zoneDistance");
 			zoneTileDistance = Worker.current.getSharedProperty("zoneTileDistance");

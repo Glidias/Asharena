@@ -7,7 +7,8 @@ package util
 	public class LogTracer 
 	{
 		public static var log:Function = trace;
-		
+		public static var error:Function = trace;
+
 		public function LogTracer() 
 		{
 			

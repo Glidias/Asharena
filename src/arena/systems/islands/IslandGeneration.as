@@ -121,6 +121,46 @@ package arena.systems.islands {
 		}
 		
 
+
+		
+		public function findNodes(rootNode:KDNode,x:Number, y:Number, width:Number, height:Number):Vector.<KDNode> {
+			si  = 1;
+			var count:int = 0;
+		
+			var curLevel:int;
+			searchStack[0] = rootNode;
+			searchStackLevels[0] = 0;
+			
+			var foundNodes:Vector.<KDNode> = new Vector.<KDNode>();
+			
+			var node:KDNode  = null;
+			
+			while (si > 0) {
+				node = searchStack[--si];
+				curLevel = searchStackLevels[si];
+				
+				if  ( (node.flags & 1) && !( (x + width) < node.boundMinX || x > node.boundMaxX || (y + height) < node.boundMinY || y > node.boundMaxY)  ) {
+					foundNodes[count] = node;
+					count++;
+				}
+				
+			
+			if (node.positive && (node.flags & KDNode.FLAG_SLAVE) == 0) {
+				searchStack[si] = node.positive;
+				searchStackLevels[si] = curLevel + (node.splitDownLevel() ?  1 : 0);
+				si++;
+			}
+				if (node.negative) {
+					searchStack[si] = node.negative;
+					searchStackLevels[si] = curLevel + (node.splitDownLevel() ?  1 : 0);
+					si++;
+				}
+			
+		
+			}
+			
+			return foundNodes.length ? foundNodes : null;
+		}
 		
 		private var foundLevel:int;
 		public function findNode(x:Number, y:Number):KDNode {

@@ -152,7 +152,7 @@ package tests.islands
 				
 			terrainLOD.z = 14;
 		
-		//	addChild(exploreSystem.debugShape);
+			//addChild(exploreSystem.debugShape);
 
 			
 			ticker = new FrameTickProvider(stage);

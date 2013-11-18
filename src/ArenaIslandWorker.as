@@ -9,6 +9,8 @@ package
 	import arena.systems.islands.KDZone;
 	import arena.systems.islands.KDNode;
 	import de.polygonal.ds.LinkedQueue;
+	import de.polygonal.ds.mem.MemoryManager;
+	import de.polygonal.ds.mem.ShortMemory;
 	import de.polygonal.ds.Prioritizable;
 	import de.polygonal.ds.PriorityQueue;
 	import flash.display.Sprite;
@@ -49,6 +51,7 @@ package
 		private var _jobRunning:Boolean = false;
 		private var _curRunningJob:IsleJob;
 		
+		
 		public function ArenaIslandWorker() 
 		{
 			
@@ -76,6 +79,12 @@ package
 			
 			channels = new IslandChannels();
 			channels.initFromChild();
+			LogTracer.error = channels.sendError;
+			
+			loaderOffsets =  Worker.current.getSharedProperty("loaderOffsets");
+			loaderAmount = Worker.current.getSharedProperty("loaderAmount");
+			loaderTilesAcross = channels.zoneTileDistance / channels.minLODTreeTileDistance;
+			
 			
 			LogTracer.log = channels.sendTrace;
 			
@@ -109,12 +118,14 @@ package
 			
 			// ALL TIERS
 			channels.mainResponseDone.addEventListener(Event.CHANNEL_MESSAGE, onMainResponseDone);
-		
 
 		}
 		
 		private function onMainResponseDone(e:Event):void 
 		{
+			_curRunningJob = null;
+					_jobRunning = false;
+			//if (_jobRunning) channels.sendError( new Error("SHOULD NOT BE!:"+_curRunningJob) );
 			resumeNewJob();
 		}
 		
@@ -129,6 +140,7 @@ package
 					handlePositionChange();
 				}
 				else if (requestCode === IslandChannels.ON_LODTREE_CHANGE) {
+					handlePositionChange();
 					handleLODChange();
 				}
 				
@@ -180,9 +192,10 @@ package
 		{
 			
 			var classe:Class = Object(job).constructor;
-			LogTracer.log("Starting job:"+job);
+			
 			
 			if (classe === CreateIslandResource) {
+				LogTracer.log("Starting job:"+job);
 				if ( (job as CreateIslandResource).pending  ) {
 					
 					throw new Error("SHOULD NOT BE!111");
@@ -207,6 +220,9 @@ package
 			
 			}
 			else if (classe === SampleScaledHeight) {
+				
+				(job as SampleScaledHeight).zone.samplingJobs[job.index] = null;
+				
 				// consider if sampleScaledHeight has all IslandResource dependencies parsed, else lookup releavant CreateIslandResource to prioritize to jobQueue.head and recall attemptStartNewCurJob!!
 				
 				//attemptStartNewCurJob();
@@ -215,8 +231,12 @@ package
 				//return;
 			}
 			
-			job.execute();
-			
+			try {
+				job.execute();
+			}
+			catch (e:Error) {
+				channels.sendError(e);
+			}
 		}
 		
 		private var _curTimeout:uint = 0;
@@ -228,29 +248,46 @@ package
 		
 		private function onJobFinished(job:IsleJob):void {
 			var classe:Class = Object(job).constructor;
-			_jobRunning = false;
-			_curRunningJob = null;
-			LogTracer.log("Job finsihed:"+job);
+		
+			
 
 			
 			if (classe === CreateIslandResource) {  // can do a specific setTimeout to resumeNewJob...
 				
+				LogTracer.log("Job finished:"+job);
 				// is CreateIslandResource kdZone within 1 visible range bound? If so, can notify main that island has been spotted??
 				if (false) {  // send request to Main first, handle async response cases from Main
 					
 				}
 				else {
+					_curRunningJob = null;
+					_jobRunning = false;
 					setTimeoutToResumeNewJob(  300);
 				
 				}
 			}
 			else if (classe === SampleScaledHeight) {  // send request to Main first, handle async response cases from Main
-				
-				
+				sendHeightSample(job as SampleScaledHeight);
+	
 			}
 			else { // can do a default setTimeout to resumeNewJob
+				_curRunningJob = null;
+					_jobRunning = false;
 				setTimeoutToResumeNewJob(  300);
 			}
+		}
+		
+		private function sendHeightSample(job:SampleScaledHeight):void 
+		{
+			var mem:ShortMemory = SampleScaledHeight.MEM;
+			channels.workerByteArray.position = 0;
+			channels.workerByteArray.writeInt( job.zone.x );
+			channels.workerByteArray.writeInt(job.zone.y);
+			channels.workerByteArray.writeFloat(job.sampleX);
+			channels.workerByteArray.writeFloat(job.sampleY);
+			channels.workerByteArray.writeByte(job.level);
+			channels.workerByteArray.writeBytes(MemoryManager._instance._bytes, mem.offset, mem.bytes);
+			channels.islandInitedChannel.send(IslandChannels.INITED_DETAIL_HEIGHT);
 		}
 		
 		public function resumeNewJob():void {
@@ -259,33 +296,69 @@ package
 		
 		
 		
-		private function handleLODChange():void // this is triggered if LOD hierahical tree grid changes.
+		private function handleLODChange():void // this is triggered as well if LOD hierahical tree grid changes.
 		{
+			channels.mainByteArray.position = 0;
 			
-			/*
-			var seed:uint;
-			var zone:KDZone;
-			var createIslandJob:CreateIslandResource;
-			var createIslandRes:IslandResource;
-			var len:int;
-			var i:int;
-			for (key in zoneHash) {
-				zone = zoneHash[seed];
-				
-				len = zone.createIslandJobs.length;
-				for (i = 0; i < len; i++) {
-					createIslandJob = zone.createIslandJobs[i];
-					createIslandRes = createIslandJob.resource;
-					if (createIslandRes.heightMap != null) { 
-						
+			var numLevels:int = channels.mainParamsArray.readByte();
+			var notYetLoadedKDNodes:Dictionary = new Dictionary();
+			
+			for (var level:int = 0 ; level < numLevels; level++)  {  // per level
+				var offset:int = loaderOffsets[level];
+				var len:int = channels.mainParamsArray.readInt();
+				var tilesAcross:int = (loaderTilesAcross >> level);
+				var kdWidth:Number = IslandGeneration.BM_SIZE_SMALL/tilesAcross;
+				for (var i:int = 0; i < len; i++) {  // samples per level
+					var fx:Number=channels.mainByteArray.readFloat();
+					var fy:Number = channels.mainByteArray.readFloat();
+					var xi:int = Math.floor(fx);
+					var yi:int = Math.floor(fy);
+					var seed:uint = islandGen.getSeed( xi, yi );
+					var zone:KDZone = zoneHash[seed];
+					if (zone == null) continue;
+					
+					fx -= xi;
+					fy -= yi;
+					var lx:int= int(fx* tilesAcross);
+					var ly:int =  int(fy*tilesAcross);
+					//
+					var sampleJob:SampleScaledHeight = zone.samplingJobs[offset + ly * tilesAcross + lx];
+					if (sampleJob != null) {  // simply prioritize already-created sampling job
+						jobQueue.remove(sampleJob);
+						jobQueue.prepend(sampleJob);
 					}
-					else {
+					else {  // create new sample job if required by querying sample region into zone's KDTree to gather any possible islands. With, that , create sampling job for that area.
+						var nodes:Vector.<KDNode> = islandGen.findNodes(zone.root, fx * IslandGeneration.BM_SIZE_SMALL_I, fy * IslandGeneration.BM_SIZE_SMALL_I, kdWidth,kdWidth );
+						if (nodes!=null) {
+							//LogTracer.log("Found island KDNodes in vincitity..." + islandGen.numFoundNodes);
+							sampleJob = new SampleScaledHeight();
+							sampleJob.init(nodes, fx, fy, level);
+							sampleJob.zone = zone;
+							sampleJob.index = offset + fy * tilesAcross + fx;
+							zone.samplingJobs[sampleJob.index] = sampleJob;
+							jobQueue.prepend(sampleJob);
+							
+							for each(var node:KDNode in nodes) {
+								if (node.islandResource == null && node.job != _curRunningJob) {
+									notYetLoadedKDNodes[node] = true;
+								}
+							}
+						}
 						
 					}
 				}
-				
 			}
-			*/
+			
+			for (var k:* in notYetLoadedKDNodes) {
+				node = k;
+				(node.job.pending ? pendingJobQueue : jobQueue).remove(node.job);
+				node.job.pending = false;
+				node.job.next = null;
+				node.job.prev = null;
+				jobQueue.prepend( node.job );
+			}
+			
+		
 		}
 		
 		
@@ -396,6 +469,8 @@ package
 							zone = new KDZone(); // instantly set up a zone tree
 							zone.x = xii;
 							zone.y = yii;
+							zone.samplingJobs = new Vector.<SampleScaledHeight>(loaderAmount, true);
+							
 							//LogTracer.log("Adding zone to generate at: "+[xii, yii]);
 							islandGen.init(xii, yii);
 							zone.root = islandGen.rootNode;
@@ -405,7 +480,7 @@ package
 								job = new CreateIslandResource();
 								job.zone = zone;
 								job.node = node;
-								
+								node.job = job;
 								//LogTracer.log("Adding island to generate: "+node.seed);
 								job.init(new IslandResource(), node.seed + "-1");
 								
@@ -498,6 +573,10 @@ package
 		
 		
 		private var lastMapGen:mapgen2;
+		private var loaderOffsets:Vector.<int>;
+		private var loaderAmount:int;
+		private var loaderTilesAcross:int;
+		
 		/*
 		public function onIslandGenerated(e:Event):void {
 			

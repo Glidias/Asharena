@@ -66,7 +66,8 @@ package arena.systems.islands
 		private var previewMats:Vector.<FillMaterial>;
 		
 		public var startZonePosition:Point =  new Point(0,0);
-		
+		private var _zoneLODX:Number;
+		private var _zoneLODY:Number;
 		
 		
 		/*
@@ -188,7 +189,23 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			_squaredDistUpdate = a * a + b * b;
 		}
 
-		
+			private function reshuffle(x:int, y:int):void 
+		{
+			LogTracer.log("Reshuffling!");
+			return;
+			
+			var toShuffle:Vector.<QuadTreePage> = loadedPages.concat();
+			var len:int = loadedPages.length;
+			for (var i:int = 0; i < len; i++) {
+				// TODO: remove loadedPages[i]
+				loadedPages[i] = null;
+			}
+			
+			// need to flush moved pages (for now) if not using xy transform procedure
+			
+			// check NE
+
+		}
 		
 		override public function update(time:Number):void {
 			var cy:Number;
@@ -255,10 +272,17 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 				lastY = y;
 				//throw new Error(y*zoneSizeDiv);
 				channels.mainParamsArray.position = 0;
-				channels.mainParamsArray.writeFloat(x*zoneSizeDiv + startZonePosition.x*2);
-				channels.mainParamsArray.writeFloat(y*zoneSizeDiv + startZonePosition.y*2);
-				channels.initIslandChannel.send(IslandChannels.ON_POSITION_CHANGE);
-				//LogTracer.log("Sending center zone request:"+(x * zoneSizeDiv+startZonePosition.x) + ", " + (y * zoneSizeDiv+startZonePosition.y));
+				channels.mainByteArray.position = 0;
+				
+				x = x * zoneSizeDiv + startZonePosition.x * wd*zoneSizeDiv;
+				y = -y * zoneSizeDiv + startZonePosition.y * hd * zoneSizeDiv;	
+				channels.mainParamsArray.writeFloat(x);
+				channels.mainParamsArray.writeFloat(y);
+				// LogTracer.log("Writing position:" + x + ", "+y);
+				_zoneLODX = x - wd*zoneSizeDiv;
+				_zoneLODY = y - hd*zoneSizeDiv;
+
+
 			
 		
 			// natively use rounded off camera position x/y to determine center position of 2x2 boundingSpaceGrid and thus it's TL location.
@@ -314,6 +338,10 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 				//	LogTracer.log("Tree update:" );
 					
 					resolveLODTreeState();
+					channels.initIslandChannel.send(IslandChannels.ON_LODTREE_CHANGE);
+				}
+				else {
+					channels.initIslandChannel.send(IslandChannels.ON_POSITION_CHANGE);
 				}
 			
 		}
@@ -329,11 +357,14 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 		//public var debugResolved:Boolean = false;
 		private function resolveLODTreeState():void 
 		{
+			//x * zoneSizeDiv + startZonePosition.x * wd*zoneSizeDiv;
+			
 			//if (debugResolved) return;
 			//debugResolved = true;
 			
 			var len:int = treeUtil.levelNumSquares.length;
 			var count:int = 0;
+			channels.mainParamsArray.writeByte(len);
 			
 			debugShape.graphics.clear();
 			debugShape.graphics.beginFill(0xFF0000, .5);
@@ -344,8 +375,11 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			var size:int = treeUtil.smallestSquareSize * tileSize;
 			//var debugCount:int =  0;
 			var data:Vector.<int> = treeUtil.indices;
+				
+			var rowMult:int =1/ treeUtil.boundWidth;
 			for (var level:int = 0; level < len; level++) {
 				var sqCount:int;
+				
 				var lvlOffset:int =  treeUtil.loaderOffsets[level];
 				var numColumns:int = (treeUtil.boundWidth >> level);
 				var lod:TerrainLOD = terrainLOD.lods[level];
@@ -375,6 +409,9 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 				
 				sqCount = treeUtil.levelNumSquares[level];   // add necessary pages
 				lastDraws.length = sqCount;
+
+				
+				var rqcount:int = 0;
 				for (u=0; u < sqCount; u++) {
 					// (create)/request/reference QuadTreePages to later set into terrainLOD 
 					
@@ -388,10 +425,16 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 					
 					if (page== null) {  	// (create) testing phase only / or request - actual worker generation
 						// (create)
-						page = createDummyPage(level);
-						loadedPages[lvlOffset + yi * numColumns + xi] = page;
+						//page = createDummyPage(level);
+						//loadedPages[lvlOffset + yi * numColumns + xi] = page;
+						
+						// request
+						channels.mainByteArray.writeFloat(_zoneLODX+xi*rowMult);
+						channels.mainByteArray.writeFloat(_zoneLODY+yi*rowMult);
+						rqcount++;
+						
 					}
-					//else {
+					else {
 					//  ensure page is added to render list
 						if (page.index < 0) {
 							lod.addPage(page);
@@ -401,7 +444,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 						page.zorg =  (yi * size);
 						page.heightMap.XOrigin = page.xorg;
 						page.heightMap.ZOrigin = page.zorg;
-					//}
+					}
 					
 					
 	
@@ -409,30 +452,16 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 					
 				}
 				
+				channels.mainParamsArray.writeInt(rqcount);
+				
 				//throw new Error(data);
 				// debugging
-				//lod.visible = lod.gridPagesVector.length != 0;  // this isn't needed for none (create) case.
+				lod.visible = lod.gridPagesVector.length != 0;  // this isn't needed for none (create) case.
 				//lod.debug = true;
 				//debugCount+=lod.gridPagesVector.length;
 				//break;
 			}//
 			
-		}
-		
-		private function reshuffle(x:int, y:int):void 
-		{
-			LogTracer.log("Reshuffling!");
-			return;
-			
-			var toShuffle:Vector.<QuadTreePage> = loadedPages.concat();
-			var len:int = loadedPages.length;
-			for (var i:int = 0; i < len; i++) {
-				// TODO: remove loadedPages[i]
-				loadedPages[i] = null;
-			}
-			
-			// check NE
-
 		}
 		
 		private function createWorker():void
@@ -448,7 +477,9 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 		   // setSharedProperty(), createMessageChannel(), etc.
 		   // ... (not shown)
 			channels = new IslandChannels();
-			channels.initPrimordial(bgWorker, zoneSize, maxLowResSample, zoneVisDistance);
+			channels.initPrimordial(bgWorker, zoneSize, maxLowResSample, zoneVisDistance, 4, 128 );
+			bgWorker.setSharedProperty("loaderAmount", treeUtil.loaderAmount);
+			bgWorker.setSharedProperty("loaderOffsets",treeUtil.loaderOffsets);
 			LogTracer.log = channels.doTrace;
 			 channels.islandInitedChannel.addEventListener(Event.CHANNEL_MESSAGE, onChannelIslandRecieved);
 		    
@@ -457,7 +488,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			
 		 }
 		 
-		 private function onChannelIslandRecieved(e:Event):void 
+		private function onChannelIslandRecieved(e:Event):void 
 		 {
 			 var notifyCode:int = channels.islandInitedChannel.receive();
 			channels.receiveParams();
@@ -474,15 +505,59 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			else if (notifyCode === IslandChannels.INITED_BLUEPRINT_COLOR) {
 				// Apply material to currently active terrain mesh that was previously added to scene
 				
-				//LogTracer.log("Received bytes:" + channels.workerByteArray.length);
+				//LogTracer.log("Received bytes:" + channels.workerByteArray);
 				//	LogTracer.log("Received params:" + channels.workerParamsArray.readUTF());
 				// Set up mesh
 			}
 			else if (notifyCode === IslandChannels.INITED_DETAIL_HEIGHT) {
-				
+				//LogTracer.log("Received height detail bytes:" + channels.workerByteArray.length);
+				setupHeightDetail();
 			}
-			
+			//LogTracer.log("ping back");
 			// continue process by sending signal success!
+			channels.mainResponseDone.send(1);
+		 }
+		 
+		 private function setupHeightDetail():void 
+		 {
+			
+						
+			 var data:ByteArray = channels.workerByteArray;
+			 data.position = 0;
+			 
+			 // read data without alchemy opodes atm
+			 	
+			var zoneX:int = data.readInt();
+			var zoneY:int =  data.readInt();
+			var sampleX:Number= data.readFloat();
+			var sampleY:Number=data.readFloat();
+			var level:int =  data.readByte();
+			
+		
+			
+			var lvlOffset:int = treeUtil.loaderOffsets[level];
+			var numColumns:int = (treeUtil.boundWidth >> level);
+			
+			var xi:int = Math.floor((zoneX + sampleX)*numColumns);
+			var yi:int = Math.floor((zoneY + sampleY)*numColumns);
+			
+			//if (zoneX + sampleX
+			
+			///*
+			var page:QuadTreePage = createDummyPage(level);
+			//loadedPages[lvlOffset + yi * numColumns + xi] = page;
+			//*/
+			
+			var limit:int = channels.minLODTreeTileDistance;  // 128
+			for (var y:int = 0; y < limit; y++) {
+				for (var x:int = 0; x < limit; x++) {
+					data.readShort();
+				}
+			}
+			 
+			 // temp for now, to see if it's loaded
+			// page = createDummyPage(level);
+			//loadedPages[lvlOffset + yi * numColumns + xi] = page;
 		 }
 		 
 		 private function removeWorker():void {  // tbd

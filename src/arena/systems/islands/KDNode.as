@@ -1,5 +1,7 @@
 package arena.systems.islands 
 {
+	import arena.systems.islands.jobs.CreateIslandResource;
+	import arena.systems.islands.jobs.IslandResource;
 	/**
 	 * ...
 	 * @author Glenn Ko
@@ -16,7 +18,9 @@ package arena.systems.islands
 		
 		
 		
-		
+		public var islandResource:IslandResource;
+		public var job:CreateIslandResource;
+
 		
 		public var seed:uint;
 		public var flags:int;
