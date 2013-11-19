@@ -7,6 +7,7 @@ package alternterrain.util
 	import flash.display.Shape;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import util.LogTracer;
 	
 	import alternativa.engine3d.alternativa3d;
 	use namespace alternativa3d;
@@ -181,6 +182,7 @@ package alternterrain.util
 				level++;
 				qSize *= 2;
 				levelNumSquares[level] = 0;
+		
                  drawOntoGrid(rect, qSize, level);
             }
 			
@@ -211,7 +213,7 @@ package alternterrain.util
             var rx:int;
 			var ry:int;
             var gotParent:Boolean = parentGridSize <= QUERY_SIZE;
-            
+          
             for (var yi:int =  yStart; yi < yLimit; yi++) {
                     for (var xi:int = xStart; xi < xLimit; xi ++) {
                         var xis:int;

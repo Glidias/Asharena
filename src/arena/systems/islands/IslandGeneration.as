@@ -121,8 +121,7 @@ package arena.systems.islands {
 		}
 		
 
-
-		
+		// TODO: optimize mem alloc for this...
 		public function findNodes(rootNode:KDNode,x:Number, y:Number, width:Number, height:Number):Vector.<KDNode> {
 			si  = 1;
 			var count:int = 0;

@@ -13,6 +13,7 @@ package arena.systems.islands
 	import components.Pos;
 	import eu.nekobit.alternativa3d.materials.WaterMaterial;
 	import flash.display.Shape;
+	import flash.display.Sprite;
 	import flash.display3D.Context3D;
 	import flash.events.Event;
 	import flash.geom.Point;
@@ -27,7 +28,7 @@ package arena.systems.islands
 	use namespace alternativa3d;
 	import util.LogTracer;
 	/**
-	 * For exploring the entire carribean, syncronoising with background AS3 workers to generate island terrains!
+	 * For exploring the entire infinite carribean, syncronoising with background AS3 workers to generate island terrains!
 	 * @author Glenn Ko
 	 */
 	public class IslandExploreSystem extends System
@@ -82,7 +83,7 @@ package arena.systems.islands
 		 * Tile (2m by 2m or higher ..at varying LODs)
 
 		 1) terrainlodTreeUtil.update() -> creates hier grid array of quadTreePages -> list of drawn indices + levels
-1a) For always available case, create from list of drawn indices as new QuadTreePage(s) into hier grid array (if not yet inside) and into HierTerrainLOD array and set lengths accoridngly. (avakilble case)
+1a) For always available case, create from list of drawn indices as new QuadTreePage(s) into hier grid array (if not yet inside) and into HierTerrainLOD array and set lengths accoridngly. (avakilble case) (DONE)
 
 when TL reference changes, hier grid array of quadTreePages must reshuffle their quadrant positions at all levels. Todo this:
 	a) With new TL reference, check for any quadrants that are no longer applicable. Dispose off all available quadtreePages in those quadrants by iterating hier Grid array. (or cache them temporarily before disposal). 
@@ -92,23 +93,33 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
  By successfully performing this shift, the next few steps would 
 
 
-After the update(), (( Not yet available case is for defered instantation/re-get pool reference of QuadTreePage, since nothing needs to be rendered yet until the actual detailed data for QuadTreePage is received. 
+2) with list of drawn idnices + levels, send respective zonePos+level requests to worker for any missing null QuadTreePages not found in hier grid array cache. (worker to remove any unrequested/unlisted requests on his side). For non-null QuadTreePages within hier grid array cache, it's assumed those were already preloaded beforehand, so just assign them to the rendering HierTerrainLOD array. (DONE)
 
-Assert in the case where TL reference changes,  update() must return true, ie. occured!.
+3) receive zone+level key from Worker, create/retreive from pool QuadTreePage at hier grid array position and push into HierTerrainLOD array for rendering if applciable (this shuld be applicaable for high priority on demand requests), so long as the position is found in stateLookup bitmapData slot. Update QuadTreePage height data, quadSquare data, and material information accordingly.  (wip...)
 
-2) with list of drawn idnices + levels, send respective zonePos+level requests to worker for any missing null QuadTreePages not found in hier grid array cache. (worker to remove any unrequested/unlisted requests on his side). For non-null QuadTreePages within hier grid array cache, it's assumed those were already preloaded beforehand, so just assign them to the rendering HierTerrainLOD array.
-3) receive zone+level key from Worker, create/retreive from pool QuadTreePage at hier grid array position and push into HierTerrainLOD array for rendering if applciable (this shuld be applicaable for high priority on demand requests), so long as the position is found in stateLookup bitmapData slot. Update QuadTreePage height data, quadSquare data, and material information accordingly.
+4) TODO: Remove outdated Job requests on Worker end...for LOD sample requests... For any zones that are removed off context, need to ensure their samplign jobs ar eremoved as well (Doesn't seem to happen....).
+
 ))
 */
 
 		public var debugShape:Shape = new Shape();
-		
+		public var debugSprite:Sprite = new Sprite();
+		private var debugRectDict:Dictionary = new Dictionary();
+		private function createDebugRect(x:Number, y:Number, width:Number, height:Number, color:uint):Shape {
+			var shape:Shape = new Shape();
+			shape.graphics.beginFill(color, .25);
+			shape.graphics.drawRect(0, 0, width, height);
+			shape.x = x;
+			shape.y = y;
+			debugSprite.addChild(shape);
+			return shape;
+		}
 		
 		/**
 		 * @param   camera		Camera reference to determine what LOD to use.
 		 * @param	position	Reference position to determine what zones and islands regions gets spotted while traveling
 		 */
-		public function IslandExploreSystem(camera:Camera3D, position:Pos=null, zoneSize:Number = 2048, tileSize:Number=256, terrainLOD:HierarchicalTerrainLOD=null, waterMaterial:WaterMaterial=null) 
+		public function IslandExploreSystem(camera:Camera3D, position:Pos=null, zoneSizeT:Number = 2048, tileSize:Number=256, terrainLOD:HierarchicalTerrainLOD=null, waterMaterial:WaterMaterial=null) 
 		{
 			this.waterMaterial = waterMaterial;
 			//this.waterPlane = waterPlane || (new Object3D());
@@ -120,9 +131,10 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			this.position = position || (new Pos());  
 			setUpdateRadius(256);
 			
-			this.zoneSize = zoneSize;
-			zoneSize *= tileSize;
-			this.zoneSizeDiv = 1 / zoneSize;
+			this.zoneSizeTiles = zoneSizeT;
+			zoneSizeT *= tileSize;
+			this.zoneSize = zoneSizeT;
+			this.zoneSizeDiv = 1 / zoneSizeT;
 			
 			this.terrainLOD = terrainLOD;
 			loadedPages = new Vector.<QuadTreePage>(treeUtil.loaderAmount, true);
@@ -155,7 +167,8 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 		private var tileSize:Number;
 		//private var waterPlane:Object3D;
 		private var waterMaterial:WaterMaterial;
-		private static const PREVIEW_COLORS:Vector.<uint> = new <uint>[0x44EEFF,0xFF0000, 0x00FF00, 0x0000FF];
+		private static const PREVIEW_COLORS:Vector.<uint> = new <uint>[0x44EEFF,0xFFFF00, 0x00FF00, 0x0000FF];
+		private var zoneSizeTiles:int;
 		
 		private function setupPreviewMats():void 
 		{
@@ -191,7 +204,8 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 
 			private function reshuffle(x:int, y:int):void 
 		{
-			LogTracer.log("Reshuffling!");
+			
+			//throw new Error("Reshuffling! Not yet DONE!");
 			return;
 			
 			var toShuffle:Vector.<QuadTreePage> = loadedPages.concat();
@@ -240,11 +254,9 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 					startZonePosition.x += Math.floor(camera._x / wd);  // offset relatively
 					camera._x %= wd;
 					camera.transformChanged = true;
-				
-				
 				}
 				if (vWrap) {
-						if (Math.floor(camera._y / hd) >= 2) throw new Error("SHOU>LD NOT ECCEED  HD");
+					if (Math.floor(camera._y / hd) >= 2) throw new Error("SHOU>LD NOT ECCEED  HD");
 					startZonePosition.y -= Math.floor(camera._y / hd);
 					camera._y %= hd;
 					camera.transformChanged = true;
@@ -318,7 +330,6 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 
 				LogTracer.log("Tree update:" + [lx, ly]);
 				
-				
 			
 				terrainLOD.x =  x*wd*tileSize;
 				terrainLOD.y =  -y * hd * tileSize;
@@ -335,7 +346,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 				if ( treeUtil.update((camera._x - terrainLOD.x) *tileMult, -(camera._y - terrainLOD.y)*tileMult, refPositionChanged) ) { // (for now, assume camera isn't re-translated...)
 					
 	
-				//	LogTracer.log("Tree update:" );
+					LogTracer.log("LOD Tree state update:" );
 					
 					resolveLODTreeState();
 					channels.initIslandChannel.send(IslandChannels.ON_LODTREE_CHANGE);
@@ -367,18 +378,23 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			channels.mainParamsArray.writeByte(len);
 			
 			debugShape.graphics.clear();
-			debugShape.graphics.beginFill(0xFF0000, .5);
+			//debugShape.graphics.beginFill(0xFF0000, .5);
 			debugShape.graphics.lineStyle(1, 0);
 
 			
 			
-			var size:int = treeUtil.smallestSquareSize * tileSize;
+			
 			//var debugCount:int =  0;
 			var data:Vector.<int> = treeUtil.indices;
-				
-			var rowMult:int =1/ treeUtil.boundWidth;
+			
+			var size:int = treeUtil.smallestSquareSize * tileSize;
+			
 			for (var level:int = 0; level < len; level++) {
+				
 				var sqCount:int;
+				
+		
+				var rowMult:Number = 1 / (treeUtil.boundWidth >> level);
 				
 				var lvlOffset:int =  treeUtil.loaderOffsets[level];
 				var numColumns:int = (treeUtil.boundWidth >> level);
@@ -387,22 +403,39 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 				var u:int;
 				var page:QuadTreePage;
 				var pageLen:int = lod.gridPagesVector.length;
-				
+	
 				sqCount = lastDraws.length;
 				for ( u = 0 ; u < sqCount; u++) {   // remove currently viewed pages
 					var indexer:int =  lastDraws[u];
 					if (treeUtil.drawBits.get(indexer ) == 0 ) {
 						page = loadedPages[indexer]; 
+					
 						if (page != null) {
+							//	LogTracer.log("To remove page");
 							loadedPages[indexer] = null;
 							pooledPages[lenPooledPages++] = page;
+							if (debugRectDict[page]) {  // debug
+								//LogTracer.log("To remove sprite");
+									debugSprite.removeChild(debugRectDict[page]);
+									delete debugRectDict[page];
+									
+								}
 							if (page.index >= 0) {
 								lod.removePage(page, pageLen);  // TODO: Importatn! Recycle any chunk states within page tree if available.
 								pageLen--;
+								
 								lod.flushPage(page);
 							}
 						}	
 					}
+					/*
+					else {
+						debugShape.graphics.beginFill(0xFF0000, .5);
+						var realIndex:int = indexer - lvlOffset;
+						debugShape.graphics.drawRect( (realIndex%numColumns) * (8<< level),int(realIndex/numColumns)*(8<<level),(8 << level),(8 << level));
+						debugShape.graphics.beginFill(0xFF0000, 0);
+					}
+					*/
 				}
 				lod.gridPagesVector.length = pageLen;
 				
@@ -417,6 +450,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 					
 					var xi:int = data[count++];
 					var yi:int = data[count++];
+				
 					//if (level !=2) continue;
 					lastDraws[u] = indexer= lvlOffset + yi * numColumns + xi;
 					// reference - (if available in loadedPages cache)
@@ -425,13 +459,24 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 					
 					if (page== null) {  	// (create) testing phase only / or request - actual worker generation
 						// (create)
-						//page = createDummyPage(level);
-						//loadedPages[lvlOffset + yi * numColumns + xi] = page;
+						/*
+						page = createDummyPage(level);
+						loadedPages[lvlOffset + yi * numColumns + xi] = page;
+						lod.addPage(page);
+						page.xorg  = (xi * size);
+						page.zorg =  (yi * size);
+						page.heightMap.XOrigin = page.xorg;
+						page.heightMap.ZOrigin = page.zorg;
 						
+						*/
 						// request
+						//LogTracer.log("Logging request..." + (xi*rowMult) + ", "+(yi*rowMult));
+						///*
 						channels.mainByteArray.writeFloat(_zoneLODX+xi*rowMult);
-						channels.mainByteArray.writeFloat(_zoneLODY+yi*rowMult);
+						channels.mainByteArray.writeFloat(_zoneLODY + yi * rowMult);
+						debugShape.graphics.drawRect(xi*(8<<level), yi*(8<<level), (8<<level),(8<<level));
 						rqcount++;
+						//*/
 						
 					}
 					else {
@@ -444,11 +489,15 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 						page.zorg =  (yi * size);
 						page.heightMap.XOrigin = page.xorg;
 						page.heightMap.ZOrigin = page.zorg;
+						if (debugRectDict[page]) {
+							debugRectDict[page].x = xi * (8 << level);
+							debugRectDict[page].y = yi * (8 << level);
+						}
 					}
 					
 					
-	
-					debugShape.graphics.drawRect(xi*(8<<level), yi*(8<<level), (8<<level),(8<<level));
+					lod.visible = lod.gridPagesVector.length != 0;
+					
 					
 				}
 				
@@ -456,13 +505,14 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 				
 				//throw new Error(data);
 				// debugging
-				lod.visible = lod.gridPagesVector.length != 0;  // this isn't needed for none (create) case.
+			//	lod.visible = lod.gridPagesVector.length != 0;  // this isn't needed for none (create) case.
 				//lod.debug = true;
 				//debugCount+=lod.gridPagesVector.length;
 				//break;
 			}//
 			
 		}
+
 		
 		private function createWorker():void
 		 {
@@ -477,7 +527,7 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 		   // setSharedProperty(), createMessageChannel(), etc.
 		   // ... (not shown)
 			channels = new IslandChannels();
-			channels.initPrimordial(bgWorker, zoneSize, maxLowResSample, zoneVisDistance, 4, 128 );
+			channels.initPrimordial(bgWorker, zoneSizeTiles, maxLowResSample, zoneVisDistance, 4, 128 );
 			bgWorker.setSharedProperty("loaderAmount", treeUtil.loaderAmount);
 			bgWorker.setSharedProperty("loaderOffsets",treeUtil.loaderOffsets);
 			LogTracer.log = channels.doTrace;
@@ -533,20 +583,48 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 			var sampleY:Number=data.readFloat();
 			var level:int =  data.readByte();
 			
-		
+			sampleX = zoneX + sampleX -_zoneLODX;
+			sampleY = zoneY + sampleY - _zoneLODY;
+			
+			// TODO: check if sampleX and sampleY is within proper range before continuiniung
+			
 			
 			var lvlOffset:int = treeUtil.loaderOffsets[level];
 			var numColumns:int = (treeUtil.boundWidth >> level);
-			
-			var xi:int = Math.floor((zoneX + sampleX)*numColumns);
-			var yi:int = Math.floor((zoneY + sampleY)*numColumns);
+
+
+			var xi:int = Math.round( (sampleX) * numColumns);
+			var yi:int = Math.round((sampleY) * numColumns);
+			if (treeUtil.drawBits.get(lvlOffset + yi * numColumns + xi) == 0) {
+				//throw new Error("No longer valid received!");
+				LogTracer.log("Exception: no longer valid sample received...");
+				return;
+			}
 			
 			//if (zoneX + sampleX
+		//	LogTracer.log("Receiving:"+[sampleX, sampleY]);
+			///*
+			var myIndex:int = lvlOffset + yi * numColumns + xi;
+			if (loadedPages[myIndex] != null) return;
 			
 			///*
 			var page:QuadTreePage = createDummyPage(level);
-			//loadedPages[lvlOffset + yi * numColumns + xi] = page;
-			//*/
+			loadedPages[myIndex] = page;
+			
+			var size:Number = treeUtil.smallestSquareSize * tileSize;
+			// ensure page is added to render list
+			terrainLOD.lods[level].addPage(page);
+			
+			page.xorg  = xi * size;
+			page.zorg =  yi * size;
+			page.heightMap.XOrigin = page.xorg;
+			page.heightMap.ZOrigin = page.zorg;
+			
+			// debug
+			debugRectDict[page] = createDebugRect(xi * (8<<level), yi*(8<<level), (8 << level), (8 << level), PREVIEW_COLORS[level] );
+			terrainLOD.lods[level].visible = true;
+		//	LogTracer.log("adding sample at:"+level + ", "+sampleX + ", "+sampleY);
+		//	*/
 			
 			var limit:int = channels.minLODTreeTileDistance;  // 128
 			for (var y:int = 0; y < limit; y++) {
@@ -554,11 +632,14 @@ Assert in the case where TL reference changes,  update() must return true, ie. o
 					data.readShort();
 				}
 			}
-			 
+			// if (data.length != data.position) throw new Error("A");
+			
 			 // temp for now, to see if it's loaded
 			// page = createDummyPage(level);
 			//loadedPages[lvlOffset + yi * numColumns + xi] = page;
 		 }
+		 
+		
 		 
 		 private function removeWorker():void {  // tbd
 			 

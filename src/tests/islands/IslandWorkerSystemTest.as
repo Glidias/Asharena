@@ -42,9 +42,9 @@ package tests.islands
 	import flash.system.Worker;
 	
 	/**
-	 * 1) Infinite traveling coordinates (to avoid "farlands problem") by resetting position in relation to HierTreeRegion size.
-	 * 2) 4 Level of TerrainLOD arranged hierahically at 4 levels of LOD scales.
-	 * 3) Generate out terrain procedurally with/without AS3 Workers while traveling around. Using AS3 Workers allows islands and their terrain to be generated seamelssly WITHOUT having to pause-load/freeze the game performance. Sample terrain at varying LOD scales to generate on the fly.
+	 * 1) Infinite traveling coordinates (to avoid "farlands problem") by resetting position in relation to HierTreeRegion size. (DONE)
+	 * 2) 4 Level of TerrainLOD arranged hierahically at 4 levels of LOD scales. (DONE)
+	 * 3) Generate out terrain procedurally with/without AS3 Workers while traveling around. Using AS3 Workers allows islands and their terrain to be generated seamelssly WITHOUT having to pause-load/freeze the game performance. Sample terrain at varying LOD scales to generate on the fly. (wip)
 	 * @author Glidias
 	 */
 	[SWF(width='512',height='512',backgroundColor='#ffffff',frameRate='60')]
@@ -145,15 +145,15 @@ package tests.islands
 		exploreSystem.zoneVisDistance = VIS_DIST;
 			game.engine.addSystem(exploreSystem, SystemPriorities.preRender);
 			
-			_template3D.scene.addChild(terrainLOD);
+		//	_template3D.scene.addChild(terrainLOD);
 			_water.addToScene(_template3D.scene);
 				_skybox.addToScene(_template3D.scene);
 				
 				
 			terrainLOD.z = 14;
 		
-			//addChild(exploreSystem.debugShape);
-
+			addChild(exploreSystem.debugShape);
+			addChild(exploreSystem.debugSprite);
 			
 			ticker = new FrameTickProvider(stage);
 			ticker.add(tick);

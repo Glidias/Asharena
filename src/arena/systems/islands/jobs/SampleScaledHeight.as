@@ -11,12 +11,14 @@ package arena.systems.islands.jobs
 	 */
 	public class SampleScaledHeight extends IsleJob
 	{
-		private var foundNodes:Vector.<KDNode>;
+		public var foundNodes:Vector.<KDNode>;
 
 		public var level:int;
 		public var sampleX:Number;
 		public var sampleY:Number;
 		public var zone:KDZone;
+		public var timestamp:int;
+		public var cancelled:Boolean = false;
 		
 		public static var MEM:ShortMemory = new ShortMemory(128 * 128);
 		public static var ZONE_SIZE:Number = 8912;
@@ -43,7 +45,7 @@ package arena.systems.islands.jobs
 		
 		override public function execute():void {
 			var stride:int = (1 << level);
-	
+			cancelled = false;
 			
 			var zoneSize:Number = ZONE_SIZE;
 			var bmSizeSmlI:Number = IslandGeneration.BM_SIZE_SMALL_I * zoneSize;
@@ -64,7 +66,7 @@ package arena.systems.islands.jobs
 				sy = sampleY * zoneSize - node.boundMinY * bmSizeSmlI;
 				
 				var ratio:Number;
-			//	if (node.islandResource == null) throw new Error("SHOULD NOT BE!");
+			if (node.islandResource == null) throw new Error("SHOULD NOT BE!");
 				
 				ratio = node.islandResource.heightMap.width / nodeSize * stride; 
 				
@@ -105,6 +107,10 @@ package arena.systems.islands.jobs
 			foundNodes = null;
 			zone = null;
 			
+		}
+		
+		override public function cancel():void {
+			cancelled = true;
 		}
 		
 	}

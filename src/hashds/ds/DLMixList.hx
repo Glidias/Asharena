@@ -35,6 +35,15 @@ class DLMixList<T:IDLMixNode<T>> implements haxe.rtti.Generic
                 
         }
 		
+		public function contains(node:T):Bool {
+			var n:T = head;
+			while (n != null) {
+				if (n == node) return true;
+				n = n.next;
+			}
+			return false;
+		}
+		
 		 public function append2( node : T, t:T ) : Void
         {
                 // we assume node is fresh and not part of any list
@@ -54,16 +63,21 @@ class DLMixList<T:IDLMixNode<T>> implements haxe.rtti.Generic
 		
 		 public function prepend( node : T ) : Void
         {
+				node.next = head;
+				
                 // we assume node is fresh and not part of any list
                 if( head!=null )
                 {
-                      _prepend(node);
+					head.prev = node;
+                   // _prepend(node);
                 }
                 else
                 {
-                     head = node;
+                    // head = node;
                      tail = node;
                 }
+				
+				head = node;
                 
         }
 		
@@ -106,12 +120,36 @@ class DLMixList<T:IDLMixNode<T>> implements haxe.rtti.Generic
          */
         public function remove( node : T ) : Void
         {
+			///*
                 if ( head == node) head = head.next;
                 if ( tail == node) tail = tail.prev;
         
                 if (node.prev != null) node.prev.next = node.next;
                 if (node.next != null) node.next.prev = node.prev;
-                
+			//	*/
+				
+				/*
+				 if (node == head)
+                {
+                        head = head.next;
+            
+                        if (head == null) tail = null;
+                }
+                else if (node == tail)
+                {
+                        tail = tail.prev;
+                      
+                                
+                        if (tail == null) head = null;
+                }
+				
+				if (node.prev != null) node.prev.next = node.next;
+               if (node.next != null) node.next.prev = node.prev;
+			   
+			   */
+			   
+			   
+			 
         }
                 
 

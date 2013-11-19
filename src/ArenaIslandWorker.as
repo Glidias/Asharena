@@ -138,10 +138,12 @@ package
 				// Job queue deployment
 				if (requestCode === IslandChannels.ON_POSITION_CHANGE) {
 					handlePositionChange();
+					if (!_jobRunning && jobQueue.head) attemptStartNewCurJob();
 				}
 				else if (requestCode === IslandChannels.ON_LODTREE_CHANGE) {
 					handlePositionChange();
 					handleLODChange();
+					if (!_jobRunning && jobQueue.head) attemptStartNewCurJob();
 				}
 				
 				/*  // For testing
@@ -174,12 +176,26 @@ package
 			job = jobQueue.head;
 			if (job != null) {
 				
-				jobQueue.remove(job);
-				_curRunningJob = job;
-				job.next = null;
-				job.prev = null;
-				_jobRunning = true;
-				preExecuteJob(job);
+				try {
+					
+					if (preExecuteJob(job)) {
+					//	validateJobQueue();
+						jobQueue.remove(job);
+						//if (jobQueue.contains(job)) throw new Error("STIll contains job!");
+					
+						_curRunningJob = job;
+						job.next = null;
+						job.prev = null;
+						_jobRunning = true;	
+						job.execute();
+					}
+					else {
+						attemptStartNewCurJob();
+					}
+				}
+				catch (e:Error) {
+					channels.sendError( e  );
+				}
 			}
 			else {
 				_jobRunning = false;
@@ -188,7 +204,7 @@ package
 		}
 		
 		
-		private function preExecuteJob(job:IsleJob):void   // handle any specific special cases for specific job types, only called from attemptStartNewCurJob
+		private function preExecuteJob(job:IsleJob):Boolean   // handle any specific special cases for specific job types, only called from attemptStartNewCurJob
 		{
 			
 			var classe:Class = Object(job).constructor;
@@ -206,23 +222,20 @@ package
 				}
 				
 				// if job is outside visual range....consider adding it to defered list instead, or just replacing it at the tail
-				if (false) {
-					//jobQueue.append(job);
-					LogTracer.log("Defering CreateIslandResource");
-					_jobRunning = false;
-					_curRunningJob = null;
-					setTimeoutToResumeNewJob( 200); // avoid unnecessary recursion by setting timeout instead
-					return;
-				}
-				else {
-					(job as CreateIslandResource).zone.createIslandJobs.remove(job);	
-				}
-			
+				
+				(job as CreateIslandResource).zone.createIslandJobs.remove(job);	
 			}
 			else if (classe === SampleScaledHeight) {
 				
-				(job as SampleScaledHeight).zone.samplingJobs[job.index] = null;
-				
+				if ( validateSampleJob( job as SampleScaledHeight) ) {
+					
+					(job as SampleScaledHeight).zone.samplingJobs[job.index] = null;
+					return true;
+				}
+				else {
+					setTimeoutToResumeNewJob(1);
+					return false;
+				}
 				// consider if sampleScaledHeight has all IslandResource dependencies parsed, else lookup releavant CreateIslandResource to prioritize to jobQueue.head and recall attemptStartNewCurJob!!
 				
 				//attemptStartNewCurJob();
@@ -230,13 +243,32 @@ package
 				// job.execute();
 				//return;
 			}
+			return true;
+		}
+		
+		private function validateSampleJob(job:SampleScaledHeight):Boolean 
+		{
 			
-			try {
-				job.execute();
+			var allAvailable:Boolean = true;
+			///*
+			for each( var node:KDNode in job.foundNodes) {
+				if (node.islandResource == null) {
+					if ( !(node.job.pending ? pendingJobQueue : jobQueue).contains(node.job)) {
+						throw new Error("Doesnt't have job in list!");
+					}
+					(node.job.pending ? pendingJobQueue : jobQueue).remove(node.job);
+					node.job.pending = false;
+					node.job.next = null;
+					node.job.prev = null;
+					jobQueue.prepend( node.job );
+					
+					allAvailable = false;
+				}
 			}
-			catch (e:Error) {
-				channels.sendError(e);
-			}
+			//*/
+			
+		
+			return allAvailable;
 		}
 		
 		private var _curTimeout:uint = 0;
@@ -262,18 +294,26 @@ package
 				else {
 					_curRunningJob = null;
 					_jobRunning = false;
-					setTimeoutToResumeNewJob(  300);
+					setTimeoutToResumeNewJob(  200);
 				
 				}
 			}
 			else if (classe === SampleScaledHeight) {  // send request to Main first, handle async response cases from Main
-				sendHeightSample(job as SampleScaledHeight);
+				if ( !(job as SampleScaledHeight).cancelled ) {
+					(job as SampleScaledHeight).zone.samplingJobs[job.index] = null;
+					sendHeightSample(job as SampleScaledHeight);
+				}
+				else {
+					_curRunningJob = null;
+					_jobRunning = false;
+					setTimeoutToResumeNewJob(  200);
+				}
 	
 			}
 			else { // can do a default setTimeout to resumeNewJob
 				_curRunningJob = null;
-					_jobRunning = false;
-				setTimeoutToResumeNewJob(  300);
+				_jobRunning = false;
+				setTimeoutToResumeNewJob(  200);
 			}
 		}
 		
@@ -281,8 +321,10 @@ package
 		{
 			var mem:ShortMemory = SampleScaledHeight.MEM;
 			channels.workerByteArray.position = 0;
+			//LogTracer.log([job.zone.x, job.zone.y, job.sampleX , job.sampleY]);
 			channels.workerByteArray.writeInt( job.zone.x );
 			channels.workerByteArray.writeInt(job.zone.y);
+			
 			channels.workerByteArray.writeFloat(job.sampleX);
 			channels.workerByteArray.writeFloat(job.sampleY);
 			channels.workerByteArray.writeByte(job.level);
@@ -295,13 +337,21 @@ package
 		}
 		
 		
+		private var lodChangeCount:int = int.MIN_VALUE;
 		
 		private function handleLODChange():void // this is triggered as well if LOD hierahical tree grid changes.
 		{
+		
+			var node:KDNode;
+			lodChangeCount++;
+			
+			var jobInsertCount:int = 0;
+			var jobsKept:int = 0;
+			
 			channels.mainByteArray.position = 0;
 			
 			var numLevels:int = channels.mainParamsArray.readByte();
-			var notYetLoadedKDNodes:Dictionary = new Dictionary();
+			//var notYetLoadedKDNodes:Dictionary = new Dictionary();
 			
 			for (var level:int = 0 ; level < numLevels; level++)  {  // per level
 				var offset:int = loaderOffsets[level];
@@ -311,6 +361,7 @@ package
 				for (var i:int = 0; i < len; i++) {  // samples per level
 					var fx:Number=channels.mainByteArray.readFloat();
 					var fy:Number = channels.mainByteArray.readFloat();
+	
 					var xi:int = Math.floor(fx);
 					var yi:int = Math.floor(fy);
 					var seed:uint = islandGen.getSeed( xi, yi );
@@ -319,13 +370,28 @@ package
 					
 					fx -= xi;
 					fy -= yi;
+					
 					var lx:int= int(fx* tilesAcross);
 					var ly:int =  int(fy*tilesAcross);
 					//
 					var sampleJob:SampleScaledHeight = zone.samplingJobs[offset + ly * tilesAcross + lx];
-					if (sampleJob != null) {  // simply prioritize already-created sampling job
-						jobQueue.remove(sampleJob);
-						jobQueue.prepend(sampleJob);
+					if (sampleJob != null) {  // simply prioritize already-created sampling job??
+						//jobQueue.remove(sampleJob);
+						//jobQueue.prepend(sampleJob);
+						nodes = sampleJob.foundNodes;
+						sampleJob.timestamp = lodChangeCount;
+						if (!jobQueue.contains(sampleJob)) {
+							LogTracer.log("EXCEPTION:  sampleJob in array not found in JobQueue!!!");
+						}
+						jobsKept++;
+						
+						/*
+						for each(node in nodes) {
+							if (node.islandResource == null && node.job != _curRunningJob) {
+								notYetLoadedKDNodes[node] = true;
+							}
+						}
+						*/
 					}
 					else {  // create new sample job if required by querying sample region into zone's KDTree to gather any possible islands. With, that , create sampling job for that area.
 						var nodes:Vector.<KDNode> = islandGen.findNodes(zone.root, fx * IslandGeneration.BM_SIZE_SMALL_I, fy * IslandGeneration.BM_SIZE_SMALL_I, kdWidth,kdWidth );
@@ -333,22 +399,29 @@ package
 							//LogTracer.log("Found island KDNodes in vincitity..." + islandGen.numFoundNodes);
 							sampleJob = new SampleScaledHeight();
 							sampleJob.init(nodes, fx, fy, level);
+							jobInsertCount++;
 							sampleJob.zone = zone;
-							sampleJob.index = offset + fy * tilesAcross + fx;
+							sampleJob.index = offset + ly*tilesAcross + lx;
 							zone.samplingJobs[sampleJob.index] = sampleJob;
 							jobQueue.prepend(sampleJob);
+							validateJobQueue("EARLY");
+							sampleJob.timestamp = lodChangeCount;
+							//LogTracer.log("Prioritizing sample job:" + sampleJob);
 							
-							for each(var node:KDNode in nodes) {
+							/*
+							for each(node in nodes) {	
 								if (node.islandResource == null && node.job != _curRunningJob) {
 									notYetLoadedKDNodes[node] = true;
 								}
 							}
+							*/
 						}
 						
 					}
 				}
 			}
 			
+			/*
 			for (var k:* in notYetLoadedKDNodes) {
 				node = k;
 				(node.job.pending ? pendingJobQueue : jobQueue).remove(node.job);
@@ -356,9 +429,83 @@ package
 				node.job.next = null;
 				node.job.prev = null;
 				jobQueue.prepend( node.job );
+				//LogTracer.log("Prioritizing node job:" + node.job + ", "+(node.job === jobQueue.head));
+			}
+			*/
+			
+			//	LogTracer.log("Final head job:" + jobQueue.head);
+			
+			for (var j:IsleJob = jobQueue.head; j != null; j = nextJob) {
+				var nextJob:IsleJob = j.next;
+				var jobSample:SampleScaledHeight = j as SampleScaledHeight;
+				if (jobSample && jobSample.timestamp != lodChangeCount) {
+					if (checkHits(jobQueue.head, j) > 1) throw new Error("EXCEESS:"+checkHits(jobQueue.head, j));
+					jobQueue.remove(j);
+					
+					jobSample.zone.samplingJobs[jobSample.index] = null; 
+					j.next = null;
+					j.prev = null;
+					///*
+					
+					if (jobQueue.contains(j)) {
+						//jobQueue.remove(j);
+						//if (jobQueue.contains(j)) 
+						//LogTracer.log("ERR");
+						
+						throw new Error("Error: STILL CONTAINS jobNode even though removed it!" + checkIndexOf(jobQueue.head, j)  + ", "+ (j===jobQueue.head) + ", "+(j===jobQueue.tail));
+					}
+					
+					//*/
+					//LogTracer.log("removing outdated sampling job:" + jobSample);
+				}
+			}
+			
+			
+			// Debug asserts
+			if (_jobRunning && _curRunningJob is SampleScaledHeight) {
+				jobSample = _curRunningJob as SampleScaledHeight;
+				if ( jobSample.timestamp != lodChangeCount) {
+					jobSample.cancel();
+					jobSample.zone.samplingJobs[jobSample.index] = null;
+					LogTracer.log("Cur running sampling job cancelled");
+				}
+			}
+			
+			
+			for (j = jobQueue.head; j != null; j = j.next) {
+				
+				jobSample = j as SampleScaledHeight;
+				if (jobSample && jobSample.timestamp != lodChangeCount) {  // TODO: fix this exception
+					LogTracer.log("Serious exceptioN!: Outdated job sample still detected in jobQueue!");
+				}
+				
 			}
 			
 		
+			
+			LogTracer.log("Sampling jobs inserted:"+jobInsertCount + " :: pending:"+jobsKept);
+			validateJobQueue();
+			
+			
+		}
+		
+		private function checkHits(h:IsleJob, target:IsleJob):int {
+			var count:int = 0;
+			while (h != null) {
+				if (h === target) count++;
+				h = h.next;
+			}
+			return count;
+		}
+		
+		private function checkIndexOf(h:IsleJob, target:IsleJob):int {
+			var count:int = 0;
+			while (h != null) {
+				if (h === target) return count;
+				count++;
+				h = h.next;
+			}
+			return -1;
 		}
 		
 		
@@ -398,11 +545,14 @@ package
 					continue;
 				}
 				pendingJobQueue.remove(job);
+				if (pendingJobQueue.contains(job)) throw new Error("XCEPTION!: SHould not be in pendingJobQueue!");
 				job.pending = false;
 				job.next = null;
 				job.prev = null;
 				LogTracer.log("Out of view island added:" + job);
+				if (jobQueue.contains(job)) throw new Error("EXCEPTION:  SHould not be in jobqueue!");
 				jobQueue.append(job);
+				
 			}
 			//*/
 			
@@ -440,12 +590,28 @@ package
 								else {		// job is still pending in jobQueue or pendingJobQueue
 									jobsToRemove.push(job);
 									(job.pending ? pendingJobQueue : jobQueue).remove(job );
+									//validateJobQueue();
 								}
 							}
 							else {		// already parsed, no longer in jobQueue
 								job.dispose();
 							}
 						}
+						
+						///*
+						len = zone.samplingJobs.length;
+						for (i = 0; i < len; i++) {
+							var samplingJob:SampleScaledHeight = zone.samplingJobs[i];
+							//samplingJob.cancel();
+							if (samplingJob) {
+								// this is a syncronous job at the moment, so remove it instantly is fine!
+								jobQueue.remove(samplingJob);
+								samplingJob.zone.samplingJobs[samplingJob.index] = null;
+								samplingJob.dispose();
+								//validateJobQueue();
+							}
+						}
+						//*/
 						delete zoneHash[key];  
 					}
 				}
@@ -455,7 +621,7 @@ package
 				}
 			//	*/
 				
-
+			
 				
 				// go through all possible zone grid coordinates and check for any new zones that are not yet created. (for naive mode, simply 9 zones!)
 				for (var xii:int = xi; xii < xD; xii++) {
@@ -507,14 +673,28 @@ package
 					jobQueue.append2(jobInsertion.head, jobInsertion.tail);
 					jobInsertion.head = null;
 					jobInsertion.tail = null;
+					
 					LogTracer.log("JOBs inserted: Are there new jobs running atm?"+_jobRunning);
 					
 				}
 				//
 				
-
+				
 			}
-			if (!_jobRunning && jobQueue.head) attemptStartNewCurJob();
+			validateJobQueue();
+		}
+		
+		private function validateJobQueue(appednStr:String=""):Boolean {
+			var lastJ:IsleJob = null;
+
+			for (var j:IsleJob = jobQueue.head; j != null; j = j.next) {
+				if (j.prev != lastJ) throw new Error("Previous mismatch!:"+lastJ + " , "+j.prev + appednStr);
+				lastJ = j;
+			}
+			if (lastJ != jobQueue.tail) throw new Error("Tail mismatch!"+ appednStr);
+			
+			return true;
+			
 		}
 		
 	//	
