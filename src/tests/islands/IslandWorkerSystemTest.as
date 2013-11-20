@@ -131,7 +131,7 @@ package tests.islands
 						stage, 
 						_template3D.camera, 
 						27*512*256/60/60,
-						34);
+						122);
 			
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
 		
@@ -146,8 +146,8 @@ package tests.islands
 			game.engine.addSystem(exploreSystem, SystemPriorities.preRender);
 			
 		//	_template3D.scene.addChild(terrainLOD);
-			_water.addToScene(_template3D.scene);
-				_skybox.addToScene(_template3D.scene);
+			//_water.addToScene(_template3D.scene);
+			//	_skybox.addToScene(_template3D.scene);
 				
 				
 			terrainLOD.z = 14;

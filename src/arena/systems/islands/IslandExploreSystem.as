@@ -206,12 +206,17 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 		{
 			
 			//throw new Error("Reshuffling! Not yet DONE!");
+			LogTracer.log("Reshuffling required");
+			
+			
 			return;
 			
 			var toShuffle:Vector.<QuadTreePage> = loadedPages.concat();
 			var len:int = loadedPages.length;
 			for (var i:int = 0; i < len; i++) {
 				// TODO: remove loadedPages[i]
+				var page:QuadTreePage = loadedPages[i];
+				
 				loadedPages[i] = null;
 			}
 			
@@ -235,6 +240,8 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 			}
 			var x:Number = position.x - lastX;
 			var y:Number = position.y - lastY;
+			
+			debugFlushAll = false;
 	
 			
 			if (x * x + y * y < _squaredDistUpdate ) return;
@@ -288,14 +295,15 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 				
 				x = x * zoneSizeDiv + startZonePosition.x * wd*zoneSizeDiv;
 				y = -y * zoneSizeDiv + startZonePosition.y * hd * zoneSizeDiv;	
+				// send camera center position in zone units
 				channels.mainParamsArray.writeFloat(x);
 				channels.mainParamsArray.writeFloat(y);
 				// LogTracer.log("Writing position:" + x + ", "+y);
-				_zoneLODX = x - wd*zoneSizeDiv;
-				_zoneLODY = y - hd*zoneSizeDiv;
-
-
-			
+				
+				// Hardcoded determination
+				_zoneLODX = -.5 + Math.round(x*2) *.5;
+				_zoneLODY = -.5 + Math.round(y*2) *.5;
+				
 		
 			// natively use rounded off camera position x/y to determine center position of 2x2 boundingSpaceGrid and thus it's TL location.
 			wd = treeUtil.boundingSpace.width * .5;
@@ -309,9 +317,11 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 			x = Math.round( x / wd );  // get top left
 			y = Math.round( y / hd );
 			
-			
+
 			var lx:int = Math.floor( x )  +startZonePosition.x*2;
 			var ly:int = Math.floor( y ) + startZonePosition.y * 2;
+		
+			
 			
 			
 			var refPositionChanged:Boolean = false;
@@ -319,11 +329,20 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 			// If boundingSpaceGridCenter/TL location change, the camera position - boundingSpaceGrid TL location and that's it and readjust world item positions + camera to fit that. Can consider, at this stage, to remove off any items out of view. 
 			
 			// Now, with the relative camera positsion, call TerrainLODTreeUtil.update(). With any drawn items, update the list of QuadTreePages accordingly across all levels with the TL origin,  determining the zone positions of each quadTreePage to send to worker for processing.	
+				
 			
+			// TODO: try and figure out position 
+				
+				
 				x--;
 				y--;
+				
+				
+				
 				if (lastTreeX != int.MIN_VALUE && lastTreeY != int.MIN_VALUE) {
 					reshuffle(x, y);
+					
+					debugFlushAll = true;
 				}
 				lastTreeX = lx;
 				lastTreeY = ly;
@@ -346,7 +365,7 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 				if ( treeUtil.update((camera._x - terrainLOD.x) *tileMult, -(camera._y - terrainLOD.y)*tileMult, refPositionChanged) ) { // (for now, assume camera isn't re-translated...)
 					
 	
-					LogTracer.log("LOD Tree state update:" );
+					LogTracer.log("LOD Tree state update: "+_zoneLODX + ", "+_zoneLODY );
 					
 					resolveLODTreeState();
 					channels.initIslandChannel.send(IslandChannels.ON_LODTREE_CHANGE);
@@ -357,7 +376,7 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 			
 		}
 		
-		
+		private var debugFlushAll:Boolean = false;
 		
 		private function createDummyPage(level:int):QuadTreePage {
 			var page:QuadTreePage = lenPooledPages > 0 ? pooledPages[--lenPooledPages] : sampleQuadTreePage.clonePage();
@@ -407,7 +426,7 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 				sqCount = lastDraws.length;
 				for ( u = 0 ; u < sqCount; u++) {   // remove currently viewed pages
 					var indexer:int =  lastDraws[u];
-					if (treeUtil.drawBits.get(indexer ) == 0 ) {
+					if ( debugFlushAll || treeUtil.drawBits.get(indexer ) == 0 ) {
 						page = loadedPages[indexer]; 
 					
 						if (page != null) {
@@ -445,6 +464,7 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 
 				
 				var rqcount:int = 0;
+
 				for (u=0; u < sqCount; u++) {
 					// (create)/request/reference QuadTreePages to later set into terrainLOD 
 					
@@ -473,7 +493,7 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 						//LogTracer.log("Logging request..." + (xi*rowMult) + ", "+(yi*rowMult));
 						///*
 						channels.mainByteArray.writeFloat(_zoneLODX+xi*rowMult);
-						channels.mainByteArray.writeFloat(_zoneLODY + yi * rowMult);
+						channels.mainByteArray.writeFloat(_zoneLODY+ yi*rowMult);
 						debugShape.graphics.drawRect(xi*(8<<level), yi*(8<<level), (8<<level),(8<<level));
 						rqcount++;
 						//*/

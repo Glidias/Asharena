@@ -141,7 +141,7 @@ package
 					if (!_jobRunning && jobQueue.head) attemptStartNewCurJob();
 				}
 				else if (requestCode === IslandChannels.ON_LODTREE_CHANGE) {
-					handlePositionChange();
+					handlePositionChange(true);
 					handleLODChange();
 					if (!_jobRunning && jobQueue.head) attemptStartNewCurJob();
 				}
@@ -366,7 +366,10 @@ package
 					var yi:int = Math.floor(fy);
 					var seed:uint = islandGen.getSeed( xi, yi );
 					var zone:KDZone = zoneHash[seed];
-					if (zone == null) continue;
+					if (zone == null) {
+						LogTracer.log("ExCEPTION!::: Zone not found at: "+xi + ", "+yi);
+						continue;
+					}
 					
 					fx -= xi;
 					fy -= yi;
@@ -381,7 +384,7 @@ package
 						nodes = sampleJob.foundNodes;
 						sampleJob.timestamp = lodChangeCount;
 						if (!jobQueue.contains(sampleJob)) {
-							LogTracer.log("EXCEPTION:  sampleJob in array not found in JobQueue!!!");
+							throw new Error("EXCEPTION:  sampleJob in array not found in JobQueue!!!");
 						}
 						jobsKept++;
 						
@@ -394,7 +397,7 @@ package
 						*/
 					}
 					else {  // create new sample job if required by querying sample region into zone's KDTree to gather any possible islands. With, that , create sampling job for that area.
-						var nodes:Vector.<KDNode> = islandGen.findNodes(zone.root, fx * IslandGeneration.BM_SIZE_SMALL_I, fy * IslandGeneration.BM_SIZE_SMALL_I, kdWidth,kdWidth );
+						var nodes:Vector.<KDNode> = islandGen.findNodes(zone.root, xi*kdWidth, yi*kdWidth, kdWidth,kdWidth );
 						if (nodes!=null) {
 							//LogTracer.log("Found island KDNodes in vincitity..." + islandGen.numFoundNodes);
 							sampleJob = new SampleScaledHeight();
@@ -512,7 +515,7 @@ package
 		
 
 		///*
-		private function handlePositionChange():void   // this is triggered when moving a certain distance threshold, or when teleporting-in initially.
+		private function handlePositionChange(debug:Boolean=false):void   // this is triggered when moving a certain distance threshold, or when teleporting-in initially.
 		{
 			var seed:uint;
 			var key:*;
@@ -536,6 +539,8 @@ package
 			var xD:int= Math.ceil(maxX);  
 			var yD:int = Math.ceil(maxY);
 			var job:CreateIslandResource;
+			
+			if (debug) LogTracer.log("REceiving center position:" + x + ", " + y);
 			
 			
 			///*
@@ -571,7 +576,9 @@ package
 			//	/*
 			
 				var jobsToRemove:Array = [];
+				
 				for (key in zoneHash) {
+					
 					zone = zoneHash[key];
 					if ( zone.x >= xD || zone.y >= yD || zone.x + RADIUS  <= xi || zone.y + RADIUS  <= yi ) {
 						//LogTracer.log("Removing zone...:" + zone);
@@ -611,7 +618,7 @@ package
 								//validateJobQueue();
 							}
 						}
-						//*/
+						
 						delete zoneHash[key];  
 					}
 				}
@@ -632,11 +639,11 @@ package
 						
 						if (!zone) {
 							
-							zone = new KDZone(); // instantly set up a zone tree
+							zone = new KDZone(); // inzstantly set up a zone tree
 							zone.x = xii;
 							zone.y = yii;
 							zone.samplingJobs = new Vector.<SampleScaledHeight>(loaderAmount, true);
-							
+							LogTracer.log("New zone created:" + zone.x + " , " + zone.y);
 							//LogTracer.log("Adding zone to generate at: "+[xii, yii]);
 							islandGen.init(xii, yii);
 							zone.root = islandGen.rootNode;

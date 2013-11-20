@@ -138,9 +138,16 @@ package arena.systems.islands {
 				node = searchStack[--si];
 				curLevel = searchStackLevels[si];
 				
-				if  ( (node.flags & 1) && !( (x + width) < node.boundMinX || x > node.boundMaxX || (y + height) < node.boundMinY || y > node.boundMaxY)  ) {
-					foundNodes[count] = node;
-					count++;
+				if  ( (node.flags & 1)   ) {
+					var minX:Number = node.boundMinX;// node.seedMinX;
+					var minY:Number = node.boundMinY; // node.seedMinY;
+					var size:Number = node.getMeasuredShortSide();
+					var maxX:Number = node.boundMaxX; // minX + size;
+					var maxY:Number = node.boundMaxY; // minY + size;
+					if ( !((x + width) < minX || x > maxX || (y + height) < minY || y > maxY) ) {
+						foundNodes[count] = node;
+						count++;
+					}
 				}
 				
 			
@@ -174,6 +181,7 @@ package arena.systems.islands {
 			while (si > 0) {
 				node = searchStack[--si];
 				curLevel = searchStackLevels[si];
+				
 				
 				if  ( (node.flags & 1) && !(x < node.boundMinX || x > node.boundMaxX || y < node.boundMinY || y > node.boundMaxY)  ) {
 					foundLevel = curLevel;

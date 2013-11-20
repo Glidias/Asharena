@@ -46,6 +46,13 @@ package arena.systems.islands
 			else flags &= ~FLAG_VERTICAL;
 		}
 		
+		public function get seedMinX():Number {
+			return boundMinX + ( isRectangle() == 1 ? offset : 0);
+		}
+		public function get seedMinY():Number {
+			return boundMinY + ( isRectangle() == 2 ? offset : 0);
+		}
+		
 			
 		
 		
