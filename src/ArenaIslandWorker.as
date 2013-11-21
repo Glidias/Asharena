@@ -258,6 +258,9 @@ package
 					}
 					(node.job.pending ? pendingJobQueue : jobQueue).remove(node.job);
 					node.job.pending = false;
+					
+					LogTracer.log("VIsiting create island job! " + node.job);
+					
 					node.job.next = null;
 					node.job.prev = null;
 					jobQueue.prepend( node.job );
@@ -352,12 +355,13 @@ package
 			
 			var numLevels:int = channels.mainParamsArray.readByte();
 			//var notYetLoadedKDNodes:Dictionary = new Dictionary();
+			var bmSizeSml:int = IslandGeneration.BM_SIZE_SMALL;
 			
 			for (var level:int = 0 ; level < numLevels; level++)  {  // per level
 				var offset:int = loaderOffsets[level];
 				var len:int = channels.mainParamsArray.readInt();
 				var tilesAcross:int = (loaderTilesAcross >> level);
-				var kdWidth:Number = IslandGeneration.BM_SIZE_SMALL/tilesAcross;
+				var kdWidth:Number = bmSizeSml/tilesAcross;
 				for (var i:int = 0; i < len; i++) {  // samples per level
 					var fx:Number=channels.mainByteArray.readFloat();
 					var fy:Number = channels.mainByteArray.readFloat();
@@ -370,6 +374,7 @@ package
 						LogTracer.log("ExCEPTION!::: Zone not found at: "+xi + ", "+yi);
 						continue;
 					}
+					//if (zone && zone.x != xi && zone.y != yi) throw new Error("Mismatch seed:" + [zone.x, xi, zone.y, yi]);
 					
 					fx -= xi;
 					fy -= yi;
@@ -377,6 +382,8 @@ package
 					var lx:int= int(fx* tilesAcross);
 					var ly:int =  int(fy*tilesAcross);
 					//
+					
+					
 					var sampleJob:SampleScaledHeight = zone.samplingJobs[offset + ly * tilesAcross + lx];
 					if (sampleJob != null) {  // simply prioritize already-created sampling job??
 						//jobQueue.remove(sampleJob);
@@ -397,7 +404,9 @@ package
 						*/
 					}
 					else {  // create new sample job if required by querying sample region into zone's KDTree to gather any possible islands. With, that , create sampling job for that area.
-						var nodes:Vector.<KDNode> = islandGen.findNodes(zone.root, xi*kdWidth, yi*kdWidth, kdWidth,kdWidth );
+						//if (zone.x == 0 && zone.y == 0) throw new Error("A");
+						//LogTracer.log(zone+" finding nodes:"+[zone.root, fx*bmSizeSml, fy*bmSizeSml, kdWidth,kdWidth]);
+						var nodes:Vector.<KDNode> = islandGen.findNodes(zone.root, fx*bmSizeSml, fy*bmSizeSml, kdWidth,kdWidth );
 						if (nodes!=null) {
 							//LogTracer.log("Found island KDNodes in vincitity..." + islandGen.numFoundNodes);
 							sampleJob = new SampleScaledHeight();
@@ -542,8 +551,8 @@ package
 			
 			if (debug) LogTracer.log("REceiving center position:" + x + ", " + y);
 			
-			
-			///*
+					//(job.zone.x + job.node.boundMaxX * IslandGeneration.BM_SIZE_SMALL_I < minX ||  job.zone.y + job.node.boundMaxY * IslandGeneration.BM_SIZE_SMALL_I < minY || job.zone.x + job.node.boundMinX * IslandGeneration.BM_SIZE_SMALL_I > maxX || job.zone.y + job.node.boundMinY * IslandGeneration.BM_SIZE_SMALL_I > maxY)
+			/*
 			for (job = pendingJobQueue.head as CreateIslandResource; job != null; job = nextJob) {
 				var nextJob:CreateIslandResource = job.next as CreateIslandResource;
 				if (job.zone.x + job.node.boundMaxX * IslandGeneration.BM_SIZE_SMALL_I < minX ||  job.zone.y + job.node.boundMaxY * IslandGeneration.BM_SIZE_SMALL_I < minY || job.zone.x + job.node.boundMinX * IslandGeneration.BM_SIZE_SMALL_I > maxX || job.zone.y + job.node.boundMinY * IslandGeneration.BM_SIZE_SMALL_I > maxY) {
@@ -559,7 +568,7 @@ package
 				jobQueue.append(job);
 				
 			}
-			//*/
+			*/
 			
 			if (zoneRect.x != xi || zoneRect.y != yi || zoneRect.maxX != xD || zoneRect.maxY != yD) {
 				// if zoneRect has changed..
@@ -580,6 +589,8 @@ package
 				for (key in zoneHash) {
 					
 					zone = zoneHash[key];
+					
+			
 					if ( zone.x >= xD || zone.y >= yD || zone.x + RADIUS  <= xi || zone.y + RADIUS  <= yi ) {
 						//LogTracer.log("Removing zone...:" + zone);
 						var len:int = zone.createIslandJobs.len;
@@ -637,6 +648,7 @@ package
 						seed = islandGen.getSeed(xii, yii);
 						zone = zoneHash[seed];
 						
+						
 						if (!zone) {
 							
 							zone = new KDZone(); // inzstantly set up a zone tree
@@ -657,15 +669,16 @@ package
 								//LogTracer.log("Adding island to generate: "+node.seed);
 								job.init(new IslandResource(), node.seed + "-1");
 								
-								if (job.zone.x + job.node.boundMaxX * IslandGeneration.BM_SIZE_SMALL_I < minX ||  job.zone.y + job.node.boundMaxY * IslandGeneration.BM_SIZE_SMALL_I < minY || job.zone.x + job.node.boundMinX * IslandGeneration.BM_SIZE_SMALL_I > maxX || job.zone.y + job.node.boundMinY * IslandGeneration.BM_SIZE_SMALL_I > maxY) {
+								if ( true || (job.zone.x + job.node.boundMaxX * IslandGeneration.BM_SIZE_SMALL_I < minX ||  job.zone.y + job.node.boundMaxY * IslandGeneration.BM_SIZE_SMALL_I < minY || job.zone.x + job.node.boundMinX * IslandGeneration.BM_SIZE_SMALL_I > maxX || job.zone.y + job.node.boundMinY * IslandGeneration.BM_SIZE_SMALL_I > maxY) ) {
 									job.pending = true;
 									pendingJobQueue.append(job);
-									//LogTracer.log("Pending job:" + job + ", "+job.getLocation(IslandGeneration.BM_SIZE_SMALL_I) + " ::: "+[x,y]);
+									LogTracer.log("Pending job:" + job + ", "+job.getLocation(IslandGeneration.BM_SIZE_SMALL_I));
 								}
 								else {
 									//LogTracer.log("Inserting job:" + job);
 									job.priority = getDist(x, y, zone, node);
 									jobInsertion.add(job); // insertion sort by priority distance
+									//jobQueue.append(job);  // naive add
 								}
 								zone.createIslandJobs.push(job);
 							}

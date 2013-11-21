@@ -122,10 +122,13 @@ package arena.systems.islands {
 		
 
 		// TODO: optimize mem alloc for this...
-		public function findNodes(rootNode:KDNode,x:Number, y:Number, width:Number, height:Number):Vector.<KDNode> {
+		public  function findNodes(rootNode:KDNode,x:Number, y:Number, width:Number, height:Number):Vector.<KDNode> {
 			si  = 1;
 			var count:int = 0;
-		
+			var xmax:Number = x + width;
+			var ymax:Number = y + height;
+			if (xmax > BM_SIZE_SMALL) throw new Error("EXCEEDED");
+			if (ymax > BM_SIZE_SMALL) throw new Error("EXCEEDED2");
 			var curLevel:int;
 			searchStack[0] = rootNode;
 			searchStackLevels[0] = 0;
@@ -144,7 +147,7 @@ package arena.systems.islands {
 					var size:Number = node.getMeasuredShortSide();
 					var maxX:Number = node.boundMaxX; // minX + size;
 					var maxY:Number = node.boundMaxY; // minY + size;
-					if ( !((x + width) < minX || x > maxX || (y + height) < minY || y > maxY) ) {
+					if ( !( xmax <= minX || x >= maxX || ymax <= minY || y >= maxY) ) {
 						foundNodes[count] = node;
 						count++;
 					}
