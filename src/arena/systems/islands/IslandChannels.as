@@ -4,6 +4,7 @@ package arena.systems.islands
 	import flash.system.MessageChannel;
 	import flash.system.Worker;
 	import flash.utils.ByteArray;
+	import flash.utils.Endian;
 	import flash.utils.getDefinitionByName;
 	/**
 	 * Cross-communication between IslandGen worker and Main application
@@ -85,16 +86,21 @@ package arena.systems.islands
 			
 			
 			workerByteArray = new ByteArray();
+			
+			workerByteArray.endian = Endian.LITTLE_ENDIAN;
 			workerByteArray.shareable = true;
 			workerParamsArray = new ByteArray();
+		//	workerParamsArray.endian = Endian.LITTLE_ENDIAN;
 			workerParamsArray.shareable = true;
 			worker.setSharedProperty("workerByteArray", workerByteArray);
 			worker.setSharedProperty("workerParamsArray", workerParamsArray);
 			
 			
 			mainParamsArray = new ByteArray();
+			//mainParamsArray.endian = Endian.LITTLE_ENDIAN;
 			mainParamsArray.shareable = true;
 			mainByteArray = new ByteArray();
+			mainByteArray.endian = Endian.LITTLE_ENDIAN;
 			mainByteArray.shareable = true;
 			worker.setSharedProperty("mainParamsArray", mainParamsArray);
 			worker.setSharedProperty("mainByteArray", mainByteArray);
@@ -123,9 +129,12 @@ package arena.systems.islands
 			toMainErrorChannel = Worker.current.getSharedProperty("toMainErrorChannel");
 			toMainTraceChannel = Worker.current.getSharedProperty("toMainTraceChannel");
 			workerByteArray = Worker.current.getSharedProperty("workerByteArray");
+			workerByteArray.endian = Endian.LITTLE_ENDIAN;
 			workerParamsArray = Worker.current.getSharedProperty("workerParamsArray");
+			
 			mainParamsArray = Worker.current.getSharedProperty("mainParamsArray");
 			mainByteArray = Worker.current.getSharedProperty("mainByteArray");
+			mainByteArray.endian = Endian.LITTLE_ENDIAN;
 			
 			zoneDistance = Worker.current.getSharedProperty("zoneDistance");
 			zoneTileDistance = Worker.current.getSharedProperty("zoneTileDistance");

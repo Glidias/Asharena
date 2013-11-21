@@ -3,6 +3,7 @@ package arena.systems.islands
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.FillMaterial;
+	import alternterrain.core.HeightMapInfo;
 	import alternterrain.core.QuadSquareChunk;
 	import alternterrain.core.QuadTreePage;
 	import alternterrain.objects.HierarchicalTerrainLOD;
@@ -175,7 +176,7 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 			previewMats = new Vector.<FillMaterial>();
 			var len:int = PREVIEW_COLORS.length;
 			for ( var i:int = 0; i < len; i++) {
-				previewMats.push( new FillMaterial(PREVIEW_COLORS[i], .4) );
+				previewMats.push( new FillMaterial(PREVIEW_COLORS[i], 1) );
 			}
 		}
 		
@@ -526,7 +527,7 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 				//throw new Error(data);
 				// debugging
 			//	lod.visible = lod.gridPagesVector.length != 0;  // this isn't needed for none (create) case.
-				//lod.debug = true;
+				lod.debug = true;
 				//debugCount+=lod.gridPagesVector.length;
 				//break;
 			}//
@@ -549,8 +550,11 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 			channels = new IslandChannels();
 			channels.initPrimordial(bgWorker, zoneSizeTiles, maxLowResSample, zoneVisDistance, 4, 128 );
 			bgWorker.setSharedProperty("loaderAmount", treeUtil.loaderAmount);
-			bgWorker.setSharedProperty("loaderOffsets",treeUtil.loaderOffsets);
+			bgWorker.setSharedProperty("loaderOffsets", treeUtil.loaderOffsets);
+			
+			//channels.doTrace = trace;
 			LogTracer.log = channels.doTrace;
+			
 			 channels.islandInitedChannel.addEventListener(Event.CHANNEL_MESSAGE, onChannelIslandRecieved);
 		    
 			bgWorker.start();
@@ -646,17 +650,21 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 		//	LogTracer.log("adding sample at:"+level + ", "+sampleX + ", "+sampleY);
 		//	*/
 			
-			var limit:int = channels.minLODTreeTileDistance;  // 128
-			for (var y:int = 0; y < limit; y++) {
-				for (var x:int = 0; x < limit; x++) {
-					data.readShort();
-				}
+		
+			// read heightmap data  (td-optimization: alchemy)
+			var limit:int = channels.minLODTreeTileDistance + 1;  // 128
+			limit *= limit;
+			var heightData:Vector.<int> = page.heightMap.Data;
+			for (var i:int = 0; i < limit; i++) {
+				heightData[i] = data.readInt();
+				
+				//;
 			}
-			// if (data.length != data.position) throw new Error("A");
 			
-			 // temp for now, to see if it's loaded
-			// page = createDummyPage(level);
-			//loadedPages[lvlOffset + yi * numColumns + xi] = page;
+			// setup quadtree page; (td-optimization: alchemy)
+			page.Square.readByteArray(data);
+			if (data.position != data.length) throw new Error("EOF not reached yet!");
+			
 		 }
 		 
 		

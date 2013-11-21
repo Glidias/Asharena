@@ -290,6 +290,8 @@ public function SampleFromHeightMap(cd:QuadCornerData, hm:HeightMapInfo):void {
 	}
 }
 
+//public static var DEBUG_ADDCOUNT:int = 0;
+
 public function	AddHeightMap(cd:QuadCornerData,  hm:HeightMapInfo ):void
 // Sets the height of all samples within the specified rectangular
 // region using the given array of floats.  Extends the tree to the
@@ -314,7 +316,7 @@ public function	AddHeightMap(cd:QuadCornerData,  hm:HeightMapInfo ):void
 	}
 	*/
 	
-	// todo: optimize by checking real indices rather than unnecessary sampling!
+	
 	cd.Verts[0] = hm.Sample( cd.xorg + BlockSize, cd.zorg);
 	cd.Verts[1] = hm.Sample( cd.xorg, cd.zorg);
 	cd.Verts[2] = hm.Sample( cd.xorg, cd.zorg+BlockSize);
@@ -326,40 +328,78 @@ public function	AddHeightMap(cd:QuadCornerData,  hm:HeightMapInfo ):void
 	var size:int = half << 1;
 	
 	// Create and update child nodes.
-	for (i = 0; i < 4; i++) {
-		var	q:QuadCornerData =  new QuadCornerData(); 
-		SetupCornerData(q, cd, i);
+	if (cd.Level >= hm.Scale) {
+		for (i = 0; i < 4; i++) {
+			var	q:QuadCornerData =  new QuadCornerData(); 
+		//	DEBUG_ADDCOUNT++;
+			SetupCornerData(q, cd, i);
 
-		if (cd.Level < hm.Scale) continue;
-		
-		if (Child[i] == null) {  // && 
-			// Create child node w/ current (unmodified) values for corner verts.
-			Child[i]  = new QuadSquare(q);
+			
+			
+			if (Child[i] == null) {  // && 
+				// Create child node w/ current (unmodified) values for corner verts.
+				Child[i]  = new QuadSquare(q);
+			}
+			
+			// Recurse.
+			//if (Child[i]) {
+				Child[i].AddHeightMap(q, hm);
+			//}
 		}
-		
-		// Recurse.
-		//if (Child[i]) {
-			Child[i].AddHeightMap(q, hm);
-		//}
 	}
 	
 	// Deviate vertex heights based on data sampled from heightmap.
-	var	s:Vector.<int> = new Vector.<int>(5,true);
-	s[0] = hm.Sample(cd.xorg + half, cd.zorg + half);
-	s[1] = hm.Sample(cd.xorg + (half<<1), cd.zorg + half);
-	s[2] = hm.Sample(cd.xorg + half, cd.zorg);
-	s[3] = hm.Sample(cd.xorg, cd.zorg + half);
-	s[4] = hm.Sample(cd.xorg + half, cd.zorg + (half<<1));
+	
+	Vertex[0] = hm.Sample(cd.xorg + half, cd.zorg + half);
+	Vertex[1] = hm.Sample(cd.xorg + (half<<1), cd.zorg + half);
+	Vertex[2] = hm.Sample(cd.xorg + half, cd.zorg);
+	Vertex[3] = hm.Sample(cd.xorg, cd.zorg + half);
+	Vertex[4] = hm.Sample(cd.xorg + half, cd.zorg + (half<<1));
 
-	// Modify the vertex heights if necessary, and set the dirty
-	// flag if any modifications occur, so that we know we need to
-	// recompute error data later.
-	for (i = 0; i < 5; i++) {
-		//if (s[i] != 0) {
-			
-			Vertex[i] = s[i];  //+   dont deviate
-		//}
+	
+	
+}
+
+
+// Mainly for AS3 worker or optimized cases where everything is already pre-allocated and unnecessary code-considerations are removed.
+public function	AddHeightMapInlineFast(cd:QuadCornerData,  hm:HeightMapInfo ):void
+// Faster version compared to above
+{
+	var BlockSize:int = 2 << cd.Level;
+	
+	/*
+	cd.Verts[0] = hm.Data[cd.xorg + BlockSize + hm.RowWidth*cd.zorg];
+	cd.Verts[1] = hm.Data[ cd.xorg +  hm.RowWidth*cd.zorg];
+	cd.Verts[2] = hm.Data[ cd.xorg +  (cd.zorg+BlockSize) * hm.RowWidth];
+	cd.Verts[3] = hm.Data[ cd.xorg + BlockSize +  (cd.zorg+BlockSize)*hm.RowWidth];
+	*/
+		
+	cd.Verts[0] = hm.Sample( cd.xorg + BlockSize, cd.zorg);
+	cd.Verts[1] = hm.Sample( cd.xorg, cd.zorg);
+	cd.Verts[2] = hm.Sample( cd.xorg, cd.zorg+BlockSize);
+	cd.Verts[3] = hm.Sample( cd.xorg + BlockSize, cd.zorg+BlockSize);
+	
+	var	i:int
+	
+	var half:int = 1 << cd.Level;
+	var size:int = half << 1;
+	
+	// Create and update child nodes.
+	
+	if (cd.Level >= hm.Scale) {
+		for (i = 0; i < 4; i++) {
+			var	q:QuadCornerData =  QuadCornerData.BUFFER[QuadCornerData.BI++];
+			SetupCornerData(q, cd, i);
+			Child[i].AddHeightMapInlineFast(q, hm);
+		}
 	}
+	
+	// Set vertex heights based on data sampled from heightmap
+	Vertex[0] = hm.Sample(cd.xorg + half, cd.zorg + half);
+	Vertex[1] = hm.Sample(cd.xorg + (half<<1), cd.zorg + half);
+	Vertex[2] = hm.Sample(cd.xorg + half, cd.zorg);
+	Vertex[3] = hm.Sample(cd.xorg, cd.zorg + half);
+	Vertex[4] = hm.Sample(cd.xorg + half, cd.zorg + (half<<1));
 
 	
 }
@@ -393,6 +433,31 @@ public function GetQuadSquareChunk(cd:QuadCornerData, error:int, targetChunkLeve
 	return chunk;
 }
 
+public function WriteQuadSquareChunkInline(chunk:QuadSquareChunk, cd:QuadCornerData, error:int, targetChunkLevel:int=12):void {
+	
+
+	chunk.MinY = MinY;
+	chunk.MaxY = MaxY;
+
+	chunk.error = error;
+	if (cd.Level == targetChunkLevel+1)  return;
+	
+	// with starting cd, recurse though entire quad squares till targetChunkLevel to get error value
+	//GetSquareChunkAux(cd, 
+	var q:QuadCornerData;
+	var count:int = QuadCornerData.BI;
+	SetupCornerData( q = QuadCornerData.BUFFER[count++], cd, 0);
+	WriteQuadSquareChunkInline(chunk.Child[0], q, errorList[0], targetChunkLevel);  
+	SetupCornerData( q = QuadCornerData.BUFFER[count++], cd, 1);
+	 WriteQuadSquareChunkInline(chunk.Child[1],q, errorList[1],targetChunkLevel);
+	SetupCornerData( q = QuadCornerData.BUFFER[count++], cd, 2);
+	 WriteQuadSquareChunkInline(chunk.Child[2],q, errorList[2],targetChunkLevel);
+	SetupCornerData( q = QuadCornerData.BUFFER[count++], cd, 3);
+	WriteQuadSquareChunkInline(chunk.Child[3],q, errorList[3], targetChunkLevel);
+	QuadCornerData.BI += 4;
+	
+
+}
 
 
 public	function StaticCullAux(cd:QuadCornerData,  ThresholdDetail:Number,  TargetLevel:int):void
@@ -608,6 +673,82 @@ public function getHighestError(cd:QuadCornerData):Number {
 	return maxerror;
 }
 //*/
+
+ public function RecomputeErrorAndLightingInline(cd:QuadCornerData):Number 
+// Recomputes the error values for this tree.  Returns the
+// max error.
+// Also updates MinY & MaxY.
+// Also computes quick & dirty vertex lighting for the demo.
+{
+	var	i:int;
+	var	y:Number;
+	// Measure error of center and edge vertices.
+	var	maxerror:Number = 0;
+
+	// Compute error of center vert.
+	var	e:Number;
+	if (cd.ChildIndex & 1) {
+		e = Math.abs(Vertex[0] - (cd.Verts[1] + cd.Verts[3]) * 0.5);
+	} else {
+		e = Math.abs(Vertex[0] - (cd.Verts[0] + cd.Verts[2]) * 0.5);
+	}
+	if (e > maxerror) maxerror = e;
+
+	// Initial min/max.
+	MaxY = Vertex[0];
+	MinY = Vertex[0];
+
+	// Check min/max of corners.
+	for (i = 0; i < 4; i++) {
+		y = cd.Verts[i];
+		if (y < MinY) MinY = y;
+		if (y > MaxY) MaxY = y;
+	}
+	
+	// Edge verts.
+	e = Math.abs(Vertex[1] - (cd.Verts[0] + cd.Verts[3]) * 0.5);
+	if (e > maxerror) maxerror = e;
+	errorList[0] = e;
+	
+	e = Math.abs(Vertex[4] - (cd.Verts[2] + cd.Verts[3]) * 0.5);
+	if (e > maxerror) maxerror = e;
+	errorList[1] = e;
+
+	// Min/max of edge verts.
+	for (i = 0; i < 4; i++) {
+		y = Vertex[1 + i];
+		if (y < MinY) MinY = y;
+		if (y > MaxY) MaxY = y;
+	}
+	
+	// Check child squares.
+	if (Child[0]) {
+		for (i = 0; i < 4; i++) {
+			
+			
+			var	q:QuadCornerData = QuadCornerData.BUFFER[QuadCornerData.BI++];
+			SetupCornerData(q, cd, i);
+			errorList[i+2] = Child[i].RecomputeErrorAndLightingInline(q);
+
+			if (Child[i].MinY < MinY) MinY = Child[i].MinY;
+			if (Child[i].MaxY > MaxY) MaxY = Child[i].MaxY;
+
+			if (errorList[i+2] > maxerror) maxerror = errorList[i+2];
+		
+		}
+	}
+
+
+	//
+	// Compute quickie demo lighting.
+	//
+	//removed off...not required for this case.
+
+	// The error, MinY/MaxY, and lighting values for this node and descendants are correct now.
+
+	
+	return maxerror;
+}
 
 		
 

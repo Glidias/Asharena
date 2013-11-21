@@ -145,15 +145,15 @@ package tests.islands
 		exploreSystem.zoneVisDistance = VIS_DIST;
 			game.engine.addSystem(exploreSystem, SystemPriorities.preRender);
 			
-		//	_template3D.scene.addChild(terrainLOD);
-			//_water.addToScene(_template3D.scene);
-			//	_skybox.addToScene(_template3D.scene);
+			_template3D.scene.addChild(terrainLOD);
+			_water.addToScene(_template3D.scene);
+				_skybox.addToScene(_template3D.scene);
 				
 				
 			terrainLOD.z = 14;
 		
-			addChild(exploreSystem.debugShape);
-			addChild(exploreSystem.debugSprite);
+			//addChild(exploreSystem.debugShape);
+			//addChild(exploreSystem.debugSprite);
 			
 			ticker = new FrameTickProvider(stage);
 			ticker.add(tick);

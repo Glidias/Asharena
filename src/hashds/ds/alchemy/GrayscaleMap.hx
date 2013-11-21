@@ -3,6 +3,7 @@ import de.polygonal.ds.mem.ByteMemory;
 import de.polygonal.ds.mem.IntMemory;
 import de.polygonal.ds.mem.ShortMemory;
 import flash.display.BitmapData;
+import flash.errors.Error;
 import flash.Memory;
 
 /**
@@ -14,10 +15,19 @@ class GrayscaleMap
 	public var width:Int;
 	public var height:Int;
 	public var mem:ByteMemory;
+	public var highestSample:Int;
 
 	public function new() 
 	{
 	
+	}
+	
+	public static function isFlat(mem:IntMemory, flatVal:Int):Bool {
+		var len:Int = mem.size;
+		for (i in 0...len) {
+			if (mem.get(i) != flatVal) return false;
+		}
+		return true;
 	}
 	
 	public inline function init(width:Int, height:Int):Void {
@@ -26,13 +36,14 @@ class GrayscaleMap
 		this.height = height;
 	}
 	
+	
 		public static function createFromBitmapData(data:BitmapData):GrayscaleMap {
 		var map:GrayscaleMap = new GrayscaleMap();
 		map.init(data.width, data.height);
 		
 		for (y in 0...map.height) {
 			for (x in 0...map.width) {
-				map.setPixel(x, y, data.getPixel(x,y) & 0xFF);
+				map.setValue(x, y, data.getPixel(x,y) & 0xFF);
 			}
 		}
 		return map;
@@ -76,11 +87,13 @@ class GrayscaleMap
 			return 0xFF000000 | (byte << 16) | (byte << 8) | byte;
 		}
 		
+	
+		
 		public inline function getPixelWithHeightScale(ix:Int, iz:Int, heightScale:Int):Int {
 			return mem.get(ix + iz * width) * heightScale; 
 		}
 		
-		public inline function setPixel(ix:Int, iz:Int, byteValue:Int):Void {
+		public inline function setValue(ix:Int, iz:Int, byteValue:Int):Void {
 			mem.set(ix + iz * width, byteValue); 
 		}
 		
@@ -169,6 +182,7 @@ class GrayscaleMap
 				ix = startX;
 				dx = startDX;
 				while (ix < iwidth) {
+					//if (dx + dy * dWidth >= result.size) throw new Error( "OUT OF RANGE!"+(dx + dy * dWidth) + ", "+result.size + ", "+[dx,dy,startX,iwidth,startY,iheight]);
 					result.set(dx + dy * dWidth , sample(ix,iy,scale,base) );
 					ix += ratio;
 					dx++;
@@ -179,21 +193,25 @@ class GrayscaleMap
 		}
 		
 		public inline function samplePixelsTo3(result:ShortMemory, ix:Float, iy:Float, ratio:Float, iwidth:Float, iheight:Float,dx:Int, dy:Int, dWidth:Int, scale:Int, base:Int):Void {
+		
 			iwidth += ix;
 			iheight += iy;
-						var startX:Float = ix;
+			var startX:Float = ix;
+			var startY:Float = iy;
 			var startDX:Int = dx;
 			while (iy < iheight) {
 				ix = startX;
 				dx = startDX;
 				while (ix < iwidth) {
-					result.set(dx + dy * dWidth , sample(ix,iy,scale,base) );
+					
+					result.set(dx + dy * dWidth , 0 );
 					ix += ratio;
 					dx++;
 				}
 				iy += ratio;
 				dy++;
 			}
+				
 		}
 		
 		public inline function dispose():Void {
@@ -210,8 +228,8 @@ class GrayscaleMap
 		// between sample points are bilinearly interpolated from surrounding points.
 		// xxx deal with edges: either force to 0 or over-size the query region....
 		{
-			
-			return getPixel(round(x), round(z));  // naive roundoff sampling
+		
+			return getPixelWithHeightScale(round(x), round(z), scale) + base;
 			
 		
 		

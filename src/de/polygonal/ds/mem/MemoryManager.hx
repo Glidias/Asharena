@@ -31,6 +31,7 @@ package de.polygonal.ds.mem;
 
 import de.polygonal.ds.error.Assert.assert;
 import de.polygonal.ds.Bits;
+import flash.utils.Endian;
 
 private typedef MemoryAccessFriend =
 {
@@ -280,6 +281,7 @@ class MemoryManager
 		
 		#if alchemy
 			_bytes = new flash.utils.ByteArray();
+			_bytes.endian = Endian.LITTLE_ENDIAN;
 			#if flash10
 			var tmp = new Array<Int>();
 			for (i in 0...1024) tmp[i] = flash.Memory.getByte(i);
@@ -569,6 +571,7 @@ class MemoryManager
 		#if alchemy
 		//copy "raw" bytes to the start of the byte array while "data" bytes go to the end of the byte array
 		var copy = new flash.utils.ByteArray();
+		copy.endian = Endian.LITTLE_ENDIAN;
 		#if flash
 		copy.length = rawOffset + requiredBytes;
 		for (i in 0..._bytesRaw) copy[i] = flash.Memory.getByte(i);
@@ -646,7 +649,7 @@ class MemoryManager
 		//copy "raw" bytes to the start of the byte array while "data" bytes go to the end of the byte array
 		#if alchemy
 		var copy = new flash.utils.ByteArray();
-		
+			copy.endian = Endian.LITTLE_ENDIAN;
 			#if flash
 			copy.length = rawOffset + _bytesTotal;
 			for (i in 0..._bytesRaw) copy[i] = _bytes[i];

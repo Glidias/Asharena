@@ -7,8 +7,6 @@ package alternterrain.core
 	import flash.utils.IDataOutput;
 	import flash.utils.IExternalizable;
 	
-	import alternativa.engine3d.alternativa3d;
-	use namespace alternativa3d;
 
 	
 	/**
@@ -572,6 +570,36 @@ public	function UpdateAux(cd:QuadChunkCornerData, camera:Vector3D, CenterError:N
 			Child[3] = input.readObject();
 		}
 	}
+	
+	public function readByteArray(input:ByteArray):void 
+	{
+	
+		/* #if positiveShortHeightsOnly
+			MinY = input.readUnsignedShort();
+			MaxY = input.readUnsignedShort();
+		*/
+		///* #else if positiveNegativeShortHeights
+			MinY = input.readInt();
+			MaxY = input.readInt();
+			
+			//MinY = -int.MAX_VALUE * .5;
+			//MaxY = int.MAX_VALUE * .5;
+		//#end if */
+		
+		error = input.readInt();
+		input.readBoolean();  // todo: depeciate fully
+		//normals =  ? input.readObject() : null;
+		if ( input.readBoolean() ) {
+			Child[0] = new QuadSquareChunk();
+			Child[0].readByteArray(input);
+			Child[1] = new QuadSquareChunk();
+			Child[1].readByteArray(input);
+			Child[2] =  new QuadSquareChunk();
+			Child[2].readByteArray(input);
+			Child[3] = new QuadSquareChunk();
+			Child[3].readByteArray(input);
+		}
+	}
 
 	public function writeExternal(output:IDataOutput):void 
 	{
@@ -586,6 +614,24 @@ public	function UpdateAux(cd:QuadChunkCornerData, camera:Vector3D, CenterError:N
 			output.writeObject(Child[1]);
 			output.writeObject(Child[2]);
 			output.writeObject(Child[3]);
+		}
+		else output.writeBoolean(false);
+	}
+	
+	public function writeByteArray(output:ByteArray):void 
+	{
+		output.writeInt(MinY);
+		output.writeInt(MaxY);
+
+		output.writeInt(error);
+		output.writeBoolean( false );  // todo: depciate fully
+		//if (normals != null) output.writeObject(normals);
+		if (Child[0] != null) {
+			output.writeBoolean(true);
+			Child[0].writeByteArray(output);
+			Child[1].writeByteArray(output);
+			Child[2].writeByteArray(output);
+			Child[3].writeByteArray(output);
 		}
 		else output.writeBoolean(false);
 	}

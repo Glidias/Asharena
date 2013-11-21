@@ -16,7 +16,7 @@
     </define>
     <define append="true">
       <name>CONFIG::timeStamp</name>
-      <value>'11/7/2013'</value>
+      <value>'11/21/2013'</value>
     </define>
     <define append="true">
       <name>CONFIG::air</name>
@@ -56,7 +56,6 @@
       <path-element>D:\Git\Asharena\lib\Progression4.swc</path-element>
       <path-element>D:\Git\Asharena\lib\ds.swc</path-element>
       <path-element>D:\Git\Asharena\lib\dsai.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\fonts.swc</path-element>
       <path-element>D:\Git\Asharena\lib\hashds.swc</path-element>
       <path-element>D:\Git\Asharena\lib\hashds-alchemy.swc</path-element>
     </library-path>

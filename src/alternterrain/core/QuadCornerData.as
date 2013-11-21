@@ -55,6 +55,14 @@ package alternterrain.core
 			BUFFER.fixed = true;
 			BLEN = size;
 		}
+		
+		public static function fillBuffer():void {
+			var len:int = BLEN;
+			var result:Vector.<QuadCornerData> = BUFFER;
+			for (var i:int = 0; i < len; i++) {
+				result[i] = new QuadCornerData();
+			}
+		}
 
 		
 		public function clone():QuadCornerData {

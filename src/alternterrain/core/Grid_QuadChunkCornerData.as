@@ -6,7 +6,7 @@ package alternterrain.core
 	 */
 	public class Grid_QuadChunkCornerData 
 	{
-		public var vec:Vector.<QuadTreePage>;
+		public var vec:Vector.<QuadChunkCornerData>;
 		public var cols:int;
 
 		public var originX:int = 0;

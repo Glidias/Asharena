@@ -1027,6 +1027,7 @@ package terraingen.island  {
 	
 		public function makeHeightExport(exportSize:int = 0):GrayscaleMap {
 			var grayscale:GrayscaleMap = new GrayscaleMap();
+			exportSize = exportSize != 0 ? exportSize : EXPORT_SIZE;
 			grayscale.init(exportSize+1, exportSize+1);
 				var exportSize:int = grayscale.width;
 			  var exportBitmap:BitmapData = new BitmapData(exportSize, exportSize);

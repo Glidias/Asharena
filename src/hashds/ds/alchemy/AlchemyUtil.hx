@@ -48,6 +48,15 @@ class AlchemyUtil
 		}
 	}
 	
+	public function setupIntHeights(addr:Int, result:Vector<UInt>, limit:Int):Void {
+		var count:Int = 0;
+		while ( count < limit) {
+			result[count] = Memory.getI32(addr);
+			count++;
+			addr += 2;
+		}
+	}
+	
 	public function setupColorBitmap(addr:Int, data:BitmapData, vec:Vector<UInt>):Void {
 		var count:Int = 0;
 

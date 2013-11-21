@@ -145,8 +145,8 @@ package arena.systems.islands {
 					var minX:Number = node.boundMinX;// node.seedMinX;
 					var minY:Number = node.boundMinY; // node.seedMinY;
 					var size:Number = node.getMeasuredShortSide();
-					var maxX:Number = node.boundMaxX; // minX + size;
-					var maxY:Number = node.boundMaxY; // minY + size;
+					var maxX:Number =  minX + size;
+					var maxY:Number = minY + size;
 					if ( !( xmax <= minX || x >= maxX || ymax <= minY || y >= maxY) ) {
 						foundNodes[count] = node;
 						count++;

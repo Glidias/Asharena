@@ -2,6 +2,9 @@ package hashds;
 
 import de.polygonal.ds.mem.BitMemory;
 import de.polygonal.ds.mem.MemoryManager;
+import flash.system.ApplicationDomain;
+import flash.utils.ByteArray;
+import flash.utils.Endian;
 import hashds.ds.alchemy.AlchemyUtil;
 import hashds.ds.alchemy.ColorMap;
 import hashds.ds.alchemy.FullColorMap;
@@ -32,7 +35,6 @@ class HashDSMainAlchemy
 	}
 	
 	public static function main():Void {
-		
 		
 	}
 	

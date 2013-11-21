@@ -794,6 +794,7 @@ package alternterrain.objects
 		public function cullingInFrustum(culling:int, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number):int 
 		{
 			
+	
 
 				if (maxZ < waterLevel) return -1;		
 				
@@ -1026,6 +1027,7 @@ package alternterrain.objects
 						
 						var cd:QuadTreePage;
 						_currentPage = cd = gridPagesVector[i];
+						
 						var c:QuadSquareChunk = cd.Square;
 						var curCulling:int;
 						if  ( (curCulling=cullingInFrustum(culling, cd.xorg , cd.zorg, c.MinY, cd.xorg + full, cd.zorg + full, c.MaxY)) >=0 ) {

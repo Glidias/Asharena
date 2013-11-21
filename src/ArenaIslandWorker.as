@@ -1,5 +1,10 @@
 package  
 {
+	import alternterrain.core.HeightMapInfo;
+	import alternterrain.core.QuadChunkCornerData;
+	import alternterrain.core.QuadCornerData;
+	import alternterrain.core.QuadSquare;
+	import alternterrain.core.QuadSquareChunk;
 	import arena.systems.islands.IslandChannels;
 	import arena.systems.islands.IslandGeneration;
 	import arena.systems.islands.jobs.CreateIslandResource;
@@ -9,6 +14,7 @@ package
 	import arena.systems.islands.KDZone;
 	import arena.systems.islands.KDNode;
 	import de.polygonal.ds.LinkedQueue;
+	import de.polygonal.ds.mem.IntMemory;
 	import de.polygonal.ds.mem.MemoryManager;
 	import de.polygonal.ds.mem.ShortMemory;
 	import de.polygonal.ds.Prioritizable;
@@ -20,7 +26,9 @@ package
 	import flash.utils.ByteArray;
 	import flash.utils.clearTimeout;
 	import flash.utils.Dictionary;
+	import flash.utils.Endian;
 	import flash.utils.setTimeout;
+	import hashds.ds.alchemy.GrayscaleMap;
 	import hashds.ds.DLMixList_arena_systems_islands_jobs_IsleJob;
 	import hashds.ds.DMixPriorityList_arena_systems_islands_jobs_IsleJob;
 	import jp.progression.commands.lists.SerialList;
@@ -51,10 +59,13 @@ package
 		private var _jobRunning:Boolean = false;
 		private var _curRunningJob:IsleJob;
 		
+		private var heightMapSample:HeightMapInfo;
+		private var quadCornerDataSample:QuadCornerData;
+		private var quadChunkDataSample:QuadChunkCornerData;
+		private var heightDataSample:IntMemory;
 		
 		public function ArenaIslandWorker() 
 		{
-			
 			
 			if (!Worker.current.isPrimordial) {
 				try {
@@ -70,9 +81,9 @@ package
 			}
 		}
 		
+		
 		private function init():void 
 		{
-			
 			
 			zoneRect = new RectI();
 			zoneHash = new Dictionary();
@@ -81,10 +92,36 @@ package
 			channels.initFromChild();
 			LogTracer.error = channels.sendError;
 			
+			var tilesAcross:int = channels ?  channels.minLODTreeTileDistance : 128;
+			QuadCornerData.setFixedBufferSize(21844);  // for(n...levels) count += tilesAcross*tilesAcross; tilesAcross *=.5;
+			QuadCornerData.fillBuffer();
+			heightMapSample = new HeightMapInfo();
+			heightMapSample.RowWidth = tilesAcross+1;
+			heightMapSample.XSize = heightMapSample.RowWidth;
+			heightMapSample.ZSize = heightMapSample.RowWidth;
+			heightMapSample.XOrigin = 0;
+			heightMapSample.ZOrigin = 0;
+			heightMapSample.setFlat(tilesAcross, 256); // hardcoded tileSize
+			quadCornerDataSample = QuadCornerData.createRoot(0, 0, tilesAcross * 256);  // hardcoded tileSize
+			quadCornerDataSample.Square.AddHeightMap(quadCornerDataSample, heightMapSample);
+			quadChunkDataSample = new QuadChunkCornerData();
+			quadChunkDataSample.Square = quadCornerDataSample.Square.GetQuadSquareChunk(quadCornerDataSample, 0 );
+			quadCornerDataSample.Square.WriteQuadSquareChunkInline(quadChunkDataSample.Square, quadCornerDataSample, 0);
+			
+			heightDataSample = new IntMemory(heightMapSample.RowWidth * heightMapSample.RowWidth);
+			SampleScaledHeight.MEM = heightDataSample;
+			//throw new Error(QuadSquare.DEBUG_ADDCOUNT);
+			
+
+			
+			//IntMemory.toVector(heightDataSample, -1, -1, heightMapSample.Data);
+			//ShortMemory.toVector
+			//quadCornerDataSample.Square.RecomputeErrorAndLighting(quadCornerDataSample);
+			//throw new Error(quadCornerDataSample.Square.errorList);
+			
 			loaderOffsets =  Worker.current.getSharedProperty("loaderOffsets");
 			loaderAmount = Worker.current.getSharedProperty("loaderAmount");
 			loaderTilesAcross = channels.zoneTileDistance / channels.minLODTreeTileDistance;
-			
 			
 			LogTracer.log = channels.sendTrace;
 			
@@ -118,6 +155,8 @@ package
 			
 			// ALL TIERS
 			channels.mainResponseDone.addEventListener(Event.CHANNEL_MESSAGE, onMainResponseDone);
+			
+			
 
 		}
 		
@@ -132,7 +171,7 @@ package
 		private function onIslandInitHandler(e:Event):void 
 		{
 			try {
-			
+
 				var requestCode:* = channels.initIslandChannel.receive();
 				
 				// Job queue deployment
@@ -165,9 +204,6 @@ package
 			}
 		}
 		
-		
-		
-	
 
 		
 		private function attemptStartNewCurJob():void { 
@@ -302,7 +338,7 @@ package
 				}
 			}
 			else if (classe === SampleScaledHeight) {  // send request to Main first, handle async response cases from Main
-				if ( !(job as SampleScaledHeight).cancelled ) {
+				if ( !(job as SampleScaledHeight).cancelled && !GrayscaleMap.isFlat(heightDataSample, 0) ) {  // TODO: consider predetermine flatness instaed of adding in job!
 					(job as SampleScaledHeight).zone.samplingJobs[job.index] = null;
 					sendHeightSample(job as SampleScaledHeight);
 				}
@@ -322,7 +358,8 @@ package
 		
 		private function sendHeightSample(job:SampleScaledHeight):void 
 		{
-			var mem:ShortMemory = SampleScaledHeight.MEM;
+			
+			var mem:IntMemory = heightDataSample;
 			channels.workerByteArray.position = 0;
 			//LogTracer.log([job.zone.x, job.zone.y, job.sampleX , job.sampleY]);
 			channels.workerByteArray.writeInt( job.zone.x );
@@ -331,7 +368,28 @@ package
 			channels.workerByteArray.writeFloat(job.sampleX);
 			channels.workerByteArray.writeFloat(job.sampleY);
 			channels.workerByteArray.writeByte(job.level);
-			channels.workerByteArray.writeBytes(MemoryManager._instance._bytes, mem.offset, mem.bytes);
+
+			channels.workerByteArray.writeBytes(MemoryManager._instance._bytes, mem.offset , mem.bytes);
+		
+		
+			IntMemory.toVector(mem, -1, -1, heightMapSample.Data);
+			QuadCornerData.BI = 0;
+			quadCornerDataSample.Square.AddHeightMapInlineFast(quadCornerDataSample, heightMapSample);
+			//quadCornerDataSample.Square.AddHeightMap(quadCornerDataSample, heightMapSample);
+			QuadCornerData.BI = 0;
+			var error:int = quadCornerDataSample.Square.RecomputeErrorAndLightingInline(quadCornerDataSample);
+			//var error:int = quadCornerDataSample.Square.RecomputeErrorAndLighting(quadCornerDataSample);
+			QuadCornerData.BI = 0;
+			//quadCornerDataSample.Square.WriteQuadSquareChunkInline(quadChunkDataSample.Square, quadCornerDataSample, error);
+			quadChunkDataSample.Square = quadCornerDataSample.Square.GetQuadSquareChunk(quadCornerDataSample, error);
+			//LogTracer.log("BOUNDS:" + [quadCornerDataSample.Square.MinY, quadCornerDataSample.Square.MaxY]);
+			quadChunkDataSample.Square.writeByteArray(channels.workerByteArray);
+			
+			QuadCornerData.BI = 0;
+			// TODO: create quadSquareChunk bytes form above sample!
+			
+			
+			
 			channels.islandInitedChannel.send(IslandChannels.INITED_DETAIL_HEIGHT);
 		}
 		
