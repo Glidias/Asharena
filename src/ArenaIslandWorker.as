@@ -64,6 +64,8 @@ package
 		private var quadChunkDataSample:QuadChunkCornerData;
 		private var heightDataSample:IntMemory;
 		
+		
+	
 		public function ArenaIslandWorker() 
 		{
 			
@@ -106,7 +108,7 @@ package
 			quadCornerDataSample.Square.AddHeightMap(quadCornerDataSample, heightMapSample);
 			quadChunkDataSample = new QuadChunkCornerData();
 			quadChunkDataSample.Square = quadCornerDataSample.Square.GetQuadSquareChunk(quadCornerDataSample, 0 );
-			quadCornerDataSample.Square.WriteQuadSquareChunkInline(quadChunkDataSample.Square, quadCornerDataSample, 0);
+			//quadCornerDataSample.Square.WriteQuadSquareChunkInline(quadChunkDataSample.Square, quadCornerDataSample, 0);
 			
 			heightDataSample = new IntMemory(heightMapSample.RowWidth * heightMapSample.RowWidth);
 			SampleScaledHeight.MEM = heightDataSample;
@@ -380,8 +382,8 @@ package
 			var error:int = quadCornerDataSample.Square.RecomputeErrorAndLightingInline(quadCornerDataSample);
 			//var error:int = quadCornerDataSample.Square.RecomputeErrorAndLighting(quadCornerDataSample);
 			QuadCornerData.BI = 0;
-			//quadCornerDataSample.Square.WriteQuadSquareChunkInline(quadChunkDataSample.Square, quadCornerDataSample, error);
-			quadChunkDataSample.Square = quadCornerDataSample.Square.GetQuadSquareChunk(quadCornerDataSample, error);
+			quadCornerDataSample.Square.WriteQuadSquareChunkInline(quadChunkDataSample.Square, quadCornerDataSample, error);
+			//quadChunkDataSample.Square = quadCornerDataSample.Square.GetQuadSquareChunk(quadCornerDataSample, error);
 			//LogTracer.log("BOUNDS:" + [quadCornerDataSample.Square.MinY, quadCornerDataSample.Square.MaxY]);
 			quadChunkDataSample.Square.writeByteArray(channels.workerByteArray);
 			
@@ -410,6 +412,9 @@ package
 			var jobsKept:int = 0;
 			
 			channels.mainByteArray.position = 0;
+			
+			var toInsertHead:SampleScaledHeight;
+			var toInsertTail:SampleScaledHeight;
 			
 			var numLevels:int = channels.mainParamsArray.readByte();
 			//var notYetLoadedKDNodes:Dictionary = new Dictionary();
@@ -473,7 +478,18 @@ package
 							sampleJob.zone = zone;
 							sampleJob.index = offset + ly*tilesAcross + lx;
 							zone.samplingJobs[sampleJob.index] = sampleJob;
-							jobQueue.prepend(sampleJob);
+							jobQueue.append(sampleJob);
+							/*
+							if (toInsertHead != null) {
+								toInsertTail.next = sampleJob;
+								sampleJob.prev = toInsertTail;
+							}
+							else {
+								toInsertHead = sampleJob;
+							}
+							*/
+							toInsertTail  = sampleJob;
+							
 							validateJobQueue("EARLY");
 							sampleJob.timestamp = lodChangeCount;
 							//LogTracer.log("Prioritizing sample job:" + sampleJob);
@@ -530,6 +546,10 @@ package
 				}
 			}
 			
+			// insert newly inserted jobs into queue now
+			if (toInsertHead != null) {
+				jobQueue.prepend2(toInsertHead, toInsertTail);
+			}
 			
 			// Debug asserts
 			if (_jobRunning && _curRunningJob is SampleScaledHeight) {

@@ -56,7 +56,7 @@ package alternativa.engine3d.materials {
 		 static alternativa3d const kilProcedure:Procedure = new Procedure([
 			"#c0=cThresholdAlpha",
 			"#v0=vPosition",
-			"sub t0.z, v0.y, c0.z",
+			"sub t0.z, v0.z, c0.z",
 			"kil t0.z"
 		], "kilProcedure");
 		
@@ -128,6 +128,8 @@ package alternativa.engine3d.materials {
 		 */
 		public var transparentPass:Boolean = true;
 		
+		private var waterMode:Boolean = true;
+		
 		/**
 		 * If <code>true</code>, perform opaque pass. Parts of surface, cumulative alpha value of which is greater or equal than  <code>alphaThreshold</code> will be drawn within opaque pass.
 		 * @see #alphaThreshold
@@ -172,9 +174,8 @@ package alternativa.engine3d.materials {
 			}
 		}
 		
-		public static const WATER_BIT:uint = 128;
-		public static const NON_WATER_MASK:uint = ~WATER_BIT;
-		public var waterMode:Boolean = true;
+
+
 		
 		/**
 		 * @param object
@@ -186,7 +187,7 @@ package alternativa.engine3d.materials {
 		 */
 		private function getProgram(object:Object3D, programs:Vector.<TextureZClipMaterialProgram>, camera:Camera3D, opacityMap:TextureResource, alphaTest:int, waterMode:Boolean):TextureZClipMaterialProgram {
 			var key:uint = (opacityMap != null ? 3 : 0) + alphaTest;
-			key |= waterMode ? WATER_BIT : 0;
+
 			
 			var program:TextureZClipMaterialProgram = programs[key];
 			if (program == null) {
@@ -206,7 +207,7 @@ package alternativa.engine3d.materials {
 
 				// Pixel shader
 				var fragmentLinker:Linker = new Linker(Context3DProgramType.FRAGMENT);
-				if (waterMode) fragmentLinker.addProcedure(kilProcedure);
+				 fragmentLinker.addProcedure(kilProcedure);
 				var outProcedure:Procedure = (opacityMap != null ? getDiffuseOpacityProcedure : getDiffuseProcedure);
 				fragmentLinker.addProcedure(outProcedure);
 				if (alphaTest > 0) {

@@ -130,9 +130,12 @@ package arena.systems.islands.jobs
 				//LogTracer.log(level + " / " + node.islandResource.heightMap.width + " / " + nodeSize +" Sampling: " + sx + ", " + sy + ", " + ratio + ", " + width + ", " + height + ", " + dx + ", " + dy);
 				// For now, naive impl
 				
+				width += ratio;
+				height += ratio;
+				
 				// currently hardcoding height scales atm...this shuoudl be randomized..
 				PRNG.setSeed(node.seed);
-				var determineHtScale:Number = (1 << int(Math.log(nodeSize + .01) * Math.LOG2E)) * ( PRNG.nextDouble() > .5 ?  .2 : .1);
+				var determineHtScale:Number = (1 << int(Math.log(nodeSize + .01) * Math.LOG2E)) * ( PRNG.nextDouble() > .5 ?  .15 : .1);
 				if (determineHtScale < 7) determineHtScale = 7;
 				node.islandResource.heightMap.samplePixelsTo2(MEM, sx, sy, ratio, width, height, dx, dy, minSampleSize+1,  determineHtScale, 0); 
 			

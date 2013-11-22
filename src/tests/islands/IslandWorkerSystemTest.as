@@ -3,7 +3,11 @@ package tests.islands
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.materials.TextureMaterial;
+	import alternativa.engine3d.materials.TextureZClipMaterial;
 	import alternativa.engine3d.RenderingSystem;
+	import alternativa.engine3d.resources.BitmapTextureResource;
+	import alternativa.engine3d.resources.TextureResource;
 	import alternterrain.objects.HierarchicalTerrainLOD;
 	import alternterrain.objects.TerrainLOD;
 	import arena.systems.islands.IslandChannels;
@@ -24,6 +28,7 @@ package tests.islands
 	import flash.utils.ByteArray;
 	import flash.utils.getDefinitionByName;
 	import flash.utils.setTimeout;
+	import spawners.grounds.CarribeanTextures;
 	import util.LogTracer;
 	//import haxe.Log;
 	import spawners.arena.IslandGenWorker;
@@ -66,6 +71,8 @@ package tests.islands
 		private var hideFromReflection:Vector.<Object3D> = null;// new Vector.<Object3D>();
 		private var spectatorPerson:SimpleFlyController;
 		private var terrainLOD:HierarchicalTerrainLOD;
+		
+		
 	
 		
 		
@@ -95,7 +102,7 @@ package tests.islands
 			_water = new WaterBase(NormalWaterAssets);
 			_skybox = new SkyboxBase(ClearBlueSkyAssets, WaterBase.SIZE);
 			
-			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[_skybox, _water, new SpawnerBundleA([IslandGenWorker])]);
+			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[_skybox, _water, new SpawnerBundleA([IslandGenWorker,CarribeanTextures])]);
 			bundleLoader.progressSignal.add( _preloader.setProgress );
 			bundleLoader.loadBeginSignal.add( _preloader.setLabel );
 
@@ -131,7 +138,7 @@ package tests.islands
 						stage, 
 						_template3D.camera, 
 						27*512*256/60/60,
-						122);
+						144);
 			
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
 		
@@ -141,16 +148,27 @@ package tests.islands
 			
 			terrainLOD  = new HierarchicalTerrainLOD();
 			terrainLOD.setupPages(SpawnerBundle.context3D, 128, 0);
+			
+			var res:TextureResource  = new BitmapTextureResource( new CarribeanTextures.SAND().bitmapData );
+		res.upload(SpawnerBundle.context3D);
+		
+		var mat:TextureZClipMaterial =  new TextureZClipMaterial(res ); 	
+		mat.waterLevel = 1;
+
 		var exploreSystem:IslandExploreSystem = new IslandExploreSystem(_template3D.camera, null, dist, 256, terrainLOD, _water.waterMaterial);
+		exploreSystem.waterLevel = mat.waterLevel;
+		exploreSystem.dummyTexture = mat
+		exploreSystem.dummyTextureOverWater = new TextureMaterial(res);
+		
 		exploreSystem.zoneVisDistance = VIS_DIST;
 			game.engine.addSystem(exploreSystem, SystemPriorities.preRender);
 			
 			_template3D.scene.addChild(terrainLOD);
 			_water.addToScene(_template3D.scene);
 				_skybox.addToScene(_template3D.scene);
+				_water.plane.z = mat.waterLevel;
 				
-				
-			terrainLOD.z = 14;
+			
 		
 			//addChild(exploreSystem.debugShape);
 			//addChild(exploreSystem.debugSprite);

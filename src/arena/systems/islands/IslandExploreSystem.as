@@ -3,6 +3,10 @@ package arena.systems.islands
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.FillMaterial;
+	import alternativa.engine3d.materials.Material;
+	import alternativa.engine3d.materials.TextureZClipMaterial;
+	import alternativa.engine3d.resources.BitmapTextureResource;
+	import alternativa.engine3d.resources.TextureResource;
 	import alternterrain.core.HeightMapInfo;
 	import alternterrain.core.QuadSquareChunk;
 	import alternterrain.core.QuadTreePage;
@@ -25,6 +29,7 @@ package arena.systems.islands
 	import flash.utils.Dictionary;
 	import spawners.arena.IslandGenWorker;
 	import alternativa.engine3d.alternativa3d;
+	import spawners.grounds.CarribeanTextures;
 	import util.SpawnerBundle;
 	use namespace alternativa3d;
 	import util.LogTracer;
@@ -169,6 +174,7 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 		//private var waterPlane:Object3D;
 		private var waterMaterial:WaterMaterial;
 		private static const PREVIEW_COLORS:Vector.<uint> = new <uint>[0x44EEFF,0xFFFF00, 0x00FF00, 0x0000FF];
+		 public var waterLevel:Number = 0;
 		private var zoneSizeTiles:int;
 		
 		private function setupPreviewMats():void 
@@ -379,9 +385,12 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 		
 		private var debugFlushAll:Boolean = false;
 		
+		public  var dummyTexture:Material;
+		public  var dummyTextureOverWater:Material;
+		
 		private function createDummyPage(level:int):QuadTreePage {
 			var page:QuadTreePage = lenPooledPages > 0 ? pooledPages[--lenPooledPages] : sampleQuadTreePage.clonePage();
-			page.material = previewMats[level];
+			page.material = dummyTexture || previewMats[level];
 			return page; 
 		}
 		
@@ -527,7 +536,7 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 				//throw new Error(data);
 				// debugging
 			//	lod.visible = lod.gridPagesVector.length != 0;  // this isn't needed for none (create) case.
-				lod.debug = true;
+				//lod.debug = true;
 				//debugCount+=lod.gridPagesVector.length;
 				//break;
 			}//
@@ -649,6 +658,10 @@ when TL reference changes, hier grid array of quadTreePages must reshuffle their
 			terrainLOD.lods[level].visible = true;
 		//	LogTracer.log("adding sample at:"+level + ", "+sampleX + ", "+sampleY);
 		//	*/
+		
+			//if (dummyTextureOverWater && page.Square.MinY >= waterLevel) {
+			//	page.material = dummyTextureOverWater;
+			//}
 			
 		
 			// read heightmap data  (td-optimization: alchemy)
