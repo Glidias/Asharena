@@ -435,26 +435,26 @@ public function GetQuadSquareChunk(cd:QuadCornerData, error:int, targetChunkLeve
 
 public function WriteQuadSquareChunkInline(chunk:QuadSquareChunk, cd:QuadCornerData, error:int, targetChunkLevel:int=12):void {
 	
-
+if (chunk == null) throw new Error("NULL FOUDN!"+(cd.Level == targetChunkLevel)+", "+cd.Level);
 	chunk.MinY = MinY;
 	chunk.MaxY = MaxY;
 
 	chunk.error = error;
-	if (cd.Level == targetChunkLevel+1)  return;
+	if (cd.Level == targetChunkLevel)  return;
 	
 	// with starting cd, recurse though entire quad squares till targetChunkLevel to get error value
-	//GetSquareChunkAux(cd, 
+
 	var q:QuadCornerData;
-	var count:int = QuadCornerData.BI;
-	SetupCornerData( q = QuadCornerData.BUFFER[count++], cd, 0);
+	//var count:int = QuadCornerData.BI;
+	SetupCornerData( q = QuadCornerData.BUFFER[QuadCornerData.BI++], cd, 0);
 	WriteQuadSquareChunkInline(chunk.Child[0], q, errorList[0], targetChunkLevel);  
-	SetupCornerData( q = QuadCornerData.BUFFER[count++], cd, 1);
+	SetupCornerData( q = QuadCornerData.BUFFER[QuadCornerData.BI++], cd, 1);
 	 WriteQuadSquareChunkInline(chunk.Child[1],q, errorList[1],targetChunkLevel);
-	SetupCornerData( q = QuadCornerData.BUFFER[count++], cd, 2);
+	SetupCornerData( q = QuadCornerData.BUFFER[QuadCornerData.BI++], cd, 2);
 	 WriteQuadSquareChunkInline(chunk.Child[2],q, errorList[2],targetChunkLevel);
-	SetupCornerData( q = QuadCornerData.BUFFER[count++], cd, 3);
+	SetupCornerData( q = QuadCornerData.BUFFER[QuadCornerData.BI++], cd, 3);
 	WriteQuadSquareChunkInline(chunk.Child[3],q, errorList[3], targetChunkLevel);
-	QuadCornerData.BI += 4;
+
 	
 
 }

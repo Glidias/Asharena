@@ -106,8 +106,9 @@ package
 			quadCornerDataSample.Square.AddHeightMap(quadCornerDataSample, heightMapSample);
 			quadChunkDataSample = new QuadChunkCornerData();
 			quadChunkDataSample.Square = quadCornerDataSample.Square.GetQuadSquareChunk(quadCornerDataSample, 0 );
-			quadCornerDataSample.Square.WriteQuadSquareChunkInline(quadChunkDataSample.Square, quadCornerDataSample, 0);
-			
+			//QuadCornerData.BI = 0;
+			//quadCornerDataSample.Square.WriteQuadSquareChunkInline(quadChunkDataSample.Square, quadCornerDataSample, 0);
+			//QuadCornerData.BI = 0;
 			heightDataSample = new IntMemory(heightMapSample.RowWidth * heightMapSample.RowWidth);
 			SampleScaledHeight.MEM = heightDataSample;
 			//throw new Error(QuadSquare.DEBUG_ADDCOUNT);
@@ -380,8 +381,9 @@ package
 			var error:int = quadCornerDataSample.Square.RecomputeErrorAndLightingInline(quadCornerDataSample);
 			//var error:int = quadCornerDataSample.Square.RecomputeErrorAndLighting(quadCornerDataSample);
 			QuadCornerData.BI = 0;
-			//quadCornerDataSample.Square.WriteQuadSquareChunkInline(quadChunkDataSample.Square, quadCornerDataSample, error);
-			quadChunkDataSample.Square = quadCornerDataSample.Square.GetQuadSquareChunk(quadCornerDataSample, error);
+		
+			quadCornerDataSample.Square.WriteQuadSquareChunkInline(quadChunkDataSample.Square, quadCornerDataSample, error);
+			//quadChunkDataSample.Square = quadCornerDataSample.Square.GetQuadSquareChunk(quadCornerDataSample, error);
 			//LogTracer.log("BOUNDS:" + [quadCornerDataSample.Square.MinY, quadCornerDataSample.Square.MaxY]);
 			quadChunkDataSample.Square.writeByteArray(channels.workerByteArray);
 			
