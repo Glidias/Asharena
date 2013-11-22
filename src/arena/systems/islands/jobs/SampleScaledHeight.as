@@ -3,6 +3,7 @@ package arena.systems.islands.jobs
 	import arena.systems.islands.IslandGeneration;
 	import arena.systems.islands.KDZone;
 	import arena.systems.islands.KDNode;
+	import de.polygonal.core.math.random.ParkMiller31;
 	import de.polygonal.ds.mem.IntMemory;
 	import de.polygonal.math.PM_PRNG;
 	import util.LogTracer;
@@ -25,7 +26,7 @@ package arena.systems.islands.jobs
 		public static var MEM:IntMemory;
 		public static var ZONE_SIZE:Number = 8192;
 		public static var MIN_SAMPLE_SIZE:int = 128;
-		public static var PRNG:PM_PRNG = new PM_PRNG();
+		public static var PRNG:ParkMiller31 = new ParkMiller31();
 
 		public function SampleScaledHeight() // 1, 2, 4, 8 - stride is basically the result of the bitshift. It determines the scale for the noise.
 		{
@@ -135,7 +136,7 @@ package arena.systems.islands.jobs
 				
 				// currently hardcoding height scales atm...this shuoudl be randomized..
 				PRNG.setSeed(node.seed);
-				var determineHtScale:Number = (1 << int(Math.log(nodeSize + .01) * Math.LOG2E)) * ( PRNG.nextDouble() > .5 ?  .15 : .1);
+				var determineHtScale:Number = (1 << int(Math.log(nodeSize + .01) * Math.LOG2E)) * ( PRNG.randomFloat() > .5 ?  .15 : .1);
 				if (determineHtScale < 7) determineHtScale = 7;
 				node.islandResource.heightMap.samplePixelsTo2(MEM, sx, sy, ratio, width, height, dx, dy, minSampleSize+1,  determineHtScale, 0); 
 			
@@ -144,6 +145,8 @@ package arena.systems.islands.jobs
 			
 			ON_COMPLETE.dispatch(this);
 		}
+		
+	
 		
 		
 		

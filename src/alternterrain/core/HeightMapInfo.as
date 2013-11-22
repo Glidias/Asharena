@@ -67,17 +67,18 @@ package alternterrain.core
   var heightClamp:int = (smoothEdges) ? height : height - 1;
   
   // [Optimization] Calculate bounds ahead of time
-  var bounds:int = width * height;
+  var bounds:int = widthClamp * heightClamp;
   
   // Validate requirements
  
   
-  // Allocate the result
-  var result:Vector.<int> = new Vector.<int>();  // this should be a float
+  // TODO: pre-Allocate the result for optimized cases
+  var result:Vector.<int> = new Vector.<int>(Data.length,true);  // this should be a float
+ 
   var heightMap:Vector.<int> = Data;
-  // Make sure memory was allocated
-  if (!result)
-    return;
+  
+
+ 
   
   for (z = (smoothEdges) ? 0 : 1; z < heightClamp; ++z)
   {

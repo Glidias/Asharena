@@ -1,4 +1,5 @@
 package hashds.ds.alchemy;
+import de.polygonal.core.math.random.ParkMiller31;
 import de.polygonal.ds.mem.ByteMemory;
 import de.polygonal.ds.mem.IntMemory;
 import de.polygonal.ds.mem.ShortMemory;
@@ -97,6 +98,10 @@ class GrayscaleMap
 			mem.set(ix + iz * width, byteValue); 
 		}
 		
+		public inline function getValue(ix:Int, iz:Int):Int {
+			return mem.get(ix + iz * width); 
+		}
+		
 		public function setFromBitmapData(bmpData:BitmapData):Void {
 			var iwidth:Int = bmpData.width;
 			var iheight:Int = bmpData.height;
@@ -183,7 +188,7 @@ class GrayscaleMap
 				dx = startDX;
 				while (ix < iwidth) {
 					//if (dx + dy * dWidth >= result.size) throw new Error( "OUT OF RANGE!"+(dx + dy * dWidth) + ", "+result.size + ", "+[dx,dy,startX,iwidth,startY,iheight]);
-					result.set(dx + dy * dWidth , sample(ix,iy,scale,base) );
+					result.set(dx + dy * dWidth , sample(ix,iy,scale,base )  );
 					ix += ratio;
 					dx++;
 				}
@@ -229,13 +234,13 @@ class GrayscaleMap
 		// xxx deal with edges: either force to 0 or over-size the query region....
 		{
 		
-			return getPixelWithHeightScale(round(x), round(z), scale) + base;
+			//return getPixelWithHeightScale(round(x), round(z), scale) + base;
 			
 		
 		
 			
 			
-			/*
+			///*
 			
 			// Break coordinates into grid-relative coords (ix,iz) and remainder (rx,rz).
 			var xi:Int = Std.int(x);
@@ -248,7 +253,7 @@ class GrayscaleMap
 				if (xi >= width ) xi = width - 1;
 				if (zi >= height) zi = height -1;
 				
-				throw "Out of bounds sample!";
+				//throw new Error("OUTTA BOUNDS");
 				//return 0;	// Outside the grid.
 			}
 
@@ -265,7 +270,7 @@ class GrayscaleMap
 			return round( (s00 * (1-fx) + s01 * fx) * (1-fz) +
 				(s10 * (1-fx) + s11 * fx) * fz );
 				
-				*/
+				//*/
 		}
 		
 		 /**

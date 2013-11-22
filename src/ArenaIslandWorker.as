@@ -375,6 +375,7 @@ package
 		
 		
 			IntMemory.toVector(mem, -1, -1, heightMapSample.Data);
+			//heightMapSample.BoxFilterHeightMap(true);
 			QuadCornerData.BI = 0;
 			quadCornerDataSample.Square.AddHeightMapInlineFast(quadCornerDataSample, heightMapSample);
 			//quadCornerDataSample.Square.AddHeightMap(quadCornerDataSample, heightMapSample);

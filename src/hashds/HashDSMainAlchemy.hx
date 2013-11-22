@@ -1,5 +1,6 @@
 package hashds;
 
+import de.polygonal.core.math.random.ParkMiller31;
 import de.polygonal.ds.mem.BitMemory;
 import de.polygonal.ds.mem.MemoryManager;
 import flash.system.ApplicationDomain;
@@ -27,6 +28,7 @@ class HashDSMainAlchemy
 		ColorMap;
 		AlchemyUtil;
 		BitMemory;
+		ParkMiller31;
 		
 		#if alchemy
 		MemoryManager;
