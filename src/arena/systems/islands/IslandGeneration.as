@@ -306,7 +306,7 @@ package arena.systems.islands {
         public function init(setX:Number = 0, setY:Number=0 ):void 
         {
        
-		 
+		 Perlin.setParams( PARAMS );
 		
 		seededNodes = new Vector.<KDNode>();
 		seededNodeDict = new Dictionary();
@@ -588,15 +588,14 @@ package arena.systems.islands {
 			bitmapData.setPixel(x, y, n + (n << 8) + (n << 16));
 		}
 
-        
+        public static var PARAMS:Object = { octaves:4, H:0.64, lacunarity:2 };
         
         public function loadComplete():void 
         {
 
 			
 			
-			Perlin.setParams( {octaves:4, H:0.64, lacunarity:2 } );
-
+			
 
 	
           

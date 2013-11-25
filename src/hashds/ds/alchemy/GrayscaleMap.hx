@@ -178,9 +178,10 @@ class GrayscaleMap
 			}
 		}
 		
-		public inline function samplePixelsTo2(result:IntMemory, ix:Float, iy:Float, ratio:Float, iwidth:Float, iheight:Float,dx:Int, dy:Int, dWidth:Int, scale:Int, base:Int):Void {
+		public inline function samplePixelsTo2(result:IntMemory, ix:Float, iy:Float, ratio:Float, iwidth:Float, iheight:Float,dx:Int, dy:Int, dWidth:Int, scale:Int, base:Int, noiseFunc:Float->Float->Float->Float, seed:Float, min:Int, max:Int, scaler:Float):Void {
 			iwidth += ix;
 			iheight += iy;
+			var range:Float = max - min;
 			var startX:Float = ix;
 			var startDX:Int = dx;
 			while (iy < iheight) {
@@ -188,7 +189,9 @@ class GrayscaleMap
 				dx = startDX;
 				while (ix < iwidth) {
 					//if (dx + dy * dWidth >= result.size) throw new Error( "OUT OF RANGE!"+(dx + dy * dWidth) + ", "+result.size + ", "+[dx,dy,startX,iwidth,startY,iheight]);
-					result.set(dx + dy * dWidth , sample(ix,iy,scale,base )  );
+					var myHeight:Int = sample(ix, iy, scale, base );
+					myHeight += myHeight > base ?  Std.int(noiseFunc(ix*scaler, iy*scaler, seed)*range+ min) : 0;  // TODO: ensure input/output is correct across all locations/scales
+					result.set(dx + dy * dWidth ,  myHeight );
 					ix += ratio;
 					dx++;
 				}

@@ -1,5 +1,6 @@
 package arena.systems.islands.jobs 
 {
+	import alternterrainxtras.msa.Perlin;
 	import arena.systems.islands.IslandGeneration;
 	import arena.systems.islands.KDZone;
 	import arena.systems.islands.KDNode;
@@ -45,12 +46,16 @@ package arena.systems.islands.jobs
 
 			this.foundNodes = foundNodes;
 		
-		}
+		} 
 		
+		public static var PARAMS:Object = { octaves:4, H:.4, lacunarity:2.4 };
 		
 		override public function execute():void {
 		
 			cancelled = false;
+			
+			Perlin.setParams( PARAMS );
+
 			
 			var zoneSize:Number = ZONE_SIZE;
 			var bmSizeSmlI:Number = IslandGeneration.BM_SIZE_SMALL_I * zoneSize;  // to convert KD coorindate to tile coordinates
@@ -136,9 +141,14 @@ package arena.systems.islands.jobs
 				
 				// currently hardcoding height scales atm...this shuoudl be randomized..
 				PRNG.setSeed(node.seed);
-				var determineHtScale:Number = (1 << int(Math.log(nodeSize + .01) * Math.LOG2E)) * ( PRNG.randomFloat() > .5 ?  .15 : .1);
+				var nodeLevel:int = int(Math.log(nodeSize + .01) * Math.LOG2E);
+	
+				var determineHtScale:Number = (1 << nodeLevel) * ( PRNG.randomFloat() > .5 ?  .15 : .1);
 				if (determineHtScale < 7) determineHtScale = 7;
-				node.islandResource.heightMap.samplePixelsTo2(MEM, sx, sy, ratio, width, height, dx, dy, minSampleSize+1,  determineHtScale, 0); 
+				
+				nodeLevel -=  10; // 2^10=1024 hardcode cap
+				if (nodeLevel < 0) nodeLevel = 0;
+				node.islandResource.heightMap.samplePixelsTo2(MEM, sx, sy, ratio, width, height, dx, dy, minSampleSize+1,  determineHtScale, 0, Perlin.fractalNoise, node.seed, -3200, 3200, 1/(40<<nodeLevel)); 
 			
 				
 			}
