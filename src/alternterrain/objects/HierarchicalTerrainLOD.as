@@ -18,12 +18,14 @@ package alternterrain.objects
 		
 	
 		static private const NUM_LEVELS:int = 4;
+		private var _matchDetailWithScale:Boolean;
 		
 		
-		public function HierarchicalTerrainLOD() 
+		public function HierarchicalTerrainLOD(doMatchDetailWithScale:Boolean=true) 
 		{
 			var numLevels:int = NUM_LEVELS;
 			var scale:Number = 1;
+			_matchDetailWithScale = doMatchDetailWithScale;
 			lods = new Vector.<TerrainLOD>();
 			for (var i:int = 0; i < numLevels; i++) {
 				var t:TerrainLOD = new TerrainLOD();
@@ -32,6 +34,7 @@ package alternterrain.objects
 				t.transformChanged = true;
 				addChild(t);
 				lods.push(t);
+				if (doMatchDetailWithScale) t.detail /= scale; 
 				scale *= 2;
 			}
 		}
@@ -65,6 +68,24 @@ package alternterrain.objects
 				cached_retrieved += t.cached_retrieved;
 			}
 			return newly_instantiated + ", " + pool_retrieved + ", " + cached_retrieved;
+		}
+		
+		public function get matchDetailWithScale():Boolean 
+		{
+			return _matchDetailWithScale;
+		}
+		
+		public function set matchDetailWithScale(value:Boolean):void 
+		{
+				_matchDetailWithScale = value;
+				var scale:Number = 2;
+				var baseDetail:Number = lods[0].detail;
+				for (var i:int = 1; i < NUM_LEVELS; i++) {
+					var t:TerrainLOD = lods[i];
+					lods[i].detail = value ? baseDetail / scale : baseDetail;
+					scale *= 2;
+					lods[i].invalidateUpdatePosition();
+				}
 		}
 		
 		

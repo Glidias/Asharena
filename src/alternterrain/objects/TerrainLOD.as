@@ -723,6 +723,12 @@ package alternterrain.objects
 			//mySurface.numTriangles = PATCHES_ACROSS * 2;
 		}
 		
+		public function invalidateUpdatePosition():void {
+			_lastUpdateCameraPos.x = -1e22;
+			_lastUpdateCameraPos.y = -1e22;
+			_lastUpdateCameraPos.z = -1e22;
+		}
+		
 		public function getTotalStats():String {
 			
 			return newly_instantiated + ", " + pool_retrieved + ", " + cached_retrieved;

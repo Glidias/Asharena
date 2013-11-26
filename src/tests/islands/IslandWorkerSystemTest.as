@@ -191,6 +191,9 @@ package tests.islands
 				spectatorPerson.maxPitch = -Math.PI*.5;
 				spectatorPerson.minPitch = -Math.PI*.5;
 			}
+			else if (e.keyCode === Keyboard.I) {
+				terrainLOD.matchDetailWithScale = !terrainLOD.matchDetailWithScale;
+			}
 		}
 
 		

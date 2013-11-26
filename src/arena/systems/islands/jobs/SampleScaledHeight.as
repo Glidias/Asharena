@@ -148,7 +148,7 @@ package arena.systems.islands.jobs
 				
 				nodeLevel -=  10; // 2^10=1024 hardcode cap
 				if (nodeLevel < 0) nodeLevel = 0;
-				node.islandResource.heightMap.samplePixelsTo2(MEM, sx, sy, ratio, width, height, dx, dy, minSampleSize+1,  determineHtScale, 0, Perlin.fractalNoise, node.seed, -3200, 3200, 1/(40<<nodeLevel)); 
+				node.islandResource.heightMap.samplePixelsTo2(MEM, sx, sy, ratio, width, height, dx, dy, minSampleSize+1,  determineHtScale, 0, Perlin.fractalNoise, node.seed, -3200, 3200, 1/(40)); 
 			
 				
 			}
