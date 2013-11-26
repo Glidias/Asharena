@@ -75,7 +75,7 @@ package arena.systems.islands {
 		
         public function IslandGeneration():void 
         {
-			prng = new PM_PRNG();
+			prng = new PM_PRNG(); 
 			MAX = PM_PRNG.MAX;
 			SQ_DIM = Math.sqrt(MAX);
 			RADIUS = SQ_DIM * .5;
