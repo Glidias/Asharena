@@ -11,6 +11,7 @@ import hashds.ds.alchemy.ColorMap;
 import hashds.ds.alchemy.FullColorMap;
 import hashds.ds.alchemy.GrayscaleMap;
 import hashds.ds.alchemy.ShortHeightMap;
+import hashds.ds.FractalNoise;
 
 
 /**
@@ -29,6 +30,7 @@ class HashDSMainAlchemy
 		AlchemyUtil;
 		BitMemory;
 		ParkMiller31;
+		FractalNoise;
 		
 		#if alchemy
 		MemoryManager;

@@ -10,6 +10,7 @@ package arena.systems.islands {
 	import com.bit101.components.NumericStepper;
 	import com.bit101.components.VBox;
 	import de.polygonal.math.PM_PRNG;
+	import hashds.ds.FractalNoise;
 	import terraingen.island.mapgen2;
 	import util.LogTracer;
 	//import de.polygonal.math.PM_PRNG;
@@ -51,8 +52,8 @@ package arena.systems.islands {
 		public var seed:uint;
 		
 
-
-
+		private var NOISEGEN:FractalNoise = new FractalNoise();
+		
 		public var rootNode:KDNode;
 		private var prng:PM_PRNG;
 		
@@ -306,7 +307,7 @@ package arena.systems.islands {
         public function init(setX:Number = 0, setY:Number=0 ):void 
         {
        
-		 Perlin.setParams( PARAMS );
+		
 		
 		seededNodes = new Vector.<KDNode>();
 		seededNodeDict = new Dictionary();
@@ -559,7 +560,7 @@ package arena.systems.islands {
 		public var tx:Number = 0;
 		public var ty:Number = 0;
 		private var postFunction:Function = Smoothing.linear;
-		private var noiseFunction:Function = Perlin.fractalNoise;
+		private var noiseFunction:Function = NOISEGEN.noise;
 		private var phase:Number = 0;
 		private var brightness:Number = 0;
 		private var contrast:Number = 3.29;
@@ -595,7 +596,7 @@ package arena.systems.islands {
 
 			
 			
-			
+			 NOISEGEN.setParams( PARAMS );
 
 	
           

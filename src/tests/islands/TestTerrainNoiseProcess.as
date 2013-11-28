@@ -38,8 +38,8 @@ package tests.islands
 			
 		
 			
-			//addEventListener(Event.ENTER_FRAME, onEnterFrame);
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, onEnterFrame);
+			addEventListener(Event.ENTER_FRAME, onEnterFrame);
+			//stage.addEventListener(KeyboardEvent.KEY_DOWN, onEnterFrame);
 			
 			bmd = new BitmapData(BMD_SIZE, BMD_SIZE, false, 0);
 			bmp = new Bitmap(bmd);
@@ -56,8 +56,8 @@ package tests.islands
 		
 		private function onEnterFrame(e:Event):void 
 		{
-			filterNoise.offsetX = 0;// 8192 * Math.sqrt(uint.MAX_VALUE);
-			//filterNoise.offsetY+=1;
+			filterNoise.offsetX+=1;// 8192 * Math.sqrt(uint.MAX_VALUE);
+			filterNoise.offsetY+=1;
 			reset();
 			
 			filterNoise.terrainApplyNoise(40 , 4, 2.4, .4);

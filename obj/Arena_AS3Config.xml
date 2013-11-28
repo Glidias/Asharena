@@ -16,7 +16,7 @@
     </define>
     <define append="true">
       <name>CONFIG::timeStamp</name>
-      <value>'11/7/2013'</value>
+      <value>'29/11/2013'</value>
     </define>
     <define append="true">
       <name>CONFIG::air</name>
@@ -47,20 +47,22 @@
     <verbose-stacktraces>false</verbose-stacktraces>
     <source-path append="true">
       <path-element>D:\Git\Asharena\src</path-element>
-      <path-element>D:\Program Files\FlashDevelop\Library\AS3\classes</path-element>
+      <path-element>D:\Program Files (x86)\FlashDevelop\Library\AS3\classes</path-element>
     </source-path>
     <library-path append="true">
       <path-element>D:\Git\Asharena\lib\Alternativa3D.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\Progression4.swc</path-element>
       <path-element>D:\Git\Asharena\lib\asharena.swc</path-element>
+      <path-element>D:\Git\Asharena\lib\marchingsquares.swc</path-element>
+      <path-element>D:\Git\Asharena\lib\Progression4.swc</path-element>
       <path-element>D:\Git\Asharena\lib\ds.swc</path-element>
       <path-element>D:\Git\Asharena\lib\dsai.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\marchingsquares.swc</path-element>
       <path-element>D:\Git\Asharena\lib\fonts.swc</path-element>
+      <path-element>D:\Git\Asharena\lib\hashds.swc</path-element>
+      <path-element>D:\Git\Asharena\lib\hashds-alchemy.swc</path-element>
     </library-path>
   </compiler>
   <file-specs>
-    <path-element>D:\Git\Asharena\src\tests\islands\IslandWorkerSystemTest.as</path-element>
+    <path-element>D:\Git\Asharena\src\tests\islands\TestTerrainNoiseProcess.as</path-element>
   </file-specs>
   <default-background-color>#FFFFFF</default-background-color>
   <default-frame-rate>60</default-frame-rate>

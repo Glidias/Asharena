@@ -181,7 +181,7 @@ class GrayscaleMap
 		public inline function samplePixelsTo2(result:IntMemory, ix:Float, iy:Float, ratio:Float, iwidth:Float, iheight:Float,dx:Int, dy:Int, dWidth:Int, scale:Int, base:Int, noiseFunc:Float->Float->Float->Float, seed:Float, min:Int, max:Int, scaler:Float):Void {
 			iwidth += ix;
 			iheight += iy;
-			var range:Float = max - min; 
+			var range:Float = max - min;
 			var startX:Float = ix;
 			var startDX:Int = dx;
 			while (iy < iheight) {

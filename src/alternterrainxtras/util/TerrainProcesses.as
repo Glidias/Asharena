@@ -3,6 +3,7 @@ package alternterrainxtras.util
 	import alternterrainxtras.msa.Perlin;
 	import alternterrainxtras.msa.Smoothing;
 	import flash.display.BitmapData;
+	import hashds.ds.FractalNoise;
 	/**
 	 * 
 	 * Useful for modifying terrain heights, adding additional detail, noise, smoothing, etc. Based on code found in terrain.cpp.
@@ -64,8 +65,7 @@ package alternterrainxtras.util
 		public static const ROLL:int =	0;
 		public static const STICK:int =	1;
 		
-		
-
+	
 		
 		public function TerrainProcesses() 
 		{
@@ -87,18 +87,23 @@ package alternterrainxtras.util
 			}
 		}
 		
+		public var offsetX:int = 0;
+		public var offsetY:int = 0;
+		private var fractalNoise:FractalNoise = new FractalNoise();
+		
 		public function terrainApplyNoise(scale:Number, octaves:int=4, lacunarity:Number=128, H:Number = 128 ):void {
-			Perlin.setParams( { octaves:octaves, H:H, lacunarity:lacunarity } );
+			//Perlin.setParams( { octaves:octaves, H:H, lacunarity:lacunarity } );
+			fractalNoise.setParamsI( octaves, lacunarity, H);
 			var phase:int = terrainRandomSeed;
 			var range:Number = maxDisp - minDisp;
-			var mx:int = terrainGridWidth * .5;
-			var my:int =  terrainGridLength * .5;
+		
 			var xMult:Number =  1 / scale;
 			var yMult:Number =  1 / scale;
-			
+			var ox:Number = offsetX * xMult;
+			var oy:Number = offsetY * yMult;
 			for (var y:int = 0; y < terrainGridLength; y++) {
 				for (var x:int = 0; x < terrainGridWidth; x++) {
-					terrainHeights[y * terrainGridWidth + x] += minDisp +  Perlin.fractalNoise((x - mx)*xMult, (y - my)*yMult , phase) * range;  //Perlin.fractalNoise((x - mx), (y - my) , phase)
+					terrainHeights[y * terrainGridWidth + x] += minDisp +  fractalNoise.noise(x*xMult + ox, y*yMult + oy , phase) * range;  //Perlin.fractalNoise((x - mx), (y - my) , phase)
 					
 				}
 			}
