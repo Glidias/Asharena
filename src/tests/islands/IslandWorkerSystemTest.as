@@ -148,6 +148,7 @@ package tests.islands
 			
 			terrainLOD  = new HierarchicalTerrainLOD();
 			terrainLOD.setupPages(SpawnerBundle.context3D, 128, 0);
+			terrainLOD.setUpdateRadius(256);
 			
 			var res:TextureResource  = new BitmapTextureResource( new CarribeanTextures.SAND().bitmapData );
 		res.upload(SpawnerBundle.context3D);

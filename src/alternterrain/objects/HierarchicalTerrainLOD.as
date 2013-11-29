@@ -29,7 +29,7 @@ package alternterrain.objects
 			lods = new Vector.<TerrainLOD>();
 			for (var i:int = 0; i < numLevels; i++) {
 				var t:TerrainLOD = new TerrainLOD();
-				
+			
 				t._scaleX = t._scaleY = scale;
 				t.transformChanged = true;
 				addChild(t);
@@ -86,6 +86,15 @@ package alternterrain.objects
 					scale *= 2;
 					lods[i].invalidateUpdatePosition();
 				}
+		}
+		
+		public function setUpdateRadius(val:Number):void {
+			for (var i:int = 0; i < NUM_LEVELS; i++) {
+					var t:TerrainLOD = lods[i];
+					t.setUpdateRadius(val);
+					val *= .5;
+				}
+				
 		}
 		
 		

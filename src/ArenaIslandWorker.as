@@ -106,12 +106,14 @@ package
 			heightMapSample.setFlat(tilesAcross, 256); // hardcoded tileSize
 			quadCornerDataSample = QuadCornerData.createRoot(0, 0, tilesAcross * 256);  // hardcoded tileSize
 			quadCornerDataSample.Square.AddHeightMap(quadCornerDataSample, heightMapSample);
+			
 			quadChunkDataSample = new QuadChunkCornerData();
 			quadChunkDataSample.Square = quadCornerDataSample.Square.GetQuadSquareChunk(quadCornerDataSample, 0 );
 			//quadCornerDataSample.Square.WriteQuadSquareChunkInline(quadChunkDataSample.Square, quadCornerDataSample, 0);
 			
 			heightDataSample = new IntMemory(heightMapSample.RowWidth * heightMapSample.RowWidth);
 			SampleScaledHeight.MEM = heightDataSample;
+			SampleScaledHeight.NOISEGEN.setParamsI(4, 2.4, .4);
 			//throw new Error(QuadSquare.DEBUG_ADDCOUNT);
 			
 

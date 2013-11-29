@@ -143,6 +143,7 @@ package arena.systems.islands.jobs
 				height += ratio;
 				
 				// currently hardcoding height scales atm...this shuoudl be randomized..
+		
 				PRNG.setSeed(node.seed);
 				var nodeLevel:int = int(Math.log(nodeSize + .01) * Math.LOG2E);
 	
@@ -150,8 +151,14 @@ package arena.systems.islands.jobs
 				
 				
 				nodeLevel -=  10; // 2^10=1024 hardcode cap
-				if (nodeLevel < 0) nodeLevel = 0;
-				node.islandResource.heightMap.samplePixelsTo2(MEM, sx, sy, ratio, width, height, dx, dy, minSampleSize+1,  determineHtScale, 0, noiseMethod, node.seed, -3200, 3200, 1/(40<<nodeLevel)); 
+				if (nodeLevel < 0) nodeLevel = 0;  
+				
+				var heightRange:int = PRNG.randomRange(1000, 3000);
+				// In order from smoothness to rockiness
+				// 1000 - 3000: 	 Amplitude
+				// 64 - 40  	    : Frequency baseScale
+				var baseScale:int = PRNG.randomRange(40,64);
+				node.islandResource.heightMap.samplePixelsTo2(MEM, sx, sy, ratio, width, height, dx, dy, minSampleSize+1,  determineHtScale, 0, noiseMethod, (node.seed&255), -heightRange, heightRange, (1/(baseScale>>nodeLevel))); 
 			
 				
 			}

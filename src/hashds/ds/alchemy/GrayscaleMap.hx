@@ -184,6 +184,8 @@ class GrayscaleMap
 			var range:Float = max - min;
 			var startX:Float = ix;
 			var startDX:Int = dx;
+		
+		
 			while (iy < iheight) {
 				ix = startX;
 				dx = startDX;

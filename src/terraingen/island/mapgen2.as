@@ -155,6 +155,7 @@ package terraingen.island  {
     public var noisyEdges:NoisyEdges;
 	
 	public static const COMPLETED:String = "COMPLEETED";
+	static public const ORIGIN:Point = new Point();
 
 	[SWF(width="800", height="600", frameRate=60)]
     public function mapgen2() {
@@ -1039,7 +1040,7 @@ package terraingen.island  {
 			  
 			renderPolygons(exportGraphics.graphics, exportElevationColors, 'elevation', null);
 			exportBitmap.draw(exportGraphics, m);
-			
+		//	exportBitmap.applyFilter( exportBitmap, exportBitmap.rect, ORIGIN, new BlurFilter(4, 4, 4) );
 			grayscale.setFromBitmapData(exportBitmap);
 			
 			return grayscale;

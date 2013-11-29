@@ -93,7 +93,7 @@ package alternterrainxtras.util
 		
 		public function terrainApplyNoise(scale:Number, octaves:int=4, lacunarity:Number=128, H:Number = 128 ):void {
 			//Perlin.setParams( { octaves:octaves, H:H, lacunarity:lacunarity } );
-			fractalNoise.setParamsI( octaves, lacunarity, H);
+			fractalNoise.setParamsI( octaves, lacunarity, H); 
 			var phase:int = terrainRandomSeed;
 			var range:Number = maxDisp - minDisp;
 		
