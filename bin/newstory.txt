@@ -62,3 +62,94 @@ Every faction allows sub-choices of 3 character class unique to each faction. Th
 
 Before The Ash:
 	Euridin was a region consisting of simple townsfolk wanting a good life, caught among 3 powerful warring factions of entirely different idealogies.
+	
+	
+LEADER-FOLLOWER DYNAMICS BETWEEN CHARACTER CLASSES:
+____________________________________________________________________
+	
+Slavus (Beta)
+Samnian (Omega)
+Flammite (Alpha)
+Dimochai (Alpha)
+
+Sharpshooter (Omega)
+Skirmisher  (Beta)
+Pirate Captain  (Alpha)
+(Freebooter) (Zeta)
+
+Man-At-Arms (Beta)
+Knight (Omega)
+Archer (Beta) 
+(Lord) (Alpha)
+(Cleric) (Omega)
+(Assassin) (Zeta)
+  
+Huscarl (Omega)  * -could do with reskin
+Gestir (Beta)    * -could do with reskin
+Berserker (Zeta)  * -missing hl1. hl2 need to port back
+(Jarl) (Omega to replace Huscarl's)
+(Bondi) (Beta) 
+
+Viking-Pirate (Alpha)
+
+
+
+(Current available faction betas/zetas)
+GLADIATOR:
+Slavus 
+
+PIRATE:
+Skirmisher
+
+VIKING:
+Gestir
+
+CRUSADER:
+Man-At-Arms
+Bowman
+
+__________________________
+
+BOAT crew party management:
+-------------------
+Players form up a boat party under the following constraints:
+
+Personal/Storage capacity: 18 points
+Command capacity: 20 points
+
+Alpha - 10 command points per person. Such a person can command up to 10 men of varying classes. Alphas dominate/coerce Betas into doing their will due to their standing/position. Alphas don't get along well with other Alphas due to their strong personalities, regardless of similar ideals. The only thing they might share in common is their shared interest in dominating Betas. They appear in the smallest of numbers.
+
+Beta - 1 command point per person. Such a person Can only command up to 18 men of the same class so long as no alphas/omegas are around due to good rapport/similarity among themselves. They are basically the masses. They look similar to other regular crowd-based NPCs.
+
+Omega - 5 command points per person. Such a person can command up to 6 men of varying classes. Omegas are amiable, charismatic, and lead and convince betas through rhetoric and ideas. Omegas tend to submit to Alphas, but can often not get along well with other Omegas of differing ideas. They appear in small to medium numbers.
+
+Zeta - 3 command points person. Such a person doesn't command anyone and is more of an anti-social lonewolf. They can work under Alphas/Omegas under certain circumstances. Zeta tends to be a "special" type of character class social category and can appear in either large or small numbers. 
+
+
+Possible combinations and their outcomes (excluding the inclusion of Zetas):
+
+2 alphas - 2 personal occupied. 16 free storage space on boat. 
+RESULT: This is unsustainable. 2 bored alphas on the boat with plenty to eat until supplies run out, but have nothing else better to do but banter every second, lacking any real manpower.
+
+3 omegas, 3 betas - 6 personal occupied. 12 free storage on boat.  Fully uses command points.
+RESULT: Rather unsustainable.  3 omegas will have too much differing ideas and conflict in opinion, and overall not much manpower.
+
+18 betas -18 personal occupied. 0 free storage space on boat.  Fully uses command points.
+RESULT: Great for raw manpower/labor/rioting parties. But no further storage on boat possible unless lesser Betas are used. 
+
+1 omega, 6 betas - 7 personal occupied. 11 free storage space on boat.
+RESULT: If more betas are used (up to 17), they tend can't be managed well and would be outside Omega's control/influence. 
+
+2 omegas, 10 betas - 12 personal occupied. 6 free storage on boat.  Fully uses command points.
+RESULT: Less betas can be used to make up for avaialble storage. 2 omegas may have differing ideas and can conflict in opinion.
+
+1 alpha, 10 betas - 11 personal occupied. 0 storage space on boat. Fully uses command points.
+RESULT: Autocratic command and control. Betas can be freed to make up for storage space on boat.
+
+
+Results are aggreated in terms of, and can be reoredered according to one's intended criteria:
+	1) Manpower capability  - How much manpower is available on boat.
+	2) Free storage capacity - How much free storage space on boat.
+	3) Command effeciency - How effecient the command is
+	4) Manpower satisfaction - How satisfied is manpower with command.
+	5) Variety - How varied the skillset of the party is
