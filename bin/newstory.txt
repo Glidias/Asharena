@@ -143,7 +143,7 @@ RESULT: If more betas are used (up to 17), they tend can't be managed well and w
 2 omegas, 10 betas - 12 personal occupied. 6 free storage on boat.  Fully uses command points.
 RESULT: Less betas can be used to make up for avaialble storage. 2 omegas may have differing ideas and can conflict in opinion.
 
-1 alpha, 10 betas - 11 personal occupied. 0 storage space on boat. Fully uses command points.
+1 alpha, 10 betas - 11 personal occupied. 7 storage space on boat. Fully uses command points.
 RESULT: Autocratic command and control. Betas can be freed to make up for storage space on boat.
 
 
