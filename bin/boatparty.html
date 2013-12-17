@@ -90,7 +90,7 @@
 			for (i=0; i< len; i++) {
 				for( o=0; o<len2; o++) {
 					topFaction = $(query[i]).data("f");
-					if (topLevelHash[topFaction]) continue;
+					//if (topLevelHash[topFaction]) continue;
 					topLevelHash[topFaction] = true;
 					sum += getAnimoAverage(topFaction, $(query2[o]).data("f"));
 
