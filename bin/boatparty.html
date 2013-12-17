@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Voyage RPG</title>
+	<style>
+		body {
+			
+		}
+		#PartySelection, .columner { width:300px }
+		#PartySelection ul { border-bottom:1px solid #000000; padding-bottom:20px; }
+		#PartySelection ul li { cursor:pointer; } 
+		#PartySelection ul li:hover { text-decoration:underline; } 
+		#PartySelection ul a { display:none; }
+		#PartySelection .boat { font-size:19px; }
+		#PartySelection h1 { font-size:19px; }
+		#PartySelection h3, #PartyResult h3  { font-size:12px;text-indent:24px; color:#777777; margin-bottom:0px; margin-top:4px;}
+		#PartyResult { width:300px; top:0; position:fixed; left:350px; }
+		#PartyResult ul.division { font-size:11px; }
+		#PartyResult ul.division li { cursor:pointer; }
+		#Info { font-family:Arial; font-size:13px; background-color:#ffffff; border:1px solid #000000; width:100%; height:auto; display:block; position:relative;}
+		.stat span { font-weight:bold }
+		.stat span.static { font-weight:bold; color:#AAAAAA; }
+	</style>
+	<script src="js/jquery.min.js"></script>
+	<script>
+	$(document).ready( function() {
+	
+		var _power = parseInt( $("#remaining_power").text() );
+		var _capacity = parseInt( $("#remaining_capacity").text() );
+		
+		$("#PartySelection ul a.calcvp").each(function(index,item) {
+			item = $(item);
+			var v1 = item.parent().children('a[rel=v]').text();
+			var v2 = item.parent().children('a[rel=p]').text();
+			v1 = parseInt(v1);
+			v2 = parseInt(v2);
+			item.text( Math.floor((v1+v2)/2));
+		});
+		$("#PartySelection ul a.vpcalc").each(function(index,item) {
+			item =$(item);
+			var rel = item.attr("rel");
+			var v1 = $("#v").children('a[rel='+rel+']').text();
+			var v2 =$("#p").children('a[rel='+rel+']').text();
+			v1 = parseInt(v1);
+			v2 = parseInt(v2);
+			item.text( Math.floor((v1+v2)/2));
+			
+		});
+		
+		
+		function getPower() {
+			return _power;
+		}
+		function setPower(val) {
+			_power = val;
+			$("#remaining_power").text(val);
+		}
+		
+		function getCapacity() {
+			return _capacity;
+		}
+		function setCapacity(val) {
+			_capacity = val;
+			$("#remaining_capacity").text(val);
+		}
+		
+		function getPowerIndex(val) {
+			return val === 3 ? 2 : val === 10 ? 0 : val === 5 ? 1 : val === 1 ?  3 : -1;
+		}
+		
+		function onPartyMemberClick() {
+			var me = $(this);
+			me.remove();
+			setCapacity(getCapacity()+1);
+			setPower(getPower() + me.data("p"));
+			
+			
+			calculateAnimosities();
+		}
+		
+		function calculateAnim2Sets(query, query2) {
+			var len = query.length;
+			var len2 = query2.length;
+			var i;
+			var pairs= 0;
+			var sum =0;
+			var topFaction;
+			var topLevelHash = {};
+			for (i=0; i< len; i++) {
+				for( o=0; o<len2; o++) {
+					topFaction = $(query[i]).data("f");
+					if (topLevelHash[topFaction]) continue;
+					topLevelHash[topFaction] = true;
+					sum += getAnimoAverage(topFaction, $(query2[o]).data("f"));
+
+					pairs++;
+				}
+			}
+			
+			return pairs != 0 ? sum / 1 : 0;
+		}
+		
+		function calculateAnimPairwiseAverage(query, useMean) {
+			var len = query.length;
+			var i;
+			var pairs= 0;
+			var sum =0;
+			for (i=0; i< len ;i++) {
+				for( o=(i+1); o<len; o++) {
+				
+					sum += getAnimoAverage($(query[i]).data("f"), $(query[o]).data("f"));
+					pairs++;
+				}
+			}
+			
+			return pairs != 0 ? Math.floor( sum / (useMean ? pairs : 1)) : 0;
+		}
+		
+		
+
+		
+		function calculateAnimosities() {
+			var cur;
+			cur = $("#alpha2omega");
+			cur.text( calculateAnimPairwiseAverage( $("#alpha-party li").add($("#omega-party li")) ) + "%");
+			
+			cur = $("#alphaomega2beta");
+			cur.text( calculateAnim2Sets($("#alpha-party li").add($("#omega-party li")), $("#beta-party li").add("#zeta-party li") ) + "%");
+			//cur.text(  + "%" );
+			
+			cur = $("#beta2beta");
+			cur.text( calculateAnimPairwiseAverage($("#beta-party li").add($("#zeta-party li")), true ) + "%");
+		}
+		
+
+		
+		function getAnimoAverage(id1, id2) {
+	
+			var a1 = $("#"+id1).children('a[rel='+id2+']').text();
+			
+			var a2 = $("#"+id2).children('a[rel='+id1+']').text();
+			a1 = a1 ? parseInt(a1)-25 : 0;
+			a2 = a2 ? parseInt(a2)-25 : 0;
+			if (a1 <0) a1 = 0;
+			if (a2 < 0) a2 = 0;
+			return Math.floor( (a1+a2)/2 );
+		}
+	
+	
+		var partyDivisions = $("#PartyResult ul.division");
+
+		$("#PartySelection ul li").click( function(e) {
+			if (_capacity == 0) {
+				alert("Not enough room on boat!");
+				return;
+			}
+			
+			var me = $(e.currentTarget);
+			var power = me.data("p");
+			var powerLeft = getPower() - power;
+			if (powerLeft < 0) {
+				alert("Not enough remaining power points!");
+				return;
+			}
+			
+
+			var partyIndex = getPowerIndex(power);
+			if (partyIndex < 0) {
+				alert("ERROR could not resolve party index");
+				return;
+			}
+			var cloned = me.clone();
+			cloned.data("f", me.parent().attr("id") );
+			cloned.click( onPartyMemberClick);
+			$(partyDivisions[partyIndex]).append(cloned);
+			
+			setCapacity(getCapacity()-1);
+			setPower(powerLeft);
+			
+			calculateAnimosities();
+		});
+	});
+	</script>
+</head>
+<body>
+	<div id="PartySelection" data-p="20">
+		<div class="boatsection">
+			<div class="boat" data-capacity="18">Viking Longship</div>
+		</div>
+		<ul class="faction" id="v">
+			<h1>Viking</h1>
+			<h3 class="omega">Omega (5)↓</h3>
+			<li data-p="5">Huscarl</li>	
+			<h3>Zeta (3)↓</h3>
+			<li data-p="3">Berserker</li>	
+			<h3>Beta (1)↓</h3>
+			<li data-p="1">Gestir</li>
+			<a rel="c">50</a>
+			<a rel="p">30</a>
+			<a rel="g">20</a>
+			<a rel="vp">30</a>
+		</ul>
+		
+		<ul class="faction" id="p">
+			<h1>Pirate</h1>
+			<h3>Alpha (10)↓</h3>
+			<li data-p="10">Pirate Captain</li>	
+			<h3>Omega (5)↓</h3>
+			<li data-p="5">Sharpshooter</li>	
+			<h3>Beta (1)↓</h3>
+			<li data-p="1">Skirmisher</li>
+			<a rel="v">45</a>
+			<a rel="c">45</a>
+			<a rel="g">10</a>
+			<a rel="vp">45</a>
+		</ul>
+		<ul class="faction" id="c">
+			<h1>Crusader</h1>
+			<h3>Omega (5)↓</h3>
+			<li data-p="5">Knight</li>
+			<h3>Beta (1)↓</h3>
+			<li data-p="1">Man-At-Arms</li>
+			<li data-p="1">Archer</li>	
+			<a rel="v">45</a>
+			<a rel="p">30</a>
+			<a rel="g">30</a>
+			<a rel="vp" class="calcvp"></a>
+		</ul>
+		<ul class="faction" id="g">
+			<h1>Gladiator</h1>
+			<h3>Alpha (10)↓</h3>
+			<li data-p="10">Flammite</li>
+			<li data-p="10">Dimochai</li>
+			<h3>Omega (5)↓</h3>
+			<li data-p="5">Samnian</li>
+			<h3>Beta (1)↓</h3>
+			<li data-p="1">Slavus</li>
+			<a rel="c">50</a>
+			<a rel="p">30</a>
+			<a rel="v">20</a>
+			<a rel="vp" class="calcvp"></a>
+		</ul>
+		<ul class="faction" id="vp">
+			<h1>Half-Viking</h1>
+			<h3>Alpha (10)↓</h3>
+			<li class="c" data-p="10">Viking Pirate</li>
+			<a rel="v">0</a>
+			<a rel="p">0</a>
+			<a rel="c" class="vpcalc"></a>
+			<a rel="g" class="vpcalc"></a>
+		</ul>
+	</div>
+	<div id="PartyResult">
+		<h2>Crew Party</h2>
+		<div class="results">
+			<div class="stat">Total power points pool: <span class="static" id="total_power">20</span></div>
+			<div class="stat">Power points remaining: <span id="remaining_power">20</span></div>
+			<br/>
+			<div class="stat">Total allowed boat capacity: <span class="static" id="total_capacity">18</span></div>
+			<div class="stat">Boat capacity remaining: <span id="remaining_capacity">18</span></div>
+		</div>
+		<br/>
+		<h3>Alpha (10)↓</h3>
+		<ul class="division" id="alpha-party">
+		
+		</ul>
+		<h3>Omega (5)↓</h3>
+		<ul class="division" id="omega-party">
+		
+		</ul>
+		<h3>Zeta (3)↓</h3>
+		<ul class="division" id="zeta-party">
+		
+		</ul>
+		<h3>Beta (1)↓</h3>
+		<ul class="division" id="beta-party">
+		
+		</ul>
+		______Faction Animosity_____
+		<h3>Alpha to Alpha/Omega = <span id="alpha2omega"></span></h3>
+		<br/>
+		<h3>Alpha/Omega to Beta/Zeta = <span id="alphaomega2beta"></span></h3>
+		<br/>
+		<h3>Beta to Beta = <span id="beta2beta"></span></h3>
+
+	</div>
+	
+	<div id="Info" class="columners">
+		<h3>Faction animosities</h3>
+		<ul>
+			<li><b>Pirates:</b> Dislikes both vikings and crusaders equally (45%/45%), than gladiators (10%).</li>
+			<li><b>Crusaders:</b> Dislikes vikings first (40%), than pirates and gladiators equally. (30%/30%).</li>
+			<li><b>Vikings:</b> Dislikes crusaders first (50%), then pirates (30%), than gladiators (20%).</li>
+			<li><b>Gladiators:</b> Dislikes crusaders first (50%), then pirates (30%), than vikings (20%).</li>
+			<li>Animosity cannot exceed 25% within/between divisions. If so, the party breaks.</li>
+		</ul>
+		<h3>Party Divisions</h3>
+		<ul>
+	
+		<li><b>Alpha -</b> 10 command points per person. Such a person can command up to 10 men of varying classes. Alphas dominate/coerce Betas into doing their will due to their standing/position. Alphas don't get along well with other Alphas due to their strong personalities, regardless of similar ideals. The only thing they might share in common is their shared interest in dominating Betas. They appear in the smallest of numbers.</li>
+
+<li><b>Beta -</b> 1 command point per person. Such a person Can only command up to 18 men of the same class and division so long as no alphas/omegas are around due to good rapport/similarity among themselves. They are basically the masses. They look similar to other regular crowd-based NPCs. When it comes to raw manpower, Beta is a necessity.</li>
+
+<li><b>Omega -</b> 5 command points per person. Such a person can command up to 6 men of varying classes. Omegas are amiable, charismatic, and lead and convince betas through rhetoric and ideas. Omegas tend to submit to Alphas, but can often not get along well with other Omegas of differing ideas. They appear in small to medium numbers.</li>
+
+<li><b>Zeta -</b> 3 command points person. Such a person doesn't command anyone and is more of an anti-social lonewolf. They can work under Alphas/Omegas under certain circumstances. Zeta tends to be a "special" type of character class social category and can appear in either large or small numbers.</li>
+	</ul>
+	</div>
+</body>
+</html>

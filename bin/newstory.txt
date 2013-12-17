@@ -93,7 +93,6 @@ Berserker (Zeta)  * -missing hl1. hl2 need to port back
 Viking-Pirate (Alpha)
 
 
-
 (Current available faction betas/zetas)
 GLADIATOR:
 Slavus 
@@ -115,7 +114,7 @@ BOAT crew party management:
 Players form up a boat party under the following constraints:
 
 Personal/Storage capacity: 18 points
-Command capacity: 20 points
+Command(power) point capacity: 20 points
 
 Alpha - 10 command points per person. Such a person can command up to 10 men of varying classes. Alphas dominate/coerce Betas into doing their will due to their standing/position. Alphas don't get along well with other Alphas due to their strong personalities, regardless of similar ideals. The only thing they might share in common is their shared interest in dominating Betas. They appear in the smallest of numbers.
 
@@ -134,6 +133,8 @@ RESULT: This is unsustainable. 2 bored alphas on the boat with plenty to eat unt
 3 omegas, 3 betas - 6 personal occupied. 12 free storage on boat.  Fully uses command points.
 RESULT: Rather unsustainable.  3 omegas will have too much differing ideas and conflict in opinion, and overall not much manpower.
 
+---------------------
+
 18 betas -18 personal occupied. 0 free storage space on boat.  Fully uses command points.
 RESULT: Great for raw manpower/labor/rioting parties. But no further storage on boat possible unless lesser Betas are used. 
 
@@ -146,10 +147,76 @@ RESULT: Less betas can be used to make up for avaialble storage. 2 omegas may ha
 1 alpha, 10 betas - 11 personal occupied. 7 storage space on boat. Fully uses command points.
 RESULT: Autocratic command and control. Betas can be freed to make up for storage space on boat.
 
+1 alpha, 1 omega, 5 betas - 7 personal occupied. 11 free storage space on boat. Fully uses command points.
+RESULT: Betas can be freed to make up for storage space on boat.
 
 Results are aggreated in terms of, and can be reoredered according to one's intended criteria:
-	1) Manpower capability  - How much manpower is available on boat.
+	1) Manpower command capability  - How much manpower is available on boat.
 	2) Free storage capacity - How much free storage space on boat.
-	3) Command effeciency - How effecient the command is
-	4) Manpower satisfaction - How satisfied is manpower with command.
+	3) Command effeciency - How effective the command is
+	4) Manpower satisfaction - How satisfied/happy is manpower with command.
 	5) Variety - How varied the skillset of the party is
+	
+	
+FACTION POWER CONTROL/ BALANCE OF POWER:
+-------------------------
+Within a party, there can be intrigue depending on the mix of different factions. Each faction specialises in certain type of combat, thus the advantage of having multiple factions in a party is a good way to achieve a common objective, at the cost of potential conflict and sub-plots within the party itself.  People from certain factions tend not to cooperate with people from other factions due to history. Thus in such sitautions, NPCs can either become willing servants  or unwilling slaves within the manpower dynamic (were they captured or hired?). Percentages reflect the range of animosity that can occur between the different factions (from 0% to MAX%). THis is a random factor that can affect the cohesiveness of an NPC party, or the kind of power dynamics that occur. (eg. are the betas captured slaves or willing workers?). For hybrid faction classes, the average floored mean is used, or if a faction match occurs, than the animosity is considered fully to the other faction (a disadvantage of hybrid races) between follower to leader, but zero animisoity is considered between leader to follower.
+
+Pirates: Dislikes both vikings and crusaders equally (45%/45%), than gladiators (10%).
+Crusaders: Dislikes vikings first (40%), than pirates and gladiators equally. (30%/30%).
+Vikings: Dislikes crusaders first (50%), then pirates (30%), than gladiators (20%).
+Gladiators: Dislikes crusaders first (50%), then pirates (30%), than vikings (20%).
+
+Anytime the random result (Math.random()*percentage) exceeds 25%, animisoity is considered accordingly against that faction in such a way that would affect the metagame to a certain degree, and would affect effectiveness of command or make commanding not possible at all. Anything 25% or below would simply appear in dialogue as "tongue-in-cheek" speech, but have no bearing in the game. If the amount of average animisoity between 2 levels meets or exceeds 50% or above (ie. 50-25=25%), than command is no longer possible and the status is automatically set to hostile/mutiny cases.  Animisoity is multiplied against the total sum of command (power) points between the different factions. Thus, a huge amount  of betas can have as much power (if not more) than a single alpha, thus making command not possible. Thus, since percentage total animisotiry for all betas cannot exceed the 25% threshold for each laeder, this also adds a limit to how many people you can command at once, and also the nature of the relationship. You can have more than 1 leader though, meaning 2 leaders provide 50% threshold, 3 leaders provide 75% threshold. This however, doesn't really reduce the base animisotity per beta, it just overpowers the othe rside in terms of numbers, making it hard for betas to go against the alpha/omega's wishes.
+
+Eg. scenerio test
+	A single Viking-Pirate hybrid (alpha/omega) tries to command up to 8 betas.
+	   - 8 gladiators (	25%-25=0% animisority towards leader ) ( 15%-25=0% animosity towards servants) 0% animosity averaged per beta. 
+	   - 8 vikings ( 30%-25=5% animisority towards leader ) ( 0% animisoity towards servants ) 2% animisity averaged per beta.
+	   - 8 pirate   ( 45%-25=20% animisority towards leader ) ( 0% animisoity towards servants ) 10% animisity averaged per beta.
+	   - 8 crusaders ( 35%-25=10% animisority towards leader ) ( 47%-25=22% animisoity towards servants ) 16% animisity averaged per beta.
+	   
+	A single Viking (alpha/omega) tries to command up to 8 betas.
+	  - 8 gladiators ( 25%-25=0% animisority towards leader ) ( 32%-25=7% animosity towards servants) 3% animosity averaged  per beta. 
+	  - 8 pirate   ( 45%-25=20% animisority towards leader ) ( 0% animisoity towards servants ) 10% animisity averaged  per beta. 
+	  - 8 crusaders ( 40%-25=15% animisority towards leader. ) ( 25% animisoity towards servants. ) 20% animisity averaged per beta.  
+	   
+	A single Gladiator (alpha/omega) tries to command up to 8 betas.
+	  - 8 vikings  ( 20%-25=0% animisority towards leader ) ( 20%-25=0% animosity towards servants  ) 0% animisity averaged  per beta.  
+	  - 8 pirate   ( 10%-25=0% animisority towards leader ) ( 30%-25=5% animisoity towards servants ) 2% animisity averaged  per beta. 
+	  - 8 crusaders ( 30%-25=5% animisority towards leader. ) ( 50%-25=25% animisoity towards servants.  ) 15% animisity averaged per beta.  
+	  
+	A single Crusader (alpha/omega) tries to command up to 8 betas.
+	  - 8 vikings  (50%-25=25% animisority towards leader ) ( 40%-25=15% animosity towards servants  ) 20% animisity averaged per beta. 
+	  - 8 pirate   (45%-25=20% animisority towards leader ) ( 30%-25=5% animisoity towards servants ) 12% animisity averaged per beta
+	  - 8 gladiators  (50%-25=25% animisority towards leader ) ( 30%-25=5% animisoity towards servants ) 15% animisity averaged per beta
+	  
+
+Alpha to Omega = (Leadership ineffeciency. Time taken to relay commands, etc.)
+
+Alpha to Beta (if applicable) = 
+Omega to Beta (if applicable) =
+Average AlphaOmegaBeta =  (Mean of above. Amiabiliity to leadership )
+
+Amount of personal control top-down: 
+
+	
+Pirate
+--------
+Alpha/Omega: Fighting
+Beta: Gunpowder, Treasure Hunting
+	
+Viking
+-------------
+Alpha/Omega: Fighting
+Beta: Woodcrafting/Shipbuilding, Fishing, Herbology
+	
+Gladiators
+-------------
+Alpha/Omega: Fighting, Magic
+Beta:  Land Resource gathering, Animal handling
+	
+Crusader:
+--------------
+Alpha/Omega: Fighting, Armorer
+Beta: Tower defense, Archery
