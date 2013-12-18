@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>Voyage RPG</title>
+	<title>Daggerfall Party-based RPG</title>
 	<style>
 		body {
 			
@@ -16,7 +15,7 @@
 		#PartySelection .boat { font-size:19px; }
 		#PartySelection h1 { font-size:19px; }
 		#PartySelection h3, #PartyResult h3  { font-size:12px;text-indent:24px; color:#777777; margin-bottom:0px; margin-top:4px;}
-		#PartyResult { width:300px; top:0; position:fixed; left:350px; height:100%; overflow:auto; }
+		#PartyResult { width:300px; top:0; position:fixed; left:350px; overflow:auto; height:100%; }
 		#PartyResult ul.division { font-size:11px; }
 		#PartyResult ul.division li { cursor:pointer; }
 		#Info { font-family:Arial; font-size:13px; background-color:#ffffff; border:1px solid #000000; width:100%; height:auto; display:block; position:relative;}
@@ -175,19 +174,21 @@
 				for (i in followerHash) {
 					val.push(followerHash[i]);
 				}
+			
 				val =  val.length > 1 ? val.join(" ,") : val.length > 0 ? ( val[0]-17 <= 0 ? 0 : val[0]-17) : 0;
+			
+				return val;
 			}
 			else {
 			
 				for (i=0; i<leaders.length; i++) {
-					commandCapacity+= $(leaders[i]).data("p") == 10 ? 10 : 4;
+					commandCapacity+= $(leaders[i]).data("p") == 10 ? 9 : 4;
 				}
 				val = followers.length - commandCapacity;
 				if (val < 0) val = 0;
 				return val;
 			}
 		}
-		
 
 		
 		function getAnimoAverage(id1, id2) {
@@ -207,7 +208,7 @@
 
 		$("#PartySelection ul li").click( function(e) {
 			if (_capacity == 0) {
-				alert("Not enough room on boat!");
+				alert("Not enough room left for party!");
 				return;
 			}
 			
@@ -244,79 +245,159 @@
 
 	<div id="PartySelection" data-p="20">
 		<div class="boatsection">
-			<div class="boat" data-capacity="18">Viking Longship</div>
+			<div class="boat" data-capacity="18">Daggerfall Crew Party</div>
 		</div>
-		<ul class="faction" id="v">
-			<h1>Viking</h1>
-			<h3 class="omega">Omega (5)↓</h3>
-			<li data-p="5">Huscarl</li>	
-			<h3>Zeta (3)↓</h3>
-			<li data-p="3">Berserker</li>	
+		<ul class="faction" id="animals">
+			<h1>Animals</h1>
 			<h3>Beta (1)↓</h3>
-			<li data-p="1">Gestir</li>
-			<a rel="c">50</a>
-			<a rel="p">30</a>
-			<a rel="g">20</a>
-			<a rel="vp">30</a>
+			<li data-p="1">Giant Bat</li>
+			<li data-p="1">Giant Rat</li>
+			<li data-p="1">Grizzly Bear</li>
+			<li data-p="1">Sabertooth Tiger</li>
+			<li data-p="1">Spider</li>
+			<li data-p="1">Giant Scorpion</li>
+			<li data-p="1">Slaughterfish</li>
+			<a rel="undead">100</a>
+			<a rel="humans">40</a>
+			<a rel="atronach">30</a>
+			<a rel="lycan">20</a>
+			<a rel="daedra">40</a>
+			<a rel="monsters">80</a>
+			<a rel="orcs">40</a>
+			<!--<a ref="animals"></a>-->
 		</ul>
 		
-		<ul class="faction" id="p">
-			<h1>Pirate</h1>
+		<ul class="faction" id="humans">
+			<h1>Humans</h1>
 			<h3>Alpha (10)↓</h3>
-			<li data-p="10">Pirate Captain</li>	
+			<li data-p="10">Warrior</li>
+			<li data-p="10">Spellsword</li>
 			<h3>Omega (5)↓</h3>
-			<li data-p="5">Sharpshooter</li>	
+			<li data-p="5">Knight</li>	
+			<li data-p="5">Healer</li>
+			<h3>Zeta (3)↓</h3>
+			<li data-p="3">Assassin</li>
+			<li data-p="3">Burglar</li>
+			<li data-p="3">Rogue</li>
 			<h3>Beta (1)↓</h3>
-			<li data-p="1">Skirmisher</li>
-			<a rel="v">45</a>
-			<a rel="c">45</a>
-			<a rel="g">10</a>
-			<a rel="vp">45</a>
+			<li data-p="1">Archer</li>
+			<li data-p="1">Barbarian</li>
+			<li data-p="1">Battlemage</li>
+			<li data-p="1">Guard</li>
+			<li data-p="1">Mage</li>
+			<li data-p="1">Monk</li>
+			<li data-p="1">Nightblade</li>
+			<li data-p="1">Thief</li>
+			<a rel="undead">100</a>
+			<a rel="orcs">80</a>
+			<a rel="monsters">90</a>
+			<a rel="lycan">30</a>
+			<a rel="daedra">40</a>
+			<a ref="animals">10</a>
+			<a rel="atronach">35</a>
 		</ul>
-		<ul class="faction" id="c">
-			<h1>Crusader</h1>
-			<h3>Omega (5)↓</h3>
-			<li data-p="5">Knight</li>
+		<ul class="faction" id="monsters">
+			<h1>Monsters</h1>
 			<h3>Beta (1)↓</h3>
-			<li data-p="1">Man-At-Arms</li>
-			<li data-p="1">Archer</li>	
-			<a rel="v">45</a>
-			<a rel="p">30</a>
-			<a rel="g">30</a>
-			<a rel="vp" class="calcvp"></a>
+			<li data-p="1">Centaur</li>
+			<li data-p="1">Dragonling</li>	
+			<li data-p="1">Dreugh</li>	
+			<li data-p="1">Gargoyle</li>	
+			<li data-p="1">Harpy</li>	
+			<li data-p="1">Imp</li>	
+			<li data-p="1">Lamia</li>	
+			<li data-p="1">Nymph</li>	
+			<li data-p="1">Spriggan</li>	
+			<a rel="undead">70</a>
+			<a rel="humans">55</a>
+			<a rel="atronach">5</a>
+			<a rel="lycan">40</a>
+			<a rel="daedra">8</a>
+			<a ref="animals">50</a>
+			<a rel="orcs">45</a>
 		</ul>
-		<ul class="faction" id="g">
-			<h1>Gladiator</h1>
+		<ul class="faction" id="orcs">
+			<h1>Orcs</h1>
 			<h3>Alpha (10)↓</h3>
-			<li data-p="10">Flammite</li>
-			<li data-p="10">Dimochai</li>
+			<li data-p="10">Orc Warlord</li>
 			<h3>Omega (5)↓</h3>
-			<li data-p="5">Samnian</li>
+			<li data-p="5">Orc Sergeant</li>
 			<h3>Beta (1)↓</h3>
-			<li data-p="1">Slavus</li>
-			<a rel="c">50</a>
-			<a rel="p">30</a>
-			<a rel="v">20</a>
-			<a rel="vp" class="calcvp"></a>
+			<li data-p="1">Orc</li>
+			<li data-p="1">Orc Shaman</li>
+			<a rel="undead">35</a>
+			<a rel="humans">70</a>
+			<a rel="atronach">35</a>
+			<a rel="lycan">50</a>
+			<a rel="daedra">35</a>
+			<a rel="animals">8</a>
+			<a rel="monsters">25</a>
 		</ul>
-		<ul class="faction" id="vp">
-			<h1>Half-Viking</h1>
+		<ul class="faction" id="atronach">
+			<h1>Atronachs</h1>
+			<h3>Beta (1)↓</h3>
+			<li class="c" data-p="1">Fire Atronach</li>
+			<li class="c" data-p="1">Flesh Atronach</li>
+			<li class="c" data-p="1">Ice Atronach</li>
+			<li class="c" data-p="1">Iron Atronach</li>
+			<a rel="undead">5</a>
+			<a rel="humans">5</a>
+			<a rel="lycan">5</a>
+			<a rel="daedra">5</a>
+			<a rel="monsters">5</a>
+			<a rel="orcs">5</a>
+			<a ref="animals">5</a>
+		</ul>
+		<ul class="faction" id="undead">
+			<h1>Undead</h1>
 			<h3>Alpha (10)↓</h3>
-			<li class="c" data-p="10">Viking Pirate</li>
-			<a rel="v">0</a>
-			<a rel="p">0</a>
-			<a rel="c" class="vpcalc"></a>
-			<a rel="g" class="vpcalc"></a>
+			<li class="c" data-p="10">Ancient Lich</li>
+			<h3>Omega (5)↓</h3>
+			<li class="c" data-p="5">Lich</li>
+			<li class="c" data-p="5">Vampire Ancient</li>
+			<h3>Zeta (3)</h3>
+			<li class="c" data-p="3">Vampire</li>
+			<h3>Beta (1)↓</h3>
+			<li class="c" data-p="1">Ghost</li>
+			<li class="c" data-p="1">Mummy</li>
+			<li class="c" data-p="1">Skeleton Warrior</li>
+			<li class="c" data-p="1">Zombie</li>
+			<li class="c" data-p="1">Wraith</li>
+			<a rel="humans">85</a>
+			<a rel="atronach">30</a>
+			<a rel="lycan">50</a>
+			<a rel="daedra">25</a>
+			<a rel="monsters">30</a>
+			<a rel="orcs">40</a>
+			<a ref="animals">85</a>
+		</ul>
+		<ul class="faction" id="daedra">
+			<h1>Daedra</h1>
+			<h3>Alpha (10)↓</h3>
+			<li class="c" data-p="10">Daedra Lord</li>
+			<li class="c" data-p="10">Daedra Seducer</li>
+			<h3>Omega (5)↓</h3>
+			<li class="c" data-p="5">Fire Daedra</li>
+			<li class="c" data-p="5">Frost Daedra</li>
+			<h3>Beta (1)↓</h3>
+			<li class="c" data-p="1">Daedroth</li>
+			<a rel="undead">25</a>
+			<a rel="humans">25</a>
+			<a rel="atronach">25</a>
+			<a rel="lycan">25</a>
+			<a rel="monsters">25</a>
+			<a rel="orcs">25</a>
+			<a ref="animals">25</a>
 		</ul>
 	</div>
 	<div id="PartyResult">
 		<h2>Crew Party</h2>
 		<div class="results">
-			<div class="stat">Total power points pool: <span class="static" id="total_power">20</span></div>
-			<div class="stat">Power points remaining: <span id="remaining_power">20</span></div>
+			<div class="stat">Total power points pool: <span class="static" id="total_power">90</span></div>
+			<div class="stat">Power points remaining: <span id="remaining_power">90</span></div>
 			<br/>
-			<div class="stat">Total allowed boat capacity: <span class="static" id="total_capacity">18</span></div>
-			<div class="stat">Boat capacity remaining: <span id="remaining_capacity">18</span></div>
+			<div class="stat">Total allowed party capacity: <span class="static" id="total_capacity">60</span></div>
+			<div class="stat">Party capacity remaining: <span id="remaining_capacity">60</span></div>
 			<br/>
 			<div class="stat">Splinter groupings/stragglers: <span id="splinters">-</span></div>
 		</div>
@@ -343,9 +424,7 @@
 		<h3 class="dislike">Alpha/Omega to Beta/Zeta = <span id="alphaomega2beta"></span></h3>
 		<br/>
 		<h3 class="dislike">Beta to Beta = <span id="beta2beta"></span></h3>
-		
-		<br/>
-		
+
 	</div>
 	
 	<div id="Info" class="columners">
@@ -356,10 +435,7 @@
 		<br/>Click on the Crew Party character class names on the right to remove them from the Crew party.
 		<h3>Faction animosities</h3>
 		<ul>
-			<li><b>Pirates:</b> Dislikes both vikings and crusaders equally (45%/45%), than gladiators (10%).</li>
-			<li><b>Crusaders:</b> Dislikes vikings first (40%), than pirates and gladiators equally. (30%/30%).</li>
-			<li><b>Vikings:</b> Dislikes crusaders first (50%), then pirates (30%), than gladiators (20%).</li>
-			<li><b>Gladiators:</b> Dislikes crusaders first (50%), then pirates (30%), than vikings (20%).</li>
+			
 			<li><b>"Animosity" is the percentage that exceeds 25% of "dislike" and has a bearing on the game beyond innocent "fun" dialogue. Animosity cannot exceed 25% within/between divisions. If so, the party is considered invalid (ie. a "dislike" has occured beyond 50% mark). Numbers come into play when aggregating dislikes.</b></li>
 			<li>Also, for the party to be united. No spinter groups should be found within the party. Else, the party will split as well.</li>
 		</ul>
@@ -376,10 +452,7 @@
 	</ul>
 	<h3>Faction skillset bonuses and specialities*</h3>
 	<ul>
-		<li><b>Pirates:</b>Seamanship, Gunpowder*.</li>
-		<li><b>Crusaders:</b> Tower Defense*, Ranged Archery*</li>
-		<li><b>Vikings:</b>Seamanship, Fishing, Boatbuilding*, Herding, Smithing, Farming</li>
-		<li><b>Gladiators:</b> Wilderness Hunting, Magic*.</li>
+		
 	</ul>
 	</div>
 </body>
