@@ -1,0 +1,356 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	
+    <head>
+    	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Little Wargame</title>
+        <meta name="description" content="Little Wargame is a HTML5 Realtime Stragegy (RTS) game, that runs completely in your browser." />
+        <meta name="language" content="en" />
+        <style type="text/css">
+        	
+        	#canvas
+        	{
+        		position: relative;
+        		margin: 0;
+        		padding: 0;
+        		display: block;
+        	}
+        	
+        	#canvas2
+        	{
+        		margin: 0;
+        		padding: 0;
+        		display: none;
+        	}
+        	
+        	#file
+        	{
+        		display: none;
+        	}
+        	
+        	html, body
+        	{
+        		margin: 0;
+        		padding: 0;
+        	}
+        	
+        	body
+        	{
+        		cursor: url('imgs/cursor.cur'), auto;
+        	}
+        	
+        </style>
+    </head>
+    
+    <body>
+		<canvas id="canvas" oncontextmenu="return false"></canvas>
+		<canvas id="canvas2"></canvas>
+		<input type="file" id="file" />
+		<script type="text/javascript">
+			
+			// Constants
+			var WIDTH = window.innerWidth;
+			var HEIGHT = window.innerHeight;
+			var SCROLL_RANGE = 20;
+			var SCALE_FACTOR = 4;
+			var FIELD_SIZE = 16 * SCALE_FACTOR;
+			var UNIT_RADIUS = 1 / 2.4;
+			var UNIT_WIDTH = UNIT_RADIUS * 2;
+			var SCROLL_SPEED = 1000; 				// Pixels per Second
+			var FPS = 100;
+			var ORDER_BUTTON_SIZE = 64;
+			var INTERFACE_HEIGHT = 142;
+			var MINIMAP_WIDTH = 192;
+			var MINIMAP_HEIGHT = 192;
+			var Y_OFFSET = 1 / 8;
+			var CLICK_TOLERANCE = 0.25;				// click tolerance when selecting a unit
+			var BUILDING_START_HP_PERCENTAGE = 0.1;	// % of HP a building has, when the construction start, it gains the rest while beeing constructed
+			var MAX_SUPPLY = 50;					// per player
+			var MIN_DIST_CC_TO_MINE = 7;
+			var TICK_TIME = 50;						// ms
+			var DRAWING = true;						// game will be drawn (or only calculated ?)
+			var TICKS_DELAY = 5;					// delay in multiplayer game. Too low delay can lead to slow running game if connection is bad
+			var EDITOR_BUTTON_SIZE = 64;
+			
+			// canvas
+			var canvas = document.getElementById('canvas');
+			var c = canvas.getContext("2d");
+			
+			// dummy canvas
+			var canvas2 = document.getElementById('canvas2');
+			var c2 = canvas2.getContext("2d");
+			canvas2.width = 1000;
+			canvas2.height = 1000;
+			
+			// Global Variables
+			var timestamp = new Date().getTime();
+			var newTime = timestamp;
+			var timeDiff = 0;
+			var timeOfLastUpdate = 0;
+			var show_fps = false;
+			var timestampArchives = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+			var show_unit_details = false;
+			var fps = 0;
+			var disable_fog = false;
+			var use_1sec_build_Time = false;
+			var ticksCounter = 0;
+			var percentageOfCurrentTickPassed = 0;
+			var game_paused = false;
+			var maps = [];
+			
+			var ressourcesToLoad = 1;
+			
+		</script>
+		
+		<!-- extern -->
+		<script type="text/javascript" src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
+		<script type="text/javascript" src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+		<script type="text/javascript" src="extern/FileSaver.js"></script>
+		<!-- /extern -->
+		
+		<script type="text/javascript" src="Player.js"></script>
+		<script type="text/javascript" src="MapObject.js"></script>
+		<script type="text/javascript" src="Unit.js"></script>
+		<script type="text/javascript" src="Building.js"></script>
+		<script type="text/javascript" src="functions.js"></script>
+		
+		<script type="text/javascript">
+			
+			// global imgs
+			var imgShadow = loadImage("imgs/shadow.png");
+			var dustImages = [loadImage("imgs/effects/dust1.png"), loadImage("imgs/effects/dust2.png")];
+			var menuBg = loadImage("imgs/bg.png");
+			var menuButtonLeftImg = loadImage("imgs/menu-button-left.png");
+			var menuButtonMiddleImg = loadImage("imgs/menu-button-middle.png");
+			var menuButtonRightImg = loadImage("imgs/menu-button-right.png");
+			var menuButtonLeftImgPressed = loadImage("imgs/menu-button-left-pressed.png");
+			var menuButtonMiddleImgPressed = loadImage("imgs/menu-button-middle-pressed.png");
+			var menuButtonRightImgPressed = loadImage("imgs/menu-button-right-pressed.png");
+			var scrollLine = loadImage("imgs/scrollLine.png");
+			var scrollBoxTop = loadImage("imgs/scrollBoxTop.png");
+			var scrollBoxMiddle = loadImage("imgs/scrollBoxMiddle.png");
+			var scrollBoxBottom = loadImage("imgs/scrollBoxButtom.png");
+			var scrollButtonUp = loadImage("imgs/scrollButtonTop.png");
+			var scrollButtonBottom = loadImage("imgs/scrollButtonBottom.png");
+			var particleImages = [loadImage("imgs/p1.png")];
+			var hammerImg = loadImage("imgs/hammer.png");
+			var attentionmarkImg = loadImage("imgs/attentionmark.png");
+			var attentionmarkYellowImg = loadImage("imgs/attentionmark-yellow.png");
+			var underAttackImg = loadImage("imgs/under-attack.png");
+			
+		</script>
+		
+		<script type="text/javascript" src="MapObjectType.js"></script>
+		<script type="text/javascript" src="UnitType.js"></script>
+		<script type="text/javascript" src="BuildingType.js"></script>
+		<script type="text/javascript" src="TileType.js"></script>
+		<script type="text/javascript" src="Tile.js"></script>
+		<script type="text/javascript" src="Field.js"></script>
+		<script type="text/javascript" src="Data.js"></script>
+		<script type="text/javascript" src="Game.js"></script>
+		<script type="text/javascript" src="UIElement.js"></script>
+		<script type="text/javascript" src="UIText.js"></script>
+		<script type="text/javascript" src="UIButton.js"></script>
+		<script type="text/javascript" src="UIWindow.js"></script>
+		<script type="text/javascript" src="UIImage.js"></script>
+		<script type="text/javascript" src="UIInput.js"></script>
+		<script type="text/javascript" src="KeyManager.js"></script>
+		<script type="text/javascript" src="Interface.js"></script>
+		<script type="text/javascript" src="Button.js"></script>
+		<script type="text/javascript" src="Enviroment.js"></script>
+		<script type="text/javascript" src="Minimap.js"></script>
+		<script type="text/javascript" src="FontManager.js"></script>
+		<script type="text/javascript" src="Projectile.js"></script>
+		<script type="text/javascript" src="SoundManager.js"></script>
+		<script type="text/javascript" src="Menu.js"></script>
+		<script type="text/javascript" src="MapEditor.js"></script>
+		<script type="text/javascript" src="Lobby.js"></script>
+		<script type="text/javascript" src="MusicManager.js"></script>
+		<script type="text/javascript" src="Options.js"></script>
+		
+		<!-- Effects -->
+		<script type="text/javascript" src="EffectClasses/Explosion.js"></script>
+		<script type="text/javascript" src="EffectClasses/Dust.js"></script>
+		<script type="text/javascript" src="EffectClasses/GroundOrder.js"></script>
+		<!-- /Effects -->
+		
+		<!-- maps -->
+		<script type="text/javascript" src="maps/testmap.json"></script>
+		<script type="text/javascript" src="maps/valley2.json"></script>
+		<script type="text/javascript" src="maps/rockyFields.json"></script>
+		<!-- /maps -->
+		
+		<script type="text/javascript">
+			
+			// set size and resize
+			resize();
+			window.onresize = resize;
+			
+			// display "loading"
+			c.font = "bold 48px Arial";
+			c.lineWidth = 2;
+			c.fillStyle = "red";
+			c.fillText("loading...", WIDTH / 2 - 100, HEIGHT / 2 - 18);
+			c.strokeText("loading...", WIDTH / 2 - 100, HEIGHT / 2 - 18);
+			
+			// network stuff
+			var playerNameFromCookie = getCookieValue(document.cookie, "name");
+			var networkPlayerName = validatePlayerName(playerNameFromCookie) ? playerNameFromCookie : "Player1";
+			players[0].name = networkPlayerName;
+			var network_game = false;
+			var incomingOrders = [];
+			var outgoingOrders = [];
+			for(var i = 0; i < TICKS_DELAY; i++)
+				outgoingOrders.push([i]);
+			
+			// get sound options from cookie
+			var sound_on = getCookieValue(document.cookie, "sound_off") == "true" ? false : true;
+			var music_on = getCookieValue(document.cookie, "music_off") == "true" ? false : true;
+			var mouse_scroll_when_window_mode = getCookieValue(document.cookie, "mouse_scroll_off") == "true" ? false : true;
+			
+			// create objects
+			var interface = new Interface();
+			var soundManager = null;
+			var menu = new Menu();
+			var editor = new MapEditor();
+			var lobby = null;
+			var game = null;
+			var options = new Options();
+			var game_state = GAME.MENU;
+			var fontManager = new FontManager("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!'%&//()=?[]+*~#_-.,:;<>|@€ßäöüÄÖÜ&");
+			var musicManager = null;
+			
+			ressourceLoaded();
+			
+			// main loop, gets called by the imageLoaded() function, when all images are loaded and the game is ready
+			function mainLoop()
+			{
+				
+				// time stuff and fps output
+				newTime = new Date().getTime();
+				timeDiff = (newTime - timestamp) / 1000;
+				timestamp = newTime;
+				
+				// fps calculation
+				timestampArchives.push(timestamp);
+				if(Math.random() < 0.1)
+					fps = Math.floor(10 * 1000 / (timestamp - timestampArchives[0]));
+				timestampArchives.splice(0, 1);
+				
+				if(game_state == GAME.PLAYING)
+				{
+					
+					if(timeOfLastUpdate + TICK_TIME <= timestamp && !gameIsPaused() && (!network_game || (incomingOrders[0] && incomingOrders[0][0] == ticksCounter)))
+					{
+						
+						if(network_game)
+						{
+							
+							// create array with all orders to execute
+							incomingOrders[0].splice(0, 1);
+							outgoingOrders[0].splice(0, 1);
+							var orders = incomingOrders[0].concat(outgoingOrders[0]);
+							
+							// delete orders that will be executed this tick from orders to execute
+							incomingOrders.splice(0, 1);
+							outgoingOrders.splice(0, 1);
+							
+							// create new orders array
+							outgoingOrders.push([ticksCounter + TICKS_DELAY]);
+							
+							// send newest orders to other pc
+							lobby.server.send(JSON.stringify(outgoingOrders[outgoingOrders.length - 2]));
+							
+							// execute all the orders
+							while(orders.length > 0)
+							{
+								
+								var order = orders[1];
+								var shift = orders[2];
+								
+								// build target, check if unit or field or none
+								var target = null;
+								var targetAvailable = true;
+								
+								if(orders[0] == "unit")
+								{
+									target = game.getUnitById(orders[3]);
+									targetAvailable = target ? true : false;
+									orders.splice(0, 4);
+								}
+								
+								if(orders[0] == "field")
+								{
+									target = new Field(orders[3], orders[4], true);
+									orders.splice(0, 5);
+								}
+								
+								if(orders[0] == "instant")
+								{
+									orders.splice(0, 3);
+								}
+								
+								// make array from arraystring for units and find the actual units from the id's
+								var units = [];
+								var i = 0;
+								for(i = 0; i < orders.length && typeof orders[i] == "number"; i++)
+								{
+									var newUnit = game.getUnitById(orders[i]);
+									if(newUnit)
+										units.push(newUnit);
+								}
+								
+								orders.splice(0, i);
+								
+								// issue order
+								if(targetAvailable)
+									game.issueOrderToUnits(units, order, target, true, shift);
+								
+							}
+						}
+						
+						timeOfLastUpdate = timestamp;
+						game.update();
+						ticksCounter++;
+					}
+					
+					percentageOfCurrentTickPassed = Math.min((timestamp - timeOfLastUpdate) / TICK_TIME, 1);
+					
+					// draw everything
+					game.draw();
+					keyManager.draw();
+					interface.draw();
+					
+				}
+				else if(game_state == GAME.EDITOR)
+				{
+					editor.draw();
+				}
+				else if(game_state == GAME.LOBBY)
+				{
+					lobby.draw();
+				}
+				else
+				{
+					menu.draw();
+				}
+				
+				options.draw();
+				musicManager.draw();
+				
+				requestAnimFrame(mainLoop);
+				
+			}
+			
+			// Analytics
+			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+			ga('create', 'UA-46301279-1', 'littlewargame.com');
+			ga('send', 'pageview');
+			
+		</script>
+    </body>
+</html>
