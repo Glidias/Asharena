@@ -1,0 +1,61 @@
+Main background story:
+-----------------------------
+Different warriors from different eras find themselves transported to an alternate world where some of their predecessors has already been there before and settled in this new "timeless" infinite procedurally generated island world. This world seems to be primarily owned by a powerful Empire, who seems to control all the time portals and manupulate nature to their liking, who have locked them in this alternate reality. 
+
+Return back to homeworld...Why? Some people suspect their own original world within their timeframes lies in ruins/creature-outbreak due to the portal experiments the Empire did (with unconfirmed visions by certain people). The Empire disrupted the order of nature.
+
+Theme Cliches (had we had enough of these??):
+--------------
+- An "empire" entity.
+- Different splinter factions, etc.
+- Alternate reality/Matrix-prison, etc.
+
+Cookiecutter missions:
+----------------------
+Find treasure/relic
+Raid island
+Conquer island
+Rescue
+Trade with island (deal with someone there or some guild, etc.)
+
+
+Island bits:
+---------------------
+- Does island have creeps?
+- Does island have monsters?
+- Is island contested by different parties?
+- Is island owned by a certain faction?
+- Is island already populated?
+- Is island owned by the Empire?
+
+1) Mixed faction parties 
+2) Pure Crusader/Viking/Pirate faction parties (they tend to perform specific tasks typical to their faction within the gameworld)
+3) OR Empire can hire either 1) and 2) type parties to do their bidding.
+
+
+The Main Quest:
+---------------------
+
+The player decides on his main quest arc according to his own personal beliefs, which is deteremind through conversations at the beginning (though this might change as time passes and circumstances come into play, causing different outcomes). 
+
+- He hates the Empire  (bit 0 :: dec 1 )
+- He wants to return home and not settle in this new world  (bit 1 :: dec 2)
+- He believes that his homeworld is on the verge of collapse and wants to first investigate about it/restore it from within the new world.  (bit 2 :: dec 4)
+
+This gives 7 possible ending variations:
+1) He hates the Empire but believes the current island world is the new world to live in. Thus, he wants to defeat the Empire only and set up a free island world.
+2) He wants to return to his homeworld urgently (and wants others to do so), believing that time is of the essence, even if his home may not be in the best state of affairs already.
+3) Same as no.2, but also dislikes the Empire and believes that defeating the Empire is the key to fufilling the above mission.
+4) He wants to convince some Empire's people  to try and reverse the process the Empire did to the homeworld whcih he belives lies in disarray. However, he wants peace for all people in the island world which he wants to settle in, and belives the Empire to not necessarily be entirely evil.
+5) He wants to do no.4's final end objective, but not through persusation, but by forcefully defeating the entire Empire in the process of undoing the process of destruction the Empire did through their technology. He finally settles in the new world, however, since he considers going back too difficult a task.
+6) His homeworld's welfare is most important instead of defeating the empire, but believes in infiltrating the Empire's capital fortresses, undoing the process the Empire did, and than opening a portal to lead everyone (or at least himself and some people) back home. 
+7) Basically, this is the hardest ending, because he wants to achieves all 3 objectives from within the new world, which involves defeating the Empire as well besides finding a way back to his homeworld that is to be restored.
+
+Or optionally, he doesn't have any bit convictions and thus no "ending". He just wants to live in the new world and simply explore it.
+
+
+Gameplay Mechanics:
+------------------------
+- Party composition management. 
+- Convincing/finding NPCs to join you, or hiring them.
+- Raiding/infiltrating guarded areas

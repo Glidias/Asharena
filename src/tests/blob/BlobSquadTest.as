@@ -200,8 +200,8 @@ package tests.blob
             blobFormationPreview.graphics.moveTo(radius, 0);
             blobFormationPreview.graphics.lineTo(radius + 13, 0);
         
-         //   blob.visible = false;
-            //    blobFormationPreview.visible = false;
+            blob.visible = false;
+               blobFormationPreview.visible = false;
             
         setupBlobPosition(40, 40);
         }
