@@ -125,6 +125,7 @@ package examples
 			addEventListener(Event.ADDED_TO_STAGE, addedInit);
 
 		}
+		private static const MAP_SCALE:Number = 1;
 		
 		public function inject(cameraTarget:Object3D, followTarget:Object3D, playerPos:Pos, playerRot:Rot, skinRenderable:Object3D, teapotMaterial:VertexLightZClipMaterial=null):void {
 			this.playerPos = playerPos;
@@ -132,6 +133,7 @@ package examples
 			this.followTarget = followTarget;
 			this.cameraTarget = cameraTarget;
 			this.skinRenderable = skinRenderable;
+			
 			
 			followTarget.x = camera.x;
 			followTarget.y = camera.y;
@@ -146,7 +148,7 @@ package examples
             thirdPerson = new OrbitCameraMan(camera, new Object3D(), stage, raycastImpl, followTarget, playerRot, true); 
 			
             //thirdPerson.controller.easingSeparator  = 12;
-            thirdPerson.preferedZoom = 160;
+            thirdPerson.preferedZoom = 160 ;
             thirdPerson.controller.minDistance = 30;
 			thirdPerson.preferedMinDistance = 60;
 			thirdPerson.fadeDistance = thirdPerson.preferedMinDistance-1;
@@ -242,7 +244,7 @@ package examples
 	
 	}
 		
-		private var waterLevel:Number =  -20000;
+		private var waterLevel:Number =  -20000  * (MAP_SCALE > 1 ? MAP_SCALE : 1);
 		public var reflectClipOffset:Number = 2;
 				
 		private function onContext3DCreated(e:Event):void			
@@ -353,9 +355,9 @@ package examples
 			// TerrainLOD
 			terrainLOD = new TerrainLOD();
 			
-			//terrainLOD.scaleX = 3;
-			//terrainLOD.scaleY = 2;
-	
+			terrainLOD.scaleX = MAP_SCALE;
+			terrainLOD.scaleY = MAP_SCALE;
+	terrainLOD.scaleZ =  MAP_SCALE;
 			terrainLOD.setUpdateRadius(256);
 			terrainLOD.setupUpdateCullingMode(TerrainLOD.CULL_NONE);
 			//terrainLOD.debug = true;
@@ -389,12 +391,13 @@ package examples
 			terrainLOD.loadSinglePage(stage3D.context3D, _loadedPage, standardMaterial, 0, -1, 256);  //new FillMaterial(0xFF0000, 1)
 			
 		
-			var hWidth:Number = terrainLOD.boundBox.maxX * .5;
+			var hWidth:Number = terrainLOD.boundBox.maxX * .5 * terrainLOD.scaleX;
 			terrainLOD.x -= hWidth;
 			terrainLOD.y += hWidth;
 			
-				camera.z = _loadedPage.heightMap.Sample(camera.x - terrainLOD.x, -(camera.y - terrainLOD.y)) ;
-			if (camera.z < waterLevel) camera.z = waterLevel;
+				camera.z = _loadedPage.heightMap.Sample((camera.x - terrainLOD.x)/terrainLOD.scaleX, -(camera.y - terrainLOD.y)/terrainLOD.scaleX) ;
+			camera.z *=  terrainLOD.scaleZ;
+				if (camera.z < waterLevel) camera.z = waterLevel;
 			camera.z += 1600;	
 	
 		
@@ -504,7 +507,7 @@ package examples
 			
 			 waterLevel = _baseWaterLevel + Math.sin(_waterOscValue) * (_waterSpeed != 0 ? _baseWaterLevelOscillate : 0);
 			 
-			 
+			// skinRenderable.visible = terrainLOD.scaleX == 1;
 			
 		
 			if (teapotMaterial != null) {
