@@ -100,16 +100,24 @@ package examples
 		static private const SBRight:Class;
 		
 		static public const START_LOD:Number = 1;
-		static public const FOG_DIST_TILES:int = 2048;
 		
 		private var _normalMapData:BitmapData;
 		private var settings:TemplateSettings = new TemplateSettings();
 		
 		
-		[Embed(source="assets/myterrain.tre", mimeType="application/octet-stream")]
-		private var TERRAIN_DATA:Class;
+		/* Map scale distances and land area
+		512  x1- 6 km2 ~ 5km2
+		1024 x2- 24 km2 ~  19km2
+		2048 x4- 100 km2 ~ 80km2
+		4016 x8- 400km2  ~ 320km2
+		*/
 		
-		[Embed(source="assets/myterrain_normal_rough.jpg")]
+		[Embed(source="assets/myterrainx2.tre", mimeType="application/octet-stream")]
+		private var TERRAIN_DATA:Class;
+		private static const TERRAIN_HEIGHT_SCALE:Number = 2;
+		private static const MAP_SCALE:Number = 4;
+		
+		[Embed(source="assets/myterrain_normal.jpg")]
 		private var NORMAL_MAP:Class;
 		
 		[Embed(source="assets/edgeblend_mist.png")]
@@ -119,13 +127,14 @@ package examples
 		
 		
 		
+		
 		public function WaterAndTerrain3rdPerson()
 		{
 			
 			addEventListener(Event.ADDED_TO_STAGE, addedInit);
 
 		}
-		private static const MAP_SCALE:Number = 1;
+
 		
 		public function inject(cameraTarget:Object3D, followTarget:Object3D, playerPos:Pos, playerRot:Rot, skinRenderable:Object3D, teapotMaterial:VertexLightZClipMaterial=null):void {
 			this.playerPos = playerPos;
@@ -153,7 +162,7 @@ package examples
 			thirdPerson.preferedMinDistance = 60;
 			thirdPerson.fadeDistance = thirdPerson.preferedMinDistance-1;
 			thirdPerson.minFadeAlpha = 0;
-            thirdPerson.controller.maxDistance =256*32;
+            thirdPerson.controller.maxDistance =256*32 * MAP_SCALE;
             //thirdPerson.controller.minAngleLatitude = 5;  // LEFT HANDED SYSTEM with thumb being latitude
             thirdPerson.controller.minAngleLatitude = -85;  // pitch up
             thirdPerson.controller.maxAngleLatidude = 75;  // pitch down
@@ -242,17 +251,21 @@ package examples
 		_loadedPage = new QuadTreePage();
 		_loadedPage.readExternal(data);
 	
+	
 	}
 		
-		private var waterLevel:Number =  -20000  * (MAP_SCALE > 1 ? MAP_SCALE : 1);
+		private var waterLevel:Number =   (-64000 +20); // * (MAP_SCALE > 1 ? MAP_SCALE : 1) 
 		public var reflectClipOffset:Number = 2;
-				
+		
+		private static const MAX_POSSIBLE_HEIGHT:Number = Math.sqrt( 64 * 255 + 256) * TERRAIN_HEIGHT_SCALE;
+		private static const FAR_CLIPPING:Number = Math.sqrt(MAX_POSSIBLE_HEIGHT*MAX_POSSIBLE_HEIGHT + 2* 333901639.34426229508196721311475 * MAX_POSSIBLE_HEIGHT) * 1  * 3;
+		
 		private function onContext3DCreated(e:Event):void			
 		{
 			// Container
 			
 			// Camera
-			camera = new Camera3D(1, FOG_DIST_TILES*256);  //1024*256
+			camera = new Camera3D(1, FAR_CLIPPING);  //1024*256
 			camera.x = 0*256;
 			camera.y = 0*256;
 			camera.z = waterLevel + 66400;
@@ -296,7 +309,7 @@ package examples
 			frontres.upload(stage3D.context3D);
 			backres.upload(stage3D.context3D);		
 			camera.nearClipping = 1;
-			camera.farClipping = 524288 * 2;
+			camera.farClipping = FAR_CLIPPING;
 			var fogMat:FillMaterial = new FillMaterial(settings.viewBackgroundColor);
 			//sb = new SkyBox(camera.farClipping * 10, fogMat, fogMat, fogMat, fogMat, fogMat, fogMat, 0.005);  //left,right,front,back,bottom,top
 			sb = new SkyBox(8192*256*2, left,right,front,back,bottom,top,0.005);
@@ -311,7 +324,7 @@ package examples
 			// Reflective plane
 			var normalRes:BitmapTextureResource = new BitmapTextureResource(new Normal1().bitmapData);
 			waterMaterial = new WaterMaterial(normalRes, normalRes);
-		var scaler:Number = 4;
+		var scaler:Number = 4*MAP_SCALE;
 			waterMaterial.setFollowCamera(  waterMaterial.getUVOffsetScaling(2048 * 256*scaler, uvScaler * 32) );
 			plane = new Plane(2048 * 256*scaler, 2048 * 256*scaler, 64, 64, false, false, null, waterMaterial);
 			var uvs:Vector.<Number>= plane.geometry.getAttributeValues(VertexAttributes.TEXCOORDS[0]);
@@ -357,16 +370,16 @@ package examples
 			
 			terrainLOD.scaleX = MAP_SCALE;
 			terrainLOD.scaleY = MAP_SCALE;
-	terrainLOD.scaleZ =  MAP_SCALE;
+		//terrainLOD.scaleZ =  MAP_SCALE;
 			terrainLOD.setUpdateRadius(256);
 			terrainLOD.setupUpdateCullingMode(TerrainLOD.CULL_NONE);
 			//terrainLOD.debug = true;
 			terrainLOD.detail = START_LOD;
-			terrainLOD.waterLevel = waterLevel;
+			terrainLOD.waterLevel = waterLevel ;
 			raycastImpl = new RaycastImpl(terrainLOD);
 			
 			standardMaterial = new StandardTerrainMaterial2(groundTextureResource , new BitmapTextureResource( _normalMapData), null, null  );
-			standardMaterial.uvMultiplier2 = 1 / 1;
+			standardMaterial.uvMultiplier2 =MAP_SCALE;
 			//throw new Error([standardMaterial.opaquePass, standardMaterial.alphaThreshold, standardMaterial.transparentPass]);
 			//standardMaterial.transparentPass = false;
 			standardMaterial.normalMapSpace = NormalMapSpace.OBJECT;
@@ -374,27 +387,31 @@ package examples
 			standardMaterial.glossiness = 0;
 			standardMaterial.mistMap = new BitmapTextureResource(new EDGE().bitmapData);
 			StandardTerrainMaterial2.fogMode = 1;
-			StandardTerrainMaterial2.fogFar =  256 * FOG_DIST_TILES;
+			StandardTerrainMaterial2.fogFar =  FAR_CLIPPING;
 			StandardTerrainMaterial2.fogNear = 256 * 32;
 			StandardTerrainMaterial2.fogColor = settings.viewBackgroundColor;
 			standardMaterial.waterLevel = waterLevel;
 			standardMaterial.waterMode = 1;
 			//standardMaterial.tileSize = 512;
 			standardMaterial.pageSize = _loadedPage.heightMap.RowWidth - 1;
-			_loadedPage.xorg += 555 * 256 - 256;
-			_loadedPage.zorg += 155*256 - 256;
+			//_loadedPage.xorg += 255 * 256  - 256;
+		//	_loadedPage.zorg += 255*256  - 256;
 			_loadedPage.heightMap.XOrigin = _loadedPage.xorg;
 			_loadedPage.heightMap.ZOrigin = _loadedPage.zorg;
 		//	_loadedPage.heightMap.Scale += 1;
 		//	_loadedPage.Level+=1;
 
+
 			terrainLOD.loadSinglePage(stage3D.context3D, _loadedPage, standardMaterial, 0, -1, 256);  //new FillMaterial(0xFF0000, 1)
 			
-		
-			var hWidth:Number = terrainLOD.boundBox.maxX * .5 * terrainLOD.scaleX;
+			
+			var hWidth:Number = (terrainLOD.boundBox.maxX-terrainLOD.boundBox.minX) * .5 * terrainLOD.scaleX;
+	//terrainLOD.x -= terrainLOD.boundBox.minX;
+	//terrainLOD.x -= terrainLOD.boundBox.minX;
+	
 			terrainLOD.x -= hWidth;
 			terrainLOD.y += hWidth;
-			
+		//throw new Error([(camera.x - terrainLOD.x) / terrainLOD.scaleX, -(camera.y - terrainLOD.y) / terrainLOD.scaleX]);
 				camera.z = _loadedPage.heightMap.Sample((camera.x - terrainLOD.x)/terrainLOD.scaleX, -(camera.y - terrainLOD.y)/terrainLOD.scaleX) ;
 			camera.z *=  terrainLOD.scaleZ;
 				if (camera.z < waterLevel) camera.z = waterLevel;
@@ -507,7 +524,7 @@ package examples
 			
 			 waterLevel = _baseWaterLevel + Math.sin(_waterOscValue) * (_waterSpeed != 0 ? _baseWaterLevelOscillate : 0);
 			 
-			// skinRenderable.visible = terrainLOD.scaleX == 1;
+		
 			
 		
 			if (teapotMaterial != null) {

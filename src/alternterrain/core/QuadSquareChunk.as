@@ -556,11 +556,11 @@ public	function UpdateAux(cd:QuadChunkCornerData, camera:Vector3D, CenterError:N
 			MaxY = input.readUnsignedShort();
 		*/
 		///* #else if positiveNegativeShortHeights
-			MinY = input.readShort();
-			MaxY = input.readShort();
+			MinY = input.readInt();
+			MaxY = input.readInt();
 		//#end if */
 		
-		error = input.readUnsignedShort();
+		error = input.readUnsignedInt();
 		input.readBoolean();  // todo: depeciate fully
 		//normals =  ? input.readObject() : null;
 		if ( input.readBoolean() ) {
@@ -603,9 +603,9 @@ public	function UpdateAux(cd:QuadChunkCornerData, camera:Vector3D, CenterError:N
 
 	public function writeExternal(output:IDataOutput):void 
 	{
-		output.writeShort(MinY);
-		output.writeShort(MaxY);
-		output.writeShort(error);
+		output.writeInt(MinY);
+		output.writeInt(MaxY);
+		output.writeUnsignedInt(error);
 		output.writeBoolean( false );  // todo: depciate fully
 		//if (normals != null) output.writeObject(normals);
 		if (Child[0] != null) {

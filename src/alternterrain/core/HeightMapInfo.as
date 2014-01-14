@@ -50,6 +50,8 @@ package alternterrain.core
 			Data.fixed = val;
 		}
 		
+
+		
 		public function BoxFilterHeightMap(
                        smoothEdges:Boolean=true):void
 {
@@ -417,7 +419,7 @@ package alternterrain.core
 			Data = new Vector.<int>(byte.readUnsignedInt(), true);
 			var len:uint = Data.length;
 			for (var i:uint = 0; i <  len; i++) {
-				Data[i] = byte.readShort();
+				Data[i] = byte.readInt();
 			}
 		}
 		
@@ -434,7 +436,7 @@ package alternterrain.core
 			var len:uint = Data.length;
 			byte.writeUnsignedInt(Data.length);
 			for (var i:uint = 0; i <  len; i++) {
-				byte.writeShort(Data[i]);
+				byte.writeInt(Data[i]);
 			}
 		}
 		
