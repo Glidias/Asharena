@@ -78,6 +78,10 @@ package tests.blob
             addChar(20, -20);
           addChar(-20, 20);
            addChar( 20, 20);
+		   addChar( 40, 20);
+		   addChar( 60, 20);
+		   addChar( 80, 20);
+		   addChar( 100, 20);
 			//*/
             
             

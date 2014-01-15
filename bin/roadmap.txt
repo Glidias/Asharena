@@ -83,8 +83,13 @@ Either:
 
 Boat party lands at dock,  while towns/villages will get generated in the background...After clearing the area of fog from within the loci of the dock, fog clears and entire terrain (is fully) revealed with towns also visible. Towns do not exist outside the vincity of the fog, but fog will be extremley thick.
 
-
-
+Tech Roadmap: 
+a) PRE-GENERATE: Plant resource areas/doodads on island
+b) PRE-GENERATE: Jetty Dock location and structure on specific side of island (need to determine how this is done)
+c) POST-GENERATE: This can be done in prologue jetty crawling, or done progressively on-demand
+	1) Identify flat areas to place village block layout
+	2) Connect villages together
+	3) Consider series of flat areas and whether to enclose them as walled city.
 
 Algorithms:
 -----------
@@ -109,7 +114,6 @@ drill
 RESIDENTIAL & ARGRICULTURE:
 ----------------
 house - residential
-inn - communal/lodging
 farmhouse 
 
 GOVERNMENT:
@@ -123,9 +127,19 @@ MILITARY:
 barracks
 siege workshop - cannons
 
+SERVICES:
+-----------
+bank
+temple
+tavern
+
 RETAIL:
 --------------
-weapon shop 
-general shop
-magic shop
+weapon shop
+armorer shop
+general store
+alchemist
 stables
+bookseller
+clothing
+gem store
