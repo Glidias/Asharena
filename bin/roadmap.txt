@@ -57,3 +57,75 @@ Acrobatics: (Considerations)
 1) Variable Jump Power (Falling animation frame), 
 2) Scale walls/Vault obstacles with jump and no jump. (Auto-jump when sprinting ahead)
 3) Tumble when fall from great height (hold sprinting while in air?)
+
+
+__________________________________________________
+
+For each island:
+
+1) Towns/Villages: - Random Dungeon Layout over flattish areas ( processing async and save )
+2) Resources & doodads: - Cave (marching squares in subtract), Noise over biome regions. Sparse noise doodads for stuff outside resource regions. (sync processing)
+3) Rock outcrops along steep slopes: (especially at coast) (sync processing)
+4) Dock jetty: - Bridge building minigame: (Saboteur style) or some random maze algorithm form start/end
+
+(sync processing)
+- Low/High resolution 512x512/1024x1024 splat/height (restricted to 3 textures and 1 slope texture)
+- 512x512 blit maps that will stretch accordingly for larger environments.
+
+
+Acid water dock jetty disembark scenerio
+------------------------------------------
+Either: 
+1) Island area coasts are all cliffed up......, meaning only accessible from dock
+2) Waters surrounding island is acidic, preventing boat from moving further in, having to disembark from outer.
+3) A thick fog has descended on the island, preventing boat from safely travel further in.
+4) Lots of rock outcrops around the coast, requiring diembarkabation at dock.
+
+Boat party lands at dock,  while towns/villages will get generated in the background...After clearing the area of fog from within the loci of the dock, fog clears and entire terrain (is fully) revealed with towns also visible. Towns do not exist outside the vincity of the fog, but fog will be extremley thick.
+
+
+
+
+Algorithms:
+-----------
+Random Dungeon Layout
+Path Harder
+Dungeon fl
+
+
+INDUSTRY:
+----------------
+dockyard - boat building
+granary -  food storage/processing
+lumber mill - timber
+workshop - pottery, items, etc.
+blacksmith - forged weapons
+
+RESOURCE:
+--------------
+mine
+drill
+
+RESIDENTIAL & ARGRICULTURE:
+----------------
+house - residential
+inn - communal/lodging
+farmhouse 
+
+GOVERNMENT:
+------------
+keep
+castle
+town hall
+
+MILITARY:
+-----------
+barracks
+siege workshop - cannons
+
+RETAIL:
+--------------
+weapon shop 
+general shop
+magic shop
+stables
