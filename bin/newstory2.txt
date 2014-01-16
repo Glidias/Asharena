@@ -1,23 +1,6 @@
 Main background story:
 -----------------------------
-Different warriors from different eras find themselves transported to an alternate world where some of their predecessors has already been there before and settled in this new "timeless" infinite procedurally generated island world. This world seems to be primarily owned by a powerful Empire, who seems to control all the time portals and manupulate nature to their liking, who have locked them in this alternate reality. 
-
-Return back to homeworld...Why? Some people suspect their own original world within their timeframes lies in ruins/creature-outbreak due to the portal experiments the Empire did (with unconfirmed visions by certain people). The Empire disrupted the order of nature.
-
-Theme Cliches (had we had enough of these??):
---------------
-- An "empire" entity.
-- Different splinter factions, etc.
-- Alternate reality/Matrix-prison, etc.
-
-Cookiecutter missions:
-----------------------
-Find treasure/relic
-Raid island
-Conquer island
-Rescue
-Trade with island (deal with someone there or some guild, etc.)
-
+Different warriors from different eras have found themselves transported to an alternate world, a seamingly "timeless" infinite world of never-ending islands. This world seems to be primarily owned by a powerful empire known as the Union, who seems to control all of time and dimensionals portals, manipulating nature to their liking. With the recent creature outbreaks and unconfirmed visions of certain people of original times, the question remains even stronger than before: Is this new world better than the one they used to live in? How many generations would pass with children not knowing of the world their forefathers once lived in? Is the old worlds dead, in shambles, left alone or in danger? It may be up to you, to find out..
 
 Island bits:
 ---------------------
@@ -26,11 +9,11 @@ Island bits:
 - Is island contested by different parties?
 - Is island owned by a certain faction?
 - Is island already populated?
-- Is island owned by the Empire?
+- Is island owned by the Union?
 
 1) Mixed faction parties 
 2) Pure Crusader/Viking/Pirate faction parties (they tend to perform specific tasks typical to their faction within the gameworld)
-3) OR Empire can hire either 1) and 2) type parties to do their bidding.
+3) OR Union can hire either 1) and 2) type parties to do their bidding.
 
 
 The Main Quest:
@@ -38,18 +21,18 @@ The Main Quest:
 
 The player decides on his main quest arc according to his own personal beliefs, which is deteremind through conversations at the beginning (though this might change as time passes and circumstances come into play, causing different outcomes). 
 
-- He hates the Empire  (bit 0 :: dec 1 )
+- He hates the Union  (bit 0 :: dec 1 )
 - He wants to return home and not settle in this new world  (bit 1 :: dec 2)
 - He believes that his homeworld is on the verge of collapse and wants to first investigate about it/restore it from within the new world.  (bit 2 :: dec 4)
 
 This gives 7 possible ending variations:
-1) He hates the Empire but believes the current island world is the new world to live in. Thus, he wants to defeat the Empire only and set up a free island world.
+1) He hates the Union but believes the current island world is the new world to live in. Thus, he wants to defeat the Union only and set up a free island world.
 2) He wants to return to his homeworld urgently (and wants others to do so), believing that time is of the essence, even if his home may not be in the best state of affairs already.
-3) Same as no.2, but also dislikes the Empire and believes that defeating the Empire is the key to fufilling the above mission.
-4) He wants to convince some Empire's people  to try and reverse the process the Empire did to the homeworld whcih he belives lies in disarray. However, he wants peace for all people in the island world which he wants to settle in, and belives the Empire to not necessarily be entirely evil.
-5) He wants to do no.4's final end objective, but not through persusation, but by forcefully defeating the entire Empire in the process of undoing the process of destruction the Empire did through their technology. He finally settles in the new world, however, since he considers going back too difficult a task.
-6) His homeworld's welfare is most important instead of defeating the empire, but believes in infiltrating the Empire's capital fortresses, undoing the process the Empire did, and than opening a portal to lead everyone (or at least himself and some people) back home. 
-7) Basically, this is the hardest ending, because he wants to achieves all 3 objectives from within the new world, which involves defeating the Empire as well besides finding a way back to his homeworld that is to be restored.
+3) Same as no.2, but also dislikes the Union and believes that defeating the Union is the key to fufilling the above mission.
+4) He wants to convince some Union's people  to try and reverse the process the Union did to the homeworld whcih he belives lies in disarray. However, he wants peace for all people in the island world which he wants to settle in, and belives the Union to not necessarily be entirely evil.
+5) He wants to do no.4's final end objective, but not through persusation, but by forcefully defeating the entire Union in the process of undoing the process of destruction the Union did through their technology. He finally settles in the new world, however, since he considers going back too difficult a task.
+6) His homeworld's welfare is most important instead of defeating the Union, but believes in infiltrating the Union's capital fortresses, undoing the process the Union did, and than opening a portal to lead everyone (or at least himself and some people) back home. 
+7) Basically, this is the hardest ending, because he wants to achieves all 3 objectives from within the new world, which involves defeating the Union as well besides finding a way back to his homeworld that is to be restored.
 
 Or optionally, he doesn't have any bit convictions and thus no "ending". He just wants to live in the new world and simply explore it.
 
@@ -59,3 +42,63 @@ Gameplay Mechanics:
 - Party composition management. 
 - Convincing/finding NPCs to join you, or hiring them.
 - Raiding/infiltrating guarded areas
+
+
+Exploring a world of procedurally generated islands. Islands use one of the following biomes:
+- Swamp - Can become habitat for vikings, otherwise, a place for gathering swamp-related resources.
+- Desert - Can become habitat for gladiators, otherwise, a place for gathering desert-related resources.
+- Forested Highlands - Can become habitat for crusaders, otherwise, a place for gathering forested/highland-related resources.
+- Plains/Shrubland - Can become habitat for pirates, otherwise, a place for gathering plain/shrubland-related resources.
+THe choice of a place being a habitat vs a purely resource-gathering/industrial place for a given faction lies in a faction's native inhabitants' expertise. Some faction inhabitants (ie. the commoner) have mastered the art of thriving even in harsher landscapes, or have the special skills in expertly harnessing nearby resources to make life better for themselves while living in close proximity to these resources.
+
+These are the main types of island missions, where accomplishing them may further the Main Storyline in certain circumstances. 
+
+Colonization/Pathfinding:
+-------------------------------
+Players set out exploring the uncolonized islands as pathfinders for either a given faction (or Union) to identify various parts of the terrain that could be suited to build village settlements or/and resource gathering infrastructure. Once they are discovered and cleared of any potential dangers (perhaps through conquest), they are slated to start developing with the ability for some players (depending on your world status) to influence the types of buildings made through proposals and upgrades. As time passes, the game progressively adds new buildings, roads, etc. to form up a settlement. The purpose of colonization is to own an island for inhabitants to settle in, or purely for resource gathering and export.
+
+
+Conquest:
+---------
+Involves a much larger army with a long-drawn series of small skirmishes in order to completely rout out enemy settlements/buildings/forces and fully capture the island.
+
+
+Raiding:
+---------
+Involves an attempt to grab resources (or perform a probing attack) on a given island with a small invading party. Can involve stealth or a direct attack.
+
+
+Scouting:
+--------
+Reconaissance on an occupied island, requiring stealth, usually prior to a conquest/raid.
+
+
+Assignment:
+-----------
+Some kind of errant/visitation/request required on a given island. This is your typical RPG quest.
+
+
+Defense:
+----------
+Involves defending an island against invaders.
+
+
+Patrolling:
+-------------
+Involves guarding an island from raids.
+
+
+
+Dock jetty Building (Saboteur minigame):
+------------------
+Involves building jetty docks out to the sea to a target location. Some of these targets have oil resources as well, making them important to connect a jetty to these locations.
+
+Mine digging (Saboteur  minigame)
+-------------------------
+Same as above, but takes place underground, leading to gold.
+
+
+
+Game Mechanics:
+-----------------
+Islands are big, so waypoints can be set across a vast distance, and a path generated to travel to that location immediately. But during this process, enemies might react to your movements in a turn-based manner (in response to perhaps spotting you). This also occurs if you use free-form movement of your party blob/individual at periodic intervals. If not caught out in the open, it's possible for individuals to take cover in response to the enemy, or perhaps, you'd want to split up or adjust your positions a bit.
