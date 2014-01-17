@@ -1,7 +1,8 @@
+Old roadmap:
+
 1) Test load all chars for current island (single-island.swf)
 2) Docked Viking Ship and collision model on island
-3) Docked Viking Ship and procedurally generated foggy island (test new terrain paging system)  (generate-island.swf)
-4) Place Biomes, terrain, props, etc.  as part of above process with location specific collisions
+3) Place Biomes, terrain, props, etc.  as part of above process with location specific collisions
 
 
 3 Vikings & Me:  (three-vikings-and-me.swf)
@@ -60,6 +61,7 @@ Acrobatics: (Considerations)
 
 
 __________________________________________________
+NEW ROADMAP:
 
 For each island:
 
@@ -73,23 +75,35 @@ For each island:
 - 512x512 blit maps that will stretch accordingly for larger environments.
 
 
-Acid water dock jetty disembark scenerio
-------------------------------------------
+Build dock scenerio
+---------------------
+Pathfinders have already went ahead and have called to build a dock location at a newfound island. Your boat party is requested to join in and supervise the construction of the dock.
+
+
+Acid/oil water dock jetty disembark scenerio
+---------------------------------------------
 Either: 
 1) Island area coasts are all cliffed up......, meaning only accessible from dock
 2) Waters surrounding island is acidic, preventing boat from moving further in, having to disembark from outer.
 3) A thick fog has descended on the island, preventing boat from safely travel further in.
 4) Lots of rock outcrops around the coast, requiring diembarkabation at dock.
 
-Boat party lands at dock,  while towns/villages will get generated in the background...After clearing the area of fog from within the loci of the dock, fog clears and entire terrain (is fully) revealed with towns also visible. Towns do not exist outside the vincity of the fog, but fog will be extremley thick.
+Boat party lands at dock,  while towns/villages will get generated in the background...After clearing the area of fog from within the loci of the dock, fog clears and entire terrain (is fully) revealed with towns also visible. Towns do not exist outside the vincity of the fog, but fog will be extremely thick. Enemies are in your way! Taking into account collision detection, move your blob party (or multiple parties) along the dangerous jetty and combat monsters accordingly.
+
+
 
 Tech Roadmap: 
 a) PRE-GENERATE: Plant resource areas/doodads on island
-b) PRE-GENERATE: Jetty Dock location and structure on specific side of island (need to determine how this is done)
+b) PRE/MAN-GENERATE: Jetty Dock location and structure on specific side of island 
 c) POST-GENERATE: This can be done in prologue jetty crawling, or done progressively on-demand
 	1) Identify flat areas to place village block layout
 	2) Connect villages together
 	3) Consider series of flat areas and whether to enclose them as walled city.
+	
+Open-world turn-based abstract blob combat system. (Move by meter, draw path, click on destination auto-generate path, etc.)
+d) Initial: Abstract first person blob, and non-movable 3rd person preview and position markers.
+e) Try: Blobs with individual break-out/follow approach.
+
 
 Algorithms:
 -----------
@@ -108,8 +122,8 @@ blacksmith - forged weapons
 
 RESOURCE:
 --------------
-mine
-drill
+mining shed
+oil platform
 
 RESIDENTIAL & ARGRICULTURE:
 ----------------

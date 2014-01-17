@@ -4,12 +4,13 @@ Different warriors from different eras have found themselves transported to an a
 
 Island bits:
 ---------------------
-- Does island have creeps?
+- Does island have creeps? Inland, coastal, or both?
 - Does island have monsters?
 - Is island contested by different parties?
 - Is island owned by a certain faction?
 - Is island already populated?
 - Is island owned by the Union?
+- Has island alraedy been visited by earlier pathfinders?
 
 1) Mixed faction parties 
 2) Pure Crusader/Viking/Pirate faction parties (they tend to perform specific tasks typical to their faction within the gameworld)
@@ -43,6 +44,17 @@ Gameplay Mechanics:
 - Convincing/finding NPCs to join you, or hiring them.
 - Raiding/infiltrating guarded areas
 
+It's targetted to the following types of players:
+	- Those that like open-world exploration/roaming within RPGs.
+	- Those that like strategy/challenge within RPGs.
+Players indirectly determine/control what gets build due to discovering suitable areas within the island (their reward), but the actual details/location of what eventually gets build is procedurally done by the game itself, not by the players. (Though the dock-building is a minigame aspect to allow players to influence the layout of a jetty dock, and what services it might provide...). Some might discover treasure/secret areas in the process. However, some of the routine aspects of buying/selling (eg. going to known shops) are streamlined to a menu-based list, such that no longer need to personally travel to such shops since they are already well-known shops within common-populated areas (eg. viewing a directory, or spotting the shop while traveling will add that shop in your journal). The main reward of of the players comes with voyaging out to the seas, visiting islands,etc.. Once stationed in a particular island, you can use it's available services in menu-format, adhering more to a strategy/management kind of approach.
+
+Thus, the following aspects do take a minor backseat compared to some other RPGs, to open up different avenues of gameplay.
+   - No "Uber" items, etc. No item is really better than any other but are all situational and character-based. But rarer finds do sell more at a higher price, which encourages exploration.
+   - Less emphasis on XP. Grinding up levels won't make you significantly more powerful, just a way to shape your chaaracter differently and increase his reputation in the gameworld after completing missions.
+   - No personal inventory. A shared boat party inventory instead.
+   - Less emphasis on loot during a mission. Vew few any inventory space per person. Looting is done automatically after every successful mission completion on an island, treating loot as "spoils", preventing the need to personally collect loot from corpses unless the corpse has something worth using at that point of time. (After all,  you're not carrying a "looting" bag/backpack on a mission that gives you lots of inventory space.).
+   -  No fixed storyline, though there's a main storyline quest arc for the Main character, and clever dialogue to be used to show the different characterisations of various NPCs within the party (also a storyline to justify how various NPCs, possibly of different factions, ended up joining the same party to begin with.).
 
 Exploring a world of procedurally generated islands. Islands use one of the following biomes:
 - Swamp - Can become habitat for vikings, otherwise, a place for gathering swamp-related resources.
@@ -51,26 +63,26 @@ Exploring a world of procedurally generated islands. Islands use one of the foll
 - Plains/Shrubland - Can become habitat for pirates, otherwise, a place for gathering plain/shrubland-related resources.
 THe choice of a place being a habitat vs a purely resource-gathering/industrial place for a given faction lies in a faction's native inhabitants' expertise. Some faction inhabitants (ie. the commoner) have mastered the art of thriving even in harsher landscapes, or have the special skills in expertly harnessing nearby resources to make life better for themselves while living in close proximity to these resources.
 
-These are the main types of island missions, where accomplishing them may further the Main Storyline in certain circumstances. 
+These are the main types of island missions, where accomplishing them may further the Main Storyline in certain circumstances. You can work under the Union to allow easy access to all faction members. But secretly, you might want to overthrow the Union.
 
 Colonization/Pathfinding:
 -------------------------------
-Players set out exploring the uncolonized islands as pathfinders for either a given faction (or Union) to identify various parts of the terrain that could be suited to build village settlements or/and resource gathering infrastructure. Once they are discovered and cleared of any potential dangers (perhaps through conquest), they are slated to start developing with the ability for some players (depending on your world status) to influence the types of buildings made through proposals and upgrades. As time passes, the game progressively adds new buildings, roads, etc. to form up a settlement. The purpose of colonization is to own an island for inhabitants to settle in, or purely for resource gathering and export.
+Players set out exploring the uncolonized islands as pathfinders for either a given faction (or Union) to identify various parts of the terrain that could be suited to build village settlements or/and resource gathering infrastructure. Once they are discovered and cleared of any potential dangers (perhaps through conquest if required), they are slated to start developing with the ability for some players (depending on your world status) to influence the types of buildings made through proposals and upgrades. As time passes, the game progressively adds new buildings, roads, etc. to form up a settlement. The purpose of colonization is to own an island for inhabitants to settle in, or purely for resource gathering and export.
 
 
 Conquest:
 ---------
-Involves a much larger army with a long-drawn series of small skirmishes in order to completely rout out enemy settlements/buildings/forces and fully capture the island.
+Involves a much larger army with a long-drawn series of skirmishes by multiple boat parties in order to completely rout out enemy settlements/buildings/forces and fully capture the island.
 
 
 Raiding:
 ---------
-Involves an attempt to grab resources (or perform a probing attack) on a given island with a small invading party. Can involve stealth or a direct attack.
+Involves an attempt to grab resources (or perform a probing attack) on a given island with a single small invading party. Can involve stealth or a direct attack.
 
 
 Scouting:
 --------
-Reconaissance on an occupied island, requiring stealth, usually prior to a conquest/raid.
+Reconaissance on an occupied island, requiring stealth, usually prior to a conquest/raid. Sometimes, pathfinding might turn into a scouting scenerio.
 
 
 Assignment:
@@ -91,12 +103,32 @@ Involves guarding an island from raids.
 
 Dock jetty Building (Saboteur minigame):
 ------------------
-Involves building jetty docks out to the sea to a target location. Some of these targets have oil resources as well, making them important to connect a jetty to these locations.
+Involves building jetty docks from the low-tide coast to high-tide mainland. Some areas at the coast have oil resources as well, making them important to connect a jetty to these locations with oil wells.
 
-Mine digging (Saboteur  minigame)
+Colonization:
+As a pathfinder, your job is to enter an island and perform various essential tasks, making sure the island is safe and suitable for people to eventually come in make use of it. One of this includes building a jetty.
+
+1) You can place a jetty just before the sea-slope starts.
+2) Depending on where you plan to place the jetty, it'll indicate the number of tiles (if any) required along the given direction to reach mainland. You need to fully extend the jetty out to touch mainland in order to fully complete the jetty.
+3) Where the jetty ends, it'll slope down ( if necessary) to to the appopiate mainland attidude, to indicate an end point for the jetty.
+4) In cases where the island has a lot of mudcrabs/seaside creeps, and you wish to preserve/harvest them instead of killing them, the jetty must be extended all the way (if necessary) to a mainland area that has an altitude at the same height of the jetty (usually, the jetty is perched higher to avoid the dangerous creatures).
+
+The purpose of a jetty is to allow for ships to dock and disembark on the island safely, regardless of whether it's low tide or high tide. It provides a legal means of keeping track who enters the island and who leaves through the customs gate. It marks the area where a ship should safely dock, preventing danger of hitting obstacles when such ships approach closer to mainland. An extended jetty network provides an area for trade/commerce as well, or a place to do mud-creature (seaside) harvesting for food and materials.
+
+All Saboteur minigames are played in real-time heart-beat-based blobber format, moving from node-to-node or tile-to-tile accordingly within the sandbox, keeping bandwidth usage minimal and players to stack in randomly pre-assigned positions within each node tile, without taking into consideration collision detection. Card actions can be executed on other players within the same node/tile (or may be a ranged action depending on gun availability). Executing of card or move has a fixed cooldown, but card actions can  have cooldowns which are adjusted accordingly to balance the game.
+
+Environment can vary by including thick fog that prevents visibility across a certain distance.
+
+4 x blue dwarf/worker, 4 x green dwarf/worker, 2 x geologist/oil-prospector/fisherman, 3 x saboteur, 1 x boss, 1 x profiteer).
+
+When it ends, the finalised dock may include storage areas/trading shops/fishery areas/oil wells and such, depending on the resultant layout. The minigame results in content being generated as a result.
+
+This game can be played multiplayer (P2P also possible, or webRTC), or with bots (though coding AI would require effort).
+
+
+Mine/Treasure digging (Saboteur minigame)
 -------------------------
-Same as above, but takes place underground, leading to gold.
-
+Same as above, but takes place underground, leading to 3 possible gold locations. Most likely will be tile-based movement in typical dungeon crawler format.
 
 
 Game Mechanics:
