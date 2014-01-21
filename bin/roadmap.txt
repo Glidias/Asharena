@@ -87,6 +87,7 @@ Either:
 2) Waters surrounding island is acidic, preventing boat from moving further in, having to disembark from outer.
 3) A thick fog has descended on the island, preventing boat from safely travel further in.
 4) Lots of rock outcrops around the coast, requiring diembarkabation at dock.
+5) Or simply, oil spill fire, you can't just move in.
 
 Boat party lands at dock,  while towns/villages will get generated in the background...After clearing the area of fog from within the loci of the dock, fog clears and entire terrain (is fully) revealed with towns also visible. Towns do not exist outside the vincity of the fog, but fog will be extremely thick. Enemies are in your way! Taking into account collision detection, move your blob party (or multiple parties) along the dangerous jetty and combat monsters accordingly.
 
@@ -99,11 +100,9 @@ c) POST-GENERATE: This can be done in prologue jetty crawling, or done progressi
 	1) Identify flat areas to place village block layout
 	2) Connect villages together
 	3) Consider series of flat areas and whether to enclose them as walled city.
-	
-Open-world turn-based abstract blob combat system. (Move by meter, draw path, click on destination auto-generate path, etc.)
-d) Initial: Abstract first person blob, and non-movable 3rd person preview and position markers.
-e) Try: Blobs with individual break-out/follow approach.
 
+	
+	
 
 Algorithms:
 -----------
@@ -157,3 +156,34 @@ stables
 bookseller
 clothing
 gem store
+
+_______________________
+
+Turn-based approach uses a system similar to Valkerie-Chronicles.
+
+Turn based exploration (Whether there's enemies or not...) + Turn based combat: 
+- Rigid party formations can move freely at the cost of 1 or 2 command points (but restricted to using the member with the lowest movement points, ie. slowest member in party). This can make it more economical than using 1 command point per individual, allowing your entire party to traverse greater distances.
+-If navigating through difficult areas like forests and such where a rigid party formation is not possible, you'll have to do more micromanagement of individual members within party (as rigid blob formation no longer possible) and end up spending more command points per individual, affecting overall mobility of all your parties (or a party caught out in difficult terrain). This makes roads and open areas advantageous despite having disadvantages in terms of stealth/discreetness.
+-Once all command points are used up, enemies (if any) may start moving (if enemies are expected, a short pause is used to simulate any possible enemy movement, otherwise, the game continues seamlessly), and enemies may make broad strategic decisions to actually flank your positions (if they've already spotted them).
+  * advantage of this system is that you can have quite a lot of enemies visible on the map , but since they aren't moving all at once except for each turn, non-moving units can use precomputed static LOD geometry that reduces both draw calls and polycount, which is great for optimization. 
+  * less CPU processing required, since it isn't entirely real-time (ie. not everyone is moving simulatneously), in particular, collision detection/steering between multiple agents/crowds, etc.
+  * easier for enemy AI to respond to a static situation, compared to a dynamic one that requires more per-interval polling.
+  * less bandwidth usage for multiplayer
+  * more slower-paced, especially during exploration mode where micromanagement in/out of difficult terrain can be discouraging. However, when precise individual positions/paths are required for stealth, this is advantageous.
+
+Real time exploration + Turn based combat:
+- Up to 3 party members follow party leader through pathfinding when rigid blob  formation broken, but can explcitly try to move into formation facing a particular direction, when explictly called to do so.
+- Other parties can follow Leader Party average position through pathfinding, and will do so, even in difficult araes, breaking rigid formation unless explicitly called to hold position from outside a difficult area, or to move into a certain specific position as directed by Leading Party. Optionally, can micromanage/individual control each party instead.
+- Enemies patrol around in real-time, once spotted you and responds by attacking you with a weapon (or approaching at close-enough imminent melee engagement range), turn based combat mode is activated. Enemy has the turn initiative in this case, and may end up attacking you. Similar to Wizardry 8 system.
+- Once you've spotted an enemy (whether the enemy has detected you or not), you can activate turn-based combat mode for both advancing and attacking. You have the turn initative in this case, and may be the one to deal attack first in some cases.  Similar to Wizardry 8 system.
+- Turn-based combat mode can only be exited when you're out of engagement range, and the enemy (and all sides involved) have completed their turns.
+   * more realistic
+   * streamlines exploration, less micromanagement required until combat occurs. Creates a right balance between seamless exploration and detailed combat.
+   * need to set up pathfinding nodes for difficult areas.
+   * More AI coding required. May have problems with poorly coded AI and pathfinding (or just clustering/crowding issues), particularly if large groups are involved (ie. multiple parties). For a single party (of 4 men), this shouldn't be a problem though, but moving between parties may be difficult.
+
+Real time combat: 
+* More 'realistic'.
+* The ability to abuse AI incompetancy with keeping up the pace of chasing/hitting, with the player kiting them constantly. This may happen if rudimentary AI processing is done at a pace that is lower than the framerate, thus player reactions/controls will always be faster than AI reactions. The only way to circumvent this is to create aggressive AI that responds to your movements per frame, so you can't easily kite them (at corners/obstacles especially), ensuring the player is locked in a melee struggle that is hard to escape from.
+* Hard to manage/micormanage individuals within a short time, less emphasis on strategy or precise movements. This can be circumvented with a pause option used in many games like Dragon Age/Baldur's Gate.
+* Easy to get over trivial enemy encounters that don't pose much danger, such as rats, insects, etc. Combat resolves quickly and seamlessly. This may be considered as an alternative to turn-based combat in certain situations, particularly for certain weak enemy types that can afford to be "stupid".
