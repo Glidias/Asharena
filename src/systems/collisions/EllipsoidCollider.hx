@@ -14,6 +14,7 @@ package systems.collisions;
 
 
 	import components.Transform3D;
+	import flash.geom.Vector3D;
 	
 	import util.geom.Geometry;
 	import util.TypeDefs;
@@ -341,7 +342,7 @@ package systems.collisions;
 			}
 			
 			numGeometries = 0;	
-				numI = indicesLength;
+			numI = indicesLength;
 		
 		}
 		//*/
@@ -441,13 +442,114 @@ package systems.collisions;
 				numI = indicesLength;
 				
 		}
+		
+		private function loopGeometriesNaive():Void {  // 
+			var rad:Float = this.rad;
+			numFaces = 0;  // changed naming
+			var indicesLength:Int = 0;
+			var normalsLength:Int = 0;
+			
+			// Loop geometries
+			var j:Int;
+			var mapOffset:Int = 0;
+			var verticesLength:Int = 0;
+			var geometriesLength:Int = numGeometries;  // changed
+			
+			for (i in 0...geometriesLength) {
+				var geometry:Geometry = geometries[i];
+				var transform:Transform3D = matrix;// transforms[i];
+				var geomNumVertices:Int = geometry.numVertices;  // changed
+				var geometryIndicesLength:Int = geometry.numIndices; // changed
+				var geomVertices:Vector<Float> = geometry.vertices; // new
+				if (geomNumVertices == 0 || geometryIndicesLength == 0) continue;
+				// Transform vertices
+				j = 0;
+				var geomVertLen:Int = geomNumVertices * 3;
+				while (j < geomVertLen) {  // changed
+					var vx:Float = geomVertices[j];
+					var vy:Float = geomVertices[j+1];
+					var vz:Float = geomVertices[j+2];
+					vertices[verticesLength] = transform.a*vx + transform.b*vy + transform.c*vz + transform.d; verticesLength++;
+					vertices[verticesLength] = transform.e*vx + transform.f*vy + transform.g*vz + transform.h; verticesLength++;
+					vertices[verticesLength] = transform.i * vx + transform.j * vy + transform.k * vz + transform.l; verticesLength++;
+					j += 3;
+				}
+			
+				// Loop triangles
+				var geometryIndices:Vector<UInt> = geometry.indices;
+				j  = 0;
+				while (j < geometryIndicesLength) {
+					var a:Int = geometryIndices[j] + mapOffset; j++;
+					var index:Int = a*3;
+					var ax:Float = vertices[index]; index++;
+					var ay:Float = vertices[index]; index++;
+					var az:Float = vertices[index];
+					var b:Int = geometryIndices[j] + mapOffset; j++;
+					index = b*3;
+					var bx:Float = vertices[index]; index++;
+					var by:Float = vertices[index]; index++;
+					var bz:Float = vertices[index];
+					var c:Int = geometryIndices[j] + mapOffset; j++;
+					index = c*3;
+					var cx:Float = vertices[index]; index++;
+					var cy:Float = vertices[index]; index++;
+					var cz:Float = vertices[index];
+					// Exclusion by bound
+					//if (ax > rad && bx > rad && cx > rad || ax < -rad && bx < -rad && cx < -rad) continue;
+					//if (ay > rad && by > rad && cy > rad || ay < -rad && by < -rad && cy < -rad) continue;
+					//if (az > rad && bz > rad && cz > rad || az < -rad && bz < -rad && cz < -rad) continue;
+					// The normal
+					var abx:Float = bx - ax;
+					var aby:Float = by - ay;
+					var abz:Float = bz - az;
+					var acx:Float = cx - ax;
+					var acy:Float = cy - ay;
+					var acz:Float = cz - az;
+					var normalX:Float = acz*aby - acy*abz;
+					var normalY:Float = acx*abz - acz*abx;
+					var normalZ:Float = acy*abx - acx*aby;
+					var len:Float = normalX*normalX + normalY*normalY + normalZ*normalZ;
+					if (len < 0.001) continue;
+					len = 1/Math.sqrt(len);
+					normalX *= len;
+					normalY *= len;
+					normalZ *= len;
+					var offset:Float = ax*normalX + ay*normalY + az*normalZ;
+					//if (offset > rad || offset < -rad) continue;
+					indices[indicesLength] = a; indicesLength++;
+					indices[indicesLength] = b; indicesLength++;
+					indices[indicesLength] = c; indicesLength++;
+					normals[normalsLength] = normalX; normalsLength++;
+					normals[normalsLength] = normalY; normalsLength++;
+					normals[normalsLength] = normalZ; normalsLength++;
+					normals[normalsLength] = offset; normalsLength++;
+					numFaces++;
+				}
+				// Offset by nomber of vertices
+				mapOffset += geomNumVertices;
+				
+			}
+		
+			numGeometries = 0;
+				numI = indicesLength;
+				
+		}
 		#end
 //*/
 	
 			
 			
-
+		private static var ZERO_VECTOR:Vector3D = new Vector3D();
 		
+		public function calculateCollidableGeometry(source:Vector3D, collidable:IECollidable):Void {
+			prepare(source, ZERO_VECTOR);
+			matrix.identity();
+			inverseMatrix.identity();
+			collidable.collectGeometry(this);
+			
+			loopGeometriesNaive();
+
+		}
 		
 		public inline function addGeometry(geometry:Geometry, transform:Transform3D):Void {
 			geometries[numGeometries] = geometry;

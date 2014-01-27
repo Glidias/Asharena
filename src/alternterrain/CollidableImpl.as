@@ -44,8 +44,11 @@ package alternterrain
 			
 		}
 		
+		
 	
 		/* INTERFACE systems.collisions.IECollidable */
+		
+		
 		
 		public function collectGeometry(collider:EllipsoidCollider):void 
 		{
@@ -53,14 +56,18 @@ package alternterrain
 				waterPlane.collectGeometry(collider);
 				
 				if ( prepareObject(collider, terrain, terrainTransform, terrainTransformInverse, terrainCollideTransform, terrainGeom) ) {
-	
+				
 					terrain.setupCollisionGeometry(collider.sphere, terrainGeom.vertices, terrainGeom.indices, 0, 0 );
+						
 						
 					terrainGeom.numVertices = terrain.numCollisionTriangles * 3;
 					terrainGeom.numIndices = terrain.numCollisionTriangles * 3;
 			
 				}
+				
 		}
+		
+		public var alwaysIntersect:Boolean = false;
 		
 		private function prepareObject(collider:EllipsoidCollider, object:Object3D, objTransform:Transform3D, objTransformInverse:Transform3D, collisionTransform:Transform3D, geom:Geometry):Boolean {
 			if (object.transformChanged || terrainFirstTime) {
@@ -75,8 +82,10 @@ package alternterrain
 			if (object.boundBox != null) {
 				collisionTransform.combine(objTransformInverse, collider.matrix);
 				collider.calculateSphere(collisionTransform);
-				intersects = object.boundBox.checkSphere(collider.sphere);  
+				intersects = alwaysIntersect || object.boundBox.checkSphere(collider.sphere);  
 			}
+			alwaysIntersect = false;
+			
 			if (intersects) {
 				collisionTransform.combine(collider.inverseMatrix, objTransform); 
 				collider.addGeometry(geom, collisionTransform);

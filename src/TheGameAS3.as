@@ -3,6 +3,11 @@ package
 	import alternativa.engine3d.animation.AnimationClip;
 	import alternativa.engine3d.animation.keys.Track;
 	import alternativa.engine3d.animation.keys.TransformTrack;
+	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.objects.WireFrame;
+	import alternativa.engine3d.primitives.Box;
+	import flash.geom.Vector3D;
+	import systems.collisions.EllipsoidCollider;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.loaders.ParserA3D;
@@ -41,6 +46,9 @@ package
 	import systems.rendering.RenderNode;
 	import systems.SystemPriorities;
 	import views.Alternativa3DView;
+	
+	import alternativa.engine3d.alternativa3d;
+	use namespace alternativa3d;
 
 	/**
 	 * This is running under AS3 using alternativa3d engine.
@@ -52,6 +60,7 @@ package
 		private var arenaSpawner:ArenaSpawner;	
 		private var _view:WaterAndTerrain3rdPerson = new WaterAndTerrain3rdPerson();
 		private var spawnerBundle:GladiatorBundle;
+		private var collideImpl:CollidableImpl;
 		
 		public function TheGameAS3(stage:Stage) 
 		{
@@ -97,11 +106,113 @@ package
 			startGame();
 		}
 		
+
+		private var testChunkEllipsoid:EllipsoidCollider = new EllipsoidCollider(32 * 256 * .5, 32 * 256 * .5, 888);
+		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
 			if (e.keyCode === Keyboard.P) {
 				LogTracer.log( _view.terrainLOD.getTotalStats() );
 			}
+			else if (e.keyCode === Keyboard.L) {
+				//var added:Number =  /(32 * 256)) + 128 * 32;
+				//testChunkEllipsoid.radiusX = 
+				var  pos:Vector3D = new Vector3D( int(arenaSpawner.currentPlayerEntity.get(Pos).x), int(arenaSpawner.currentPlayerEntity.get(Pos).y), arenaSpawner.currentPlayerEntity.get(Pos).z);
+				//pos = _view.terrainLOD.globalToLocal(pos);
+				collideImpl.alwaysIntersect = true;
+				testChunkEllipsoid.calculateCollidableGeometry(pos, collideImpl); 
+				_view.scene.addChild( createWireframeCollisionPreview(pos, 0.57357643635104609610803191282616) );
+				//throw new Error(testChunkEllipsoid.numFaces);
+			}
+		}
+		
+		
+		public function createWireframeCollisionPreview(pos:Vector3D, maxNormalZ:Number):WireFrame {
+			var wireframe:WireFrame;
+			var dummyMesh:Mesh = new Mesh();
+		
+		
+			dummyMesh.geometry = new alternativa.engine3d.resources.Geometry(testChunkEllipsoid.vertices.length/3);
+			dummyMesh.geometry.addVertexStream( [VertexAttributes.POSITION, VertexAttributes.POSITION, VertexAttributes.POSITION]);
+			
+//throw new Error( ( testChunkEllipsoid.vertices.length / 3 ) + ", "+ testChunkEllipsoid.vertices.length + ", "+(3*dummyMesh.geometry.numVertices) );
+			dummyMesh.geometry.setAttributeValues(VertexAttributes.POSITION, testChunkEllipsoid.vertices);
+			
+			
+			//dummyMesh.geometry.indices = extractUnsignedVector(testChunkEllipsoid.indices, testChunkEllipsoid.numFaces * 3);
+			dummyMesh.geometry.indices = extractSteepPolygons(0.57357643635104609610803191282616);
+
+			//dummyMesh = new Box(300, 300, 300);
+		
+		//	WireFrame.createLinesList(
+			//wireframe =  WireFrame.createEdges(dummyMesh, 0xFFFFFF, 1, 1);
+			wireframe = WireFrame.createLinesList(extractSteepEdges(0.57357643635104609610803191282616),0xFFFFFF,1,2);
+			wireframe.matrix = _view.terrainLOD.matrix;
+			
+			wireframe.geometry.upload( _view.stage3D.context3D);
+		//	wireframe.scaleX = 1/testChunkEllipsoid.radiusX;
+		//	wireframe.scaleY = 1/testChunkEllipsoid.radiusY;
+		//	wireframe.scaleZ = 1/testChunkEllipsoid.radiusZ;
+			wireframe.boundBox = null;
+			return wireframe;	
+		}
+		
+		private function extractUnsignedVector(vec:Vector.<int>, sliceAmt:int):Vector.<uint> {
+			var vect:Vector.<uint> = new Vector.<uint>(sliceAmt, true);
+			for (var i:int = 0; i < sliceAmt; i++) {
+				vect[i] = vec[i];
+			}
+			return vect;
+		}
+		
+		private function extractSteepPolygons(threshold:Number):Vector.<uint> {
+			var vect:Vector.<uint> = new Vector.<uint>();
+			var len:int = testChunkEllipsoid.numFaces;
+			var count:int = 0;
+			
+			for (var i:int = 0; i < len; i++) {
+				if ( testChunkEllipsoid.normals[i*4 + 2] <= threshold ) {
+					vect[count++] = testChunkEllipsoid.indices[i*3];
+					vect[count++] = testChunkEllipsoid.indices[i*3+1];
+					vect[count++] = testChunkEllipsoid.indices[i*3+2];
+				}
+			}
+			vect.fixed = true;
+			return vect;
+		}
+		
+		private function extractSteepEdges(threshold:Number):Vector.<Vector3D> {
+			var vect:Vector.<Vector3D> = new Vector.<Vector3D>();
+			var len:int = testChunkEllipsoid.numFaces;
+			var count:int = 0;
+			
+			for (var i:int = 0; i < len; i++) {
+				if ( testChunkEllipsoid.normals[i * 4 + 2] <= threshold ) {
+					var ax:Number =  testChunkEllipsoid.vertices[ testChunkEllipsoid.indices[i * 3] * 3];
+					var ay:Number =  testChunkEllipsoid.vertices[ testChunkEllipsoid.indices[i * 3]*3+1];
+					var az:Number =  testChunkEllipsoid.vertices[ testChunkEllipsoid.indices[i * 3] * 3 +2];
+					var bx:Number =  testChunkEllipsoid.vertices[ testChunkEllipsoid.indices[i * 3 + 1] * 3  ];
+					var by:Number=  testChunkEllipsoid.vertices[ testChunkEllipsoid.indices[i * 3 + 1] * 3 + 1 ];
+					var bz:Number =  testChunkEllipsoid.vertices[ testChunkEllipsoid.indices[i * 3 + 1] * 3 + 2 ];
+					var cx:Number =   testChunkEllipsoid.vertices[testChunkEllipsoid.indices[i * 3 + 2] * 3 ];
+					var cy:Number =   testChunkEllipsoid.vertices[testChunkEllipsoid.indices[i * 3 + 2] * 3 + 1];
+					var cz:Number =   testChunkEllipsoid.vertices[testChunkEllipsoid.indices[i * 3 + 2] * 3 + 2];
+					if (az > bz && az > cz) {
+						vect[count++] = new Vector3D(bx, by, bz);
+						vect[count++] = new Vector3D(cx, cy, cz);
+					}
+					else if (bz > cz && bz > az) {
+							vect[count++] = new Vector3D(cx,cy, cz);
+						vect[count++] = new Vector3D(ax, ay, az);
+					}
+					else {
+						vect[count++] = new Vector3D(ax,ay, az);
+						vect[count++] = new Vector3D(bx, by, bz);
+					}
+				}
+			}
+			vect.fixed = true;
+			return vect;
 		}
 	
 		
@@ -115,7 +226,7 @@ package
 				colliderSystem.collidable = geom;
 				*/		
 				colliderSystem._collider.threshold = 0.0001;
-				colliderSystem.collidable = new CollidableImpl(_view.terrainLOD, _view.getWaterPlane());
+				colliderSystem.collidable =collideImpl =  new CollidableImpl(_view.terrainLOD, _view.getWaterPlane());
 			}
 			
 			gameStates.engineState.changeState( "thirdPerson");

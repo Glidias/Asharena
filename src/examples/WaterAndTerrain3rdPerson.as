@@ -114,8 +114,10 @@ package examples
 		
 		[Embed(source="assets/myterrainx2.tre", mimeType="application/octet-stream")]
 		private var TERRAIN_DATA:Class;
-		private static const TERRAIN_HEIGHT_SCALE:Number = 2;
-		private static const MAP_SCALE:Number = 4;
+		private static const TERRAIN_HEIGHT_SCALE:Number =2;
+		private static const MAP_SCALE:Number = 1;
+		
+		private var waterLevel:Number =   (-64000 +84); // * (MAP_SCALE > 1 ? MAP_SCALE : 1) 
 		
 		[Embed(source="assets/myterrain_normal.jpg")]
 		private var NORMAL_MAP:Class;
@@ -253,8 +255,7 @@ package examples
 	
 	
 	}
-		
-		private var waterLevel:Number =   (-64000 +20); // * (MAP_SCALE > 1 ? MAP_SCALE : 1) 
+	
 		public var reflectClipOffset:Number = 2;
 		
 		private static const MAX_POSSIBLE_HEIGHT:Number = Math.sqrt( 64 * 255 + 256) * TERRAIN_HEIGHT_SCALE;
