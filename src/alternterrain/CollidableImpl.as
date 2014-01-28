@@ -2,6 +2,7 @@ package alternterrain
 {
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.primitives.Box;
 	import alternterrain.objects.TerrainLOD;
 	import components.Transform3D;
 	import flash.geom.Vector3D;
@@ -82,8 +83,12 @@ package alternterrain
 			
 			if (object.boundBox != null) {
 				collisionTransform.combine(objTransformInverse, collider.matrix);
+				
 				collider.calculateSphere(collisionTransform);
-				intersects = alwaysIntersect || object.boundBox.checkSphere(collider.sphere);  
+
+				intersects = alwaysIntersect || object.boundBox.checkSphere(collider.sphere); 
+				
+				
 			}
 			alwaysIntersect = false;
 			

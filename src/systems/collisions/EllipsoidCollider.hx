@@ -509,7 +509,7 @@ package systems.collisions;
 					var normalY:Float = acx*abz - acz*abx;
 					var normalZ:Float = acy*abx - acx*aby;
 					var len:Float = normalX*normalX + normalY*normalY + normalZ*normalZ;
-					if (len < 0.001) continue;
+					//if (len < 0.001) continue;
 					len = 1/Math.sqrt(len);
 					normalX *= len;
 					normalY *= len;

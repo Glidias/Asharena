@@ -1730,10 +1730,11 @@ package alternterrain.objects
 				var radius:Number = sphere.w;
 						var hxorg:Number = hm.XOrigin;
 					var hzorg:Number = hm.ZOrigin;
+		
 					
 				radius = radius < (tileSize>>1) ? (tileSize>>1) : radius;
-				var startX:int = (sphere.x - radius - hxorg)  * tileSizeInv - 1;
-				var startY:int = (-(sphere.y - radius) - hzorg) * tileSizeInv - 1;
+				var startX:int = (sphere.x - hxorg - radius )  * tileSizeInv - 1;
+				var startY:int = (-sphere.y  - hzorg - radius) * tileSizeInv - 1;
 				var data:Vector.<int> = hm.Data;
 				var len:int = radius * 2 * tileSizeInv + 2;
 				var xtmax:int = startX + len;

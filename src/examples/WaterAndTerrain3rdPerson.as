@@ -440,7 +440,7 @@ package examples
 		//	scene.removeChild(terrainLOD);
 			// Uncomment and see how this affects rendered reflection
 			///*
-			 obstacle = new Box(400,400,400,1,1,1,false, obstacleMat = new FillMaterial(0xFF000F, .5));
+			 obstacle = OBSTACLE = new Box(400,400,400,1,1,1,false, obstacleMat = new FillMaterial(0xFF000F, .5));
 			obstacle.x = terrainLOD.x + terrainLOD.boundBox.minX; 
 			obstacle.y = terrainLOD.y + terrainLOD.boundBox.minY;
 			obstacle.z = waterLevel;
@@ -581,7 +581,8 @@ package examples
 		private var _loadedPage:QuadTreePage;
 		private var standardMaterial:StandardTerrainMaterial2;
 		public var terrainLOD:TerrainLOD;
-		private var obstacle:Box;
+		public var obstacle:Box;
+		public static var OBSTACLE:Box;
 		private var obstacleMat:FillMaterial;
 		private var tileTrace:Box;
 		private var _traceTiles:Vector.<Object3D> = new Vector.<Object3D>();
