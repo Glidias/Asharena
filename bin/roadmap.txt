@@ -187,3 +187,32 @@ Real time combat:
 * The ability to abuse AI incompetancy with keeping up the pace of chasing/hitting, with the player kiting them constantly. This may happen if rudimentary AI processing is done at a pace that is lower than the framerate, thus player reactions/controls will always be faster than AI reactions. The only way to circumvent this is to create aggressive AI that responds to your movements per frame, so you can't easily kite them (at corners/obstacles especially), ensuring the player is locked in a melee struggle that is hard to escape from.
 * Hard to manage/micormanage individuals within a short time, less emphasis on strategy or precise movements. This can be circumvented with a pause option used in many games like Dragon Age/Baldur's Gate.
 * Easy to get over trivial enemy encounters that don't pose much danger, such as rats, insects, etc. Combat resolves quickly and seamlessly. This may be considered as an alternative to turn-based combat in certain situations, particularly for certain weak enemy types that can afford to be "stupid".
+
+
+For every command turn, you can choose either an individual, a group, or a formation of groups
+
+Moving As:
+_______________
+* Group Circle 
+ - Group Wedge Pointman
+ - Group Column Pointman  /  Group Column Rearman
+ ^ Group Leader
+
+* Formation Vehicle 
+ - Formation Wedge Point-Group
+ - Formation Column Point-Group /  Group Rear-Group
+ - Formation Wedge Pointman
+ - Formation Column Pointman /  Group Rearman
+
+* Individual 
+
+
+LEGEND:
+Group can go up 4 men
+Formation can go up to 16 men. (combination of 4 groups)
+
+* Basic tight blob, rigid formation vehicle or individual character (no exploitation possible). No pathfinding/following-ai required. Gives the most control, possibly at the expense of more command points required.
+- Advanced Chain spring-link formation. Some pathfinding may be required in certain circumstances duruing following.
+^ Advanced Follow into formation position approach...(similar to Baldur's Gate. Lots of pathfinding required). Movement of companions may require some depletion of movement points as well.
+
+Header top of screen will clearly indicate movement mode of given unit, group(s) involved, etc, and any ability to switch to a different mode from a given mode within a given command point turn.

@@ -31,6 +31,10 @@ Skills:
 
 * Acrobatics
 * Athletics
+* Trekking
+* Climbing
+* Swimming
+
 * Short blade
 * Long blade
 * Blunt
@@ -47,24 +51,30 @@ Skills:
 * Blade throwing
 * Axe throwing
 * Spear throwing
+* Pistol
+* Rifle
+* Shotgun
+
 * Unarmoured
 * Light armour
 * Medium armour
 * Heavy armour
+
 * Fire magic
 * Sand magic
 * Blood magic
 * Spirit magic
+
 * Mercantile
 * Etiquette
+
 * Sneak
 * Security
+
 * Herbology
 * Blacksmithing
 * Gunsmithing
-* Pistol
-* Rifle
-* Shotgun
+
 
 
 Skill type categories:

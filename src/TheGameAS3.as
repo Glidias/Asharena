@@ -159,20 +159,16 @@ package
 
 			//dummyMesh = new Box(300, 300, 300);
 		
-		//	WireFrame.createLinesList(
-			wireframe =  WireFrame.createEdges(dummyMesh, 0xFFFFFF, 1, 1);
+			
+		//	wireframe =  WireFrame.createEdges(dummyMesh, 0xFFFFFF, 1, 1);
+			wireframe = WireFrame.createLinesList(extractSteepEdges(0.57357643635104609610803191282616), 0xFFFFFF, 1, 2);
+				
 			var mat:Matrix3D = _view.terrainLOD.matrix;// mat.invert();
 			wireframe.matrix = mat;
 			wireframe.x += -pos.x;
 			wireframe.y += -pos.y;
-		wireframe.z += -pos.z;
-			//wireframe.x = pos.x;
-			//wireframe.y = pos.y;
-			//wireframe.z = pos.z;
-		//wireframe.matrix = _view.terrainLOD.matrix;
+			wireframe.z += -pos.z;
 
-			//wireframe = WireFrame.createLinesList(extractSteepEdges(0.57357643635104609610803191282616),0xFFFFFF,1,2);
-		//	wireframe.matrix = testChunkEllipsoid.;
 			
 			wireframe.geometry.upload( _view.stage3D.context3D);
 		
@@ -225,7 +221,7 @@ package
 						vect[count++] = new Vector3D(cx, cy, cz);
 					}
 					else if (bz > cz && bz > az) {
-							vect[count++] = new Vector3D(cx,cy, cz);
+						vect[count++] = new Vector3D(cx,cy, cz);
 						vect[count++] = new Vector3D(ax, ay, az);
 					}
 					else {
