@@ -543,8 +543,7 @@ package systems.collisions;
 		
 		public function calculateCollidableGeometry(source:Vector3D, collidable:IECollidable):Void {
 			prepare(source, ZERO_VECTOR);
-			matrix.identity();
-			inverseMatrix.identity();
+
 			collidable.collectGeometry(this);
 			
 			loopGeometriesNaive();

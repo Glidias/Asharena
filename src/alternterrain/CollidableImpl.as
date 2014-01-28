@@ -79,6 +79,7 @@ package alternterrain
 			// Check collision with the bound
 			var intersects:Boolean = true;
 			
+			
 			if (object.boundBox != null) {
 				collisionTransform.combine(objTransformInverse, collider.matrix);
 				collider.calculateSphere(collisionTransform);

@@ -6,6 +6,7 @@ package
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.WireFrame;
 	import alternativa.engine3d.primitives.Box;
+	import flash.geom.Matrix3D;
 	import flash.geom.Vector3D;
 	import systems.collisions.EllipsoidCollider;
 	import alternativa.engine3d.core.Object3D;
@@ -106,8 +107,8 @@ package
 			startGame();
 		}
 		
-
-		private var testChunkEllipsoid:EllipsoidCollider = new EllipsoidCollider(32 * 256 * .5, 32 * 256 * .5, 888);
+		private static const DEFAULT_RADIUS:Number = 32 * 256 * .5;
+		private var testChunkEllipsoid:EllipsoidCollider = new EllipsoidCollider(DEFAULT_RADIUS, DEFAULT_RADIUS,DEFAULT_RADIUS);
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
@@ -117,10 +118,21 @@ package
 			else if (e.keyCode === Keyboard.L) {
 				//var added:Number =  /(32 * 256)) + 128 * 32;
 				//testChunkEllipsoid.radiusX = 
-				var  pos:Vector3D = new Vector3D( int(arenaSpawner.currentPlayerEntity.get(Pos).x), int(arenaSpawner.currentPlayerEntity.get(Pos).y), arenaSpawner.currentPlayerEntity.get(Pos).z);
-				//pos = _view.terrainLOD.globalToLocal(pos);
+				var  pos:Vector3D = new Vector3D( int(arenaSpawner.currentPlayerEntity.get(Pos).x) , int(arenaSpawner.currentPlayerEntity.get(Pos).y), arenaSpawner.currentPlayerEntity.get(Pos).z);
+				//pos.x = 333*256 + _view.terrainLOD.x ;
+				//pos.y = _view.terrainLOD.y - 333*256;
+				
+				//pos.x -=  _view.terrainLOD.x;
+			//	pos.y -=  _view.terrainLOD.y;
+				//pos.x += -256 * 32;
+				//pos.y +=  256 * 32;
+				//pos.z = 0;
+		
+			//	pos.y += 256*512;
 				collideImpl.alwaysIntersect = true;
 				testChunkEllipsoid.calculateCollidableGeometry(pos, collideImpl); 
+				//throw new Error( testChunkEllipsoid.sphere + " == " + _view.terrainLOD.globalToLocal(pos));
+				if (testChunkEllipsoid.numFaces == 0) throw new Error("Could not find any hits!");
 				_view.scene.addChild( createWireframeCollisionPreview(pos, 0.57357643635104609610803191282616) );
 				//throw new Error(testChunkEllipsoid.numFaces);
 			}
@@ -145,14 +157,22 @@ package
 			//dummyMesh = new Box(300, 300, 300);
 		
 		//	WireFrame.createLinesList(
-			//wireframe =  WireFrame.createEdges(dummyMesh, 0xFFFFFF, 1, 1);
-			wireframe = WireFrame.createLinesList(extractSteepEdges(0.57357643635104609610803191282616),0xFFFFFF,1,2);
-			wireframe.matrix = _view.terrainLOD.matrix;
+			wireframe =  WireFrame.createEdges(dummyMesh, 0xFFFFFF, 1, 1);
+			var mat:Matrix3D = _view.terrainLOD.matrix;// mat.invert();
+			wireframe.matrix = mat;
+			wireframe.x += -pos.x;
+			wireframe.y += -pos.y;
+			wireframe.z += -pos.z;
+			//wireframe.x = pos.x;
+			//wireframe.y = pos.y;
+			//wireframe.z = pos.z;
+		//wireframe.matrix = _view.terrainLOD.matrix;
+
+			//wireframe = WireFrame.createLinesList(extractSteepEdges(0.57357643635104609610803191282616),0xFFFFFF,1,2);
+		//	wireframe.matrix = testChunkEllipsoid.;
 			
 			wireframe.geometry.upload( _view.stage3D.context3D);
-		//	wireframe.scaleX = 1/testChunkEllipsoid.radiusX;
-		//	wireframe.scaleY = 1/testChunkEllipsoid.radiusY;
-		//	wireframe.scaleZ = 1/testChunkEllipsoid.radiusZ;
+		
 			wireframe.boundBox = null;
 			return wireframe;	
 		}

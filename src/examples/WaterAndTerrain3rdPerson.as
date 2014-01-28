@@ -64,7 +64,7 @@ package examples
 		public var scene:Object3D = new Object3D();
 		public var stage3D:Stage3D;
 		
-		private var camera:Camera3D;
+		public var camera:Camera3D;
 
 		
 		public var raycastImpl:RaycastImpl;
