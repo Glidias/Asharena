@@ -1,28 +1,54 @@
-Old roadmap:
+ORGANISED FORCES:
+All organised forces can travel across the sea by boat (with the exception of flying creatures/giants) and attack islands, making them possible aggressors in a given scenerio, instaed of just defenders. They have their own language, and knowing their language (or finding one that can interprate) is required for diplomacy.
 
-1) Test load all chars for current island (single-island.swf)
-2) Docked Viking Ship and collision model on island
-3) Place Biomes, terrain, props, etc.  as part of above process with location specific collisions
+Non-Human forces:
+---------------------------
+War Trolls
+The Armored Ones	(some may travel by air)
+Shadowmen 		(travels by large Shadowman Overlord instead of by Boat)
+Elementals 		(travels by Air instead of by Boat)
+Ghost Rogues
+Goblin-orcs
+Goblin-halflings
+Minotaurs
+
+Human Factions 
+----------------
+Gladiators
+Vikings
+Crusaders
+Pirates
+
+All factions can co-exist under the Union. They all spaek the English language.
+
+All organised forces are divided into group/game designations of:
+Delta, Iota, Phi, Chi
 
 
-3 Vikings & Me:  (three-vikings-and-me.swf)
-------------------
-4) Rocking Ship and collision and piloting mode /  Sea Obstacles & encounters
-5) Intro and ship exploration
-6) (all chars with animations + punching + weaponary)
-7) Monsters and AI 
+AMPHIBIOUS/AIRDROP MISSIONS: (Free roaming)
+
+Invasion:
+----------
+For Defenders:  Organised Forces are willing to invade the island and encroach inland against known opposition which may be another organised force, or a native group, using plenty of resources/equipment/boats to do so.  One must decide if holding the dock (if available)/coast is necessary or not. An island can be invaded from multiple sides, thus you might need to move inland to defend to avoid being spreaded too thin at the coast. In the case of invasion, the defenders are usually outnumbered, which requires the use of static defenses and positions to gain an advantage over the attackers.
+For Attackers: Play the attacking side in an attempt to lay siege on an island!
+
+Raid:
+------
+For Defenders: An island can be raided from a particular side discreetly. There are designated patrolling circle routes on the island itself that can be followed along where storage/industrial buildings exist. Other areas to defend include dock paths leading to oil wells and mining shafts. Determine which side possible raiders could be invading from. Raiders can come in the form of flying enemies, and may not necessarily be organised forces but simply scavengers. Your objective is to protect any inland storages, mining shafts and dock (if available).
+For Attackers: Perform a raid on an island.  Cannons and gunpowder are are best used to take. But resources and other stuff are worth trying to get. In some cases, disrupting/causing damage to their infrastructure is also a good tactic.
+
+Colonization:
+---------------
+As a pathfinder, your job is to attempt to explore a given island in an attempt to take it. However, an island might be contested by other organised forces coming in from other areas, or/and include indigenous population or just creeps/monsters. Your job is to "secure" the island as an advanced party (clearing away monsters/creeps and such), and send in a signal for builders to come, once done. In some cases, the player can open-endedly choose not to colonize an island but let the island remain "free", if already owned by another indigenous population with whom you can communicate/negotiate with. If there are rival forces trying to take an island, one could negotiate a shared plan for a given island instaed of fighting over it.
+
+In a typical amphibious (beach landing)/air-drop island scenerio, there are actually only 2 basic cases. Either one side attacks and the other defends on a large/small scale. Or, both sides try to attack an island that is currently "no-man's/some other creature's" land.
 
 
-Asharena: (ash-arena.swf)
----------------------
-- Multiplayer integration
-- Character stats and actual rules for different character types.
+SABOTEUR PATH BUILDING MISSIONS: (RTC tile-based movement)
+- Build jetty at assigned location to given destination (either inland or towards an oil well or towards a mining shaft)
+- Clear mining tunnels to lead to Gold
 
-Saboteur Arena: (saboteur-arena.swf)
-------------------------
-- Minigame (River map)
-- Multiplayer integration.
-
+	
 ______________________________________________
 
 1) Include tumble-left/tumble-right, (jump velocity, ground normal WILL always not be available, or at least something to disable surface movmeent during duration of tumble) ! *
