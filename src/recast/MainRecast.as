@@ -10,6 +10,8 @@ package recast
 	import flash.display.BitmapData;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.events.KeyboardEvent;
+	import flash.ui.Keyboard;
 	/**
 	 * ...
 	 * @author Glenn Ko
@@ -63,7 +65,7 @@ package recast
 			PopKeys.initStage(stage);
 		
 			Startup.LARGE_RADIUS = 2;
-			Startup.SMALL_RADIUS = Startup.LARGE_RADIUS * .45 ;
+			Startup.SMALL_RADIUS = Startup.LARGE_RADIUS * .5 ;
 
 			updateWorldThreshold = 2 * TILE_SIZE;
 			updateWorldThreshold *= updateWorldThreshold;
@@ -77,10 +79,28 @@ package recast
 			partyStartup.movableA.y = 0;
 			
 			addEventListener(Event.ENTER_FRAME, onEnterFrame);
-
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			setWorldCenter(0, 0);
 			
 			
+		}
+		
+		private function onKeyDown(e:KeyboardEvent):void 
+		{
+			if (e.keyCode === Keyboard.U) {
+				recenter();
+			}
+		}
+		
+		private function recenter():void 
+		{
+		
+			var newX:Number = partyStartup.movableA.x;
+			var newY:Number = partyStartup.movableA.y;
+				
+			partyStartup.displaceMovables( -(partyStartup.movableA.x), -(partyStartup.movableA.y));
+			setWorldCenter(newX+_worldX, newY+_worldY);
+				
 		}
 		
 		private function getSeededVal(seed:uint):Number {
@@ -174,13 +194,13 @@ package recast
 		
 		private function onEnterFrame(e:Event):void 
 		{
-			var diffX:Number = partyStartup.movableA.x - _worldX;
-			var diffY:Number = partyStartup.movableA.y - _worldY;
+			
+			var diffX:Number = partyStartup.movableA.x ;
+			var diffY:Number = partyStartup.movableA.y;
 			if (diffX * diffX + diffY * diffY >= updateWorldThreshold ) {
-				
-				setWorldCenter(partyStartup.movableA.x, partyStartup.movableA.y);
-				partyStartup.displaceMovables(-diffX, -diffY);
+				recenter();
 			}
+			
 			partyStartup.tickPreview();
 		}
 

@@ -631,21 +631,33 @@ package examples.scenes
 			movableB.x += x;
 			movableC.x += x;
 			movableD.x += x;
+		
 			
 			movableA.y += y;
 			movableB.y += y;
 			movableC.y += y;
 			movableD.y += y;
 			
-		//	if (movableA.x != 0) throw new Error("SHOULD NOT BE!:"+movableA.x);
+			if (movableA.x != 0 || movableA.y!=0) throw new Error("SHOULD NOT BE!:"+movableA.x + ", "+movableA.y);
+		var i:int = fixedSprings.length;
+				while (--i > -1) {
+					
+						
+						fixedSprings[i].x = movableA.x;
+						fixedSprings[i].y = movableA.y;
+					
+					
+				}
 			
 			personA.x = movableA.x; personA.y = movableA.y;
-			
+			/*	
 			personB.x = movableB.x; personB.y = movableB.y;
 			
 			personC.x = movableA.x; personC.y = movableC.y;
 			
 			personD.x = movableD.x; personD.y = movableD.y;
+			*/
+			
 		}
 	}
 }
