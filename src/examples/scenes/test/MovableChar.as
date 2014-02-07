@@ -20,7 +20,7 @@ package examples.scenes.test
 		
 		override public function draw(g:Graphics):void {
 			g.lineStyle(0, color, .6);
-			g.drawCircle( x, y, Math.max( r, 3 )*1 );
+			g.drawCircle( x, y,r );
 		}
 		
 	}

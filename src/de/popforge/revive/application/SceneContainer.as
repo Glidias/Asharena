@@ -104,6 +104,7 @@ package de.popforge.revive.application
 				simulation.nextFrame();
 				return;
 			}
+	
 			
 			if( mouseSpring )
 			{

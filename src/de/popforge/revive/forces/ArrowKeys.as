@@ -13,10 +13,11 @@ package de.popforge.revive.forces
 	public class ArrowKeys implements IForce, IDrawAble
 	{
 		private var movable:MovableParticle;
-		public var speed:Number = .5;
-		public function ArrowKeys(movable:MovableParticle) 
+		public var speed:Number;
+		public function ArrowKeys(movable:MovableParticle, speed:Number=.5) 
 		{
 			this.movable = movable;
+			this.speed = speed;
 			
 			
 		}

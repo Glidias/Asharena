@@ -34,6 +34,8 @@ package de.popforge.revive.application
 			immovables = new Array();
 		}
 		
+	
+		
 		public function nextFrame(): void
 		{
 			applyEnvirons();

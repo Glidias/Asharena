@@ -67,10 +67,10 @@ package examples.scenes
 	public class Startup extends SceneContainer
 	{
 		
-		private var personA:Person = new Person(MovableChar.COLORS[0], "leader");
-		private var personB:Person = new Person(MovableChar.COLORS[1], "person b");
-		private var personC:Person = new Person(MovableChar.COLORS[2], "person c");
-		private var personD:Person = new Person(MovableChar.COLORS[3], "person d");
+		private var personA:Person = new Person(MovableChar.COLORS[0], "leader", SMALL_RADIUS);
+		private var personB:Person = new Person(MovableChar.COLORS[1], "person b", SMALL_RADIUS);
+		private var personC:Person = new Person(MovableChar.COLORS[2], "person c", SMALL_RADIUS);
+		private var personD:Person = new Person(MovableChar.COLORS[3], "person d", SMALL_RADIUS);
 		private var footing:int = new Vector.<int>(3,true);
 		
 		public function Startup()
@@ -98,6 +98,14 @@ package examples.scenes
 			}
 		}
 		
+		public function manualInit2DPreview(cont:Sprite):void {
+			cont.addChild(this);
+			addChild(personA);
+			addChild(personB);
+			addChild(personC);
+			addChild(personD);
+		}
+		
 		private function createParty():void 
 		{
 			var pos:Array = POSITIONS_COLUMN_JITTERD;
@@ -117,7 +125,7 @@ package examples.scenes
 			personB.x = movableB.x; personB.y = movableB.y;
 			personC.x = movableC.x; personC.y = movableC.y;
 			personD.x = movableD.x; personD.y = movableD.y;
-			
+	
 			memberCircleLookup.push(movableB);
 			memberCircleLookup.push(movableC);
 			memberCircleLookup.push(movableD);
@@ -180,7 +188,9 @@ package examples.scenes
 				*/
 				
 			}
-
+			
+			//simulation.addMovable( new MovableCircle(13, 13, 4) );
+			//simulation.addMovable( new MovableCircle(13, 23, 4) );
 			
 		}
 		
@@ -197,6 +207,8 @@ package examples.scenes
 			}
 			
 		}
+		
+		
 		private var POSITIONS_COLUMN:Array = [ 
 			new Point(256, 96),
 			new Point(256, 128),
@@ -233,13 +245,13 @@ package examples.scenes
 		];
 		
 		private static var FOLLOW_LEADER_SPRING:Boolean = true;
-		private var movableA:MovableCircle;
-		private var movableB:MovableCircle;
-		private var movableC:MovableCircle;
-		private var movableD:MovableCircle;
+		public var movableA:MovableCircle;
+		public var movableB:MovableCircle;
+		public var movableC:MovableCircle;
+		public var movableD:MovableCircle;
 		
 		
-		private var testCircle:MovableCircle = new MovableCircle(0, 0, 32);
+		private var testCircle:MovableCircle = new MovableCircle(0, 0, 3);
 		
 		private var invalidMembers:Vector.<int> = new Vector.<int>();
 		private var validMembers:Vector.<int> =  new Vector.<int>();
@@ -269,6 +281,11 @@ package examples.scenes
 			onEnterFrame(null);
 		}
 		
+		private static const DUMMY_EVENT:Event = new Event("enterFrame");
+		public function tickPreview():void {
+			onEnterFrame(DUMMY_EVENT);
+		}
+		
 		override protected function onEnterFrame( event: Event ): void
 		{
 			var i:int;
@@ -288,7 +305,7 @@ package examples.scenes
 				lastY  = movableA.y - lastY;
 				lastX *= lastX;
 				lastY *= lastY;
-				if (lastX + lastY > 16*16) {
+				if (lastX + lastY > footStepThreshold) {
 					footsteps.push(movableA.x);
 					footsteps.push(movableA.y);
 				}
@@ -537,7 +554,11 @@ package examples.scenes
 		
 		
 		private var springs:Array = [];
-		private var targetSpringRest:Number;
+		private var footStepThreshold:Number = 16 * 16;
+		public function setFootstepThreshold(val:Number):void {
+			footStepThreshold = val * val;
+		}
+		public var targetSpringRest:Number;
 		public var enableFootsteps:Boolean = true;
 		
 		public function transitSpringLength(spring:*, targetSpringRest:Number):void {
@@ -553,8 +574,8 @@ package examples.scenes
 			
 		}
 		
-		private static const LARGE_RADIUS:Number = 16;
-		private static const SMALL_RADIUS:Number = LARGE_RADIUS * .45;
+		public static var LARGE_RADIUS:Number = 16;
+		public static var SMALL_RADIUS:Number = LARGE_RADIUS * .45;
 
 		static public const NULL_SPRING:Spring = new Spring( new MovableCircle(0,0,2), new MovableCircle(1,1,2) );
 		
@@ -597,6 +618,35 @@ package examples.scenes
 			immovable = new ImmovableBezierQuadric( WIDTH/2, HEIGHT, WIDTH-192, HEIGHT/2, WIDTH, HEIGHT, false );
 			simulation.addImmovable( immovable );
 		}
+		
+		public function redrawImmovables():void 
+		{
+			iShape.graphics.clear();
+			drawImmovables();
+		}
+		
+		public function displaceMovables(x:Number, y:Number):void 
+		{
+			movableA.x += x;
+			movableB.x += x;
+			movableC.x += x;
+			movableD.x += x;
+			
+			movableA.y += y;
+			movableB.y += y;
+			movableC.y += y;
+			movableD.y += y;
+			
+		//	if (movableA.x != 0) throw new Error("SHOULD NOT BE!:"+movableA.x);
+			
+			personA.x = movableA.x; personA.y = movableA.y;
+			
+			personB.x = movableB.x; personB.y = movableB.y;
+			
+			personC.x = movableA.x; personC.y = movableC.y;
+			
+			personD.x = movableD.x; personD.y = movableD.y;
+		}
 	}
 }
 import flash.display.Sprite;
@@ -605,15 +655,15 @@ import flash.geom.Vector3D;
 class Person extends Sprite {
 	
 	private var forwardVec:Vector3D = new Vector3D();
-	public var speed:Number = 222;
+	public var speed:Number;
 	public var speedCap:Number;
 	
 
 	
-	public function Person(color:uint, name:String) {
-		
+	public function Person(color:uint, name:String, radius:Number, speed:Number=222) {
+		this.speed = speed;
 		graphics.beginFill(color, 1);
-		graphics.drawCircle(0, 0, 16*.45 );
+		graphics.drawCircle(0, 0, radius  );
 		this.name = name;
 	}
 	
