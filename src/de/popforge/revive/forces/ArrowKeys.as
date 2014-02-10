@@ -1,6 +1,8 @@
 package de.popforge.revive.forces 
 {
+
 	import de.popforge.revive.display.IDrawAble;
+	import de.popforge.revive.geom.Vec2D;
 	import de.popforge.revive.member.Movable;
 	import de.popforge.revive.member.MovableParticle;
 	import de.popforge.surface.io.PopKeys;
@@ -23,29 +25,32 @@ package de.popforge.revive.forces
 		}
 		
 		/* INTERFACE de.popforge.revive.forces.IForce */
-		
+		private var force:Vec2D = new Vec2D(0,0);
 		public function solve():void 
 		{
-			movable.velocity.x = 0;
-			movable.velocity.y = 0;
+			force.x = 0;
+			force.y = 0;
 			if (PopKeys.isDown(Keyboard.UP)) {
-				movable.velocity.y -= 1;
+				force.y -= 1;
 				
 			}
 			if (PopKeys.isDown(Keyboard.DOWN)) {
-				movable.velocity.y += 1;
+				force.y += 1;
 			}
 			if (PopKeys.isDown(Keyboard.LEFT)) {
-				movable.velocity.x -= 1;
+				force.x -= 1;
 				
 			}
 			if (PopKeys.isDown(Keyboard.RIGHT)) {
-				movable.velocity.x += 1;
+				force.x += 1;
 				
 			}
-			movable.velocity.normalize();
-			movable.velocity.x *= speed;
-			movable.velocity.y *= speed;
+			force.normalize();
+			force.x *= speed;
+			force.y *= speed;
+			
+			movable.velocity.x += force.x;
+			movable.velocity.y += force.y;
 		}
 		
 		/* INTERFACE de.popforge.revive.display.IDrawAble */

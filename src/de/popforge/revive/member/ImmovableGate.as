@@ -11,10 +11,10 @@ package de.popforge.revive.member
 	public class ImmovableGate extends Immovable
 		implements IDynamicIntersectionTestAble, IResolvable, IDrawAble
 	{
-		private var x0: Number;
-		private var y0: Number;
-		private var x1: Number;
-		private var y1: Number;
+		public var x0: Number;
+		public var y0: Number;
+		public var x1: Number;
+		public var y1: Number;
 		
 		private var length: Number;
 		

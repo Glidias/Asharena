@@ -44,7 +44,7 @@ package recast
 			
 		public var lib:Object;
 		private var memUser:MemUser = new MemUser();
-		private var agentPtrs:Vector.<uint> = new Vector.<uint>();
+		public var agentPtrs:Vector.<uint> = new Vector.<uint>();
 
 		public function MainRecastWorker() 
 		{
@@ -54,7 +54,7 @@ package recast
 			
 			initCLib();
 			
-			doDummyLoad();
+			//doDummyLoad();
 			
 			
 		}
@@ -105,9 +105,14 @@ package recast
 			
 		}
 		
+		
 		private function doDummyLoad():void {
 			loadFile( PLANE_VERTICES + "\n" + PLANE_INDICES );
 			lib.initCrowd(MAX_AGENTS, MAX_AGENT_RADIUS); //maxagents, max agent radius			
+		}
+		
+		public function initCrowd():void {
+			lib.initCrowd(MAX_AGENTS, MAX_AGENT_RADIUS);
 		}
 		
 		private var lastMapX:Number;
@@ -121,9 +126,27 @@ package recast
 			targetMapY = y;
 			
 			var byteArray:ByteArray = new ByteArray();
-			byteArray.writeMultiByte(contents, "iso-8859-1")
-			loader.supplyFile(OBJ_FILE, byteArray );
-			lib.loadMesh(OBJ_FILE);
+			byteArray.writeMultiByte(contents, "iso-8859-1");
+			TOGGLE = !TOGGLE;
+			var suffix:String = ( TOGGLE ? "_" : "");
+			
+			loader.supplyFile(OBJ_FILE+suffix, byteArray );
+			lib.loadMesh(OBJ_FILE+suffix);
+			lib.buildMesh();
+			
+			
+			return validateNewNavMesh();
+			
+		}
+		
+		public function loadFileBytes(byteArray:ByteArray):int {
+			
+			
+		
+			TOGGLE = !TOGGLE;
+			var suffix:String = ( TOGGLE ? "_" : "");
+			loader.supplyFile(OBJ_FILE+suffix, byteArray );
+			lib.loadMesh(OBJ_FILE+suffix);
 			lib.buildMesh();
 			
 			
@@ -133,8 +156,14 @@ package recast
 		
 		public var orphanedAgentIndices:Vector.<int> = new Vector.<int>();
 		
+		
+		
+		// TODO: need to do this up proper...
 		private function validateNewNavMesh():int
 		{
+			return 0;
+			
+			
 			var newAgents:Vector.<uint> = new Vector.<uint>();
 			
 			var newAgentCount:int = 0;
@@ -186,6 +215,7 @@ package recast
 		private function onEnterFrame(e:Event):void 
 		{
 			update();
+			
 		}
 		
 
@@ -198,6 +228,13 @@ package recast
 			var appendVertices:String = "";
 			var appendIndices:String = "";
 			loadFile( PLANE_VERTICES + appendVertices + "\n" + PLANE_INDICES + appendIndices);
+		}
+		
+		public function createZoneWithWavefront(appendVertices:String, appendIndices:String):void {
+			
+			
+
+		loadFile( PLANE_VERTICES + appendVertices + "\n" + PLANE_INDICES + appendIndices);
 		}
 		
 		private function updateDestination(x:Number, y:Number):void 
@@ -218,8 +255,9 @@ package recast
 		private var agentCount:int = 0;
 		private var globalDestX:Number = 0;
 		private var globalDestY:Number = 0;
+		private var TOGGLE:Boolean=true;
 		
-		public function addAgent(ax:Number, ay:Number):int
+		public function addAgent(ax:Number, ay:Number):uint
 		{
 			
 			var radius:Number = MAX_AGENT_RADIUS;
@@ -230,9 +268,11 @@ package recast
 			var pathOptimizationRange:Number = 30.0;
 			
 			var agentId:int = lib.addAgent(ax, OBJ_HEIGHT, ay, radius, height, maxAccel, maxSpeed, collisionQueryRange, pathOptimizationRange);
-			agentPtrs[agentCount++] = agentId;
+			var agentPtr:uint = lib.getAgentPosition(agentId);
+			
+			agentPtrs[agentCount++] = agentPtr;
 			validateAgents();
-			return agentId;
+			return agentPtr;
 		}
 		
 		private function validateAgents():void 
@@ -309,7 +349,7 @@ package recast
 		public function setAgentY(i:int, val:Number):void
 		{
 
-			 memUser._mwf( agentPtrs[i + 4], val); // + 4 since a float takes up 4 bytes
+			 memUser._mwf( agentPtrs[i] + 4, val); // + 4 since a float takes up 4 bytes
 			
 		
 		}
@@ -318,7 +358,7 @@ package recast
 		public function setAgentZ(i:int, val:Number):void
 		{
 		
-			 memUser._mwf( agentPtrs[i + 8], val);
+			 memUser._mwf( agentPtrs[i] + 8, val);
 			
 			
 		}

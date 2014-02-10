@@ -114,11 +114,11 @@ package examples.scenes
 			movableA = new MovableChar( pos[0].x, pos[0].y, SMALL_RADIUS, 0 );
 			
 			simulation.addMovable( movableA );
-			movableB = new MovableChar( pos[1].x, pos[1].y, LARGE_RADIUS , 1 );
+			movableB = new MovableChar( pos[1].x, pos[1].y, SMALL_RADIUS , 1 );
 			simulation.addMovable( movableB );
-			movableC = new MovableChar( pos[2].x, pos[2].y, LARGE_RADIUS, 2 );
+			movableC = new MovableChar( pos[2].x, pos[2].y, SMALL_RADIUS, 2 );
 			simulation.addMovable( movableC );
-			movableD = new MovableChar( pos[3].x, pos[3].y, LARGE_RADIUS, 3 );
+			movableD = new MovableChar( pos[3].x, pos[3].y, SMALL_RADIUS, 3 );
 			simulation.addMovable( movableD );
 			
 			personA.x = movableA.x; personA.y = movableA.y;
@@ -207,55 +207,51 @@ package examples.scenes
 			}
 			
 		}
-		
+		public static var START_X:Number = 256;
+		public static var START_Y:Number = 96;
 		
 		private var POSITIONS_COLUMN:Array = [ 
-			new Point(256, 96),
-			new Point(256, 128),
-			new Point(256, 160),
-			new Point(256, 192) 
+			new Point(START_X, START_Y),
+			new Point(START_X, START_Y+LARGE_RADIUS*1),
+			new Point(START_X, START_Y+LARGE_RADIUS*2),
+			new Point(START_X, START_Y+LARGE_RADIUS*3) 
 		];
 		
 		private var POSITIONS_COLUMN_STAGGERED:Array = [ 
-			new Point(256+16, 96),
-			new Point(256-16, 128),
-			new Point(256+16, 160),
-			new Point(256-16, 192) 
+			new Point(START_X+16, START_Y),
+			new Point(START_X-16, START_Y+LARGE_RADIUS*1),
+			new Point(START_X+16, START_Y+LARGE_RADIUS*2),
+			new Point(START_X-16, START_Y+LARGE_RADIUS*3) 
 		];
 		private var POSITIONS_COLUMN_JITTERD:Array = [ 
-			new Point(256+4, 96),
-			new Point(256-4, 128),
-			new Point(256+4, 160),
-			new Point(256-4, 192) 
+			new Point(START_X+4, START_Y),
+			new Point(START_X-4, START_Y+LARGE_RADIUS*1),
+			new Point(START_X+4, START_Y+LARGE_RADIUS*2),
+			new Point(START_X-4, START_Y+LARGE_RADIUS*3) 
 		];
 		
 		
 		private var POSITIONS_WEDGE:Array = [ 
-			new Point(256, 96),
-			new Point(256-32, 96+32),
-			new Point(256+32, 96+32),
-			new Point(256, 96+64) 
+			new Point(START_X, START_Y),
+			new Point(START_X-32, START_Y+32),
+			new Point(START_X+32, START_Y+32),
+			new Point(START_X, START_Y+64) 
 		];
 		
-		private var POSITIONS_BLOCK:Array = [ 
-			new Point(256, 96),
-			new Point(256, 128),
-			new Point(256, 160),
-			new Point(256, 192) 
-		];
+		
 		
 		private static var FOLLOW_LEADER_SPRING:Boolean = true;
-		public var movableA:MovableCircle;
-		public var movableB:MovableCircle;
-		public var movableC:MovableCircle;
-		public var movableD:MovableCircle;
+		public var movableA:MovableChar;
+		public var movableB:MovableChar;
+		public var movableC:MovableChar;
+		public var movableD:MovableChar;
 		
 		
 		private var testCircle:MovableCircle = new MovableCircle(0, 0, 3);
 		
 		private var invalidMembers:Vector.<int> = new Vector.<int>();
 		private var validMembers:Vector.<int> =  new Vector.<int>();
-		private var memberCircleLookup:Vector.<MovableCircle> = new Vector.<MovableCircle>();
+		public var memberCircleLookup:Vector.<MovableChar> = new Vector.<MovableChar>();
 		private var memberCharLookup:Vector.<Person> = new Vector.<Person>();
 		
 		private var fixedSprings:Array = [];
@@ -308,7 +304,9 @@ package examples.scenes
 				if (lastX + lastY > footStepThreshold) {
 					footsteps.push(movableA.x);
 					footsteps.push(movableA.y);
+					if (footStepCallback!=null) footStepCallback();
 				}
+				
 			}
 
 			
@@ -324,6 +322,7 @@ package examples.scenes
 						else {
 							// add to valid
 							validMembers[numValid++] = 0;
+							movableB.following = 0;
 							switchSpring(0, fixedSprings[0]);
 							
 						}
@@ -337,6 +336,7 @@ package examples.scenes
 				}
 				else {
 							// add to valid
+							movableB.following = 0;
 					validMembers[numValid++] = 0;
 						switchSpring(0, fixedSprings[0]);
 							
@@ -352,6 +352,7 @@ package examples.scenes
 						else {
 							// add to valid
 							validMembers[numValid++] = 1;
+							movableC.following = 0;
 							switchSpring(1, fixedSprings[1]);
 						}
 					}
@@ -364,6 +365,7 @@ package examples.scenes
 				}
 				else {
 							// add to valid
+							movableC.following = 0;
 					validMembers[numValid++] = 1;
 						switchSpring(1, fixedSprings[1]);
 							
@@ -379,6 +381,7 @@ package examples.scenes
 						}
 						else {
 							// add to valid
+							movableD.following = 0;
 							validMembers[numValid++] = 2;
 							switchSpring(2, fixedSprings[2]);
 						}
@@ -391,10 +394,14 @@ package examples.scenes
 				else {
 					// add to valid
 					validMembers[numValid++] = 2;
+					movableD.following = 0;
 					switchSpring(2, fixedSprings[2]);
 							//throw new Error("A");
 				}
 			//}
+			
+			var initialValidMembers:int = numValid;
+			
 			
 			var index:int;
 			var u:int;
@@ -412,7 +419,7 @@ package examples.scenes
 						validMembers[numValid++] = index;
 						
 						switchSpring(index, new Spring(memberCircleLookup[index], memberCircleLookup[validMembers[u]], 1) );
-						
+						memberCircleLookup[index].following =1;
 						resolved = true;
 						break;
 					}
@@ -422,7 +429,7 @@ package examples.scenes
 				if (!resolved) {
 				//	simulation.removeForce(springs[index]);
 					//springs[index] = NULL_SPRING;
-					
+					memberCircleLookup[index].following = -1;
 					
 					var f:int = footsteps.length;
 					f -= 2;
@@ -442,9 +449,8 @@ package examples.scenes
 					
 					if (!resolved) {
 						switchSpring(index, NULL_SPRING);
+						memberCircleLookup[index].following = -2;
 					}
-					
-					
 					
 					
 					/*
@@ -474,7 +480,11 @@ package examples.scenes
 						
 				}
 				
+				
+				
 			}
+			
+			
 			
 			
 			
@@ -499,7 +509,7 @@ package examples.scenes
 			*/
 			
 			i = fixedSprings.length;
-				while (--i > -1) {
+				while (--i > -1) {f
 					
 						
 						fixedSprings[i].x = movableA.x;
@@ -507,6 +517,45 @@ package examples.scenes
 					
 					
 				}
+				
+				
+				
+					// now, determine pos standing offsets for memberCircles, based off current formation links
+					f = 0;
+					f +=movableB.following < 0 ? 0 : movableB.following;
+					f +=  movableC.following < 0 ? 0 : movableC.following;
+					f += movableD.following < 0 ? 0 : movableD.following;
+					
+		
+					movableB.slot = -1;
+					movableC.slot = -1;
+					movableD.slot = -1;
+					movableB.offsetX = 0; movableB.offsetY = 0;
+					movableC.offsetX = 0; movableC.offsetY = 0;
+					movableD.offsetX = 0; movableD.offsetY = 0;
+		
+					if (f==0) {  // all following leader
+						// possible triangle formation, resolve to diamond if required
+						_formationState = 0;
+						resolveTriFormation();
+						
+					}
+					else if ( f === 1) {  // 2 follwong leader, only 1 following someone
+						_formationState = 1;
+						// determine rearguard only
+						rearGuard = (movableD.following > 0  ? movableD : movableC.following > 0 ? movableC : movableB)
+						lastRearGuardSlot = rearGuard.slot;
+						rearGuard.slot = 2;
+						
+					}
+					else if ( f == 2) {  // a column is used, determine rearguard only
+						_formationState = 2;
+						
+						rearGuard = (movableD.following > 0 && memberCircleLookup[movableD.following].following > 0 ? movableD : movableC.following > 0 &&  memberCircleLookup[movableC.following].following > 0 ? movableC : movableB)
+						lastRearGuardSlot = rearGuard.slot;
+						rearGuard.slot = 2;
+						
+					}
 				
 			// move guys to match formation points
 			personA.x = movableA.x; personA.y = movableA.y;
@@ -520,7 +569,223 @@ package examples.scenes
 			// check for temporary BCD springs that can afford to be removed (ie. completed)
 		}
 		
+		private function resolveTriFormation():void 
+		{
+			
+		
+			
+			var rearGuard:MovableChar;
+			var dx:Number;
+			var dy:Number;
+			
+			var dx2:Number;
+			var dy2:Number;
+		
+			var temp:Number;
+			var sign:Number;
+			var sign2:Number;
+			// find the 2 flankers
+			
+			var numFlankers:int = 0;
+			
+			dx=movableA.x - movableB.x;
+			dy = movableA.y - movableB.y;
+			temp = dx;
+			dx = -dy;
+			dy = temp;
+	
+			
+			dx2 = movableC.x - movableB.x;
+			dy2 = movableC.y - movableB.y;
+			sign = dx * dx2 + dy * dy2;
+			dx2 = movableD.x - movableB.x;
+			dy2 = movableD.y - movableB.y;
+			sign2 = dx * dx2 + dy * dy2;
+			sign = sign > 0 ? 1 : -1;
+			sign2 = sign2 > 0 ? 1 : -1;
+			numFlankers += sign === sign2 ? 1 : 0;
+			if (sign === sign2) {
+				movableB.slot =  sign < 0 ? 1 : 0;
+				movableB.offsetX = dx * sign;
+				movableB.offsetY = dy * sign;
+			}
+			
+			dx=movableA.x - movableC.x;
+			dy=movableA.y - movableC.y;
+			temp = dx;
+			dx = -dy;
+			dy = temp;
+			
+			dx2 = movableB.x - movableC.x;
+			dy2 = movableB.y - movableC.y;
+			sign = dx * dx2 + dy * dy2;
+			dx2 = movableD.x - movableC.x;
+			dy2 = movableD.y - movableC.y;
+			sign2 = dx * dx2 + dy * dy2;
+			sign = sign > 0 ? 1 : -1;
+			sign2 = sign2 > 0 ? 1 : -1;
+			numFlankers += sign === sign2 ? 1 : 0;
+			if (sign === sign2) {
+				movableC.slot =  sign < 0 ? 1 : 0;
+				movableC.offsetX = dx * sign;
+				movableC.offsetY = dy * sign;
+			}
+			
+			//if (numFlankers !=2) {
+				dx=movableA.x - movableD.x;
+				dy=movableA.y - movableD.y;
+				temp = dx;
+			dx = -dy;
+			dy = temp;
+			
+				dx2 = movableC.x - movableD.x;
+				dy2 = movableC.y - movableD.y;
+				sign = dx * dx2 + dy * dy2;
+				dx2 = movableB.x - movableD.x;
+				dy2 = movableB.y - movableD.y;
+				sign2 = dx * dx2 + dy * dy2;
+				sign = sign > 0 ? 1 : -1;
+				sign2 = sign2 > 0 ? 1 : -1;
+				numFlankers += sign === sign2 ? 1 : 0;
+				if (sign === sign2) {
+					movableD.slot = sign < 0 ? 1 : 0;
+					movableD.offsetX = dx * sign;
+					movableD.offsetY = dy * sign;
+				}
+			//}
+			
+			if (numFlankers != 2) {  // invalid, so 
+				
+					movableB.offsetX = 0; movableB.offsetY = 0;
+					movableC.offsetX = 0; movableC.offsetY = 0;
+					movableD.offsetX = 0; movableD.offsetY = 0;
+					movableB.slot = -1;
+					movableC.slot = -1;
+					movableD.slot = -1;
+				
+				//throw new Error("numflanks:"+numFlankers);
+				//if (numFlankers == 0) throw new Error("NO FLANKERS");
+				return;
+			}
+			else if (numFlankers === 3) {
+				throw new Error("WEIRD 3 flankers");
+			}
+			
+			//throw new Error("GOT 2 flankers");
+			
+			// find rearguard among the 2 flankers
+			var flanker1:MovableChar;
+			var flanker2:MovableChar;
+			
+			
+			
+			if (movableD.slot < 0) {
+				flanker1 = movableB;
+				flanker2 = movableC;
+				rearGuard = movableD;
+			}
+			else if (movableC.slot < 0) {
+				flanker1 = movableB;
+				flanker2 = movableD;
+				rearGuard = movableC;
+			}
+			else {
+				flanker1 = movableD;
+				flanker2 = movableC;
+				rearGuard = movableB;
+			}
+			
+			
+			
+			// flankers form an obtuse or right angle that don't need seperation since they are spreaded far enough
+			// ( can early exit here)
+			if (flanker1.offsetX * flanker2.offsetX + flanker1.offsetY * flanker2.offsetY >= 0) {
+					movableB.offsetX = 0; movableB.offsetY = 0;
+					movableC.offsetX = 0; movableC.offsetY = 0;
+					movableD.offsetX = 0; movableD.offsetY = 0;
+					movableB.slot = -1;
+					movableC.slot = -1;
+					movableD.slot = -1;
+					return;
+			}
+			
+			rearGuard.slot = 2;
+			// else  flankers form an acute angle that needs some spreading out.
+			
+			// move rearguard back
+			rearGuard.offsetX = rearGuard.x - movableA.x;
+			rearGuard.offsetY = rearGuard.y - movableA.y;
+			dx = Math.sqrt(rearGuard.offsetX * rearGuard.offsetX + rearGuard.offsetY * rearGuard.offsetY);
+			dx = (rearGuard.r  / dx);
+			rearGuard.offsetX *= dx;
+			rearGuard.offsetY *= dx;
+			
+			
+			
+			dx = flanker1.offsetX;
+			dy = flanker1.offsetY;
+			dx2 = flanker2.offsetX;
+			dy2 = flanker2.offsetY;
+			
+			
+			
+			flanker1.offsetX =  movableA.x + dx2 - flanker1.x;
+			flanker1.offsetY =  movableA.y + dy2 - flanker1.y;
+			
+			flanker2.offsetX =  movableA.x + dx - flanker2.x;
+			flanker2.offsetY =  movableA.y + dy - flanker2.y;
+			
+		
+			flanker1.offsetX *= flanker1.flankScale; flanker1.offsetY *= flanker1.flankScale;
+			flanker2.offsetX *= flanker2.flankScale; flanker2.offsetY *= flanker2.flankScale;
+			
+	
+			
+			var intersect:DynamicIntersection;
+		
+			testCircle.x = flanker1.x;
+			testCircle.y = flanker1.y;
+			testCircle.r = flanker1.r;
+			testCircle.velocity.x = flanker1.offsetX;
+			testCircle.velocity.y = flanker1.offsetY;
+			intersect = getClosestIntersectionEnv(testCircle);
+			dx = intersect != null ? intersect.dt : 1;
+			flanker1.offsetX *= dx;
+			flanker1.offsetY *= dx;
+			
+			testCircle.x = flanker2.x;
+			testCircle.y = flanker2.y;
+			testCircle.r = flanker2.r;
+			testCircle.velocity.x = flanker2.offsetX;
+			testCircle.velocity.y = flanker2.offsetY;
+			intersect = getClosestIntersectionEnv(testCircle);
+			dx = intersect != null ? intersect.dt : 1;
+			flanker2.offsetX *= dx;
+			flanker2.offsetY *= dx;
+			
+			
+			
+			//flanker1.offsetX =0; 	flanker1.offsetY =0;
+			//flanker2.offsetX = 0; flanker2.offsetY = 0;
+			
+		}
+		
 		private var testLeader:MovableCircle = new MovableCircle(1, 1, 1);
+		
+		private function getClosestIntersectionEnv(testCirc:MovableCircle):DynamicIntersection {
+			var closestIntersect:DynamicIntersection = null;
+			for each(var obstacle:IDynamicIntersectionTestAble in simulation.immovables) {
+				var intersect:DynamicIntersection = obstacle.dIntersectMovableCircle(testCircle, 1);
+				
+				if (intersect != null) {
+					if (closestIntersect == null || closestIntersect.dt > intersect.dt) {
+						closestIntersect = intersect;
+					}
+				}
+			}
+			
+			return closestIntersect;
+		}
 		
 		private function checkLinkToLeaderBlocked(movable:MovableCircle, person:Person, radius:Number, customLeader:MovableCircle=null):Boolean 
 		{
@@ -555,6 +820,9 @@ package examples.scenes
 		
 		private var springs:Array = [];
 		private var footStepThreshold:Number = 16 * 16;
+		private var _formationState:int;
+		public var lastRearGuardSlot:int=2;
+		
 		public function setFootstepThreshold(val:Number):void {
 			footStepThreshold = val * val;
 		}
@@ -565,11 +833,11 @@ package examples.scenes
 			if (spring.targetLength >= 0) {
 				targetSpringRest = spring.targetLength;
 			}
-				
+			const springSpeed:Number = SPRING_SPEED;
 			var decresing:Boolean = targetSpringRest <= spring.restLength;
 			var diff:Number = decresing ? spring.restLength - targetSpringRest : targetSpringRest - spring.restLength;
-			spring.restLength += (decresing  ? -1 : 1);
-			if (diff < 1) spring.restLength = targetSpringRest;
+			spring.restLength += (decresing  ? -springSpeed : springSpeed);
+			if (diff < springSpeed) spring.restLength = targetSpringRest;
 			
 			
 		}
@@ -578,6 +846,10 @@ package examples.scenes
 		public static var SMALL_RADIUS:Number = LARGE_RADIUS * .45;
 
 		static public const NULL_SPRING:Spring = new Spring( new MovableCircle(0,0,2), new MovableCircle(1,1,2) );
+
+		public static var SPRING_SPEED:Number = 1;
+		public var footStepCallback:Function;
+		public var rearGuard:MovableChar;
 		
 		public function createScene(): void
 		{
@@ -659,6 +931,11 @@ package examples.scenes
 			*/
 			
 		}
+		
+		public function get formationState():int 
+		{
+			return _formationState;
+		}
 	}
 }
 import flash.display.Sprite;
@@ -677,6 +954,9 @@ class Person extends Sprite {
 		graphics.beginFill(color, 1);
 		graphics.drawCircle(0, 0, radius  );
 		this.name = name;
+		
+		alpha = name != "leader" ? 0: .2 ;
+		visible = name === "leader";
 	}
 	
 	public function moveToTargetLocation(targetX:Number, targetY:Number):void {

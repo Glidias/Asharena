@@ -113,7 +113,7 @@ package de.popforge.revive.application
 			}
 			
 			simulation.nextFrame();
-			simulation.nextFrame();
+		//	simulation.nextFrame();
 			
 			
 			
@@ -131,7 +131,7 @@ package de.popforge.revive.application
 			mShape.graphics.lineStyle( 0, COLOR_FORCE );
 			for each( drawAble in simulation.forces )
 			{
-				drawAble.draw( mShape.graphics );
+			//	drawAble.draw( mShape.graphics );
 			}
 		}
 		

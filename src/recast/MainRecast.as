@@ -7,10 +7,13 @@ package recast
 	import de.popforge.revive.member.ImmovableGate;
 	import de.popforge.surface.io.PopKeys;
 	import examples.scenes.Startup;
+	import examples.scenes.test.MovableChar;
 	import flash.display.BitmapData;
+	import flash.display.DisplayObject;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
+	import flash.net.FileReference;
 	import flash.ui.Keyboard;
 	/**
 	 * ...
@@ -21,8 +24,7 @@ package recast
 		public var MAX:uint;
 		public var SQ_DIM:Number;
 		public var RADIUS:Number;
-		//[Embed(source="../../bin/flat.obj", mimeType="application/octet-stream")]
-		//private var myObjFile:Class;
+		
 		
 		private var _worker:MainRecastWorker;
 
@@ -30,6 +32,8 @@ package recast
 		//private var tiles:Array;
 		private var agentSprites:Array = [];
 		private var previewer:RecastPreviewer;
+		
+		private var preferedPositions:Vector.<int> = new Vector.<int>(3, true);
 		
 		
 		private var partyStartup:Startup;
@@ -41,48 +45,129 @@ package recast
 			
 			super();
 			
+			
+			
+			MainRecastWorker.MAX_SPEED = 3.6*1.6
+			MainRecastWorker.MAX_ACCEL = 8.0*16
+			MainRecastWorker.MAX_AGENT_RADIUS =1.02;// 0.24 * 5;
 			_worker = new MainRecastWorker();
 			
-		//	_worker.loadFile( new myObjFile());
-		//	_worker.createZone( new <Number>[], new <uint>[]);
+			
+		//	_worker.loadFileBytes( new myObjFile());
+			
 			
 			addChild(previewer = new RecastPreviewer());
 			previewer.scaleX = 4;
 			previewer.scaleY = 4;
 
 
-			previewer.drawNavMesh(_worker.lib.getTiles());
+			//previewer.drawNavMesh(_worker.lib.getTiles());
 			//previewer.drawMesh(_worker.lib.getTris(), _worker.lib.getVerts());
 			
-		//	_worker.addAgent(0, 0);
+			
 		
 			MAX = PM_PRNG.MAX;
 			SQ_DIM = Math.sqrt(MAX);
 			RADIUS = SQ_DIM * .5;
 			
 			
-			addEventListener(Event.ENTER_FRAME, onEnterFrame);
+	
 			PopKeys.initStage(stage);
 		
 			Startup.LARGE_RADIUS = 2;
 			Startup.SMALL_RADIUS = Startup.LARGE_RADIUS * .5 ;
-
+			Startup.SPRING_SPEED = 313131; // 0.08; // for now, until resolve mem issues
+			Startup.START_X = 0;
+			Startup.START_Y = 0;
+			partyStartup = new Startup();
+			
+			setWorldCenter(0, 0);
+			_worker.initCrowd();
+			
+			addEventListener(Event.ENTER_FRAME, onEnterFrame);
+	
+		
+			
 			updateWorldThreshold = 2 * TILE_SIZE;
 			updateWorldThreshold *= updateWorldThreshold;
 			
-			partyStartup = new Startup();
+			
 			//partyStartup.targetSpringRest = Startup.LARGE_RADIUS *2;
 			partyStartup.setFootstepThreshold(2);
-			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .05));
+			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .08));
+			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableB, .08));
+			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableC, .08));
+			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableD, .08));
 			partyStartup.manualInit2DPreview(previewer);
 			partyStartup.movableA.x = 0;
 			partyStartup.movableA.y = 0;
 			
+			preferedPositions[0] = 0;
+			preferedPositions[1] = 1;
+			preferedPositions[2] = 2;
+		//	partyStartup.footStepCallback = onLeaderFootstep;
+			
 			addEventListener(Event.ENTER_FRAME, onEnterFrame);
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-			setWorldCenter(0, 0);
 			
 			
+			
+			addAgent(partyStartup.movableB.x, partyStartup.movableB.y, 0xFF0000);
+
+			addAgent(partyStartup.movableC.x, partyStartup.movableC.y, 0x00FF00);
+			addAgent(partyStartup.movableD.x, partyStartup.movableD.y, 0x0000FF);
+			
+			_worker.addAgent(partyStartup.movableA.x, partyStartup.movableA.y);
+			
+			drawAgents();
+			
+		}
+		
+		private function onLeaderFootstep():void 
+		{
+			
+			var offsetX:Number;
+			var offsetY:Number;
+			
+
+			var formationState:int = partyStartup.formationState;
+			var resolveFlankers:Boolean = formationState > 0;
+			for (var i:int = 0; i < 3; i++) {
+				var curCircle:MovableChar = partyStartup.memberCircleLookup[i];
+				if (curCircle.slot >= 0 ) {
+					preferedPositions[i] = curCircle.slot;
+					_worker.lib.moveAgent(curCircle.slot, curCircle.x + curCircle.offsetX, 0,  curCircle.y + curCircle.offsetY); 
+				}
+				else {
+					
+					_worker.lib.moveAgent( (!resolveFlankers ? preferedPositions[i] : preferedPositions[i] != partyStartup.rearGuard.slot ? preferedPositions[i] : partyStartup.lastRearGuardSlot), curCircle.x + curCircle.offsetX, 0,  curCircle.y + curCircle.offsetY); 
+				}
+				
+				// NOTE: this does not determine flank averages...
+			}
+			
+			/*
+			offsetX = partyStartup.movableB.offsetX;
+			offsetY =  partyStartup.movableB.offsetY;
+			_worker.lib.moveAgent(0, partyStartup.movableB.x + offsetX, 0,  partyStartup.movableB.y + offsetY); 
+			
+			offsetX = partyStartup.movableC.offsetX;
+			offsetY =  partyStartup.movableC.offsetY;
+			_worker.lib.moveAgent(1, partyStartup.movableC.x + offsetX, 0,  partyStartup.movableC.y + offsetY); 
+			
+			offsetX = partyStartup.movableD.offsetX;
+			offsetY =  partyStartup.movableD.offsetY;
+			_worker.lib.moveAgent(2, partyStartup.movableD.x + offsetX, 0,  partyStartup.movableD.y+ offsetY); 
+			*/
+			
+		}
+		
+		private function addAgent(x:Number, y:Number, color:uint=0xFF0000):void {
+			_worker.addAgent(x, y);
+			var child:DisplayObject;
+			agentSprites.push( previewer.addChild( child = new AgentSpr(color)) );
+			//child.x = x;
+			//child.y = y;
 		}
 		
 		private function onKeyDown(e:KeyboardEvent):void 
@@ -95,6 +180,8 @@ package recast
 		private function recenter():void 
 		{
 		
+			return;
+			
 			var newX:Number = partyStartup.movableA.x;
 			var newY:Number = partyStartup.movableA.y;
 				
@@ -127,8 +214,10 @@ package recast
 			
 			var invTileSize:Number = 1 / TILE_SIZE;
 		
-					partyStartup.simulation.immovables = [];
+			partyStartup.simulation.immovables = [];
 			// unique seed per tile (not very large world supported...but for testing only..)
+			
+			
 			
 			var hTilesAcross:int = NUM_TILES_ACROSS * .5;
 			var startWorldX:Number=worldX- hTilesAcross * TILE_SIZE;
@@ -140,13 +229,14 @@ package recast
 			for (var x:int = xMin; x < xMax; x++) {
 				var lx:Number = x*TILE_SIZE - worldX;
 				for (var y:int = yMin; y < yMax; y++) {
+					if (Math.abs(y) < 1 || Math.abs(x) < 1) continue;
 					//if (getSeed(x, y) == prng.seed) throw new Error("SHOULD BE UNIQUE!");
 					prng.seed =  getSeed(x, y);
 				
 					var ly:Number = y*TILE_SIZE - worldY;
 					var val:Number = prng.nextDouble();
 					if ( val > 0.6) { // tree stump
-				//	addBox(x*TILE_SIZE,y*TILE_SIZE,16,16 );
+				
 						addBox(prng.nextDoubleRange(Startup.LARGE_RADIUS+lx, lx + TILE_SIZE - Startup.LARGE_RADIUS),  prng.nextDoubleRange(Startup.LARGE_RADIUS+ly, ly + TILE_SIZE - Startup.LARGE_RADIUS), Startup.LARGE_RADIUS, Startup.LARGE_RADIUS  );
 					}
 					else if (val > 0.2) {  // sandbag
@@ -162,15 +252,87 @@ package recast
 			
 		//	throw new Error([xMin, xMax, yMin, yMax]);
 	
-			partyStartup.redrawImmovables();
+		
+			partyStartup.redrawImmovables(); 
 			
+			
+			
+		//	new FileReference().save(MainRecastWorker.PLANE_VERTICES+wavefrontVertBuffer + "\n" + MainRecastWorker.PLANE_INDICES + wavefrontPolyBuffer, "testwavefront.obj");
+
+			_worker.createZoneWithWavefront(wavefrontVertBuffer, wavefrontPolyBuffer);
+			
+			wavefrontVertBuffer = "";
+			wavefrontPolyBuffer = "";
+			wavefrontVertCount = 5;
+			
+			previewer.drawNavMesh(_worker.lib.getTiles());
 		}
 		
+		private var wavefrontVertBuffer:String = "";
+		private var wavefrontPolyBuffer:String = "";
+		private var wavefrontVertCount:int = 5;
+		
 		private function addBox(x:Number, y:Number, width:Number, height:Number):void {
-			partyStartup.simulation.addImmovable( new ImmovableGate( x + width, y, x + width, y + height) );
-			partyStartup.simulation.addImmovable( new ImmovableGate( x , y, x + width, y) );
-			partyStartup.simulation.addImmovable( new ImmovableGate(  x, y+height, x , y) );
-			partyStartup.simulation.addImmovable( new ImmovableGate(x + width, y + height, x, y + height) );
+			var r:Number = Startup.SMALL_RADIUS;
+			var ig:ImmovableGate;
+			partyStartup.simulation.addImmovable(ig = new ImmovableGate( x + width, y, x + width, y + height) );
+			
+			
+			wavefrontVertBuffer += "\nv " + ig.x1 + " 16 " + ig.y1;
+			wavefrontVertBuffer += "\nv " + ig.x0 + " 16 " + ig.y0;
+			
+			wavefrontVertBuffer += "\nv " + ig.x1 + " -2 " + ig.y1;
+			wavefrontVertBuffer += "\nv " + ig.x0 + " -2 " + ig.y0;
+			wavefrontPolyBuffer += "\nf " + (wavefrontVertCount + 0) + " " + (wavefrontVertCount + 2) + " "+(wavefrontVertCount + 3);
+			wavefrontPolyBuffer += "\nf "+(wavefrontVertCount+1)+" "+(wavefrontVertCount+0)+" "+(wavefrontVertCount+3);
+			wavefrontVertCount += 4;
+			
+			
+			partyStartup.simulation.addImmovable(ig = new ImmovableGate( x , y, x + width, y) );
+			
+			
+			wavefrontVertBuffer += "\nv " + ig.x1 + " 16 " + ig.y1;
+			wavefrontVertBuffer += "\nv " + ig.x0 + " 16 " + ig.y0;
+			
+			wavefrontVertBuffer += "\nv " + ig.x1 + " -2 " + ig.y1;
+			wavefrontVertBuffer += "\nv " + ig.x0 + " -2 " + ig.y0;
+			wavefrontPolyBuffer += "\nf " + (wavefrontVertCount + 0) + " " + (wavefrontVertCount + 2) + " "+(wavefrontVertCount + 3);
+			wavefrontPolyBuffer += "\nf "+(wavefrontVertCount+1)+" "+(wavefrontVertCount+0)+" "+(wavefrontVertCount+3);
+			wavefrontVertCount += 4;
+			
+			
+			partyStartup.simulation.addImmovable(ig = new ImmovableGate(  x, y + height, x , y) );
+			
+			
+			
+			
+			wavefrontVertBuffer += "\nv " + ig.x1 + " 16 " + ig.y1;
+			wavefrontVertBuffer += "\nv " + ig.x0 + " 16 " + ig.y0;
+			
+			wavefrontVertBuffer += "\nv " + ig.x1 + " -2 " + ig.y1;
+			wavefrontVertBuffer += "\nv " + ig.x0 + " -2 " + ig.y0;
+			wavefrontPolyBuffer += "\nf " + (wavefrontVertCount + 0) + " " + (wavefrontVertCount + 2) + " "+(wavefrontVertCount + 3);
+			wavefrontPolyBuffer += "\nf "+(wavefrontVertCount+1)+" "+(wavefrontVertCount+0)+" "+(wavefrontVertCount+3);
+			wavefrontVertCount += 4;
+			
+			partyStartup.simulation.addImmovable(ig = new ImmovableGate(x + width, y + height, x, y + height) );
+		
+			
+			wavefrontVertBuffer += "\nv " + ig.x1 + " 16 " + ig.y1;
+			wavefrontVertBuffer += "\nv " + ig.x0 + " 16 " + ig.y0;
+			
+			wavefrontVertBuffer += "\nv " + ig.x1 + " -2 " + ig.y1;
+			wavefrontVertBuffer += "\nv " + ig.x0 + " -2 " + ig.y0;
+			
+			wavefrontPolyBuffer += "\nf " + (wavefrontVertCount + 0) + " " + (wavefrontVertCount + 2) + " "+(wavefrontVertCount + 3);
+			wavefrontPolyBuffer += "\nf "+(wavefrontVertCount+1)+" "+(wavefrontVertCount+0)+" "+(wavefrontVertCount+3);
+			wavefrontVertCount += 4;
+			
+			
+			partyStartup.simulation.addImmovable( new ImmovableCircleOuter(x + r, y + r, r) );
+			partyStartup.simulation.addImmovable( new ImmovableCircleOuter(x+width - r, y + r, r) );
+			partyStartup.simulation.addImmovable( new ImmovableCircleOuter(x +width- r, y + height - r, r) );
+			partyStartup.simulation.addImmovable( new ImmovableCircleOuter(x + r, y + height- r, r) );
 			
 			/*
 			partyStartup.simulation.addImmovable( new ImmovableGate(x + width, y + height,  x + width, y) );
@@ -197,11 +359,22 @@ package recast
 			
 			var diffX:Number = partyStartup.movableA.x ;
 			var diffY:Number = partyStartup.movableA.y;
-			if (diffX * diffX + diffY * diffY >= updateWorldThreshold ) {
+			var sqDist:Number = diffX * diffX + diffY * diffY;
+			
+		
+			if (sqDist >= updateWorldThreshold ) {
 				recenter();
 			}
 			
+			_worker.setAgentX(3, partyStartup.movableA.x);
+			_worker.setAgentZ(3, partyStartup.movableA.y);
+			if (sqDist > 16) {
+			
+				onLeaderFootstep();
+			}
+			
 			partyStartup.tickPreview();
+			drawAgents();
 		}
 
 		
@@ -210,12 +383,14 @@ package recast
 		{
 			for ( var i:int = 0; i < agentSprites.length; i++ )
 			{
-				var agentPtr:uint = _worker.lib.getAgentPosition(agentSprites[i].idx);
-				
+				var agentPtr:uint = _worker.agentPtrs[i];
+				//_worker.setAgentX(i, Math.random() * 32);
+				//_worker.setAgentZ(i, Math.random() * 32);
 				var ux:Number = _worker.getAgentX(i);
 				var uz:Number = _worker.getAgentZ(i);
 				agentSprites[i].x = ux;
 				agentSprites[i].y = uz;
+				//throw new Error([ux, uz]);
 			}
 		}
 		
@@ -225,4 +400,16 @@ package recast
 		
 	}
 
+}
+import examples.scenes.Startup;
+import flash.display.Shape;
+
+class AgentSpr extends Shape {
+	public function AgentSpr(color:uint=0xFF0000) {
+		
+		graphics.beginFill(color, 1);
+		graphics.drawCircle(0, 0, Startup.SMALL_RADIUS);
+		
+	}
+	
 }

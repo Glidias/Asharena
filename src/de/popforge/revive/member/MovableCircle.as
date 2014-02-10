@@ -13,6 +13,7 @@ package de.popforge.revive.member
 	{
 		public var r: Number;
 		
+		
 		public function MovableCircle( x: Number, y: Number, r: Number )
 		{
 			super( x, y );

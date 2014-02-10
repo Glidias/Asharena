@@ -155,13 +155,13 @@ package
 			
 			
 		//	dummyMesh.geometry.indices = extractUnsignedVector(testChunkEllipsoid.indices, testChunkEllipsoid.numFaces * 3);
-		dummyMesh.geometry.indices = extractSteepPolygons(0.57357643635104609610803191282616);
+			dummyMesh.geometry.indices = extractSteepPolygons(0.57357643635104609610803191282616);
 
 			//dummyMesh = new Box(300, 300, 300);
 		
 			
-		//	wireframe =  WireFrame.createEdges(dummyMesh, 0xFFFFFF, 1, 1);
-			wireframe = WireFrame.createLinesList(extractSteepEdges(0.57357643635104609610803191282616), 0xFFFFFF, 1, 2);
+			wireframe =  WireFrame.createEdges(dummyMesh, 0xFFFFFF, 1, 1);
+			//wireframe = WireFrame.createLinesList(extractSteepEdges(0.57357643635104609610803191282616), 0xFFFFFF, 1, 2);
 				
 			var mat:Matrix3D = _view.terrainLOD.matrix;// mat.invert();
 			wireframe.matrix = mat;
