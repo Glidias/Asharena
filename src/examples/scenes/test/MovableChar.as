@@ -24,7 +24,7 @@ package examples.scenes.test
 		}
 		
 		override public function draw(g:Graphics):void {
-			return;
+			//return;
 			g.lineStyle(0, color, .6);
 			g.drawCircle( x, y, r );
 			

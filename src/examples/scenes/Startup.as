@@ -270,7 +270,7 @@ package examples.scenes
 		
 	
 		private var freqFootsteps:int = 0;
-		private var footsteps:Vector.<Number> = new Vector.<Number>();
+		public var footsteps:Vector.<Number> = new Vector.<Number>();
 		
 		
 		public function tick():void {
@@ -899,11 +899,30 @@ package examples.scenes
 		
 		public function displaceMovables(x:Number, y:Number):void 
 		{
+			
+			
+			
 			movableA.x += x;
 			movableB.x += x;
 			movableC.x += x;
 			movableD.x += x;
+			
+		// todo: shorten footstep length only, but this can be done preioduically...//ny existing footstep springs...
+		footsteps.length = 0;
+		footsteps[0] = movableA.x;
+		footsteps[1] = movableA.y;
 		
+		// or update all footsteps
+		
+		/*
+		i = footsteps.length  - 1;
+		while ( i > 0) {
+			footsteps[i] += y;
+			footsteps[i - 1] += x;
+
+			i -= 2;
+		}
+		*/
 			
 			movableA.y += y;
 			movableB.y += y;
@@ -921,14 +940,15 @@ package examples.scenes
 					
 				}
 			
+				//
 			personA.x = movableA.x; personA.y = movableA.y;
-			/*	
+			///*	
 			personB.x = movableB.x; personB.y = movableB.y;
 			
 			personC.x = movableA.x; personC.y = movableC.y;
 			
 			personD.x = movableD.x; personD.y = movableD.y;
-			*/
+			//*/
 			
 		}
 		
@@ -956,7 +976,7 @@ class Person extends Sprite {
 		this.name = name;
 		
 		alpha = name != "leader" ? 0: .2 ;
-		visible = name === "leader";
+		//visible = name === "leader";
 	}
 	
 	public function moveToTargetLocation(targetX:Number, targetY:Number):void {

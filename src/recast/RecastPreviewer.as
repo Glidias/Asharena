@@ -20,6 +20,7 @@ package  recast
 		
 		public function drawNavMesh(tiles:Array):void
 		{
+			graphics.clear();
 			//draw each nav mesh tile
 			for ( var t:int = 0; t < tiles.length; t++)
 			{

@@ -45,12 +45,13 @@ package recast
 		public var lib:Object;
 		private var memUser:MemUser = new MemUser();
 		public var agentPtrs:Vector.<uint> = new Vector.<uint>();
+		private var oldAgentPtrs:Vector.<uint>;
 
 		public function MainRecastWorker() 
 		{
-			this.scaleX = this.scaleY = SCALE;
-			this.x = 300;
-			this.y = 300;
+			//this.scaleX = this.scaleY = SCALE;
+			///this.x = 300;
+			//this.y = 300;
 			
 			initCLib();
 			
@@ -120,22 +121,27 @@ package recast
 		private var targetMapX:Number;
 		private var targetMapY:Number;
 
-		public function loadFile(contents:String, x:Number = 0, y:Number = 0):int {
+		
+		private var loadCount:int = 0;
+		public function loadFile(contents:String, x:Number = 0, y:Number = 0, dx:Number = 0, dy:Number=0 ):int {
 			
 			targetMapX = x;
 			targetMapY = y;
+			stopAllAgents();
 			
 			var byteArray:ByteArray = new ByteArray();
 			byteArray.writeMultiByte(contents, "iso-8859-1");
 			TOGGLE = !TOGGLE;
-			var suffix:String = ( TOGGLE ? "_" : "");
+			var suffix:String = String(loadCount++);// ( TOGGLE ? "_" : "");
 			
-			loader.supplyFile(OBJ_FILE+suffix, byteArray );
+			loader.supplyFile(OBJ_FILE + suffix, byteArray );
+			
 			lib.loadMesh(OBJ_FILE+suffix);
-			lib.buildMesh();
 			
+			 lib.buildMesh();
+			//
 			
-			return validateNewNavMesh();
+			return validateNewNavMesh(dx,dy);
 			
 		}
 		
@@ -150,7 +156,7 @@ package recast
 			lib.buildMesh();
 			
 			
-			return validateNewNavMesh();
+			return validateNewNavMesh(0, 0);
 			
 		}
 		
@@ -159,9 +165,12 @@ package recast
 		
 		
 		// TODO: need to do this up proper...
-		private function validateNewNavMesh():int
+		private function validateNewNavMesh(dx:Number, dy:Number):int
 		{
-			return 0;
+			
+		//	graphics.clear();
+			//graphics.beginFill(0xAAAAAA, .7);
+			
 			
 			
 			var newAgents:Vector.<uint> = new Vector.<uint>();
@@ -177,33 +186,54 @@ package recast
 			var maxX:Number = targetMapX + 64;
 			var maxY:Number = targetMapY + 64;
 			
+			
+			
+			var tarPositions:Array = [];
+			
+		
+			
+			for (i = 0; i < len; i++) {
+				var tarX:Number =  getAgentX(i) + dx;
+				var tarY:Number =  getAgentZ(i) + dy;
+				tarPositions.push(tarX);
+				tarPositions.push(tarY);
+
+			}
+			
+		
+			
+
+			
 			for (var i:int = 0; i < len; i++) {
-				var tarX:Number =  getAgentX(i) - xDiff;
-				var tarY:Number =  getAgentZ(i) - yDiff;
-				if (tarX >= minX && tarY >= minY && tarX <=maxX && tarY <=maxY) {  // check which agents are still within vincity, reset their positions
-					setAgentX( i,tarX );
-					setAgentZ( i, tarY );
-					newAgents[newAgentCount++] = agentPtrs[i];
+				
+				tarX = tarPositions[(i << 1) ];
+				tarY = tarPositions[(i << 1) + 1];
+				
+				if (true || tarX >= minX && tarY >= minY && tarX <= maxX && tarY <= maxY) {  // check which agents are still within vincity, reset their positions
+					//
+
+				//	if (TOGGLE) 
+				replaceAgent(tarX, tarY, i);
 				}
 				else {
+					throw new Error("Havne't handled orphaned agent case yet!");
 					lib.removeAgent( agentPtrs[i] );
 					agentCount--;
 					orphanedAgentIndices[numOrphans++] = i;
 				}
 			}
 			
-			agentPtrs = newAgents;
+				//if (len) {
+					//throw new Error(ZoneCreateCount + ", "+slotOffset);
+				//	slotOffset += 4;
+				//}
+		
+			//agentPtrs = newAgents;
 			
-			if (numOrphans > 0) {
+			//if (numOrphans > 0) {
 				validateAgents();
-			}
-		
-			lastMapX = targetMapX;
-			lastMapY = targetMapY;
-			updateDestination(globalDestX, globalDestY);
+			//}
 			
-		
-			// dispatch complete, saying which agents are orphaned in the process of new navmesh area queried
 			
 			
 			return numOrphans;
@@ -221,6 +251,8 @@ package recast
 
 		public static const PLANE_VERTICES:String = "v -64 0 -64\nv 64 0 -64\nv -64 0 64\nv 64 0 64";
 		public static const PLANE_INDICES:String = "f 1 3 4\nf 1 4 2";
+		static public const BUILD_DONE:String = "buildDone";
+		public var numOrphans:int;
 
 		public function createZone(vertices:Vector.<Number>, indices:Vector.<uint>):void {
 			
@@ -228,15 +260,23 @@ package recast
 			var appendVertices:String = "";
 			var appendIndices:String = "";
 			loadFile( PLANE_VERTICES + appendVertices + "\n" + PLANE_INDICES + appendIndices);
+			
 		}
 		
-		public function createZoneWithWavefront(appendVertices:String, appendIndices:String):void {
+		private var ZoneCreateCount:int = 0;
+		public function createZoneWithWavefront(appendVertices:String, appendIndices:String ,x:Number, y:Number, dx:Number, dy:Number ):void {
 			
-			
+			removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+	targetMapX = x;
+	targetMapY = y;
+		numOrphans = loadFile( PLANE_VERTICES + appendVertices + "\n" + PLANE_INDICES + appendIndices, x,y, dx, dy);
 
-		loadFile( PLANE_VERTICES + appendVertices + "\n" + PLANE_INDICES + appendIndices);
+		ZoneCreateCount++;
+		dispatchEvent( new Event(BUILD_DONE));
+		 
 		}
 		
+		/*
 		private function updateDestination(x:Number, y:Number):void 
 		{
 			globalDestX = x;
@@ -251,11 +291,13 @@ package recast
 				lib.moveAgent(i, x, OBJ_HEIGHT, y); 
 			}
 		}
+		*/
 		
 		private var agentCount:int = 0;
 		private var globalDestX:Number = 0;
 		private var globalDestY:Number = 0;
 		private var TOGGLE:Boolean=true;
+		private var slotOffset:int = 0;
 		
 		public function addAgent(ax:Number, ay:Number):uint
 		{
@@ -269,13 +311,50 @@ package recast
 			
 			var agentId:int = lib.addAgent(ax, OBJ_HEIGHT, ay, radius, height, maxAccel, maxSpeed, collisionQueryRange, pathOptimizationRange);
 			var agentPtr:uint = lib.getAgentPosition(agentId);
-			
+			if (agentId != agentCount) throw new Error("MISMATCH index 11!"+agentCount );
 			agentPtrs[agentCount++] = agentPtr;
 			validateAgents();
 			return agentPtr;
 		}
 		
-		private function validateAgents():void 
+		
+		private function replaceAgent(ax:Number, ay:Number, index:int):void
+		{
+			
+			var radius:Number = MAX_AGENT_RADIUS;
+			var height:Number = 2;
+			var maxAccel:Number = MAX_ACCEL;
+			var maxSpeed:Number = MAX_SPEED;
+			var collisionQueryRange:Number = 12.0;
+			var pathOptimizationRange:Number = 30.0;
+			lib.removeAgent( index );
+			
+			
+
+				var agentId:int = lib.addAgent(ax, OBJ_HEIGHT, ay, radius, height, maxAccel, maxSpeed, collisionQueryRange, pathOptimizationRange);
+		
+			if (index ==0 && agentId != index) {
+				slotOffset = agentId;
+			}
+
+			if (agentId!= index ) throw new Error("MISMATCH index!" + index + ", " + agentId );
+			
+			var agentPtr:uint = lib.getAgentPosition(agentId);
+			
+			
+			agentPtrs[agentId] = agentPtr;
+	
+			
+		}
+		public function startUpdating():void {
+			addEventListener(Event.ENTER_FRAME, onEnterFrame);
+		}
+		
+		public function stopUpdating():void {
+			removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+		}
+		
+		public function validateAgents():void 
 		{
 			if (agentCount > 0) addEventListener(Event.ENTER_FRAME, onEnterFrame)
 			else removeEventListener(Event.ENTER_FRAME, onEnterFrame);
@@ -359,6 +438,23 @@ package recast
 		{
 		
 			 memUser._mwf( agentPtrs[i] + 8, val);
+			
+			
+		}
+		
+		
+		
+		public function moveAgent(slot:int, offsetX:Number, z:Number, offsetY:Number):void 
+		{
+			lib.moveAgent(slotOffset + slot, offsetX, z, offsetY);
+		}
+		
+		public function stopAllAgents():void 
+		{
+			var i:int = agentPtrs.length;
+			while (--i > -1) {
+				lib.requestMoveVelocity(i, 0,0,0);
+			}
 			
 			
 		}

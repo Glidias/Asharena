@@ -11,6 +11,8 @@ package recast
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
 	import flash.display.Sprite;
+	import flash.display.StageAlign;
+	import flash.display.StageScaleMode;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.net.FileReference;
@@ -40,15 +42,19 @@ package recast
 		
 		private var prng:PM_PRNG = new PM_PRNG();
 		
+		// [SWF(width="800", height="600", frameRate="60")]
 		public function MainRecast() 
 		{
 			
 			super();
+						MainRecastWorker.MAX_AGENTS = 8;
 			
+			stage.align = StageAlign.TOP_LEFT;
+			stage.scaleMode = StageScaleMode.NO_SCALE;
 			
-			
-			MainRecastWorker.MAX_SPEED = 3.6*1.6
-			MainRecastWorker.MAX_ACCEL = 8.0*16
+
+			MainRecastWorker.MAX_SPEED = 5.2*1.6
+			MainRecastWorker.MAX_ACCEL = 10.0*16
 			MainRecastWorker.MAX_AGENT_RADIUS =1.02;// 0.24 * 5;
 			_worker = new MainRecastWorker();
 			
@@ -59,6 +65,7 @@ package recast
 			addChild(previewer = new RecastPreviewer());
 			previewer.scaleX = 4;
 			previewer.scaleY = 4;
+			previewer.y -= 40;
 
 
 			//previewer.drawNavMesh(_worker.lib.getTiles());
@@ -76,12 +83,14 @@ package recast
 		
 			Startup.LARGE_RADIUS = 2;
 			Startup.SMALL_RADIUS = Startup.LARGE_RADIUS * .5 ;
-			Startup.SPRING_SPEED = 313131; // 0.08; // for now, until resolve mem issues
+			Startup.SPRING_SPEED = 313131; // 0.08; // for now, until resolve mem issues  //313131; //
 			Startup.START_X = 0;
 			Startup.START_Y = 0;
 			partyStartup = new Startup();
-			
-			setWorldCenter(0, 0);
+		//	partyStartup.enableFootsteps = false;
+		//	partyStartup.footsteps.length = 0;
+		
+			setWorldCenter(0, 0, 0 ,0);
 			_worker.initCrowd();
 			
 			addEventListener(Event.ENTER_FRAME, onEnterFrame);
@@ -94,7 +103,7 @@ package recast
 			
 			//partyStartup.targetSpringRest = Startup.LARGE_RADIUS *2;
 			partyStartup.setFootstepThreshold(2);
-			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .08));
+			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .15));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableB, .08));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableC, .08));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableD, .08));
@@ -113,13 +122,15 @@ package recast
 			
 			
 			addAgent(partyStartup.movableB.x, partyStartup.movableB.y, 0xFF0000);
-
 			addAgent(partyStartup.movableC.x, partyStartup.movableC.y, 0x00FF00);
 			addAgent(partyStartup.movableD.x, partyStartup.movableD.y, 0x0000FF);
 			
 			_worker.addAgent(partyStartup.movableA.x, partyStartup.movableA.y);
 			
 			drawAgents();
+			
+			
+			previewer.addChild(_worker);
 			
 		}
 		
@@ -134,13 +145,14 @@ package recast
 			var resolveFlankers:Boolean = formationState > 0;
 			for (var i:int = 0; i < 3; i++) {
 				var curCircle:MovableChar = partyStartup.memberCircleLookup[i];
+				var tarCircle:MovableChar = curCircle.following != -2 ? curCircle : partyStartup.movableA;
 				if (curCircle.slot >= 0 ) {
 					preferedPositions[i] = curCircle.slot;
-					_worker.lib.moveAgent(curCircle.slot, curCircle.x + curCircle.offsetX, 0,  curCircle.y + curCircle.offsetY); 
+					_worker.moveAgent(curCircle.slot, tarCircle.x + tarCircle.offsetX, 0,  tarCircle.y + tarCircle.offsetY); 
 				}
 				else {
 					
-					_worker.lib.moveAgent( (!resolveFlankers ? preferedPositions[i] : preferedPositions[i] != partyStartup.rearGuard.slot ? preferedPositions[i] : partyStartup.lastRearGuardSlot), curCircle.x + curCircle.offsetX, 0,  curCircle.y + curCircle.offsetY); 
+					_worker.moveAgent( (!resolveFlankers ? preferedPositions[i] : preferedPositions[i] != partyStartup.rearGuard.slot ? preferedPositions[i] : partyStartup.lastRearGuardSlot), tarCircle.x + tarCircle.offsetX, 0,  tarCircle.y + tarCircle.offsetY); 
 				}
 				
 				// NOTE: this does not determine flank averages...
@@ -149,15 +161,15 @@ package recast
 			/*
 			offsetX = partyStartup.movableB.offsetX;
 			offsetY =  partyStartup.movableB.offsetY;
-			_worker.lib.moveAgent(0, partyStartup.movableB.x + offsetX, 0,  partyStartup.movableB.y + offsetY); 
+			_worker.moveAgent(0, partyStartup.movableB.x + offsetX, 0,  partyStartup.movableB.y + offsetY); 
 			
 			offsetX = partyStartup.movableC.offsetX;
 			offsetY =  partyStartup.movableC.offsetY;
-			_worker.lib.moveAgent(1, partyStartup.movableC.x + offsetX, 0,  partyStartup.movableC.y + offsetY); 
+			_worker.moveAgent(1, partyStartup.movableC.x + offsetX, 0,  partyStartup.movableC.y + offsetY); 
 			
 			offsetX = partyStartup.movableD.offsetX;
 			offsetY =  partyStartup.movableD.offsetY;
-			_worker.lib.moveAgent(2, partyStartup.movableD.x + offsetX, 0,  partyStartup.movableD.y+ offsetY); 
+			_worker.moveAgent(2, partyStartup.movableD.x + offsetX, 0,  partyStartup.movableD.y+ offsetY); 
 			*/
 			
 		}
@@ -175,18 +187,24 @@ package recast
 			if (e.keyCode === Keyboard.U) {
 				recenter();
 			}
+			else if (e.keyCode === Keyboard.P) {
+				_worker.stopAllAgents();
+			}
 		}
 		
 		private function recenter():void 
 		{
 		
-			return;
+			
 			
 			var newX:Number = partyStartup.movableA.x;
 			var newY:Number = partyStartup.movableA.y;
 				
-			partyStartup.displaceMovables( -(partyStartup.movableA.x), -(partyStartup.movableA.y));
-			setWorldCenter(newX+_worldX, newY+_worldY);
+			partyStartup.displaceMovables( -newX, -newY);
+
+					
+			setWorldCenter(newX + _worldX, newY + _worldY, -newX, -newY );
+			
 				
 		}
 		
@@ -196,11 +214,12 @@ package recast
 		}
 		
 		
-		private function setWorldCenter(x:Number, y:Number):void 
+		private function setWorldCenter(x:Number, y:Number, dx:Number, dy:Number):void 
 		{
 			_worldX = x;
 			_worldY =  y;
-			createRandomObstacles(x, y);
+			createRandomObstacles(x, y, dx,dy);
+			
 		}
 	
 		private var NUM_TILES_ACROSS:Number = 8;
@@ -210,7 +229,7 @@ package recast
 		private var _worldY:Number;
 		private var updateWorldThreshold:Number;
 		
-		private function createRandomObstacles(worldX:Number, worldY:Number):void {
+		private function createRandomObstacles(worldX:Number, worldY:Number, dx:Number, dy:Number):void {
 			
 			var invTileSize:Number = 1 / TILE_SIZE;
 		
@@ -226,6 +245,7 @@ package recast
 			var yMin:int = Math.floor( startWorldY * invTileSize);
 			var xMax:int = Math.ceil( (worldX + hTilesAcross * TILE_SIZE) * invTileSize)
 			var yMax:int = Math.ceil( (worldY + hTilesAcross * TILE_SIZE) * invTileSize)
+
 			for (var x:int = xMin; x < xMax; x++) {
 				var lx:Number = x*TILE_SIZE - worldX;
 				for (var y:int = yMin; y < yMax; y++) {
@@ -235,20 +255,25 @@ package recast
 				
 					var ly:Number = y*TILE_SIZE - worldY;
 					var val:Number = prng.nextDouble();
-					if ( val > 0.6) { // tree stump
+					if ( val > 0.5) { // tree stump
 				
-						addBox(prng.nextDoubleRange(Startup.LARGE_RADIUS+lx, lx + TILE_SIZE - Startup.LARGE_RADIUS),  prng.nextDoubleRange(Startup.LARGE_RADIUS+ly, ly + TILE_SIZE - Startup.LARGE_RADIUS), Startup.LARGE_RADIUS, Startup.LARGE_RADIUS  );
+						addBox(prng.nextDoubleRange(Startup.LARGE_RADIUS + lx, lx + TILE_SIZE - Startup.LARGE_RADIUS),  prng.nextDoubleRange(Startup.LARGE_RADIUS + ly, ly + TILE_SIZE - Startup.LARGE_RADIUS), Startup.LARGE_RADIUS, Startup.LARGE_RADIUS  );
+						
+						
 					}
-					else if (val > 0.2) {  // sandbag
+					else if (val > 0.4) {  // sandbag
 						addBox(lx,ly,6,3 );
 					}
 					else {  // solid full block
 						addBox(lx,ly,16,16 );
 					}
 					
-					
 				}
 			}
+		
+			
+		
+			
 			
 		//	throw new Error([xMin, xMax, yMin, yMax]);
 	
@@ -259,7 +284,16 @@ package recast
 			
 		//	new FileReference().save(MainRecastWorker.PLANE_VERTICES+wavefrontVertBuffer + "\n" + MainRecastWorker.PLANE_INDICES + wavefrontPolyBuffer, "testwavefront.obj");
 
-			_worker.createZoneWithWavefront(wavefrontVertBuffer, wavefrontPolyBuffer);
+		
+		removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+		PopKeys.reset();
+
+			
+		_worker.addEventListener(MainRecastWorker.BUILD_DONE, onWorkerBulidDone);
+		
+			_worker.createZoneWithWavefront(wavefrontVertBuffer, wavefrontPolyBuffer, _worldX, _worldY, dx, dy);
+			
+			
 			
 			wavefrontVertBuffer = "";
 			wavefrontPolyBuffer = "";
@@ -268,9 +302,28 @@ package recast
 			previewer.drawNavMesh(_worker.lib.getTiles());
 		}
 		
+		private function onWorkerBulidDone(e:Event):void 
+		{
+				
+
+		
+			
+			_worker.removeEventListener(e.type, onWorkerBulidDone);
+			addEventListener(Event.ENTER_FRAME, onEnterFrame);
+		//	_worker.validateAgents();
+			lastLeaderX = 0;
+			lastLeaderY = 0;
+			
+		
+			onLeaderFootstep();
+			
+		}
+		
 		private var wavefrontVertBuffer:String = "";
 		private var wavefrontPolyBuffer:String = "";
 		private var wavefrontVertCount:int = 5;
+		private var lastLeaderX:Number = 0;
+		private var lastLeaderY:Number = 0;
 		
 		private function addBox(x:Number, y:Number, width:Number, height:Number):void {
 			var r:Number = Startup.SMALL_RADIUS;
@@ -357,7 +410,7 @@ package recast
 		private function onEnterFrame(e:Event):void 
 		{
 			
-			var diffX:Number = partyStartup.movableA.x ;
+			var diffX:Number = partyStartup.movableA.x;
 			var diffY:Number = partyStartup.movableA.y;
 			var sqDist:Number = diffX * diffX + diffY * diffY;
 			
@@ -368,13 +421,24 @@ package recast
 			
 			_worker.setAgentX(3, partyStartup.movableA.x);
 			_worker.setAgentZ(3, partyStartup.movableA.y);
-			if (sqDist > 16) {
 			
+			diffX -= lastLeaderX;
+			diffY -= lastLeaderY;
+			
+			
+			sqDist =  diffX * diffX + diffY * diffY;
+			if (sqDist > 1) {
+				lastLeaderX = partyStartup.movableA.x;
+				lastLeaderY = partyStartup.movableA.y;
 				onLeaderFootstep();
+			
 			}
 			
-			partyStartup.tickPreview();
+		//	partyStartup.tickPreview();
 			drawAgents();
+			
+			
+			
 		}
 
 		

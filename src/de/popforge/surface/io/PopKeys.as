@@ -27,5 +27,9 @@ package de.popforge.surface.io
 		{
 			state[ event.keyCode ] = false;
 		}
+		
+		public static function reset():void {
+			state = [];
+		}
 	}
 }
