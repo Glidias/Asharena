@@ -98,12 +98,23 @@ package examples.scenes
 			}
 		}
 		
+		
+		public function manualInit():void {
+			removeEventListener( Event.ADDED, onAdded );
+			removeEventListener( Event.REMOVED, onRemoved );
+		}
+		
 		public function manualInit2DPreview(cont:Sprite):void {
+			removeEventListener( Event.ADDED, onAdded );
+			removeEventListener( Event.REMOVED, onRemoved );
+			
 			cont.addChild(this);
 			addChild(personA);
 			addChild(personB);
 			addChild(personC);
 			addChild(personD);
+	
+			removeEventListener(Event.ENTER_FRAME, onEnterFrame);
 		}
 		
 		private function createParty():void 
@@ -976,7 +987,7 @@ class Person extends Sprite {
 		this.name = name;
 		
 		alpha = name != "leader" ? 0: .2 ;
-		//visible = name === "leader";
+		visible = name === "leader";
 	}
 	
 	public function moveToTargetLocation(targetX:Number, targetY:Number):void {

@@ -19,6 +19,8 @@ package recast
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
+	import flash.system.MessageChannel;
+	import flash.system.Worker;
 	import flash.text.TextField;
 	import flash.ui.Keyboard;
 	import flash.utils.ByteArray;
@@ -26,6 +28,7 @@ package recast
 	import flash.utils.getTimer;
 	import flash.utils.setInterval;
 	import flash.utils.setTimeout;
+	import util.AS3WorkerBridge;
 	
 	 [SWF(width="800", height="600", frameRate="60")]
 	public class MainRecastWorker extends Sprite
@@ -46,19 +49,111 @@ package recast
 		private var memUser:MemUser = new MemUser();
 		public var agentPtrs:Vector.<uint> = new Vector.<uint>();
 		private var oldAgentPtrs:Vector.<uint>;
+		
+		private var bridge:RecastWorkerBridge = new RecastWorkerBridge();
 
-		public function MainRecastWorker() 
+		public function MainRecastWorker(sync:Boolean=false) 
 		{
+			this.sync = sync;
 			//this.scaleX = this.scaleY = SCALE;
 			///this.x = 300;
 			//this.y = 300;
 			
-			initCLib();
-			
-			//doDummyLoad();
-			
+			if (!Worker.current.isPrimordial) {
+				try {
+					init(true);
+				}
+				catch (e:Error) {
+					bridge.sendError(e);
+				}
+			}
+			else {
+				//IslandGenWorker.BYTES = loaderInfo.bytes;
+				if (sync) init();
+			}
 			
 		}
+		
+		private function init(isWorker:Boolean=false):void {
+			if (isWorker) {
+				
+				bridge.initAsChild();
+				MAX_ACCEL = bridge.MAX_ACCEL;
+				MAX_AGENT_RADIUS = bridge.MAX_AGENT_RADIUS
+				MAX_AGENTS = bridge.MAX_AGENTS;
+				MAX_SPEED = bridge.MAX_SPEED;
+				
+				
+				listenChannel = (!bridge.usingChannel2 ? bridge.toWorkerChannel : bridge.toWorkerChannel2);
+				listenChannel.addEventListener(Event.CHANNEL_MESSAGE, onReceivedMessageFromMain);
+				
+			}
+			initCLib();
+		}
+		
+		private function onReceivedMessageFromMain(e:Event):void 
+		{
+			try {
+				var cmd:int = listenChannel.receive();
+				
+				if (cmd === RecastWorkerBridge.CMD_MOVE_AGENTS) {
+					
+					respond_moveAgents();
+				}
+				else if (cmd === RecastWorkerBridge.CMD_CREATE_ZONE) {
+					respond_createZone();
+					bridge.toMainChannel.send(RecastWorkerBridge.RESPONSE_CREATE_ZONE_DONE);
+				}
+				else if (cmd === RecastWorkerBridge.CMD_SET_AGENTS) {
+					
+					respond_setAgents();
+					bridge.toMainChannelSync.send(AS3WorkerBridge.RESPONSE_SYNC);
+				}	
+			}
+			catch (err:Error) {
+				bridge.sendError(err);
+			}
+		}
+		
+		private function respond_createZone():void 
+		{
+			bridge.toWorkerBytes.position = 0;
+			createZone(bridge.toWorkerVertexBuffer, bridge.toWorkerIndexBuffer, bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat());
+		}
+		
+		private function respond_moveAgents():void 
+		{
+			bridge.targetAgentPosBytes.position = 0;
+			
+			var numAgentsToMove:int = bridge.targetAgentPosBytes.readInt();
+
+			for (var i:int = 0; i < numAgentsToMove; i++) {
+				moveAgent( bridge.targetAgentPosBytes.readInt(),
+				bridge.targetAgentPosBytes.readFloat(),
+				bridge.targetAgentPosBytes.readFloat(),
+				bridge.targetAgentPosBytes.readFloat() );
+			}
+		}
+		
+		private function respond_setAgents():void 
+		{
+			var i:int = agentCount;
+			
+			while (--i > -1) {
+				lib.removeAgent(i );
+			}
+			
+			bridge.toWorkerBytes.position = 0;
+			
+			var numAgentsToCreate:int = bridge.toWorkerBytes.readInt();
+			
+			for (i=0; i < numAgentsToCreate; i++) {
+				
+				addAgent( bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat() );
+			}
+			
+		}
+		
 		private var libs:Array = [];
 		private var timeIn:int;
 		private var _debugField:TextField;
@@ -108,7 +203,7 @@ package recast
 		
 		
 		private function doDummyLoad():void {
-			loadFile( PLANE_VERTICES + "\n" + PLANE_INDICES );
+			loadFile( PLANE_VERTICES + "\n" + PLANE_INDICES, 0,0,0,0 );
 			lib.initCrowd(MAX_AGENTS, MAX_AGENT_RADIUS); //maxagents, max agent radius			
 		}
 		
@@ -123,7 +218,8 @@ package recast
 
 		
 		private var loadCount:int = 0;
-		public function loadFile(contents:String, x:Number = 0, y:Number = 0, dx:Number = 0, dy:Number=0 ):int {
+		public function loadFile(contents:String, x:Number , y:Number, dx:Number , dy:Number ):int {
+		
 			
 			targetMapX = x;
 			targetMapY = y;
@@ -254,15 +350,29 @@ package recast
 		static public const BUILD_DONE:String = "buildDone";
 		public var numOrphans:int;
 
-		public function createZone(vertices:Vector.<Number>, indices:Vector.<uint>):void {
+		public function createZone(vertexBuffer:ByteArray, indexBuffer:ByteArray, x:Number, y:Number, dx:Number, dy:Number):void {
+			
+			removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+			targetMapX = x;
+			targetMapY = y;
 			
 			
-			var appendVertices:String = "";
-			var appendIndices:String = "";
-			loadFile( PLANE_VERTICES + appendVertices + "\n" + PLANE_INDICES + appendIndices);
+			vertexBuffer.position = 0;
+			indexBuffer.position = 0;
+			var appendVertices:String = createStringFromVertexBuffer(vertexBuffer);
+			var appendIndices:String = createStringFromIndexBuffer(indexBuffer);
+			
+			numOrphans = loadFile( PLANE_VERTICES + appendVertices + "\n" + PLANE_INDICES + appendIndices, x, y, dx, dy);
+			
+			if (ZoneCreateCount == 0) {
+				initCrowd();
+			}
+			ZoneCreateCount++;
+			dispatchEvent( new Event(BUILD_DONE));
 			
 		}
 		
+
 		private var ZoneCreateCount:int = 0;
 		public function createZoneWithWavefront(appendVertices:String, appendIndices:String ,x:Number, y:Number, dx:Number, dy:Number ):void {
 			
@@ -271,9 +381,35 @@ package recast
 	targetMapY = y;
 		numOrphans = loadFile( PLANE_VERTICES + appendVertices + "\n" + PLANE_INDICES + appendIndices, x,y, dx, dy);
 
+		if (ZoneCreateCount == 0) {
+			initCrowd();
+		}
 		ZoneCreateCount++;
 		dispatchEvent( new Event(BUILD_DONE));
 		 
+		}
+		
+		private function createStringFromVertexBuffer(vertexBuffer:ByteArray):String 
+		{
+			var i:int = (vertexBuffer.length - vertexBuffer.position) >> 2;
+			i /= 3;
+			var str:String = "";
+			while (--i > -1) {
+				str	+= "\nv " +vertexBuffer.readFloat() + " "+vertexBuffer.readFloat()+ " "+vertexBuffer.readFloat();
+			}
+			return str;
+		}
+		
+		private function createStringFromIndexBuffer(indexBuffer:ByteArray):String 
+		{
+			var i:int = (indexBuffer.length - indexBuffer.position) >> 2;
+			i /= 3;
+			
+			var str:String = "";
+			while (--i > -1) {
+				str += "\nf "+indexBuffer.readInt()+ " "+indexBuffer.readInt()+ " "+indexBuffer.readInt();
+			}
+			return str;
 		}
 		
 		/*
@@ -297,7 +433,9 @@ package recast
 		private var globalDestX:Number = 0;
 		private var globalDestY:Number = 0;
 		private var TOGGLE:Boolean=true;
+		private var sync:Boolean;
 		private var slotOffset:int = 0;
+		private var listenChannel:MessageChannel;
 		
 		public function addAgent(ax:Number, ay:Number):uint
 		{
@@ -346,13 +484,7 @@ package recast
 	
 			
 		}
-		public function startUpdating():void {
-			addEventListener(Event.ENTER_FRAME, onEnterFrame);
-		}
 		
-		public function stopUpdating():void {
-			removeEventListener(Event.ENTER_FRAME, onEnterFrame);
-		}
 		
 		public function validateAgents():void 
 		{
@@ -364,7 +496,7 @@ package recast
 		public function removeAgent(index:int):void
 		{
 			var spliced:Vector.<uint> = agentPtrs.splice(index, 1);
-			lib.removeAgent( agentPtrs[index] );
+			lib.removeAgent(index );
 			agentCount--;
 			validateAgents();
 		}

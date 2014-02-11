@@ -84,14 +84,14 @@ package de.popforge.revive.application
 			}
 		}
 		
-		private function onAdded( event: Event ): void
+		protected function onAdded( event: Event ): void
 		{
 			stage.addEventListener( Event.ENTER_FRAME, onEnterFrame );
 			stage.addEventListener( MouseEvent.MOUSE_DOWN, onMouseDown );
 			stage.addEventListener( MouseEvent.MOUSE_UP, onMouseUp );
 		}
 		
-		private function onRemoved( event: Event ): void
+		protected function onRemoved( event: Event ): void
 		{
 			stage.removeEventListener( Event.ENTER_FRAME, onEnterFrame );
 			stage.removeEventListener( MouseEvent.MOUSE_DOWN, onMouseDown );
@@ -125,13 +125,13 @@ package de.popforge.revive.application
 			mShape.graphics.lineStyle( 0, COLOR_MOVABLE );
 			for each( drawAble in simulation.movables )
 			{
-				drawAble.draw( mShape.graphics );
+			//	drawAble.draw( mShape.graphics );
 			}
 			
 			mShape.graphics.lineStyle( 0, COLOR_FORCE );
 			for each( drawAble in simulation.forces )
 			{
-				drawAble.draw( mShape.graphics );
+			//	drawAble.draw( mShape.graphics );
 			}
 		}
 		

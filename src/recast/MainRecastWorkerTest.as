@@ -10,18 +10,28 @@ package recast
 	import examples.scenes.test.MovableChar;
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
+	import flash.display.Loader;
 	import flash.display.Sprite;
 	import flash.display.StageAlign;
 	import flash.display.StageScaleMode;
 	import flash.events.Event;
+	import flash.events.IEventDispatcher;
 	import flash.events.KeyboardEvent;
 	import flash.net.FileReference;
+	import flash.net.URLLoader;
+	import flash.net.URLLoaderDataFormat;
+	import flash.net.URLRequest;
+	import flash.system.MessageChannel;
+	import flash.system.Worker;
+	import flash.system.WorkerDomain;
+	import flash.text.TextField;
 	import flash.ui.Keyboard;
+	import flash.utils.ByteArray;
 	/**
 	 * ...
 	 * @author Glenn Ko
 	 */
-	public class MainRecast extends Sprite
+	public class MainRecastWorkerTest extends Sprite
 	{
 		public var MAX:uint;
 		public var SQ_DIM:Number;
@@ -29,6 +39,9 @@ package recast
 		
 		
 		private var _worker:MainRecastWorker;
+		
+		private var worker1:Worker;
+		private var curWorker:Worker;
 
 		private var targetSprite:Sprite = new Sprite();
 		//private var tiles:Array;
@@ -41,26 +54,49 @@ package recast
 		private var partyStartup:Startup;
 		
 		private var prng:PM_PRNG = new PM_PRNG();
-		
+
 		// [SWF(width="800", height="600", frameRate="60")]
-		public function MainRecast() 
+		public function MainRecastWorkerTest() 
 		{
 			
 			super();
-						MainRecastWorker.MAX_AGENTS = 8;
+			
 			
 			stage.align = StageAlign.TOP_LEFT;
 			stage.scaleMode = StageScaleMode.NO_SCALE;
 			
-
+			
+			var loader:URLLoader = new URLLoader();
+			loader.dataFormat = URLLoaderDataFormat.BINARY;
+			loader.addEventListener(Event.COMPLETE, onLoadComplete);
+			loader.load(new URLRequest("recastworker.swf"));
+			
+			var field:TextField = new TextField();
+			field.autoSize = "left";
+			field.text = "Please wait while we load AS3 Recast/Detour pathfinding worker...";
+			addChild(field);
+			
+		}
+		
+		private function onLoadComplete(e:Event):void 
+		{
+			removeChildAt(0);
+			var urlLoader:URLLoader = (e.currentTarget as URLLoader);
+			urlLoader.removeEventListener(e.type, onLoadComplete);
+			init(urlLoader.data);
+		}
+		
+		
+		private function init(workerBytes:ByteArray):void {
+			MainRecastWorker.MAX_AGENTS = 8;
 			MainRecastWorker.MAX_SPEED = 5.2*1.6
 			MainRecastWorker.MAX_ACCEL = 10.0*16
 			MainRecastWorker.MAX_AGENT_RADIUS =1.02;// 0.24 * 5;
-			_worker = new MainRecastWorker();
+			_worker = new MainRecastWorker(true);
 			
+			bridge = new RecastWorkerBridge();
 			
-		//	_worker.loadFileBytes( new myObjFile());
-			
+			worker1 = curWorker = createPrimodialWorker(workerBytes);
 			
 			addChild(previewer = new RecastPreviewer());
 			previewer.scaleX = 4;
@@ -78,7 +114,6 @@ package recast
 			RADIUS = SQ_DIM * .5;
 			
 			
-	
 			PopKeys.initStage(stage);
 		
 			Startup.LARGE_RADIUS = 2;
@@ -91,12 +126,10 @@ package recast
 		//	partyStartup.footsteps.length = 0;
 		
 			setWorldCenter(0, 0, 0 ,0);
-			_worker.initCrowd();
+			//_worker.initCrowd();
 			
-			addEventListener(Event.ENTER_FRAME, onEnterFrame);
-	
-		
 			
+
 			updateWorldThreshold = 2 * TILE_SIZE;
 			updateWorldThreshold *= updateWorldThreshold;
 			
@@ -119,20 +152,96 @@ package recast
 			addEventListener(Event.ENTER_FRAME, onEnterFrame);
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			
-			
+
 			
 			addAgent(partyStartup.movableB.x, partyStartup.movableB.y, 0xFF0000);
 			addAgent(partyStartup.movableC.x, partyStartup.movableC.y, 0x00FF00);
 			addAgent(partyStartup.movableD.x, partyStartup.movableD.y, 0x0000FF);
-			
 			_worker.addAgent(partyStartup.movableA.x, partyStartup.movableA.y);
-			
-			drawAgents();
-			
 			
 			previewer.addChild(_worker);
 			
+			setAgents();
+			
+
 		}
+		
+		public function setAgents():void {
+			
+			bridge.toWorkerBytes.position = 0;
+			
+			bridge.toWorkerBytes.writeInt(4);
+			
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableB.x);
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableB.y);
+			
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableC.x);
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableC.y);
+			
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableD.x);
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableD.y);
+			
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableA.x);
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableA.y);
+			
+			bridge.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onAgentsSetup);
+			curWorkerMessageChannel.send(RecastWorkerBridge.CMD_SET_AGENTS);
+		}
+		
+		private function onAgentsSetup(e:Event):void 
+		{
+			
+			
+			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onAgentsSetup);
+			
+		
+			
+			drawSyncAgents();
+		}
+		
+		
+		
+		
+		private function createPrimodialWorker(workerBytes:ByteArray):Worker 
+		{
+			
+			var worker:Worker = WorkerDomain.current.createWorker(workerBytes);
+			bridge.MAX_SPEED = 5.2 * 1.6;
+			bridge.MAX_ACCEL = 10.0 * 16;
+			bridge.MAX_AGENT_RADIUS = 1.02;
+			bridge.usingChannel2 = false;
+			bridge.initAsPrimordial(worker);
+			bridge.setupErrorThrowHandler();
+			
+			curWorkerMessageChannel = bridge.toWorkerChannel;
+			bridge.toMainChannel.addEventListener(Event.CHANNEL_MESSAGE, onReceivedFromWorkerNavMesh);		
+			
+			
+			
+			worker.start();
+			return worker;
+		}
+		
+		private function onReceivedFromWorkerNavMesh(e:Event):void 
+		{
+			
+			// draw nav mesh preview from byte array
+			
+			
+			
+			bridge.originPosBytes.position = 0;
+			bridge.originPosBytes.writeFloat(_worldX);
+			bridge.originPosBytes.writeFloat(_worldY);
+			
+			bridge.leaderPosBytes.position = 0;
+			bridge.leaderPosBytes.writeFloat(0);
+			bridge.leaderPosBytes.writeFloat(0);
+			
+			lastLeaderX = 0;
+			lastLeaderY = 0;
+		}
+		
+		
 		
 		private function onLeaderFootstep():void 
 		{
@@ -178,6 +287,10 @@ package recast
 			_worker.addAgent(x, y);
 			var child:DisplayObject;
 			agentSprites.push( previewer.addChild( child = new AgentSpr(color)) );
+			
+			child.x = x;
+			child.y = y;
+			
 			//child.x = x;
 			//child.y = y;
 		}
@@ -201,7 +314,7 @@ package recast
 			var newY:Number = partyStartup.movableA.y;
 				
 			partyStartup.displaceMovables( -newX, -newY);
-
+			
 					
 			setWorldCenter(newX + _worldX, newY + _worldY, -newX, -newY );
 			
@@ -217,9 +330,10 @@ package recast
 		private function setWorldCenter(x:Number, y:Number, dx:Number, dy:Number):void 
 		{
 			_worldX = x;
-			_worldY =  y;
-			createRandomObstacles(x, y, dx,dy);
+			_worldY = y;
 			
+			
+			createRandomObstacles(x, y, dx, dy);
 		}
 	
 		private var NUM_TILES_ACROSS:Number = 8;
@@ -230,6 +344,10 @@ package recast
 		private var updateWorldThreshold:Number;
 		
 		private function createRandomObstacles(worldX:Number, worldY:Number, dx:Number, dy:Number):void {
+			
+			bridge.toWorkerVertexBuffer.position = 0;
+			bridge.toWorkerIndexBuffer.position = 0;
+			
 			
 			var invTileSize:Number = 1 / TILE_SIZE;
 		
@@ -258,8 +376,6 @@ package recast
 					if ( val > 0.5) { // tree stump
 				
 						addBox(prng.nextDoubleRange(Startup.LARGE_RADIUS + lx, lx + TILE_SIZE - Startup.LARGE_RADIUS),  prng.nextDoubleRange(Startup.LARGE_RADIUS + ly, ly + TILE_SIZE - Startup.LARGE_RADIUS), Startup.LARGE_RADIUS, Startup.LARGE_RADIUS  );
-						
-						
 					}
 					else if (val > 0.4) {  // sandbag
 						addBox(lx,ly,6,3 );
@@ -278,26 +394,37 @@ package recast
 		//	throw new Error([xMin, xMax, yMin, yMax]);
 	
 		
+			
 			partyStartup.redrawImmovables(); 
 			
 			
 			
 		//	new FileReference().save(MainRecastWorker.PLANE_VERTICES+wavefrontVertBuffer + "\n" + MainRecastWorker.PLANE_INDICES + wavefrontPolyBuffer, "testwavefront.obj");
 
-		
-		removeEventListener(Event.ENTER_FRAME, onEnterFrame);
-		PopKeys.reset();
+		wavefrontVertCount = 5;
 
-			
-		_worker.addEventListener(MainRecastWorker.BUILD_DONE, onWorkerBulidDone);
+		// async
 		
-			_worker.createZoneWithWavefront(wavefrontVertBuffer, wavefrontPolyBuffer, _worldX, _worldY, dx, dy);
+			bridge.toWorkerVertexBuffer.length = bridge.toWorkerVertexBuffer.position;
+			bridge.toWorkerIndexBuffer.length = bridge.toWorkerIndexBuffer.position;
+		
+			bridge.toWorkerBytes.position = 0;
+			bridge.toWorkerBytes.writeFloat(_worldX);
+			bridge.toWorkerBytes.writeFloat(_worldY);
+			bridge.toWorkerBytes.writeFloat(dx);
+			bridge.toWorkerBytes.writeFloat(dy);
+			curWorkerMessageChannel.send(RecastWorkerBridge.CMD_CREATE_ZONE);
 			
+			// sync
 			
+				removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+			PopKeys.reset();
+			_worker.addEventListener(MainRecastWorker.BUILD_DONE, onWorkerBulidDone);
 			
-			wavefrontVertBuffer = "";
-			wavefrontPolyBuffer = "";
-			wavefrontVertCount = 5;
+			//_worker.createZoneWithWavefront(wavefrontVertBuffer, wavefrontPolyBuffer, _worldX, _worldY, dx, dy);
+			_worker.createZone(bridge.toWorkerVertexBuffer, bridge.toWorkerIndexBuffer, _worldX, _worldY, dx, dy);
+			
+		
 			
 			previewer.drawNavMesh(_worker.lib.getTiles());
 		}
@@ -319,11 +446,17 @@ package recast
 			
 		}
 		
-		private var wavefrontVertBuffer:String = "";
-		private var wavefrontPolyBuffer:String = "";
+
 		private var wavefrontVertCount:int = 5;
+		
+		
+		//private var vertBuffer:ByteArray
+		
 		private var lastLeaderX:Number = 0;
 		private var lastLeaderY:Number = 0;
+
+		private var bridge:RecastWorkerBridge;
+		private var curWorkerMessageChannel:MessageChannel;
 		
 		private function addBox(x:Number, y:Number, width:Number, height:Number):void {
 			var r:Number = Startup.SMALL_RADIUS;
@@ -331,54 +464,125 @@ package recast
 			partyStartup.simulation.addImmovable(ig = new ImmovableGate( x + width, y, x + width, y + height) );
 			
 			
-			wavefrontVertBuffer += "\nv " + ig.x1 + " 16 " + ig.y1;
-			wavefrontVertBuffer += "\nv " + ig.x0 + " 16 " + ig.y0;
 			
-			wavefrontVertBuffer += "\nv " + ig.x1 + " -2 " + ig.y1;
-			wavefrontVertBuffer += "\nv " + ig.x0 + " -2 " + ig.y0;
-			wavefrontPolyBuffer += "\nf " + (wavefrontVertCount + 0) + " " + (wavefrontVertCount + 2) + " "+(wavefrontVertCount + 3);
-			wavefrontPolyBuffer += "\nf "+(wavefrontVertCount+1)+" "+(wavefrontVertCount+0)+" "+(wavefrontVertCount+3);
+		
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x1);
+			bridge.toWorkerVertexBuffer.writeFloat(16);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y1);
+			
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x0);
+			bridge.toWorkerVertexBuffer.writeFloat(16);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y0);
+			
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x1);
+			bridge.toWorkerVertexBuffer.writeFloat(-2);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y1);
+			
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x0);
+			bridge.toWorkerVertexBuffer.writeFloat(-2);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y0);
+			
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 0);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 2);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 3);
+			
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 1);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 0);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 3);
+			
 			wavefrontVertCount += 4;
-			
+
 			
 			partyStartup.simulation.addImmovable(ig = new ImmovableGate( x , y, x + width, y) );
 			
+		
 			
-			wavefrontVertBuffer += "\nv " + ig.x1 + " 16 " + ig.y1;
-			wavefrontVertBuffer += "\nv " + ig.x0 + " 16 " + ig.y0;
 			
-			wavefrontVertBuffer += "\nv " + ig.x1 + " -2 " + ig.y1;
-			wavefrontVertBuffer += "\nv " + ig.x0 + " -2 " + ig.y0;
-			wavefrontPolyBuffer += "\nf " + (wavefrontVertCount + 0) + " " + (wavefrontVertCount + 2) + " "+(wavefrontVertCount + 3);
-			wavefrontPolyBuffer += "\nf "+(wavefrontVertCount+1)+" "+(wavefrontVertCount+0)+" "+(wavefrontVertCount+3);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x1);
+			bridge.toWorkerVertexBuffer.writeFloat(16);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y1);
+			
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x0);
+			bridge.toWorkerVertexBuffer.writeFloat(16);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y0);
+			
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x1);
+			bridge.toWorkerVertexBuffer.writeFloat(-2);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y1);
+			
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x0);
+			bridge.toWorkerVertexBuffer.writeFloat(-2);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y0);
+			
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 0);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 2);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 3);
+			
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 1);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 0);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 3);
+			
 			wavefrontVertCount += 4;
-			
 			
 			partyStartup.simulation.addImmovable(ig = new ImmovableGate(  x, y + height, x , y) );
 			
 			
 			
 			
-			wavefrontVertBuffer += "\nv " + ig.x1 + " 16 " + ig.y1;
-			wavefrontVertBuffer += "\nv " + ig.x0 + " 16 " + ig.y0;
 			
-			wavefrontVertBuffer += "\nv " + ig.x1 + " -2 " + ig.y1;
-			wavefrontVertBuffer += "\nv " + ig.x0 + " -2 " + ig.y0;
-			wavefrontPolyBuffer += "\nf " + (wavefrontVertCount + 0) + " " + (wavefrontVertCount + 2) + " "+(wavefrontVertCount + 3);
-			wavefrontPolyBuffer += "\nf "+(wavefrontVertCount+1)+" "+(wavefrontVertCount+0)+" "+(wavefrontVertCount+3);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x1);
+			bridge.toWorkerVertexBuffer.writeFloat(16);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y1);
+			
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x0);
+			bridge.toWorkerVertexBuffer.writeFloat(16);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y0);
+			
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x1);
+			bridge.toWorkerVertexBuffer.writeFloat(-2);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y1);
+			
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x0);
+			bridge.toWorkerVertexBuffer.writeFloat(-2);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y0);
+			
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 0);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 2);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 3);
+			
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 1);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 0);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 3);
+			
 			wavefrontVertCount += 4;
 			
 			partyStartup.simulation.addImmovable(ig = new ImmovableGate(x + width, y + height, x, y + height) );
-		
+
 			
-			wavefrontVertBuffer += "\nv " + ig.x1 + " 16 " + ig.y1;
-			wavefrontVertBuffer += "\nv " + ig.x0 + " 16 " + ig.y0;
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x1);
+			bridge.toWorkerVertexBuffer.writeFloat(16);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y1);
 			
-			wavefrontVertBuffer += "\nv " + ig.x1 + " -2 " + ig.y1;
-			wavefrontVertBuffer += "\nv " + ig.x0 + " -2 " + ig.y0;
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x0);
+			bridge.toWorkerVertexBuffer.writeFloat(16);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y0);
 			
-			wavefrontPolyBuffer += "\nf " + (wavefrontVertCount + 0) + " " + (wavefrontVertCount + 2) + " "+(wavefrontVertCount + 3);
-			wavefrontPolyBuffer += "\nf "+(wavefrontVertCount+1)+" "+(wavefrontVertCount+0)+" "+(wavefrontVertCount+3);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x1);
+			bridge.toWorkerVertexBuffer.writeFloat(-2);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y1);
+			
+			bridge.toWorkerVertexBuffer.writeFloat(ig.x0);
+			bridge.toWorkerVertexBuffer.writeFloat(-2);
+			bridge.toWorkerVertexBuffer.writeFloat(ig.y0);
+			
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 0);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 2);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 3);
+			
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 1);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 0);
+			bridge.toWorkerIndexBuffer.writeInt(wavefrontVertCount + 3);
+			
 			wavefrontVertCount += 4;
 			
 			
@@ -409,7 +613,9 @@ package recast
 		
 		private function onEnterFrame(e:Event):void 
 		{
-			
+
+			partyStartup.tickPreview();
+		
 			var diffX:Number = partyStartup.movableA.x;
 			var diffY:Number = partyStartup.movableA.y;
 			var sqDist:Number = diffX * diffX + diffY * diffY;
@@ -419,8 +625,14 @@ package recast
 				recenter();
 			}
 			
+			// async
+			bridge.leaderPosBytes.position = 0;
+			bridge.leaderPosBytes.writeFloat( partyStartup.movableA.x);
+			bridge.leaderPosBytes.writeFloat( partyStartup.movableA.y);
+			// sync
 			_worker.setAgentX(3, partyStartup.movableA.x);
 			_worker.setAgentZ(3, partyStartup.movableA.y);
+			
 			
 			diffX -= lastLeaderX;
 			diffY -= lastLeaderY;
@@ -434,16 +646,14 @@ package recast
 			
 			}
 			
-		//	partyStartup.tickPreview();
-			drawAgents();
 			
-			
+			drawSyncAgents();	
 			
 		}
 
 		
 		
-		private function drawAgents():void
+		private function drawSyncAgents():void
 		{
 			for ( var i:int = 0; i < agentSprites.length; i++ )
 			{
