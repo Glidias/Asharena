@@ -37,7 +37,7 @@ package recast
 		public var toWorkerChannel:MessageChannel;
 		public var toWorkerChannel2:MessageChannel;
 		
-		public var toMainChannelSync:MessageChannel;
+		public var toMainChannelSync:MessageChannel;  
 		
 		// currently for RESPONSE_CREATE_ZONE_DONE only
 		public var toMainChannel:MessageChannel;
@@ -63,7 +63,11 @@ package recast
 		{
 			
 		}
-		
+		 public function $initAsPrimordial(worker:Worker):void {
+			
+			super.initAsPrimordial(worker);
+			
+		}
 		/*
 		override public function initAsPrimordial(worker:Worker):void {
 			

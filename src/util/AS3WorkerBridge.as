@@ -52,6 +52,8 @@ package util
 		}
 		
 		
+		
+		
 		protected function initAsPrimodialManually(worker:Worker):void {
 			worker.setSharedProperty("toMainErrorChannel", toMainErrorChannel = worker.createMessageChannel(Worker.current));
 			worker.setSharedProperty("toMainTraceChannel", toMainTraceChannel = worker.createMessageChannel(Worker.current));

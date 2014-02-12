@@ -19,6 +19,7 @@ package recast
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
+	import flash.system.ApplicationDomain;
 	import flash.system.MessageChannel;
 	import flash.system.Worker;
 	import flash.text.TextField;
@@ -79,10 +80,13 @@ package recast
 			if (isWorker) {
 				
 				bridge.initAsChild();
+				
 				MAX_ACCEL = bridge.MAX_ACCEL;
 				MAX_AGENT_RADIUS = bridge.MAX_AGENT_RADIUS
 				MAX_AGENTS = bridge.MAX_AGENTS;
 				MAX_SPEED = bridge.MAX_SPEED;
+				
+				if (bridge.usingChannel2) bridge.sendError(new Error("i am using CHANNEL2!!!"));
 				
 				
 				listenChannel = (!bridge.usingChannel2 ? bridge.toWorkerChannel : bridge.toWorkerChannel2);
@@ -122,6 +126,7 @@ package recast
 		
 		private function respond_createZone():void 
 		{
+			
 			bridge.toWorkerBytes.position = 0;
 		
 			createZone(bridge.toWorkerVertexBuffer, bridge.toWorkerIndexBuffer, bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat());

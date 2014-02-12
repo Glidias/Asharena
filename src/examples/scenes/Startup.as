@@ -98,6 +98,8 @@ package examples.scenes
 			}
 		}
 		
+	
+		
 		
 		public function manualInit():void {
 			removeEventListener( Event.ADDED, onAdded );
@@ -918,6 +920,12 @@ package examples.scenes
 			movableC.x += x;
 			movableD.x += x;
 			
+			movableA.y += y;
+			movableB.y += y;
+			movableC.y += y;
+			movableD.y += y;
+			
+			
 		// todo: shorten footstep length only, but this can be done preioduically...//ny existing footstep springs...
 		footsteps.length = 0;
 		footsteps[0] = movableA.x;
@@ -935,12 +943,9 @@ package examples.scenes
 		}
 		*/
 			
-			movableA.y += y;
-			movableB.y += y;
-			movableC.y += y;
-			movableD.y += y;
 			
-			if (movableA.x != 0 || movableA.y!=0) throw new Error("SHOULD NOT BE!:"+movableA.x + ", "+movableA.y);
+			
+			//if (movableA.x != 0 || movableA.y!=0) throw new Error("SHOULD NOT BE!:"+movableA.x + ", "+movableA.y);
 		var i:int = fixedSprings.length;
 				while (--i > -1) {
 					

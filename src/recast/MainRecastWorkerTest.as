@@ -43,6 +43,7 @@ package recast
 		//private var _worker:MainRecastWorker;
 		
 		private var worker1:Worker;
+		private var worker2:Worker;
 		private var curWorker:Worker;
 
 		private var targetSprite:Sprite = new Sprite();
@@ -82,7 +83,6 @@ package recast
 		
 		private function onLoadComplete(e:Event):void 
 		{
-		
 			var urlLoader:URLLoader = (e.currentTarget as URLLoader);
 			urlLoader.removeEventListener(e.type, onLoadComplete);
 			init(urlLoader.data);
@@ -99,6 +99,7 @@ package recast
 			bridge = new RecastWorkerBridge();
 			
 			worker1 = curWorker = createPrimodialWorker(workerBytes);
+			
 		}
 		
 		public function setAgents():void {
@@ -143,21 +144,22 @@ package recast
 		
 		private function createPrimodialWorker(workerBytes:ByteArray):Worker 
 		{
+			this.workerBytes = workerBytes;
 			
 			var worker:Worker = WorkerDomain.current.createWorker(workerBytes);
-		
+			
 			
 			
 			bridge.MAX_SPEED = 5.2 * 1.6;
 			bridge.MAX_ACCEL = 10.0 * 16;
 			bridge.MAX_AGENT_RADIUS = 1.02;
-			bridge.usingChannel2 = false;
+			
 			bridge.initAsPrimordial(worker);
 			bridge.setupErrorThrowHandler();
 				bridge.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onFirstWorkerState);
 				
-			curWorkerMessageChannel = bridge.toWorkerChannel;
-			bridge.toMainChannel.addEventListener(Event.CHANNEL_MESSAGE, onReceivedFromWorkerNavMesh);		
+			curWorkerMessageChannel = newNavMeshMessageChannel = bridge.toWorkerChannel;
+			bridge.toMainChannel.addEventListener(Event.CHANNEL_MESSAGE, onWorkerNavMeshBuild);		
 			
 			
 			
@@ -165,8 +167,23 @@ package recast
 			return worker;
 		}
 		
+		private function createSecondaryWorker(workerBytes:ByteArray):Worker 
+		{
+			
+			var worker:Worker = WorkerDomain.current.createWorker(workerBytes);
+			bridge.usingChannel2 = true;
+			bridge.$initAsPrimordial(worker);
+			worker.start();
+			return worker;
+		}
+		
 		private function onFirstWorkerState(e:Event):void 
 		{
+			
+			
+			worker2 = createSecondaryWorker(workerBytes);
+			workerBytes = null;
+			
 			
 			bridge.toMainChannelSync.receive();
 			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onFirstWorkerState);
@@ -209,7 +226,7 @@ package recast
 			
 			//partyStartup.targetSpringRest = Startup.LARGE_RADIUS *2;
 			partyStartup.setFootstepThreshold(2);
-			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .15));
+			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .15*.6));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableB, .08));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableC, .08));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableD, .08));
@@ -238,26 +255,44 @@ package recast
 			
 		}
 		
-		private function onReceivedFromWorkerNavMesh(e:Event):void 
+		
+		
+		private function onWorkerNavMeshBuild(e:Event):void 
 		{
 			
-			// check if currently requested position is still valid for current position of party, or still keep old one.
 			
-			//
-
-			//  request to draw nav mesh preview from byte array
+			// check if currently requested position is still more valid for current position of party, or still keep old one.
 			
-			bridge.originPosBytes.position = 0;
+			
+			
+			
+			// if no longer as valid, switch to new worker and new position
+			if (newNavMeshMessageChannel === bridge.toWorkerChannel2) {
+				throw new Error("RECEVEID RECENTERED NAVMESH BUILD!");
+			}
+			newNavMeshMessageChannel = bridge.toWorkerChannel2; // depends...this has to toggle ...
+			
+			partyStartup.displaceMovables( -_lastLeaderX, -_lastLeaderY);
+			partyStartup.simulation.immovables = newImmovables;
+			partyStartup.redrawImmovables(); 
+			newImmovables = null;
+			
+			bridge.originPosBytes.position = 0;  // inform worker of new worldX,worldY position bytes
 			bridge.originPosBytes.writeFloat(_worldX);
 			bridge.originPosBytes.writeFloat(_worldY);
+
+			//  request to draw nav mesh preview from byte array ?
 			
-			bridge.leaderPosBytes.position = 0;
-			bridge.leaderPosBytes.writeFloat(0);
-			bridge.leaderPosBytes.writeFloat(0);
+		
+			
+		//	bridge.leaderPosBytes.position = 0;
+		//	bridge.leaderPosBytes.writeFloat(0);
+			//bridge.leaderPosBytes.writeFloat(0);
 			
 			lastLeaderX = 0;
 			lastLeaderY = 0;
 			
+			workersInactive = false;
 			
 			
 			
@@ -350,14 +385,13 @@ package recast
 		private function recenter():void 
 		{
 		
-			return;
+			
 			
 			var newX:Number = partyStartup.movableA.x;
 			var newY:Number = partyStartup.movableA.y;
-				
-			partyStartup.displaceMovables( -newX, -newY);
-			
-					
+			_lastLeaderX = newX;
+			_lastLeaderY = newY;
+	
 			setWorldCenter(newX + _worldX, newY + _worldY, -newX, -newY );
 			
 				
@@ -385,15 +419,22 @@ package recast
 		private var _worldY:Number;
 		private var updateWorldThreshold:Number;
 		
+		private var newImmovables:Array;
+		
 		private function createRandomObstacles(worldX:Number, worldY:Number, dx:Number, dy:Number):void {
+			
+			
+		
 			
 			bridge.toWorkerVertexBuffer.position = 0;
 			bridge.toWorkerIndexBuffer.position = 0;
 			
 			
 			var invTileSize:Number = 1 / TILE_SIZE;
+			
+			newImmovables = [];
 		
-			partyStartup.simulation.immovables = [];
+			
 			// unique seed per tile (not very large world supported...but for testing only..)
 			
 			
@@ -437,16 +478,14 @@ package recast
 	
 		
 			
-			partyStartup.redrawImmovables(); 
-			
 			
 			
 		//	new FileReference().save(MainRecastWorker.PLANE_VERTICES+wavefrontVertBuffer + "\n" + MainRecastWorker.PLANE_INDICES + wavefrontPolyBuffer, "testwavefront.obj");
 
-		wavefrontVertCount = 5;
+			wavefrontVertCount = 5;
 
-		// async
-		
+			// async
+			workersInactive = true;
 			bridge.toWorkerVertexBuffer.length = bridge.toWorkerVertexBuffer.position;
 			bridge.toWorkerIndexBuffer.length = bridge.toWorkerIndexBuffer.position;
 		
@@ -455,7 +494,8 @@ package recast
 			bridge.toWorkerBytes.writeFloat(_worldY);
 			bridge.toWorkerBytes.writeFloat(dx);
 			bridge.toWorkerBytes.writeFloat(dy);
-			curWorkerMessageChannel.send(RecastWorkerBridge.CMD_CREATE_ZONE);
+			newNavMeshMessageChannel.send(RecastWorkerBridge.CMD_CREATE_ZONE);
+			
 			
 			// sync
 			
@@ -497,11 +537,12 @@ package recast
 
 		private var bridge:RecastWorkerBridge;
 		private var curWorkerMessageChannel:MessageChannel;
+		private var newNavMeshMessageChannel:MessageChannel;
 		
 		private function addBox(x:Number, y:Number, width:Number, height:Number):void {
 			var r:Number = Startup.SMALL_RADIUS;
 			var ig:ImmovableGate;
-			partyStartup.simulation.addImmovable(ig = new ImmovableGate( x + width, y, x + width, y + height) );
+			newImmovables.push(ig = new ImmovableGate( x + width, y, x + width, y + height) );
 			
 			
 			
@@ -533,7 +574,7 @@ package recast
 			wavefrontVertCount += 4;
 
 			
-			partyStartup.simulation.addImmovable(ig = new ImmovableGate( x , y, x + width, y) );
+			newImmovables.push(ig = new ImmovableGate( x , y, x + width, y) );
 			
 		
 			
@@ -564,7 +605,7 @@ package recast
 			
 			wavefrontVertCount += 4;
 			
-			partyStartup.simulation.addImmovable(ig = new ImmovableGate(  x, y + height, x , y) );
+			newImmovables.push( ig = new ImmovableGate(  x, y + height, x , y) );
 			
 			
 			
@@ -596,7 +637,7 @@ package recast
 			
 			wavefrontVertCount += 4;
 			
-			partyStartup.simulation.addImmovable(ig = new ImmovableGate(x + width, y + height, x, y + height) );
+			newImmovables.push(ig = new ImmovableGate(x + width, y + height, x, y + height) );
 
 			
 			bridge.toWorkerVertexBuffer.writeFloat(ig.x1);
@@ -626,16 +667,16 @@ package recast
 			wavefrontVertCount += 4;
 			
 			
-			partyStartup.simulation.addImmovable( new ImmovableCircleOuter(x + r, y + r, r) );
-			partyStartup.simulation.addImmovable( new ImmovableCircleOuter(x+width - r, y + r, r) );
-			partyStartup.simulation.addImmovable( new ImmovableCircleOuter(x +width- r, y + height - r, r) );
-			partyStartup.simulation.addImmovable( new ImmovableCircleOuter(x + r, y + height- r, r) );
+			newImmovables.push( new ImmovableCircleOuter(x + r, y + r, r) );
+			newImmovables.push( new ImmovableCircleOuter(x+width - r, y + r, r) );
+			newImmovables.push( new ImmovableCircleOuter(x +width- r, y + height - r, r) );
+			newImmovables.push( new ImmovableCircleOuter(x + r, y + height- r, r) );
 			
 			/*
-			partyStartup.simulation.addImmovable( new ImmovableGate(x + width, y + height,  x + width, y) );
-			partyStartup.simulation.addImmovable( new ImmovableGate( x + width, y, x , y) );
-			partyStartup.simulation.addImmovable( new ImmovableGate(   x , y, x, y+height ));
-			partyStartup.simulation.addImmovable( new ImmovableGate( x, y+height,x+width, y+height) );
+			newImmovables.push( new ImmovableGate(x + width, y + height,  x + width, y) );
+			newImmovables.push( new ImmovableGate( x + width, y, x , y) );
+			newImmovables.push( new ImmovableGate(   x , y, x, y+height ));
+			newImmovables.push( new ImmovableGate( x, y+height,x+width, y+height) );
 			*/
 		}
 		
@@ -651,9 +692,15 @@ package recast
 			return a;
 		}
 		
+		private var workerBytes:ByteArray;
+		private var workersInactive:Boolean = false;
+		private var _lastLeaderX:Number = 0;
+		private var _lastLeaderY:Number = 0;
+		
 		private function onEnterFrame(e:Event):void 
 		{
-
+			
+			
 			partyStartup.tickPreview();
 		
 			var diffX:Number = partyStartup.movableA.x;
@@ -687,7 +734,7 @@ package recast
 			
 			}
 			
-			drawASyncAgents();	
+			 drawASyncAgents();	
 		}
 
 
