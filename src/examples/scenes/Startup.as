@@ -105,8 +105,8 @@ package examples.scenes
 		}
 		
 		public function manualInit2DPreview(cont:Sprite):void {
-			removeEventListener( Event.ADDED, onAdded );
-			removeEventListener( Event.REMOVED, onRemoved );
+			//removeEventListener( Event.ADDED, onAdded );
+			//removeEventListener( Event.REMOVED, onRemoved );
 			
 			cont.addChild(this);
 			addChild(personA);

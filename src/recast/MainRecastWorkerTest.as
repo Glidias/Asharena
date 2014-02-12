@@ -24,9 +24,11 @@ package recast
 	import flash.system.MessageChannel;
 	import flash.system.Worker;
 	import flash.system.WorkerDomain;
+	import flash.system.WorkerState;
 	import flash.text.TextField;
 	import flash.ui.Keyboard;
 	import flash.utils.ByteArray;
+	import flash.utils.Endian;
 	/**
 	 * ...
 	 * @author Glenn Ko
@@ -38,7 +40,7 @@ package recast
 		public var RADIUS:Number;
 		
 		
-		private var _worker:MainRecastWorker;
+		//private var _worker:MainRecastWorker;
 		
 		private var worker1:Worker;
 		private var curWorker:Worker;
@@ -80,7 +82,7 @@ package recast
 		
 		private function onLoadComplete(e:Event):void 
 		{
-			removeChildAt(0);
+		
 			var urlLoader:URLLoader = (e.currentTarget as URLLoader);
 			urlLoader.removeEventListener(e.type, onLoadComplete);
 			init(urlLoader.data);
@@ -92,20 +94,91 @@ package recast
 			MainRecastWorker.MAX_SPEED = 5.2*1.6
 			MainRecastWorker.MAX_ACCEL = 10.0*16
 			MainRecastWorker.MAX_AGENT_RADIUS =1.02;// 0.24 * 5;
-			_worker = new MainRecastWorker(true);
+			//_worker = new MainRecastWorker(true);
 			
 			bridge = new RecastWorkerBridge();
 			
 			worker1 = curWorker = createPrimodialWorker(workerBytes);
+		}
+		
+		public function setAgents():void {
 			
+			bridge.toWorkerBytesMutex.lock();
+			
+			bridge.toWorkerBytes.position = 0;
+			
+			bridge.toWorkerBytes.writeInt(4);
+			
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableB.x);
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableB.y);
+			
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableC.x);
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableC.y);
+			
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableD.x);
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableD.y);
+			
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableA.x);
+			bridge.toWorkerBytes.writeFloat(partyStartup.movableA.y);
+			
+			bridge.toWorkerBytesMutex.unlock();
+			
+			bridge.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onAgentsSetup);
+			curWorkerMessageChannel.send(RecastWorkerBridge.CMD_SET_AGENTS);
+		}
+		
+		private function onAgentsSetup(e:Event):void 
+		{
+			
+			bridge.toMainChannelSync.receive();
+			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onAgentsSetup);
+			
+		
+			
+		//	drawASyncAgents();
+		}
+		
+		
+		
+		
+		private function createPrimodialWorker(workerBytes:ByteArray):Worker 
+		{
+			
+			var worker:Worker = WorkerDomain.current.createWorker(workerBytes);
+		
+			
+			
+			bridge.MAX_SPEED = 5.2 * 1.6;
+			bridge.MAX_ACCEL = 10.0 * 16;
+			bridge.MAX_AGENT_RADIUS = 1.02;
+			bridge.usingChannel2 = false;
+			bridge.initAsPrimordial(worker);
+			bridge.setupErrorThrowHandler();
+				bridge.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onFirstWorkerState);
+				
+			curWorkerMessageChannel = bridge.toWorkerChannel;
+			bridge.toMainChannel.addEventListener(Event.CHANNEL_MESSAGE, onReceivedFromWorkerNavMesh);		
+			
+			
+			
+			worker.start();
+			return worker;
+		}
+		
+		private function onFirstWorkerState(e:Event):void 
+		{
+			
+			bridge.toMainChannelSync.receive();
+			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onFirstWorkerState);
+			
+			removeChildAt(0);
+				
 			addChild(previewer = new RecastPreviewer());
 			previewer.scaleX = 4;
 			previewer.scaleY = 4;
 			previewer.y -= 40;
 
 
-			//previewer.drawNavMesh(_worker.lib.getTiles());
-			//previewer.drawMesh(_worker.lib.getTris(), _worker.lib.getVerts());
 			
 			
 		
@@ -157,77 +230,22 @@ package recast
 			addAgent(partyStartup.movableB.x, partyStartup.movableB.y, 0xFF0000);
 			addAgent(partyStartup.movableC.x, partyStartup.movableC.y, 0x00FF00);
 			addAgent(partyStartup.movableD.x, partyStartup.movableD.y, 0x0000FF);
-			_worker.addAgent(partyStartup.movableA.x, partyStartup.movableA.y);
 			
-			previewer.addChild(_worker);
+			
+			//previewer.addChild(_worker);
 			
 			setAgents();
 			
-
-		}
-		
-		public function setAgents():void {
-			
-			bridge.toWorkerBytes.position = 0;
-			
-			bridge.toWorkerBytes.writeInt(4);
-			
-			bridge.toWorkerBytes.writeFloat(partyStartup.movableB.x);
-			bridge.toWorkerBytes.writeFloat(partyStartup.movableB.y);
-			
-			bridge.toWorkerBytes.writeFloat(partyStartup.movableC.x);
-			bridge.toWorkerBytes.writeFloat(partyStartup.movableC.y);
-			
-			bridge.toWorkerBytes.writeFloat(partyStartup.movableD.x);
-			bridge.toWorkerBytes.writeFloat(partyStartup.movableD.y);
-			
-			bridge.toWorkerBytes.writeFloat(partyStartup.movableA.x);
-			bridge.toWorkerBytes.writeFloat(partyStartup.movableA.y);
-			
-			bridge.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onAgentsSetup);
-			curWorkerMessageChannel.send(RecastWorkerBridge.CMD_SET_AGENTS);
-		}
-		
-		private function onAgentsSetup(e:Event):void 
-		{
-			
-			
-			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onAgentsSetup);
-			
-		
-			
-			drawSyncAgents();
-		}
-		
-		
-		
-		
-		private function createPrimodialWorker(workerBytes:ByteArray):Worker 
-		{
-			
-			var worker:Worker = WorkerDomain.current.createWorker(workerBytes);
-			bridge.MAX_SPEED = 5.2 * 1.6;
-			bridge.MAX_ACCEL = 10.0 * 16;
-			bridge.MAX_AGENT_RADIUS = 1.02;
-			bridge.usingChannel2 = false;
-			bridge.initAsPrimordial(worker);
-			bridge.setupErrorThrowHandler();
-			
-			curWorkerMessageChannel = bridge.toWorkerChannel;
-			bridge.toMainChannel.addEventListener(Event.CHANNEL_MESSAGE, onReceivedFromWorkerNavMesh);		
-			
-			
-			
-			worker.start();
-			return worker;
 		}
 		
 		private function onReceivedFromWorkerNavMesh(e:Event):void 
 		{
 			
-			// draw nav mesh preview from byte array
+			// check if currently requested position is still valid for current position of party, or still keep old one.
 			
-			
+			//
+
+			//  request to draw nav mesh preview from byte array
 			
 			bridge.originPosBytes.position = 0;
 			bridge.originPosBytes.writeFloat(_worldX);
@@ -239,6 +257,10 @@ package recast
 			
 			lastLeaderX = 0;
 			lastLeaderY = 0;
+			
+			
+			
+			
 		}
 		
 		
@@ -249,24 +271,44 @@ package recast
 			var offsetX:Number;
 			var offsetY:Number;
 			
+			bridge.targetAgentPosMutex.lock();
+			bridge.targetAgentPosBytes.position = 0;
+			
+			
+			
 
 			var formationState:int = partyStartup.formationState;
 			var resolveFlankers:Boolean = formationState > 0;
+			
+			//bridge.targetAgentPosBytes.endian = Endian.BIG_ENDIAN;
+			bridge.targetAgentPosBytes.writeInt(3);
+			
 			for (var i:int = 0; i < 3; i++) {
+				
 				var curCircle:MovableChar = partyStartup.memberCircleLookup[i];
 				var tarCircle:MovableChar = curCircle.following != -2 ? curCircle : partyStartup.movableA;
 				if (curCircle.slot >= 0 ) {
+					bridge.targetAgentPosBytes.writeInt(i);
 					preferedPositions[i] = curCircle.slot;
-					_worker.moveAgent(curCircle.slot, tarCircle.x + tarCircle.offsetX, 0,  tarCircle.y + tarCircle.offsetY); 
+					//_worker.moveAgent(curCircle.slot, tarCircle.x + tarCircle.offsetX, 0,  tarCircle.y + tarCircle.offsetY); 
+					bridge.targetAgentPosBytes.writeFloat(tarCircle.x + tarCircle.offsetX);
+					bridge.targetAgentPosBytes.writeFloat(0);
+					bridge.targetAgentPosBytes.writeFloat(tarCircle.y + tarCircle.offsetY);
 				}
 				else {
-					
-					_worker.moveAgent( (!resolveFlankers ? preferedPositions[i] : preferedPositions[i] != partyStartup.rearGuard.slot ? preferedPositions[i] : partyStartup.lastRearGuardSlot), tarCircle.x + tarCircle.offsetX, 0,  tarCircle.y + tarCircle.offsetY); 
+					bridge.targetAgentPosBytes.writeInt(  (!resolveFlankers ? preferedPositions[i] : preferedPositions[i] != partyStartup.rearGuard.slot ? preferedPositions[i] : partyStartup.lastRearGuardSlot)  );
+					//_worker.moveAgent( , tarCircle.x + tarCircle.offsetX, 0,  tarCircle.y + tarCircle.offsetY); 
+					bridge.targetAgentPosBytes.writeFloat( tarCircle.x + tarCircle.offsetX);
+					bridge.targetAgentPosBytes.writeFloat(0);
+					bridge.targetAgentPosBytes.writeFloat(tarCircle.y + tarCircle.offsetY);
 				}
 				
 				// NOTE: this does not determine flank averages...
 			}
 			
+			
+			bridge.toWorkerChannel.send(RecastWorkerBridge.CMD_MOVE_AGENTS);
+			bridge.targetAgentPosMutex.unlock();
 			/*
 			offsetX = partyStartup.movableB.offsetX;
 			offsetY =  partyStartup.movableB.offsetY;
@@ -284,7 +326,7 @@ package recast
 		}
 		
 		private function addAgent(x:Number, y:Number, color:uint=0xFF0000):void {
-			_worker.addAgent(x, y);
+		
 			var child:DisplayObject;
 			agentSprites.push( previewer.addChild( child = new AgentSpr(color)) );
 			
@@ -301,14 +343,14 @@ package recast
 				recenter();
 			}
 			else if (e.keyCode === Keyboard.P) {
-				_worker.stopAllAgents();
+			
 			}
 		}
 		
 		private function recenter():void 
 		{
 		
-			
+			return;
 			
 			var newX:Number = partyStartup.movableA.x;
 			var newY:Number = partyStartup.movableA.y;
@@ -417,18 +459,16 @@ package recast
 			
 			// sync
 			
-				removeEventListener(Event.ENTER_FRAME, onEnterFrame);
-			PopKeys.reset();
-			_worker.addEventListener(MainRecastWorker.BUILD_DONE, onWorkerBulidDone);
+			//	removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+			//PopKeys.reset();
+			//_worker.addEventListener(MainRecastWorker.BUILD_DONE, onWorkerBulidDone);
 			
 			//_worker.createZoneWithWavefront(wavefrontVertBuffer, wavefrontPolyBuffer, _worldX, _worldY, dx, dy);
-			_worker.createZone(bridge.toWorkerVertexBuffer, bridge.toWorkerIndexBuffer, _worldX, _worldY, dx, dy);
-			
-		
-			
-			previewer.drawNavMesh(_worker.lib.getTiles());
+		//	_worker.createZone(bridge.toWorkerVertexBuffer, bridge.toWorkerIndexBuffer, _worldX, _worldY, dx, dy);
+			//previewer.drawNavMesh(_worker.lib.getTiles());
 		}
 		
+		/*
 		private function onWorkerBulidDone(e:Event):void 
 		{
 				
@@ -445,7 +485,7 @@ package recast
 			onLeaderFootstep();
 			
 		}
-		
+		*/
 
 		private var wavefrontVertCount:int = 5;
 		
@@ -629,9 +669,10 @@ package recast
 			bridge.leaderPosBytes.position = 0;
 			bridge.leaderPosBytes.writeFloat( partyStartup.movableA.x);
 			bridge.leaderPosBytes.writeFloat( partyStartup.movableA.y);
+			
 			// sync
-			_worker.setAgentX(3, partyStartup.movableA.x);
-			_worker.setAgentZ(3, partyStartup.movableA.y);
+			//_worker.setAgentX(3, partyStartup.movableA.x);
+			//_worker.setAgentZ(3, partyStartup.movableA.y);
 			
 			
 			diffX -= lastLeaderX;
@@ -646,26 +687,26 @@ package recast
 			
 			}
 			
-			
-			drawSyncAgents();	
-			
+			drawASyncAgents();	
 		}
 
+
 		
-		
-		private function drawSyncAgents():void
+		private function drawASyncAgents():void
 		{
-			for ( var i:int = 0; i < agentSprites.length; i++ )
+			bridge.toMainAgentPosMutex.lock();
+			bridge.toMainAgentPosBytes.position = 0;
+			var len:int = 3;
+			if (len > (bridge.toMainAgentPosBytes.length>>3)) {
+				len =  (bridge.toMainAgentPosBytes.length>>3);
+			}
+			for ( var i:int = 0; i < len; i++ )
 			{
-				var agentPtr:uint = _worker.agentPtrs[i];
-				//_worker.setAgentX(i, Math.random() * 32);
-				//_worker.setAgentZ(i, Math.random() * 32);
-				var ux:Number = _worker.getAgentX(i);
-				var uz:Number = _worker.getAgentZ(i);
-				agentSprites[i].x = ux;
-				agentSprites[i].y = uz;
+				agentSprites[i].x = bridge.toMainAgentPosBytes.readFloat();
+				agentSprites[i].y = bridge.toMainAgentPosBytes.readFloat();
 				//throw new Error([ux, uz]);
 			}
+			bridge.toMainAgentPosMutex.unlock();
 		}
 		
 

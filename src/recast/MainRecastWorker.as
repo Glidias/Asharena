@@ -43,6 +43,7 @@ package recast
 		
 		private static const WORLD_SCALE:Number =5 
 		
+	
 		private static var SCALE:Number = 10 / WORLD_SCALE;
 			
 		public var lib:Object;
@@ -89,6 +90,9 @@ package recast
 				
 			}
 			initCLib();
+			if (isWorker) {
+				bridge.toMainChannelSync.send(AS3WorkerBridge.RESPONSE_SYNC);
+			}
 		}
 		
 		private function onReceivedMessageFromMain(e:Event):void 
@@ -105,8 +109,9 @@ package recast
 					bridge.toMainChannel.send(RecastWorkerBridge.RESPONSE_CREATE_ZONE_DONE);
 				}
 				else if (cmd === RecastWorkerBridge.CMD_SET_AGENTS) {
-					
+					bridge.toWorkerBytesMutex.lock();
 					respond_setAgents();
+					bridge.toWorkerBytesMutex.unlock();
 					bridge.toMainChannelSync.send(AS3WorkerBridge.RESPONSE_SYNC);
 				}	
 			}
@@ -118,21 +123,34 @@ package recast
 		private function respond_createZone():void 
 		{
 			bridge.toWorkerBytes.position = 0;
+		
 			createZone(bridge.toWorkerVertexBuffer, bridge.toWorkerIndexBuffer, bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat());
+			
+			
 		}
 		
 		private function respond_moveAgents():void 
 		{
+			bridge.targetAgentPosMutex.lock();
 			bridge.targetAgentPosBytes.position = 0;
-			
+		
 			var numAgentsToMove:int = bridge.targetAgentPosBytes.readInt();
-
+			
+			var leaderX:Number = getAgentX(3);
+			var leaderY:Number = getAgentZ(3);
 			for (var i:int = 0; i < numAgentsToMove; i++) {
-				moveAgent( bridge.targetAgentPosBytes.readInt(),
+
+				
+
+				moveAgent( bridge.targetAgentPosBytes.readInt() ,
 				bridge.targetAgentPosBytes.readFloat(),
 				bridge.targetAgentPosBytes.readFloat(),
 				bridge.targetAgentPosBytes.readFloat() );
+	
+				
 			}
+			bridge.targetAgentPosMutex.unlock();
+			
 		}
 		
 		private function respond_setAgents():void 
@@ -163,7 +181,7 @@ package recast
 			loader = new CLibInit();
 			//now call the CLib init function
 			lib = loader.init();
-			
+		
 			//set mesh settings		
 			var m_cellSize:Number = 0.3,
 			m_cellHeight:Number = 0.3,
@@ -220,7 +238,7 @@ package recast
 		private var loadCount:int = 0;
 		public function loadFile(contents:String, x:Number , y:Number, dx:Number , dy:Number ):int {
 		
-			
+		
 			targetMapX = x;
 			targetMapY = y;
 			stopAllAgents();
@@ -229,7 +247,7 @@ package recast
 			byteArray.writeMultiByte(contents, "iso-8859-1");
 			TOGGLE = !TOGGLE;
 			var suffix:String = String(loadCount++);// ( TOGGLE ? "_" : "");
-			
+		
 			loader.supplyFile(OBJ_FILE + suffix, byteArray );
 			
 			lib.loadMesh(OBJ_FILE+suffix);
@@ -445,7 +463,7 @@ package recast
 			var maxAccel:Number = MAX_ACCEL;
 			var maxSpeed:Number = MAX_SPEED;
 			var collisionQueryRange:Number = 12.0;
-			var pathOptimizationRange:Number = 30.0;
+			var pathOptimizationRange:Number = 150;
 			
 			var agentId:int = lib.addAgent(ax, OBJ_HEIGHT, ay, radius, height, maxAccel, maxSpeed, collisionQueryRange, pathOptimizationRange);
 			var agentPtr:uint = lib.getAgentPosition(agentId);
@@ -464,7 +482,7 @@ package recast
 			var maxAccel:Number = MAX_ACCEL;
 			var maxSpeed:Number = MAX_SPEED;
 			var collisionQueryRange:Number = 12.0;
-			var pathOptimizationRange:Number = 30.0;
+			var pathOptimizationRange:Number = 150;//30.0*WORLD_SCALE;
 			lib.removeAgent( index );
 			
 			
@@ -520,17 +538,36 @@ package recast
 		
 		public function update():void
 		{
-			lib.update(0.03); //pass dt in seconds
+			//try { 
 			
+			if (bridge != null && bridge.leaderPosBytes && bridge.leaderPosBytes.length>0) {
+				bridge.leaderPosBytes.position = 0;
+				setAgentX(bridge.leaderIndex, bridge.leaderPosBytes.readFloat());
+				setAgentZ(bridge.leaderIndex, bridge.leaderPosBytes.readFloat());
+			}
+			
+			lib.update(0.03); //pass dt in seconds
+			if (bridge != null) {
+				bridge.toMainAgentPosMutex.lock();
+				bridge.toMainAgentPosBytes.position = 0;
+				var len:int = agentPtrs.length; // consider, use Domain Memory and share it's bytearray to Main app.
+				for (var i:int = 0; i < len; i++) {
+					 bridge.toMainAgentPosBytes.writeFloat( memUser._mrf(agentPtrs[i]) );
+					 bridge.toMainAgentPosBytes.writeFloat( memUser._mrf(agentPtrs[i] + 8) );
+				}
+				bridge.toMainAgentPosMutex.unlock();
+			}
+			
+			//}
+			//catch (e:Error) {
+			//	bridge.sendError(e);
+			//}
 		}
 		
 		
 		public function getAgentX(i:int):Number
 		{
-		
-			return memUser._mrf(agentPtrs[i]);
-			
-			
+			return memUser._mrf(agentPtrs[i]);	
 		}
 		
 		public function getAgentY(i:int):Number
