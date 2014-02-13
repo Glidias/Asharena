@@ -12,39 +12,21 @@ package recast
 	public class RecastWorkerBridge extends AS3WorkerBridge
 	{
 		
-		private static const WORLD_SCALE:Number = 5;
+		public static const WORLD_SCALE:Number = 5;
 		
-		public var MAX_AGENTS:int = 60;
-		public var MAX_AGENT_RADIUS:Number = 0.24*WORLD_SCALE;
-		public var MAX_SPEED:Number = 3.5*3
-		public var MAX_ACCEL:Number = 8.0 * 3
+		
 
-		public var toMainAgentPosBytes:ByteArray;  // agent positions written from AS3 worker (consider using alchemy mem from worker??)
-		public var toMainAgentPosMutex:Mutex;
-		public var targetAgentPosBytes:ByteArray; // target agent waypoint positions written from primodial
-		public var targetAgentPosMutex:Mutex;
-		
-		public var leaderPosBytes:ByteArray; // leader agent position from center origin written from primodidal 	
-		public var originPosBytes:ByteArray; // center origin world position written from primodial
-		public var leaderIndex:int = 3;
-		
-		public var usingChannel2:Boolean = false;
-		public var toWorkerVertexBuffer:ByteArray;  
-		public var toWorkerIndexBuffer:ByteArray; 
-		public var toWorkerBytes:ByteArray; // for generic sync(emulate-sync) use. Ensure RESPONSE_SYNC code is pinged back via toMainChannelSync before continuing.
-		public var toWorkerBytesMutex:Mutex;  // to ensure read-only access to workerBytes rource, without writing from outside
+		private var _props:RecastWorkerBridgeProps;	
 		
 		public var toWorkerChannel:MessageChannel;
-		public var toWorkerChannel2:MessageChannel;
+
 		
 		public var toMainChannelSync:MessageChannel;  
 		
 		// currently for RESPONSE_CREATE_ZONE_DONE only
 		public var toMainChannel:MessageChannel;
-		public var toMainBytes:ByteArray;  
-		
-		
-		
+	
+
 		
 		// toWorkerBytes commands
 		public static const CMD_ADD_AGENTS:int = 0; // not yet
@@ -61,13 +43,25 @@ package recast
 
 		public function RecastWorkerBridge() 
 		{
-			
+			if (!ignoreConstructor) {
+				_props = new RecastWorkerBridgeProps();
+				sharedProperties = _props;
+			}
 		}
+		
+		
 		 public function $initAsPrimordial(worker:Worker):void {
 			
 			super.initAsPrimordial(worker);
 			
 		}
+		
+		public function get props():RecastWorkerBridgeProps 
+		{
+			return _props;
+		}
+		
+	
 		/*
 		override public function initAsPrimordial(worker:Worker):void {
 			

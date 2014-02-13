@@ -20,6 +20,15 @@ package util
 		public var toMainTraceChannel:MessageChannel;
 		
 		public static const RESPONSE_SYNC:int = int.MAX_VALUE;
+		
+		protected var _sharedProperties:*;
+		
+		private static var IGNORE_CONSTRUCTOR:Boolean = false;
+		public static function get ignoreConstructor():Boolean {
+			var value:Boolean = IGNORE_CONSTRUCTOR;
+			IGNORE_CONSTRUCTOR = false;
+			return value;
+		}
 
 		public function AS3WorkerBridge() 
 		{
@@ -28,11 +37,15 @@ package util
 		}
 		
 		public function initAsPrimordial(worker:Worker):void {  // overwrite this to intiialize any required variables specific to primodial case. Don't call super if you wish not to use reflection.
+			reflectObject(this, worker);
+			if (_sharedProperties!= null) reflectObject(_sharedProperties, worker);
+		}
 		
-			var xml:XML  = describeType(this);
+		protected function reflectObject(untypedMe:*, worker:Worker):void {
+			var xml:XML  = describeType(untypedMe);
 			var varList:XMLList = xml.variable;
 			var len:int = varList.length();
-			var untypedMe:* = this;
+
 			for (var i:int = 0; i < len; i++) {
 				var node:XML = varList[i];
 				var name:String = node.@name;
@@ -53,18 +66,37 @@ package util
 		
 		
 		
+		public function createSecondaryWorker(worker:Worker):* {
+			var me:Object = this;
+			IGNORE_CONSTRUCTOR = true;
+			var instance:AS3WorkerBridge = new me.constructor();
+			
+			instance.reflectObject(instance, worker);  // create new message channels
+
+			if (_sharedProperties != null) reflectObject(_sharedProperties, worker);
+			return instance;
+		}
 		
 		protected function initAsPrimodialManually(worker:Worker):void {
 			worker.setSharedProperty("toMainErrorChannel", toMainErrorChannel = worker.createMessageChannel(Worker.current));
 			worker.setSharedProperty("toMainTraceChannel", toMainTraceChannel = worker.createMessageChannel(Worker.current));
 		}
 		
+		protected function set sharedProperties(val:*):void {
+			_sharedProperties = val;
+		}
 		
 		public function initAsChild():void { // do reflection to get shared properties
-			var xml:XML  = describeType(this);
+			reflectPropertiesAsChild(this);
+			if (_sharedProperties != null) reflectPropertiesAsChild(_sharedProperties);
+		}
+
+		protected function reflectPropertiesAsChild(untypedMe:*):void {
+		
+			var xml:XML  = describeType(untypedMe);
 			var varList:XMLList = xml.variable;
 			var len:int = varList.length();
-			var untypedMe:* = this;
+		
 			for (var i:int = 0; i < len; i++) {
 				var node:XML = varList[i];
 				var name:String = node.@name;

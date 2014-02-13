@@ -39,12 +39,16 @@ package recast
 		public var SQ_DIM:Number;
 		public var RADIUS:Number;
 		
-		
-		//private var _worker:MainRecastWorker;
-		
+
 		private var worker1:Worker;
 		private var worker2:Worker;
-		private var curWorker:Worker;
+		
+		private var bridgeChannels:RecastWorkerBridge;
+		private var bridgeChannels2:RecastWorkerBridge;
+		private var bridge:RecastWorkerBridgeProps;
+		private var curBridgeChannels:RecastWorkerBridge;
+		private var builderBridgeChannels:RecastWorkerBridge;
+	
 
 		private var targetSprite:Sprite = new Sprite();
 		//private var tiles:Array;
@@ -53,17 +57,16 @@ package recast
 		
 		private var preferedPositions:Vector.<int> = new Vector.<int>(3, true);
 		
-		
 		private var partyStartup:Startup;
 		
 		private var prng:PM_PRNG = new PM_PRNG();
-
+		
+		
 		// [SWF(width="800", height="600", frameRate="60")]
 		public function MainRecastWorkerTest() 
 		{
 			
 			super();
-			
 			
 			stage.align = StageAlign.TOP_LEFT;
 			stage.scaleMode = StageScaleMode.NO_SCALE;
@@ -78,7 +81,6 @@ package recast
 			field.autoSize = "left";
 			field.text = "Please wait while we load AS3 Recast/Detour pathfinding worker...";
 			addChild(field);
-			
 		}
 		
 		private function onLoadComplete(e:Event):void 
@@ -96,9 +98,14 @@ package recast
 			MainRecastWorker.MAX_AGENT_RADIUS =1.02;// 0.24 * 5;
 			//_worker = new MainRecastWorker(true);
 			
-			bridge = new RecastWorkerBridge();
+			bridgeChannels = new RecastWorkerBridge();
+			bridge = bridgeChannels.props;
+			bridge.MAX_SPEED = 5.2 * 1.6;
+			bridge.MAX_ACCEL = 10.0 * 16;
+			bridge.MAX_AGENT_RADIUS = 1.02;
 			
-			worker1 = curWorker = createPrimodialWorker(workerBytes);
+			worker1 = createPrimodialWorker(workerBytes);
+			
 			
 		}
 		
@@ -124,18 +131,23 @@ package recast
 			
 			bridge.toWorkerBytesMutex.unlock();
 			
-			bridge.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onAgentsSetup);
-			curWorkerMessageChannel.send(RecastWorkerBridge.CMD_SET_AGENTS);
+			//if (!secondary) {
+				bridgeChannels.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onAgentsSetup);
+				bridgeChannels.toWorkerChannel.send(RecastWorkerBridge.CMD_SET_AGENTS);
+			
+			//}
+			//else {
+				bridgeChannels2.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onAgentsSetup);
+				bridgeChannels2.toWorkerChannel.send(RecastWorkerBridge.CMD_SET_AGENTS);
+			//}
 		}
 		
 		private function onAgentsSetup(e:Event):void 
 		{
-			
-			bridge.toMainChannelSync.receive();
-			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onAgentsSetup);
-			
-		
-			
+			var msgChannel:MessageChannel = e.currentTarget as MessageChannel;
+			msgChannel.receive();
+			msgChannel.removeEventListener(e.type, onAgentsSetup);
+
 		//	drawASyncAgents();
 		}
 		
@@ -149,53 +161,69 @@ package recast
 			var worker:Worker = WorkerDomain.current.createWorker(workerBytes);
 			
 			
+			// premordial only
+			bridgeChannels.initAsPrimordial(worker);
+			bridgeChannels.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onFirstWorkerState);
+			curBridgeChannels = builderBridgeChannels =  bridgeChannels;
 			
-			bridge.MAX_SPEED = 5.2 * 1.6;
-			bridge.MAX_ACCEL = 10.0 * 16;
-			bridge.MAX_AGENT_RADIUS = 1.02;
-			
-			bridge.initAsPrimordial(worker);
-			bridge.setupErrorThrowHandler();
-				bridge.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onFirstWorkerState);
-				
-			curWorkerMessageChannel = newNavMeshMessageChannel = bridge.toWorkerChannel;
-			bridge.toMainChannel.addEventListener(Event.CHANNEL_MESSAGE, onWorkerNavMeshBuild);		
-			
-			
+			// for everyone
+			bridgeChannels.setupErrorThrowHandler();
+			bridgeChannels.toMainChannel.addEventListener(Event.CHANNEL_MESSAGE, onWorkerNavMeshBuild);		
 			
 			worker.start();
 			return worker;
 		}
+		
+		
 		
 		private function createSecondaryWorker(workerBytes:ByteArray):Worker 
 		{
+	
+			bridge.usingChannel2 = true;
 			
 			var worker:Worker = WorkerDomain.current.createWorker(workerBytes);
-			bridge.usingChannel2 = true;
-			bridge.$initAsPrimordial(worker);
+			bridgeChannels2  = bridgeChannels.createSecondaryWorker(worker);
+			
+			// for everyone
+			bridgeChannels2.setupErrorThrowHandler();
+			bridgeChannels2.toMainChannel.addEventListener(Event.CHANNEL_MESSAGE, onWorkerNavMeshBuild);		
+	
+			
+			// for secondary worker
+			bridgeChannels2.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onSecondWorkerState);
+			
 			worker.start();
+			
 			return worker;
 		}
 		
+
+		
 		private function onFirstWorkerState(e:Event):void 
 		{
-			
-			
-			worker2 = createSecondaryWorker(workerBytes);
-			workerBytes = null;
-			
-			
-			bridge.toMainChannelSync.receive();
+			bridgeChannels.toMainChannelSync.receive();
 			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onFirstWorkerState);
+			worker2 = createSecondaryWorker(workerBytes);
 			
+			workerBytes = null;	
+		}
+		
+		private function onSecondWorkerState(e:Event):void 
+		{
+			bridgeChannels2.toMainChannelSync.receive();
+			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onSecondWorkerState);
+			initAll();
+		}
+		
+		
+		
+		private function initAll():void {
 			removeChildAt(0);
 				
 			addChild(previewer = new RecastPreviewer());
 			previewer.scaleX = 4;
 			previewer.scaleY = 4;
 			previewer.y -= 40;
-
-
 			
 			
 		
@@ -251,8 +279,9 @@ package recast
 			
 			//previewer.addChild(_worker);
 			
-			setAgents();
 			
+			
+			setAgents();
 		}
 		
 		
@@ -262,15 +291,17 @@ package recast
 			
 			
 			// check if currently requested position is still more valid for current position of party, or still keep old one.
-			
-			
-			
-			
-			// if no longer as valid, switch to new worker and new position
-			if (newNavMeshMessageChannel === bridge.toWorkerChannel2) {
-				throw new Error("RECEVEID RECENTERED NAVMESH BUILD!");
+			if (false) {
+				newImmovables = null;
 			}
-			newNavMeshMessageChannel = bridge.toWorkerChannel2; // depends...this has to toggle ...
+	
+			
+			
+			var curBuildIsFirst:Boolean =  e.currentTarget === bridgeChannels.toMainChannel;
+		
+			curBridgeChannels = curBuildIsFirst ? bridgeChannels : bridgeChannels2; 
+			builderBridgeChannels =  curBuildIsFirst ?  bridgeChannels2 : bridgeChannels;
+			
 			
 			partyStartup.displaceMovables( -_lastLeaderX, -_lastLeaderY);
 			partyStartup.simulation.immovables = newImmovables;
@@ -342,7 +373,7 @@ package recast
 			}
 			
 			
-			bridge.toWorkerChannel.send(RecastWorkerBridge.CMD_MOVE_AGENTS);
+			curBridgeChannels.toWorkerChannel.send(RecastWorkerBridge.CMD_MOVE_AGENTS);
 			bridge.targetAgentPosMutex.unlock();
 			/*
 			offsetX = partyStartup.movableB.offsetX;
@@ -424,8 +455,7 @@ package recast
 		private function createRandomObstacles(worldX:Number, worldY:Number, dx:Number, dy:Number):void {
 			
 			
-		
-			
+
 			bridge.toWorkerVertexBuffer.position = 0;
 			bridge.toWorkerIndexBuffer.position = 0;
 			
@@ -494,7 +524,7 @@ package recast
 			bridge.toWorkerBytes.writeFloat(_worldY);
 			bridge.toWorkerBytes.writeFloat(dx);
 			bridge.toWorkerBytes.writeFloat(dy);
-			newNavMeshMessageChannel.send(RecastWorkerBridge.CMD_CREATE_ZONE);
+			builderBridgeChannels.toWorkerChannel.send(RecastWorkerBridge.CMD_CREATE_ZONE);
 			
 			
 			// sync
@@ -535,9 +565,8 @@ package recast
 		private var lastLeaderX:Number = 0;
 		private var lastLeaderY:Number = 0;
 
-		private var bridge:RecastWorkerBridge;
-		private var curWorkerMessageChannel:MessageChannel;
-		private var newNavMeshMessageChannel:MessageChannel;
+		
+		
 		
 		private function addBox(x:Number, y:Number, width:Number, height:Number):void {
 			var r:Number = Startup.SMALL_RADIUS;
@@ -697,9 +726,11 @@ package recast
 		private var _lastLeaderX:Number = 0;
 		private var _lastLeaderY:Number = 0;
 		
+		
 		private function onEnterFrame(e:Event):void 
 		{
 			
+			var stillLoading:Boolean = workersInactive;
 			
 			partyStartup.tickPreview();
 		
@@ -708,7 +739,7 @@ package recast
 			var sqDist:Number = diffX * diffX + diffY * diffY;
 			
 		
-			if (sqDist >= updateWorldThreshold ) {
+			if (!stillLoading && sqDist >= updateWorldThreshold ) {
 				recenter();
 			}
 			
@@ -731,6 +762,7 @@ package recast
 				lastLeaderX = partyStartup.movableA.x;
 				lastLeaderY = partyStartup.movableA.y;
 				onLeaderFootstep();
+				
 			
 			}
 			

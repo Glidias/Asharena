@@ -52,10 +52,15 @@ package recast
 		public var agentPtrs:Vector.<uint> = new Vector.<uint>();
 		private var oldAgentPtrs:Vector.<uint>;
 		
-		private var bridge:RecastWorkerBridge = new RecastWorkerBridge();
+		private var bridgeChannels:RecastWorkerBridge;
+		private var bridge:RecastWorkerBridgeProps;
 
 		public function MainRecastWorker(sync:Boolean=false) 
 		{
+			bridgeChannels = new RecastWorkerBridge();
+			bridge = bridgeChannels.props;
+			
+			
 			this.sync = sync;
 			//this.scaleX = this.scaleY = SCALE;
 			///this.x = 300;
@@ -66,10 +71,11 @@ package recast
 					init(true);
 				}
 				catch (e:Error) {
-					bridge.sendError(e);
+					bridgeChannels.sendError(e);
 				}
 			}
 			else {
+				
 				//IslandGenWorker.BYTES = loaderInfo.bytes;
 				if (sync) init();
 			}
@@ -79,23 +85,29 @@ package recast
 		private function init(isWorker:Boolean=false):void {
 			if (isWorker) {
 				
-				bridge.initAsChild();
+				bridgeChannels.initAsChild();
 				
 				MAX_ACCEL = bridge.MAX_ACCEL;
 				MAX_AGENT_RADIUS = bridge.MAX_AGENT_RADIUS
 				MAX_AGENTS = bridge.MAX_AGENTS;
 				MAX_SPEED = bridge.MAX_SPEED;
 				
-				if (bridge.usingChannel2) bridge.sendError(new Error("i am using CHANNEL2!!!"));
+			//	if (bridge.usingChannel2) bridgeChannels.sendError(new Error("i am using CHANNEL2!!!"));
 				
-				
-				listenChannel = (!bridge.usingChannel2 ? bridge.toWorkerChannel : bridge.toWorkerChannel2);
+				listenChannel = bridgeChannels.toWorkerChannel;
 				listenChannel.addEventListener(Event.CHANNEL_MESSAGE, onReceivedMessageFromMain);
 				
 			}
 			initCLib();
 			if (isWorker) {
-				bridge.toMainChannelSync.send(AS3WorkerBridge.RESPONSE_SYNC);
+				if (bridge.usingChannel2) {
+					active = false;
+					//	loadFile( PLANE_VERTICES + "\n" + PLANE_INDICES, 0,0,0,0 );
+					lib.initCrowd(MAX_AGENTS, MAX_AGENT_RADIUS);
+				//	validateAgents();
+				//	doDummyLoad();
+				}
+				bridgeChannels.toMainChannelSync.send(AS3WorkerBridge.RESPONSE_SYNC);
 			}
 		}
 		
@@ -110,17 +122,17 @@ package recast
 				}
 				else if (cmd === RecastWorkerBridge.CMD_CREATE_ZONE) {
 					respond_createZone();
-					bridge.toMainChannel.send(RecastWorkerBridge.RESPONSE_CREATE_ZONE_DONE);
+					bridgeChannels.toMainChannel.send(RecastWorkerBridge.RESPONSE_CREATE_ZONE_DONE);
 				}
 				else if (cmd === RecastWorkerBridge.CMD_SET_AGENTS) {
 					bridge.toWorkerBytesMutex.lock();
 					respond_setAgents();
 					bridge.toWorkerBytesMutex.unlock();
-					bridge.toMainChannelSync.send(AS3WorkerBridge.RESPONSE_SYNC);
+					bridgeChannels.toMainChannelSync.send(AS3WorkerBridge.RESPONSE_SYNC);
 				}	
 			}
 			catch (err:Error) {
-				bridge.sendError(err);
+				bridgeChannels.sendError(err);
 			}
 		}
 		
@@ -160,12 +172,14 @@ package recast
 		
 		private function respond_setAgents():void 
 		{
+			if (!active) return;//  throw new Error("A");
+		
 			var i:int = agentCount;
 			
 			while (--i > -1) {
 				lib.removeAgent(i );
 			}
-			
+			bridge.toWorkerBytesMutex.lock();
 			bridge.toWorkerBytes.position = 0;
 			
 			var numAgentsToCreate:int = bridge.toWorkerBytes.readInt();
@@ -175,6 +189,8 @@ package recast
 				addAgent( bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat() );
 			}
 			
+			
+			bridge.toWorkerBytesMutex.unlock();
 		}
 		
 		private var libs:Array = [];
@@ -226,7 +242,7 @@ package recast
 		
 		
 		private function doDummyLoad():void {
-			loadFile( PLANE_VERTICES + "\n" + PLANE_INDICES, 0,0,0,0 );
+		//	loadFile( PLANE_VERTICES + "\n" + PLANE_INDICES, 0,0,0,0 );
 			lib.initCrowd(MAX_AGENTS, MAX_AGENT_RADIUS); //maxagents, max agent radius			
 		}
 		
@@ -363,8 +379,14 @@ package recast
 		
 		private function onEnterFrame(e:Event):void 
 		{
-			update();
 			
+		//	try {
+			//if (!active) return;
+			update();
+			//}
+			//catch (err:Error) {
+			//	bridgeChannels.sendError(err);
+			//}
 		}
 		
 
@@ -459,6 +481,7 @@ package recast
 		private var sync:Boolean;
 		private var slotOffset:int = 0;
 		private var listenChannel:MessageChannel;
+		private var active:Boolean = true;
 		
 		public function addAgent(ax:Number, ay:Number):uint
 		{
@@ -472,7 +495,7 @@ package recast
 			
 			var agentId:int = lib.addAgent(ax, OBJ_HEIGHT, ay, radius, height, maxAccel, maxSpeed, collisionQueryRange, pathOptimizationRange);
 			var agentPtr:uint = lib.getAgentPosition(agentId);
-			if (agentId != agentCount) throw new Error("MISMATCH index 11!"+agentCount );
+			if (agentId != agentCount) throw new Error("MISMATCH index!"+agentCount + ", "+agentId );
 			agentPtrs[agentCount++] = agentPtr;
 			validateAgents();
 			return agentPtr;
@@ -511,7 +534,7 @@ package recast
 		
 		public function validateAgents():void 
 		{
-			if (agentCount > 0) addEventListener(Event.ENTER_FRAME, onEnterFrame)
+			if (active && agentCount > 0) addEventListener(Event.ENTER_FRAME, onEnterFrame)
 			else removeEventListener(Event.ENTER_FRAME, onEnterFrame);
 			
 		}
