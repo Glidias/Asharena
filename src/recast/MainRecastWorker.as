@@ -172,25 +172,27 @@ package recast
 		
 		private function respond_setAgents():void 
 		{
-			if (!active) return;//  throw new Error("A");
+			//if (!active) return;//  throw new Error("A");
 		
 			var i:int = agentCount;
 			
 			while (--i > -1) {
 				lib.removeAgent(i );
 			}
-			bridge.toWorkerBytesMutex.lock();
+			
 			bridge.toWorkerBytes.position = 0;
 			
 			var numAgentsToCreate:int = bridge.toWorkerBytes.readInt();
+		
+
 			
 			for (i=0; i < numAgentsToCreate; i++) {
 				
 				addAgent( bridge.toWorkerBytes.readFloat(), bridge.toWorkerBytes.readFloat() );
 			}
+				
 			
-			
-			bridge.toWorkerBytesMutex.unlock();
+		
 		}
 		
 		private var libs:Array = [];
@@ -379,7 +381,7 @@ package recast
 		
 		private function onEnterFrame(e:Event):void 
 		{
-			
+				if (!active) bridgeChannels.sendError( new Error("Inactive worker should not have enterFrame!"));
 		//	try {
 			//if (!active) return;
 			update();
@@ -485,7 +487,7 @@ package recast
 		
 		public function addAgent(ax:Number, ay:Number):uint
 		{
-			
+					
 			var radius:Number = MAX_AGENT_RADIUS;
 			var height:Number = 2;
 			var maxAccel:Number = MAX_ACCEL;
@@ -494,7 +496,11 @@ package recast
 			var pathOptimizationRange:Number = 150;
 			
 			var agentId:int = lib.addAgent(ax, OBJ_HEIGHT, ay, radius, height, maxAccel, maxSpeed, collisionQueryRange, pathOptimizationRange);
+	//	bridgeChannels.sendError(  new Error("Agent Id trace assumption:"+agentId) );
+			
 			var agentPtr:uint = lib.getAgentPosition(agentId);
+			
+			
 			if (agentId != agentCount) throw new Error("MISMATCH index!"+agentCount + ", "+agentId );
 			agentPtrs[agentCount++] = agentPtr;
 			validateAgents();
@@ -534,6 +540,7 @@ package recast
 		
 		public function validateAgents():void 
 		{
+			
 			if (active && agentCount > 0) addEventListener(Event.ENTER_FRAME, onEnterFrame)
 			else removeEventListener(Event.ENTER_FRAME, onEnterFrame);
 			

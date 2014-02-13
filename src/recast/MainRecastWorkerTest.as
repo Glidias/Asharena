@@ -129,7 +129,7 @@ package recast
 			bridge.toWorkerBytes.writeFloat(partyStartup.movableA.x);
 			bridge.toWorkerBytes.writeFloat(partyStartup.movableA.y);
 			
-			bridge.toWorkerBytesMutex.unlock();
+		
 			
 			//if (!secondary) {
 				bridgeChannels.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onAgentsSetup);
@@ -137,9 +137,13 @@ package recast
 			
 			//}
 			//else {
-				bridgeChannels2.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onAgentsSetup);
-				bridgeChannels2.toWorkerChannel.send(RecastWorkerBridge.CMD_SET_AGENTS);
+			
+			
+			
+				
 			//}
+			
+				bridge.toWorkerBytesMutex.unlock();
 		}
 		
 		private function onAgentsSetup(e:Event):void 
@@ -148,7 +152,20 @@ package recast
 			msgChannel.receive();
 			msgChannel.removeEventListener(e.type, onAgentsSetup);
 
+			
+			bridgeChannels2.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onAgentsSetup2);
+			bridgeChannels2.toWorkerChannel.send(RecastWorkerBridge.CMD_SET_AGENTS);
 		//	drawASyncAgents();
+		}
+		
+		private function onAgentsSetup2(e:Event):void 
+		{
+			var msgChannel:MessageChannel = e.currentTarget as MessageChannel;
+			msgChannel.receive();
+			msgChannel.removeEventListener(e.type, onAgentsSetup);
+			
+			throw new Error("Receiving no.2 agent setup confirmation");
+			
 		}
 		
 		
@@ -191,8 +208,10 @@ package recast
 			
 			// for secondary worker
 			bridgeChannels2.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onSecondWorkerState);
-			
 			worker.start();
+			
+			// if dont wish to create secondar yworker
+			//initAll();
 			
 			return worker;
 		}
