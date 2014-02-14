@@ -967,6 +967,7 @@ package examples.scenes
 			//*/
 			
 		}
+	
 		
 		public function get formationState():int 
 		{

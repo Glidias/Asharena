@@ -79,7 +79,7 @@ package recast
 			
 			var field:TextField = new TextField();
 			field.autoSize = "left";
-			field.text = "Please wait while we load AS3 Recast/Detour pathfinding worker...";
+			field.text = "Please wait while we load AS3 Recast/Detour pathfinding workers and maps...";
 			addChild(field);
 		}
 		
@@ -164,7 +164,12 @@ package recast
 			msgChannel.receive();
 			msgChannel.removeEventListener(e.type, onAgentsSetup);
 			
-			throw new Error("Receiving no.2 agent setup confirmation");
+			// final ready
+			removeChildAt(0);
+			addEventListener(Event.ENTER_FRAME, onEnterFrame);
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			
+			partyStartup.manualInit2DPreview(previewer);
 			
 		}
 		
@@ -237,7 +242,7 @@ package recast
 		
 		
 		private function initAll():void {
-			removeChildAt(0);
+			
 				
 			addChild(previewer = new RecastPreviewer());
 			previewer.scaleX = 4;
@@ -259,6 +264,7 @@ package recast
 			Startup.START_X = 0;
 			Startup.START_Y = 0;
 			partyStartup = new Startup();
+			
 		//	partyStartup.enableFootsteps = false;
 		//	partyStartup.footsteps.length = 0;
 		
@@ -267,17 +273,17 @@ package recast
 			
 			
 
-			updateWorldThreshold = 2 * TILE_SIZE;
+			updateWorldThreshold = 1.1* TILE_SIZE;
 			updateWorldThreshold *= updateWorldThreshold;
 			
 			
 			//partyStartup.targetSpringRest = Startup.LARGE_RADIUS *2;
 			partyStartup.setFootstepThreshold(2);
-			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .15*.6));
+			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .13*.5));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableB, .08));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableC, .08));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableD, .08));
-			partyStartup.manualInit2DPreview(previewer);
+			
 			partyStartup.movableA.x = 0;
 			partyStartup.movableA.y = 0;
 			
@@ -286,8 +292,7 @@ package recast
 			preferedPositions[2] = 2;
 		//	partyStartup.footStepCallback = onLeaderFootstep;
 			
-			addEventListener(Event.ENTER_FRAME, onEnterFrame);
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+		
 			
 
 			
@@ -321,6 +326,8 @@ package recast
 			curBridgeChannels = curBuildIsFirst ? bridgeChannels : bridgeChannels2; 
 			builderBridgeChannels =  curBuildIsFirst ?  bridgeChannels2 : bridgeChannels;
 			
+			// TODO: notify workers to switch between active/inactive accordingly
+			// update AI positions for the active worker based off displaced positions
 			
 			partyStartup.displaceMovables( -_lastLeaderX, -_lastLeaderY);
 			partyStartup.simulation.immovables = newImmovables;

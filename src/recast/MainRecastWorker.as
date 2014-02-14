@@ -102,10 +102,8 @@ package recast
 			if (isWorker) {
 				if (bridge.usingChannel2) {
 					active = false;
-					//	loadFile( PLANE_VERTICES + "\n" + PLANE_INDICES, 0,0,0,0 );
+						loadFile( PLANE_VERTICES + "\n" + PLANE_INDICES, 0,0,0,0 );
 					lib.initCrowd(MAX_AGENTS, MAX_AGENT_RADIUS);
-				//	validateAgents();
-				//	doDummyLoad();
 				}
 				bridgeChannels.toMainChannelSync.send(AS3WorkerBridge.RESPONSE_SYNC);
 			}
@@ -244,7 +242,7 @@ package recast
 		
 		
 		private function doDummyLoad():void {
-		//	loadFile( PLANE_VERTICES + "\n" + PLANE_INDICES, 0,0,0,0 );
+			loadFile( PLANE_VERTICES + "\n" + PLANE_INDICES, 0,0,0,0 );
 			lib.initCrowd(MAX_AGENTS, MAX_AGENT_RADIUS); //maxagents, max agent radius			
 		}
 		
@@ -495,8 +493,14 @@ package recast
 			var collisionQueryRange:Number = 12.0;
 			var pathOptimizationRange:Number = 150;
 			
-			var agentId:int = lib.addAgent(ax, OBJ_HEIGHT, ay, radius, height, maxAccel, maxSpeed, collisionQueryRange, pathOptimizationRange);
-	//	bridgeChannels.sendError(  new Error("Agent Id trace assumption:"+agentId) );
+			var agentId:int;
+			
+
+			agentId = lib.addAgent(ax, OBJ_HEIGHT, ay, radius, height, maxAccel, maxSpeed, collisionQueryRange, pathOptimizationRange);
+				
+		
+			
+			//	bridgeChannels.sendError(  new Error("Agent Id trace assumption:"+agentId) );
 			
 			var agentPtr:uint = lib.getAgentPosition(agentId);
 			
