@@ -128,10 +128,54 @@ package recast
 					bridge.toWorkerBytesMutex.unlock();
 					bridgeChannels.toMainChannelSync.send(AS3WorkerBridge.RESPONSE_SYNC);
 				}	
+				else if (cmd === RecastWorkerBridge.CMD_DEACTIVATE) {
+					active = false;
+					removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+					bridgeChannels.toMainChannelSync.send(AS3WorkerBridge.RESPONSE_SYNC);
+				}
+				else if (cmd === RecastWorkerBridge.CMD_ACTIVATE) {
+					active = true;
+					alreadyReactivated = true;
+					updateAgentPositionsSyncWithLeader();
+					
+				validateNewNavMesh(0, 0);
+				//	validateAgents();
+				
+						
+				}
 			}
 			catch (err:Error) {
 				bridgeChannels.sendError(err);
 			}
+		}
+		
+		private var alreadyReactivated:Boolean = false;
+		
+		private function updateAgentPositionsSyncWithLeader():void   
+		{
+			
+				bridge.toMainAgentPosMutex.lock();
+				
+				
+				bridge.toMainAgentPosBytes.position = (bridge.leaderIndex << 3);  // TODO: use leader agent direct pointer instead..
+				bridge.toMainAgentPosBytes.position = 0;
+				
+
+			
+				
+				bridge.toMainAgentPosBytes.position = 0;
+				
+				var len:int = agentPtrs.length; 
+				
+				for (var i:int = 0; i < len; i++) {
+					setAgentX(i,  bridge.toMainAgentPosBytes.readFloat() - lastLeaderX );
+					 setAgentZ( i, bridge.toMainAgentPosBytes.readFloat() - lastLeaderY  );
+					 //lib.moveAgent(i, leaderX, 0, leaderY);
+				}
+		//	lib.update(3);
+				
+				bridge.toMainAgentPosMutex.unlock();
+			
 		}
 		
 		private function respond_createZone():void 
@@ -144,8 +188,12 @@ package recast
 			
 		}
 		
+		
+		
 		private function respond_moveAgents():void 
 		{
+			
+			
 			bridge.targetAgentPosMutex.lock();
 			bridge.targetAgentPosBytes.position = 0;
 		
@@ -157,7 +205,7 @@ package recast
 
 				
 
-				moveAgent( bridge.targetAgentPosBytes.readInt() ,
+				lib.moveAgent( bridge.targetAgentPosBytes.readInt() ,
 				bridge.targetAgentPosBytes.readFloat(),
 				bridge.targetAgentPosBytes.readFloat(),
 				bridge.targetAgentPosBytes.readFloat() );
@@ -254,11 +302,15 @@ package recast
 		private var lastMapY:Number;
 		private var targetMapX:Number;
 		private var targetMapY:Number;
+		private var lastLeaderX:Number;
+		private var lastLeaderY:Number;
 
 		
 		private var loadCount:int = 0;
 		public function loadFile(contents:String, x:Number , y:Number, dx:Number , dy:Number ):int {
 		
+			lastLeaderX = -dx;
+			lastLeaderY = -dy;
 		
 			targetMapX = x;
 			targetMapY = y;
@@ -379,10 +431,21 @@ package recast
 		
 		private function onEnterFrame(e:Event):void 
 		{
+
+			
+			if (!bridge.enterFrameMutex.tryLock()) {
+				
+				
+				return;
+			}
+
+			
 				if (!active) bridgeChannels.sendError( new Error("Inactive worker should not have enterFrame!"));
 		//	try {
 			//if (!active) return;
 			update();
+			
+			bridge.enterFrameMutex.unlock();
 			//}
 			//catch (err:Error) {
 			//	bridgeChannels.sendError(err);
@@ -527,9 +590,7 @@ package recast
 
 				var agentId:int = lib.addAgent(ax, OBJ_HEIGHT, ay, radius, height, maxAccel, maxSpeed, collisionQueryRange, pathOptimizationRange);
 		
-			if (index ==0 && agentId != index) {
-				slotOffset = agentId;
-			}
+			
 
 			if (agentId!= index ) throw new Error("MISMATCH index!" + index + ", " + agentId );
 			
@@ -652,10 +713,7 @@ package recast
 		
 		
 		
-		public function moveAgent(slot:int, offsetX:Number, z:Number, offsetY:Number):void 
-		{
-			lib.moveAgent(slotOffset + slot, offsetX, z, offsetY);
-		}
+	
 		
 		public function stopAllAgents():void 
 		{

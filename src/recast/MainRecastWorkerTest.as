@@ -78,6 +78,7 @@ package recast
 			loader.load(new URLRequest("recastworker.swf"));
 			
 			var field:TextField = new TextField();
+			_debugField = field;
 			field.autoSize = "left";
 			field.text = "Please wait while we load AS3 Recast/Detour pathfinding workers and maps...";
 			addChild(field);
@@ -92,10 +93,7 @@ package recast
 		
 		
 		private function init(workerBytes:ByteArray):void {
-			MainRecastWorker.MAX_AGENTS = 8;
-			MainRecastWorker.MAX_SPEED = 5.2*1.6
-			MainRecastWorker.MAX_ACCEL = 10.0*16
-			MainRecastWorker.MAX_AGENT_RADIUS =1.02;// 0.24 * 5;
+			
 			//_worker = new MainRecastWorker(true);
 			
 			bridgeChannels = new RecastWorkerBridge();
@@ -162,10 +160,12 @@ package recast
 		{
 			var msgChannel:MessageChannel = e.currentTarget as MessageChannel;
 			msgChannel.receive();
-			msgChannel.removeEventListener(e.type, onAgentsSetup);
+			msgChannel.removeEventListener(e.type, onAgentsSetup2);
 			
 			// final ready
-			removeChildAt(0);
+		//	removeChildAt(0);
+			_debugField.text = "";
+			
 			addEventListener(Event.ENTER_FRAME, onEnterFrame);
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			
@@ -273,13 +273,13 @@ package recast
 			
 			
 
-			updateWorldThreshold = 1.1* TILE_SIZE;
+			updateWorldThreshold = 2* TILE_SIZE;
 			updateWorldThreshold *= updateWorldThreshold;
 			
 			
 			//partyStartup.targetSpringRest = Startup.LARGE_RADIUS *2;
 			partyStartup.setFootstepThreshold(2);
-			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .13*.5));
+			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .15*.5));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableB, .08));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableC, .08));
 			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableD, .08));
@@ -308,51 +308,68 @@ package recast
 			setAgents();
 		}
 		
-		
+		private var _firstTime:Boolean = true;
 		
 		private function onWorkerNavMeshBuild(e:Event):void 
 		{
 			
 			
-			// check if currently requested position is still more valid for current position of party, or still keep old one.
-			if (false) {
-				newImmovables = null;
-			}
+			// TODO: check if currently requested position is still more valid for current position of party, or still keep old one.
+
 	
 			
 			
 			var curBuildIsFirst:Boolean =  e.currentTarget === bridgeChannels.toMainChannel;
 		
+			var firstTime:Boolean = _firstTime;
+			_firstTime = false;
+			
+
+			if (!firstTime) {
+			
+				bridge.enterFrameMutex.lock();
+				curBridgeChannels.toMainChannelSync.addEventListener(Event.CHANNEL_MESSAGE, onNewBridgeChannelDeactivated);
+				curBridgeChannels.toWorkerChannel.send(RecastWorkerBridge.CMD_DEACTIVATE);
+				
+				
+			}
+			else workersInactive = false;
+			
+			
+			
 			curBridgeChannels = curBuildIsFirst ? bridgeChannels : bridgeChannels2; 
 			builderBridgeChannels =  curBuildIsFirst ?  bridgeChannels2 : bridgeChannels;
 			
-			// TODO: notify workers to switch between active/inactive accordingly
-			// update AI positions for the active worker based off displaced positions
+			_debugField.text = curBuildIsFirst ? "Worker #1 Running" : "Worker #2 Running";
+
 			
 			partyStartup.displaceMovables( -_lastLeaderX, -_lastLeaderY);
 			partyStartup.simulation.immovables = newImmovables;
+		
 			partyStartup.redrawImmovables(); 
 			newImmovables = null;
 			
 			bridge.originPosBytes.position = 0;  // inform worker of new worldX,worldY position bytes
 			bridge.originPosBytes.writeFloat(_worldX);
 			bridge.originPosBytes.writeFloat(_worldY);
+			_curWorldX = _worldX;
+			_curWorldY = _worldY;
 
 			//  request to draw nav mesh preview from byte array ?
+		
 			
 		
 			
-		//	bridge.leaderPosBytes.position = 0;
-		//	bridge.leaderPosBytes.writeFloat(0);
-			//bridge.leaderPosBytes.writeFloat(0);
 			
-			lastLeaderX = 0;
-			lastLeaderY = 0;
 			
+		}
+		
+		private function onNewBridgeChannelDeactivated(e:Event):void  // once tranfer of enterFrame betwenen workers is done through removal of old enterFrame
+		{
+			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onNewBridgeChannelDeactivated );
+			bridge.enterFrameMutex.unlock();
 			workersInactive = false;
-			
-			
-			
+			curBridgeChannels.toWorkerChannel.send(RecastWorkerBridge.CMD_ACTIVATE);
 		}
 		
 		
@@ -435,7 +452,7 @@ package recast
 				recenter();
 			}
 			else if (e.keyCode === Keyboard.P) {
-			
+			throw new Error(numChildren);
 			}
 		}
 		
@@ -472,8 +489,10 @@ package recast
 		private var NUM_TILES_ACROSS:Number = 8;
 		private var TILE_SIZE:Number = 16;
 		private var WORLD_TILE_SIZE:Number = TILE_SIZE * NUM_TILES_ACROSS;
-		private var _worldX:Number;
-		private var _worldY:Number;
+		private var _worldX:Number = 0;
+		private var _worldY:Number = 0 ;
+		private var _curWorldX:Number;
+		private var _curWorldY:Number;
 		private var updateWorldThreshold:Number;
 		
 		private var newImmovables:Array;
@@ -541,6 +560,8 @@ package recast
 			wavefrontVertCount = 5;
 
 			// async
+			_debugField.text = builderBridgeChannels === bridgeChannels ? "Worker #1 creating new nav-mesh" : "Worker #2 creating new nav-mesh";
+			
 			workersInactive = true;
 			bridge.toWorkerVertexBuffer.length = bridge.toWorkerVertexBuffer.position;
 			bridge.toWorkerIndexBuffer.length = bridge.toWorkerIndexBuffer.position;
@@ -751,12 +772,13 @@ package recast
 		private var workersInactive:Boolean = false;
 		private var _lastLeaderX:Number = 0;
 		private var _lastLeaderY:Number = 0;
+		private var _debugField:TextField;
 		
 		
 		private function onEnterFrame(e:Event):void 
 		{
 			
-			var stillLoading:Boolean = workersInactive;
+		
 			
 			partyStartup.tickPreview();
 		
@@ -765,7 +787,7 @@ package recast
 			var sqDist:Number = diffX * diffX + diffY * diffY;
 			
 		
-			if (!stillLoading && sqDist >= updateWorldThreshold ) {
+			if (!workersInactive && sqDist >= updateWorldThreshold ) {
 				recenter();
 			}
 			

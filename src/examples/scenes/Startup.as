@@ -925,6 +925,13 @@ package examples.scenes
 			movableC.y += y;
 			movableD.y += y;
 			
+				if( mouseSpring )
+			{
+				simulation.removeForce( mouseSpring );
+			
+				mouseSpring = null;
+			}
+			
 			
 		// todo: shorten footstep length only, but this can be done preioduically...//ny existing footstep springs...
 		footsteps.length = 0;

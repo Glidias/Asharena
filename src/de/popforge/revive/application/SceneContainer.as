@@ -38,7 +38,7 @@ package de.popforge.revive.application
 		protected var iShape: Shape;
 		protected var mShape: Shape;
 		
-		private var mouseSpring: FixedSpring;
+		protected var mouseSpring: FixedSpring;
 		
 		public function SceneContainer()
 		{

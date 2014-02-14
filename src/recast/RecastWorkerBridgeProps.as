@@ -29,6 +29,8 @@ package recast
 		public var toWorkerBytesMutex:Mutex;  // to ensure read-only access to workerBytes rource, without writing from outside
 		public var toMainBytes:ByteArray;  
 		
+		public var enterFrameMutex:Mutex;  // consider just using single byte byteArray to determine state of enterFrame??
+		
 		public function RecastWorkerBridgeProps() 
 		{
 			
