@@ -280,9 +280,9 @@ package recast
 			//partyStartup.targetSpringRest = Startup.LARGE_RADIUS *2;
 			partyStartup.setFootstepThreshold(2);
 			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .15*.5));
-			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableB, .08));
-			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableC, .08));
-			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableD, .08));
+			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableB, .15*.5));
+			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableC, .15*.5));
+			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableD, .15*.5));
 			
 			partyStartup.movableA.x = 0;
 			partyStartup.movableA.y = 0;

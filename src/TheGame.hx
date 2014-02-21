@@ -36,7 +36,7 @@ class TheGame
 	public var engine:Engine;
 	public var engineState:EngineStateMachine;
 	
-	public var spawner:Spawner;  // to depeciate
+	public var spawner:Spawner; 
 	
 	public var stage:Stage;
 	public var ticker:FrameTickProvider;

@@ -47,14 +47,14 @@ class GameStates
 
 		thirdPerson = new EngineState();
 		thirdPerson.addSingleton( GravitySystem ).withPriority( SystemPriorities.update);
-		thirdPerson.addInstance( new PlayerJumpSystem(keyPoll) ).withPriority( SystemPriorities.update);
+		thirdPerson.addInstance( new PlayerJumpSystem() ).withPriority( SystemPriorities.update);
 		thirdPerson.addInstance( new PlayerSurfaceMovementSystem()).withPriority( SystemPriorities.update);
 		thirdPerson.addInstance(colliderSystem).withPriority( SystemPriorities.preSolveCollisions);
 		thirdPerson.addSingleton( QPhysicsSystem ).withPriority( SystemPriorities.solveCollisions);
 	
 		thirdPerson.addSingleton( MovementSystem  ).withPriority( SystemPriorities.move);
 		thirdPerson.addSingleton( SurfaceMovementSystem  ).withPriority( SystemPriorities.stateMachines);
-		thirdPerson.addInstance( new PlayerControlActionSystem(keyPoll) ).withPriority(SystemPriorities.stateMachines);
+		thirdPerson.addInstance( new PlayerControlActionSystem() ).withPriority(SystemPriorities.stateMachines);
 		thirdPerson.addSingleton( AnimationSystem  ).withPriority( SystemPriorities.animate);
 		radialSensorSystem = new RadialSensorSystem();
 		thirdPerson.addInstance(radialSensorSystem).withPriority(SystemPriorities.stateMachines);

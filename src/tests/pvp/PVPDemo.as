@@ -1,0 +1,218 @@
+package tests.pvp 
+{
+	import alternativa.a3d.collisions.CollisionBoundNode;
+	import alternativa.a3d.collisions.CollisionUtil;
+	import alternativa.a3d.controller.SimpleFlyController;
+	import alternativa.a3d.controller.ThirdPersonController;
+	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.materials.FillMaterial;
+	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.primitives.Plane;
+	import alternativa.engine3d.RenderingSystem;
+	import alternterrain.CollidableMesh;
+	import ash.core.Entity;
+	import ash.tick.FrameTickProvider;
+	import components.Pos;
+	import flash.display.MovieClip;
+	import flash.events.KeyboardEvent;
+	import flash.ui.Keyboard;
+	import spawners.arena.GladiatorBundle;
+	import systems.animation.IAnimatable;
+	import systems.collisions.CollidableNode;
+	import systems.collisions.EllipsoidCollider;
+	import systems.collisions.GroundPlaneCollisionSystem;
+	import systems.player.a3d.GladiatorStance;
+	import systems.SystemPriorities;
+	import util.SpawnerBundle;
+	import util.SpawnerBundleLoader;
+	import views.engine3d.MainView3D;
+	import views.ui.bit101.PreloaderBar;
+	
+	//import alternativa.engine3d.alternativa3d;
+	//use namespace alternativa3d;
+	
+	/**
+	 * A boilerplate example from TestBuild3DPreload, containing the common stuff needed for all Ash-Arena games.
+	 * 
+	 * @author Glidias
+	 */
+	public class PVPDemo extends MovieClip 
+	{
+		private var _template3D:MainView3D;
+		private var game:TheGame;
+		private var ticker:FrameTickProvider;
+		private var _preloader:PreloaderBar = new PreloaderBar()
+		private var bundleLoader:SpawnerBundleLoader;
+		
+		private var spectatorPerson:SimpleFlyController;
+		private var arenaSpawner:ArenaSpawner;
+		private var collisionScene:Object3D;
+		
+		public function PVPDemo() 
+		{
+			haxe.initSwc(this);
+		
+			
+			game = new TheGame(stage);
+	
+			addChild( _template3D = new MainView3D() );
+			_template3D.onViewCreate.add(onReady3D);
+			
+			_template3D.visible = false;
+			addChild(_preloader);
+		}
+		
+		
+		// customise methods accordingly here...
+				
+		private function getSpawnerBundles():Vector.<SpawnerBundle> 
+		{
+			return new <SpawnerBundle>[new GladiatorBundle(arenaSpawner)];
+		}
+		
+		private function setupViewSettings():void 
+		{
+			_template3D.viewBackgroundColor = 0xDDDDDD;
+		}
+		
+		private function setupEnvironment():void 
+		{
+			// example visual scene
+			var planeFloor:Mesh = new Plane(2048, 2048, 1, 1, false, false, null, new FillMaterial(0xBBBBBB, 1) );
+			_template3D.scene.addChild(planeFloor);
+			//arenaSpawner.addCrossStage(SpawnerBundle.context3D);
+			SpawnerBundle.uploadResources(planeFloor.getResources(true, null));
+			
+		
+			// collision scene (can be something else)
+			collisionScene = planeFloor;
+			game.colliderSystem.collidable = CollisionUtil.getCollisionGraph(collisionScene);
+			game.colliderSystem._collider.threshold = 0.00001;
+			// (Optional) Enforced ground plane collision
+			//game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(0, true) ).withPriority(SystemPriorities.resolveCollisions);
+
+		}
+		
+		private var testArr:Array = [];
+		private var testIndex:int = 0;
+		
+		private function setupStartingEntites():void {
+			
+			// Register any custom skins needed for this game
+			//arenaSpawner.setupSkin(, ArenaSpawner.RACE_SAMNIAN);
+		
+			// spawn any beginning entieies
+			var curPlayer:Entity;
+			
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, 0, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48, 0, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*2, 0, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*3, 0, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 4, 0, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 5, 0, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 6, 0, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 7, 0, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 8, 0, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 9, 0, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 10, 0, 0); testArr.push(curPlayer);
+			
+			
+			arenaSpawner.switchPlayer(testArr[testIndex], stage);
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			
+		}
+		
+		private function onKeyDown(e:KeyboardEvent):void 
+		{
+
+			if (e.keyCode === Keyboard.Y) {
+				testIndex++;
+				
+				if (testIndex >= testArr.length) testIndex = 0;
+				arenaSpawner.switchPlayer(testArr[testIndex], stage);
+				
+			}
+		}
+		
+		
+		
+		private function setupGameplay():void 
+		{
+			// Third person
+			///*
+			var dummyEntity:Entity = arenaSpawner.getNullEntity(); // arenaSpawner.getPlayerBoxEntity(SpawnerBundle.context3D);
+			// arenaSpawner.getNullEntity();
+			dummyEntity.get(Pos).z = 72*.5;
+			game.engine.addEntity(dummyEntity);
+			//*/
+			// possible to  set raycastScene  parameter to something else besides "collisionScene"...
+			var thirdPerson:ThirdPersonController = new ThirdPersonController(stage, _template3D.camera, collisionScene, dummyEntity.get(Object3D) as Object3D, dummyEntity.get(Object3D) as Object3D, dummyEntity );
+			game.gameStates.thirdPerson.addInstance(thirdPerson).withPriority(SystemPriorities.postRender);
+			
+			// (Optional) Go straight to 3rd person
+			game.gameStates.engineState.changeState("thirdPerson");
+		}
+		
+		
+		// boilerplate below...
+		
+		private function onReady3D():void 
+		{
+			SpawnerBundle.context3D = _template3D.stage3D.context3D;
+			
+			setupViewSettings();
+			
+			arenaSpawner = new ArenaSpawner(game.engine, game.keyPoll);
+			
+			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, getSpawnerBundles() );
+			bundleLoader.progressSignal.add( _preloader.setProgress );
+			bundleLoader.loadBeginSignal.add( _preloader.setLabel );		
+		}
+		
+		
+		private function onSpawnerBundleLoaded():void 
+		{
+			removeChild(_preloader);			
+			_template3D.visible = true;
+			
+			
+			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
+
+			
+			spectatorPerson =new SimpleFlyController( 
+						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
+						null ,
+						stage, 
+						_template3D.camera, 
+						GameSettings.SPECTATOR_SPEED,
+						GameSettings.SPECTATOR_SPEED_SHIFT_MULT);
+			
+						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
+		
+	
+			
+			game.engine.addSystem( spectatorPerson, SystemPriorities.postRender ) ;
+		
+
+			
+			setupEnvironment();
+			setupStartingEntites();
+			setupGameplay();
+
+			
+			ticker = new FrameTickProvider(stage);
+			ticker.add(tick);
+			ticker.start();
+		}
+		
+
+		
+		private function tick(time:Number):void 
+		{
+			game.engine.update(time);
+			_template3D.render();
+		}
+		
+	}
+
+}

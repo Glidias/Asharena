@@ -262,7 +262,7 @@ package
 
 		
 		override public function getSpawner():Spawner {	
-			return (arenaSpawner=new ArenaSpawner(engine));
+			return (arenaSpawner=new ArenaSpawner(engine, keyPoll));
 		}
 			
 		

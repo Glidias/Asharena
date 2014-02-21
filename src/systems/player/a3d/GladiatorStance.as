@@ -175,6 +175,10 @@ package systems.player.a3d
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false, 0, true);
 			//stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown, false,0,true);
 		}
+		public function unbindKeys(stage:IEventDispatcher):void {
+			stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+		}
+		
 		
 		private function onMouseDown(e:MouseEvent):void 
 		{

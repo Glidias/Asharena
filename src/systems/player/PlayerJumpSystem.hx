@@ -22,12 +22,12 @@ class PlayerJumpSystem extends System
 
 	private var nodeList:NodeList<PlayerJumpNode>;
 	
-	private var key:KeyPoll;
+
 	
-	public function new(keyPoll:KeyPoll) 
+	public function new() 
 	{
 		super();
-		this.key = keyPoll;
+	
 	}
 	
 	
@@ -38,7 +38,7 @@ class PlayerJumpSystem extends System
 	override public function update(time:Float):Void {
 		var n:PlayerJumpNode = nodeList.head;
 		if (n == null) return;
-		
+		var key:KeyPoll = n.keyPoll;
 		n.jump.update(time);
 		if (n.collision.gotGroundNormal) {
 		
@@ -67,4 +67,5 @@ class PlayerJumpNode extends Node<PlayerJumpNode> {
 	public var collision:CollisionResult;
 	public var trigger:ActionIntSignal;
 	public var vel:Vel;
+	public var keyPoll:KeyPoll;
 }

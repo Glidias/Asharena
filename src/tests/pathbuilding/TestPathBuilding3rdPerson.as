@@ -103,7 +103,7 @@ package tests.pathbuilding
 			
 			SpawnerBundle.context3D = _template3D.stage3D.context3D;
 			
-			gladiatorBundle = new GladiatorBundle(arenaSpawner = new ArenaSpawner(game.engine));
+			gladiatorBundle = new GladiatorBundle(arenaSpawner = new ArenaSpawner(game.engine, game.keyPoll));
 			jettySpawner = new JettySpawner();
 			hudAssets = new SaboteurHud(game.engine, stage, game.keyPoll);
 			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[gladiatorBundle, jettySpawner, hudAssets]);

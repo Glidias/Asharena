@@ -17,7 +17,7 @@ package alternativa.a3d.controller
 	 */
 	public class ThirdPersonController extends System
 	{
-		private var thirdPerson:OrbitCameraMan;
+		public var thirdPerson:OrbitCameraMan;
 		
 		public function ThirdPersonController(stage:Stage, camera:Camera3D, raycastScene:Object3D, followTarget:Object3D, cameraTarget:Object3D, playerEnt:Entity, playerPos:Pos=null, playerRot:Rot=null ) 
 		{

@@ -302,6 +302,11 @@ package alternativa.engine3d.controller {
         {
             _maxAngleLatidude = value;
         }
+		
+		public function set followTarget(value:Object3D):void 
+		{
+			_followTarget = value;
+		}
         
 
 

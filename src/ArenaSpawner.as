@@ -25,6 +25,7 @@ package
 	import flash.display3D.Context3D;
 	import flash.events.IEventDispatcher;
 	import flash.utils.Dictionary;
+	import input.KeyPoll;
 	import systems.animation.IAnimatable;
 	import systems.player.a3d.GladiatorStance;
 	import alternativa.engine3d.alternativa3d;
@@ -49,9 +50,72 @@ package
 		public var currentPlayerSkin:Skin;
 		public var currentPlayerEntity:Entity;
 		
-		public function ArenaSpawner(engine:Engine) 
+		public function ArenaSpawner(engine:Engine, keyPoll:KeyPoll) 
 		{
 			super(engine);
+			this.keyPoll = keyPoll;
+			
+		}
+		
+		public function switchPlayer(ent:Entity, stage:Stage):void {
+			
+			var gladiatorStance:GladiatorStance;
+			
+			if (currentPlayerEntity ) {
+				gladiatorStance = currentPlayerEntity.get(IAnimatable) as GladiatorStance;
+				if (gladiatorStance) gladiatorStance.unbindKeys(stage);
+				currentPlayerEntity.remove(KeyPoll);
+			}
+			
+			currentPlayerEntity = ent;
+			currentPlayer = ent.get(Object3D) as Object3D;
+			currentPlayerSkin = findSkin(currentPlayer);
+			
+			gladiatorStance = ent.get(IAnimatable) as GladiatorStance;
+			if (gladiatorStance) gladiatorStance.bindKeys(stage);
+			
+			currentPlayerEntity.add(keyPoll, KeyPoll);
+			
+		}
+		
+		public function findSkin(obj:Object3D):Skin {
+			if (obj is Skin) return obj as Skin;
+			
+			var c:Object3D;
+			for ( c = obj.childrenList; c != null; c = c.next) {
+				if (c is Skin) return c as Skin;
+			}
+			return null;
+		}
+		
+		public function getNullEntity():Entity {
+			var ent:Entity = new Entity();
+			ent.add( new Object3D(),  Object3D);
+			ent.add( new Pos());
+			ent.add( new Rot());
+			
+			return ent;
+		}
+		
+		private var keyPoll:KeyPoll;
+		public const DUMMY_MATERIAL:FillMaterial = new FillMaterial(0xDD64AA);
+		private var dummyBox:Box;
+		private function getNewDummyBox(context3D:Context3D):Box {
+			dummyBox = new Box(32, 32, 72, 1, 1, 1, false, DUMMY_MATERIAL);
+			dummyBox.geometry.upload(context3D);
+			return dummyBox;
+		}
+		
+		public function getPlayerBoxEntity(context3D:Context3D):Entity {
+			var ent:Entity = new Entity();
+			var box:Box;
+			ent.add(dummyBox ? dummyBox.clone() : getNewDummyBox(context3D),  Object3D);
+			
+
+			ent.add( new Pos());
+			ent.add( new Rot());
+			
+			return ent;
 		}
 		
 		public function setupSkin(skin:Skin, race:String):void {
@@ -162,6 +226,7 @@ package
 				currentPlayer = obj;
 				currentPlayerSkin = sk;
 				currentPlayerEntity = ent;
+				ent.add(keyPoll, KeyPoll);
 			}
 			actions.add( gladiatorStance.handleAction );
 			ent.add(gladiatorStance, IAnimatable);

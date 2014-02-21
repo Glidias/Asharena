@@ -192,6 +192,19 @@ package alternativa.engine3d.controller
             _fadeDistance = value;
 
         }
+		
+		public function get followTarget():Object3D 
+		{
+			return _followTarget;
+		}
+		
+		public function set followTarget(value:Object3D):void 
+		{
+			_followTarget = value;
+			controller.followTarget = followTarget;
+			delete ignoreDict[value];
+			ignoreDict[value] = true;
+		}
         
     }
 

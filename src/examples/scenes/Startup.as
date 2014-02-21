@@ -1000,7 +1000,7 @@ class Person extends Sprite {
 		this.name = name;
 		
 		alpha = name != "leader" ? 0: .2 ;
-		visible = name === "leader";
+	//	visible = name === "leader";
 	}
 	
 	public function moveToTargetLocation(targetX:Number, targetY:Number):void {

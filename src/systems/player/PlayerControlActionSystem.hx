@@ -23,8 +23,9 @@ import util.geom.Vec3Utils;
  * Determines which keys are pressed and current velocity/physics state of player to determine what animation actions to play (normally, this is for lower-body only
  * and covers basic animation notifications for surface movement only. It does not assume whether player is able crouch/jump/crawl/etc.) That would require
  * another app-specific class to  handle each PlayerAction signal accordignly.
- *
  * 
+ * Currnetly, this system is hardcoded to only move 1 entity via keyboard controls.
+ *
  * @author Glenn Ko
  */
 class PlayerControlActionSystem extends System
@@ -39,13 +40,9 @@ class PlayerControlActionSystem extends System
 	public static inline var WALK_STRAFE_THRESHOLD:Float = 0;
 	public static inline var RUN_STRAFE_THRESHOLD:Float = 0;
 	
-	public var key:KeyPoll;
-	
-	public function new(key:KeyPoll) 
+	public function new() 
 	{
-		super();
-		this.key = key;
-		
+		super();	
 	}
 	
 	
@@ -66,6 +63,8 @@ class PlayerControlActionSystem extends System
 	
 	
 	
+	
+	
 	override public function update(time:Float):Void {
 		var n:PlayerActionNode = nodeList.head;
 		//while (n != null) {
@@ -76,6 +75,7 @@ class PlayerControlActionSystem extends System
 		var v:Vel;
 		var value:Float;
 		var boo:Bool; 
+		var key:KeyPoll = n.keyPoll;
 		
 		if (n.action.locked) return;
 		
@@ -140,5 +140,6 @@ class PlayerActionNode extends Node<PlayerActionNode> {
 	public var rot:Rot;
 	public var direction:DirectionVectors;
 	public var action:ActionIntSignal;
+	public var keyPoll:KeyPoll;
 	
 }
