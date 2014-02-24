@@ -153,7 +153,6 @@ package tests
 		
 	
 			
-			game.engine.addSystem( spectatorPerson, SystemPriorities.postRender ) ;
 			
 			
 			setupEnvironment();

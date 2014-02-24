@@ -14,6 +14,7 @@ import systems.movement.MovementSystem;
 import systems.movement.PlayerSurfaceMovementSystem;
 import systems.movement.QPhysicsSystem;
 import systems.SystemPriorities;
+import systems.tweening.TweenSystem;
 import util.geom.Geometry;
 
 import systems.collisions.EllipsoidCollider;
@@ -34,7 +35,7 @@ class TheGame
 	public var colliderSystem:EllipsoidColliderSystem;
 	
 	public var engine:Engine;
-	public var engineState:EngineStateMachine;
+	//public var engineState:EngineStateMachine;
 	
 	public var spawner:Spawner; 
 	
@@ -70,6 +71,7 @@ class TheGame
 		FlockingSystem;
 		Spawner;
 		GroundPlaneCollisionSystem;
+		TweenSystem;
 	
 		
 		// Spawn starting entities

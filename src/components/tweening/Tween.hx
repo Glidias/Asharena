@@ -17,9 +17,12 @@ class Tween extends TweenCore /*, implements IAnimatable*/
 	public var startVals:Array<Float>;
 	public var endVals:Array<Float>;
 	public var props:Array<String>;
+
 	public var funcMask:Int = 0;
 	
 	public var arrLen:Int;
+	
+	
 	
 	
 	
@@ -48,7 +51,7 @@ class Tween extends TweenCore /*, implements IAnimatable*/
 		
 		// settle options
 		if (options != null) {
-			repeatCount = options.repeatCount != null ? options.repeatCount : 0;
+			repeatCount = options.repeatCount;
 			ease = options.ease != null ? options.ease : DEFAULT_EASE;
 			onComplete = options.onComplete != null ? options.onComplete : null;
 		}
@@ -71,21 +74,33 @@ class Tween extends TweenCore /*, implements IAnimatable*/
 		for ( key in Reflect.fields( tweenProps ) ) {
 				isFunc = false;
 				if ( key.substr(0, 3)  != "set" ) {
-					startVals[untyped nbTotal] = startV = target[untyped key];	
+					untyped startVals[ nbTotal] = startV = target[ key];	
 				}
 				else {
 					isFunc = true;
 					funcMask |= (1 << nbTotal);
-					startVals[untyped nbTotal] = startV =  target[untyped "get"+key.substr(3)]();	
+					untyped startVals[ nbTotal] = startV =  target[ "get"+key.substr(3)]();	
 				}
-				endVals[untyped nbTotal] = tweenProps[untyped key] - startV;
+				untyped endVals[ nbTotal] = tweenProps[ key] - startV;
 			
 				props[nbTotal] = key;
+				
 				nbTotal++;
 		}
 			
 		arrLen = nbTotal;
 	}
+	
+	public inline function updateProps(fromObj:Dynamic, destObj:Dynamic):Void {
+		var i:Int = arrLen;
+		while (--i > -1) {
+			var p:String =   props[i];
+			startVals[i ] =  untyped fromObj[p];
+			endVals[ i ] =   untyped destObj[p] - startVals[i ];
+		}
+	}
+	
+
 	
 	public inline function _getTotalDuration():Float {
 		return duration;
@@ -116,9 +131,11 @@ class Tween extends TweenCore /*, implements IAnimatable*/
 		}
 
 		var i:Int = arrLen;
+		
 		while (--i > -1) {
-			if ( (funcMask & (1<<i)) != 0) target[ untyped props[i] ]( ease(t, startVals[i], endVals[i], duration) );
-			else  target[ untyped props[i] ] = ease(t, startVals[i], endVals[i], duration);
+			
+			if ( (funcMask & (1<<i)) != 0) untyped target[  props[i] ]( ease(t, startVals[i], endVals[i], duration) );
+			else untyped  target[  props[i] ] = ease(t, startVals[i], endVals[i], duration);
 		}
 	}
 	//*/

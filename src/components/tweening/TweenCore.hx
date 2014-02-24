@@ -13,10 +13,11 @@ class TweenCore
 	// options
 	public var repeatCount:Int;
 	public var onComplete:Void->Void;
+	public var dead:Bool;
 	
 	public function new() 
 	{
-		
+		dead = true;
 	}
 	
 }

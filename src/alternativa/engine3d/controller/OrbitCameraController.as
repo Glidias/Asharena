@@ -81,6 +81,7 @@ package alternativa.engine3d.controller {
             useMouseWheelControl:Boolean = true, mouseWheelHandler:Function=null
             )
         {
+			
             _target = targetObject;
             _followTarget = followTarget;
 
@@ -97,12 +98,16 @@ package alternativa.engine3d.controller {
             _mouseUpEventSource.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
     
             // マウスホイール操作
-			_mouseWheelHandler = mouseWheelHandler;
+			
 			
             if (useMouseWheelControl)
             {
-                _mouseDownEventSource.addEventListener(MouseEvent.MOUSE_WHEEL, (_mouseWheelHandler=mouseWheelHandler || this.mouseWheelHandler));
+				
+                _mouseDownEventSource.addEventListener(MouseEvent.MOUSE_WHEEL, (_mouseWheelHandler=(mouseWheelHandler || this.mouseWheelHandler)) );
             }
+			else {
+				_mouseWheelHandler = null;
+			}
 
             // キーボード操作
             if (useKeyControl)
@@ -110,6 +115,8 @@ package alternativa.engine3d.controller {
                 _keyEventSource.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler);
                 _keyEventSource.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler);
             }
+			
+		
         }
         
         public function reset():void {
@@ -717,6 +724,60 @@ package alternativa.engine3d.controller {
         public function getDistance():Number {
             return _length;
         }
+		
+		override public function enable():void {
+			super.enable();
+			 if (_mouseDownEventSource) {
+                _mouseDownEventSource.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+				if (_mouseWheelHandler!=null)  _mouseDownEventSource.addEventListener(MouseEvent.MOUSE_WHEEL, _mouseWheelHandler);
+			 }
+            // マウスホイール操作
+            
+
+            // キーボード操作
+            if (_keyEventSource)
+            {
+                _keyEventSource.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler);
+                _keyEventSource.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler);
+            }
+		}
+		
+		override public function disable():void {
+			super.disable();
+			 if (_mouseDownEventSource) {
+                _mouseDownEventSource.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+				 if (_mouseWheelHandler!=null)  _mouseDownEventSource.removeEventListener(MouseEvent.MOUSE_WHEEL, _mouseWheelHandler);
+			 }
+
+            // マウスホイール操作
+           
+
+            // キーボード操作
+            if (_keyEventSource)
+            {
+                _keyEventSource.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler);
+                _keyEventSource.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler);
+            }
+		}
+		
+		 public function disablePermanently():void {
+			super.disable();
+			 if (_mouseDownEventSource) {
+                _mouseDownEventSource.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+				if (_mouseWheelHandler!=null)   _mouseDownEventSource.removeEventListener(MouseEvent.MOUSE_WHEEL, _mouseWheelHandler);				
+			 }
+            // マウスホイール操作
+           
+
+            // キーボード操作
+            if (_keyEventSource)
+            {
+                _keyEventSource.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler);
+                _keyEventSource.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler);
+            }
+			_mouseDownEventSource = null;
+			_keyEventSource = null;
+		}
 
         /**
          * オブジェクトを使用不可にしてメモリを解放します。

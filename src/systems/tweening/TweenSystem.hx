@@ -86,8 +86,8 @@ class TweenSystem extends System
 			i = tw.arrLen;
 			while (--i > -1) {
 			
-				if ( (tw.funcMask & (1 << i)) != 0) tw.target[ untyped tw.props[i] ]( tw.ease(tw.t, tw.startVals[i], tw.endVals[i], tw.duration) );
-				else  tw.target[ untyped tw.props[i] ] = tw.ease(tw.t, tw.startVals[i], tw.endVals[i], tw.duration);
+				if ( (tw.funcMask & (1 << i)) != 0) untyped tw.target[ tw.props[i] ]( tw.ease(tw.t, tw.startVals[i], tw.endVals[i], tw.duration) );
+				else  untyped tw.target[  tw.props[i] ] = tw.ease(tw.t, tw.startVals[i], tw.endVals[i], tw.duration);
 			}
 			return kill;
 	}
@@ -98,8 +98,13 @@ class TweenSystem extends System
 		while (n != null) {
 			n.tween.t += time;
 			if ( updateTween(n.tween) ) {
-				if (n.tween.onComplete != null) n.tween.onComplete();
+				if (n.tween.onComplete != null) {
+					n.tween.onComplete();
+					
+				}
+				n.tween.dead = true;
 				n.entity.remove(Tween);
+				
 			}
 			n = n.next;
 		}
@@ -109,7 +114,11 @@ class TweenSystem extends System
 		while (g != null) {
 			g.group.t += time;
 			if ( updateGroup( g.group ) ) {
-				if (g.group.onComplete != null) g.group.onComplete();
+				if (g.group.onComplete != null) {
+					g.group.onComplete();
+					
+				}
+				g.group.dead = true;
 				g.entity.remove(TweenGroup);
 			}
 			g = g.next;

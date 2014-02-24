@@ -19,9 +19,10 @@ package alternativa.a3d.controller
 	{
 		public var thirdPerson:OrbitCameraMan;
 		
-		public function ThirdPersonController(stage:Stage, camera:Camera3D, raycastScene:Object3D, followTarget:Object3D, cameraTarget:Object3D, playerEnt:Entity, playerPos:Pos=null, playerRot:Rot=null ) 
+		public function ThirdPersonController(stage:Stage, camera:Camera3D, raycastScene:Object3D, followTarget:Object3D, cameraTarget:Object3D, playerEnt:Entity, playerPos:Pos=null, playerRot:Rot=null, useMouseWheel:Boolean=true ) 
 		{
 		
+			
 			//if (playerPos == null) playerPos = playerEnt.get(Pos) as Pos;
 			if (playerRot == null) playerRot = playerEnt.get(Rot) as Rot;
 			
@@ -29,7 +30,7 @@ package alternativa.a3d.controller
 		
 			 // -- Player-Specific stuff for Client	 
 			 // TODO: look at object could be higher!
-            thirdPerson = new OrbitCameraMan(camera, cameraTarget, stage, raycastScene, followTarget, playerRot, true); 
+            thirdPerson = new OrbitCameraMan(camera, cameraTarget, stage, raycastScene, followTarget, playerRot, useMouseWheel); 
 			
             //thirdPerson.controller.easingSeparator  = 12;
             thirdPerson.preferedZoom = 160;
@@ -50,15 +51,15 @@ package alternativa.a3d.controller
 			
 			//thirdPerson.controller.disable();
 		
-		
+			thirdPerson.controller.disable();
 		}
 		
 		override public function addToEngine(engine:Engine):void {
-		//	thirdPerson.controller.enable();
+			thirdPerson.controller.enable();
 		}
 		
 		override public function removeFromEngine(engine:Engine):void {
-			//thirdPerson.controller.disable();
+			thirdPerson.controller.disable();
 		}
 		
 		override public function update(time:Number):void {

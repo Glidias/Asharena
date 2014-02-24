@@ -52,6 +52,9 @@ package alternativa.engine3d.controller
         public var threshold:Number = 0.01;
         
 		public var alphaSetter:*;
+		
+		private static const DEG_TO_RAD:Number = Math.PI / 180;
+		private static const RAD_TO_DEG:Number = 180 / Math.PI;
 
         
         public var instant:Boolean = false;
@@ -72,6 +75,8 @@ package alternativa.engine3d.controller
 			
 			
         }
+		
+		
         
         /*
              _object.x += -Math.sin(_object.rotationZ) * 120;
@@ -82,7 +87,8 @@ package alternativa.engine3d.controller
             _object.z += forward.z * 120;
         */
         
-        public function mouseWheelHandler(e:MouseEvent, delta:Number=0):void {
+        private function mouseWheelHandler(e:MouseEvent, delta:Number = 0):void {
+		
             var _lastLength:Number = controller.getDistance();
             _lastLength -= e!= null ? e.delta * mouseWheelSensitivity : delta;
 			var minDist:Number = (preferedMinDistance > 0 ? preferedMinDistance : controller.minDistance);
@@ -181,6 +187,15 @@ package alternativa.engine3d.controller
             controller.setDistance(value);
             
         }
+		
+		public function set instantZoom(value:Number):void {
+			_preferedZoom = value;
+			controller.setDistance(value, true);
+		}
+		
+		public function get instanceZoom():Number {
+			return _preferedZoom;
+		}
         
         public function get fadeDistance():Number 
         {
@@ -204,6 +219,23 @@ package alternativa.engine3d.controller
 			controller.followTarget = followTarget;
 			delete ignoreDict[value];
 			ignoreDict[value] = true;
+		}
+		
+		public function setFollowComponents(object:Object3D, rot:Rot):void {
+			followTarget = object;
+			this.rot = rot;
+			if (followAzimuth || followPitch) {
+				if (followAzimuth) {
+					//_followTarget.rotationZ = rot.z = camera.rotationZ;
+					controller.setLongitude( rot.z * RAD_TO_DEG, true);
+					
+				}
+				if (followPitch) {
+					controller.setLatitude( Math.PI * .5 - rot.x, true);  // Hmm...not too sure about this..need to test
+					//_followTarget.rotationX =  rot.x= camera.rotationX + Math.PI * .5;
+				}
+			controller.update();
+			}
 		}
         
     }

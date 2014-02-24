@@ -18,7 +18,7 @@ class TweenGroup extends TweenCore
 		t = 0;
 		
 		if (options != null) {
-			repeatCount = options.repeatCount != null ? options.repeatCount : 0;
+			repeatCount =options.repeatCount;
 			onComplete = options.onComplete != null ? options.onComplete : null;
 		}
 		else {

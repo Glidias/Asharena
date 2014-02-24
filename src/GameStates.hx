@@ -19,7 +19,7 @@ import systems.sensors.RadialSensorSystem;
 import systems.SystemPriorities;
 
 /**
- * ...
+ * Some commonly used default state systems used here...
  * @author Glenn Ko
  */
 class GameStates
@@ -40,15 +40,11 @@ class GameStates
 		init(engine, keyPoll);
 	}
 	
-	function init(engine:Engine, keyPoll:KeyPoll) 
-	{
-		engineState = new EngineStateMachine(engine);
-		
-
-		thirdPerson = new EngineState();
+	public function getNewThirdPersonState():EngineState {
+		var thirdPerson:EngineState =  new EngineState();
 		thirdPerson.addSingleton( GravitySystem ).withPriority( SystemPriorities.update);
-		thirdPerson.addInstance( new PlayerJumpSystem() ).withPriority( SystemPriorities.update);
-		thirdPerson.addInstance( new PlayerSurfaceMovementSystem()).withPriority( SystemPriorities.update);
+		thirdPerson.addSingleton( PlayerJumpSystem ).withPriority( SystemPriorities.update);
+		thirdPerson.addSingleton( PlayerSurfaceMovementSystem).withPriority( SystemPriorities.update);
 		thirdPerson.addInstance(colliderSystem).withPriority( SystemPriorities.preSolveCollisions);
 		thirdPerson.addSingleton( QPhysicsSystem ).withPriority( SystemPriorities.solveCollisions);
 	
@@ -56,22 +52,35 @@ class GameStates
 		thirdPerson.addSingleton( SurfaceMovementSystem  ).withPriority( SystemPriorities.stateMachines);
 		thirdPerson.addInstance( new PlayerControlActionSystem() ).withPriority(SystemPriorities.stateMachines);
 		thirdPerson.addSingleton( AnimationSystem  ).withPriority( SystemPriorities.animate);
-		radialSensorSystem = new RadialSensorSystem();
 		thirdPerson.addInstance(radialSensorSystem).withPriority(SystemPriorities.stateMachines);
-		engineState.addState("thirdPerson", thirdPerson);
-		
-		
-		spectator = new EngineState();
+	
+		return thirdPerson;
+	}
+	
+	public function getNewSpectatorState():EngineState {
+		var spectator:EngineState = new EngineState();
 		spectator.addSingleton( GravitySystem ).withPriority( SystemPriorities.update);
 		spectator.addInstance(colliderSystem).withPriority( SystemPriorities.preSolveCollisions);
 		spectator.addSingleton( QPhysicsSystem ).withPriority( SystemPriorities.solveCollisions);
 		spectator.addSingleton( MovementSystem  ).withPriority( SystemPriorities.move);
 		spectator.addSingleton( SurfaceMovementSystem  ).withPriority( SystemPriorities.stateMachines);
 		spectator.addSingleton( AnimationSystem  ).withPriority( SystemPriorities.animate);
-		engineState.addState("spectator", spectator);
-
-		
 	
+		return spectator;
+	}
+	
+	
+	function init(engine:Engine, keyPoll:KeyPoll) 
+	{
+		engineState = new EngineStateMachine(engine);
+		
+		 radialSensorSystem = new RadialSensorSystem();
+		 
+		thirdPerson = getNewThirdPersonState();
+		engineState.addState("thirdPerson", thirdPerson);
+		
+		spectator = getNewSpectatorState();
+		engineState.addState("spectator", spectator);
 	}
 	
 	

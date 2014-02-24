@@ -49,17 +49,28 @@ class PlayerControlActionSystem extends System
 	override public function addToEngine(engine:Engine):Void {
 		nodeList = engine.getNodeList(PlayerActionNode);
 		//key.dispObj.addEventListener();
+		
 	}
+	
+	
 	
 	override public function removeFromEngine(engine:Engine):Void {
 		super.removeFromEngine(engine);
 		//
 		var n:PlayerActionNode = nodeList.head;
-		if (n != null) {
+		while (n != null) {
 			n.action.set(PlayerAction.IDLE);
+			//n.keyPoll.disable();
+			n.keyPoll.resetAllStates();
+			n.vel.x = 0;
+			n.vel.y = 0;
+			
+			n = n.next;
 		}
 		
 	}
+	
+
 	
 	
 	

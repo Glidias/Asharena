@@ -21,6 +21,7 @@ package
 	import components.Ellipsoid;
 	import components.Pos;
 	import components.Rot;
+	import components.Vel;
 	import flash.display.Stage;
 	import flash.display3D.Context3D;
 	import flash.events.IEventDispatcher;
@@ -65,6 +66,16 @@ package
 				gladiatorStance = currentPlayerEntity.get(IAnimatable) as GladiatorStance;
 				if (gladiatorStance) gladiatorStance.unbindKeys(stage);
 				currentPlayerEntity.remove(KeyPoll);
+				
+				var vel:Vel = currentPlayerEntity.get(Vel) as Vel;
+				if (vel) {
+					
+					vel.x = 0;
+					vel.y = 0;
+			
+					
+				}
+				
 			}
 			
 			currentPlayerEntity = ent;
@@ -74,7 +85,9 @@ package
 			gladiatorStance = ent.get(IAnimatable) as GladiatorStance;
 			if (gladiatorStance) gladiatorStance.bindKeys(stage);
 			
+			keyPoll.resetAllStates();
 			currentPlayerEntity.add(keyPoll, KeyPoll);
+			
 			
 		}
 		
