@@ -62,8 +62,8 @@ class PlayerControlActionSystem extends System
 			n.action.set(PlayerAction.IDLE);
 			//n.keyPoll.disable();
 			n.keyPoll.resetAllStates();
-			n.vel.x = 0;
-			n.vel.y = 0;
+			//n.vel.x = 0;
+			//n.vel.y = 0;
 			
 			n = n.next;
 		}

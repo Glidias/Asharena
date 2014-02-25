@@ -24,7 +24,7 @@ package alternativa.a3d.controller
 		
 			
 			//if (playerPos == null) playerPos = playerEnt.get(Pos) as Pos;
-			if (playerRot == null) playerRot = playerEnt.get(Rot) as Rot;
+			if (playerRot == null) playerRot =playerEnt!= null ?  playerEnt.get(Rot) as Rot || new Rot() : new Rot();
 			
 		
 		

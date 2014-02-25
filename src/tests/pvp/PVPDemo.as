@@ -43,8 +43,8 @@ package tests.pvp
 	//use namespace alternativa3d;
 	
 	/**
-	 * A boilerplate example from TestBuild3DPreload, containing the common stuff needed for all Ash-Arena games.
-	 * 
+
+	 *  WIP pvp demo
 	 * @author Glidias
 	 */
 	public class PVPDemo extends MovieClip 
@@ -142,7 +142,11 @@ package tests.pvp
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
-
+			if (game.gameStates.engineState.currentState === engineStateTransiting) {
+				// for now until interupt case is available
+				return;
+			}
+			
 			if (e.keyCode === Keyboard.TAB  &&   !game.keyPoll.isDown(Keyboard.TAB)  ) {
 				cyclePlayerChoice();
 			}
@@ -163,7 +167,7 @@ package tests.pvp
 			if (game.gameStates.engineState.currentState != engineStateCommander) {
 				
 				changeCameraView("commander");
-				
+				return;
 			}
 			
 		
@@ -183,12 +187,12 @@ package tests.pvp
 		private function focusOnTargetChar(targetEntity:Entity):void 
 		{
 
-			var pos:Pos = targetEntity.get(Pos) as Pos;
+			var pos:Object3D = targetEntity.get(Object3D) as Object3D;
 			if ( centerPlayerTween == null) {
-				centerPlayerTween =	new Tween(_commandLookEntity.get(Pos), 2, { x:pos.x, y:pos.y, z:pos.z + CMD_Z_OFFSET } );
+				centerPlayerTween =	new Tween(_commandLookEntity.get(Object3D), 2, { x:pos.x, y:pos.y, z:pos.z + CMD_Z_OFFSET } );
 			}
 			else {
-				centerPlayerTween.updateProps( _commandLookEntity.get(Pos), pos );
+				centerPlayerTween.updateProps( _commandLookEntity.get(Object3D), pos );
 				centerPlayerTween.t = 0;
 			
 			}
@@ -211,10 +215,22 @@ package tests.pvp
 			
 		}
 		
+		private function getDestAngle(actualangle:Number, destangle:Number):Number {
+			 var difference:Number = destangle - actualangle;
+        if (difference < -180) difference += 360;
+        if (difference > 180) difference -= 360;
+			return difference + actualangle;
+			
+			//var diffangle:Number = (actualangle - destangle) + 180;
+			//diffangle = (diffangle / 360.0)
+			//diffangle = ((diffangle - Math.floor( diffangle )) * 360.0) - 180;
+			//return diffangle - actualangle;
+		}
 		
 		private function changeCameraView(targetState:String):void {
 			
 			// TODO: interrupt case.
+			
 			
 			if (targetState === "thirdPerson" && game.gameStates.engineState.currentState === engineStateCommander) {
 				
@@ -226,6 +242,7 @@ package tests.pvp
 				transitionCameras(thirdPersonController.thirdPerson, commanderCameraController.thirdPerson, targetState, arenaSpawner.currentPlayer.x, arenaSpawner.currentPlayer.y, arenaSpawner.currentPlayer.z, Cubic.easeIn);
 			}
 			else {
+				//throw new Error("NO transition");
 				game.gameStates.engineState.changeState("spectator");
 				game.gameStates.engineState.changeState(targetState);
 			}
@@ -235,13 +252,13 @@ package tests.pvp
 		private function transitionCameras(fromCamera:OrbitCameraMan, toCamera:OrbitCameraMan, targetState:String=null, customX:Number=Number.NaN, customY:Number = Number.NaN, customZ:Number = Number.NaN, customEase:Function=null, duration:Number=1):void 
 		{
 	
-			fromCamera.controller.angleLatitude %= 360;
-			fromCamera.controller.angleLongitude %= 360;
+			//fromCamera.controller.angleLatitude %= 360;
+			//fromCamera.controller.angleLongitude %= 360;
 			
-			toCamera.controller.angleLatitude %= 360;
-			toCamera.controller.angleLongitude %= 360;
+			//toCamera.controller.angleLatitude %= 360;
+			//toCamera.controller.angleLongitude %= 360;
 			
-			transitionCamera.thirdPerson.instantZoom = fromCamera.preferedZoom;
+			transitionCamera.thirdPerson.instantZoom =  fromCamera.preferedZoom;
 			transitionCamera.thirdPerson.controller.angleLatitude = fromCamera.controller.angleLatitude;
 			transitionCamera.thirdPerson.controller.angleLongitude = fromCamera.controller.angleLongitude;
 		
@@ -251,17 +268,15 @@ package tests.pvp
 			transitCameraTarget.y = isNaN(customY) ?fromCamera.followTarget.y : customY;
 			transitCameraTarget.z = isNaN(customZ) ? fromCamera.followTarget.z : customZ;
 
-		//	transitionCamera.update(0);
 		
 			var tarX:Number = toCamera.followTarget.x;
 			var tarY:Number = toCamera.followTarget.y;
 			var tarZ:Number = toCamera.followTarget.z;
 			
 
-		//	if (!isNaN(customX)) return;
 
 			var ease:Function = customEase != null ? customEase : Cubic.easeOut;
-			var tween:Tween =new Tween(transitionCamera.thirdPerson.controller, duration, {  setDistance:toCamera.controller.getDistance(), angleLatitude:toCamera.controller.angleLatitude, angleLongitude:toCamera.controller.angleLongitude  }, { ease:ease }  );
+			var tween:Tween =new Tween(transitionCamera.thirdPerson.controller, duration, {  setDistance:toCamera.controller.getDistance(), angleLatitude:getDestAngle(transitionCamera.thirdPerson.controller.angleLatitude, toCamera.controller.angleLatitude), angleLongitude:getDestAngle(transitionCamera.thirdPerson.controller.angleLongitude, toCamera.controller.angleLongitude)  }, { ease:ease }  );
 			var tween2:Tween = new Tween(transitionCamera.thirdPerson.followTarget, duration, { x:tarX, y:tarY, z:tarZ   }, { ease:ease }  );
 			
 			game.engine.addEntity( new Entity().add( tween  ) );
@@ -293,20 +308,21 @@ package tests.pvp
 			///*
 			var dummyEntity:Entity = arenaSpawner.getNullEntity(); // arenaSpawner.getPlayerBoxEntity(SpawnerBundle.context3D);
 			// arenaSpawner.getNullEntity();
-			dummyEntity.get(Pos).z =CMD_Z_OFFSET;
+		
 			_commandLookTarget = dummyEntity.get(Object3D) as Object3D;
 			_commandLookEntity = dummyEntity;
-			game.engine.addEntity(dummyEntity);
+		//	_commandLookTarget.z = CMD_Z_OFFSET;
+			//game.engine.addEntity(dummyEntity);
 			//*/
 			// possible to  set raycastScene  parameter to something else besides "collisionScene"...
-			thirdPersonController = new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, dummyEntity, null, null, false);
-			thirdPersonController.thirdPerson.preferedZoom = 140;
-	
+			thirdPersonController = new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, false);
+			thirdPersonController.thirdPerson.instantZoom = 140;
+		//thirdPersonController.thirdPerson.controller.minDistance = 0;
 			game.gameStates.thirdPerson.addInstance(thirdPersonController).withPriority(SystemPriorities.postRender);
 			
 			
 			
-			commanderCameraController =  new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, dummyEntity, null, null, false );
+			commanderCameraController =  new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, false );
 			//commanderCameraController.thirdPerson.preferedMinDistance = CMD_DIST;
 			commanderCameraController.thirdPerson.instantZoom = CMD_DIST; 
 		////	commanderCameraController.thirdPerson.controller.maxDistance = CMD_DIST;
@@ -318,12 +334,16 @@ package tests.pvp
 			game.gameStates.engineState.addState("commander", engineStateCommander);
 		
 			
-			transitionCamera =new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, dummyEntity, null, null, false);
+			transitionCamera =new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, false);
 			transitionCamera.thirdPerson.controller.disablePermanently();
 			transitionCamera.thirdPerson.controller.stopMouseLook ();
 			transitionCamera.thirdPerson.mouseWheelSensitivity  = 0;
 			engineStateTransiting = game.gameStates.getNewSpectatorState();
-			transitionCamera.thirdPerson.preferedMinDistance = transitionCamera.thirdPerson.controller.minDistance = Number.MIN_VALUE;
+			transitionCamera.thirdPerson.controller.minAngleLatitude = -Number.MAX_VALUE;
+			transitionCamera.thirdPerson.controller.maxAngleLatidude = Number.MAX_VALUE;
+				transitionCamera.thirdPerson.controller.minAngleLatitude = -Number.MAX_VALUE;
+			transitionCamera.thirdPerson.controller.maxAngleLatidude = Number.MAX_VALUE;
+			 transitionCamera.thirdPerson.controller.minDistance = -Number.MAX_VALUE;
 			 transitionCamera.thirdPerson.controller.maxDistance= Number.MAX_VALUE;
 			engineStateTransiting.addInstance( transitionCamera).withPriority(SystemPriorities.postRender);
 			game.gameStates.engineState.addState("transiting", engineStateTransiting);
