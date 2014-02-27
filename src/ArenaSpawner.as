@@ -196,7 +196,7 @@ package
 			addRenderEntity( upload( new Box(900, 10, 10, 1, 1, 1, false, new FillMaterial(0x00FF00) ),  context3D), pos || new Pos(), rot || new Rot() );
 		}
 		
-		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0 ):Entity {
+		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0, azimuth:Number=0 ):Entity {
 			var ent:Entity = getGladiatorBase(x,y,z);
 			var skProto:Skin = skinDict[race];
 			var sk:Skin = skProto.clone() as Skin;
@@ -223,6 +223,8 @@ package
 			bb.maxY = 16;
 			bb.maxZ = 16;
 			*/
+			
+			(ent.get(Rot) as Rot).z = azimuth;
 			
 			var ellipsoid:Ellipsoid = ent.get(Ellipsoid) as Ellipsoid;
 			//addRenderEntity(getBoundingBox(bb), ent.get(Pos) as Pos, ent.get(Rot) as Rot);

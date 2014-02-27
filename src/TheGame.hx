@@ -1,4 +1,5 @@
 package ;
+import arena.systems.player.LimitedPlayerMovementSystem;
 import ash.core.Engine;
 import ash.fsm.EngineState;
 import ash.fsm.EngineStateMachine;
@@ -72,6 +73,9 @@ class TheGame
 		Spawner;
 		GroundPlaneCollisionSystem;
 		TweenSystem;
+		
+		LimitedPlayerMovementSystem;
+		
 	
 		
 		// Spawn starting entities

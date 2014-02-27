@@ -11,9 +11,12 @@ package tests.pvp
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
 	import alternterrain.CollidableMesh;
+	import arena.components.char.MovementPoints;
+	import arena.systems.player.LimitedPlayerMovementSystem;
 	import ash.core.Entity;
 	import ash.fsm.EngineState;
 	import ash.tick.FrameTickProvider;
+	import com.bit101.components.ProgressBar;
 	import com.greensock.easing.Cubic;
 	import com.greensock.easing.Linear;
 	import components.Pos;
@@ -45,6 +48,22 @@ package tests.pvp
 	/**
 
 	 *  WIP pvp demo
+	 * todo:
+		 * Turns/Command-point/Movement meter mechanic.
+		 * 
+		 * Targeting/LOS mechanic (weapon min/max (optimum) range, cone)  If target is below min range, a melee/secondary attack might be used instead. 
+		 * 
+		 * Obstacles and stuffs in environment
+		 * 
+		 * Add variety of units with ranged/guns.
+		 * 
+		 * PC Top-view command mode with mouse camera scrolling and select individuals with mouse. (RTS style)
+		 * 
+		 * Formation support with:
+		 * Console individual + follower list mechanic for roster..Cycle through menu of individuals/leaders.
+		 * PC Mouse Drag Box or Shift + Select mechanic for Roster, (can cycle left/right) based on selected leaders to allow moving as formation.
+		 * 
+		 * 
 	 * @author Glidias
 	 */
 	public class PVPDemo extends MovieClip 
@@ -58,6 +77,8 @@ package tests.pvp
 		private var spectatorPerson:SimpleFlyController;
 		private var arenaSpawner:ArenaSpawner;
 		private var collisionScene:Object3D;
+		
+		private var testMovementMeter:ProgressBar;
 		
 		public function PVPDemo() 
 		{
@@ -104,7 +125,11 @@ package tests.pvp
 
 		}
 		
+		// CAMERA CONTROLLING
 		private var testArr:Array = [];
+		private var testArr2:Array = [];
+		private var curArr:Array = testArr;
+		
 		private var testIndex:int = 0;
 		private var thirdPersonController:ThirdPersonController;
 		private var commanderCameraController:ThirdPersonController;
@@ -114,6 +139,22 @@ package tests.pvp
 		private var _commandLookTarget:Object3D;
 		private var _commandLookEntity:Entity;
 		
+		private static const CMD_Z_OFFSET:Number = 72 + 40;
+		private static var CMD_DIST:Number = 730;
+		private var transitionCamera:ThirdPersonController;
+		private var centerPlayerTween:Tween;
+		private var _transitCompleteCallback:Function;
+		
+		
+		// FULES
+		private var movementPoints:MovementPoints = new MovementPoints();	
+		private  var MAX_MOVEMENT_POINTS:Number = 5;
+		private  var MAX_COMMAND_POINTS:int = 20;
+		private var COMMAND_POINTS_PER_TURN:int = 5;
+		private var commandPoints:Vector.<int> = new <int>[COMMAND_POINTS_PER_TURN,COMMAND_POINTS_PER_TURN];
+		
+		
+		
 		private function setupStartingEntites():void {
 			
 			// Register any custom skins needed for this game
@@ -122,18 +163,30 @@ package tests.pvp
 			// spawn any beginning entieies
 			var curPlayer:Entity;
 			
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, 0, 0); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48, 0, 0); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*2, 0, 0); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*3, 0, 0); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 4, 0, 0); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 5, 0, 0); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 6, 0, 0); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 7, 0, 0); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 8, 0, 0); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 9, 0, 0); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 10, 0, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, -520, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48, -520, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*2, -520, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*3, -520, 0); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 4, -520, 0); testArr.push(curPlayer);
+
 			
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 6, 520, 0, Math.PI); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 7, 520, 0, Math.PI); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 8, 520, 0, Math.PI); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 9, 520, 0, Math.PI); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 10, 520, 0, Math.PI); testArr2.push(curPlayer);
+			
+			
+			var i:int = testArr.length;
+			while (--i > -1) {
+				
+				testArr[i].add( new Counter());
+			}
+			i = testArr2.length;
+			while (--i > -1) {
+				
+				testArr2[i].add( new Counter());
+			}
 			
 			//arenaSpawner.switchPlayer(testArr[testIndex], stage);
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false, 1);
@@ -156,13 +209,142 @@ package tests.pvp
 			else if (e.keyCode === Keyboard.K &&   !game.keyPoll.isDown(Keyboard.K) ) {
 				switchToPlayer();
 			}
+			else if (e.keyCode === Keyboard.BACKSPACE && !game.keyPoll.isDown(Keyboard.BACKSPACE)) {
+				endPhase();
+			}
 			
 			
 		}
 		
-		private var centerPlayerTween:Tween;
+		
+		private  var CAMERA_PHASETO_AVERAGE:Boolean = false; // switch phase new side average position?  else selected target
+		private  var CAMERA_PHASEFROM_AVERAGE:Boolean = true;  // old side average position? else nearest target from above
+		
+		
+		private function endPhase():void {
+			
+			
+			if (game.gameStates.engineState.currentState != engineStateCommander) {
+				
+				_transitCompleteCallback = endPhase;
+				changeCameraView("commander");
+				return;
+			}
+			
+			
+	
+			var oldArr:Array = curArr;
+			curArr = curArr != testArr ? testArr : testArr2;
 
-		private function cyclePlayerChoice():void   // cycling players only allowed in commander view
+			
+			var x:Number = 0;
+			var y:Number = 0;
+			var x2:Number = 0;
+			var y2:Number = 0;
+			var i:int;
+			var len:int;
+			var obj:Object3D;
+			var dx:Number;
+			var dy:Number;
+			var d:Number = Number.MAX_VALUE;
+			
+			
+			i = commandPoints.length;
+			while (--i > -1) {
+				commandPoints[i] += COMMAND_POINTS_PER_TURN;
+				if (commandPoints[i] > MAX_COMMAND_POINTS) commandPoints[i] = MAX_COMMAND_POINTS;
+			}
+			
+			
+			i = testArr.length;
+			while (--i > -1) {
+				var counter:Counter = testArr[i].get(Counter) as Counter;
+				counter.value = 1;
+			}
+			
+			i = testArr.length;
+			while (--i > -1) {
+				counter = testArr2[i].get(Counter) as Counter;
+				counter.value = 1;
+			}
+			
+			
+			len = curArr.length;
+			
+			// TODO: visibility awareness determination required... before adding them in...
+			
+			if (CAMERA_PHASETO_AVERAGE) {
+				for (i = 0; i < len; i++) {
+					obj = curArr[i].get(Object3D);
+					
+					x += obj.x;
+					y += obj.y;
+				}
+				x /= len;
+				y /= len;
+			}
+			else {
+				obj = curArr[0].get(Object3D);
+				x = obj.x;
+				y = obj.y;
+			}
+			
+			
+			len = oldArr.length;
+			
+			if (CAMERA_PHASEFROM_AVERAGE) {
+				for (i = 0; i < len; i++) {
+					obj = oldArr[i].get(Object3D);
+					
+					x2 += obj.x;
+					y2 += obj.y;
+				}
+				x2 /= len;
+				y2 /= len;
+			}
+			else {
+				var nx:Number = 0;
+				var ny:Number = 0;
+				for (i = 0; i < len; i++) {
+					obj = oldArr[i].get(Object3D);
+					
+					x2 = obj.x;
+					y2 = obj.y;
+					dx = x2 - x;
+					dy = y2 - y;
+					var testD:Number = dx * dx + dy * dy ;
+					if (testD < d) {
+						d = testD;
+						nx = x2;
+						ny = y2;
+					}
+					
+				}
+				x2 = nx;
+				y2 = ny;
+			}
+			
+			
+			
+			
+			x = x2 - x;
+			y = y2 - y;
+			
+			var fromAng:Number = commanderCameraController.thirdPerson.controller.angleLongitude;
+			var ang:Number = (Math.atan2(y, x) - Math.PI*.5) * (180 / Math.PI);
+			//ang = curArr != testArr ? 180 : 0;
+			
+			game.engine.addEntity( new Entity().add( new Tween(commanderCameraController.thirdPerson.controller, 3, { angleLongitude: getDestAngle(fromAng,ang) } ) ) ); 
+
+			testIndex = 0;
+			cyclePlayerChoice(0);
+			
+			
+		
+		}
+		
+
+		private function cyclePlayerChoice(cycleAmount:int=1):void   // cycling players only allowed in commander view
 		{
 			if (game.gameStates.engineState.currentState != engineStateCommander) {
 				
@@ -173,21 +355,25 @@ package tests.pvp
 		
 			
 			if ( game.gameStates.engineState.currentState === engineStateCommander )  {
-				 testIndex++;
-				 	if (testIndex >= testArr.length) testIndex = 0;
-					focusOnTargetChar(testArr[testIndex]);
+				 testIndex+=cycleAmount;
+				 	if (testIndex >= curArr.length) testIndex = 0;
+					focusOnTargetChar(curArr[testIndex]);
 			}
+			
+				var counter:Counter = curArr[testIndex].get(Counter) as Counter;
+				movementPoints.movementTimeLeft=  MAX_MOVEMENT_POINTS / (1 << counter.value);
 		
 		}
 		
-		private static const CMD_Z_OFFSET:Number = 72 + 40;
-		private static var CMD_DIST:Number = 730;
-		private var transitionCamera:ThirdPersonController;
+
 		
 		private function focusOnTargetChar(targetEntity:Entity):void 
 		{
 
 			var pos:Object3D = targetEntity.get(Object3D) as Object3D;
+			
+		
+			
 			if ( centerPlayerTween == null) {
 				centerPlayerTween =	new Tween(_commandLookEntity.get(Object3D), 2, { x:pos.x, y:pos.y, z:pos.z + CMD_Z_OFFSET } );
 			}
@@ -202,17 +388,33 @@ package tests.pvp
 			}
 		}
 
+	
+
+		
+		
 		
 		private function switchToPlayer():void {
 			if (game.gameStates.engineState.currentState === game.gameStates.thirdPerson) {
 				return;
 			}
 			game.keyPoll.resetAllStates();
-			arenaSpawner.switchPlayer(testArr[testIndex], stage);
+			
+		
+			
+			
+			if (arenaSpawner.currentPlayerEntity) arenaSpawner.currentPlayerEntity.remove(MovementPoints);
+			arenaSpawner.switchPlayer(curArr[testIndex], stage);
+			
+			
+			var counter:Counter = arenaSpawner.currentPlayerEntity.get(Counter) as Counter;
+			movementPoints.movementTimeLeft = MAX_MOVEMENT_POINTS / (1 << counter.value);
+			
+			counter.value++;
+			
+			arenaSpawner.currentPlayerEntity.add( movementPoints, MovementPoints);
+			
 			thirdPersonController.thirdPerson.setFollowComponents( arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Rot) as Rot);
-			changeCameraView("thirdPerson");
-			
-			
+			changeCameraView("thirdPerson");		
 		}
 		
 		private function getDestAngle(actualangle:Number, destangle:Number):Number {
@@ -291,14 +493,28 @@ package tests.pvp
 		}
 		
 		private function onTransitComplete():void {
+
 			game.gameStates.engineState.changeState(_targetTransitState);
 			_targetTransitState = null;
+			
+			if (_transitCompleteCallback != null) {
+				_transitCompleteCallback();
+				_transitCompleteCallback = null;
+			}
+		}
+		
+		private function onOutOfFuel():void {
+			
+			//arenaSpawner.currentPlayerEntity.get(Vel).x = 0;
+		//	arenaSpawner.currentPlayerEntity.get(SurfaceMovement);
+		//	cyclePlayerChoice();
 		}
 		
 		
 		
 		private function setupGameplay():void 
 		{
+			
 			
 			// Tweening system
 			game.engine.addSystem( new TweenSystem(), SystemPriorities.animate );
@@ -315,11 +531,16 @@ package tests.pvp
 			//game.engine.addEntity(dummyEntity);
 			//*/
 			// possible to  set raycastScene  parameter to something else besides "collisionScene"...
-			thirdPersonController = new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, false);
+			thirdPersonController = new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, true);
 			thirdPersonController.thirdPerson.instantZoom = 140;
-		//thirdPersonController.thirdPerson.controller.minDistance = 0;
+		thirdPersonController.thirdPerson.controller.minDistance = 20;
+		thirdPersonController.thirdPerson.controller.maxDistance = 240;
 			game.gameStates.thirdPerson.addInstance(thirdPersonController).withPriority(SystemPriorities.postRender);
 			
+			// special PVP movement limited time
+			var movementPointSystem:LimitedPlayerMovementSystem;
+			game.gameStates.thirdPerson.addInstance( movementPointSystem= new LimitedPlayerMovementSystem() ).withPriority(SystemPriorities.preMove);
+			movementPointSystem.outOfFuel.add( onOutOfFuel);
 			
 			
 			commanderCameraController =  new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, false );
@@ -398,6 +619,7 @@ package tests.pvp
 
 			
 			setupEnvironment();
+			setupInterface();
 			setupStartingEntites();
 			setupGameplay();
 
@@ -407,14 +629,30 @@ package tests.pvp
 			ticker.start();
 		}
 		
+		private function setupInterface():void 
+		{
+			testMovementMeter = new ProgressBar();
+			testMovementMeter.width = 300;
+			addChild(testMovementMeter);
+		}
+		
 
 		
 		private function tick(time:Number):void 
 		{
+			
 			game.engine.update(time);
 			_template3D.render();
+			testMovementMeter.value = movementPoints.movementTimeLeft / MAX_MOVEMENT_POINTS;
+			
 		}
 		
 	}
 
+}
+
+
+class Counter {
+	public var value:int = 0;
+	
 }

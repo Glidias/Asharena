@@ -62,7 +62,7 @@ class SurfaceMovementNode extends Node<SurfaceMovementNode> {
 	public var movement:SurfaceMovement;
 	public var directions:DirectionVectors;
 	public var collision:CollisionResult;  // this is used to determine whther person is on surface or not..
-	
+
 }
 
 

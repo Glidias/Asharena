@@ -54,6 +54,11 @@ class SurfaceMovement
 		setStrafeSpeed(37);
 	}
 	
+	inline public function resetAllStates():Void {
+		walk_state = 0;
+		strafe_state = 0;
+	}
+	
 	inline public function setWalkSpeeds(forwardSpeed:Float, backspeed:Float = -1):Void {
 		WALK_SPEED = forwardSpeed;
 		WALKBACK_SPEED = (backspeed != -1) ? backspeed : forwardSpeed; 
