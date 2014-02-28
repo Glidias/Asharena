@@ -59,11 +59,15 @@ package alternativa.engine3d.controller
         
         public var instant:Boolean = false;
         public var mouseWheelSensitivity:Number = 30;
+		
+		public var offsetX:Number = 0;
+		public var offsetY:Number = 0;
+		public var offsetZ:Number = 0;
         
         public function OrbitCameraMan(camera:Camera3D,  cameraTarget:Object3D, stager:InteractiveObject, scene:Object3D, followTarget:Object3D=null, rot:Rot=null, useMouseWheel:Boolean=false) 
         {
 			this.rot = rot;
-			var controller:OrbitCameraController = new OrbitCameraController(camera, cameraTarget, stager, stager, stager, false, useMouseWheel, mouseWheelHandler);
+			var controller:OrbitCameraController = new OrbitCameraController(camera, new Object3D(), stager, stager, stager, false, useMouseWheel, mouseWheelHandler);
             this._followTarget = followTarget || (controller._followTarget);
 			alphaSetter = new DummyAlpha();
             this.scene = scene;
@@ -73,7 +77,7 @@ package alternativa.engine3d.controller
             controller.minPitch = Math.PI * .5;
 			preferedMinDistance = 0;
 			
-			
+		
         }
 		
 		
@@ -87,7 +91,7 @@ package alternativa.engine3d.controller
             _object.z += forward.z * 120;
         */
         
-        private function mouseWheelHandler(e:MouseEvent, delta:Number = 0):void {
+        public function mouseWheelHandler(e:MouseEvent, delta:Number = 0):void {
 		
             var _lastLength:Number = controller.getDistance();
             _lastLength -= e!= null ? e.delta * mouseWheelSensitivity : delta;
@@ -104,7 +108,23 @@ package alternativa.engine3d.controller
             preferedZoom = _lastLength;
             
         }
+		
+		public function validateFollowTarget():void {
+			var follower:Object3D = controller._followTarget;
+			follower._x = _followTarget.x + offsetX;
+			follower._y = _followTarget.y + offsetY;
+			follower._z = _followTarget.z  + offsetZ;	
+			
+		}
+		
         public function update():void {
+			var follower:Object3D = controller._followTarget;
+			follower._x = _followTarget.x + offsetX;
+			follower._y = _followTarget.y + offsetY;
+			follower._z = _followTarget.z  + offsetZ;
+			
+	
+			
             controller.update(); 
 
             var camera:Camera3D = controller._target;
@@ -216,7 +236,7 @@ package alternativa.engine3d.controller
 		public function set followTarget(value:Object3D):void 
 		{
 			_followTarget = value;
-			controller.followTarget = followTarget;
+		
 			delete ignoreDict[value];
 			ignoreDict[value] = true;
 		}

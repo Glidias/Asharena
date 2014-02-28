@@ -16,6 +16,7 @@ package tests.pvp
 	import ash.core.Entity;
 	import ash.fsm.EngineState;
 	import ash.tick.FrameTickProvider;
+	import com.bit101.components.Label;
 	import com.bit101.components.ProgressBar;
 	import com.greensock.easing.Cubic;
 	import com.greensock.easing.Linear;
@@ -79,6 +80,8 @@ package tests.pvp
 		private var collisionScene:Object3D;
 		
 		private var testMovementMeter:ProgressBar;
+		private var testCPLabel:Label;
+		
 		
 		public function PVPDemo() 
 		{
@@ -129,6 +132,8 @@ package tests.pvp
 		private var testArr:Array = [];
 		private var testArr2:Array = [];
 		private var curArr:Array = testArr;
+		private var arrayOfSides:Array = [testArr, testArr2];
+			private var sideIndex:int = 0;
 		
 		private var testIndex:int = 0;
 		private var thirdPersonController:ThirdPersonController;
@@ -139,6 +144,7 @@ package tests.pvp
 		private var _commandLookTarget:Object3D;
 		private var _commandLookEntity:Entity;
 		
+		private static const CHASE_Z_OFFSET:Number = 44;
 		private static const CMD_Z_OFFSET:Number = 72 + 40;
 		private static var CMD_DIST:Number = 730;
 		private var transitionCamera:ThirdPersonController;
@@ -151,8 +157,13 @@ package tests.pvp
 		private  var MAX_MOVEMENT_POINTS:Number = 5;
 		private  var MAX_COMMAND_POINTS:int = 20;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
-		private var commandPoints:Vector.<int> = new <int>[COMMAND_POINTS_PER_TURN,COMMAND_POINTS_PER_TURN];
+		private var commandPoints:Vector.<int> = new <int>[0,0];
 		
+		
+		
+		private function getDeductionCP():int {
+			return 1;
+		}
 		
 		
 		private function setupStartingEntites():void {
@@ -207,7 +218,10 @@ package tests.pvp
 				changeCameraView("commander");
 			}
 			else if (e.keyCode === Keyboard.K &&   !game.keyPoll.isDown(Keyboard.K) ) {
-				switchToPlayer();
+				if (commandPoints[sideIndex] - getDeductionCP()  >= 0 ) {
+					switchToPlayer();
+				}
+				
 			}
 			else if (e.keyCode === Keyboard.BACKSPACE && !game.keyPoll.isDown(Keyboard.BACKSPACE)) {
 				endPhase();
@@ -221,6 +235,39 @@ package tests.pvp
 		private  var CAMERA_PHASEFROM_AVERAGE:Boolean = true;  // old side average position? else nearest target from above
 		
 		
+		private function startPhase():void {
+			
+			sideIndex = 0;
+			curArr = arrayOfSides[sideIndex];
+			
+			commandPoints[sideIndex] += COMMAND_POINTS_PER_TURN;
+			if (commandPoints[sideIndex] > MAX_COMMAND_POINTS) commandPoints[sideIndex] = MAX_COMMAND_POINTS;
+			
+			updateCP();
+			
+			
+			
+			if (game.gameStates.engineState.currentState != engineStateCommander) {
+				_transitCompleteCallback = selectFirstMan;
+				changeCameraView("commander");
+			
+			}
+		}
+		
+		private function selectFirstMan():void {
+			setTimeout(selectFirstMan2, 0);
+			//throw new Error("A");
+			//setTimeout( cyclePlayerChoice, 0);
+			
+		}
+		
+			private function selectFirstMan2():void {
+			cyclePlayerChoice(0);
+			//throw new Error("A");
+			//setTimeout( cyclePlayerChoice, 0);
+			
+		}
+		
 		private function endPhase():void {
 			
 			
@@ -233,9 +280,16 @@ package tests.pvp
 			
 			
 	
-			var oldArr:Array = curArr;
-			curArr = curArr != testArr ? testArr : testArr2;
+			var oldArr:Array = arrayOfSides[sideIndex];
+			
 
+			sideIndex++;
+			if (sideIndex >= commandPoints.length) {
+				sideIndex = 0;
+			}
+			curArr = arrayOfSides[sideIndex];
+			
+			
 			
 			var x:Number = 0;
 			var y:Number = 0;
@@ -249,23 +303,24 @@ package tests.pvp
 			var d:Number = Number.MAX_VALUE;
 			
 			
-			i = commandPoints.length;
-			while (--i > -1) {
-				commandPoints[i] += COMMAND_POINTS_PER_TURN;
-				if (commandPoints[i] > MAX_COMMAND_POINTS) commandPoints[i] = MAX_COMMAND_POINTS;
-			}
 			
+		
+			commandPoints[sideIndex] += COMMAND_POINTS_PER_TURN;
+			if (commandPoints[sideIndex] > MAX_COMMAND_POINTS) commandPoints[sideIndex] = MAX_COMMAND_POINTS;
+			
+			
+			updateCP();
 			
 			i = testArr.length;
 			while (--i > -1) {
 				var counter:Counter = testArr[i].get(Counter) as Counter;
-				counter.value = 1;
+				counter.value = 0;
 			}
 			
 			i = testArr.length;
 			while (--i > -1) {
 				counter = testArr2[i].get(Counter) as Counter;
-				counter.value = 1;
+				counter.value = 0;
 			}
 			
 			
@@ -351,8 +406,7 @@ package tests.pvp
 				changeCameraView("commander");
 				return;
 			}
-			
-		
+
 			
 			if ( game.gameStates.engineState.currentState === engineStateCommander )  {
 				 testIndex+=cycleAmount;
@@ -373,12 +427,13 @@ package tests.pvp
 			var pos:Object3D = targetEntity.get(Object3D) as Object3D;
 			
 		
-			
+			var props:Object = { x:pos.x, y:pos.y, z:pos.z + CMD_Z_OFFSET };
 			if ( centerPlayerTween == null) {
-				centerPlayerTween =	new Tween(_commandLookEntity.get(Object3D), 2, { x:pos.x, y:pos.y, z:pos.z + CMD_Z_OFFSET } );
+				
+				centerPlayerTween =	new Tween(_commandLookEntity.get(Object3D), 2, props );
 			}
 			else {
-				centerPlayerTween.updateProps( _commandLookEntity.get(Object3D), pos );
+				centerPlayerTween.updateProps( _commandLookEntity.get(Object3D), props );
 				centerPlayerTween.t = 0;
 			
 			}
@@ -397,7 +452,12 @@ package tests.pvp
 			if (game.gameStates.engineState.currentState === game.gameStates.thirdPerson) {
 				return;
 			}
+			
+			commandPoints[sideIndex] -= getDeductionCP();
+			updateCP();
+			
 			game.keyPoll.resetAllStates();
+			
 			
 		
 			
@@ -441,8 +501,14 @@ package tests.pvp
 			}
 			else if (targetState === "commander" && game.gameStates.engineState.currentState === game.gameStates.thirdPerson) {
 				game.gameStates.engineState.changeState("transiting");
-				transitionCameras(thirdPersonController.thirdPerson, commanderCameraController.thirdPerson, targetState, arenaSpawner.currentPlayer.x, arenaSpawner.currentPlayer.y, arenaSpawner.currentPlayer.z, Cubic.easeIn);
+				transitionCameras(thirdPersonController.thirdPerson, commanderCameraController.thirdPerson, targetState, NaN, NaN, NaN, Cubic.easeIn);
 			}
+			/*
+			else if (targetState === "commander" && game.gameStates.engineState.currentState === game.gameStates.spectator) {
+				game.gameStates.engineState.changeState("transiting");
+				transitionCameras(spectatorPerson, commanderCameraController.thirdPerson, targetState, arenaSpawner.currentPlayer.x, arenaSpawner.currentPlayer.y, arenaSpawner.currentPlayer.z, Cubic.easeIn);
+			}
+			*/
 			else {
 				//throw new Error("NO transition");
 				game.gameStates.engineState.changeState("spectator");
@@ -460,21 +526,25 @@ package tests.pvp
 			//toCamera.controller.angleLatitude %= 360;
 			//toCamera.controller.angleLongitude %= 360;
 			
+			//transitionCamera.thirdPerson.validateFollowTarget();
+			fromCamera.validateFollowTarget();
+			toCamera.validateFollowTarget();
+			
 			transitionCamera.thirdPerson.instantZoom =  fromCamera.preferedZoom;
 			transitionCamera.thirdPerson.controller.angleLatitude = fromCamera.controller.angleLatitude;
 			transitionCamera.thirdPerson.controller.angleLongitude = fromCamera.controller.angleLongitude;
 		
 			
 			var transitCameraTarget:Object3D = transitionCamera.thirdPerson.followTarget;
-			transitCameraTarget.x = isNaN(customX) ?  fromCamera.followTarget.x : customX;
-			transitCameraTarget.y = isNaN(customY) ?fromCamera.followTarget.y : customY;
-			transitCameraTarget.z = isNaN(customZ) ? fromCamera.followTarget.z : customZ;
+			transitCameraTarget.x = isNaN(customX) ?  fromCamera.controller._followTarget.x : customX;
+			transitCameraTarget.y = isNaN(customY) ?fromCamera.controller._followTarget.y : customY;
+			transitCameraTarget.z = isNaN(customZ) ? fromCamera.controller._followTarget.z : customZ;
 
 		
-			var tarX:Number = toCamera.followTarget.x;
-			var tarY:Number = toCamera.followTarget.y;
-			var tarZ:Number = toCamera.followTarget.z;
-			
+			var tarX:Number = toCamera.controller._followTarget.x;
+			var tarY:Number = toCamera.controller._followTarget.y;
+			var tarZ:Number = toCamera.controller._followTarget.z;
+		
 
 
 			var ease:Function = customEase != null ? customEase : Cubic.easeOut;
@@ -527,7 +597,7 @@ package tests.pvp
 		
 			_commandLookTarget = dummyEntity.get(Object3D) as Object3D;
 			_commandLookEntity = dummyEntity;
-		//	_commandLookTarget.z = CMD_Z_OFFSET;
+			_commandLookTarget.z = CMD_Z_OFFSET;
 			//game.engine.addEntity(dummyEntity);
 			//*/
 			// possible to  set raycastScene  parameter to something else besides "collisionScene"...
@@ -535,6 +605,7 @@ package tests.pvp
 			thirdPersonController.thirdPerson.instantZoom = 140;
 		thirdPersonController.thirdPerson.controller.minDistance = 20;
 		thirdPersonController.thirdPerson.controller.maxDistance = 240;
+		thirdPersonController.thirdPerson.offsetZ = CHASE_Z_OFFSET;
 			game.gameStates.thirdPerson.addInstance(thirdPersonController).withPriority(SystemPriorities.postRender);
 			
 			// special PVP movement limited time
@@ -574,9 +645,9 @@ package tests.pvp
 			//throw new Error(game.gameStates.engineState.currentState);
 			//game.gameStates.engineState.changeState("thirdPerson");
 			
-			
-			game.gameStates.engineState.changeState("commander");
-		
+			arenaSpawner.currentPlayer = _commandLookTarget;
+			game.gameStates.engineState.changeState("thirdPerson");
+			startPhase();
 		}
 		
 		
@@ -634,6 +705,16 @@ package tests.pvp
 			testMovementMeter = new ProgressBar();
 			testMovementMeter.width = 300;
 			addChild(testMovementMeter);
+			
+			testCPLabel = new Label(this, 322);
+
+
+			updateCP();
+		}
+		
+		private function updateCP():void 
+		{
+			testCPLabel.text = "CP left: "+commandPoints[sideIndex];
 		}
 		
 

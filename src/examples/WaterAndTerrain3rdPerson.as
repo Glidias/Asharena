@@ -156,7 +156,8 @@ package examples
 
 			 // -- Player-Specific stuff for Client	 
 			 // TODO: look at object could be higher!
-            thirdPerson = new OrbitCameraMan(camera, new Object3D(), stage, raycastImpl, followTarget, playerRot, true); 
+            thirdPerson = new OrbitCameraMan(camera, followTarget, stage, raycastImpl, followTarget, playerRot, true); 
+			thirdPerson.offsetZ = 44;
 			
             //thirdPerson.controller.easingSeparator  = 12;
             thirdPerson.preferedZoom = 160 ;
@@ -500,9 +501,7 @@ package examples
 			camera.startTimer();	
 			
 			var follower:Object3D = thirdPerson.controller._followTarget;
-			follower._x = playerPos.x;
-			follower._y = playerPos.y;
-			follower._z= playerPos.z + 44;
+
 			
 			thirdPerson.followAzimuth = _orbitKeyDown ? false : true;
 			 thirdPerson.update();
