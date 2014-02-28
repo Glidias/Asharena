@@ -53,6 +53,11 @@ package systems.player.a3d
 			_stanceString = val === 0 ? "stand" : val === 1 ? "combat" : "crouch";
 			_stance = val;
 		}
+		
+		public function get stance():int 
+		{
+			return _stance;
+		}
 	
 		
 		public static const SPEED_BACKWARDS:Number = 60;
@@ -354,6 +359,12 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			//
 			
 			skin.z = _running || _stance != 2  ? 0 : -17;
+		}
+		
+		public function setIdleStance(val:int):void 
+		{
+			stance = val;
+			handleAction(PlayerAction.IDLE);
 		}
 			
 		

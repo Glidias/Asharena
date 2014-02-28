@@ -742,6 +742,20 @@ package alternativa.engine3d.controller {
             }
 		}
 		
+		public function disableMouseWheel():void {
+			 if (_mouseDownEventSource && _mouseWheelHandler!=null) {
+               
+				  _mouseDownEventSource.removeEventListener(MouseEvent.MOUSE_WHEEL, _mouseWheelHandler);
+			 }
+		}
+		
+		public function enableMouseWheel():void {
+			 if (_mouseDownEventSource && _mouseWheelHandler != null) {
+               
+				 _mouseDownEventSource.addEventListener(MouseEvent.MOUSE_WHEEL, _mouseWheelHandler);
+			 }
+		}
+		
 		override public function disable():void {
 			super.disable();
 			 if (_mouseDownEventSource) {

@@ -19,6 +19,7 @@ package spawners.arena
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import ash.core.Engine;
 	import flash.display.BitmapData;
+	import flash.geom.ColorTransform;
 	import flash.utils.ByteArray;
 	import systems.player.a3d.AnimationManager;
 	import systems.player.a3d.GladiatorStance;
@@ -40,6 +41,17 @@ package spawners.arena
 			this.arenaSpawner = spawner;
 			
 			super();
+		}
+		
+		public function getSideTexture(side:int):BitmapTextureResource {
+			var bmd:BitmapData = new Samnian.$_TEXTURE().bitmapData;
+
+			//var invertTransform:ColorTransform = new ColorTransform(-1,-1,-1,1,255,255,255,0)
+			//bmd.colorTransform(bmd.rect, invertTransform);
+			bmd.draw(bmd, null, null, "invert");
+			return new BitmapTextureResource(bmd);
+			
+			
 		}
 		
 		override protected function init():void {

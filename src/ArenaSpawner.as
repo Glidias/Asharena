@@ -6,6 +6,7 @@ package
 	import alternativa.engine3d.loaders.ParserMaterial;
 	import alternativa.engine3d.loaders.TexturesLoader;
 	import alternativa.engine3d.materials.FillMaterial;
+	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.StandardMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.objects.Mesh;
@@ -189,6 +190,25 @@ package
 			var sk:Skin = clone ? skProto.clone() as Skin : skProto;
 			return sk;
 		}
+
+		
+		private var sideTextureResources:Dictionary = new Dictionary();
+		
+		public function addTextureResourceSide(context3D:Context3D, race:String, side:int, resource:BitmapTextureResource):void {
+			if (side < 1) throw new Error("Side needs to be at least 1 or higher from base 0!");
+			resource.upload(context3D);
+			var skProto:Skin = skinDict[race];
+			var untypedMat:* = skProto.getSurface(0).material;
+			untypedMat = untypedMat.clone();
+			untypedMat.diffuseMap = resource;
+			sideTextureResources[race + side] = untypedMat;
+			
+		}
+		
+		public function getMaterialSide(race:String, side:int):Material {
+			
+			return sideTextureResources[race + side];
+		}
 		
 		public function addCrossStage(context3D:Context3D, pos:Pos=null, rot:Rot=null):void {
 						
@@ -196,11 +216,17 @@ package
 			addRenderEntity( upload( new Box(900, 10, 10, 1, 1, 1, false, new FillMaterial(0x00FF00) ),  context3D), pos || new Pos(), rot || new Rot() );
 		}
 		
-		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0, azimuth:Number=0 ):Entity {
+		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0, azimuth:Number=0, side:int=0):Entity {
 			var ent:Entity = getGladiatorBase(x,y,z);
 			var skProto:Skin = skinDict[race];
 			var sk:Skin = skProto.clone() as Skin;
 			
+			if (side > 0) {
+				var customMat:Material = getMaterialSide(race, side);
+				if (customMat == null) throw new Error("No side material found!");
+				sk.getSurface(0).material =customMat
+				
+			}
 			
 			var obj:Object3D;
 			

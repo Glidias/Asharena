@@ -241,9 +241,10 @@ package alternativa.engine3d.controller
 			ignoreDict[value] = true;
 		}
 		
-		public function setFollowComponents(object:Object3D, rot:Rot):void {
+		public function setFollowComponents(object:Object3D, rot:Rot, alphaSetter:*=null):void {
 			followTarget = object;
 			this.rot = rot;
+			if (alphaSetter) this.alphaSetter = alphaSetter;
 			if (followAzimuth || followPitch) {
 				if (followAzimuth) {
 					//_followTarget.rotationZ = rot.z = camera.rotationZ;

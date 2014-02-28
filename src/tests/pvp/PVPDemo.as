@@ -10,6 +10,7 @@ package tests.pvp
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
+	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternterrain.CollidableMesh;
 	import arena.components.char.MovementPoints;
 	import arena.systems.player.LimitedPlayerMovementSystem;
@@ -20,6 +21,7 @@ package tests.pvp
 	import com.bit101.components.ProgressBar;
 	import com.greensock.easing.Cubic;
 	import com.greensock.easing.Linear;
+	import components.controller.SurfaceMovement;
 	import components.Pos;
 	import components.Rot;
 	import components.tweening.Tween;
@@ -29,12 +31,14 @@ package tests.pvp
 	import flash.events.KeyboardEvent;
 	import flash.ui.Keyboard;
 	import flash.utils.setTimeout;
+	import input.KeyPoll;
 	import spawners.arena.GladiatorBundle;
 	import systems.animation.IAnimatable;
 	import systems.collisions.CollidableNode;
 	import systems.collisions.EllipsoidCollider;
 	import systems.collisions.GroundPlaneCollisionSystem;
 	import systems.player.a3d.GladiatorStance;
+	import systems.player.PlayerAction;
 	import systems.SystemPriorities;
 	import systems.tweening.TweenSystem;
 	import util.SpawnerBundle;
@@ -48,9 +52,9 @@ package tests.pvp
 	
 	/**
 
-	 *  WIP pvp demo
+	 *  WIP pvp demo. This will later act as the main controller, for combat mode encounters in the RPG.
+	 * 
 	 * todo:
-		 * Turns/Command-point/Movement meter mechanic.
 		 * 
 		 * Targeting/LOS mechanic (weapon min/max (optimum) range, cone)  If target is below min range, a melee/secondary attack might be used instead. 
 		 * 
@@ -82,6 +86,8 @@ package tests.pvp
 		private var testMovementMeter:ProgressBar;
 		private var testCPLabel:Label;
 		
+	private var _gladiatorBundle:GladiatorBundle;
+		
 		
 		public function PVPDemo() 
 		{
@@ -102,7 +108,7 @@ package tests.pvp
 				
 		private function getSpawnerBundles():Vector.<SpawnerBundle> 
 		{
-			return new <SpawnerBundle>[new GladiatorBundle(arenaSpawner)];
+			return new <SpawnerBundle>[_gladiatorBundle = new GladiatorBundle(arenaSpawner)];
 		}
 		
 		private function setupViewSettings():void 
@@ -146,6 +152,7 @@ package tests.pvp
 		
 		private static const CHASE_Z_OFFSET:Number = 44;
 		private static const CMD_Z_OFFSET:Number = 72 + 40;
+		 private var TARGET_MODE_ZOOM:Number = 40;
 		private static var CMD_DIST:Number = 730;
 		private var transitionCamera:ThirdPersonController;
 		private var centerPlayerTween:Tween;
@@ -174,6 +181,8 @@ package tests.pvp
 			// spawn any beginning entieies
 			var curPlayer:Entity;
 			
+			arenaSpawner.addTextureResourceSide(SpawnerBundle.context3D, ArenaSpawner.RACE_SAMNIAN, 1, _gladiatorBundle.getSideTexture(1)  );
+			
 			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, -520, 0); testArr.push(curPlayer);
 			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48, -520, 0); testArr.push(curPlayer);
 			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*2, -520, 0); testArr.push(curPlayer);
@@ -181,11 +190,11 @@ package tests.pvp
 			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 4, -520, 0); testArr.push(curPlayer);
 
 			
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 6, 520, 0, Math.PI); testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 7, 520, 0, Math.PI); testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 8, 520, 0, Math.PI); testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 9, 520, 0, Math.PI); testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 10, 520, 0, Math.PI); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 6, 520, 0, Math.PI, 1); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 7, 520, 0, Math.PI, 1); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 8, 520, 0, Math.PI, 1); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 9, 520, 0, Math.PI, 1); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 10, 520, 0, Math.PI, 1); testArr2.push(curPlayer);
 			
 			
 			var i:int = testArr.length;
@@ -221,13 +230,63 @@ package tests.pvp
 				if (commandPoints[sideIndex] - getDeductionCP()  >= 0 ) {
 					switchToPlayer();
 				}
-				
+			}
+			else if (e.keyCode === Keyboard.Z && !game.keyPoll.isDown(Keyboard.Z) ) {
+				toggleTargetingMode();
 			}
 			else if (e.keyCode === Keyboard.BACKSPACE && !game.keyPoll.isDown(Keyboard.BACKSPACE)) {
 				endPhase();
 			}
 			
 			
+		}
+		
+		private var _targetMode:Boolean = false;
+		private var _lastTargetZoom:Number;
+		private var _lastTargetStance:int;
+		
+		private function toggleTargetingMode():void 
+		{
+			if ( game.gameStates.engineState.currentState !=  game.gameStates.thirdPerson) {
+				return;
+			}
+			
+			var gladiatorStance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
+			
+			
+			if (!_targetMode) {
+				_lastTargetZoom = thirdPersonController.thirdPerson.controller.getDistance();
+				_lastTargetStance = gladiatorStance.stance;
+			}
+			_targetMode = !_targetMode;
+			
+			if (_targetMode) {
+				thirdPersonController.thirdPerson.preferedZoom = TARGET_MODE_ZOOM;
+				thirdPersonController.thirdPerson.controller.disableMouseWheel();
+				
+				(arenaSpawner.currentPlayerEntity.get(SurfaceMovement) as SurfaceMovement).resetAllStates();
+				game.keyPoll.resetAllStates();
+				arenaSpawner.currentPlayerEntity.remove(KeyPoll);
+				gladiatorStance.setIdleStance( 1);
+			}
+			else {
+				exitTargetMode();
+				gladiatorStance.setIdleStance( _lastTargetStance);
+			}
+			
+		}
+		
+		private function exitTargetMode():void 
+		{
+			_targetMode = false;
+			
+			thirdPersonController.thirdPerson.preferedZoom = _lastTargetZoom;
+			thirdPersonController.thirdPerson.controller.enableMouseWheel();
+		
+			var gladiatorStance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
+		
+			
+			if (movementPoints.movementTimeLeft > 0) arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll);
 		}
 		
 		
@@ -245,8 +304,6 @@ package tests.pvp
 			
 			updateCP();
 			
-			
-			
 			if (game.gameStates.engineState.currentState != engineStateCommander) {
 				_transitCompleteCallback = selectFirstMan;
 				changeCameraView("commander");
@@ -256,15 +313,11 @@ package tests.pvp
 		
 		private function selectFirstMan():void {
 			setTimeout(selectFirstMan2, 0);
-			//throw new Error("A");
-			//setTimeout( cyclePlayerChoice, 0);
 			
 		}
 		
-			private function selectFirstMan2():void {
+		private function selectFirstMan2():void {
 			cyclePlayerChoice(0);
-			//throw new Error("A");
-			//setTimeout( cyclePlayerChoice, 0);
 			
 		}
 		
@@ -402,7 +455,7 @@ package tests.pvp
 		private function cyclePlayerChoice(cycleAmount:int=1):void   // cycling players only allowed in commander view
 		{
 			if (game.gameStates.engineState.currentState != engineStateCommander) {
-				
+				if (_targetMode) exitTargetMode();
 				changeCameraView("commander");
 				return;
 			}
@@ -453,6 +506,8 @@ package tests.pvp
 				return;
 			}
 			
+			_targetMode = false;
+			
 			commandPoints[sideIndex] -= getDeductionCP();
 			updateCP();
 			
@@ -472,7 +527,9 @@ package tests.pvp
 			counter.value++;
 			
 			arenaSpawner.currentPlayerEntity.add( movementPoints, MovementPoints);
-			
+			//var untyped:* = arenaSpawner.currentPlayerSkin.getSurface(0).material;
+			//arenaSpawner.currentPlayerSkin.getSurface(0).material as 
+			//arenaSpawner.currentPlayerSkin.getSurface(0).material
 			thirdPersonController.thirdPerson.setFollowComponents( arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Rot) as Rot);
 			changeCameraView("thirdPerson");		
 		}
@@ -482,11 +539,7 @@ package tests.pvp
         if (difference < -180) difference += 360;
         if (difference > 180) difference -= 360;
 			return difference + actualangle;
-			
-			//var diffangle:Number = (actualangle - destangle) + 180;
-			//diffangle = (diffangle / 360.0)
-			//diffangle = ((diffangle - Math.floor( diffangle )) * 360.0) - 180;
-			//return diffangle - actualangle;
+
 		}
 		
 		private function changeCameraView(targetState:String):void {
@@ -517,6 +570,8 @@ package tests.pvp
 		}
 		
 		private var _targetTransitState:String;
+
+		
 		private function transitionCameras(fromCamera:OrbitCameraMan, toCamera:OrbitCameraMan, targetState:String=null, customX:Number=Number.NaN, customY:Number = Number.NaN, customZ:Number = Number.NaN, customEase:Function=null, duration:Number=1):void 
 		{
 	
@@ -603,7 +658,9 @@ package tests.pvp
 			// possible to  set raycastScene  parameter to something else besides "collisionScene"...
 			thirdPersonController = new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, true);
 			thirdPersonController.thirdPerson.instantZoom = 140;
-		thirdPersonController.thirdPerson.controller.minDistance = 20;
+			
+		thirdPersonController.thirdPerson.preferedMinDistance = 100;
+		thirdPersonController.thirdPerson.controller.minDistance = 0;
 		thirdPersonController.thirdPerson.controller.maxDistance = 240;
 		thirdPersonController.thirdPerson.offsetZ = CHASE_Z_OFFSET;
 			game.gameStates.thirdPerson.addInstance(thirdPersonController).withPriority(SystemPriorities.postRender);
@@ -714,7 +771,7 @@ package tests.pvp
 		
 		private function updateCP():void 
 		{
-			testCPLabel.text = "CP left: "+commandPoints[sideIndex];
+			testCPLabel.text = (sideIndex > 0 ? "Ghost army" : "Player army" )+" CP left: "+commandPoints[sideIndex] +" / "+MAX_COMMAND_POINTS;
 		}
 		
 
