@@ -3,7 +3,7 @@
  * @author Glenn Ko
  */
 
-package util.geom;
+package util;
 
 class BitLib 
 {

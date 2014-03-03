@@ -67,7 +67,7 @@ package
 				gladiatorStance = currentPlayerEntity.get(IAnimatable) as GladiatorStance;
 				if (gladiatorStance) gladiatorStance.unbindKeys(stage);
 				currentPlayerEntity.remove(KeyPoll);
-				
+				setAsNonPlayer(currentPlayerEntity);
 				var vel:Vel = currentPlayerEntity.get(Vel) as Vel;
 				if (vel) {
 					
@@ -80,9 +80,15 @@ package
 			}
 			
 			currentPlayerEntity = ent;
+			if (ent == null) {
+				currentPlayer = null;
+				currentPlayerSkin = null;
+				return;
+			}
+			
 			currentPlayer = ent.get(Object3D) as Object3D;
 			currentPlayerSkin = findSkin(currentPlayer);
-			
+			setAsSinglePlayer(ent);
 			gladiatorStance = ent.get(IAnimatable) as GladiatorStance;
 			if (gladiatorStance) gladiatorStance.bindKeys(stage);
 			
@@ -216,10 +222,12 @@ package
 			addRenderEntity( upload( new Box(900, 10, 10, 1, 1, 1, false, new FillMaterial(0x00FF00) ),  context3D), pos || new Pos(), rot || new Rot() );
 		}
 		
-		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0, azimuth:Number=0, side:int=0):Entity {
-			var ent:Entity = getGladiatorBase(x,y,z);
+		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0, azimuth:Number=0, side:int=0, name:String=null):Entity {
+			var ent:Entity = getGladiatorBase(x,y,z, 0,0,0, playerStage!=null);
 			var skProto:Skin = skinDict[race];
 			var sk:Skin = skProto.clone() as Skin;
+			
+			
 			
 			if (side > 0) {
 				var customMat:Material = getMaterialSide(race, side);
@@ -231,6 +239,7 @@ package
 			var obj:Object3D;
 			
 			obj = new Object3D();
+			if (name != null) obj.name = name;
 			obj.boundBox = sk.boundBox;
 			
 			sk.boundBox = null;
@@ -275,6 +284,15 @@ package
 			engine.addEntity(ent);
 			
 			return ent;
+		}
+		
+		public function disableStanceControls(stage:Stage):void 
+		{
+			var gladiatorStance:GladiatorStance;
+			
+			
+			gladiatorStance = currentPlayerEntity ? currentPlayerEntity.get(IAnimatable) as GladiatorStance : null;
+			if (gladiatorStance) gladiatorStance.unbindKeys(stage);
 		}
 		
 		private function upload(obj:Object3D,context3D:Context3D, hierachy:Boolean=false):Object3D 

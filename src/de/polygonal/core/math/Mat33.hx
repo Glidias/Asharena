@@ -437,14 +437,7 @@ class Mat33
 		}
 	}
 	
-	/** Returns the string form of the value that this object represents. */
-	public function toString():String
-	{
-		return Printf.format("Mat33:\n" +
-			"[%-+10.4f %-+10.4f %-+10.4f]\n" +
-			"[%-+10.4f %-+10.4f %-+10.4f]\n" +
-			"[%-+10.4f %-+10.4f %-+10.4f]", [m11, m12, m13, m21, m22, m23, m31, m32, m33]);
-	}
+
 	
 	inline function _fastTrig(angle:Float):Void
 	{

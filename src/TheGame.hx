@@ -1,4 +1,4 @@
-package ;
+package;
 import arena.systems.player.LimitedPlayerMovementSystem;
 import ash.core.Engine;
 import ash.fsm.EngineState;
@@ -14,6 +14,8 @@ import systems.movement.FlockingSystem;
 import systems.movement.MovementSystem;
 import systems.movement.PlayerSurfaceMovementSystem;
 import systems.movement.QPhysicsSystem;
+import systems.player.PlayerTargetingSystem;
+
 import systems.SystemPriorities;
 import systems.tweening.TweenSystem;
 import util.geom.Geometry;
@@ -75,7 +77,7 @@ class TheGame
 		TweenSystem;
 		
 		LimitedPlayerMovementSystem;
-		
+		PlayerTargetingSystem;
 	
 		
 		// Spawn starting entities

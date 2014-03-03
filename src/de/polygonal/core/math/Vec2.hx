@@ -138,11 +138,5 @@ class Vec2
 		return new Vec2(x, y);
 	}
 	
-	/** Returns the string form of the value that this object represents. */
-	public function toString():String
-	{
-		return Printf.format("Vec2:\n" +
-			"[%-+10.4f]\n" +
-			"[%-+10.4f]", [x, y]);
-	}
+	
 }

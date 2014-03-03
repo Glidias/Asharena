@@ -941,14 +941,7 @@ class Mat44
 	/**
 	 * Returns the string form of the value that this object represents.
 	 */
-	public function toString():String
-	{
-		return Printf.format("Mat44:\n" +
-			"[%-+10.4f %-+10.4f %-+10.4f %-+10.4f]\n" +
-			"[%-+10.4f %-+10.4f %-+10.4f %-+10.4f]\n" +
-			"[%-+10.4f %-+10.4f %-+10.4f %-+10.4f]\n" +
-			"[%-+10.4f %-+10.4f %-+10.4f %-+10.4f]", [m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44]);
-	}
+	
 	
 	inline function _fastTrig(angle:Float)
 	{

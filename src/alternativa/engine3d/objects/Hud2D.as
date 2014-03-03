@@ -37,6 +37,8 @@ package alternativa.engine3d.objects
 			}
 			orthoCamera = ORTHO_CAM;
 			
+			z = 1.1;
+			
 			
 		
 		}

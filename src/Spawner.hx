@@ -25,9 +25,10 @@ class Spawner
 	public function new(engine:Engine) 
 	{
 		this.engine = engine;	
+
 	}
 
-	public function getGladiatorBase(x:Float = 0, y:Float = 0, z:Float = 0, rx:Float = 0, ry:Float = 0, rz:Float=0 ):Entity {
+	public function getGladiatorBase(x:Float = 0, y:Float = 0, z:Float = 0, rx:Float = 0, ry:Float = 0, rz:Float=0, isPlayer:Bool=true):Entity {
 		var ent:Entity = new Entity();
 		
 		ent.add( new Pos(x,y,z) ).add( new Rot(rx,ry,rz) ).add( new Vel() );
@@ -39,9 +40,26 @@ class Spawner
 		var coll:CollisionResult;
 		ent.add(  new Ellipsoid(20, 20, 36)).add( coll = new CollisionResult() ).add( new MoveResult() );
 		coll.flags |= CollisionResult.FLAG_MAX_GROUND_NORMAL;
+		if (isPlayer) {
+			
+			
+		}
 		//.add(  new Ellipsoid(32,32,72)).add( new MoveResult() );
 		
 		ent.add( new ActionIntSignal() );
+		
+		return ent;
+	}
+	
+
+	
+	public function setAsSinglePlayer(ent:Entity):Entity {
+		
+		
+		return ent;
+	}
+	
+	public function setAsNonPlayer(ent:Entity):Entity {
 		
 		return ent;
 	}

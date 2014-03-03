@@ -23,7 +23,7 @@ package alternativa.engine3d.controller
      public class OrbitCameraMan 
     {
 
-        private var _followTarget:Object3D;
+        alternativa3d var _followTarget:Object3D;
 		public var rot:Rot;
         public var controller:OrbitCameraController;
         

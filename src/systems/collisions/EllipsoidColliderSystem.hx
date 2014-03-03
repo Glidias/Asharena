@@ -8,6 +8,7 @@ import components.MoveResult;
 import components.Pos;
 import components.Transform3D;
 import components.Vel;
+import input.KeyPoll;
 import util.TypeDefs;
 
 /**
@@ -94,4 +95,5 @@ class EllipsoidNode extends Node<EllipsoidNode> {  // For positioned nodes witho
 	public var vel:Vel;
 	public var pos:Pos;
 	public var result:MoveResult;
+	
 }
