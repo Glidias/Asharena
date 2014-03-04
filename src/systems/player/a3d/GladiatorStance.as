@@ -6,6 +6,7 @@ package systems.player.a3d
 	import alternativa.engine3d.animation.AnimationSwitcher;
 	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Skin;
+	import ash.signals.Signal1;
 	import components.controller.SurfaceMovement;
 	import components.Ellipsoid;
 	import components.Pos;
@@ -49,9 +50,17 @@ package systems.player.a3d
 		
 		private var _stance:int = 0;
 		private var _stanceString:String = "stand";
+		
+		public static var ON_STANCE_CHANGE:Signal1 = new Signal1();
+		
 		public function set stance(val:int):void {
+			var lastStance:int = _stance;
 			_stanceString = val === 0 ? "stand" : val === 1 ? "combat" : "crouch";
 			_stance = val;
+			if (lastStance != val) {
+				ON_STANCE_CHANGE.dispatch(val);
+			
+			}
 		}
 		
 		public function get stance():int 
@@ -193,15 +202,16 @@ package systems.player.a3d
 		}
 		
 		public function lowerStanceToggle():void {
-			_stance++;
+			var tryStance:int = _stance+1;
 	
-			stance = _stance > 2 ? 1 : _stance;
+			stance = tryStance > 2 ? 1 : tryStance;
 			handleAction(lastAction);
 		}
 		
 		public function raiseStanceToggle():void {
-			_stance--;
-			stance = _stance < 0 ? 1 : _stance;
+			var tryStance:int = _stance-1;
+			
+			stance = tryStance < 0 ? 1 : tryStance;
 			handleAction(lastAction);
 		}
 		

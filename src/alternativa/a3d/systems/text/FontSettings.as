@@ -231,10 +231,17 @@ package alternativa.a3d.systems.text
 			spriteSet._numSprites = boundsCache.length;
 		}
 		
+		public function finaliseWrittenData():void 
+		{
+			if (counter > spriteSet._numSprites) spriteSet.numSprites = counter;
+			spriteSet._numSprites = counter;
+		}
+		
 		public function cacheData(str:String, maxWidth:Number, centered:Boolean):void {
 			if (str === "") {
 				boundsCache = [];
 				referTextCache = "";
+				counter = 0;
 				return;
 			}
 			str =maxWidth != 0 ?  fontSheet.fontV.getParagraph(str, 0, 0, maxWidth, boundParagraph) : str;
@@ -331,6 +338,7 @@ package alternativa.a3d.systems.text
 				//font.getRandomRect(rect);
 				var aabb:AABB2 = bounds[count];
 				var withinBounds:Boolean =  ( y + aabb.minY >= minimumY );
+			//	if (i != data.length) throw new Error("REPLACE");
 				data[i] =   x +aabb.minX + (aabb.maxX - aabb.minX) * .5;
 				data[i + 1] =  y+  (aabb.minY + (aabb.maxY-aabb.minY)*.5);
 				data[i + 2] =  (x + aabb.maxX <= maskWidth && x + aabb.minX >= minX )  && withinBounds? 0 : -1;
@@ -344,10 +352,13 @@ package alternativa.a3d.systems.text
 			
 			
 			boundsCache = bounds;
+			counter += bounds.length;
 			referTextCache = referText;
 			
 			_outsideBound = outsideBound;
 		}
+		
+
 		
 	
 		

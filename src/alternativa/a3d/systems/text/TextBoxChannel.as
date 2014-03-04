@@ -1,6 +1,7 @@
 package alternativa.a3d.systems.text 
 {
 	import alternativa.engine3d.alternativa3d;
+	import alternativa.engine3d.core.Object3D;
 	import ash.core.NodeList;
 	import ash.signals.Signal1;
 	import ash.signals.Signal2;
@@ -324,6 +325,25 @@ package alternativa.a3d.systems.text
 			
 			if (head.node === tail.node) _lastScrollNode = head.node;
 			
+		}
+		
+		public function addToContainer(cont:Object3D):void {
+			var len:int = styles.length;
+			for (var i:int = 0; i < len; i++) {
+				cont.addChild( styles[i].spriteSet);
+			}
+		}
+		
+		
+		
+		public function moveTo(x:Number, y:Number):void {
+			var len:int = styles.length;
+			for (var i:int = 0; i < len; i++) {
+				var obj:Object3D = styles[i].spriteSet;
+				obj._x = x;
+				obj._y = y;
+				obj.transformChanged = true;
+			}
 		}
 		
 		public function TextBoxChannel(styles:Vector.<FontSettings>, maxDisplayedItems:uint=5, timeout:Number=-1, vSpacing:Number=3) 

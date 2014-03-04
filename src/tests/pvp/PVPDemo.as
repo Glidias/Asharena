@@ -267,7 +267,7 @@ package tests.pvp
 				_lastTargetStance = gladiatorStance.stance;
 			}
 			_targetMode = !_targetMode;
-			
+						arenaHUD.setTargetMode(_targetMode);
 			if (_targetMode) {
 				thirdPersonController.thirdPerson.preferedZoom = TARGET_MODE_ZOOM;
 				thirdPersonController.thirdPerson.controller.disableMouseWheel();
@@ -287,6 +287,7 @@ package tests.pvp
 		private function exitTargetMode():void 
 		{
 			_targetMode = false;
+			arenaHUD.setTargetMode(_targetMode);
 			
 			thirdPersonController.thirdPerson.preferedZoom = _lastTargetZoom;
 			thirdPersonController.thirdPerson.controller.enableMouseWheel();
@@ -536,7 +537,7 @@ package tests.pvp
 			}
 			
 			_targetMode = false;
-			
+						arenaHUD.setTargetMode(_targetMode);
 			commandPoints[sideIndex] -= getDeductionCP();
 			updateCP();
 			
@@ -659,6 +660,13 @@ package tests.pvp
 
 			game.gameStates.engineState.changeState(_targetTransitState);
 			arenaHUD.setState(_targetTransitState);
+			if (_targetTransitState != "commander") {
+				arenaHUD.hideStars();
+			}
+			else  {
+				arenaHUD.showStars();
+			}
+			
 			_targetTransitState = null;
 			
 			if (_transitCompleteCallback != null) {
@@ -675,10 +683,15 @@ package tests.pvp
 		}
 		
 		
+		private function onStanceChange(val:int):void {
+			arenaHUD.setStance(val);
+		}
 		
 		private function setupGameplay():void 
 		{
 			
+			
+			GladiatorStance.ON_STANCE_CHANGE.add(onStanceChange);
 			
 			// Tweening system
 			game.engine.addSystem( new TweenSystem(), SystemPriorities.animate );
@@ -838,6 +851,7 @@ package tests.pvp
 		private function updateCP():void 
 		{
 		//	testCPLabel.text = (sideIndex > 0 ? "Ghost army" : "Player army" )+" CP left: "+commandPoints[sideIndex] +" / "+MAX_COMMAND_POINTS;
+			arenaHUD.updateTurnInfo( commandPoints[sideIndex], MAX_COMMAND_POINTS, (sideIndex > 0 ? "Ghost army" : "Player army" ), sideIndex, COMMAND_POINTS_PER_TURN );
 		}
 		
 
