@@ -78,6 +78,7 @@ class TheGame
 		
 		LimitedPlayerMovementSystem;
 		PlayerTargetingSystem;
+		
 	
 		
 		// Spawn starting entities

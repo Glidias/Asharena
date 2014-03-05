@@ -19,9 +19,13 @@ package arena.views.hud
 	import alternativa.engine3d.spriteset.materials.TextureAtlasMaterial;
 	import alternativa.engine3d.spriteset.SpriteSet;
 	import alternativa.engine3d.spriteset.util.SpriteGeometryUtil;
+	import arena.components.char.ArenaCharacterClass;
+	import ash.core.Entity;
 	import assets.fonts.ConsoleFont;
 	import assets.fonts.Fontsheet;
+	import components.Health;
 	import de.polygonal.motor.geom.primitive.AABB2;
+	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display.Stage;
 	import flash.events.Event;
@@ -29,6 +33,7 @@ package arena.views.hud
 	import flash.geom.Vector3D;
 	import flash.utils.Dictionary;
 	import saboteur.spawners.SaboteurHudAssets;
+	import systems.player.PlayerTargetNode;
 	import util.SpawnerBundle;
 	import alternativa.engine3d.alternativa3d;
 	use namespace alternativa3d;
@@ -62,7 +67,7 @@ package arena.views.hud
 		private var fontConsole:Fontsheet;
 		private var _textGeometry:Geometry;
 		static public const MAX_CHARS:int = 60;  // per draw call
-		static public const MSG_END_ACTION_TURN:String = "Press 'TAB' to end action turn.";
+		static public const MSG_END_ACTION_TURN:String = "Hit 'TAB' to end action turn.";
 		static public const MSG_START_ACTION_TURN:String = "Press 'K' to start action turn.";
 		static public const MSG_END_PHASE:String =  "Hit 'Backspace' to end phase."
 		
@@ -82,13 +87,41 @@ package arena.views.hud
 		private var arrowZOffset:Number = 64;
 		private var maxArrowScale:Number = 2;
 		private var minArrowScale:Number = .75;
+		
+		
+		private var vec3:Vector3D = new Vector3D();
+		private var projectedPoint:Vector3D = new Vector3D();
+	//	/*
+		
+		private var visibleArrowMarkers:int = 0;
+		private var visibleArrowMarkerPoints:Vector.<Number> = new Vector.<Number>();
+		private var visibleArrowTargets:Vector.<Object3D>;
+		private var _movementBar:SpriteMeshSetClone;
+		static private const MOVEMENT_BAR_SCALE:Number = 180;
+		static private const TARGET_INFO_CMD_Y:Number = 130;
+		static private const TARGET_INFO_Y:Number = 130-55;
+		
+		
+		private var _textTurnInfo:FontSettings;
+		private var _cpMeter:Array;
+		private var _cpMeterHolder:Object3D;
+		private var _textTurnInfoMini:FontSettings;
+		private var _textTargetMode:FontSettings;
+		
+		private var _targetInfo:TextBoxChannel;
+		private var _actionChoicesBox:TextBoxChannel;
+		private var _curCharInfo:TextBoxChannel;
+		private var _msgLogInfo:TextBoxChannel;
+		private var _stanceCharInfo:TextBoxChannel;
+		
+		private var _displayChar:Entity;
 	
 	
 		public function ArenaHUD(stage:Stage) 
 		{
 			hud = new Hud2D();
 			
-		
+			
 			ASSETS = [SaboteurHudAssets];
 			this.stage = stage;
 			super();
@@ -211,6 +244,8 @@ package arena.views.hud
 			
 			// setup basic fonts
 			fontConsole = new ConsoleFont();
+			
+		//	stage.addChild( new Bitmap( fontConsole.bmpResource.data) );
 			fontConsole.bmpResource.upload(context3D);
 			//chatTextInput.glyphRange = fontConsole.fontV._glyphRange;
 			_textGeometry  = SpriteGeometryUtil.createNormalizedSpriteGeometry(MAX_CHARS, 0, 1, 1, 0, 0, 2);
@@ -405,22 +440,28 @@ package arena.views.hud
 			_targetInfo = new TextBoxChannel( new <FontSettings>[ getNewFontSettings(fontConsole, fontMat, 30) ], 5, -1, 3); 
 			_targetInfo.width = 200;
 			_targetInfo.addToContainer(layoutTopLeft);
+			_targetInfo.moveTo(5, TARGET_INFO_CMD_Y);
+				
+			/*
 			_targetInfo.appendMessage("1. ---------");
 			_targetInfo.appendMessage(" ");
 			_targetInfo.appendMessage("2. ---------");
 			_targetInfo.appendMessage("3. ---------");
-			_targetInfo.moveTo(5, TARGET_INFO_CMD_Y);
-			_targetInfo.update(0);
+		
+			_targetInfo.drawNow();
+			*/
 			//layoutTopLeft.addChild(_targetInfo );
 			
 			_actionChoicesBox = new TextBoxChannel( new <FontSettings>[ getNewFontSettings(fontConsole, fontMat, 30) ], 5, -1, 3); 
 			_actionChoicesBox.addToContainer(layoutTopLeft);
 			registerVisStatesOfTextBox("thirdPerson", _actionChoicesBox);
+			/*
 			_actionChoicesBox.appendMessage("1. --------");
 			_actionChoicesBox.appendMessage("2. ---------");
 			_actionChoicesBox.appendMessage("3. ---------");
 			_actionChoicesBox.appendMessage("4. ---------");
-			_actionChoicesBox.update(0);
+			_actionChoicesBox.drawNow();
+			*/
 			_actionChoicesBox.moveTo(200+20, _actionChoicesBox._heightOffset + 20);
 			
 			// Command points and Turn info on top center
@@ -471,7 +512,7 @@ package arena.views.hud
 			_msgLogInfo.appendMessage("6. ---------");
 			_msgLogInfo.appendMessage("7. ---------");
 			_msgLogInfo.appendMessage("8. ---------");
-			_msgLogInfo.update(0);
+			_msgLogInfo.drawNow();
 			*/
 			
 			
@@ -479,9 +520,8 @@ package arena.views.hud
 			_stanceCharInfo = new TextBoxChannel( new <FontSettings>[ getNewFontSettings(fontConsole, fontMat, 30) ], 5, -1, 3); 
 			_stanceCharInfo.addToContainer(layoutBottomLeft);
 			registerVisStatesOfTextBox("thirdPerson", _stanceCharInfo);
-			_stanceCharInfo.appendMessage("Standing");
-			_stanceCharInfo.appendMessage("Q/Ctrl - Cautious");
-			_stanceCharInfo.update(0);
+			setStance(0);
+		
 			_stanceCharInfo.moveTo(5, 0);
 			
 			// your stats on bottom right
@@ -489,11 +529,7 @@ package arena.views.hud
 			_curCharInfo.centered = true;
 			_curCharInfo.width = 140;
 			_curCharInfo.addToContainer(layoutBottomRight);
-			_curCharInfo.appendMessage("1. ---------");
-			_curCharInfo.appendMessage(" ");
-			_curCharInfo.appendMessage("2. ---------");
-			_curCharInfo.appendMessage(" ");
-				_curCharInfo.update(0);
+			
 			_curCharInfo.moveTo( -80, 0);
 		
 
@@ -503,49 +539,26 @@ package arena.views.hud
 			_stanceCharInfo.clearAll();
 				
 			if (stance ===0) {
-				_stanceCharInfo.appendMessage("Standing");
+				_stanceCharInfo.appendSpanTagMessage('<span u="2">Standing</span>');
 				_stanceCharInfo.appendMessage("Q/Ctrl - Cautious");
 		
 			}
 			else if (stance === 1) {
 				_stanceCharInfo.appendMessage("Q - Standing");
-				_stanceCharInfo.appendMessage("Cautious");
+				_stanceCharInfo.appendSpanTagMessage('<span u="2">Cautious</span>');
 				_stanceCharInfo.appendMessage("Ctrl - Crouched");
 			}
 			else {
 				
 				_stanceCharInfo.appendMessage("Q/Ctrl - Cautious");
-				_stanceCharInfo.appendMessage("Crouched");
+				_stanceCharInfo.appendSpanTagMessage('<span u="2">Crouched</span>');
 			}
-			_stanceCharInfo.update(0);
+			_stanceCharInfo.drawNow();
 				
 		}
 		
 		
-		private var vec3:Vector3D = new Vector3D();
-		private var projectedPoint:Vector3D = new Vector3D();
-	//	/*
-		
-		private var visibleArrowMarkers:int = 0;
-		private var visibleArrowMarkerPoints:Vector.<Number> = new Vector.<Number>();
-		private var visibleArrowTargets:Vector.<Object3D>;
-		private var _movementBar:SpriteMeshSetClone;
-		static private const MOVEMENT_BAR_SCALE:Number = 180;
-		static private const TARGET_INFO_CMD_Y:Number = 130;
-		static private const TARGET_INFO_Y:Number = 130-55;
-		
-		
-		private var _textTurnInfo:FontSettings;
-		private var _cpMeter:Array;
-		private var _cpMeterHolder:Object3D;
-		private var _textTurnInfoMini:FontSettings;
-		private var _textTargetMode:FontSettings;
-		
-		private var _targetInfo:TextBoxChannel;
-		private var _actionChoicesBox:TextBoxChannel;
-		private var _curCharInfo:TextBoxChannel;
-		private var _msgLogInfo:TextBoxChannel;
-		private var _stanceCharInfo:TextBoxChannel;
+
 		
 		
 		public function showArrowMarkers(targets:Vector.<Object3D>):void {
@@ -591,21 +604,70 @@ package arena.views.hud
 			
 		}
 		
+		private var _stars:Boolean = false;
+		
 		public function hideStars():void {
+			_stars = false;
 			hideList(_cpMeter);
 			_textTurnInfo.spriteSet.visible = false;
 			
 			_targetInfo.moveTo(5, TARGET_INFO_Y);
 			_textTargetMode.writeFinalData("Press 'Z' - target mode", 0, 0, 2000, true);
 		
+			///*
+			setChar(_displayChar);
+		//	*/
+		
+		setTargetChar(null);
+		
+		}
+		
+		public function setChar(ent:Entity):void {
+			_displayChar = ent;
+			
 			
 			_curCharInfo.clearAll();
-			_curCharInfo.appendMessage("1. ---------");
-			_curCharInfo.appendMessage(" ");
-			_curCharInfo.appendMessage("2. ---------");
-			_curCharInfo.appendMessage(MSG_END_ACTION_TURN);
-			_curCharInfo.update(0);
+			if (ent == null) {
+				_curCharInfo.drawNow();
+				return;
+			}
+			
+			var health:Health = ent.get(Health) as Health;
+			var obj:Object3D = ent.get(Object3D) as Object3D;
+			var charClass:ArenaCharacterClass = ent.get(ArenaCharacterClass) as ArenaCharacterClass;
+			
+			//ent.get(ArenaChar
+			
+			_curCharInfo.appendMessage("Name: "+obj.name);
+			_curCharInfo.appendMessage("HP: "+health.hp+"/"+health.maxHP);
+			_curCharInfo.appendMessage("Class: " + charClass.name);
+			//_curCharInfo.appendMessage("Weapon: "+charClass.name);
+			_curCharInfo.appendMessage(_stars ? MSG_START_ACTION_TURN : MSG_END_ACTION_TURN);
+			_curCharInfo.drawNow();
+		}
 		
+		public function setTargetChar(node:PlayerTargetNode):void {
+			
+			_targetInfo.clearAll();
+			if (node == null) {
+				
+				_targetInfo.drawNow();
+				return;
+				
+			}
+			
+			
+			var ent:Entity = node.entity;
+			var obj:Object3D = node.obj;
+			
+			var health:Health = ent.get(Health) as Health;
+			var charClass:ArenaCharacterClass = ent.get(ArenaCharacterClass) as ArenaCharacterClass;
+			
+			_targetInfo.appendMessage("Name: "+obj.name);
+			_targetInfo.appendMessage("HP: "+health.hp+"/"+health.maxHP);
+			_targetInfo.appendMessage("Class: " + charClass.name);
+			//_curCharInfo.appendMessage("Weapon: "+charClass.name);
+			_targetInfo.drawNow();
 		}
 		
 		public function setTargetMode(val:Boolean):void {
@@ -613,21 +675,13 @@ package arena.views.hud
 		}
 		
 		public function showStars():void {
+			_stars = true;
 			showList(_cpMeter);
 			_textTurnInfo.spriteSet.visible = true;
 			
 				_textTargetMode.writeFinalData(MSG_END_PHASE, 0,0,2000,true);
 				
 			_targetInfo.moveTo(5, TARGET_INFO_CMD_Y);
-			
-			
-			_curCharInfo.clearAll();
-			_curCharInfo.appendMessage("1. ---------");
-			_curCharInfo.appendMessage(" ");
-			_curCharInfo.appendMessage("2. ---------");
-			_curCharInfo.appendMessage(MSG_START_ACTION_TURN);
-			_curCharInfo.update(0);
-			
 		}
 	
 		public function update():void {

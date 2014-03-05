@@ -462,6 +462,7 @@ package tests.pvp
 		
 		private function focusOnCurPlayer():void {
 			arenaSpawner.switchPlayer(null, stage);
+			
 			focusOnTargetChar(curArr[testIndex]);
 		}
 
@@ -486,10 +487,14 @@ package tests.pvp
 		
 
 		
-		private function focusOnTargetChar(targetEntity:Entity):void 
+		private function focusOnTargetChar(targetEntity:Entity, friendly:Boolean=true):void 
 		{
 
 			var pos:Object3D = targetEntity.get(Object3D) as Object3D;
+			
+			if (friendly) {
+				arenaHUD.setChar(targetEntity);
+			}
 
 			markedTargets[0] = pos;
 			arenaHUD.showArrowMarkers(markedTargets);
@@ -589,7 +594,7 @@ package tests.pvp
 			else if (targetState === "commander" && game.gameStates.engineState.currentState === game.gameStates.thirdPerson) {
 				_transitCompleteCallback = focusOnCurPlayer;
 				updateTargetCharFocus();
-				
+				arenaHUD.setTargetChar(null);
 				game.gameStates.engineState.changeState("transiting");
 				arenaHUD.setState("transiting");
 				transitionCameras(thirdPersonController.thirdPerson, commanderCameraController.thirdPerson, targetState, NaN, NaN, NaN, Cubic.easeIn);
@@ -690,6 +695,7 @@ package tests.pvp
 		private function setupGameplay():void 
 		{
 			
+		
 			
 			GladiatorStance.ON_STANCE_CHANGE.add(onStanceChange);
 			
@@ -722,6 +728,7 @@ package tests.pvp
 			var targetingSystem:ThirdPersonTargetingSystem = new ThirdPersonTargetingSystem(thirdPersonController.thirdPerson);
 			game.gameStates.thirdPerson.addInstance(targetingSystem).withPriority(SystemPriorities.postRender);
 			targetingSystem.targetChanged.add(onTargetChanged);
+			targetingSystem.targetChanged.add(arenaHUD.setTargetChar);
 			
 			
 			// special PVP movement limited time
@@ -843,7 +850,7 @@ package tests.pvp
 		
 		private function setupInterface():void 
 		{
-			
+		
 
 
 		}

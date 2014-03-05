@@ -1,6 +1,5 @@
 package arena.systems.player;
 import arena.components.char.MovementPoints;
-import arena.components.char.ArenaCharStats;
 import ash.core.Engine;
 import ash.core.Node;
 import ash.core.NodeList;
@@ -92,5 +91,5 @@ class LimitedPlayerMovementNode extends Node<LimitedPlayerMovementNode> {
 	
 	public var gravity:Gravity;
 	
-	//public var stats:ArenaCharStats;
+	//public var stats:ArenaCharSheet;
 }

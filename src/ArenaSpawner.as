@@ -15,8 +15,11 @@ package
 	import alternativa.engine3d.primitives.GeoSphere;
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.utils.Object3DUtils;
+	import arena.components.char.ArenaCharacterClass;
 	import ash.core.Engine;
 	import ash.core.Entity;
+	import ash.signals.Signal0;
+	import ash.signals.Signal1;
 	import components.ActionIntSignal;
 	import components.controller.SurfaceMovement;
 	import components.Ellipsoid;
@@ -37,13 +40,13 @@ package
 	 * ...
 	 * @author Glenn Ko
 	 */
-	public class ArenaSpawner extends Spawner
+	public class ArenaSpawner extends Spawner 
 	{
 	
 		private var skinDict:Dictionary = new Dictionary();
+		private var charClasses:Dictionary = new Dictionary();
 		
-		
-		public static const RACE_SAMNIAN:String = "samnian";
+		public static const RACE_SAMNIAN:String = "Samnian";
 		//public static const RACE_DOMOCHAI:String = "dimochai";
 		//public static const RACE_FLAMMITE:String = "flammite";
 		//public static const RACE_SLAVUS:String = "slavus";
@@ -51,6 +54,13 @@ package
 		public var currentPlayer:Object3D;
 		public var currentPlayerSkin:Skin;
 		public var currentPlayerEntity:Entity;
+		public function getPlayerEntity():Entity {
+			return currentPlayerEntity;
+		}
+		private var _currentPlayerEntityChanged:Signal1 = new Signal1();
+		public function get playerEntityChanged():Signal1 {
+			return _currentPlayerEntityChanged;
+		}
 		
 		public function ArenaSpawner(engine:Engine, keyPoll:KeyPoll) 
 		{
@@ -83,8 +93,10 @@ package
 			if (ent == null) {
 				currentPlayer = null;
 				currentPlayerSkin = null;
+				_currentPlayerEntityChanged.dispatch(null);
 				return;
 			}
+		
 			
 			currentPlayer = ent.get(Object3D) as Object3D;
 			currentPlayerSkin = findSkin(currentPlayer);
@@ -94,6 +106,8 @@ package
 			
 			keyPoll.resetAllStates();
 			currentPlayerEntity.add(keyPoll, KeyPoll);
+			
+			_currentPlayerEntityChanged.dispatch(currentPlayerEntity);
 			
 			
 		}
@@ -138,11 +152,21 @@ package
 			return ent;
 		}
 		
+		public function registerCharacterClass(charClass:ArenaCharacterClass, race:String):void {
+			charClasses[race] = charClass;
+		}
+		
 		public function setupSkin(skin:Skin, race:String):void {
 			if ( skin._surfaces[0].material is StandardMaterial ) {
 				skin.geometry.calculateNormals();
 				skin.geometry.calculateTangents(0);
 				
+			}
+			
+			var charClass:ArenaCharacterClass;
+			if (!charClasses[race]) {
+				charClasses[race] = charClass = new ArenaCharacterClass();
+				charClass.name = race;
 			}
 
 			skin._rotationX = Math.PI * .5;
@@ -246,6 +270,8 @@ package
 			
 			obj.addChild(sk);
 			ent.add(obj, Object3D);
+			
+			ent.add(charClasses[race], ArenaCharacterClass);
 			
 			/*
 			var bb:BoundBox;

@@ -7,6 +7,7 @@ import components.controller.SurfaceMovement;
 import components.DirectionVectors;
 import components.Ellipsoid;
 import components.Gravity;
+import components.Health;
 import components.Jump;
 import components.MoveResult;
 import components.Pos;
@@ -42,8 +43,9 @@ class Spawner
 		coll.flags |= CollisionResult.FLAG_MAX_GROUND_NORMAL;
 		if (isPlayer) {
 			
-			
 		}
+		
+		ent.add( new Health().init() );
 		//.add(  new Ellipsoid(32,32,72)).add( new MoveResult() );
 		
 		ent.add( new ActionIntSignal() );

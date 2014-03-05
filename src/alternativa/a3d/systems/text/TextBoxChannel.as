@@ -446,6 +446,11 @@ package alternativa.a3d.systems.text
 			//tail.span = FontSettings.getCharSpanValues(val);
 		}
 		
+		public function drawNow():void {
+			refresh();
+		//	dirtyFlags = 0;
+		}
+		
 		private function refresh():void {
 			var i:int;
 			var m:Message;
