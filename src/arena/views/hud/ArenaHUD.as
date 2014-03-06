@@ -33,6 +33,8 @@ package arena.views.hud
 	import flash.geom.Vector3D;
 	import flash.utils.Dictionary;
 	import saboteur.spawners.SaboteurHudAssets;
+	import systems.animation.IAnimatable;
+	import systems.player.a3d.GladiatorStance;
 	import systems.player.PlayerTargetNode;
 	import util.SpawnerBundle;
 	import alternativa.engine3d.alternativa3d;
@@ -115,7 +117,23 @@ package arena.views.hud
 		private var _stanceCharInfo:TextBoxChannel;
 		
 		private var _displayChar:Entity;
-	
+	/*
+	 Show CP in bar instead,
+MOve cue target mode to area below top left target display
+
+Allow stance if already in corouch mode to target mode
+
+Only cue target mode if within range (targeting)
+
+Components for:
+----------------
+WeaponSlots
+Weapon
+ - name
+ - range
+ - damage
+ - cone
+*/
 	
 		public function ArenaHUD(stage:Stage) 
 		{
@@ -525,12 +543,12 @@ package arena.views.hud
 			_stanceCharInfo.moveTo(5, 0);
 			
 			// your stats on bottom right
-			_curCharInfo = new TextBoxChannel( new <FontSettings>[ getNewFontSettings(fontConsole, fontMat, 30) ], 5, -1, 3); 
+			_curCharInfo = new TextBoxChannel( new <FontSettings>[ getNewFontSettings(fontConsole, fontMat, 30) ], 6, -1, 3); 
 			_curCharInfo.centered = true;
-			_curCharInfo.width = 140;
+			_curCharInfo.width = 160;
 			_curCharInfo.addToContainer(layoutBottomRight);
 			
-			_curCharInfo.moveTo( -80, 0);
+			_curCharInfo.moveTo( -92, 0);
 		
 
 		}
@@ -641,9 +659,13 @@ package arena.views.hud
 			_curCharInfo.appendMessage("Name: "+obj.name);
 			_curCharInfo.appendMessage("HP: "+health.hp+"/"+health.maxHP);
 			_curCharInfo.appendMessage("Class: " + charClass.name);
-			//_curCharInfo.appendMessage("Weapon: "+charClass.name);
-			_curCharInfo.appendMessage(_stars ? MSG_START_ACTION_TURN : MSG_END_ACTION_TURN);
+			_curCharInfo.appendMessage("Attack: Melee Gladius (1.2m)");
+			_curCharInfo.appendMessage("'C' to cycle attack modes. (1/2)"); //"'C' to switch attack mode. (1/2)" //"Attack completed."
+			 _curCharInfo.appendMessage(_stars ? MSG_START_ACTION_TURN : MSG_END_ACTION_TURN);
 			_curCharInfo.drawNow();
+			
+			var gSa:GladiatorStance = ent.get(IAnimatable) as GladiatorStance;
+			setStance(gSa.stance);
 		}
 		
 		public function setTargetChar(node:PlayerTargetNode):void {
@@ -733,7 +755,7 @@ package arena.views.hud
 			var cpInfo:String ="CP: "+ curCommandPoints + " / " + maxCommandPoints +  "  [+" + incomeNextTurn + "]";
 		
 			_textTurnInfo.counter = 0;
-			_textTurnInfo.writeData(side +"'s "+curCommandPoints+" CP left:", 0, 0, 800, false);
+			_textTurnInfo.writeData(side +" :: "+curCommandPoints+" CP left:", 0, 0, 800, false);
 			
 			//throw new Error(_textTurnInfo.boundsCache.length );
 			var aabb:AABB2 = _textTurnInfo.boundParagraph; 
