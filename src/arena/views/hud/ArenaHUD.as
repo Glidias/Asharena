@@ -24,6 +24,8 @@ package arena.views.hud
 	import assets.fonts.ConsoleFont;
 	import assets.fonts.Fontsheet;
 	import components.Health;
+	import components.weapon.Weapon;
+	import components.weapon.WeaponSlot;
 	import de.polygonal.motor.geom.primitive.AABB2;
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
@@ -117,6 +119,9 @@ package arena.views.hud
 		private var _stanceCharInfo:TextBoxChannel;
 		
 		private var _displayChar:Entity;
+		
+		public static const UNIT_METER_SCALE:Number = 0.01905;  // based off Half-life dimensions, a unit in meters, which is 19.05mm (around 2 cm)
+		public static const METER_UNIT_SCALE:Number = 1/UNIT_METER_SCALE; 
 /*
 Components for:
 ----------------
@@ -129,6 +134,7 @@ Weapon
  
  Only cue target mode if within range (targeting) 
 */
+ 
 	
 		public function ArenaHUD(stage:Stage) 
 		{
@@ -651,15 +657,19 @@ Weapon
 			
 			var health:Health = ent.get(Health) as Health;
 			var obj:Object3D = ent.get(Object3D) as Object3D;
+			_curCharObj = obj;
 			var charClass:ArenaCharacterClass = ent.get(ArenaCharacterClass) as ArenaCharacterClass;
-			
+			var weapon:Weapon = ent.get(Weapon) as Weapon;
+			var weaponSlots:WeaponSlot = ent.get(WeaponSlot) as WeaponSlot;
 			//ent.get(ArenaChar
+			_curWeaponRange = weapon.range;
 			
 			_curCharInfo.appendMessage("Name: "+obj.name);
 			_curCharInfo.appendMessage("HP: "+health.hp+"/"+health.maxHP);
 			_curCharInfo.appendMessage("Class: " + charClass.name);
-			_curCharInfo.appendMessage("Attack: Melee Gladius (1.2m)");
-			_curCharInfo.appendMessage("'C' to cycle attack modes. (1/2)"); //"'C' to switch attack mode. (1/2)" //"Attack completed."
+			var rangeInMeters:Number = int(weapon.range * UNIT_METER_SCALE * 100) / 100;
+			_curCharInfo.appendMessage("Attack: "+weapon.name+" ("+rangeInMeters+"m)");
+			_curCharInfo.appendMessage(weaponSlots ? "'C' to cycle attack modes. (1/"+weaponSlots.slots.length+")" : " " ); //"'C' to switch attack mode. (1/2)" //"Attack completed."
 			 _curCharInfo.appendMessage(_stars ? MSG_START_ACTION_TURN : MSG_END_ACTION_TURN);
 			_curCharInfo.drawNow();
 			
@@ -668,6 +678,9 @@ Weapon
 		}
 		
 		private var _gotTargetInRange:Boolean = false;
+		private var _curWeaponRange:Number = 0;
+		private var _curCharObj:Object3D;
+		
 		public function setTargetChar(node:PlayerTargetNode):void {
 			
 			_targetInfo.clearAll();
@@ -678,13 +691,26 @@ Weapon
 				return;
 				
 			}
-			_gotTargetInRange = true;  //TODO: subjected to weapon condition
 			
 			var ent:Entity = node.entity;
 			var obj:Object3D = node.obj;
 			
 			var health:Health = ent.get(Health) as Health;
 			var charClass:ArenaCharacterClass = ent.get(ArenaCharacterClass) as ArenaCharacterClass;
+		
+			if (_curCharObj) {
+				
+				//var dx:Number = obj._x;
+				//var dy:Number = obj._y;
+				_gotTargetInRange =  true;  //TODO: subjected to weapon condition
+			}
+			else {
+			
+				_gotTargetInRange =  true;  //TODO: subjected to weapon condition
+			
+			}
+			
+		
 			
 			_targetInfo.appendMessage("Name: "+obj.name);
 			_targetInfo.appendMessage("HP: "+health.hp+"/"+health.maxHP);

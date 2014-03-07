@@ -28,6 +28,7 @@ package tests.pvp
 	import components.Rot;
 	import components.tweening.Tween;
 	import components.Vel;
+	import components.weapon.Weapon;
 	import flash.display.MovieClip;
 	import flash.display.Stage;
 	import flash.events.KeyboardEvent;
@@ -92,8 +93,10 @@ package tests.pvp
 		
 		private var _gladiatorBundle:GladiatorBundle;
 		private var arenaHUD:ArenaHUD;
-
 		
+		
+
+		private var TEST_MELEE_WEAPON:Weapon = new Weapon().init("Some Melee weapon", 0.76*ArenaHUD.METER_UNIT_SCALE , 30 );
 		
 		public function PVPDemo() 
 		{
@@ -178,6 +181,7 @@ package tests.pvp
 			return 1;
 		}
 		
+
 		
 		private function setupStartingEntites():void {
 			
@@ -189,18 +193,18 @@ package tests.pvp
 			
 			arenaSpawner.addTextureResourceSide(SpawnerBundle.context3D, ArenaSpawner.RACE_SAMNIAN, 1, _gladiatorBundle.getSideTexture(1)  );
 			
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, -520, 0, 0, 0, "0"); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48, -520, 0, 0, 0, "1"); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*2, -520, 0, 0, 0, "2"); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*3, -520, 0, 0, 0, "3"); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 4, -520, 0, 0, 0, "4"); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, -520, 0, 0, 0, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48, -520, 0, 0, 0, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*2, -520, 0, 0, 0, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*3, -520, 0, 0, 0, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 4, -520, 0, 0, 0, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
 
 			
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 6, 520, 0, Math.PI, 1, "0"); testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 7, 520, 0, Math.PI, 1, "1"); testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 8, 520, 0, Math.PI, 1, "2"); testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 9, 520, 0, Math.PI, 1, "3"); testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 10, 520, 0, Math.PI, 1, "4"); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 6, 520, 0, Math.PI, 1, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 7, 520, 0, Math.PI, 1, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 8, 520, 0, Math.PI, 1, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 9, 520, 0, Math.PI, 1, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 10, 520, 0, Math.PI, 1, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
 			
 			
 			var i:int = testArr.length;
