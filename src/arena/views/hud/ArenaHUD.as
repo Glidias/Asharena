@@ -117,14 +117,7 @@ package arena.views.hud
 		private var _stanceCharInfo:TextBoxChannel;
 		
 		private var _displayChar:Entity;
-	/*
-	 Show CP in bar instead,
-MOve cue target mode to area below top left target display
-
-Allow stance if already in corouch mode to target mode
-
-Only cue target mode if within range (targeting)
-
+/*
 Components for:
 ----------------
 WeaponSlots
@@ -133,6 +126,8 @@ Weapon
  - range
  - damage
  - cone
+ 
+ Only cue target mode if within range (targeting) 
 */
 	
 		public function ArenaHUD(stage:Stage) 
@@ -493,11 +488,12 @@ Weapon
 
 			
 			_textTurnInfoMini =  new FontSettings( fontConsole, fontMat, getNewTextSpriteSet(50, fontMat, _textGeometry), "commandPointsMini" );
-			_textTurnInfoMini.spriteSet._x = -50;	
-			_textTurnInfoMini.spriteSet._y = -90;	
-			_textTurnInfoMini.spriteSet.alwaysOnTop = true;
+			_textTurnInfoMini.spriteSet._x = 5;	
+			_textTurnInfoMini.spriteSet._y = 110;	
+			//_textTurnInfoMini.hardSetUVOffsetIndices(1);
+		//	_textTurnInfoMini.spriteSet.alwaysOnTop = true;
 			//_textTurnInfoMini.spriteSet.z -= .2;
-			layoutBottomRight.addChild(_textTurnInfoMini.spriteSet);
+			layoutTopLeft.addChild(_textTurnInfoMini.spriteSet);
 			registerVisState("thirdPerson", _textTurnInfoMini.spriteSet);
 			
 			_textTargetMode =  new FontSettings( fontConsole, fontMat, getNewTextSpriteSet(50, fontMat, _textGeometry), "commandPointsMini" );
@@ -623,6 +619,7 @@ Weapon
 		}
 		
 		private var _stars:Boolean = false;
+		private var _cpInfo:String;
 		
 		public function hideStars():void {
 			_stars = false;
@@ -630,7 +627,9 @@ Weapon
 			_textTurnInfo.spriteSet.visible = false;
 			
 			_targetInfo.moveTo(5, TARGET_INFO_Y);
-			_textTargetMode.writeFinalData("Press 'Z' - target mode", 0, 0, 2000, true);
+			
+			_textTargetMode.writeFinalData(_cpInfo, 0, 0, 2000, true);
+			//_textTargetMode.writeFinalData("Press 'Z' - target mode", 0, 0, 2000, true);
 		
 			///*
 			setChar(_displayChar);
@@ -668,16 +667,18 @@ Weapon
 			setStance(gSa.stance);
 		}
 		
+		private var _gotTargetInRange:Boolean = false;
 		public function setTargetChar(node:PlayerTargetNode):void {
 			
 			_targetInfo.clearAll();
 			if (node == null) {
-				
+				_gotTargetInRange = false;
 				_targetInfo.drawNow();
+				validateTargetInRange();
 				return;
 				
 			}
-			
+			_gotTargetInRange = true;  //TODO: subjected to weapon condition
 			
 			var ent:Entity = node.entity;
 			var obj:Object3D = node.obj;
@@ -690,10 +691,24 @@ Weapon
 			_targetInfo.appendMessage("Class: " + charClass.name);
 			//_curCharInfo.appendMessage("Weapon: "+charClass.name);
 			_targetInfo.drawNow();
+			
+				validateTargetInRange();
 		}
 		
 		public function setTargetMode(val:Boolean):void {
-			_textTargetMode.writeFinalData(val ? "Z - exit target mode" : "Z - target mode", 0,0,2000,true);
+			if (val) {
+				_textTargetMode.writeFinalData(val ? "Z - exit target mode" : "Z - target mode", 0, 0, 2000, true);
+				 _textTurnInfoMini.writeFinalData("", 0,0,300,false);
+			}
+			else  {
+					_textTargetMode.writeFinalData(_cpInfo, 0, 0, 2000, true);
+					//validateTargetInRange();
+			}
+		}
+		
+		private function validateTargetInRange():void 
+		{
+			 _textTurnInfoMini.writeFinalData(_gotTargetInRange ?  "Z - target mode" : "", 0,0,300,false);
 		}
 		
 		public function showStars():void {
@@ -702,6 +717,7 @@ Weapon
 			_textTurnInfo.spriteSet.visible = true;
 			
 				_textTargetMode.writeFinalData(MSG_END_PHASE, 0,0,2000,true);
+			
 				
 			_targetInfo.moveTo(5, TARGET_INFO_CMD_Y);
 		}
@@ -753,7 +769,8 @@ Weapon
 		public function updateTurnInfo(curCommandPoints:int, maxCommandPoints:int, side:String, sideIndex:int, incomeNextTurn:int):void 
 		{
 			var cpInfo:String ="CP: "+ curCommandPoints + " / " + maxCommandPoints +  "  [+" + incomeNextTurn + "]";
-		
+			_cpInfo = cpInfo;
+			
 			_textTurnInfo.counter = 0;
 			_textTurnInfo.writeData(side +" :: "+curCommandPoints+" CP left:", 0, 0, 800, false);
 			
@@ -764,9 +781,9 @@ Weapon
 			adjustSpriteMeshIconMeter(curCommandPoints, _cpMeter);
 			_cpMeterHolder.x = _textTurnInfo.spriteSet._parent.x +  aabbWidth + 18;
 			_cpMeterHolder.y = _textTurnInfo.spriteSet._parent.y + 10;
-			_textTurnInfoMini.writeFinalData(cpInfo , 0, 0, 800, true);  // curCommandPoints + "CP left."
-		
-
+			//_textTurnInfoMini.writeFinalData(cpInfo , 0, 0, 800, false);  // curCommandPoints + "CP left."
+			
+	
 			_textTurnInfo.writeData("+" + incomeNextTurn + " next phase.  Max: " + maxCommandPoints , curCommandPoints * 16 + aabbWidth + 12, 0, 2000, false, _textTurnInfo.boundsCache.length    );
 	
 			_textTurnInfo.finaliseWrittenData();

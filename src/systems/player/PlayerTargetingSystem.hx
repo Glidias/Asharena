@@ -11,7 +11,7 @@ import systems.player.PlayerTargetNode;
 import util.geom.Vec3;
 
 /**
- * This is for basic crosshair-rollover kind of targetting via raycasting, to get information of other entities.
+ * This is for basic crosshair/mouse-rollover kind of targetting via raycasting, to get information of other entities.
  * @author Glenn Ko
  */
 class PlayerTargetingSystem extends System

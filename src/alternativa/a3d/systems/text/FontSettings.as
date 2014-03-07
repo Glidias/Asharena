@@ -30,6 +30,10 @@ package alternativa.a3d.systems.text
 		
 		private var uvx:Number = 0;
 		private var uvy:Number = 0;
+		public function hardSetUVOffsetIndices(x:int=0, y:int=0):void {
+			uvx = fontSheet.uSpanOffset*x;
+			uvy = fontSheet.uSpanOffset*y;
+		}
 		
 		public function FontSettings(fontSheet:Fontsheet, material:Material, spriteSet:SpriteSet, id:String="") 
 		{

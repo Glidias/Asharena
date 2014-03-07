@@ -267,7 +267,7 @@ package tests.pvp
 				_lastTargetStance = gladiatorStance.stance;
 			}
 			_targetMode = !_targetMode;
-						arenaHUD.setTargetMode(_targetMode);
+			arenaHUD.setTargetMode(_targetMode);
 			if (_targetMode) {
 				thirdPersonController.thirdPerson.preferedZoom = TARGET_MODE_ZOOM;
 				thirdPersonController.thirdPerson.controller.disableMouseWheel();
@@ -275,7 +275,7 @@ package tests.pvp
 				(arenaSpawner.currentPlayerEntity.get(SurfaceMovement) as SurfaceMovement).resetAllStates();
 				game.keyPoll.resetAllStates();
 				arenaSpawner.currentPlayerEntity.remove(KeyPoll);
-				gladiatorStance.setIdleStance( 1);
+				if (gladiatorStance.stance == 0) gladiatorStance.setIdleStance( 1);
 			}
 			else {
 				exitTargetMode();

@@ -5,6 +5,8 @@ import ash.fsm.EngineState;
 import ash.fsm.EngineStateMachine;
 import ash.tick.FrameTickProvider;
 import components.ActionUIntSignal;
+import components.weapon.Weapon;
+import components.weapon.WeaponSlot;
 import flash.display.Stage;
 import input.KeyPoll;
 import systems.animation.AnimationSystem;
@@ -79,7 +81,8 @@ class TheGame
 		LimitedPlayerMovementSystem;
 		PlayerTargetingSystem;
 		
-	
+		Weapon;
+		WeaponSlot;
 		
 		// Spawn starting entities
 	
