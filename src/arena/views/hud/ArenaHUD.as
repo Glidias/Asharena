@@ -23,7 +23,9 @@ package arena.views.hud
 	import ash.core.Entity;
 	import assets.fonts.ConsoleFont;
 	import assets.fonts.Fontsheet;
+	import components.Ellipsoid;
 	import components.Health;
+	import components.Pos;
 	import components.weapon.Weapon;
 	import components.weapon.WeaponSlot;
 	import de.polygonal.motor.geom.primitive.AABB2;
@@ -116,6 +118,7 @@ package arena.views.hud
 		private var _actionChoicesBox:TextBoxChannel;
 		private var _curCharInfo:TextBoxChannel;
 		private var _msgLogInfo:TextBoxChannel;
+		
 		private var _stanceCharInfo:TextBoxChannel;
 		
 		private var _displayChar:Entity;
@@ -126,13 +129,6 @@ package arena.views.hud
 Components for:
 ----------------
 WeaponSlots
-Weapon
- - name
- - range
- - damage
- - cone
- 
- Only cue target mode if within range (targeting) 
 */
  
 	
@@ -423,6 +419,7 @@ Weapon
 			return new FontSettings( fontConsole, fontMat, getNewTextSpriteSet(estimatedAmt, fontMat, _textGeometry ));
 		}
 		
+		
 		// END BOILERPLATE
 		
 		private function setupHUD():void 
@@ -474,13 +471,11 @@ Weapon
 			_actionChoicesBox = new TextBoxChannel( new <FontSettings>[ getNewFontSettings(fontConsole, fontMat, 30) ], 5, -1, 3); 
 			_actionChoicesBox.addToContainer(layoutTopLeft);
 			registerVisStatesOfTextBox("thirdPerson", _actionChoicesBox);
-			/*
-			_actionChoicesBox.appendMessage("1. --------");
-			_actionChoicesBox.appendMessage("2. ---------");
-			_actionChoicesBox.appendMessage("3. ---------");
-			_actionChoicesBox.appendMessage("4. ---------");
+			///*
+			_actionChoicesBox.appendMessage("F - Attack now");
+
 			_actionChoicesBox.drawNow();
-			*/
+			//*/
 			_actionChoicesBox.moveTo(200+20, _actionChoicesBox._heightOffset + 20);
 			
 			// Command points and Turn info on top center
@@ -555,6 +550,8 @@ Weapon
 
 		}
 		
+	
+		
 		public function setStance(stance:int):void {
 			_stanceCharInfo.clearAll();
 				
@@ -564,7 +561,7 @@ Weapon
 		
 			}
 			else if (stance === 1) {
-				_stanceCharInfo.appendMessage("Q - Standing");
+				if (!_targetMode) _stanceCharInfo.appendMessage("Q - Standing");
 				_stanceCharInfo.appendSpanTagMessage('<span u="2">Cautious</span>');
 				_stanceCharInfo.appendMessage("Ctrl - Crouched");
 			}
@@ -624,6 +621,10 @@ Weapon
 			
 		}
 		
+		private function toMeters(val:Number):Number {
+			return int(val * UNIT_METER_SCALE * 100) / 100;
+		}
+		
 		private var _stars:Boolean = false;
 		private var _cpInfo:String;
 		
@@ -645,21 +646,43 @@ Weapon
 		
 		}
 		
+		private var _charWeaponEnabled:Boolean = true;
+		
 		public function setChar(ent:Entity):void {
 			_displayChar = ent;
-			
+			_charWeaponEnabled = true;
 			
 			_curCharInfo.clearAll();
 			if (ent == null) {
 				_curCharInfo.drawNow();
+				_curCharPos = null;
+				lastCharPosition.x = Number.MAX_VALUE;
+				lastCharPosition.y = Number.MAX_VALUE;
+				lastCharPosition.z = Number.MAX_VALUE;
 				return;
 			}
 			
-			var health:Health = ent.get(Health) as Health;
+			_curCharPos = ent.get(Pos) as Pos;
+			
+			lastCharPosition.x = _curCharPos.x;
+			lastCharPosition.y = _curCharPos.y;
+			lastCharPosition.z = _curCharPos.z;
+			
+			updateCharInfo();
+			
+			var gSa:GladiatorStance = ent.get(IAnimatable) as GladiatorStance;
+			setStance(gSa.stance);
+		}
+		
+		private function updateCharInfo():void 
+		{
+			var ent:Entity = _displayChar;
+				var health:Health = ent.get(Health) as Health;
 			var obj:Object3D = ent.get(Object3D) as Object3D;
-			_curCharObj = obj;
+		
+			
 			var charClass:ArenaCharacterClass = ent.get(ArenaCharacterClass) as ArenaCharacterClass;
-			var weapon:Weapon = ent.get(Weapon) as Weapon;
+			var weapon:Weapon = getWeapon(ent);
 			var weaponSlots:WeaponSlot = ent.get(WeaponSlot) as WeaponSlot;
 			//ent.get(ArenaChar
 			_curWeaponRange = weapon.range;
@@ -668,21 +691,32 @@ Weapon
 			_curCharInfo.appendMessage("HP: "+health.hp+"/"+health.maxHP);
 			_curCharInfo.appendMessage("Class: " + charClass.name);
 			var rangeInMeters:Number = int(weapon.range * UNIT_METER_SCALE * 100) / 100;
-			_curCharInfo.appendMessage("Attack: "+weapon.name+" ("+rangeInMeters+"m)");
+			_curCharInfo.appendMessage((_charWeaponEnabled ? "Attack: " : "" )+weapon.name+" ("+rangeInMeters+"m)");
 			_curCharInfo.appendMessage(weaponSlots ? "'C' to cycle attack modes. (1/"+weaponSlots.slots.length+")" : " " ); //"'C' to switch attack mode. (1/2)" //"Attack completed."
 			 _curCharInfo.appendMessage(_stars ? MSG_START_ACTION_TURN : MSG_END_ACTION_TURN);
 			_curCharInfo.drawNow();
-			
-			var gSa:GladiatorStance = ent.get(IAnimatable) as GladiatorStance;
-			setStance(gSa.stance);
 		}
 		
 		private var _gotTargetInRange:Boolean = false;
 		private var _curWeaponRange:Number = 0;
-		private var _curCharObj:Object3D;
+		private var _curCharPos:Pos;
+		private var _targetNode:PlayerTargetNode;
+		private var _targetMode:Boolean;
+		
+		private function getRangeToTarget():Number {
+			var dx:Number = _curCharPos.x - _targetNode.pos.x;
+			var dy:Number = _curCharPos.y - _targetNode.pos.y;
+			var dz:Number = _curCharPos.z - _targetNode.pos.z;
+			var dist:Number = Math.sqrt(dx * dx + dy * dy + dz * dz);
+			var distM:Number = 1 / dist;
+			dx *= distM*_targetNode.ellipsoid.x;
+			dy *= distM*_targetNode.ellipsoid.y;
+			dz *= distM*_targetNode.ellipsoid.z;
+			return  dist - Math.sqrt(dx*dx+dy*dy+dz*dz);
+		}
 		
 		public function setTargetChar(node:PlayerTargetNode):void {
-			
+			_targetNode = node;
 			_targetInfo.clearAll();
 			if (node == null) {
 				_gotTargetInRange = false;
@@ -696,17 +730,21 @@ Weapon
 			var obj:Object3D = node.obj;
 			
 			var health:Health = ent.get(Health) as Health;
-			var charClass:ArenaCharacterClass = ent.get(ArenaCharacterClass) as ArenaCharacterClass;
-		
-			if (_curCharObj) {
+			if (health.hp <= 0) {
 				
-				//var dx:Number = obj._x;
-				//var dy:Number = obj._y;
-				_gotTargetInRange =  true;  //TODO: subjected to weapon condition
+				return;
+			}
+			var charClass:ArenaCharacterClass = ent.get(ArenaCharacterClass) as ArenaCharacterClass;
+			var weapon:Weapon = getWeapon(ent);
+			var pos:Pos = node.pos;
+
+			if (_curCharPos) {
+				_gotTargetInRange =  getRangeToTarget() <= _curWeaponRange;
+				
 			}
 			else {
 			
-				_gotTargetInRange =  true;  //TODO: subjected to weapon condition
+				_gotTargetInRange =  false; 
 			
 			}
 			
@@ -715,26 +753,61 @@ Weapon
 			_targetInfo.appendMessage("Name: "+obj.name);
 			_targetInfo.appendMessage("HP: "+health.hp+"/"+health.maxHP);
 			_targetInfo.appendMessage("Class: " + charClass.name);
-			//_curCharInfo.appendMessage("Weapon: "+charClass.name);
+			_curCharInfo.appendMessage("Carrying: "+weapon.name);
 			_targetInfo.drawNow();
 			
-				validateTargetInRange();
+			validateTargetInRange();
 		}
 		
+		private function checkTargetInRange():Boolean {
+			var gotTargetInRange:Boolean;
+			if ( _targetNode && _curCharPos) {
+				gotTargetInRange = getRangeToTarget() <= _curWeaponRange;
+				
+			}
+			else {
+			
+				gotTargetInRange =  true;  //TODO: subjected to weapon condition
+			
+				
+			}
+			if (gotTargetInRange != _gotTargetInRange) {
+				_gotTargetInRange = gotTargetInRange
+				validateTargetInRange();
+				return true;
+			}
+			return false;
+		}
 		public function setTargetMode(val:Boolean):void {
+			_targetMode = val;
 			if (val) {
-				_textTargetMode.writeFinalData(val ? "Z - exit target mode" : "Z - target mode", 0, 0, 2000, true);
-				 _textTurnInfoMini.writeFinalData("", 0,0,300,false);
+				_textTargetMode.writeFinalData("Z - exit target mode", 0, 0, 2000, true);
+				 _textTurnInfoMini.writeFinalData("", 0, 0, 300, false);
+				 checkTargetModeOptions();
 			}
 			else  {
-					_textTargetMode.writeFinalData(_cpInfo, 0, 0, 2000, true);
-					//validateTargetInRange();
+				_textTargetMode.writeFinalData(_cpInfo, 0, 0, 2000, true);
+				
 			}
+			validateTargetInRange();
+		}
+		
+		private function checkTargetModeOptions():void 
+		{
+			
 		}
 		
 		private function validateTargetInRange():void 
 		{
-			 _textTurnInfoMini.writeFinalData(_gotTargetInRange ?  "Z - target mode" : "", 0,0,300,false);
+			_actionChoicesBox.styles[0].spriteSet.visible = _targetMode && _gotTargetInRange && _targetNode;
+			if (_targetMode || !_targetNode) {  // show valid target options if within range
+				_textTurnInfoMini.writeFinalData(_targetNode && !_gotTargetInRange && _charWeaponEnabled ? "out of range: " + toMeters(getRangeToTarget()) + "m" : "");
+				if (_targetMode) {
+					checkTargetModeOptions();
+				}
+				return;
+			}
+			_textTurnInfoMini.writeFinalData(_gotTargetInRange  ?  _charWeaponEnabled ? "Z - target mode" : "" :  _charWeaponEnabled ? "out of range: "+toMeters(getRangeToTarget())+"m" : "" ,0,0,300,false);
 		}
 		
 		public function showStars():void {
@@ -747,10 +820,35 @@ Weapon
 				
 			_targetInfo.moveTo(5, TARGET_INFO_CMD_Y);
 		}
+		
+		private var lastCharPosition:Vector3D = new Vector3D(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+		private var positionChangeThreshold:Number = 1;
+		
 	
 		public function update():void {
 			var len:int;
+		//	if (_gotTargetInRange && !targetNode) throw new Error("A");
+			// check target in range
+			var alreadyValidated:Boolean = checkTargetInRange();
 		
+			if (!alreadyValidated && _targetNode && !_gotTargetInRange && _curCharPos) {
+				var dx:Number = _curCharPos.x -lastCharPosition.x;
+				var dy:Number = _curCharPos.y - lastCharPosition.y;
+				var dz:Number = _curCharPos.z- lastCharPosition.z;
+				if ( dx * dx + dy * dy + dz * dz  >= positionChangeThreshold) {
+					
+					validateTargetInRange();
+					
+					lastCharPosition.x = _curCharPos.x;
+					lastCharPosition.y = _curCharPos.y;
+					lastCharPosition.z = _curCharPos.z;
+					
+				}
+			}
+			
+		
+			// update arrows
+			
 			//if ( camera.transformChanged ) {
 				
 				var t:Transform3D = camera.globalToLocalTransform;
@@ -813,6 +911,54 @@ Weapon
 			_textTurnInfo.writeData("+" + incomeNextTurn + " next phase.  Max: " + maxCommandPoints , curCommandPoints * 16 + aabbWidth + 12, 0, 2000, false, _textTurnInfo.boundsCache.length    );
 	
 			_textTurnInfo.finaliseWrittenData();
+		}
+		
+		public function checkStrike(keyCode:uint):Boolean // Todo: neeed serious refactoring to seperate view/model
+		{
+			if (!_charWeaponEnabled || !_targetMode || !_gotTargetInRange || !_targetNode) return false;
+			_charWeaponEnabled = false; 
+			updateCharInfo();
+			var health:Health = targetNode.entity.get(Health) as Health;
+			health.damage( getWeapon(_displayChar).damage );
+			
+			return true;
+		}
+		
+		public function getWeapon(ent:Entity):Weapon {
+			return ent.get(Weapon) as Weapon;
+		}
+		
+		public function txtPlayerStrike(e:Entity, hp:int, amount:int, killingBlow:Boolean=false):void 
+		{
+		//	_msgLogInfo.resetAllScrollingMessages()
+			var obj:Object3D = e.get(Object3D) as Object3D;
+			_msgLogInfo.appendSpanTagMessage(!killingBlow  ? '<span u="2">Player</span> hits <span u="1">'+obj.name + '</span> for <span u="2">'+amount + '</span> points of damage.' : '<span u="2">Player kills</span> <span u="1">'+obj.name + '</span>!');
+			_msgLogInfo.drawNow();
+			if ( e === _targetNode.entity) {
+				if (!killingBlow ) {
+					setTargetChar(_targetNode);
+					
+				}
+				else if (killingBlow) {
+					setTargetChar(null );
+				}
+			}
+		
+		}
+		
+		public function txtTookDamageFrom(e:Entity, hp:int, amount:int, killingBlow:Boolean=false):void 
+		{
+			
+		}
+		
+		public function get targetNode():PlayerTargetNode 
+		{
+			return _targetNode;
+		}
+		
+		public function get charWeaponEnabled():Boolean 
+		{
+			return _charWeaponEnabled;
 		}
 		
 

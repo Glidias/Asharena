@@ -12,6 +12,7 @@ package tests.pvp
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.BitmapTextureResource;
+	import alternativa.types.Float;
 	import alternterrain.CollidableMesh;
 	import arena.components.char.MovementPoints;
 	import arena.systems.player.LimitedPlayerMovementSystem;
@@ -24,6 +25,7 @@ package tests.pvp
 	import com.greensock.easing.Cubic;
 	import com.greensock.easing.Linear;
 	import components.controller.SurfaceMovement;
+	import components.Health;
 	import components.Pos;
 	import components.Rot;
 	import components.tweening.Tween;
@@ -44,6 +46,7 @@ package tests.pvp
 	import systems.player.PlayerAction;
 	import systems.player.PlayerTargetingSystem;
 	import systems.player.PlayerTargetNode;
+	import systems.sensors.HealthTrackingSystem;
 	import systems.SystemPriorities;
 	import systems.tweening.TweenSystem;
 	import util.SpawnerBundle;
@@ -61,7 +64,9 @@ package tests.pvp
 	 * 
 	 * todo:
 		 * 
-		 * Targeting/LOS mechanic (weapon min/max (optimum) range, cone)  If target is below min range, a melee/secondary attack might be used instead. 
+		 * Basic enemy LOS aggro watch/defense system
+		 * 
+		 * Player2Player Collision blocking
 		 * 
 		 * Obstacles and stuffs in environment
 		 * 
@@ -93,10 +98,8 @@ package tests.pvp
 		
 		private var _gladiatorBundle:GladiatorBundle;
 		private var arenaHUD:ArenaHUD;
-		
-		
 
-		private var TEST_MELEE_WEAPON:Weapon = new Weapon().init("Some Melee weapon", 0.76*ArenaHUD.METER_UNIT_SCALE , 30 );
+		private var TEST_MELEE_WEAPON:Weapon = new Weapon().init("Some Melee weapon", 0.74*ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE*.25 , 33 );
 		
 		public function PVPDemo() 
 		{
@@ -148,7 +151,7 @@ package tests.pvp
 		private var testArr2:Array = [];
 		private var curArr:Array = testArr;
 		private var arrayOfSides:Array = [testArr, testArr2];
-			private var sideIndex:int = 0;
+		private var sideIndex:int = 0;
 		
 		private var testIndex:int = 0;
 		private var thirdPersonController:ThirdPersonController;
@@ -207,15 +210,23 @@ package tests.pvp
 			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 10, 520, 0, Math.PI, 1, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
 			
 			
+			var health:Health;
 			var i:int = testArr.length;
 			while (--i > -1) {
 				
 				testArr[i].add( new Counter());
+				health = testArr[i].get(Health) as Health;
+				//health.onDamaged.add(onDamaged);
+				//health.onDamaged.add(onDamaged);
 			}
 			i = testArr2.length;
 			while (--i > -1) {
 				
 				testArr2[i].add( new Counter());
+				
+				health = testArr[i].get(Health) as Health;
+			//	health.onDamaged.add(onDamaged);
+			//	health.onDamaged.add(onDamaged);
 			}
 			
 			//arenaSpawner.switchPlayer(testArr[testIndex], stage);
@@ -232,25 +243,30 @@ package tests.pvp
 				return;
 			}
 			
-			if (e.keyCode === Keyboard.TAB  &&   !game.keyPoll.isDown(Keyboard.TAB)  ) {
+			var keyCode:uint = e.keyCode;
+			if (keyCode === Keyboard.TAB  &&   !game.keyPoll.isDown(Keyboard.TAB)  ) {
 				cyclePlayerChoice();
 			}
-			else if (e.keyCode === Keyboard.L &&   !game.keyPoll.isDown(Keyboard.L) ) {
+			else if (keyCode === Keyboard.L &&   !game.keyPoll.isDown(Keyboard.L) ) {
 				changeCameraView("commander");
 			}
-			else if (e.keyCode === Keyboard.K &&   !game.keyPoll.isDown(Keyboard.K) ) {
+			else if (keyCode === Keyboard.K &&   !game.keyPoll.isDown(Keyboard.K) ) {
 				if (commandPoints[sideIndex] - getDeductionCP()  >= 0 ) {
 					switchToPlayer();
 				}
 			}
-			else if (e.keyCode === Keyboard.Z && !game.keyPoll.isDown(Keyboard.Z) ) {
-				toggleTargetingMode();
+			else if (keyCode === Keyboard.Z && !game.keyPoll.isDown(Keyboard.Z) ) {
+				if (arenaHUD.charWeaponEnabled) toggleTargetingMode();
 			}
-			else if (e.keyCode === Keyboard.BACKSPACE && !game.keyPoll.isDown(Keyboard.BACKSPACE)) {
+			else if (keyCode === Keyboard.BACKSPACE && !game.keyPoll.isDown(Keyboard.BACKSPACE)) {
 				endPhase();
 			}
-			
-			
+			else if (keyCode === Keyboard.F && !game.keyPoll.isDown(Keyboard.F)) {
+				if ( arenaHUD.checkStrike(keyCode) ) {  // for now, HP reduction is insntatneous within this method
+					// remove controls, perform animation, before toggling targeting mode and restoring back controls
+					toggleTargetingMode();
+				}
+			}
 		}
 		
 		private var _targetMode:Boolean = false;
@@ -271,6 +287,7 @@ package tests.pvp
 				_lastTargetStance = gladiatorStance.stance;
 			}
 			_targetMode = !_targetMode;
+			gladiatorStance.standEnabled = !_targetMode;
 			arenaHUD.setTargetMode(_targetMode);
 			if (_targetMode) {
 				thirdPersonController.thirdPerson.preferedZoom = TARGET_MODE_ZOOM;
@@ -278,7 +295,9 @@ package tests.pvp
 				
 				(arenaSpawner.currentPlayerEntity.get(SurfaceMovement) as SurfaceMovement).resetAllStates();
 				game.keyPoll.resetAllStates();
-				arenaSpawner.currentPlayerEntity.remove(KeyPoll);
+				//arenaSpawner.currentPlayerEntity.remove(KeyPoll); 
+				
+				
 				if (gladiatorStance.stance == 0) gladiatorStance.setIdleStance( 1);
 			}
 			else {
@@ -383,7 +402,7 @@ package tests.pvp
 				counter.value = 0;
 			}
 			
-			i = testArr.length;
+			i = testArr2.length;
 			while (--i > -1) {
 				counter = testArr2[i].get(Counter) as Counter;
 				counter.value = 0;
@@ -546,7 +565,7 @@ package tests.pvp
 			}
 			
 			_targetMode = false;
-						arenaHUD.setTargetMode(_targetMode);
+			arenaHUD.setTargetMode(_targetMode);
 			commandPoints[sideIndex] -= getDeductionCP();
 			updateCP();
 			
@@ -707,6 +726,9 @@ package tests.pvp
 			game.engine.addSystem( new TweenSystem(), SystemPriorities.animate );
 			
 			
+			
+			
+			
 			// Third person
 			///*
 			var dummyEntity:Entity = arenaSpawner.getNullEntity(); // arenaSpawner.getPlayerBoxEntity(SpawnerBundle.context3D);
@@ -782,6 +804,48 @@ package tests.pvp
 			startPhase();
 		}
 		
+		private function onDamaged(e:Entity, hp:int, amount:int):void 
+		{
+			if (e != arenaSpawner.currentPlayerEntity) {  // assume damage taken from active currentPlayerEntity
+				arenaHUD.txtPlayerStrike(e, hp, amount);
+			}
+			else {  // assume damage taken from entity under aggro system
+				arenaHUD.txtTookDamageFrom( e, hp, amount);  // TODO: e should be aggro entity
+			}
+		}
+		
+		private function onMurdered(e:Entity, hp:int, amount:int):void 
+		{
+			if (e != arenaSpawner.currentPlayerEntity) {  // assume active currentPlayerEntity killed entity
+				arenaHUD.txtPlayerStrike(e, hp, amount, true);
+				unregisterEntity(e);
+				game.engine.removeEntity(e);
+				
+			}
+			else {  // assume currentePlayerNEtity killed by entity under aggro system!
+				arenaHUD.txtTookDamageFrom(e, hp, amount, true);  // TODO: e should be aggro entity
+			}
+		}
+		
+		private function unregisterEntity(e:Entity):void 	//naive approach for roster atm.
+		{
+			var arr:Array;
+			var removeIndex:int = testArr.indexOf(e);
+			
+			arr = testArr;
+			if (removeIndex < 0) {
+				removeIndex = testArr2.indexOf(e);
+				arr = testArr2;
+			}
+			
+			if (removeIndex < 0) throw new Error("COUld not find entity in registry!");
+			arr.splice(removeIndex, 1);
+			
+			
+			
+		}
+		
+		
 		private var markedTargets:Vector.<Object3D> = new Vector.<Object3D>();
 		
 		private function onTargetChanged(node:PlayerTargetNode ):void 
@@ -841,6 +905,11 @@ package tests.pvp
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
 
 			
+			// Add a Health trackign listenining system
+			game.engine.addSystem( new HealthTrackingSystem(), SystemPriorities.stateMachines);
+			HealthTrackingSystem.SIGNAL_DAMAGE.add(onDamaged);
+			HealthTrackingSystem.SIGNAL_MURDER.add(onMurdered);
+			
 			setupEnvironment();
 			setupInterface();
 			setupStartingEntites();
@@ -881,6 +950,8 @@ package tests.pvp
 	}
 
 }
+import ash.core.Entity;
+import components.Health;
 
 
 class Counter {

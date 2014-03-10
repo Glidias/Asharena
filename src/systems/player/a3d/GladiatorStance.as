@@ -101,8 +101,8 @@ package systems.player.a3d
 		public var SPEED_CROUCH_MULTIPLIER:Number = SPEED_CROUCH / SPEED_JOG;
 		public var SPEED_CROUCHSTRAFE_MULTIPLIER:Number = SPEED_CROUCH / SPEED_STRAFE_LOWER;
 		public var SPEED_CROUCHBACK_MULTIPLIER:Number = SPEED_CROUCH / SPEED_BACKWARDS;
-		public var playerSpeedCrouchRatio:Number = .8;
-		public var playerSpeedCombatRatio:Number = .65;
+		public var playerSpeedCrouchRatio:Number = .7;
+		public var playerSpeedCombatRatio:Number = .55;
 		public var upperBodyDominant:Boolean = false;
 		public var ellipsoid:Ellipsoid;
 		
@@ -211,14 +211,14 @@ package systems.player.a3d
 		public function raiseStanceToggle():void {
 			var tryStance:int = _stance-1;
 			
-			stance = tryStance < 0 ? 1 : tryStance;
+			stance = tryStance < (standEnabled ? 0 : 1) ? 1 : tryStance;
 			handleAction(lastAction);
 		}
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
 			var keyCode:uint = e.keyCode;
-			if (keyCode === Keyboard.Q) {
+			if (keyCode === Keyboard.Q ) {
 				raiseStanceToggle();
 			}
 			else if (keyCode === Keyboard.CONTROL) {
@@ -285,7 +285,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			else if (mask & MASK_WALK) {
 				if (mask & MASK_WALK_FORWARD  ) {
 					
-					if (_stance=== 2 || val != PlayerAction.MOVE_FORWARD_FAST) {
+					if (_stance=== 2 || val != PlayerAction.MOVE_FORWARD_FAST || !standEnabled) {
 					
 						if (_stance != 2) {
 							if (_stance != 1) {  // stance 0
@@ -343,6 +343,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		private var _skinRotated:Boolean = true;
 		private var _running:Boolean;
 		private var _idle:Boolean;
+		public var standEnabled:Boolean = true;
 		
 		/* INTERFACE systems.animation.IAnimatable */
 		

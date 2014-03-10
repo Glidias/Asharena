@@ -17,6 +17,8 @@ import systems.movement.MovementSystem;
 import systems.movement.PlayerSurfaceMovementSystem;
 import systems.movement.QPhysicsSystem;
 import systems.player.PlayerTargetingSystem;
+import systems.sensors.HealthTrackingSystem;
+import systems.sensors.RadialSensorSystem;
 
 import systems.SystemPriorities;
 import systems.tweening.TweenSystem;
@@ -83,6 +85,9 @@ class TheGame
 		
 		Weapon;
 		WeaponSlot;
+		
+		RadialSensorSystem;
+		HealthTrackingSystem;
 		
 		// Spawn starting entities
 	
