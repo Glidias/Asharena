@@ -1,5 +1,56 @@
+Certain parts of these mechanics can also be adapted to real-time action RPGs as well.
+
+Basic enemy LOS aggro watch/defense system
+------------------------------------------
+All surrounding enemies that aren't engaged, will watch activated unit forever so long as the activated unit is within their 2D FOV facing and isn't occluded. For enemies that have 2D FOV facing on activated unit, but have another target within engagement range to focus on, they'll only focus on the unit conditionally if they get closer than the current nearest enagement range. For enemies that aren't engaged, they are kept in a dormant list to be checked for unoccluded 2D FOv Facing falling into view.
+
+For enemies that are already watching you, they'll always turn to look at you once you get into engagement range against them.
+
+Enemies that specifically watch you will always turn to look at you regardless of range.
+
+Turning speed happens according to time being passed as the player moves.
+
+
+An alerted enemy can always attack you so long as you are within range of them and you are within the weapon cone. They will always go to combat mode instantly once you get within engagement range aginst them.
+
+An attack cooldown is provided for the enemy in their attempt to try and attack you (though in most situations, they can only deliver 1-3 hits at the most within the time of the turn). This means they can deliver more hits overall, but no chance of critical hit for them unless you aren't in combat mode (or your back/side is exposed while moving). AN implicit time passed is also used per attack intiated by the player, allowing the enemy to counterattack in response as well if the attack cooldown is availble for him.
+
+A triggered silent attack on the enemy will occur so long as you are within range, but it will take some time to pass for the strike to unfold. During the unfolding process,there is an animation canceling timeframe threshold where the attack is considered to not have happened(ie. no cooldown used, often occurs with the raising of the weapon but not yet swinging it yet) , and a strike time (ie.variable weapon swing time before impact depending on range) before hit is calculated. If the player is out of range and angle when the strike time has occured, the strike is considered a miss automatically. If the player is out of range before the execution of the weapon's swing where the cooldown is triggered, the attack is canceled. Whether the attack animation plays or not (as a forewarning to allow kiting, lucid parrying), or a message being used, is up to the game's design (or otherwise, a cutscene is used to represent a reaction strike hit when it occurs...). A random "mood" threshold is provided for the enemy that determines a minimum range he wishes to trigger the attack, depending on the type of "hit" he is going after. More experienced enemies will take the player's velocity into account in determining whether to go ahead with the strike, or cancel it.
+
+% Chance to Hit, % Chance to Critical (x3 damage), n hits/n criticals to kill, Damage ranges
+-----------------------------------------------------
+Base damage range for hit
+x3 for Critical hit
+
+A random base damage value is selected from the range. This is used for rough n prediction only.
+- approximate damange inflicted with damageReducedDue to overall armor at facing.
+
+
+% Chance to hit based off enemy facing 
+
+% Chance to critical based on facing of enemy and range (<= 75%-n% within threshold), which uses the weapon's critical range against critical unarmored exposure at facing.
+
+% Chance to stun based on facing of enemy (will he be taken by surprise?) and type of weapon (it's stopping power) against parts of the body. A stun will basically cancel the attack and create a forced cooldown weapon for the enemy, so he can't trigger an attack until his weapon cooldown is finished in realtime situations. He also cannot move about within the turn or within melee reaction attacking range. Thus, a stunned enemy can NEVER counterattack or move throughout the entire turn. A stunned player would mean all his movement points are shut down to zero (or near-zero) to represent staggering movement.
+
+
+
+1) Roll for hit first 
+2) If hit and still alive, roll for critical (or if no longer alive, can still roll for the sake of determining "overkill" fatalities)
+3) If hit critical and still alive, roll for stun
+
+
+Resolving triggered simulatenous attacks between enemy and player:
+--------------------------------------------------------
+In the event the player strikes, but the enemy side has also triggered an attack but hasn't reached cooldown  yet, the enemy will attempt to parry/block/evade depending on how close they are towards their threshold  of their usage of cooldown. The nature of the weapon and equipment will than determine how well they go about in parrying/blocking, if he happens to be not be able to evade in such a situation. If both sides have used the cooldown already, than the one that has the faster due strike time will attempt to hit first. In either case, the slower unit will attempts respond-attack by his strike (assuming he isn't already dead/stunned). If you do get hit in your attempt to respond-attack, you have no chance to critical strike, though. Thus, the displayed predicted percentage change to critical strike in such a case would be the percentage chance an enemy (being faster) might miss, multiplied by the base critical hit percentage. Also, if the enemy is bound to hit you before you hit him, the displayed % Chance to hit in such a situation is a multiplication using the base % hit chance multiplied by percentage chance to NOT get killed/stunned by the enemy beforehand (ie. baseHitPerc * %Chance to survive any normal hit||1 * %Chance to not get stunned). This percentage chances are aggregated and displayed, to determine a rough result on whether the player would have succeeded in hitting the enemy, and if not, whether he survived as a result of it. Thus, a simple animation result can be displayed in "fixed" order, where  the player always strikes first, while the enemy always "responds". However, in reality, it could be the enemy actually did attack first...Just that for the sake of consistency, the animation shows the player misses first, than the enemy counters and either stuns/kills the player, which could be a reason why why the player actually "missed" earlier. Or both sides could exchange blows. Or both sides miss blows. Whichever order you use, (ie. enemy stuns/kills the player first, player can't respond thus "misses"), the end result is still the same since it's all aggreagated to determine the final destiny. This implicitly means a player with lower health can also tend to have a lower %chance to hit, due to the fact that a faster counter-attacking enemy (often with good damaging weapons) has a higher % change to deal a killing blow on you already. 
+
+
+Resolving attacks between enemies with different weapon ranges:
+	If the player has a longer range weapon compared to an enemy, does it mean the enemy can never respond? THere should still be a threshold where the enemy could walk a step or 2 in order to deliver a responding attack. However, in order to get a critical hit, the maximum range of the weapon isn't too effective and would require moving some closer. So, perhaps, it's fine, considering that only 1 attack can be done. But the problem with CPs, it can be spammed!
+_________________
+
 ORGANISED FORCES:
 All organised forces can travel across the sea by boat (with the exception of flying creatures/giants) and attack islands, making them possible aggressors in a given scenerio, instaed of just defenders. They have their own language, and knowing their language (or finding one that can interprate) is required for diplomacy.
+
 
 Non-Human forces:
 ---------------------------
@@ -213,32 +264,3 @@ Real time combat:
 * The ability to abuse AI incompetancy with keeping up the pace of chasing/hitting, with the player kiting them constantly. This may happen if rudimentary AI processing is done at a pace that is lower than the framerate, thus player reactions/controls will always be faster than AI reactions. The only way to circumvent this is to create aggressive AI that responds to your movements per frame, so you can't easily kite them (at corners/obstacles especially), ensuring the player is locked in a melee struggle that is hard to escape from.
 * Hard to manage/micormanage individuals within a short time, less emphasis on strategy or precise movements. This can be circumvented with a pause option used in many games like Dragon Age/Baldur's Gate.
 * Easy to get over trivial enemy encounters that don't pose much danger, such as rats, insects, etc. Combat resolves quickly and seamlessly. This may be considered as an alternative to turn-based combat in certain situations, particularly for certain weak enemy types that can afford to be "stupid".
-
-
-For every command turn, you can choose either an individual, a group, or a formation of groups
-
-Moving As:
-_______________
-* Group Circle 
- - Group Wedge Pointman
- - Group Column Pointman  /  Group Column Rearman
- ^ Group Leader
-
-* Formation Vehicle 
- - Formation Wedge Point-Group
- - Formation Column Point-Group /  Group Rear-Group
- - Formation Wedge Pointman
- - Formation Column Pointman /  Group Rearman
-
-* Individual 
-
-
-LEGEND:
-Group can go up 4 men
-Formation can go up to 16 men. (combination of 4 groups)
-
-* Basic tight blob, rigid formation vehicle or individual character (no exploitation possible). No pathfinding/following-ai required. Gives the most control, possibly at the expense of more command points required.
-- Advanced Chain spring-link formation. Some pathfinding may be required in certain circumstances duruing following.
-^ Advanced Follow into formation position approach...(similar to Baldur's Gate. Lots of pathfinding required). Movement of companions may require some depletion of movement points as well.
-
-Header top of screen will clearly indicate movement mode of given unit, group(s) involved, etc, and any ability to switch to a different mode from a given mode within a given command point turn.

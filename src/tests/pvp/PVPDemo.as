@@ -68,6 +68,8 @@ package tests.pvp
 		 * 
 		 * Player2Player Collision blocking
 		 * 
+		 * % Chance to Hit, % Chance to Critical (x3 damage), % Chance to Kill, Damage ranges	
+		 * 
 		 * Obstacles and stuffs in environment
 		 * 
 		 * Add variety of units with ranged/guns.
@@ -294,11 +296,16 @@ package tests.pvp
 				thirdPersonController.thirdPerson.controller.disableMouseWheel();
 				
 				(arenaSpawner.currentPlayerEntity.get(SurfaceMovement) as SurfaceMovement).resetAllStates();
-				game.keyPoll.resetAllStates();
-				//arenaSpawner.currentPlayerEntity.remove(KeyPoll); 
+				game.keyPoll.resetAllStates(); 
+				
+				arenaSpawner.currentPlayerEntity.remove(KeyPoll); 
 				
 				
-				if (gladiatorStance.stance == 0) gladiatorStance.setIdleStance( 1);
+				if (gladiatorStance.stance == 0) {
+					//gladiatorStance.stance = 1;
+					gladiatorStance.setIdleStance( 1);
+				}
+				arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll); 
 			}
 			else {
 				exitTargetMode();
@@ -478,7 +485,7 @@ package tests.pvp
 
 			testIndex = 0;
 			cyclePlayerChoice(0);
-			
+			arenaHUD.newPhase();
 			
 		
 		}

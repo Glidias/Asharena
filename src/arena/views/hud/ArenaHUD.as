@@ -73,9 +73,7 @@ package arena.views.hud
 		private var fontConsole:Fontsheet;
 		private var _textGeometry:Geometry;
 		static public const MAX_CHARS:int = 60;  // per draw call
-		static public const MSG_END_ACTION_TURN:String = "Hit 'TAB' to end action turn.";
-		static public const MSG_START_ACTION_TURN:String = "Press 'K' to start action turn.";
-		static public const MSG_END_PHASE:String =  "Hit 'Backspace' to end phase."
+		
 		
 		private var focalLength:Number;
 		private var viewSizeX:Number;
@@ -85,10 +83,15 @@ package arena.views.hud
 			this.camera = camera;
 			 onStageResize();
 		}
-		
-
-		
+	
 		// additional stuff
+		
+		static public const MSG_END_ACTION_TURN:String = "Hit 'TAB' to end action turn.";
+		static public const MSG_START_ACTION_TURN:String = "Press 'K' to start action turn.";
+		static public const MSG_END_PHASE:String =  "Hit 'Backspace' to end phase."
+		static public const MSG_END_PHASE_FINAL:String =  "No more CP left. Hit 'Backspace' to end phase."
+		
+		
 		private var arrowMarkers:Vector.<SpriteMeshSetClone> = new Vector.<SpriteMeshSetClone>();
 		private var arrowZOffset:Number = 64;
 		private var maxArrowScale:Number = 2;
@@ -103,6 +106,7 @@ package arena.views.hud
 		private var visibleArrowMarkerPoints:Vector.<Number> = new Vector.<Number>();
 		private var visibleArrowTargets:Vector.<Object3D>;
 		private var _movementBar:SpriteMeshSetClone;
+		private var _movementBarSkin:SpriteMeshSetClone;
 		static private const MOVEMENT_BAR_SCALE:Number = 180;
 		static private const TARGET_INFO_CMD_Y:Number = 130;
 		static private const TARGET_INFO_Y:Number = 130-55;
@@ -439,7 +443,7 @@ WeaponSlots
 			//spr.root._z = 20;
 		
 			// movement meter skin
-			 spr = addSprite(0, 0, 32, 256, 0, -20, layoutBottom);
+			 spr = _movementBarSkin = addSprite(0, 0, 32, 256, 0, -20, layoutBottom);
 			spr.root._scaleX *= .75;
 			spr.root._scaleY *= .75;
 			spr.root._rotationZ = Math.PI * .5;
@@ -634,7 +638,7 @@ WeaponSlots
 			_textTurnInfo.spriteSet.visible = false;
 			
 			_targetInfo.moveTo(5, TARGET_INFO_Y);
-			
+			_textTargetMode.hardSetUVOffsetIndices( 0);
 			_textTargetMode.writeFinalData(_cpInfo, 0, 0, 2000, true);
 			//_textTargetMode.writeFinalData("Press 'Z' - target mode", 0, 0, 2000, true);
 		
@@ -692,8 +696,9 @@ WeaponSlots
 			_curCharInfo.appendMessage("Class: " + charClass.name);
 			var rangeInMeters:Number = int(weapon.range * UNIT_METER_SCALE * 100) / 100;
 			_curCharInfo.appendMessage((_charWeaponEnabled ? "Attack: " : "" )+weapon.name+" ("+rangeInMeters+"m)");
-			_curCharInfo.appendMessage(weaponSlots ? "'C' to cycle attack modes. (1/"+weaponSlots.slots.length+")" : " " ); //"'C' to switch attack mode. (1/2)" //"Attack completed."
-			 _curCharInfo.appendMessage(_stars ? MSG_START_ACTION_TURN : MSG_END_ACTION_TURN);
+			_curCharInfo.appendMessage(weaponSlots ? "'C' to cycle attack modes. (1/" + weaponSlots.slots.length + ")" : " " ); //"'C' to switch attack mode. (1/2)" //"Attack completed."
+			if (!_charWeaponEnabled && !_stars) _curCharInfo.appendSpanTagMessage('<span u="2">Done!</span>');
+			 _curCharInfo.appendMessage(_stars ?  numStars > 0 ?  MSG_START_ACTION_TURN : " " : MSG_END_ACTION_TURN);
 			_curCharInfo.drawNow();
 		}
 		
@@ -810,19 +815,36 @@ WeaponSlots
 			_textTurnInfoMini.writeFinalData(_gotTargetInRange  ?  _charWeaponEnabled ? "Z - target mode" : "" :  _charWeaponEnabled ? "out of range: "+toMeters(getRangeToTarget())+"m" : "" ,0,0,300,false);
 		}
 		
+		public function newPhase():void {
+			show( _movementBar );
+			show(_movementBarSkin);
+			_textTargetMode.hardSetUVOffsetIndices(0);
+			_textTargetMode.writeFinalData(MSG_END_PHASE, 0,0,2000,true);
+		}
 		public function showStars():void {
 			_stars = true;
 			showList(_cpMeter);
 			_textTurnInfo.spriteSet.visible = true;
 			
-				_textTargetMode.writeFinalData(MSG_END_PHASE, 0,0,2000,true);
+			var noMoreStars:Boolean = numStars == 0;
+			_textTargetMode.hardSetUVOffsetIndices(noMoreStars ? 1 : 0);
+				_textTargetMode.writeFinalData(!noMoreStars ? MSG_END_PHASE : MSG_END_PHASE_FINAL, 0,0,2000,true);
 			
-				
+			if (noMoreStars) {
+				hide( _movementBar );
+				hide(_movementBarSkin);
+			}
 			_targetInfo.moveTo(5, TARGET_INFO_CMD_Y);
+		}
+		
+		private function get numStars():int 
+		{
+			return _cpMeter["showLen"];
 		}
 		
 		private var lastCharPosition:Vector3D = new Vector3D(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
 		private var positionChangeThreshold:Number = 1;
+		
 		
 	
 		public function update():void {
