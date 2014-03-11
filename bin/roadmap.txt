@@ -1,3 +1,112 @@
+Different levels of aggro strategies: (1 and 2 being basic)
+---------------------------
+1) Reaction-facing (they turn to face you)
+2) Reaction-attack (they attack you when u are within range, either after you attack or before you can attack)
+ 3) Respond-aggression-attack ( they move up aggressively to attack you (range limit in seconds) so long as you are within that range )
+ 4) Retailatory-aggression-attack ( they move up aggressively to attack you, if you somehow attacked them first) (range limit in seconds)
+5) Guard-attack (they move up aggressively to attack those that attack someone they are watching)  (range limit in seconds) (hold the R/T key to free look and watch/add friendly before ending turn)
+6) Pursuit (they pursue a particular target, not just passively watch them).
+
+Percentage margins:
+____________________
+
+Change to hit:  (if enemy is unaware of u, chance is 100%)  (9%-0% worse case)
+
+Facing factor -------- 100% - 60%  Back to front..
+Time factor -------  1 - (time taken to hit between at range)/1 between 100%  - 30%
+
+Enemy's Parry/Block/Evade factor if you are faster  ----- ( 100- percentageRating)  within 100% - 50% 
+or Chance to not get stunned/killed by enemy if he is faster - 1-100%  (percentage chance for enemy to kill or percentage change for enemy to hit * & stun)
+
+__________________________________________
+
+Chance to crit:  (15%-0% worse case)
+
+Facing factor -------- 100% - 50%  Back to front..
+Optimum crit range ------ 30 - 100%
+
+Change to not get hit by enemy if he is faster - 1-100%
+
+* ( Armor Protection factor )
+
+
+Chance to stun: (Worse case 0% due to weapon, Worse case 15% due to positioning)
+________________________________
+Facing factor -------- 100% - 50%  Back to front..
+Weapon stun factor ------- based on weapon percentage (0 - 100%)
+Optimum stun range ------ 30 - 100%
+
+_____________________
+Possible defensive timelines: (this can vary accordingly depending on individual tactics/habits. It's often best to have a good habits that matches your weapon/equipmtent capabilities)
+30%(evade) 30%(block) 40%(parry)	
+30%(evade) 40%(block) 30%(parry)	
+If attack animation is canceled or isn't attacking, use evade + block combo block. If attack already animation executed into a swing, use block + parry combo block.
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+______________
+Weapon:
+	Base damage range (the wider the range, the more "unreliable" the weapon is)
+	Attack trigger cone (will aggro trigger attack swing once player gets into this cone and between a random range between sweet range spot for critical to 95% of maximum attack range)
+	Hittable cone (a slightly larger cone, if strike occurs outside this cone, it's considered a miss!)
+	
+	Minimum attack range (should use ellipsoid radius to derive this first, should be good enough)
+	Maximum attack range  (if strike occurs outside this cone,  it's considered a miss!)
+	
+	Time taken to start swing (in seconds)
+	Time taken to strike at maximum attack range  
+	Time taken to strike at minimum attack range (ellipsoid radius time strike)
+
+	Optimum Range for Critical
+	
+	Parry base percentage rating
+	
+	Stunning base percentage rating
+	Optimum Range for Stun 
+	
+	
+Character Defense:
+	- fixed 8 sides octagon armor-covering percentages (inverse of percentage is weakenesses, exposed parts)
+-OR/AND-
+	(( Protection list (sets of Protection: 2d arc of protection, total bodily protection, base dmg reduction) ))
+	// base chance of critical hti : 2D Arc of protection percentage coverage against enemy's attack trigger cone * lack of total bodily protection
+	//damage reduction due to hitting 1 piece of armor for non-critical hit= 2D Arc of protection percentage coverage against enemy's attack trigger cone * base dmg reduction;
+	- (advanced) base dmg reduction could vary according to differnet types of weapon
+	
+	// base values
+	Blocking rating  (based off whether got shield or some good means to block blows)
+	Evasion rating  (based off speed/manuevability of character )
+	(( PArry rating = weapon parry rating * character's parrying ability?))  <- can just use weapon directly instead
+	
+	Frontal alert arc (from/to angle, presence of shield can affect this)
+	
+	
+Hit damage:
+	 Random sample from Base damage range of weapon
+	(( - total damage reduction due to armour protection at side (if no critical hit) * angle  coverage fraction at side))
+	 
+% Chance to kill
+  - Can kill in 1 hit?  = % chance to hit
+  else Can kill in 1 critical? = % chance to critical
+  else no chance to kill.
+	
+%Chance to Hit: (if enemy is unaware of you, % chance to hit is 100%)  (Green)
+	Time taken for strike to occur (which is based off maximum range to enemy) 60 - 100%
+	* Enemy facing % weakness from his alert combat front to backside.
+	* Enemy parrying/blocking counter ability if he is attempting to counterattack, otherwise blocking/evasion ability only if he is aware, depending on his equipment.
+	* (if enemy attacked faster and will strike you first, his % chance of not stunning/killing you first.)
+	
+%Chance to Critical: (x3..or maybe more?)  (Red)
+	Enemy facing % weakness from his alert combat front to backside. (<- may/may not include this, since it's already included in chance to hit)
+	* Optimum Range for Critical  %  (depending on weapon itself)
+	* Enemy armor protection rating weaknesses % from side where attack is applied on
+	* (if enemy attacked faster and will strike you first, his % chance of not hitting you first. If he has already hit you within the turn, your critical chance is zeroed, thus, a faster attacker  has always better chance to critical hit)
+	
+%Chance to Stun: (Blue)
+	* Stunning power (base precentage depending on weapon itself)
+	* Optimum Range for Stun % (depending on weapon itself)
+	
+
 Certain parts of these mechanics can also be adapted to real-time action RPGs as well.
 
 Basic enemy LOS aggro watch/defense system
@@ -6,12 +115,12 @@ All surrounding enemies that aren't engaged, will watch activated unit forever s
 
 For enemies that are already watching you, they'll always turn to look at you once you get into engagement range against them.
 
-Enemies that specifically watch you will always turn to look at you regardless of range.
-
-Turning speed happens according to time being passed as the player moves.
+Enemies that specifically watch you will always turn to look at you once you get close enough to them. (head turning would be a good way to handle this).
 
 
 An alerted enemy can always attack you so long as you are within range of them and you are within the weapon cone. They will always go to combat mode instantly once you get within engagement range aginst them.
+
+Turning speed happens according to time being passed as the player moves.
 
 An attack cooldown is provided for the enemy in their attempt to try and attack you (though in most situations, they can only deliver 1-3 hits at the most within the time of the turn). This means they can deliver more hits overall, but no chance of critical hit for them unless you aren't in combat mode (or your back/side is exposed while moving). AN implicit time passed is also used per attack intiated by the player, allowing the enemy to counterattack in response as well if the attack cooldown is availble for him.
 

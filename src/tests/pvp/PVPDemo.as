@@ -70,6 +70,8 @@ package tests.pvp
 		 * 
 		 * % Chance to Hit, % Chance to Critical (x3 damage), % Chance to Kill, Damage ranges	
 		 * 
+		 * ____
+		 * 
 		 * Obstacles and stuffs in environment
 		 * 
 		 * Add variety of units with ranged/guns.
@@ -305,7 +307,7 @@ package tests.pvp
 					//gladiatorStance.stance = 1;
 					gladiatorStance.setIdleStance( 1);
 				}
-				arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll); 
+				//arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll); 
 			}
 			else {
 				exitTargetMode();
