@@ -9,24 +9,25 @@ import util.geom.PMath;
  */
 class EnemyAggro
 {
-	
+	public var target:PlayerAggroNode; 
 	public var attackRangeSq:Float; // this is variable, randomly assign prefered attackRange within attack range margin before any attack.
 
-	public var watch:EnemyWatch;
+	public var watch:EnemyIdle; 
 	
 	public function new() 
 	{
 		
 	}
 	
-	public inline function init(attackingRange:Float, lastWatch:EnemyWatch):Void {
+	public inline function init(target:PlayerAggroNode, attackingRange:Float, watch:EnemyIdle):Void {
+		this.target = target;
 		attackRangeSq = PMath.getSquareDist(attackingRange);
-		watch  = lastWatch;
+		this.watch  = watch;
 	}
 	
 	public inline function dispose():Void {
 		watch = null;
-		
+		target = null;
 	}
 	
 	

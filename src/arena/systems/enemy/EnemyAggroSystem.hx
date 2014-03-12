@@ -3,6 +3,7 @@ import arena.components.char.MovementPoints;
 import arena.components.enemy.EnemyAggro;
 import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
+import arena.systems.enemy.EnemyAggroSystem.EnemyWatchNode;
 import arena.systems.player.PlayerAggroNode;
 import ash.core.Engine;
 import ash.core.Node;
@@ -30,9 +31,14 @@ class EnemyAggroSystem extends System
 	private var idleList:NodeList<EnemyIdleNode>;
 	private var playerNodeList:NodeList<PlayerAggroNode>;
 	
+	 // inline, so need to recompile
+	private static inline var ROT_FACING_OFFSET:Float = (-1.5707963267948966); 
+	private static inline var ROT_PER_SEC:Float = (120 * PMath.DEG_RAD);
+	
 	public function new() 
 	{
 		super();
+
 	}
 	
 	
@@ -73,9 +79,13 @@ class EnemyAggroSystem extends System
 			
 				a.state.dispose();
 				a.entity.remove(EnemyAggro); // TODO: Revert back to old watch condition
-			a = a.next;
+				
+				a = a.next;
 		}
 		
+		playerNodeList.removeAllNoSignal();
+		aggroList.removeAllNoSignal();
+		idleList.removeAllNoSignal();
 		
 		
 	}
@@ -85,7 +95,7 @@ class EnemyAggroSystem extends System
 	function onPlayerNodeRemoved(node:PlayerAggroNode) 
 	{
 		node.movementPoints.timeElapsed = -1; // flag as "dead" using negative time elapsed (which is "impossible") 
-		
+		//throw "REMOVED";
 		// remove all invalid nodes in watchList and aggroList where the target is found to have this playerAggroNode	
 		// naively set state back to IDLE??? to force new search for any player node? Why not do the timeElapsed < 0 check for playerNode to determine if he is dead or not?...and if so, change target...or perhaps, change target from within here?
 		
@@ -124,23 +134,58 @@ class EnemyAggroSystem extends System
 	}
 
 	
+	
+	private inline function getDestAngle(actualangle:Float, destangle:Float):Float {
+		 var difference:Float = destangle - actualangle;
+        if (difference < -PMath.PI) difference += PMath.PI2;
+        if (difference > PMath.PI) difference -= PMath.PI2;
+		return difference + actualangle;
 
+	}
+	
+	private inline function getDestAngle2(actualangle:Float, destangle:Float, rotSpeed:Float):Float {
+		
+		 var difference:Float = destangle - actualangle;
+		
+        if (difference < -PMath.PI) difference += PMath.PI2;
+        if (difference > PMath.PI) difference -= PMath.PI2;
+
+		var t:Float = rotSpeed/PMath.abs(difference);
+		if (t > 1) t = 1;
+		
+		destangle= actualangle + difference;
+		
+		return  PMath.slerp(actualangle, destangle, t);
+
+	}
+	
+	private inline function getDestAngleDirection(actualangle:Float, destangle:Float):Float {
+		 var difference:Float = destangle - actualangle;
+        if (difference < -PMath.PI) difference += PMath.PI2;
+        if (difference > PMath.PI) difference -= PMath.PI2;
+		return difference*difference > .0005 ? difference > 0 ? 1 : -1 : 0;
+
+	}
 	
 	override public function update(time:Float):Void {
 		
 		var p:PlayerAggroNode;
+		
 		if (playerNodeList.head == null) return;
 		
 		p = playerNodeList.head;
+		
+		
+		
 		var playerPos:Pos = p.pos;
 		var enemyPos:Pos;
 		var dx:Float;
 		var dy:Float;
 		//var dz:Float;
 		
-		var leaderTimeElapsed:Float = p.movementPoints.timeElapsed;
+		var pTimeElapsed:Float = p.movementPoints.timeElapsed;
 		
-		if (leaderTimeElapsed <= 0) return; // being a turn based game, time only passes when player moves
+		if (pTimeElapsed <= 0) return; // being a turn based game, time only passes when player moves
 		
 		var i:EnemyIdleNode = idleList.head;
 		var rangeSq:Float;
@@ -151,27 +196,34 @@ class EnemyAggroSystem extends System
 			dx =  playerPos.x - enemyPos.x;
 			dy = playerPos.y - enemyPos.y;
 			//dz = playerPos.z - enemyPos.z;
-			if (dx * dx + dy * dy <= rangeSq && validateVisibility(enemyPos, p) ) {  // TODO: Include rotation facing detection 
+			if (dx * dx + dy * dy <= rangeSq && validateVisibility(enemyPos, p) ) {  // TODO: Include rotation facing direction as a factor for EnemyIdle case to allow backstabs
 				i.entity.remove(EnemyIdle);
-				i.entity.add(new EnemyWatch().init(i.state,p ), EnemyWatch); // TODO: Pool ENemyWatch
+				i.entity.add(new EnemyWatch().init(i.state,p), EnemyWatch); // TODO: Pool ENemyWatch
 			}
 			i = i.next;
 		}
 		
 	
 		var newAggro:EnemyAggro;
+		var rangeToAttack:Float;
+		
 		var w:EnemyWatchNode = watchList.head;
 		while (w != null) {  // check closest valid player target, if it's same or different..  and consider aggroing if player gets close enough, 
 			enemyPos = w.pos;
-			rangeSq = w.state.watchSettings.alertRangeSq;
+			
+			rangeSq = w.state.watch.aggroRangeSq;
 			dx =  playerPos.x - enemyPos.x;
 			dy = playerPos.y - enemyPos.y;
 			//dz = playerPos.z - enemyPos.z;
+			
 			if (dx * dx + dy * dy <= rangeSq && validateVisibility(enemyPos, p) ) { 
+				
 				w.entity.remove(EnemyWatch);
 				newAggro = new EnemyAggro();
-				newAggro.attackRangeSq = PMath.getSquareDist(w.weapon.attackMaxRange); // TODO: set to  unpredictable random range between critical and attackMaxRange.
-				newAggro.watch = w.state;
+				rangeToAttack = w.weapon.critMinRange + Math.random()*( w.weapon.range - w.weapon.critMinRange); 
+				newAggro.attackRangeSq = PMath.getSquareDist(rangeToAttack);
+				newAggro.watch = w.state.watch;
+				newAggro.target = w.state.target;
 				w.entity.add(newAggro, EnemyAggro);
 			}
 			
@@ -180,10 +232,64 @@ class EnemyAggroSystem extends System
 		
 		
 		var a:EnemyAggroNode = aggroList.head; 
+		var aWeaponState:WeaponState; 
 		while (a != null) { 
 			
-			// if got weapon state attacking, continue to tick it down, and finally determine hit/miss or cancel if target is already dead 
+			aWeaponState = a.weaponState;
+			var pTarget:PlayerAggroNode = a.state.target;
+			pTimeElapsed = pTarget.movementPoints.timeElapsed;
 			
+			
+			dx = pTarget.pos.x - a.pos.x;
+			dy = pTarget.pos.y - a.pos.y;
+			
+			if (pTimeElapsed < 0) { // player is dead, find new player to aggro 
+				
+			}
+			else {  // find nearest valid target , if it's diff or not, and change accordingly
+				// consider if player is out of aggro range to go back to watch
+				rangeSq = a.state.watch.aggroRangeSq + 40;  // the +40 threshold should be a good enough measure to prevent oscillation
+				/*
+				if (dx * dx + dy * dy > rangeSq) {  
+					// revert back for now, forget about finding another target
+					a.entity.remove(EnemyAggro);
+					
+					a.entity.add(new EnemyWatch().init(a.state.watch,a.state.target), EnemyWatch); // TODO: Pool ENemyWatch
+					a = a.next;
+					continue;
+				}
+				*/
+			}
+			
+			
+			// always rotate enemy to face player target
+			
+			var targRotZ:Float = Math.atan2(dy, dx) + ROT_FACING_OFFSET;
+		//	targRotZ = getDestAngle(a.rot.z, targRotZ);
+			
+			a.rot.z = getDestAngle2(a.rot.z, targRotZ, ROT_PER_SEC * pTimeElapsed);  // getDestAngleDirection(a.rot.z, targRotZ)  * (2 * PMath.DEG_RAD) * pTimeElapsed;
+			
+			
+			// determine if within "suitable" range to strike/engage player
+			/*
+			if (aWeaponState.trigger) {  // determine when target strikes target, or cancel attack if possible
+				aWeaponState.attackTime  += pTimeElapsed;
+				
+				if (aWeaponState.cooldown > 0) {
+					aWeaponState.cooldown -= pTimeElapsed;
+					
+					if (aWeaponState.cooldown <= 0) {
+						aWeaponState.trigger = false;
+						
+					}
+				}
+			}
+			*/
+
+			// Weapon summary
+			
+			// if got weapon state attacking, continue to tick it down, and finally determine hit/miss or cancel if target is already dead 
+
 			// else if within range, attempt to trigger attack via weaponState
 			
 			// if hit/miss already determined or not attacking anymore, continue to find nearer target to aggro, , and if not so and current target is invalid or already dead, find another target within watch distance and reevert back to old watch state for that target. If no target found within watch distance, need to revert back to  idle state.
@@ -230,5 +336,6 @@ class EnemyIdleNode extends Node<EnemyIdleNode> {
 	public var rot:Rot;
 	
 	public var state:EnemyIdle;	
+	
 	//public var stateMachine:EntityStateMachine;
 }

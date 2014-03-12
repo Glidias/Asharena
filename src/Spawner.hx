@@ -1,4 +1,5 @@
 package ;
+import arena.components.weapon.WeaponState;
 import ash.core.Engine;
 import ash.core.Entity;
 import components.ActionIntSignal;
@@ -49,7 +50,7 @@ class Spawner
 		//.add(  new Ellipsoid(32,32,72)).add( new MoveResult() );
 		
 		ent.add( new ActionIntSignal() );
-		
+		ent.add( new WeaponState().init() );
 		return ent;
 	}
 	

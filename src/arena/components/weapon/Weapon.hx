@@ -15,8 +15,8 @@ class Weapon
 	// advanced Arena properties below
 	public var damageRange:Int;		// damage up-range variance
 
-	//public var attackMinRange:Float;
-	public var attackMaxRange:Float;
+	public var minRange:Float;
+	
 	
 	public var critMinRange:Float;
 	public var critMaxRange:Float;

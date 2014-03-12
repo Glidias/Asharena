@@ -97,6 +97,19 @@ class NodeList<TNode:Node<TNode>>
         }
         tail = null;
     }
+	
+	public function removeAllNoSignal():Void
+    {
+        while (head != null)
+        {
+            var node:TNode = head;
+            head = head.next;
+            node.previous = null;
+            node.next = null;
+          
+        }
+        tail = null;
+    }
 
     /**
      * true if the list is empty, false otherwise.

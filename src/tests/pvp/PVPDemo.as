@@ -15,7 +15,9 @@ package tests.pvp
 	import alternativa.types.Float;
 	import alternterrain.CollidableMesh;
 	import arena.components.char.MovementPoints;
+	import arena.components.enemy.EnemyIdle;
 	import arena.components.weapon.Weapon;
+	import arena.systems.enemy.EnemyAggroSystem;
 	import arena.systems.player.LimitedPlayerMovementSystem;
 	import arena.views.hud.ArenaHUD;
 	import ash.core.Entity;
@@ -64,13 +66,15 @@ package tests.pvp
 	 * 
 	 * todo:
 		 * 
-		 * Basic enemy LOS aggro watch/defense system
+		 * [[
+		 * Chance to Hit, % Chance to Critical (x3 damage), % Chance to Kill, Damage ranges	
+		 * Basic enemy LOS aggro respond reaction-attack system
+		 * ]]
 		 * 
 		 * Player2Player Collision blocking
 		 * 
-		 * % Chance to Hit, % Chance to Critical (x3 damage), % Chance to Kill, Damage ranges	
-		 * 
-		 * ____
+		 * Chance to stun
+		 * ______________________
 		 * 
 		 * Obstacles and stuffs in environment
 		 * 
@@ -103,7 +107,41 @@ package tests.pvp
 		private var _gladiatorBundle:GladiatorBundle;
 		private var arenaHUD:ArenaHUD;
 
-		private var TEST_MELEE_WEAPON:Weapon = new Weapon().init("Some Melee weapon", 0.74*ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE*.25 , 33, 2, 22*180/Math.PI );
+		private var TEST_MELEE_WEAPON:Weapon = getTestWeapon();
+		
+		private function getTestWeapon():Weapon {
+			
+			var w:Weapon =   new Weapon();
+			w.name = "Some Melee weapon";
+			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
+			w.damage =  30;
+			w.cooldownTime = .8;
+			w.hitAngle =  22 * 180 / Math.PI;
+			
+			w.damageRange = 7;		// damage up-range variance
+	
+			w.critMinRange = w.range * .35;
+			w.critMaxRange  = w.range * .70;
+			if (w.critMinRange < 16) {
+				var corr:Number = (16 - w.critMinRange);
+				w.critMinRange += corr;
+				w.critMaxRange += corr;
+			}
+			if (w.critMaxRange > w.range) w.critMaxRange = w.range;
+			
+			w.timeToSwing  =.3;
+			w.strikeTimeAtMaxRange = .65; 
+			w.strikeTimeAtMinRange = .005;  // usually close to zero
+			
+			
+			w.parryEffect = .4;
+			
+			w.stunEffect = 0;
+			w.stunMinRange = 0;
+			w.stunMaxRange = 0;
+			
+			return w;
+		}
 		
 		public function PVPDemo() 
 		{
@@ -697,11 +735,14 @@ package tests.pvp
 
 			game.gameStates.engineState.changeState(_targetTransitState);
 			arenaHUD.setState(_targetTransitState);
+			
 			if (_targetTransitState != "commander") {
 				arenaHUD.hideStars();
+				if ( _targetTransitState === "thirdPerson" ) activateEnemyAggro();
 			}
 			else  {
 				arenaHUD.showStars();
+				if (arenaSpawner.currentPlayerEntity) arenaSpawner.currentPlayerEntity.remove(MovementPoints);
 			}
 			
 			_targetTransitState = null;
@@ -710,6 +751,19 @@ package tests.pvp
 				_transitCompleteCallback();
 				_transitCompleteCallback = null;
 			}
+		}
+		private var enemyWatchSettings:EnemyIdle = new EnemyIdle().init(9000, 512);
+		
+		private function activateEnemyAggro():void 
+		{
+			var otherSide:int = sideIndex == 0 ? 1 : 0;
+			var enemySide:Array = arrayOfSides[otherSide];
+			var len:int = enemySide.length;
+			for ( var i:int = 0; i < len; i++) {
+				var e:Entity = enemySide[i];
+				e.add(enemyWatchSettings, EnemyIdle);
+			}
+			
 		}
 		
 		private function onOutOfFuel():void {
@@ -807,6 +861,8 @@ package tests.pvp
 			
 			arenaHUD.setCamera(_template3D.camera);
 			_template3D.camera.addChild( arenaHUD.hud);
+			
+			game.gameStates.thirdPerson.addInstance( new EnemyAggroSystem() ).withPriority(SystemPriorities.stateMachines);
 			
 			game.gameStates.engineState.changeState("thirdPerson");
 			arenaHUD.setState("thirdPerson");

@@ -51,6 +51,7 @@ class LimitedPlayerMovementSystem extends System
 		
 			var vel:Vel = n.vel;
 			var displacement:Float = vel.lengthSqr();
+			n.movementPoints.timeElapsed = 0;
 			if (displacement == 0) return;
 			
 			displacement = Math.sqrt(displacement);
