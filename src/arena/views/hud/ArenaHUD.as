@@ -20,14 +20,14 @@ package arena.views.hud
 	import alternativa.engine3d.spriteset.SpriteSet;
 	import alternativa.engine3d.spriteset.util.SpriteGeometryUtil;
 	import arena.components.char.ArenaCharacterClass;
+	import arena.components.weapon.Weapon;
+	import arena.components.weapon.WeaponSlot;
 	import ash.core.Entity;
 	import assets.fonts.ConsoleFont;
 	import assets.fonts.Fontsheet;
 	import components.Ellipsoid;
 	import components.Health;
 	import components.Pos;
-	import components.weapon.Weapon;
-	import components.weapon.WeaponSlot;
 	import de.polygonal.motor.geom.primitive.AABB2;
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;

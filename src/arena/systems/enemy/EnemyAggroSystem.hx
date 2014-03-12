@@ -12,8 +12,8 @@ import ash.fsm.EntityStateMachine;
 import components.Ellipsoid;
 import components.Pos;
 import components.Rot;
-import components.weapon.Weapon;
-import components.weapon.WeaponState;
+import arena.components.weapon.Weapon;
+import arena.components.weapon.WeaponState;
 import util.geom.PMath;
 
 /**

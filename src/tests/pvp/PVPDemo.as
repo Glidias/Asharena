@@ -15,6 +15,7 @@ package tests.pvp
 	import alternativa.types.Float;
 	import alternterrain.CollidableMesh;
 	import arena.components.char.MovementPoints;
+	import arena.components.weapon.Weapon;
 	import arena.systems.player.LimitedPlayerMovementSystem;
 	import arena.views.hud.ArenaHUD;
 	import ash.core.Entity;
@@ -30,7 +31,6 @@ package tests.pvp
 	import components.Rot;
 	import components.tweening.Tween;
 	import components.Vel;
-	import components.weapon.Weapon;
 	import flash.display.MovieClip;
 	import flash.display.Stage;
 	import flash.events.KeyboardEvent;
@@ -103,7 +103,7 @@ package tests.pvp
 		private var _gladiatorBundle:GladiatorBundle;
 		private var arenaHUD:ArenaHUD;
 
-		private var TEST_MELEE_WEAPON:Weapon = new Weapon().init("Some Melee weapon", 0.74*ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE*.25 , 33 );
+		private var TEST_MELEE_WEAPON:Weapon = new Weapon().init("Some Melee weapon", 0.74*ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE*.25 , 33, 2, 22*180/Math.PI );
 		
 		public function PVPDemo() 
 		{

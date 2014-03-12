@@ -1,4 +1,4 @@
-package components.weapon;
+package arena.components.weapon;
 
 /**
  * Unique weapon state per entity.

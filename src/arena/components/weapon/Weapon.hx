@@ -1,4 +1,4 @@
-package components.weapon;
+package arena.components.weapon;
 
 /**
  * Base weapon stats. SHarable component between entities.
@@ -9,11 +9,10 @@ class Weapon
 	public var name:String;
 	public var range:Float;
 	public var damage:Int;  // min damage applied
-	
-	// advanced Arena properties below
 	public var cooldownTime:Float;
 	public var hitAngle:Float;
 	
+	// advanced Arena properties below
 	public var damageRange:Int;		// damage up-range variance
 
 	//public var attackMinRange:Float;
@@ -39,11 +38,13 @@ class Weapon
 		
 	}
 	
-	public function init(name:String, range:Float, damage:Int):Weapon {
+	public function init(name:String, range:Float, damage:Int, cooldownTime:Float, hitAngle:Float):Weapon {
 		this.name = name;
 		this.range = range;
 		this.damage = damage;
+		this.hitAngle = hitAngle;
+		this.cooldownTime = cooldownTime;
 		return this;
 	}
-	
+
 }
