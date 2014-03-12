@@ -62,7 +62,8 @@ class LimitedPlayerMovementSystem extends System
 			var baseSpeed:Float = (testMoveState  & STATE_MOVE_MASK )!=0? n.moveStats.WALK_SPEED : (testMoveState & STATE_STRAFE_MASK )!=0 ? n.moveStats.STRAFE_SPEED : (testMoveState & STATE_MOVEBACK_MASK )!=0 ? n.moveStats.WALKBACK_SPEED : (testMoveState & STATE_FALLING_MASK)!=0 ? n.gravity.force : 0; 
 			if (baseSpeed == 0) return;
 			
-			n.movementPoints.movementTimeLeft -=  displacement / baseSpeed * time;
+			
+			n.movementPoints.deplete(  displacement / baseSpeed * time);
 			
 			if (n.movementPoints.movementTimeLeft <= 0) {  // this mayb e slightly exploitable if moiving, should cap the velocity???
 				

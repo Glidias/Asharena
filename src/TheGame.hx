@@ -1,4 +1,5 @@
 package;
+import arena.systems.enemy.EnemyAggroSystem;
 import arena.systems.player.LimitedPlayerMovementSystem;
 import ash.core.Engine;
 import ash.fsm.EngineState;
@@ -88,6 +89,8 @@ class TheGame
 		
 		RadialSensorSystem;
 		HealthTrackingSystem;
+		
+		EnemyAggroSystem;
 		
 		// Spawn starting entities
 	

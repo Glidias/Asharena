@@ -480,4 +480,11 @@ class PMath
 		var t = round(x / PI2);
 		return (x < -PI) ? (x - t * PI2) : (x > PI ? x - t * PI2 : x);
 	}
+	
+	public static inline function getSquareDist(dist:Float):Float {
+		var a:Float = Math.sin(Math.PI * .125) * dist;
+		var b:Float = Math.cos(Math.PI * .125) * dist;
+		dist = a * a + b * b;
+		return dist;
+	}
 }
