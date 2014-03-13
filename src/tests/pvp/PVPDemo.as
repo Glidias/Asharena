@@ -114,7 +114,7 @@ package tests.pvp
 			var w:Weapon =   new Weapon();
 			w.name = "Some Melee weapon";
 			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
-			w.damage =  30;
+			w.damage =  25;
 			w.cooldownTime = .8;
 			w.hitAngle =  22 * 180 / Math.PI;
 			
@@ -129,8 +129,8 @@ package tests.pvp
 			}
 			if (w.critMaxRange > w.range) w.critMaxRange = w.range;
 			
-			w.timeToSwing  =.3;
-			w.strikeTimeAtMaxRange = .65; 
+			w.timeToSwing  =.15;
+			w.strikeTimeAtMaxRange = .8; 
 			w.strikeTimeAtMinRange = .005;  // usually close to zero
 			
 			

@@ -1,4 +1,5 @@
 package arena.systems.enemy;
+import arena.components.char.HitFormulas;
 import arena.components.char.MovementPoints;
 import arena.components.enemy.EnemyAggro;
 import arena.components.enemy.EnemyIdle;
@@ -32,7 +33,7 @@ class EnemyAggroSystem extends System
 	private var playerNodeList:NodeList<PlayerAggroNode>;
 	
 	 // inline, so need to recompile
-	private static inline var ROT_FACING_OFFSET:Float = (-1.5707963267948966); 
+	private static inline var ROT_FACING_OFFSET:Float = HitFormulas.ROT_FACING_OFFSET; 
 	private static inline var ROT_PER_SEC:Float = (120 * PMath.DEG_RAD);
 	
 	public function new() 

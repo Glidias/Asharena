@@ -20,6 +20,8 @@ package arena.views.hud
 	import alternativa.engine3d.spriteset.SpriteSet;
 	import alternativa.engine3d.spriteset.util.SpriteGeometryUtil;
 	import arena.components.char.ArenaCharacterClass;
+	import arena.components.char.CharDefense;
+	import arena.components.char.HitFormulas;
 	import arena.components.weapon.Weapon;
 	import arena.components.weapon.WeaponSlot;
 	import ash.core.Entity;
@@ -28,6 +30,7 @@ package arena.views.hud
 	import components.Ellipsoid;
 	import components.Health;
 	import components.Pos;
+	import components.Rot;
 	import de.polygonal.motor.geom.primitive.AABB2;
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
@@ -804,15 +807,24 @@ WeaponSlots
 		
 		private function validateTargetInRange():void 
 		{
+			var hitPercResult:Number = NaN;
+			if (_targetNode && _curCharPos) {
+				hitPercResult= HitFormulas.getPercChanceToHitDefender( _curCharPos,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense,_targetNode.entity.get(Ellipsoid) as Ellipsoid );
+				
+			}
+			
 			_actionChoicesBox.styles[0].spriteSet.visible = _targetMode && _gotTargetInRange && _targetNode;
 			if (_targetMode || !_targetNode) {  // show valid target options if within range
-				_textTurnInfoMini.writeFinalData(_targetNode && !_gotTargetInRange && _charWeaponEnabled ? "out of range: " + toMeters(getRangeToTarget()) + "m" : "");
+				_textTurnInfoMini.writeFinalData(_targetNode && !_gotTargetInRange && _charWeaponEnabled ? "out of range: " + toMeters(getRangeToTarget()) + "m" + ", "+hitPercResult : ""+hitPercResult);
 				if (_targetMode) {
 					checkTargetModeOptions();
 				}
 				return;
 			}
-			_textTurnInfoMini.writeFinalData(_gotTargetInRange  ?  _charWeaponEnabled ? "Z - target mode" : "" :  _charWeaponEnabled ? "out of range: "+toMeters(getRangeToTarget())+"m" : "" ,0,0,300,false);
+			
+			
+			
+			_textTurnInfoMini.writeFinalData(_gotTargetInRange  ?  _charWeaponEnabled ? "Z - target mode" : "" :  _charWeaponEnabled ? "out of range: "+toMeters(getRangeToTarget())+"m" + ", "+hitPercResult  : ""+hitPercResult ,0,0,300,false);
 		}
 		
 		public function newPhase():void {

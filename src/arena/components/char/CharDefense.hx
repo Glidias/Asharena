@@ -1,4 +1,5 @@
 package arena.components.char;
+import util.geom.PMath;
 
 /**
  * Character defense ratings
@@ -26,11 +27,25 @@ class CharDefense
 	public var evasion:Float;
 	//public var parry:Float;
 	
-	public var frontalArc:Float;
+	public var frontalArc:Float;  // the arc for both directions, leftwards and rightwards from forward vector
 	// leftArcAdd, rightArcAdd
+	
+	public static inline var BACKSIDE_ARC:Float = 40*PMath.DEG_RAD;  // the backside arc which is considered a backstab
 
 	public function new() 
 	{
+		
+	}
+	
+	public  function init(block:Float, evasion:Float, frontalArc:Float):CharDefense {
+		init_i(block , evasion, frontalArc);
+		return this;
+	}
+	
+	public  inline function init_i(block:Float, evasion:Float, frontalArc:Float):Void {
+		this.block = block;
+		this.evasion = evasion;
+		this.frontalArc = frontalArc;
 		
 	}
 	

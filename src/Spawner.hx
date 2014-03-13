@@ -1,4 +1,5 @@
 package ;
+import arena.components.char.CharDefense;
 import arena.components.weapon.WeaponState;
 import ash.core.Engine;
 import ash.core.Entity;
@@ -14,6 +15,7 @@ import components.MoveResult;
 import components.Pos;
 import components.Rot;
 import components.Vel;
+import util.geom.PMath;
 
 /**
  * ...
@@ -51,6 +53,7 @@ class Spawner
 		
 		ent.add( new ActionIntSignal() );
 		ent.add( new WeaponState().init() );
+		ent.add( new CharDefense().init(.5, .5, 45*PMath.DEG_RAD) );
 		return ent;
 	}
 	
