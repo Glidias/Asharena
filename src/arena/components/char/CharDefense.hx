@@ -28,7 +28,7 @@ class CharDefense
 	//public var parry:Float;
 	
 	public var frontalArc:Float;  // the arc for both directions, leftwards and rightwards from forward vector
-	// leftArcAdd, rightArcAdd
+	// leftArcAdd, rightArcAdd  // this can be included in later to factor in presence of shields on left/right hand side of body
 	
 	public static inline var BACKSIDE_ARC:Float = 40*PMath.DEG_RAD;  // the backside arc which is considered a backstab
 

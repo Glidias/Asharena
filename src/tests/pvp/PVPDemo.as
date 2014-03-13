@@ -304,8 +304,9 @@ package tests.pvp
 				endPhase();
 			}
 			else if (keyCode === Keyboard.F && !game.keyPoll.isDown(Keyboard.F)) {
-				if ( arenaHUD.checkStrike(keyCode) ) {  // for now, HP reduction is insntatneous within this method
+				if (  arenaHUD.checkStrike(keyCode) ) {  // for now, HP reduction is insntatneous within this method
 					// remove controls, perform animation, before toggling targeting mode and restoring back controls
+					
 					toggleTargetingMode();
 				}
 			}

@@ -478,6 +478,7 @@ WeaponSlots
 			_actionChoicesBox = new TextBoxChannel( new <FontSettings>[ getNewFontSettings(fontConsole, fontMat, 30) ], 5, -1, 3); 
 			_actionChoicesBox.addToContainer(layoutTopLeft);
 			registerVisStatesOfTextBox("thirdPerson", _actionChoicesBox);
+			_actionChoicesBox.styles[0].spriteSet.alwaysOnTop = true;
 			///*
 			_actionChoicesBox.appendMessage("F - Attack now");
 
@@ -733,7 +734,7 @@ WeaponSlots
 				return;
 				
 			}
-			
+		
 			var ent:Entity = node.entity;
 			var obj:Object3D = node.obj;
 			
@@ -756,6 +757,11 @@ WeaponSlots
 			
 			}
 			
+			if (_gotTargetInRange && !_stars) {
+				updateTargetChoices();
+				
+			}
+			
 		
 			
 			_targetInfo.appendMessage("Name: "+obj.name);
@@ -765,6 +771,20 @@ WeaponSlots
 			_targetInfo.drawNow();
 			
 			validateTargetInRange();
+		}
+		
+		private function updateTargetChoices():void {
+			var hitPercResult:Number;
+			var critPercResult:Number;
+			hitPercResult= HitFormulas.getPercChanceToHitDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense,_targetNode.entity.get(Ellipsoid) as Ellipsoid );
+			critPercResult= HitFormulas.getPercChanceToCritDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense,_targetNode.entity.get(Ellipsoid) as Ellipsoid );
+			hitPercResult = Math.round(hitPercResult);
+			critPercResult = Math.round(critPercResult);
+			
+			var showLabels:Boolean = false;
+			_actionChoicesBox.clearAll();
+			_actionChoicesBox.appendSpanTagMessage('F - Attack now (<span u="2">'+hitPercResult+'%</span>'+(showLabels ? " hit" : "")+' | <span u="1">'+critPercResult+'%</span>'+(showLabels ? ' critical' : '')+')');
+			_actionChoicesBox.drawNow();
 		}
 		
 		private function checkTargetInRange():Boolean {
@@ -792,6 +812,7 @@ WeaponSlots
 				_textTargetMode.writeFinalData("Z - exit target mode", 0, 0, 2000, true);
 				 _textTurnInfoMini.writeFinalData("", 0, 0, 300, false);
 				 checkTargetModeOptions();
+				 	setTargetChar(_targetNode);
 			}
 			else  {
 				_textTargetMode.writeFinalData(_cpInfo, 0, 0, 2000, true);
@@ -807,15 +828,19 @@ WeaponSlots
 		
 		private function validateTargetInRange():void 
 		{
-			var hitPercResult:Number = NaN;
-			if (_targetNode && _curCharPos) {
-				hitPercResult= HitFormulas.getPercChanceToHitDefender( _curCharPos,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense,_targetNode.entity.get(Ellipsoid) as Ellipsoid );
-				
-			}
+			//var hitPercResult:Number = NaN;
+			//var critPercResult:Number = NaN;
+			
+			//if (_targetNode && _curCharPos) {
+			//	hitPercResult= HitFormulas.getPercChanceToHitDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense,_targetNode.entity.get(Ellipsoid) as Ellipsoid );
+			//	critPercResult= HitFormulas.getPercChanceToCritDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense,_targetNode.entity.get(Ellipsoid) as Ellipsoid );
+			//	hitPercResult = Math.round(hitPercResult);
+			//	critPercResult = Math.round(critPercResult);
+			//}
 			
 			_actionChoicesBox.styles[0].spriteSet.visible = _targetMode && _gotTargetInRange && _targetNode;
 			if (_targetMode || !_targetNode) {  // show valid target options if within range
-				_textTurnInfoMini.writeFinalData(_targetNode && !_gotTargetInRange && _charWeaponEnabled ? "out of range: " + toMeters(getRangeToTarget()) + "m" + ", "+hitPercResult : ""+hitPercResult);
+				_textTurnInfoMini.writeFinalData(_targetNode && !_gotTargetInRange && _charWeaponEnabled ? "out of range: " + toMeters(getRangeToTarget()) + "m"  : "");
 				if (_targetMode) {
 					checkTargetModeOptions();
 				}
@@ -824,7 +849,7 @@ WeaponSlots
 			
 			
 			
-			_textTurnInfoMini.writeFinalData(_gotTargetInRange  ?  _charWeaponEnabled ? "Z - target mode" : "" :  _charWeaponEnabled ? "out of range: "+toMeters(getRangeToTarget())+"m" + ", "+hitPercResult  : ""+hitPercResult ,0,0,300,false);
+			_textTurnInfoMini.writeFinalData(_gotTargetInRange  ?  _charWeaponEnabled ? "Z - target mode" : "" :  _charWeaponEnabled ? "out of range: "+toMeters(getRangeToTarget())+"m"  : "" ,0,0,300,false);
 		}
 		
 		public function newPhase():void {
@@ -947,15 +972,44 @@ WeaponSlots
 			_textTurnInfo.finaliseWrittenData();
 		}
 		
-		public function checkStrike(keyCode:uint):Boolean // Todo: neeed serious refactoring to seperate view/model
+		
+		
+		public var strikeResult:int;
+		
+		
+		public function checkStrike(keyCode:uint):int // Todo: neeed serious refactoring to seperate view/model
 		{
-			if (!_charWeaponEnabled || !_targetMode || !_gotTargetInRange || !_targetNode) return false;
+			strikeResult = 0;
+			
+			if (!_charWeaponEnabled || !_targetMode || !_gotTargetInRange || !_targetNode) return 0;
 			_charWeaponEnabled = false; 
 			updateCharInfo();
-			var health:Health = targetNode.entity.get(Health) as Health;
-			health.damage( getWeapon(_displayChar).damage );
 			
-			return true;
+			var health:Health = targetNode.entity.get(Health) as Health;
+			
+			var gotHit:Boolean = false;
+			var percToRoll:Number;
+			var baseDmg:Number;
+			percToRoll= HitFormulas.getPercChanceToHitDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense,_targetNode.entity.get(Ellipsoid) as Ellipsoid );
+			//percToRoll = Math.round(hitPercResult);
+			if (Math.random() * 100 <= percToRoll) {
+				baseDmg = HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon );
+				
+				percToRoll= HitFormulas.getPercChanceToCritDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense,_targetNode.entity.get(Ellipsoid) as Ellipsoid );
+				//percToRoll = Math.round(critPercResult)
+				var gotCrit:Boolean = Math.random() * 100 <= percToRoll;
+				strikeResult = gotCrit ? 2 : 1;
+				health.damage( HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon ) * (gotCrit ? 3 : 1) );	
+				
+				return strikeResult;
+			}
+			else {
+				strikeResult = -1;
+				txtPlayerMisses( _displayChar, _targetNode.entity);
+				return strikeResult;
+			}
+			
+			return 0;
 		}
 		
 		public function getWeapon(ent:Entity):Weapon {
@@ -966,7 +1020,9 @@ WeaponSlots
 		{
 		//	_msgLogInfo.resetAllScrollingMessages()
 			var obj:Object3D = e.get(Object3D) as Object3D;
-			_msgLogInfo.appendSpanTagMessage(!killingBlow  ? '<span u="2">Player</span> hits <span u="1">'+obj.name + '</span> for <span u="2">'+amount + '</span> points of damage.' : '<span u="2">Player kills</span> <span u="1">'+obj.name + '</span>!');
+			
+			var crit:Boolean  = strikeResult == 2;
+			_msgLogInfo.appendSpanTagMessage(!killingBlow  ? '<span u="2">Player</span> hits <span u="1">'+obj.name + '</span> for <span u="'+(crit ? 1 : 2)+'">'+amount + '</span> points of '+(crit ? '<span u="1">critical</span> ': '')+'damage.' : '<span u="2">Player kills</span> <span u="1">'+obj.name + '</span>'+(crit ? ' with a <span u="1">critical</span> hit' : "")+'!');
 			_msgLogInfo.drawNow();
 			if ( e === _targetNode.entity) {
 				if (!killingBlow ) {
@@ -977,6 +1033,15 @@ WeaponSlots
 					setTargetChar(null );
 				}
 			}
+		
+		}
+		
+		// this could be due to a block/parry or something, we determine description here
+		public function txtPlayerMisses(e:Entity, targetEntity:Entity):void 
+		{
+			var obj:Object3D = e.get(Object3D) as Object3D;
+			_msgLogInfo.appendSpanTagMessage('<span u="2">Player</span> misses!');
+			_msgLogInfo.drawNow();
 		
 		}
 		

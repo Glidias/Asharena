@@ -15,7 +15,7 @@ class HitFormulas
 	
 	public static inline var ROT_FACING_OFFSET:Float = ( -1.5707963267948966);
 
-	public static inline function getPercChanceToHitDefender(posA:Pos, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid):Float {
+	public static inline function getPercChanceToHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid):Float {
 		var facinPerc:Float ;
 		var basePerc:Float = facinPerc=calculateFacingPerc(posA, posB, rotB, defB); 
 		var dx:Float = posB.x - posA.x;
@@ -26,7 +26,7 @@ class HitFormulas
 			//	calculateOptimalRangeFactor(  1 - (time taken to hit between at range)/1 between 100%  - 30%
 			
 			// Detemine overall time taken  for weapon to strike target in seconds, according to range to target
-			var rangeFactor:Float =  calculateOptimalRangeFactor(16, weaponA.range, d);
+			var rangeFactor:Float =  calculateOptimalRangeFactor(ellipsoidA.x, weaponA.range, d);
 			var totalTimeToHit:Float = weaponA.timeToSwing + rangeFactor * (weaponA.strikeTimeAtMaxRange - weaponA.strikeTimeAtMinRange);
 			var totalTimeToHitInSec:Float = totalTimeToHit;
 			if (totalTimeToHitInSec > 1) totalTimeToHitInSec = 1;
@@ -44,9 +44,18 @@ class HitFormulas
 		return basePerc;
 	}
 	
-	public static inline function getPercChanceToCritDefender(posA:Pos, weaponA:Weapon,posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid):Float {
-		
-		return 0;
+	public static inline function getPercChanceToCritDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid):Float {
+
+		var basePerc:Float =  calculateFacingPerc(posA, posB, rotB, defB); 
+		var dx:Float = posB.x - posA.x;
+		var dy:Float = posB.y - posA.y;
+		var d:Float = Math.sqrt(dx * dx + dy * dy) - ellipsoidB.x; // we assume x and y is the same!
+	
+		// Detemine best range to crit for given weapon
+		var  critOptimalRangeFactor:Float = calculateOptimalRangeFactorMidpoint(ellipsoidA.x, weaponA.range, weaponA.critMinRange, weaponA.critMaxRange, d); 
+		basePerc *= PMath.lerp( .3, 1, critOptimalRangeFactor);
+
+		return basePerc;
 	}
 	
 	// TODO: Non passive cases once EnemyAggro can strike back with Weapon!
@@ -82,7 +91,7 @@ class HitFormulas
 	}
 	
 	
-	public static inline function calculateOptimalRangeFactor(minRange:Float, maxRange:Float, sampleRange:Float):Float {
+	public static inline function calculateOptimalRangeFactor(minRange:Float, maxRange:Float, sampleRange:Float):Float {  // the nearer to maxRange ,the higher the ratio
 		// find t 
 		// sampleRange =  a + (b - a) * t;   // LERP
 		//  sampleRange = (b - a) * t + a
@@ -90,6 +99,34 @@ class HitFormulas
 		// (sampleRange - a)/ (b-a) = t;
 		sampleRange = (sampleRange - minRange) / (maxRange - minRange);
 		sampleRange = sampleRange < 0 ? 0 : sampleRange > 1 ? 1 : sampleRange;
+		return sampleRange;
+	}
+	
+	 // the nearer to midpoint ,the higher the ratio
+	public static inline function calculateOptimalRangeFactorMidpoint(minRange:Float, maxRange:Float, sampleMinRange:Float, sampleMaxRange:Float, sampleRange:Float):Float {  // the nearer to maxRange ,the higher the ratio
+		var midPt:Float = sampleMinRange + sampleMaxRange;
+		midPt *= .5;
+		if ( sampleRange ==  midPt ) sampleRange = 1
+		else if (sampleRange < midPt) {
+			sampleRange = calculateOptimalRangeFactor(minRange, midPt, sampleRange);
+		}
+		else {
+			sampleRange = calculateOptimalRangeFactor(maxRange, midPt, sampleRange);
+		}
+		return sampleRange;
+	}
+	
+	 // the nearer to sampleMax/MinRange band ,the higher the ratio. If within band, ratio is 1.
+	public static inline function calculateOptimalRangeFactorMidRange(minRange:Float, maxRange:Float, sampleMinRange:Float, sampleMaxRange:Float, sampleRange:Float):Float { 
+		
+		if ( sampleRange >= sampleMinRange && sampleRange <= sampleMaxRange) sampleRange = 1
+		else if (sampleRange < sampleMinRange) {
+			sampleRange = calculateOptimalRangeFactor(minRange, sampleMinRange, sampleRange);
+		}
+		else {
+			sampleRange = calculateOptimalRangeFactor(maxRange, sampleMaxRange, sampleRange);
+		}
+		
 		return sampleRange;
 	}
 	
