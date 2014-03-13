@@ -32,7 +32,7 @@ class HitFormulas
 			if (totalTimeToHitInSec > 1) totalTimeToHitInSec = 1;
 			
 			totalTimeToHit = 1 - calculateOptimalRangeFactor( 0, 1, totalTimeToHit);
-			var totalTimeToHitInSec:Float = totalTimeToHit;
+	
 		
 			totalTimeToHit = PMath.lerp(.3, 1, totalTimeToHit);
 			if (facinPerc <= 67) basePerc *= totalTimeToHit;   // Based off ~ frontal aspect of character
