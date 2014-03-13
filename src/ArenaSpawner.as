@@ -16,6 +16,7 @@ package
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.utils.Object3DUtils;
 	import arena.components.char.ArenaCharacterClass;
+	import arena.components.char.CharDefense;
 	import ash.core.Engine;
 	import ash.core.Entity;
 	import ash.signals.Signal0;
@@ -252,6 +253,8 @@ package
 			var sk:Skin = skProto.clone() as Skin;
 			
 			
+			var def:CharDefense = ent.get(CharDefense) as CharDefense;
+			def.evasion = 0;
 			
 			if (side > 0) {
 				var customMat:Material = getMaterialSide(race, side);

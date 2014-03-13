@@ -781,9 +781,15 @@ WeaponSlots
 			hitPercResult = Math.round(hitPercResult);
 			critPercResult = Math.round(critPercResult);
 			
+			var targetHP:Health = _targetNode.entity.get(Health) as Health;
+			
+			var sampleDmg:int = HitFormulas.rollDamageForWeapon( _displayChar.get(Weapon) as Weapon);
+			var numHits:int = Math.ceil(targetHP.hp / sampleDmg);
+			var numCritHits:int = Math.ceil(targetHP.hp / (sampleDmg*3));
+			
 			var showLabels:Boolean = false;
 			_actionChoicesBox.clearAll();
-			_actionChoicesBox.appendSpanTagMessage('F - Attack now (<span u="2">'+hitPercResult+'%</span>'+(showLabels ? " hit" : "")+' | <span u="1">'+critPercResult+'%</span>'+(showLabels ? ' critical' : '')+')');
+			_actionChoicesBox.appendSpanTagMessage('F - Attack now (<span u="2">'+hitPercResult+'%</span>'+(showLabels ? " hit" : "")+' | <span u="1">'+critPercResult+'%</span>'+(showLabels ? ' critical' : '')+')' + '  ~(<span u="2">'+numHits+'</span>|<span u="1">'+numCritHits+'</span>)' );
 			_actionChoicesBox.drawNow();
 		}
 		
@@ -812,7 +818,7 @@ WeaponSlots
 				_textTargetMode.writeFinalData("Z - exit target mode", 0, 0, 2000, true);
 				 _textTurnInfoMini.writeFinalData("", 0, 0, 300, false);
 				 checkTargetModeOptions();
-				 	setTargetChar(_targetNode);
+				 if (_targetNode) updateTargetChoices(); // setTargetChar(_targetNode);
 			}
 			else  {
 				_textTargetMode.writeFinalData(_cpInfo, 0, 0, 2000, true);
