@@ -1,0 +1,22 @@
+Rule mechanic roadmap:
+______________________________
+
+1) Active aggroing target within interception attack range should be attacked + counter-attacking. (Like in Valkerie CHronicles)
+Being triggered to be attacked by the target, while engaging the target, would yield different probablity hit/critical results, due to the fact that the enemy target might theoritically hit you in a certain manner first (or parrying), preventing you from hitting him. Unlike Valkerie Chronicles, perhaps this mechanic can be used to determine if a unit "retailiates" to begin with after being attacked) target within attack range once active aggroing target ends action turn, assuming the aggroing target is out of his we, assuming he already triggered an attack on you. Like in Valkerie Chronicles, no rolling for critical hits is done for such reaction attacks.
+
+2) Smarter AI facing: (Required for this game where facing affects situation, and can be exploited unfairly)
+Enemy could always rotate back to face closest (angledapon range. THis prevents exploits with distracting enemies, but not engaging them finally at the end of the turn. It also makes the game fairer since the active team's moving unit can rotate about freely with no movement cost before ending the unit's action turn, thus likewise, all responding enemy AI units should also have that similar freedom to rotate around at the end of the turn to face the "best" target. THis requires the active team to keep units around the target to overwhelm the target, without resorting to lame distraction techniques.
+
+3) No 6th Sense: (Like in valkerie chronicles)
+Enemy should have blind spot at the start of every turn, so if target wasn't in field of view at the start of the turn and no one is avialable to warn him, he won't turn to face him. Note that other nearby AI can warn him of the movign unit's presence, shouting "Look Out" to alert surrounding units to him.
+
+4) (Optional) Enemy Arc markers (Like in varlkerie chronicles,..). The arcs are actually used to determine the arrow/thrown projectile paths, since they have to hom in on the player even if the player moves and tries to evade it, a rolled hit would mean the arrows/thrown projectiles is always destined to hit the player. Depending on the speed of the player with his evasion, or his blocking skill, the chances of being hit is determined accordingly. Using certain formations can provide bonuses against projectiles.
+
+
+Possible rule variations:
+_________________________________________
+* One rule variation is to only resolve non-sneak attacks  after round has completed (ie. a round where both sides have completed their phases), so everything is just targetted, but not attacked immediately unless attacking the enemy from behind. If using this approach, than one team serves, while the other responds (perhaps at half amount of movement points, since they have someowhat the "final" say) trying to aggro away targetted attacks.  Targetted attacks/auto-attacks are then resolved accordingly. This gives a "I go, You go" system of turns but attacks are only resolved once both sides have moved. The responding team cannot roll for critical attacks in this situation though. Once the responding team is done, they get to serve the new round by starting first. This avoids the silliness of inactive units just sitting back (unable to respond) as someone else on their team gets hit by an enemy.
+
+* Each unit can only move once and attack once. No re-using/spamming command points on same unit. Thus, there's no actual command point usage.
+
+(etc. and various others, such as formations, etc.)
