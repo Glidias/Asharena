@@ -34,7 +34,7 @@ class EnemyAggroSystem extends System
 	
 	 // inline, so need to recompile
 	private static inline var ROT_FACING_OFFSET:Float = HitFormulas.ROT_FACING_OFFSET; 
-	private static inline var ROT_PER_SEC:Float = (120 * PMath.DEG_RAD);
+	private static inline var ROT_PER_SEC:Float = (200 * PMath.DEG_RAD);
 	
 	public function new() 
 	{
@@ -244,13 +244,16 @@ class EnemyAggroSystem extends System
 			dx = pTarget.pos.x - a.pos.x;
 			dy = pTarget.pos.y - a.pos.y;
 			
+			aWeaponState.cooldown -= pTimeElapsed;
+
+			
 			if (pTimeElapsed < 0) { // player is dead, find new player to aggro 
 				
 			}
 			else {  // find nearest valid target , if it's diff or not, and change accordingly
 				// consider if player is out of aggro range to go back to watch
 				rangeSq = a.state.watch.aggroRangeSq + 40;  // the +40 threshold should be a good enough measure to prevent oscillation
-				/*
+				///*
 				if (dx * dx + dy * dy > rangeSq) {  
 					// revert back for now, forget about finding another target
 					a.entity.remove(EnemyAggro);
@@ -259,7 +262,7 @@ class EnemyAggroSystem extends System
 					a = a.next;
 					continue;
 				}
-				*/
+				//*/
 			}
 			
 			

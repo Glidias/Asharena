@@ -67,13 +67,12 @@ package tests.pvp
 	 * todo:
 		 * 
 		 * [[
-		 * Chance to Hit, % Chance to Critical (x3 damage), % Chance to Kill, Damage ranges	
-		 * Basic enemy LOS aggro respond reaction-attack system
+		 * Basic enemy LOS aggro respond reaction-attack system, end-turn AI watch facing and possible blind spots at the start of turn.
 		 * ]]
 		 * 
 		 * Player2Player Collision blocking
 		 * 
-		 * Chance to stun
+		 * ((Chance to stun))
 		 * ______________________
 		 * 
 		 * Obstacles and stuffs in environment
@@ -85,6 +84,9 @@ package tests.pvp
 		 * Formation support with:
 		 * Console individual + follower list mechanic for roster..Cycle through menu of individuals/leaders.
 		 * PC Mouse Drag Box or Shift + Select mechanic for Roster, (can cycle left/right) based on selected leaders to allow moving as formation.
+		 * 
+		 * Link attacks (combined non-critical attacks from nearby in-range units around target)
+		 * Coordinate attacks (moving from formation movement to individual/movement unit actions)
 		 * 
 		 * 
 	 * @author Glidias
@@ -101,48 +103,10 @@ package tests.pvp
 		private var arenaSpawner:ArenaSpawner;
 		private var collisionScene:Object3D;
 		
-	
-		//private var testCPLabel:Label;
-		
 		private var _gladiatorBundle:GladiatorBundle;
 		private var arenaHUD:ArenaHUD;
 
-		private var TEST_MELEE_WEAPON:Weapon = getTestWeapon();
-		
-		private function getTestWeapon():Weapon {
-			
-			var w:Weapon =   new Weapon();
-			w.name = "Some Melee weapon";
-			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
-			w.damage =  25;
-			w.cooldownTime = .8;
-			w.hitAngle =  22 * 180 / Math.PI;
-			
-			w.damageRange = 7;		// damage up-range variance
 	
-			w.critMinRange = w.range * .35;
-			w.critMaxRange  = w.range * .70;
-			if (w.critMinRange < 16) {
-				var corr:Number = (16 - w.critMinRange);
-				w.critMinRange += corr;
-				w.critMaxRange += corr;
-			}
-			if (w.critMaxRange > w.range) w.critMaxRange = w.range;
-			
-			w.timeToSwing  =.15;
-			w.strikeTimeAtMaxRange = .8; 
-			w.strikeTimeAtMinRange = .005;  // usually close to zero
-			
-			
-			w.parryEffect = .4;
-			
-			w.stunEffect = 0;
-			w.stunMinRange = 0;
-			w.stunMaxRange = 0;
-			
-			return w;
-		}
-		
 		public function PVPDemo() 
 		{
 			haxe.initSwc(this);
@@ -213,12 +177,50 @@ package tests.pvp
 		private var _transitCompleteCallback:Function;
 		
 		
-		// FULES
+		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 5;
-		private  var MAX_COMMAND_POINTS:int = 20;
+		private  var MAX_MOVEMENT_POINTS:Number = 7;
+		private  var MAX_COMMAND_POINTS:int = 5;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
 		private var commandPoints:Vector.<int> = new <int>[0,0];
+		private var enemyWatchSettings:EnemyIdle = new EnemyIdle().init(9000, 100);
+		
+		
+		// Deault weapon stats
+		private var TEST_MELEE_WEAPON:Weapon = getTestWeapon();
+		private function getTestWeapon():Weapon {
+			
+			var w:Weapon =   new Weapon();
+			w.name = "Some Melee weapon";
+			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
+			w.damage =  25;
+			w.cooldownTime = .8;
+			w.hitAngle =  22 * 180 / Math.PI;
+			
+			w.damageRange = 7;		// damage up-range variance
+	
+			w.critMinRange = w.range * .35;
+			w.critMaxRange  = w.range * .70;
+			if (w.critMinRange < 16) {
+				var corr:Number = (16 - w.critMinRange);
+				w.critMinRange += corr;
+				w.critMaxRange += corr;
+			}
+			if (w.critMaxRange > w.range) w.critMaxRange = w.range;
+			
+			w.timeToSwing  =.15;
+			w.strikeTimeAtMaxRange = .8; 
+			w.strikeTimeAtMinRange = .005;  // usually close to zero
+			
+			
+			w.parryEffect = .4;
+			
+			w.stunEffect = 0;
+			w.stunMinRange = 0;
+			w.stunMaxRange = 0;
+			
+			return w;
+		}
 		
 		
 		
@@ -227,6 +229,7 @@ package tests.pvp
 		}
 		
 
+		// -- code goes here
 		
 		private function setupStartingEntites():void {
 			
@@ -753,7 +756,7 @@ package tests.pvp
 				_transitCompleteCallback = null;
 			}
 		}
-		private var enemyWatchSettings:EnemyIdle = new EnemyIdle().init(9000, 512);
+
 		
 		private function activateEnemyAggro():void 
 		{
