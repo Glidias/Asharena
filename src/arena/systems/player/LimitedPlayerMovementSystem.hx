@@ -26,6 +26,8 @@ class LimitedPlayerMovementSystem extends System
 	private static inline var STATE_MOVE_MASK:Int = (1 << PlayerAction.MOVE_FORWARD) | ( 1 << PlayerAction.MOVE_FORWARD_FAST);
 	private static inline var STATE_MOVEBACK_MASK:Int = (1 << PlayerAction.MOVE_BACKWARD) | (1 << PlayerAction.MOVE_BACKWARD_FAST);
 	
+	private var _playerPointsOut:MovementPoints;  // to defer timeElapsed to zero after movement poitns are out
+	
 	public var outOfFuel:Signal0;
 	
 	public function new() 
@@ -37,7 +39,21 @@ class LimitedPlayerMovementSystem extends System
 	
 	override public function addToEngine(engine:Engine):Void {
 		nodeList = engine.getNodeList(LimitedPlayerMovementNode);
+		engine.updateComplete.add(onUpdateComplete);
+	}
+	
+	override public function removeFromEngine(engine:Engine):Void {
+		engine.updateComplete.remove(onUpdateComplete);
+	}
+	
+	function onUpdateComplete() 
+	{
 		
+		if (_playerPointsOut == null) return;
+		
+		
+		_playerPointsOut.timeElapsed = 0;
+		_playerPointsOut = null;
 	}
 	
 
@@ -67,7 +83,7 @@ class LimitedPlayerMovementSystem extends System
 			n.movementPoints.deplete(  displacement / baseSpeed * time);
 			
 			if (n.movementPoints.movementTimeLeft <= 0) {  // this mayb e slightly exploitable if moiving, should cap the velocity???
-				
+				_playerPointsOut = n.movementPoints;
 				
 				n.movementPoints.movementTimeLeft = 0;
 				n.keyPoll.resetAllStates();

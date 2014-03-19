@@ -12,7 +12,6 @@ package tests.pvp
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.BitmapTextureResource;
-	import alternativa.types.Float;
 	import alternterrain.CollidableMesh;
 	import arena.components.char.MovementPoints;
 	import arena.components.enemy.EnemyIdle;
@@ -105,7 +104,7 @@ package tests.pvp
 		
 		private var _gladiatorBundle:GladiatorBundle;
 		private var arenaHUD:ArenaHUD;
-
+		
 	
 		public function PVPDemo() 
 		{
@@ -152,6 +151,10 @@ package tests.pvp
 
 		}
 		
+		private var markedTargets:Vector.<Object3D> = new Vector.<Object3D>();
+		private var _enemyAggroSystem:EnemyAggroSystem;
+		
+		
 		// CAMERA CONTROLLING
 		private var testArr:Array = [];
 		private var testArr2:Array = [];
@@ -179,7 +182,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 220;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
 		private var commandPoints:Vector.<int> = new <int>[0,0];
@@ -194,7 +197,7 @@ package tests.pvp
 			w.name = "Some Melee weapon";
 			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
 			w.damage =  25;
-			w.cooldownTime = .8;
+			w.cooldownTime = 1.3;
 			w.hitAngle =  22 * 180 / Math.PI;
 			
 			w.damageRange = 7;		// damage up-range variance
@@ -210,7 +213,7 @@ package tests.pvp
 			
 			w.timeToSwing  =.15;
 			w.strikeTimeAtMaxRange = .8; 
-			w.strikeTimeAtMinRange = .005;  // usually close to zero
+			w.strikeTimeAtMinRange = w.timeToSwing+.005;  // usually close to time to swing
 			
 			
 			w.parryEffect = .4;
@@ -775,6 +778,7 @@ package tests.pvp
 			//arenaSpawner.currentPlayerEntity.get(Vel).x = 0;
 		//	arenaSpawner.currentPlayerEntity.get(SurfaceMovement);
 		//	cyclePlayerChoice();
+			arenaHUD.outOfFuel();
 		}
 		
 		
@@ -866,11 +870,38 @@ package tests.pvp
 			arenaHUD.setCamera(_template3D.camera);
 			_template3D.camera.addChild( arenaHUD.hud);
 			
-			game.gameStates.thirdPerson.addInstance( new EnemyAggroSystem() ).withPriority(SystemPriorities.stateMachines);
+			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem=new EnemyAggroSystem() ).withPriority(SystemPriorities.stateMachines);
+			_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
+			_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
+			_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
+			//_enemyAggroSystem.onEnemyCooldown.add(onEnemyCooldown);
 			
 			game.gameStates.engineState.changeState("thirdPerson");
 			arenaHUD.setState("thirdPerson");
 			startPhase();
+		}
+		
+		private function onEnemyCooldown(e:Entity, cooldown:Number):void 
+		{
+			var obj:Object3D = e.get(Object3D) as Object3D;
+			arenaHUD.appendMessage(obj.name+" is on cooldown! "+cooldown);
+		}
+		
+		private function onEnemyAttack(e:Entity):void 
+		{
+			var obj:Object3D = e.get(Object3D) as Object3D;
+			arenaHUD.appendMessage(obj.name+" is about to attack player!");
+		}
+		private function onEnemyStrike(e:Entity):void 
+		{
+			var obj:Object3D = e.get(Object3D) as Object3D;
+			arenaHUD.appendMessage(obj.name+" finiished his strike!");
+		}
+		
+		private function onEnemyReady(e:Entity):void 
+		{
+			var obj:Object3D = e.get(Object3D) as Object3D;
+			arenaHUD.appendMessage(obj.name+" is ready to attack!");
 		}
 		
 		private function onDamaged(e:Entity, hp:int, amount:int):void 
@@ -879,7 +910,7 @@ package tests.pvp
 				arenaHUD.txtPlayerStrike(e, hp, amount);
 			}
 			else {  // assume damage taken from entity under aggro system
-				arenaHUD.txtTookDamageFrom( e, hp, amount);  // TODO: e should be aggro entity
+				arenaHUD.txtTookDamageFrom(_enemyAggroSystem.currentAttackingEnemy, hp, amount); 
 			}
 		}
 		
@@ -892,7 +923,7 @@ package tests.pvp
 				
 			}
 			else {  // assume currentePlayerNEtity killed by entity under aggro system!
-				arenaHUD.txtTookDamageFrom(e, hp, amount, true);  // TODO: e should be aggro entity
+				arenaHUD.txtTookDamageFrom(_enemyAggroSystem.currentAttackingEnemy, hp, amount, true); 
 			}
 		}
 		
@@ -915,7 +946,7 @@ package tests.pvp
 		}
 		
 		
-		private var markedTargets:Vector.<Object3D> = new Vector.<Object3D>();
+	
 		
 		private function onTargetChanged(node:PlayerTargetNode ):void 
 		{
@@ -975,7 +1006,7 @@ package tests.pvp
 
 			
 			// Add a Health trackign listenining system
-			game.engine.addSystem( new HealthTrackingSystem(), SystemPriorities.stateMachines);
+		//	game.engine.addSystem( new HealthTrackingSystem(), SystemPriorities.stateMachines);
 			HealthTrackingSystem.SIGNAL_DAMAGE.add(onDamaged);
 			HealthTrackingSystem.SIGNAL_MURDER.add(onMurdered);
 			

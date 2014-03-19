@@ -7,10 +7,13 @@ import arena.components.enemy.EnemyWatch;
 import arena.systems.enemy.EnemyAggroSystem.EnemyWatchNode;
 import arena.systems.player.PlayerAggroNode;
 import ash.core.Engine;
+import ash.core.Entity;
 import ash.core.Node;
 import ash.core.NodeList;
 import ash.core.System;
 import ash.fsm.EntityStateMachine;
+import ash.signals.Signal1;
+import ash.signals.Signal2;
 import components.Ellipsoid;
 import components.Pos;
 import components.Rot;
@@ -36,10 +39,23 @@ class EnemyAggroSystem extends System
 	private static inline var ROT_FACING_OFFSET:Float = HitFormulas.ROT_FACING_OFFSET; 
 	private static inline var ROT_PER_SEC:Float = (200 * PMath.DEG_RAD);
 	
+	// states (coudl be factored out to model class);
+	public var currentAttackingEnemy:Entity;
+	
+	public var onEnemyAttack:Signal1<Entity>;
+	public var onEnemyReady:Signal1<Entity>;
+	public var onEnemyStrike:Signal1<Entity>;
+	public var onEnemyCooldown:Signal2<Entity, Float>;
+	
 	public function new() 
 	{
 		super();
-
+		
+		onEnemyAttack = new Signal1<Entity>();
+		onEnemyReady = new Signal1<Entity>();
+		onEnemyStrike = new Signal1<Entity>();
+		
+		onEnemyCooldown = new Signal2<Entity,Float>();
 	}
 	
 	
@@ -54,6 +70,8 @@ class EnemyAggroSystem extends System
 	}
 	
 	override public function removeFromEngine(engine:Engine):Void {
+		currentAttackingEnemy = null;
+		
 		// clean up all lists
 		var i:EnemyIdleNode = idleList.head;  
 		while (i != null) {	
@@ -79,6 +97,7 @@ class EnemyAggroSystem extends System
 		while (a != null) {
 			
 				a.state.dispose();
+				a.weaponState.cancelTrigger();
 				a.entity.remove(EnemyAggro); // TODO: Revert back to old watch condition
 				
 				a = a.next;
@@ -144,6 +163,14 @@ class EnemyAggroSystem extends System
 
 	}
 	
+	private inline function getDiffAngle(actualangle:Float, destangle:Float):Float {
+		 var difference:Float = destangle - actualangle;
+        if (difference < -PMath.PI) difference += PMath.PI2;
+        if (difference > PMath.PI) difference -= PMath.PI2;
+		return difference;
+
+	}
+	
 	private inline function getDestAngle2(actualangle:Float, destangle:Float, rotSpeed:Float):Float {
 		
 		 var difference:Float = destangle - actualangle;
@@ -160,6 +187,15 @@ class EnemyAggroSystem extends System
 
 	}
 	
+	private inline function getDestAngle2D(actualangle:Float, destangle:Float, rotSpeed:Float, difference:Float):Float {
+		var t:Float = rotSpeed/PMath.abs(difference);
+		if (t > 1) t = 1;
+		
+		destangle= actualangle + difference;
+		
+		return  PMath.slerp(actualangle, destangle, t);
+	}
+	
 	private inline function getDestAngleDirection(actualangle:Float, destangle:Float):Float {
 		 var difference:Float = destangle - actualangle;
         if (difference < -PMath.PI) difference += PMath.PI2;
@@ -171,6 +207,7 @@ class EnemyAggroSystem extends System
 	override public function update(time:Float):Void {
 		
 		var p:PlayerAggroNode;
+		currentAttackingEnemy = null;
 		
 		if (playerNodeList.head == null) return;
 		
@@ -221,7 +258,7 @@ class EnemyAggroSystem extends System
 				
 				w.entity.remove(EnemyWatch);
 				newAggro = new EnemyAggro();
-				rangeToAttack = w.weapon.critMinRange + Math.random()*( w.weapon.range - w.weapon.critMinRange); 
+				rangeToAttack = w.weapon.range + p.size.x;// w.weapon.critMaxRange + Math.random() * ( w.weapon.range - w.weapon.critMaxRange); 
 				newAggro.attackRangeSq = PMath.getSquareDist(rangeToAttack);
 				newAggro.watch = w.state.watch;
 				newAggro.target = w.state.target;
@@ -234,18 +271,20 @@ class EnemyAggroSystem extends System
 		
 		var a:EnemyAggroNode = aggroList.head; 
 		var aWeaponState:WeaponState; 
+		var aWeapon:Weapon;
 		while (a != null) { 
 			
 			aWeaponState = a.weaponState;
+			aWeapon = a.weapon;
 			var pTarget:PlayerAggroNode = a.state.target;
 			pTimeElapsed = pTarget.movementPoints.timeElapsed;
 			
 			
 			dx = pTarget.pos.x - a.pos.x;
 			dy = pTarget.pos.y - a.pos.y;
-			
+			var sqDist:Float = dx * dx + dy * dy;
 			aWeaponState.cooldown -= pTimeElapsed;
-
+			
 			
 			if (pTimeElapsed < 0) { // player is dead, find new player to aggro 
 				
@@ -254,7 +293,7 @@ class EnemyAggroSystem extends System
 				// consider if player is out of aggro range to go back to watch
 				rangeSq = a.state.watch.aggroRangeSq + 40;  // the +40 threshold should be a good enough measure to prevent oscillation
 				///*
-				if (dx * dx + dy * dy > rangeSq) {  
+				if (sqDist > rangeSq) {  
 					// revert back for now, forget about finding another target
 					a.entity.remove(EnemyAggro);
 					
@@ -265,30 +304,73 @@ class EnemyAggroSystem extends System
 				//*/
 			}
 			
-			
 			// always rotate enemy to face player target
 			
 			var targRotZ:Float = Math.atan2(dy, dx) + ROT_FACING_OFFSET;
 		//	targRotZ = getDestAngle(a.rot.z, targRotZ);
 			
-			a.rot.z = getDestAngle2(a.rot.z, targRotZ, ROT_PER_SEC * pTimeElapsed);  // getDestAngleDirection(a.rot.z, targRotZ)  * (2 * PMath.DEG_RAD) * pTimeElapsed;
-			
+			var diffAngle:Float = getDiffAngle(a.rot.z, targRotZ);
+			a.rot.z = getDestAngle2D(a.rot.z, targRotZ, ROT_PER_SEC * pTimeElapsed, diffAngle);  // getDestAngleDirection(a.rot.z, targRotZ)  * (2 * PMath.DEG_RAD) * pTimeElapsed;
+			diffAngle = PMath.abs( diffAngle);
 			
 			// determine if within "suitable" range to strike/engage player
-			/*
-			if (aWeaponState.trigger) {  // determine when target strikes target, or cancel attack if possible
-				aWeaponState.attackTime  += pTimeElapsed;
-				
-				if (aWeaponState.cooldown > 0) {
-					aWeaponState.cooldown -= pTimeElapsed;
+			///*
+			if (aWeaponState.trigger) {  // if attack was triggered, 
+				if (aWeaponState.cooldown > 0) {  // weapon is on the  cooldown after strike has occured
 					
-					if (aWeaponState.cooldown <= 0) {
-						aWeaponState.trigger = false;
+					
+					if (aWeaponState.cooldown <= 0) {  // cooldown finished. allow trigger to  be pulled again
+						aWeaponState.cancelTrigger();
+						onEnemyReady.dispatch(a.entity);
+					}
+					else {
+						onEnemyCooldown.dispatch(a.entity, aWeaponState.cooldown);
+					}
+					
+					aWeaponState.cooldown -= pTimeElapsed;
+				}
+				else {  // weapon is not on cooldown, but swinging
+					aWeaponState.attackTime  += pTimeElapsed;
+					var actualDist:Float = Math.sqrt(sqDist) - p.size.x;
+					var strikeTimeAtRange:Float = PMath.lerp( aWeapon.strikeTimeAtMinRange, aWeapon.strikeTimeAtMaxRange, HitFormulas.calculateOptimalRangeFactor(aWeapon.minRange, aWeapon.range,  actualDist) );
+					// TODO: fix this strikeTimeAtRange..
+					if ( aWeaponState.attackTime >= 0.7) { // strike has occured
+						currentAttackingEnemy = a.entity;
+						if (aWeaponState.cooldown > 0) throw "WRONG!";
+						
+							
+						if (actualDist <= aWeapon.range   ) {  // strike hit! 
+							if (Math.random()*100 <= HitFormulas.getPercChanceToHitDefender(a.pos, a.ellipsoid, a.weapon, p.pos, p.rot, p.def, p.size)) {
+								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
+								// deal damage to player heath
+								//currentAttackingEnemy = a.entity;
+								p.health.damage(0 ); //HitFormulas.rollDamageForWeapon(aWeapon)
+							}
+							else { // strike rolled miss
+								
+								p.health.damage(0);
+							}
+						}
+						else {  // considered strike miss due to evading blow... out of range
+							p.health.damage(0);
+						}
+						
+						
+						aWeaponState.cooldown = aWeapon.cooldownTime;  
+						onEnemyStrike.dispatch(a.entity);
 						
 					}
+				
 				}
 			}
-			*/
+			else {   // consider whether should pull trigger
+				if (diffAngle < aWeapon.hitAngle &&  sqDist <= a.state.attackRangeSq) {
+				
+					aWeaponState.pullTrigger();
+					onEnemyAttack.dispatch(a.entity);
+				}
+			}
+			//*/
 
 			// Weapon summary
 			
@@ -316,7 +398,7 @@ class EnemyAggroNode extends Node<EnemyAggroNode> {
 	public var weaponState:WeaponState;
 	public var rot:Rot;
 	
-	public var state:EnemyAggro;	
+	public var state:EnemyAggro;
 	//public var stateMachine:EntityStateMachine;
 }
 

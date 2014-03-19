@@ -1053,7 +1053,38 @@ WeaponSlots
 		
 		public function txtTookDamageFrom(e:Entity, hp:int, amount:int, killingBlow:Boolean=false):void 
 		{
+				var obj:Object3D = e.get(Object3D) as Object3D;
+				//var player:Object3D = 
+			_msgLogInfo.appendSpanTagMessage(amount == 0 ? '<span u="1">' + obj.name + '</span> misses player.': !killingBlow ? 'Player took ' + amount + ' damage from <span u="1">' + obj.name + '</span>!' : 
+					 'Player was killed by <span u="1">' + obj.name + '</span>!' 
+				);
+			_msgLogInfo.drawNow();
 			
+			updateCharInfo();
+		}
+		
+		public function outOfFuel():void 
+		{
+			_msgLogInfo.appendSpanTagMessage(
+					 'You have ran out of movement points!' 
+				);
+				_msgLogInfo.drawNow();
+		}
+		
+		public function appendMessage(string:String):void 
+		{
+				_msgLogInfo.appendMessage(
+					string
+				);
+				_msgLogInfo.drawNow();
+		}
+		
+		public function appenSpanTagMessage(string:String):void 
+		{
+				_msgLogInfo.appendSpanTagMessage(
+					string
+				);
+				_msgLogInfo.drawNow();
 		}
 		
 		public function get targetNode():PlayerTargetNode 

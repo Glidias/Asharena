@@ -15,6 +15,18 @@ class WeaponState
 		
 	}
 	
+	public inline function pullTrigger():Void {	// for triggering attack animation before hammer-time strike
+		trigger = true;
+		attackTime = 0;
+		cooldown = 0;
+	}
+	
+	public inline function cancelTrigger():Void {  // for attack animation cancelling, or force-resetting/unpulling the trigger
+		trigger = false;
+		attackTime = 0;
+		cooldown = 0;
+	}
+	
 	public function init():WeaponState {
 		init_i();
 		return this;
@@ -26,5 +38,7 @@ class WeaponState
 		trigger = false;
 		
 	}
+	
+
 	
 }

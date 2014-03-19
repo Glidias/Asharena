@@ -1,8 +1,11 @@
 package arena.systems.player;
+import arena.components.char.CharDefense;
 import arena.components.char.MovementPoints;
 import ash.core.Node;
 import components.Ellipsoid;
+import components.Health;
 import components.Pos;
+import components.Rot;
 
 /**
  * ...
@@ -14,4 +17,11 @@ class PlayerAggroNode extends Node<PlayerAggroNode> {
 	
 	// by assigning dummy Frozen movementPoints with timeElapsed == 0, enemy aggro can be stuck on this Node...without performing any action! Enemy aggro will only change if another node gets closer than this node!
 	public var movementPoints:MovementPoints;   
+	
+		
+	// for hitting player only (this should/could be factored out elsewhere to a diff node/system)
+	public var health:Health;
+	public var rot:Rot;
+	public var def:CharDefense;
+	
 }
