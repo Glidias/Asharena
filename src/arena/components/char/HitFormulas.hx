@@ -26,8 +26,8 @@ class HitFormulas
 			//	calculateOptimalRangeFactor(  1 - (time taken to hit between at range)/1 between 100%  - 30%
 			
 			// Detemine overall time taken  for weapon to strike target in seconds, according to range to target
-			var rangeFactor:Float =  calculateOptimalRangeFactor(ellipsoidA.x, weaponA.range, d);
-			var totalTimeToHit:Float = weaponA.timeToSwing + rangeFactor * (weaponA.strikeTimeAtMaxRange - weaponA.strikeTimeAtMinRange);
+			var rangeFactor:Float =  calculateOptimalRangeFactor(weaponA.minRange, weaponA.range, d);
+			var totalTimeToHit:Float = PMath.lerp(weaponA.strikeTimeAtMinRange, weaponA.strikeTimeAtMaxRange, rangeFactor);// weaponA.timeToSwing+ rangeFactor * (weaponA.strikeTimeAtMaxRange - weaponA.strikeTimeAtMinRange); 
 			var totalTimeToHitInSec:Float = totalTimeToHit;
 			if (totalTimeToHitInSec > 1) totalTimeToHitInSec = 1;
 			

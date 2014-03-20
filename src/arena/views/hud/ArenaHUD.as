@@ -1055,10 +1055,10 @@ WeaponSlots
 		{
 				var obj:Object3D = e.get(Object3D) as Object3D;
 				//var player:Object3D = 
-			_msgLogInfo.appendSpanTagMessage(amount == 0 ? '<span u="1">' + obj.name + '</span> misses player.': !killingBlow ? 'Player took ' + amount + ' damage from <span u="1">' + obj.name + '</span>!' : 
+			appenSpanTagMessage(amount == 0 ? '<span u="1">' + obj.name + '</span> misses player.': !killingBlow ? 'Player took ' + amount + ' damage from <span u="1">' + obj.name + '</span>!' : 
 					 'Player was killed by <span u="1">' + obj.name + '</span>!' 
 				);
-			_msgLogInfo.drawNow();
+			
 			
 			updateCharInfo();
 		}
@@ -1081,9 +1081,8 @@ WeaponSlots
 		
 		public function appenSpanTagMessage(string:String):void 
 		{
-				_msgLogInfo.appendSpanTagMessage(
-					string
-				);
+			//_msgLogInfo.appendMessage("_"+	string	);
+				_msgLogInfo.appendSpanTagMessage(	string	);
 				_msgLogInfo.drawNow();
 		}
 		

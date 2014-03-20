@@ -401,8 +401,12 @@ package alternativa.a3d.systems.text
 				if (me.next != null) me.next.prev = null;
 				me.next = null;
 				me.boundCache = null;
+				
 				me.scrolling = 0;
 				me.startX  = 0;
+				
+				me.span = null;
+				me.plainText = null;
 				//me.numLinesCache = 0;
 			}
 			else {		// append new message

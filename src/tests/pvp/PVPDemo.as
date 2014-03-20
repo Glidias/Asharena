@@ -182,50 +182,18 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 4445;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 5;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
+		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
 		private var commandPoints:Vector.<int> = new <int>[0,0];
 		private var enemyWatchSettings:EnemyIdle = new EnemyIdle().init(9000, 100);
-		
-		/*
-		 * var w:Weapon =   new Weapon();
-			w.name = "Some Melee weapon";
-			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
-			w.minRange = 16;
-			w.damage =  25;
-			w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
-			w.hitAngle =  22 * 180 / Math.PI;
-			
-			w.damageRange = 7;		// damage up-range variance
-	
-			w.critMinRange = w.range * .35;
-			w.critMaxRange  = w.range * .70;
-			if (w.critMinRange < 16) {
-				var corr:Number = (16 - w.critMinRange);
-				w.critMinRange += corr;
-				w.critMaxRange += corr;
-			}
-			if (w.critMaxRange > w.range) w.critMaxRange = w.range;
-			
-			w.timeToSwing  = thrust ? 0.13333333333333333333333333333333 : 0.26666666666666666666666666666667;
-			w.strikeTimeAtMaxRange =  thrust ? 0.4 : 0.6; 
-			w.strikeTimeAtMinRange = thrust ? 0.33 : 0.5;  // usually close to time to swing
-			
-			
-			w.parryEffect = .4;
-			
-			w.stunEffect = 0;
-			w.stunMinRange = 0;
-			w.stunMaxRange = 0;
-			
-			return w;
-			*/
+
 			
 		// Deault weapon stats
 		private var TEST_MELEE_WEAPON:Weapon = getTestWeapon();
-		private function getTestWeapon():Weapon {
-			
+		private function getTestWeapon(thrust:Boolean=false):Weapon {
+			/*
 			var w:Weapon =   new Weapon();
 			w.name = "Some Melee weapon";
 			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
@@ -248,6 +216,39 @@ package tests.pvp
 			w.timeToSwing  =.15;
 			w.strikeTimeAtMaxRange = .8; 
 			w.strikeTimeAtMinRange = w.timeToSwing+.005;  // usually close to time to swing
+			
+			
+			w.parryEffect = .4;
+			
+			w.stunEffect = 0;
+			w.stunMinRange = 0;
+			w.stunMaxRange = 0;
+			
+			return w;
+			*/
+			
+			var w:Weapon =   new Weapon();
+			w.name = "Some Melee weapon";
+			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
+			w.minRange = 16;
+			w.damage =  25;
+			w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
+			w.hitAngle =  22 * 180 / Math.PI;
+			
+			w.damageRange = 7;		// damage up-range variance
+	
+			w.critMinRange = w.range * .35;
+			w.critMaxRange  = w.range * .70;
+			if (w.critMinRange < 16) {
+				var corr:Number = (16 - w.critMinRange);
+				w.critMinRange += corr;
+				w.critMaxRange += corr;
+			}
+			if (w.critMaxRange > w.range) w.critMaxRange = w.range;
+			
+			w.timeToSwing  = thrust ? 0.13333333333333333333333333333333 : 0.26666666666666666666666666666667;
+			w.strikeTimeAtMaxRange =  thrust ? 0.4 : 0.6; 
+			w.strikeTimeAtMinRange = thrust ? 0.33 : 0.5;  // usually close to time to swing
 			
 			
 			w.parryEffect = .4;
@@ -298,6 +299,7 @@ package tests.pvp
 				
 				testArr[i].add( new Counter());
 				health = testArr[i].get(Health) as Health;
+				health.hp = ASSIGNED_HP;
 				//health.onDamaged.add(onDamaged);
 				//health.onDamaged.add(onDamaged);
 			}
@@ -307,6 +309,7 @@ package tests.pvp
 				testArr2[i].add( new Counter());
 				
 				health = testArr[i].get(Health) as Health;
+				health.hp = ASSIGNED_HP;
 			//	health.onDamaged.add(onDamaged);
 			//	health.onDamaged.add(onDamaged);
 			}
@@ -814,7 +817,7 @@ package tests.pvp
 		//	cyclePlayerChoice();
 		
 		// TODO: Fix out of fuel dispatch bug from LimitedPlayerMOvementSystem
-		//	arenaHUD.outOfFuel();
+			arenaHUD.outOfFuel();
 		}
 		
 		
