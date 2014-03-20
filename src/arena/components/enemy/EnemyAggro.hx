@@ -19,6 +19,8 @@ class EnemyAggro
 	// 2 - striked already with weapon
 	// 3 - cooling down
 	
+	
+	
 	public function new() 
 	{
 		

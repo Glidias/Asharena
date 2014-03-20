@@ -47,6 +47,8 @@ class EnemyAggroSystem extends System
 	public var onEnemyStrike:Signal1<Entity>;
 	public var onEnemyCooldown:Signal2<Entity, Float>;
 	
+
+	
 	public function new() 
 	{
 		super();
@@ -56,6 +58,8 @@ class EnemyAggroSystem extends System
 		onEnemyStrike = new Signal1<Entity>();
 		
 		onEnemyCooldown = new Signal2<Entity,Float>();
+	
+	
 	}
 	
 	
@@ -354,14 +358,14 @@ class EnemyAggroSystem extends System
 					
 					aWeaponState.attackTime  += pTimeElapsed;
 					var actualDist:Float = Math.sqrt(sqDist) - p.size.x;
-					var strikeTimeAtRange:Float = PMath.lerp( aWeapon.strikeTimeAtMinRange, aWeapon.strikeTimeAtMaxRange, HitFormulas.calculateOptimalRangeFactor(aWeapon.minRange, aWeapon.range,  actualDist) );
+					var strikeTimeAtRange:Float = HitFormulas.calculateStrikeTimeAtRange(aWeapon, actualDist);
 					// TODO: fix this strikeTimeAtRange..
 					if ( aWeaponState.attackTime >= strikeTimeAtRange) { // strike has occured
 						currentAttackingEnemy = a.entity;
 				
-						
 							
 						if (actualDist <= aWeapon.range   ) {  // strike hit! 
+						
 							if (Math.random()*100 <= HitFormulas.getPercChanceToHitDefender(a.pos, a.ellipsoid, a.weapon, p.pos, p.rot, p.def, p.size)) {
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
 								// deal damage to player heath
@@ -391,6 +395,7 @@ class EnemyAggroSystem extends System
 				if (diffAngle < aWeapon.hitAngle &&  sqDist <= a.state.attackRangeSq) {
 				
 					aWeaponState.pullTrigger();
+					
 					a.state.flag = 1;
 					onEnemyAttack.dispatch(a.entity);
 					

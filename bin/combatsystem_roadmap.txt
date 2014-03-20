@@ -4,6 +4,19 @@ ______________________________
 1) Interception fire + counter-attacking. (Like in Valkerie CHronicles)
 Unlike Valkerie though, being triggered to be attacked by the target at melee range, while engaging the target, would yield different probablity hit/critical results, due to the fact that the enemy target might theoritically hit you in a certain manner first (or parrying), preventing you from hitting him. Unlike Valkerie Chronicles, perhaps this mechanic can be used to determine if a unit "retailiates" to begin with after being attacked) target within attack range once active aggroing target ends action turn, assuming the aggroing target is out of his we, assuming he already triggered an attack on you. Like in Valkerie Chronicles, no rolling for critical hits is done for such reaction attacks, which are all treated as "interception-fire". Some "aggressive-trait" enemies may have a slight move-engaging aggro to get into melee range prior to attacking you. Unlike Valkerie Chronicles, interception fire only occurs when you move (more rogue-like experience), this is because zooming in Valkerie Chronicles basically pauses time anyway so you can't move, so why should moving itself let time pass?  However, thrown projectiles will still continue to fly regardless of whether you're moving or not (see point no.4 regarding evading projectiles), so it's possible to dodge bullets still, assuming there's cover.
 
+Retailatory attack mechanics: 
+	-----------------------------
+If you deem to strike triggered aggro first, aggro will revenge attack, regardless of whether you hit or miss (unless aggro gets killed with yr strike). You either pick evade or block in response to his revenge attack, depending on which is higher rating.
+So, this attack runs as per normal as if you were defending. The difference is that you roll against his  evade/block/parry depending on the timing of the attack.
+
+If triggered aggro deemed to strike you first, you either pick evade, block or parry against him, according to timing of his strike. 
+Note that, aggro rolls against you first before you roll, including damage if he hits. If aggro's damage is deemed to kill you, you don't get to roll, and your attack is destined to miss and your turn is concluded with your death by his counter/revenge-strike (with your strike shown as "miss"). If aggro hits you first, you don't get to roll for criticals as well. So, your rolled crit percentage should be as per normal in this case (against defender) since the first aggro hit roll is already factored in.
+
+If aggro wasn't triggered, aggro will revenge attack so long as he is within range/angle (random trigger range re-roll). So, this attack runs as per normal as if you were defending.
+
+
+(Advanced, choice between evade/block can depend on situation, if too close, cannot evade. If not within blocking range (too close/too far), etc.
+
 2) Smarter AI facing: (Required for this game where facing affects situation, and can be exploited unfairly)
 Enemy could always rotate back to face closest (angledapon range. THis prevents exploits with distracting enemies, but not engaging them finally at the end of the turn. It also makes the game fairer since the active team's moving unit can rotate about freely with no movement cost before ending the unit's action turn, thus likewise, all responding enemy AI units should also have that similar freedom to rotate around at the end of the turn to face the "best" target. THis requires the active team to keep units around the target to overwhelm the target, without resorting to lame distraction techniques.
 
@@ -11,6 +24,8 @@ Enemy could always rotate back to face closest (angledapon range. THis prevents 
 Enemy should have blind spot at the start of every turn, so if target wasn't in field of view at the start of the turn and no one is avialable to warn him, he won't turn to face him. Note that other nearby AI can warn him of the movign unit's presence, shouting "Look Out" to alert surrounding units to him.
 
 4) (Optional visibility) Enemy Arc markers (Like in varlkerie chronicles,..). Unlike Valkerie, the arcs are also  used to determine the arrow/thrown projectile paths, since they have to hom in on the player even if the player moves and tries to evade it, a rolled hit would mean the arrows/thrown projectiles is always destined to hit the player. Depending on the speed of the player with his evasion, or his blocking skill, the chances of being hit is determined accordingly. Using certain formations can provide bonuses against projectiles. It's possible for ranged projectile attacks to miss due to obstacles that get in the way of it's LOS, enroute to target, even if though the roll was a "hit", it can still result in an eventual miss due to projectile colliding against obstacles before hitting the player. THis is handled with the arc being frozen once it's interrupted by an obstacle along it's path (this technique is known as "breaking path").  Thus, it's still possible to dodge projectiles using obstacles (or crouching behind them). A rolled hit simply means "a shot on-target", so you can't evade it unless an obstacle gets in the way. It's possible for other static players to take damage instead of you as a result of this. Blocking a projetile with a shield will cause you some movement points. Perhaps, holding a shield up can use up movement points.
+
+
 
 
 Possible rule variations:
