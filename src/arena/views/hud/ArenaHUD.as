@@ -696,7 +696,7 @@ WeaponSlots
 			_curWeaponRange = weapon.range;
 			
 			_curCharInfo.appendMessage("Name: "+obj.name);
-			_curCharInfo.appendMessage("HP: "+health.hp+"/"+health.maxHP);
+			_curCharInfo.appendMessage("HP: "+(health.hp >= 0 ? health.hp : 0)+"/"+health.maxHP);
 			_curCharInfo.appendMessage("Class: " + charClass.name);
 			var rangeInMeters:Number = int(weapon.range * UNIT_METER_SCALE * 100) / 100;
 			_curCharInfo.appendMessage((_charWeaponEnabled ? "Attack: " : "" )+weapon.name+" ("+rangeInMeters+"m)");

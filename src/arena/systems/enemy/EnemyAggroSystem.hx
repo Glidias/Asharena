@@ -98,6 +98,7 @@ class EnemyAggroSystem extends System
 			
 				a.state.dispose();
 				a.weaponState.cancelTrigger();
+				
 				a.entity.remove(EnemyAggro); // TODO: Revert back to old watch condition
 				
 				a = a.next;
@@ -204,6 +205,14 @@ class EnemyAggroSystem extends System
 
 	}
 	
+	// perhaps, weapons should have a prefered range for attack due to differing swing speeds, but this may alter as well depending on how target behaves (eg. evasively or not)
+	private inline function rollRandomRangeForAttack(w:Weapon, p:PlayerAggroNode):Float {
+		var range:Float = w.critMaxRange + Math.random() * ( w.range - w.critMaxRange) ;
+		 range= (range +32 < w.range) ? w.range - 32 : range;  // min 32 margin
+		range += p.size.x;
+		return range;
+	}
+	
 	override public function update(time:Float):Void {
 		
 		var p:PlayerAggroNode;
@@ -258,7 +267,7 @@ class EnemyAggroSystem extends System
 				
 				w.entity.remove(EnemyWatch);
 				newAggro = new EnemyAggro();
-				rangeToAttack = w.weapon.range + p.size.x;// w.weapon.critMaxRange + Math.random() * ( w.weapon.range - w.weapon.critMaxRange); 
+				rangeToAttack =rollRandomRangeForAttack(w.weapon,p);// w.weapon.critMaxRange + Math.random() * ( w.weapon.range - w.weapon.critMaxRange); 
 				newAggro.attackRangeSq = PMath.getSquareDist(rangeToAttack);
 				newAggro.watch = w.state.watch;
 				newAggro.target = w.state.target;
@@ -283,11 +292,17 @@ class EnemyAggroSystem extends System
 			dx = pTarget.pos.x - a.pos.x;
 			dy = pTarget.pos.y - a.pos.y;
 			var sqDist:Float = dx * dx + dy * dy;
-			aWeaponState.cooldown -= pTimeElapsed;
+	
 			
-			
-			if (pTimeElapsed < 0) { // player is dead, find new player to aggro 
+			if (pTimeElapsed < 0) { // player is dead, find new player to aggro for multi-character mode
+				//throw "DEAD";
 				
+				// for single-character mode, since player is dead, everything's safe!
+				a.entity.remove(EnemyAggro);
+				a.entity.add(a.state.watch); // TODO: Pool ENemyWatch
+				a.state.dispose();
+				a = a.next;
+					continue;
 			}
 			else {  // find nearest valid target , if it's diff or not, and change accordingly
 				// consider if player is out of aggro range to go back to watch
@@ -301,7 +316,7 @@ class EnemyAggroSystem extends System
 					a = a.next;
 					continue;
 				}
-				//*/
+			//	*/
 			}
 			
 			// always rotate enemy to face player target
@@ -318,25 +333,32 @@ class EnemyAggroSystem extends System
 			if (aWeaponState.trigger) {  // if attack was triggered, 
 				if (aWeaponState.cooldown > 0) {  // weapon is on the  cooldown after strike has occured
 					
-					
+					aWeaponState.cooldown -= pTimeElapsed;
 					if (aWeaponState.cooldown <= 0) {  // cooldown finished. allow trigger to  be pulled again
 						aWeaponState.cancelTrigger();
+						a.state.flag = 0;
+						a.state.attackRangeSq = PMath.getSquareDist( rollRandomRangeForAttack(a.weapon, p) );
 						onEnemyReady.dispatch(a.entity);
 					}
 					else {
+						a.state.flag = 3;
+						if (aWeaponState.cooldown < 0) throw "SHOULD NOT BE!";
 						onEnemyCooldown.dispatch(a.entity, aWeaponState.cooldown);
 					}
 					
-					aWeaponState.cooldown -= pTimeElapsed;
+					
 				}
 				else {  // weapon is not on cooldown, but swinging
+					
+					//if (aWeaponState.cooldown < 0) throw "SHOULD NOT BE2222!";
+					
 					aWeaponState.attackTime  += pTimeElapsed;
 					var actualDist:Float = Math.sqrt(sqDist) - p.size.x;
 					var strikeTimeAtRange:Float = PMath.lerp( aWeapon.strikeTimeAtMinRange, aWeapon.strikeTimeAtMaxRange, HitFormulas.calculateOptimalRangeFactor(aWeapon.minRange, aWeapon.range,  actualDist) );
 					// TODO: fix this strikeTimeAtRange..
-					if ( aWeaponState.attackTime >= 0.7) { // strike has occured
+					if ( aWeaponState.attackTime >= strikeTimeAtRange) { // strike has occured
 						currentAttackingEnemy = a.entity;
-						if (aWeaponState.cooldown > 0) throw "WRONG!";
+				
 						
 							
 						if (actualDist <= aWeapon.range   ) {  // strike hit! 
@@ -344,10 +366,9 @@ class EnemyAggroSystem extends System
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
 								// deal damage to player heath
 								//currentAttackingEnemy = a.entity;
-								p.health.damage(0 ); //HitFormulas.rollDamageForWeapon(aWeapon)
+								p.health.damage(HitFormulas.rollDamageForWeapon(aWeapon) );
 							}
 							else { // strike rolled miss
-								
 								p.health.damage(0);
 							}
 						}
@@ -356,7 +377,10 @@ class EnemyAggroSystem extends System
 						}
 						
 						
+						if  (a.state.flag != 1) throw "State before strke isn't 1:!" + a.state.flag + ", " + aWeaponState.cooldown;
+						if (a.state.flag == 2) throw "Repeat state 2!";
 						aWeaponState.cooldown = aWeapon.cooldownTime;  
+						a.state.flag = 2;
 						onEnemyStrike.dispatch(a.entity);
 						
 					}
@@ -367,7 +391,9 @@ class EnemyAggroSystem extends System
 				if (diffAngle < aWeapon.hitAngle &&  sqDist <= a.state.attackRangeSq) {
 				
 					aWeaponState.pullTrigger();
+					a.state.flag = 1;
 					onEnemyAttack.dispatch(a.entity);
+					
 				}
 			}
 			//*/
