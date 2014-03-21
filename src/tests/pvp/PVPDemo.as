@@ -182,9 +182,9 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 5;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 35;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
-		private  var ASSIGNED_HP:int = 100;
+		private  var ASSIGNED_HP:int = 500;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
 		private var commandPoints:Vector.<int> = new <int>[0,0];
 		private var enemyWatchSettings:EnemyIdle = new EnemyIdle().init(9000, 100);
@@ -232,7 +232,8 @@ package tests.pvp
 			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
 			w.minRange = 16;
 			w.damage =  25;
-			w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
+			w.cooldownTime = thrust ? 0.7 : 0.96;
+			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
 			w.hitAngle =  22 * 180 / Math.PI;
 			
 			w.damageRange = 7;		// damage up-range variance
@@ -910,9 +911,9 @@ package tests.pvp
 			_template3D.camera.addChild( arenaHUD.hud);
 			
 			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem=new EnemyAggroSystem() ).withPriority(SystemPriorities.stateMachines);
-			_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
-			_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
-			_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
+		//	_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
+		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
+		//	_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
 			//_enemyAggroSystem.onEnemyCooldown.add(onEnemyCooldown);
 			
 			game.gameStates.engineState.changeState("thirdPerson");

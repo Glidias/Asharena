@@ -913,6 +913,7 @@ WeaponSlots
 		}
 		public function showStars():void {
 			_stars = true;
+			clearLog();
 			showList(_cpMeter);
 			_textTurnInfo.spriteSet.visible = true;
 			
@@ -925,6 +926,12 @@ WeaponSlots
 				hide(_movementBarSkin);
 			}
 			_targetInfo.moveTo(5, TARGET_INFO_CMD_Y);
+		}
+		
+		public function clearLog():void 
+		{
+			_msgLogInfo.clearAll();
+			_msgLogInfo.drawNow();
 		}
 		
 		private function get numStars():int 
