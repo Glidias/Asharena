@@ -39,7 +39,14 @@ class LimitedPlayerMovementSystem extends System
 	
 	override public function addToEngine(engine:Engine):Void {
 		nodeList = engine.getNodeList(LimitedPlayerMovementNode);
+		nodeList.nodeRemoved.add( onNodeRemoved);
 		engine.updateComplete.add(onUpdateComplete);
+	}
+	
+	function onNodeRemoved(node:LimitedPlayerMovementNode) 
+	{
+		_playerPointsOut = node.movementPoints;   
+	//	node.movementPoints.timeElapsed = 0;
 	}
 	
 	override public function removeFromEngine(engine:Engine):Void {
@@ -49,7 +56,7 @@ class LimitedPlayerMovementSystem extends System
 	function onUpdateComplete() 
 	{
 		
-		if (_playerPointsOut == null) return;
+		if (_playerPointsOut == null) return;  // should use a push list if using multiple nodes of this
 		
 		
 		_playerPointsOut.timeElapsed = 0;

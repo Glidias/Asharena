@@ -17,10 +17,12 @@ class HitFormulas
 	
 	public static inline var ROT_FACING_OFFSET:Float = ( -1.5707963267948966);
 	
-	static public inline var CAN_BLOCK_THRESHOLD:Float = .4; // this mgiht factor out to Defense rating as well..which is dpeending on the type of shiled u r using
+	// this should factor out to Defense rating as well..which is dpeending on the type of shiled/weapon combo u r using. 
+	// It basically describes whether you can block WHILE swinging your weapon at the same time. Without a shield or blocking mechanism, this value should be zero.
+	static public inline var CAN_BLOCK_THRESHOLD:Float = .35; 
 
 
-
+	// Used for actual combat..
 	public static inline function getPercChanceToHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {
 		var facinPerc:Float ;
 		var basePerc:Float = facinPerc=calculateFacingPerc(posA, posB, rotB, defB); 
@@ -52,6 +54,7 @@ class HitFormulas
 		return basePerc;
 	}
 	
+	// Used for actual combat...
 	public static inline function getPercChanceToCritDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid):Float {
 
 		var basePerc:Float =  calculateFacingPerc(posA, posB, rotB, defB); 
@@ -77,13 +80,15 @@ class HitFormulas
 		return perc;
 	}
 	
-	// TODO: Non passive cases once EnemyAggro can strike back with Weapon!
 	
-	/*
-	public static inline function getTimeToHitFirstForAggro():Float {
-	
-		
-		
+
+	/**
+	 * Used for actual combat...against attacking enemies
+	 *	If returned value is higher than zero, it means the attacker will strike you first before you can strike him. So, he'll roll attempt hit against you first according
+	 * to this percentage, before you can roll against him (as per normal against defender).
+	 */
+	public static inline function getPercChanceToBeHitByAttacker(posA:Pos, rotA:Rot, defA:CharDefense, ellipsoidA:Ellipsoid, weaponA:Weapon,  posB:Pos, rotB:Rot,  ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState):Float {
+		// determine who will strike faster
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
 		var sqDist:Float =  Math.sqrt(dx * dx + dy * dy) ;
@@ -98,21 +103,52 @@ class HitFormulas
 		d = sqDist -ellipsoidA.x;
 		totalTimeToHit2 = calculateStrikeTimeAtRange(weaponB, d) - weaponBState.attackTime;
 		
-		if (totalTimeToHit2 > totalTimeToHit) { 
-				timeFactor = totalTimeToHit2 < weaponA.timeToSwing ? 0 : calculateOptimalRangeFactor(weaponA.timeToSwing, weaponA.strikeTimeAtMaxRange, totalTimeToHit2) < CAN_BLOCK_THRESHOLD ? defA.block : weaponA.parryEffect;
-			return totalTimeToHit2;
+		if (totalTimeToHit2 > totalTimeToHit) {  // enemy strikes first, will he hit you?
+			timeFactor = totalTimeToHit2 < weaponA.timeToSwing ? 0 : calculateOptimalRangeFactor(weaponA.timeToSwing, weaponA.strikeTimeAtMaxRange, totalTimeToHit2) < CAN_BLOCK_THRESHOLD ? defA.block : weaponA.parryEffect;
+			
+			
+			weaponBState.forceCooldown(weaponB.cooldownTime);
+			
+			return  getPercChanceToHitDefender(posB, ellipsoidB, weaponB, posA, rotA, defA, ellipsoidA, timeFactor);
+			
 		}
-		return -1;
+		else {  // you will strike first, so no worries
+			return 0;
+		}
 	}
-	*/
+	
+	/**
+	 * Used for actual combat.....against attacking enemies
+	 *	This is the roll against slower attacker,  assuming you will strike first.
+	 */
+		public static inline function getPercChanceToHitSlowerAttacker(posA:Pos, rotA:Rot, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState):Float {
+			
+		var dx:Float = posB.x - posA.x;
+		var dy:Float = posB.y - posA.y;
+	
+		var d:Float;
+		d =  Math.sqrt(dx * dx + dy * dy) -ellipsoidA.x;
+		var totalTimeToHit2:Float = calculateStrikeTimeAtRange(weaponB, d) - weaponBState.attackTime;
+		
+			// determine if attacker is going to evade, block or parry, because you will strike  first
+			// for 0 timefactor case, enemy would cancel his attack...
+			d = weaponBState.attackTime < weaponB.timeToSwing ? 0 : calculateOptimalRangeFactor(weaponB.timeToSwing, weaponB.strikeTimeAtMaxRange, totalTimeToHit2) < CAN_BLOCK_THRESHOLD ? defB.block : weaponB.parryEffect;
+			
+			weaponBState.forceCooldown(weaponB.cooldownTime);
+			
+			return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, d);
+		}
+		
+		
 	
 	/*
-		 * If you strike triggered aggro first, aggro will revenge attack. You either pick evade or block in response to his revenge attack, depending on which is higher rating. 
+	 * Used as a predictor.
+	 * If you strike triggered aggro first, aggro will revenge attack. You either pick evade or block in response to his revenge attack, depending on which is higher rating. 
 	So, this attack runs as per normal as if you were defending.
 
-	If triggered aggro strikes you first, you either pick evade, block or parry against him, according to timing of his strike.
+	If triggered aggro strikes you first, you either pick evade, block or parry against him, according to timing of his strike. Your return attack occurs as per normal, with the 
+	aggro being able to choose between evade or block according to his preference.
 	*/
-	
 	public static inline function getPercChanceToHitAttacker(posA:Pos, rotA:Rot, defA:CharDefense, ellipsoidA:Ellipsoid, weaponA:Weapon, healthA:Health,  posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState):Float {
 		// determine who will strike faster
 		var dx:Float = posB.x - posA.x;
@@ -141,12 +177,13 @@ class HitFormulas
 			// determine if attacker is going to evade, block or parry, because you will strike  first
 			// for 0 timefactor case, enemy would cancel his attack...and might retaliate similar to getPercChanceToHitdefender
 			timeFactor = weaponBState.attackTime < weaponB.timeToSwing ? 0 : calculateOptimalRangeFactor(weaponB.timeToSwing, weaponB.strikeTimeAtMaxRange, totalTimeToHit2) < CAN_BLOCK_THRESHOLD ? defB.block : weaponB.parryEffect;
-			return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, timeFactor);
+return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, timeFactor);
 		}
 		
-		return 0;
+	
 	}
 	
+	// Used as a predictor.
 		public static inline function getPercChanceToCritAttacker(posA:Pos, rotA:Rot, defA:CharDefense, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState):Float {
 			// determine who will strike faster
 		var dx:Float = posB.x - posA.x;
@@ -164,8 +201,9 @@ class HitFormulas
 			
 		var chanceToCritPerc:Float = getPercChanceToCritDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB);
 	
-		if (totalTimeToHit2 > totalTimeToHit) { // because you wouldn't strike faster than him, yr chance to crit is lessened,
-			chanceToCritPerc *= getPercChanceToHitDefender(posB, ellipsoidB, weaponB, posA, rotA, defA, ellipsoidA, 0,  weaponBState.attackTime); //
+		if (totalTimeToHit2 > totalTimeToHit) { // because you wouldn't strike faster than him, yr chance to crit is lessened, since he might hit you first
+			d = totalTimeToHit2 < weaponA.timeToSwing ? 0 : calculateOptimalRangeFactor(weaponA.timeToSwing, weaponA.strikeTimeAtMaxRange, totalTimeToHit2) < CAN_BLOCK_THRESHOLD ? defA.block : weaponA.parryEffect;
+			chanceToCritPerc *= getPercChanceToHitDefender(posB, ellipsoidB, weaponB, posA, rotA, defA, ellipsoidA, d,  weaponBState.attackTime)/100; //
 		}
 		
 		return chanceToCritPerc;

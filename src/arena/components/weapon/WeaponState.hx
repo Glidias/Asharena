@@ -39,6 +39,12 @@ class WeaponState
 		
 	}
 	
+	public function forceCooldown(val:Float) 
+	{
+		attackTime = 9999;
+		cooldown = val;
+	}
+	
 
 	
 }

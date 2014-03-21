@@ -184,7 +184,7 @@ package tests.pvp
 		private var movementPoints:MovementPoints = new MovementPoints();	
 		private  var MAX_MOVEMENT_POINTS:Number = 35;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
-		private  var ASSIGNED_HP:int = 500;
+		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
 		private var commandPoints:Vector.<int> = new <int>[0,0];
 		private var enemyWatchSettings:EnemyIdle = new EnemyIdle().init(9000, 100);
@@ -309,7 +309,7 @@ package tests.pvp
 				
 				testArr2[i].add( new Counter());
 				
-				health = testArr[i].get(Health) as Health;
+				health = testArr2[i].get(Health) as Health;
 				health.hp = ASSIGNED_HP;
 			//	health.onDamaged.add(onDamaged);
 			//	health.onDamaged.add(onDamaged);
@@ -911,7 +911,7 @@ package tests.pvp
 			_template3D.camera.addChild( arenaHUD.hud);
 			
 			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem=new EnemyAggroSystem() ).withPriority(SystemPriorities.stateMachines);
-		//	_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
+			_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
 		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
 		//	_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
 			//_enemyAggroSystem.onEnemyCooldown.add(onEnemyCooldown);
