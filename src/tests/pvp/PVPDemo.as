@@ -110,7 +110,7 @@ package tests.pvp
 		{
 			haxe.initSwc(this);
 		
-			
+		
 			game = new TheGame(stage);
 	
 			addChild( _template3D = new MainView3D() );
@@ -182,7 +182,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 35;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 5;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
@@ -911,7 +911,7 @@ package tests.pvp
 			_template3D.camera.addChild( arenaHUD.hud);
 			
 			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem=new EnemyAggroSystem() ).withPriority(SystemPriorities.stateMachines);
-			_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
+		//	_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
 		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
 		//	_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
 			//_enemyAggroSystem.onEnemyCooldown.add(onEnemyCooldown);
@@ -965,6 +965,10 @@ package tests.pvp
 			else {  // assume currentePlayerNEtity killed by entity under aggro system!
 				arenaHUD.txtTookDamageFrom(_enemyAggroSystem.currentAttackingEnemy, hp, amount, true);
 				unregisterEntity(arenaSpawner.currentPlayerEntity);
+				if (curArr[testIndex] == null) {  // do a naive reset for this case.
+					testIndex = 0;
+					//throw new Error("null pointer after unregistration...");
+				}
 				game.engine.removeEntity(arenaSpawner.currentPlayerEntity);
 			}
 		}

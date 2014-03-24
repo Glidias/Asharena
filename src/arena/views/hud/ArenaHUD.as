@@ -27,6 +27,7 @@ package arena.views.hud
 	import arena.components.weapon.Weapon;
 	import arena.components.weapon.WeaponSlot;
 	import arena.components.weapon.WeaponState;
+	import arena.systems.enemy.EnemyAggroSystem;
 	import ash.core.Entity;
 	import assets.fonts.ConsoleFont;
 	import assets.fonts.Fontsheet;
@@ -793,7 +794,8 @@ WeaponSlots
 			}
 			else {
 				aggroing = true;
-				//aggro.flag = 2;  // for
+				
+
 				// TODO: player char rot should get from aggro reference instead
 				//posA:Pos, rotA:Rot, defA:CharDefense, ellipsoidA:Ellipsoid, weaponA:Weapon, healthA:Health, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState)
 				hitPercResult = HitFormulas.getPercChanceToHitAttacker(
@@ -1039,7 +1041,7 @@ WeaponSlots
 		
 		private var strikeResult:int;
 		private var enemyStrikeResult:int;
-		private var ENEMY_ROLL_CRIT:Boolean = true;
+		private var ENEMY_ROLL_CRIT:Boolean = EnemyAggroSystem.AGGRO_HAS_CRITICAL;
 		
 		public function checkStrike(keyCode:uint):int 	// TODO: Factor resolving and calculations out to somewhere else...HUD shouldn't handle this! 
 		{
@@ -1054,7 +1056,8 @@ WeaponSlots
 			var gotCrit:Boolean
 			
 			var aggro:EnemyAggro = _targetNode.entity.get(EnemyAggro) as EnemyAggro;
-			var aggroing:Boolean = aggro!=null && aggro.flag == 1;
+			var aggroing:Boolean = aggro != null && aggro.flag == 1;
+			
 			
 			_charWeaponEnabled = false; 
 			updateCharInfo();

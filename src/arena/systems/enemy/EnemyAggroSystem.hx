@@ -47,7 +47,8 @@ class EnemyAggroSystem extends System
 	public var onEnemyStrike:Signal1<Entity>;
 	public var onEnemyCooldown:Signal2<Entity, Float>;
 	
-
+	public static inline var AGGRO_HAS_CRITICAL:Bool = true;
+	public var enemyCrit:Bool;
 	
 	public function new() 
 	{
@@ -70,6 +71,10 @@ class EnemyAggroSystem extends System
 		
 		playerNodeList = engine.getNodeList(PlayerAggroNode);
 		playerNodeList.nodeRemoved.add(onPlayerNodeRemoved);
+		
+		if (aggroList.head != null) throw "AGgro list isn't clean!";
+		if (watchList.head != null) throw "watchList list isn't clean!";
+		if (idleList.head != null) throw "idleList list isn't clean!";
 
 	}
 	
@@ -100,9 +105,9 @@ class EnemyAggroSystem extends System
 		var a:EnemyAggroNode = aggroList.head;
 		while (a != null) {
 			
-				a.state.dispose();
-				a.weaponState.cancelTrigger();
 				
+				a.weaponState.cancelTrigger();
+				a.state.dispose();
 				a.entity.remove(EnemyAggro); // TODO: Revert back to old watch condition
 				
 				a = a.next;
@@ -288,6 +293,7 @@ class EnemyAggroSystem extends System
 		while (a != null) { 
 			
 			aWeaponState = a.weaponState;
+			
 			aWeapon = a.weapon;
 			var pTarget:PlayerAggroNode = a.state.target;
 			pTimeElapsed = pTarget.movementPoints.timeElapsed;
@@ -298,13 +304,17 @@ class EnemyAggroSystem extends System
 			var sqDist:Float = dx * dx + dy * dy;
 	
 			
+			// NAive canceling of attack trigger can be done since this isn't a real-time game, and pple wouldnt notice.
 			if (pTimeElapsed < 0) { // player is dead, find new player to aggro for multi-character mode
 				//throw "DEAD";
 				
 				// for single-character mode, since player is dead, everything's safe!
+				a.state.flag = 0;
+				aWeaponState.cancelTrigger();
 				a.entity.remove(EnemyAggro);
 				a.entity.add(a.state.watch); // TODO: Pool ENemyWatch
-				a.state.dispose();
+				
+				
 				a = a.next;
 					continue;
 			}
@@ -314,14 +324,18 @@ class EnemyAggroSystem extends System
 				///*
 				if (sqDist > rangeSq) {  
 					// revert back for now, forget about finding another target
-					a.entity.remove(EnemyAggro);
 					
+					aWeaponState.cancelTrigger();
+					a.state.flag = 0;
+					a.entity.remove(EnemyAggro);
 					a.entity.add(new EnemyWatch().init(a.state.watch,a.state.target), EnemyWatch); // TODO: Pool ENemyWatch
 					a = a.next;
 					continue;
 				}
-			//	*/
+				//*/
 			}
+			
+		
 			
 			// always rotate enemy to face player target
 			
@@ -346,7 +360,7 @@ class EnemyAggroSystem extends System
 					}
 					else {
 						a.state.flag = 3;
-						if (aWeaponState.cooldown < 0) throw "SHOULD NOT BE!";
+						
 						onEnemyCooldown.dispatch(a.entity, aWeaponState.cooldown);
 					}
 					
@@ -354,12 +368,13 @@ class EnemyAggroSystem extends System
 				}
 				else {  // weapon is not on cooldown, but swinging
 					
+					
 					//if (aWeaponState.cooldown < 0) throw "SHOULD NOT BE2222!";
 					
 					aWeaponState.attackTime  += pTimeElapsed;
 					var actualDist:Float = Math.sqrt(sqDist) - p.size.x;
 					var strikeTimeAtRange:Float = HitFormulas.calculateStrikeTimeAtRange(aWeapon, actualDist);
-					// TODO: fix this strikeTimeAtRange..
+					
 					if ( aWeaponState.attackTime >= strikeTimeAtRange) { // strike has occured
 						currentAttackingEnemy = a.entity;
 				
@@ -370,7 +385,14 @@ class EnemyAggroSystem extends System
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
 								// deal damage to player heath
 								//currentAttackingEnemy = a.entity;
-								p.health.damage(HitFormulas.rollDamageForWeapon(aWeapon) );
+								if (AGGRO_HAS_CRITICAL) {
+									enemyCrit = false;
+									if ( Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, a.weapon, p.pos, p.rot, p.def, p.size) ) {
+										
+										enemyCrit = true;
+									}
+								}
+								p.health.damage(HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
 							}
 							else { // strike rolled miss
 								p.health.damage(0);
@@ -381,7 +403,7 @@ class EnemyAggroSystem extends System
 						}
 						
 						
-						if  (a.state.flag != 1) throw "State before strke isn't 1:!" + a.state.flag + ", " + aWeaponState.cooldown;
+						if  (a.state.flag != 1) throw "State before strke isn't 1:!" + a.state.flag + ", " + aWeaponState.cooldown + ", "+strikeTimeAtRange + ", "+aWeaponState.trigger + ", "+aWeaponState.attackTime;
 						if (a.state.flag == 2) throw "Repeat state 2!";
 						aWeaponState.cooldown = aWeapon.cooldownTime;  
 						a.state.flag = 2;
