@@ -67,10 +67,12 @@ package tests.pvp
 	 * todo:
 		 * 
 		 * [[
-		 * Basic enemy LOS aggro retailiatory counter-attack system, end-turn AI watch facing and possible blind spots at the start of turn.
+		 * End-turn AI watch facing and possible blind spots at the start of turn.
 		 * ]]
 		 * 
 		 * Player2Player Collision blocking
+		 * 
+		 * Integration with attack animation (weaponary)
 		 * 
 		 * ((Chance to stun))
 		 * ______________________
@@ -85,7 +87,7 @@ package tests.pvp
 		 * Console individual + follower list mechanic for roster..Cycle through menu of individuals/leaders.
 		 * PC Mouse Drag Box or Shift + Select mechanic for Roster, (can cycle left/right) based on selected leaders to allow moving as formation.
 		 * 
-		 * Link attacks (combined non-critical attacks from nearby in-range units around target)
+		 * [[Link attacks (combined non-critical attacks from nearby in-range units around target)]]
 		 * Coordinate attacks (moving from formation movement to individual/movement unit actions)
 		 * 
 		 * 
