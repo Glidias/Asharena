@@ -1,3 +1,17 @@
+p2p collision block
+integration with attack animation
+Obstacles and stuffs in environment
+Add variety of units with ranged/guns, against obstacles for arrow/bullet projectiles.
+____________
+AI blind spots and alerting nearby units (! above head)
+end turn AI watch-facing
+_________________
+Formation group movement
+__________________
+rts select interface instead of just cycling
+
+
+
 Rule mechanic roadmap:
 ______________________________
 
