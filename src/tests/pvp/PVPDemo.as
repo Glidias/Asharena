@@ -16,6 +16,7 @@ package tests.pvp
 	import arena.components.char.MovementPoints;
 	import arena.components.enemy.EnemyIdle;
 	import arena.components.weapon.Weapon;
+	import arena.components.weapon.WeaponState;
 	import arena.systems.enemy.EnemyAggroSystem;
 	import arena.systems.player.LimitedPlayerMovementSystem;
 	import arena.views.hud.ArenaHUD;
@@ -779,7 +780,7 @@ package tests.pvp
 		private function onTransitComplete():void {
 
 			game.gameStates.engineState.changeState(_targetTransitState);
-			arenaHUD.setState(_targetTransitState);
+			
 			
 			if (_targetTransitState != "commander") {
 				arenaHUD.hideStars();
@@ -790,6 +791,7 @@ package tests.pvp
 				if (arenaSpawner.currentPlayerEntity) arenaSpawner.currentPlayerEntity.remove(MovementPoints);
 			}
 			
+			arenaHUD.setState(_targetTransitState);
 			_targetTransitState = null;
 			
 			if (_transitCompleteCallback != null) {
@@ -806,6 +808,9 @@ package tests.pvp
 			var len:int = enemySide.length;
 			for ( var i:int = 0; i < len; i++) {
 				var e:Entity = enemySide[i];
+			//	if (e.get(WeaponState).trigger) {
+				//	throw new Error("Trigger should have been off!:"+_enemyAggroSystem.updating + ", "+e.get(Object3D).name);
+			//	}
 				e.add(enemyWatchSettings, EnemyIdle);
 			}
 			
@@ -911,7 +916,7 @@ package tests.pvp
 			_template3D.camera.addChild( arenaHUD.hud);
 			
 			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem=new EnemyAggroSystem() ).withPriority(SystemPriorities.stateMachines);
-		//	_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
+			//_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
 		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
 		//	_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
 			//_enemyAggroSystem.onEnemyCooldown.add(onEnemyCooldown);

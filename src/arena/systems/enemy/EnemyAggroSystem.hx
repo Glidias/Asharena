@@ -1,4 +1,5 @@
 package arena.systems.enemy;
+import alternativa.engine3d.core.Object3D;
 import arena.components.char.HitFormulas;
 import arena.components.char.MovementPoints;
 import arena.components.enemy.EnemyAggro;
@@ -49,6 +50,7 @@ class EnemyAggroSystem extends System
 	
 	public static inline var AGGRO_HAS_CRITICAL:Bool = true;
 	public var enemyCrit:Bool;
+	public var updating:Bool;
 	
 	public function new() 
 	{
@@ -59,7 +61,7 @@ class EnemyAggroSystem extends System
 		onEnemyStrike = new Signal1<Entity>();
 		
 		onEnemyCooldown = new Signal2<Entity,Float>();
-	
+		
 	
 	}
 	
@@ -78,12 +80,16 @@ class EnemyAggroSystem extends System
 
 	}
 	
+	//var boolTest:Bool;
+	
 	override public function removeFromEngine(engine:Engine):Void {
 		currentAttackingEnemy = null;
+		updating = false;
 		
 		// clean up all lists
 		var i:EnemyIdleNode = idleList.head;  
-		while (i != null) {	
+		i = idleList.head;
+		while ( i != null) {
 			i.entity.remove(EnemyIdle);
 			i = i.next;
 		}
@@ -91,12 +97,19 @@ class EnemyAggroSystem extends System
 		
 		var w:EnemyWatchNode = watchList.head;  
 		while (w != null) {
-			
+				/*
+				if (w.entity.get(WeaponState).trigger) {
+					throw "SHOULD Not have trigger if on watch state!";
+				}
+				*/
 				w.state.dispose();
-				w.entity.remove(EnemyWatch);
+				//w.entity.remove(EnemyWatch);
 				//w.entity.add(EnemyIdle);
-			
-			
+			w = w.next;
+		}
+		w = watchList.head;
+		while ( w != null) {
+			w.entity.remove(EnemyWatch);
 			w = w.next;
 		}
 		//*/
@@ -108,16 +121,32 @@ class EnemyAggroSystem extends System
 				
 				a.weaponState.cancelTrigger();
 				a.state.dispose();
-				a.entity.remove(EnemyAggro); // TODO: Revert back to old watch condition
+				/*
+				if (a.entity.get(WeaponState).trigger) {
+					throw "SHOULD Not have trigger if out of aggro state!";
+				}
+				*/
+				
+			//	a.entity.remove(EnemyAggro); // TODO: Revert back to old watch condition
 				
 				a = a.next;
 		}
 		
+		a = aggroList.head;
+		while ( a != null) {
+			a.entity.remove(EnemyAggro);
+			a= a.next;
+		}
+		
+		// should this be done!???
+		watchList.removeAllNoSignal();
 		playerNodeList.removeAllNoSignal();
 		aggroList.removeAllNoSignal();
 		idleList.removeAllNoSignal();
 		
 		
+	//	if (boolTest) throw "CLEANED";
+	//	boolTest = true;
 	}
 	
 	
@@ -223,6 +252,7 @@ class EnemyAggroSystem extends System
 	}
 	
 	override public function update(time:Float):Void {
+		updating = true;
 		
 		var p:PlayerAggroNode;
 		currentAttackingEnemy = null;
@@ -254,6 +284,7 @@ class EnemyAggroSystem extends System
 			//dz = playerPos.z - enemyPos.z;
 			if (dx * dx + dy * dy <= rangeSq && validateVisibility(enemyPos, p) ) {  // TODO: Include rotation facing direction as a factor for EnemyIdle case to allow backstabs
 				i.entity.remove(EnemyIdle);
+				
 				i.entity.add(new EnemyWatch().init(i.state,p), EnemyWatch); // TODO: Pool ENemyWatch
 			}
 			i = i.next;
@@ -280,7 +311,9 @@ class EnemyAggroSystem extends System
 				newAggro.attackRangeSq = PMath.getSquareDist(rangeToAttack);
 				newAggro.watch = w.state.watch;
 				newAggro.target = w.state.target;
+				
 				w.entity.add(newAggro, EnemyAggro);
+				
 			}
 			
 			w = w.next;
@@ -328,7 +361,8 @@ class EnemyAggroSystem extends System
 					aWeaponState.cancelTrigger();
 					a.state.flag = 0;
 					a.entity.remove(EnemyAggro);
-					a.entity.add(new EnemyWatch().init(a.state.watch,a.state.target), EnemyWatch); // TODO: Pool ENemyWatch
+					a.entity.add(new EnemyWatch().init(a.state.watch, a.state.target), EnemyWatch); // TODO: Pool ENemyWatch
+					
 					a = a.next;
 					continue;
 				}
@@ -403,7 +437,7 @@ class EnemyAggroSystem extends System
 						}
 						
 						
-						if  (a.state.flag != 1) throw "State before strke isn't 1:!" + a.state.flag + ", " + aWeaponState.cooldown + ", "+strikeTimeAtRange + ", "+aWeaponState.trigger + ", "+aWeaponState.attackTime;
+						if  (a.state.flag != 1) throw "State before strke isn't 1:!" + (a.entity.get(Object3D).name) + ":" + a.state.flag + ", " + aWeaponState.cooldown + ", "+strikeTimeAtRange + ", "+aWeaponState.trigger + ", "+aWeaponState.attackTime;
 						if (a.state.flag == 2) throw "Repeat state 2!";
 						aWeaponState.cooldown = aWeapon.cooldownTime;  
 						a.state.flag = 2;

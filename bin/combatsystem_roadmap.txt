@@ -14,14 +14,13 @@ So, this attack runs as per normal as if you were defending. The difference is t
 If triggered aggro deemed to strike you first, you either pick evade, block or parry against him, according to timing of his strike. 
 Note that, aggro rolls against you first before you roll, including damage if he hits. If aggro's damage is deemed to kill you, you don't get to roll, and your attack is destined to miss and your turn is concluded with your death by his counter/revenge-strike (with your strike shown as "miss"). If aggro hits you first, you don't get to roll for criticals as well. So, your rolled crit percentage should be as per normal in this case (against defender) since the first aggro hit roll is already factored in.
 
-If aggro wasn't triggered, aggro will revenge attack so long as he is within range/angle (random trigger range re-roll). So, this attack runs as per normal as if you were defending. Or this can only occur at the beginning of an action turn if the player DID not move yet, but triggered an attack (but this would result in lame turned exchange of blows without any factoring of parrying cases). Or perhaps better, at the start of the turn, aggro should be grouped already to pre-trigger beforehand, so parries can occur even when actions occur without movement/time passing. (So, force a pre-updat)
-
 (DONE)
 
-	fix state isn't 1 for multiple/canceld targets.
+If aggro wasn't triggered, aggro will revenge attack so long as he is within range/angle (random trigger range re-roll). So, this attack runs as per normal as if you were defending. Or this can only occur at the beginning of an action turn if the player DID not move yet, but triggered an attack (but this would result in lame turned exchange of blows without any factoring of parrying cases). Or perhaps better, at the start of the turn, aggro should be grouped already to pre-trigger beforehand, so parries can occur even when actions occur without movement/time passing. (So, force a pre-updat)
+
 (Advanced, choice between evade/block can depend on situation, if too close, cannot evade. If not within blocking range (too close/too far), etc.)
 
-2) Smarter AI facing: (Required for this game where facing affects situation, and can be exploited unfairly)
+2) Smarter AI facing choice when turn ends: (Required for this game where facing affects situation,)
 Enemy could always rotate back to face closest (angledapon range. THis prevents exploits with distracting enemies, but not engaging them finally at the end of the turn. It also makes the game fairer since the active team's moving unit can rotate about freely with no movement cost before ending the unit's action turn, thus likewise, all responding enemy AI units should also have that similar freedom to rotate around at the end of the turn to face the "best" target. THis requires the active team to keep units around the target to overwhelm the target, without resorting to lame distraction techniques.
 
 3) No 6th Sense: (Like in valkerie chronicles)
