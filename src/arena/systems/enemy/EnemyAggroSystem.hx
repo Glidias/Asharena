@@ -273,7 +273,7 @@ class EnemyAggroSystem extends System
 			dx =  playerPos.x - enemyPos.x;
 			dy = playerPos.y - enemyPos.y;
 			//dz = playerPos.z - enemyPos.z;
-			if (dx * dx + dy * dy <= rangeSq && validateVisibility(enemyPos, p) ) {  // TODO: Include rotation facing direction as a factor for EnemyIdle case to allow backstabs
+			if (dx * dx + dy * dy <= rangeSq && HitFormulas.targetIsWithinFOV2(dx, dy, i.rot, i.state.fov) && validateVisibility(enemyPos, p) ) {  // TODO: Include rotation facing direction as a factor for EnemyIdle case to allow backstabs
 				i.entity.remove(EnemyIdle);
 				
 				i.entity.add(new EnemyWatch().init(i.state,p), EnemyWatch); // TODO: Pool ENemyWatch

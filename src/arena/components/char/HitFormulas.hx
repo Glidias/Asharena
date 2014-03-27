@@ -29,6 +29,17 @@ class HitFormulas
 		
 	}
 	
+	public static inline function targetIsWithinFOV(posA:Pos, rotA:Rot, posB:Pos, fov:Float):Bool { // this doesn't take into account size of target, but should be okay in most cases...
+		
+		return targetIsWithinFOV2( posB.x - posA.x, posB.y - posA.y, rotA, fov);
+	}
+	
+	
+	public static inline function targetIsWithinFOV2(dx:Float, dy:Float, rotA:Rot, fov:Float):Bool { // this doesn't take into account size of target, but should be okay in most cases...
+		return PMath.abs(getDiffAngle(rotA.z, Math.atan2(dy, dx)+ROT_FACING_OFFSET ) ) <= fov*.5;
+	}
+	
+	
 	public static inline function targetIsWithinArcAndRangeSq(posA:Pos, rotA:Rot, posB:Pos, rangeSq:Float, arcAng:Float):Bool {
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;

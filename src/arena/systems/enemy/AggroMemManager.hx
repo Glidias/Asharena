@@ -213,11 +213,13 @@ class AggroMemManager
 		
 	}
 	
-	// TODO:
-	public function hasLOSWithFOV(fovA:Float, posA:Pos, rotA:Rot, posB:Pos):Bool {
-		return true;
+	
+	public inline function hasLOSWithFOV(fovA:Float, posA:Pos, rotA:Rot, posB:Pos):Bool {
+		
+		return HitFormulas.targetIsWithinFOV(posA, rotA, posB, fovA) && hasLOS(posA, posB);
 	}
 	
+	// TODO:
 	public function hasLOS(posA:Pos, posB:Pos):Bool {
 		return true;
 	}
