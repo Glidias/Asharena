@@ -17,6 +17,7 @@ package tests.pvp
 	import arena.components.enemy.EnemyIdle;
 	import arena.components.weapon.Weapon;
 	import arena.components.weapon.WeaponState;
+	import arena.systems.enemy.AggroMemManager;
 	import arena.systems.enemy.EnemyAggroSystem;
 	import arena.systems.player.LimitedPlayerMovementSystem;
 	import arena.views.hud.ArenaHUD;
@@ -51,6 +52,7 @@ package tests.pvp
 	import systems.sensors.HealthTrackingSystem;
 	import systems.SystemPriorities;
 	import systems.tweening.TweenSystem;
+	import util.geom.PMath;
 	import util.SpawnerBundle;
 	import util.SpawnerBundleLoader;
 	import views.engine3d.MainView3D;
@@ -107,6 +109,8 @@ package tests.pvp
 		
 		private var _gladiatorBundle:GladiatorBundle;
 		private var arenaHUD:ArenaHUD;
+		
+		private var aggroMemManager:AggroMemManager;
 		
 	
 		public function PVPDemo() 
@@ -237,7 +241,7 @@ package tests.pvp
 			w.damage =  25;
 			w.cooldownTime = thrust ? 0.7 : 0.96;
 			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
-			w.hitAngle =  22 * 180 / Math.PI;
+			w.hitAngle =  45 *  PMath.DEG_RAD;
 			
 			w.damageRange = 7;		// damage up-range variance
 	
@@ -436,6 +440,8 @@ package tests.pvp
 				changeCameraView("commander");
 			
 			}
+			
+			aggroMemManager.notifyStartPhase(sideIndex);
 		}
 		
 		private function selectFirstMan():void {
@@ -459,6 +465,8 @@ package tests.pvp
 			}
 			
 			
+			
+			
 	
 			var oldArr:Array = arrayOfSides[sideIndex];
 			
@@ -468,6 +476,8 @@ package tests.pvp
 				sideIndex = 0;
 			}
 			curArr = arrayOfSides[sideIndex];
+			aggroMemManager.notifyStartPhase(sideIndex);
+			
 			
 			
 			
@@ -713,6 +723,8 @@ package tests.pvp
 				_transitCompleteCallback = focusOnCurPlayer;
 				updateTargetCharFocus();
 				arenaHUD.setTargetChar(null);
+				aggroMemManager.notifyEndTurn();
+				
 				game.gameStates.engineState.changeState("transiting");
 				arenaHUD.setState("transiting");
 				transitionCameras(thirdPersonController.thirdPerson, commanderCameraController.thirdPerson, targetState, NaN, NaN, NaN, Cubic.easeIn);
@@ -732,6 +744,7 @@ package tests.pvp
 		}
 		
 		private var _targetTransitState:String;
+
 
 		
 		private function transitionCameras(fromCamera:OrbitCameraMan, toCamera:OrbitCameraMan, targetState:String=null, customX:Number=Number.NaN, customY:Number = Number.NaN, customZ:Number = Number.NaN, customEase:Function=null, duration:Number=1):void 
@@ -782,7 +795,7 @@ package tests.pvp
 		private function onTransitComplete():void {
 
 			game.gameStates.engineState.changeState(_targetTransitState);
-			
+			arenaHUD.setState(_targetTransitState);
 			
 			if (_targetTransitState != "commander") {
 				arenaHUD.hideStars();
@@ -793,7 +806,7 @@ package tests.pvp
 				if (arenaSpawner.currentPlayerEntity) arenaSpawner.currentPlayerEntity.remove(MovementPoints);
 			}
 			
-			arenaHUD.setState(_targetTransitState);
+		
 			_targetTransitState = null;
 			
 			if (_transitCompleteCallback != null) {
@@ -805,6 +818,8 @@ package tests.pvp
 		
 		private function activateEnemyAggro():void 
 		{
+			aggroMemManager.notifyTurnStarted(arenaSpawner.currentPlayerEntity);
+			/*
 			var otherSide:int = sideIndex == 0 ? 1 : 0;
 			var enemySide:Array = arrayOfSides[otherSide];
 			var len:int = enemySide.length;
@@ -815,6 +830,7 @@ package tests.pvp
 			//	}
 				e.add(enemyWatchSettings, EnemyIdle);
 			}
+			*/
 			
 		}
 		
@@ -922,6 +938,11 @@ package tests.pvp
 		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
 		//	_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
 			//_enemyAggroSystem.onEnemyCooldown.add(onEnemyCooldown);
+			
+			
+			// aggro mem manager
+			aggroMemManager = new AggroMemManager();
+			aggroMemManager.init(game.engine);
 			
 			game.gameStates.engineState.changeState("thirdPerson");
 			arenaHUD.setState("thirdPerson");

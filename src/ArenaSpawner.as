@@ -15,8 +15,10 @@ package
 	import alternativa.engine3d.primitives.GeoSphere;
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.utils.Object3DUtils;
+	import arena.components.char.AggroMem;
 	import arena.components.char.ArenaCharacterClass;
 	import arena.components.char.CharDefense;
+	import arena.components.enemy.EnemyIdle;
 	import ash.core.Engine;
 	import ash.core.Entity;
 	import ash.signals.Signal0;
@@ -62,6 +64,8 @@ package
 		public function get playerEntityChanged():Signal1 {
 			return _currentPlayerEntityChanged;
 		}
+		
+		private var defaultEnemyWatchMelee:EnemyIdle = new EnemyIdle().init(9000, 100);
 		
 		public function ArenaSpawner(engine:Engine, keyPoll:KeyPoll) 
 		{
@@ -310,6 +314,8 @@ package
 			}
 			actions.add( gladiatorStance.handleAction );
 			ent.add(gladiatorStance, IAnimatable);
+			
+			ent.add( new AggroMem().init(defaultEnemyWatchMelee, side) );
 			
 			engine.addEntity(ent);
 			

@@ -38,7 +38,7 @@ class EnemyAggroSystem extends System
 	
 	 // inline, so need to recompile
 	private static inline var ROT_FACING_OFFSET:Float = HitFormulas.ROT_FACING_OFFSET; 
-	private static inline var ROT_PER_SEC:Float = (200 * PMath.DEG_RAD);
+	private static inline var ROT_PER_SEC:Float = (220 * PMath.DEG_RAD);
 	
 	// states (coudl be factored out to model class);
 	public var currentAttackingEnemy:Entity;
@@ -61,8 +61,6 @@ class EnemyAggroSystem extends System
 		onEnemyStrike = new Signal1<Entity>();
 		
 		onEnemyCooldown = new Signal2<Entity,Float>();
-		
-	
 	}
 	
 	
@@ -243,14 +241,7 @@ class EnemyAggroSystem extends System
 
 	}
 	
-	// perhaps, weapons should have a prefered range for attack due to differing swing speeds, but this may alter as well depending on how target behaves (eg. evasively or not)
-	private inline function rollRandomRangeForAttack(w:Weapon, p:PlayerAggroNode):Float {
-		var range:Float = w.critMaxRange + Math.random() * ( w.range - w.critMaxRange) ;
-		 range= (range +32 < w.range) ? w.range - 32 : range;  // min 32 margin
-		range += p.size.x;
-		return range;
-	}
-	
+
 	override public function update(time:Float):Void {
 		updating = true;
 		
@@ -307,7 +298,7 @@ class EnemyAggroSystem extends System
 				
 				w.entity.remove(EnemyWatch);
 				newAggro = new EnemyAggro();
-				rangeToAttack =rollRandomRangeForAttack(w.weapon,p);// w.weapon.critMaxRange + Math.random() * ( w.weapon.range - w.weapon.critMaxRange); 
+				rangeToAttack =HitFormulas.rollRandomAttackRangeForWeapon(w.weapon,p.size);// w.weapon.critMaxRange + Math.random() * ( w.weapon.range - w.weapon.critMaxRange); 
 				newAggro.attackRangeSq = PMath.getSquareDist(rangeToAttack);
 				newAggro.watch = w.state.watch;
 				newAggro.target = w.state.target;
@@ -361,7 +352,7 @@ class EnemyAggroSystem extends System
 					aWeaponState.cancelTrigger();
 					a.state.flag = 0;
 					a.entity.remove(EnemyAggro);
-					a.entity.add(new EnemyWatch().init(a.state.watch, a.state.target), EnemyWatch); // TODO: Pool ENemyWatch
+					a.entity.add(new EnemyWatch().init(a.state.watch, a.state.target, true), EnemyWatch); // TODO: Pool ENemyWatch
 					
 					a = a.next;
 					continue;
@@ -372,8 +363,8 @@ class EnemyAggroSystem extends System
 		
 			
 			// always rotate enemy to face player target
-			
-			var targRotZ:Float = Math.atan2(dy, dx) + ROT_FACING_OFFSET;
+
+			var targRotZ:Float =  Math.atan2(dy, dx) + ROT_FACING_OFFSET;
 		//	targRotZ = getDestAngle(a.rot.z, targRotZ);
 			
 			var diffAngle:Float = getDiffAngle(a.rot.z, targRotZ);
@@ -389,7 +380,7 @@ class EnemyAggroSystem extends System
 					if (aWeaponState.cooldown <= 0) {  // cooldown finished. allow trigger to  be pulled again
 						aWeaponState.cancelTrigger();
 						a.state.flag = 0;
-						a.state.attackRangeSq = PMath.getSquareDist( rollRandomRangeForAttack(a.weapon, p) );
+						a.state.attackRangeSq = PMath.getSquareDist( HitFormulas.rollRandomAttackRangeForWeapon(a.weapon, p.size) );
 						onEnemyReady.dispatch(a.entity);
 					}
 					else {
@@ -448,7 +439,8 @@ class EnemyAggroSystem extends System
 				}
 			}
 			else {   // consider whether should pull trigger
-				if (diffAngle < aWeapon.hitAngle &&  sqDist <= a.state.attackRangeSq) {
+			
+				if (  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, a.weapon.hitAngle, sqDist, a.state.attackRangeSq)  ) {
 				
 					aWeaponState.pullTrigger();
 					

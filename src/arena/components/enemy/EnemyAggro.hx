@@ -33,6 +33,15 @@ class EnemyAggro
 		this.watch  = watch;
 	}
 	
+	public  function initSimple(target:PlayerAggroNode, watch:EnemyIdle):EnemyAggro {
+		this.target = target;
+		this.watch  = watch;
+		return this;
+	}
+	public inline function setAttackRange(range:Float):Void {
+		attackRangeSq = PMath.getSquareDist(range);
+	}
+	
 	public inline function dispose():Void {
 		watch = null;
 		target = null;

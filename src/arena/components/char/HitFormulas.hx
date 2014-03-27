@@ -21,6 +21,26 @@ class HitFormulas
 	// It basically describes whether you can block WHILE swinging your weapon at the same time. Without a shield or blocking mechanism, this value should be zero.
 	static public inline var CAN_BLOCK_THRESHOLD:Float = .35; 
 
+	
+	
+	public static inline function targetIsWithinArcAndRangeSq2(diffAngle:Float, arcAng:Float, sqDist:Float, rangeSq:Float):Bool {
+
+		return sqDist <= rangeSq && diffAngle <= arcAng;
+		
+	}
+	
+	public static inline function targetIsWithinArcAndRangeSq(posA:Pos, rotA:Rot, posB:Pos, rangeSq:Float, arcAng:Float):Bool {
+		var dx:Float = posB.x - posA.x;
+		var dy:Float = posB.y - posA.y;
+		var withinRange:Bool = dx * dx + dy * dy <= rangeSq;
+		
+		var withinAng:Bool = PMath.abs(getDiffAngle(rotA.z, Math.atan2(dy, dx)+ROT_FACING_OFFSET ) ) <= arcAng;
+		
+		return withinRange && withinAng;
+		
+	}
+	
+	
 
 	// Used for actual combat..
 	public static inline function getPercChanceToHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {
@@ -269,6 +289,13 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 		}
 		
 		return sampleRange;
+	}
+	
+	public static inline function rollRandomAttackRangeForWeapon(w:Weapon, targetSize:Ellipsoid):Float {
+		var range:Float = w.critMaxRange + Math.random() * ( w.range - w.critMaxRange) ;
+		 range= (range +22 < w.range) ? w.range - 22 : range;  // min 22 margin
+		range += targetSize.x;
+		return range;
 	}
 	
 	public static inline function rollDamageForWeapon(weapon:Weapon):Int {
