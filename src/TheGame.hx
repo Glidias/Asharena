@@ -1,5 +1,6 @@
 package;
 import arena.components.char.HitFormulas;
+import arena.systems.enemy.AggroMemManager;
 import arena.systems.enemy.EnemyAggroSystem;
 import arena.systems.player.LimitedPlayerMovementSystem;
 import ash.core.Engine;
@@ -91,6 +92,7 @@ class TheGame
 		RadialSensorSystem;
 		HealthTrackingSystem;
 		
+		AggroMemManager;
 		EnemyAggroSystem;
 		HitFormulas;
 		

@@ -5,7 +5,7 @@ import arena.components.char.MovementPoints;
 import arena.components.enemy.EnemyAggro;
 import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
-import arena.systems.enemy.EnemyAggroSystem.EnemyWatchNode;
+
 import arena.systems.player.PlayerAggroNode;
 import ash.core.Engine;
 import ash.core.Entity;
@@ -31,9 +31,9 @@ import util.geom.PMath;
 class EnemyAggroSystem extends System
 {
 
-	private var aggroList:NodeList<EnemyAggroNode>;
-	private var watchList:NodeList<EnemyWatchNode>;
-	private var idleList:NodeList<EnemyIdleNode>;
+	public var aggroList:NodeList<EnemyAggroNode>;
+	public var watchList:NodeList<EnemyWatchNode>;
+	public var idleList:NodeList<EnemyIdleNode>;
 	private var playerNodeList:NodeList<PlayerAggroNode>;
 	
 	 // inline, so need to recompile
@@ -476,39 +476,6 @@ class EnemyAggroSystem extends System
 	
 }
 
-// For enemies that are already aggroing a target, possibly engaging him, or standing ground and rotating to always face target, attacking them if within range. They might change targets if another target gets closer, so long as they aren't attacking with their weapons at the moment.
-
-class EnemyAggroNode extends Node<EnemyAggroNode> {
-	public var pos:Pos;
-	public var ellipsoid:Ellipsoid;
-	public var weapon:Weapon;
-	public var weaponState:WeaponState;
-	public var rot:Rot;
-	
-	public var state:EnemyAggro;
-	//public var stateMachine:EntityStateMachine;
-}
-
-// For enemies that are alerted against nearest visible opposing player, and will actively look around for any other potential player targets to aggro.
-
-class EnemyWatchNode extends Node<EnemyWatchNode> { 
-	public var pos:Pos;
-	public var rot:Rot;
-	public var weapon:Weapon;
-	
-	public var state:EnemyWatch;	
-	//public var stateMachine:EntityStateMachine;
-}
 
 
 
-// For calm enemies that aren't alerted (situation safe). THey might scan horizon from time to time.
-
-class EnemyIdleNode extends Node<EnemyIdleNode> {  
-	public var pos:Pos;
-	public var rot:Rot;
-	
-	public var state:EnemyIdle;	
-	
-	//public var stateMachine:EntityStateMachine;
-}

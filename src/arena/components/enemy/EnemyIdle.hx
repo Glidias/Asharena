@@ -9,15 +9,18 @@ class EnemyIdle
 {
 	public var alertRangeSq:Float;  // the threshold range in order to go to alert EnemyWatch state.
 	public var aggroRangeSq:Float;	 // the threshold range in order to go to aggressive EnemyAggro state.
+	public var fov:Float;
+	public static inline var DEFAULT_FOV:Float = 1.8849555921538759430775860299677;// (PMath.PI * .6);
 	
 	public function new() 
 	{
 		
 	}
 	
-	public function init(alertRange:Float, aggroRange:Float):EnemyIdle {
+	public function init(alertRange:Float, aggroRange:Float, fov:Float=1.8849555921538759430775860299677):EnemyIdle {
 		alertRangeSq = PMath.getSquareDist(alertRange);
 		aggroRangeSq = PMath.getSquareDist(aggroRange);
+		this.fov = fov;
 		return this;
 	}
 	

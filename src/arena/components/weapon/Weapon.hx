@@ -21,8 +21,9 @@ class Weapon
 	public var critMinRange:Float;
 	public var critMaxRange:Float;
 	
+	// timings cannot be a non-zero value! For weapons like guns and crossbows, use tiny floating point values to simulate time taken to pull the trigger/strike the firing pin, etc..
 	public var timeToSwing:Float;
-	public var strikeTimeAtMaxRange:Float;
+	public var strikeTimeAtMaxRange:Float;  
 	public var strikeTimeAtMinRange:Float;
 	
 	public var parryEffect:Float;
