@@ -18,6 +18,7 @@ package tests.pvp
 	import arena.components.weapon.Weapon;
 	import arena.components.weapon.WeaponState;
 	import arena.systems.enemy.AggroMemManager;
+	import arena.systems.enemy.EnemyAggroNode;
 	import arena.systems.enemy.EnemyAggroSystem;
 	import arena.systems.player.LimitedPlayerMovementSystem;
 	import arena.views.hud.ArenaHUD;
@@ -70,7 +71,7 @@ package tests.pvp
 		 * 
 		 * Player2Player Collision blocking
 		 * 
-		 * Integration with attack animation (weaponary)
+		 * Integration with attack animation (weaponary) with swing arc blocking
 		 * 
 		 * ((Chance to stun))
 		 * ______________________
@@ -939,10 +940,23 @@ package tests.pvp
 			// aggro mem manager
 			aggroMemManager = new AggroMemManager();
 			aggroMemManager.init(game.engine);
+			aggroMemManager.aggroList.nodeAdded.add(onEnemyAggroNodeAdded);
 			
 			game.gameStates.engineState.changeState("thirdPerson");
 			arenaHUD.setState("thirdPerson");
 			startPhase();
+		}
+		
+		private function onEnemyAggroNodeAdded(node:EnemyAggroNode):void 
+		{
+			
+			var gStance:GladiatorStance = node.entity.get(IAnimatable) as GladiatorStance;
+
+			if (gStance != null && gStance.stance == 0) {
+				gStance.stance = 1;
+				
+				gStance.setIdleStance( 1);
+			}
 		}
 		
 		private function onEnemyCooldown(e:Entity, cooldown:Number):void 

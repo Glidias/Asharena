@@ -20,6 +20,7 @@ package systems.player.a3d
 	import systems.animation.IAnimatable;
 	import systems.player.PlayerAction;
 	import alternativa.engine3d.alternativa3d;
+	import util.geom.PMath;
 	use namespace alternativa3d;
 	/**
 	 * ...
@@ -49,18 +50,22 @@ package systems.player.a3d
 		//public var upperBodyCouple:AnimationCouple = new AnimationCouple();  // for blending 2 animations
 		
 		private var _stance:int = 0;
+		private var _lastStance:int = 0;
 		private var _stanceString:String = "stand";
 		
 		public static var ON_STANCE_CHANGE:Signal1 = new Signal1();
 		
 		public function set stance(val:int):void {
 			var lastStance:int = _stance;
+			_lastStance = lastStance;
 			_stanceString = val === 0 ? "stand" : val === 1 ? "combat" : "crouch";
 			_stance = val;
 			if (lastStance != val) {
 				ON_STANCE_CHANGE.dispatch(val);
-			
+				crouchTime = 0;
+				crouchDirection = lastStance < val ? 1 : -1;
 			}
+			
 		}
 		
 		public function get stance():int 
@@ -217,7 +222,11 @@ package systems.player.a3d
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
+			//if (lastAction != 0) return; // only allow switching stance when character is idle (ie. non-moving)
+			
 			var keyCode:uint = e.keyCode;
+		
+			
 			if (keyCode === Keyboard.Q ) {
 				raiseStanceToggle();
 			}
@@ -238,9 +247,10 @@ package systems.player.a3d
 		private var lastAction:int = PlayerAction.IDLE;
 		
 		// handles any changes in action!
-		public function handleAction(val:int):void {
-			lastAction = val;
-			upperBodyDominant = false;
+			public function handleAction(val:int):void {
+				var myLastAction:int = lastAction;
+				lastAction = val;
+				upperBodyDominant = false;
 			_running = false;
 			_idle = false;
 			if (val === PlayerAction.STATE_JUMP) {
@@ -255,7 +265,11 @@ package systems.player.a3d
 			else if (val === PlayerAction.IDLE) {
 				skin._rotationZ = Math.PI;
 				skin.transformChanged = true;
-				setAnimation(fullBodyAnims[(_stance == 0 ? "standing" : _stanceString)+"_idle"], fullBodyController, fullBody, 0);
+				
+				setAnimation(fullBodyAnims[(_stance == 0 ? "standing" : _stanceString) + "_idle"], fullBodyController, fullBody,   myLastAction == 0 ? .25 : 0);  //_lastStance < 3 && _stance < 3 && 
+				if (myLastAction != 0) {
+					crouchTime = 99999999;
+				}
 				_curController = fullBodyController;
 				_idle = true;
 				return;
@@ -344,9 +358,11 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		private var _running:Boolean;
 		private var _idle:Boolean;
 		public var standEnabled:Boolean = true;
+		private var crouchDirection:int = 1;
 		
 		/* INTERFACE systems.animation.IAnimatable */
 		
+		private var crouchTime:Number = Number.MAX_VALUE;
 		public function animate(time:Number):void 
 		{
 			if (_curController != null) {
@@ -364,13 +380,52 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			}
 			if (!_idle) {
 				rootJoint._x = 0;
-				//rootJoint._y = 0;
+			//	rootJoint._y = 0;
 				rootJoint._z = 0;
 			}
 			//
 			
-			skin.z = _running || _stance != 2  ? 0 : -17;
+			/*
+			if (_running || stance != 2) {
+				ellipsoid.z = 36;
+			}
+			else {
+					ellipsoid.z = 16;
+					
+			}
+			*/
+			
+			
+			var tarSkinZ:Number;
+			if ( lastAction == 0) {
+				if ((_running || stance != 2) && _lastStance != 2 ) {
+					tarSkinZ =  0;
+					//ellipsoid.z = 36;
+				}
+				else {
+					if (crouchTime <= .25) {
+						tarSkinZ = crouchDirection > 0 ? PMath.lerp(0, -17, crouchTime / .25) :  PMath.lerp(-17, 0, crouchTime / .25);
+						crouchTime += time;
+					}
+					else {
+						tarSkinZ = crouchDirection > 0 ? -17 : 0;
+					}
+					//	ellipsoid.z = 16;	
+				}
+			}
+			else {
+				tarSkinZ = _running || _stance != 2  ? 0 : -17;
+			}
+			
+			if (tarSkinZ != skin._z) {   // above as well
+				skin._z = tarSkinZ;
+				skin.transform.l = tarSkinZ;
+				skin.inverseTransform.l = -tarSkinZ;
+				skin.transformChanged = true;  // this is required for water plane update notification
+			}
 		}
+		
+
 		
 		public function setIdleStance(val:int):void 
 		{
