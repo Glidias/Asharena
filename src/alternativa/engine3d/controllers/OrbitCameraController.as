@@ -1,4 +1,4 @@
-package alternativa.engine3d.controller {
+package alternativa.engine3d.controllers {
 	
 
 	import alternativa.engine3d.controllers.SimpleObjectController;
@@ -495,7 +495,7 @@ package alternativa.engine3d.controller {
         /**
          * @inheritDoc
          */
-        override public function update():void
+        override public function update(time:Number):void
         {
             const RADIAN:Number = Math.PI / 180;
             var oldAngleLatitude:Number = _angleLatitude;

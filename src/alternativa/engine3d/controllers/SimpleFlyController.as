@@ -1,4 +1,4 @@
-package alternativa.engine3d.controller
+package alternativa.engine3d.controllers
 {
 	import alternativa.engine3d.collisions.EllipsoidCollider;
 	import alternativa.engine3d.controllers.SimpleObjectController;
@@ -32,7 +32,7 @@ package alternativa.engine3d.controller
         }
         
 
-        override public function update():void {
+        override public function update(time:Number):void {
             var object:Object3D = this.object;
             
             if (object == null) return;
@@ -40,7 +40,7 @@ package alternativa.engine3d.controller
                 lastPosition.x = object.x;
                 lastPosition.y = object.y;
                 lastPosition.z = object.z;
-                super.update();
+                super.update(time);
                 displacement.x = object.x -  lastPosition.x;
                 displacement.y = object.y  - lastPosition.y;
                 displacement.z = object.z  - lastPosition.z;
@@ -54,7 +54,7 @@ package alternativa.engine3d.controller
                 object.z = dest.z;
             }
             else {
-                super.update();
+                super.update(time);
             }
         }
         

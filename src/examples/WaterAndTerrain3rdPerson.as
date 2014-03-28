@@ -1,7 +1,7 @@
 package examples
 {
-	import alternativa.engine3d.controller.OrbitCameraController;
-	import alternativa.engine3d.controller.OrbitCameraMan;
+	import alternativa.engine3d.controllers.OrbitCameraController;
+	import alternativa.engine3d.controllers.OrbitCameraMan;
 	import alternativa.engine3d.controllers.SimpleObjectController;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;

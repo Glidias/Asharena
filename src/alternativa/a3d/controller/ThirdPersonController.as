@@ -1,6 +1,6 @@
 package alternativa.a3d.controller 
 {
-	import alternativa.engine3d.controller.OrbitCameraMan;
+	import alternativa.engine3d.controllers.OrbitCameraMan;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
 	import ash.core.Engine;
@@ -63,7 +63,7 @@ package alternativa.a3d.controller
 		}
 		
 		override public function update(time:Number):void {
-			thirdPerson.update();
+			thirdPerson.update(time);
 		}
 		
 		

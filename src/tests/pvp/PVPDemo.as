@@ -5,7 +5,7 @@ package tests.pvp
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.controller.ThirdPersonTargetingSystem;
-	import alternativa.engine3d.controller.OrbitCameraMan;
+	import alternativa.engine3d.controllers.OrbitCameraMan;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.objects.Mesh;

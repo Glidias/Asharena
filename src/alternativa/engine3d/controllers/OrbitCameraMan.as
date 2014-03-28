@@ -1,4 +1,4 @@
-package alternativa.engine3d.controller 
+package alternativa.engine3d.controllers 
 {
   import alternativa.engine3d.core.Object3D;
   import alternativa.engine3d.core.RayIntersectionData;
@@ -117,7 +117,7 @@ package alternativa.engine3d.controller
 			
 		}
 		
-        public function update():void {
+        public function update(time:Number):void {
 			var follower:Object3D = controller._followTarget;
 			follower._x = _followTarget.x + offsetX;
 			follower._y = _followTarget.y + offsetY;
@@ -125,7 +125,7 @@ package alternativa.engine3d.controller
 			
 	
 			
-            controller.update(); 
+            controller.update(time); 
 
             var camera:Camera3D = controller._target;
         
@@ -255,7 +255,7 @@ package alternativa.engine3d.controller
 					controller.setLatitude( Math.PI * .5 - rot.x, true);  // Hmm...not too sure about this..need to test
 					//_followTarget.rotationX =  rot.x= camera.rotationX + Math.PI * .5;
 				}
-			controller.update();
+			controller.update(0);
 			}
 		}
         

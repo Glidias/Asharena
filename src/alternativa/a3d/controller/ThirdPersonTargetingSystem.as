@@ -1,6 +1,6 @@
 package alternativa.a3d.controller 
 {
-	import alternativa.engine3d.controller.OrbitCameraMan;
+	import alternativa.engine3d.controllers.OrbitCameraMan;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.alternativa3d;
 	import systems.player.PlayerTargetingSystem;

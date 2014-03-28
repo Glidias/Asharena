@@ -378,7 +378,7 @@ class AggroMemManager
 				a.state.setAttackRange(a.weapon.range);
 				var val:Float = findNearestActiveNodeToRot(a.pos, a.rot, a.state.attackRangeSq);
 				if (val != PMath.FLOAT_MAX) {  // rotate to face rotation value
-					engine.addEntity( new Entity().add( new Tween(a.rot, 1.3, { z:val } ) ) );
+					engine.addEntity( new Entity().add( new Tween(a.rot, 1.7, { z:val } ) ) );
 				}
 			}
 			a = a.next;
