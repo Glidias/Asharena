@@ -273,11 +273,15 @@ class AggroMemManager
 		curPlayerIndex = plIndex;
 		
 		var am:AggroMemNode;
-		
 		var aggro:EnemyAggro;
-		var i:Int = numAggro;
-		while (--i > -1) {
-			am = aggroArray[i];
+		am = memList.head;
+		while (am != null) {
+			
+			if (am.mem.side == activeSide) {  // active non-aggro ai side, shoudl be ignored...
+				am = am.next;
+				continue;
+			}
+			
 			if (am.mem.bits.has(plIndex)) {  // place AI in either watch/aggro
 				if (withinSqDist(playerPos, am.pos, am.mem.watchSettings.aggroRangeSq) ) {
 					//	
@@ -287,12 +291,11 @@ class AggroMemManager
 				else {
 					am.entity.add(new EnemyWatch().init(am.mem.watchSettings, playerAggroList.head) , EnemyWatch);
 				}
-	
-				
 			}
 			else {   // place AI in idle state
 				am.entity.add(am.mem.watchSettings, EnemyIdle);
 			}
+			am = am.next;
 		}
 		
 	

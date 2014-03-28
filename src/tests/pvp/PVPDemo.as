@@ -68,10 +68,6 @@ package tests.pvp
 	 * 
 	 * todo:
 		 * 
-		 * [[
-		 * End-turn AI watch facing and possible blind spots at the start of turn.
-		 * ]]
-		 * 
 		 * Player2Player Collision blocking
 		 * 
 		 * Integration with attack animation (weaponary)
