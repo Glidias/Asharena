@@ -52,6 +52,7 @@ package systems.player.a3d
 		private var _stance:int = 0;
 		private var _lastStance:int = 0;
 		private var _stanceString:String = "stand";
+		public var CROUCH_TIME:Number = .25;
 		
 		public static var ON_STANCE_CHANGE:Signal1 = new Signal1();
 		
@@ -62,7 +63,7 @@ package systems.player.a3d
 			_stance = val;
 			if (lastStance != val) {
 				ON_STANCE_CHANGE.dispatch(val);
-				crouchTime = 0;
+				crouchTime = crouchTime >= CROUCH_TIME?  0 : CROUCH_TIME - crouchTime;
 				crouchDirection = lastStance < val ? 1 : -1;
 			}
 			
@@ -128,7 +129,7 @@ package systems.player.a3d
 			this.skin = skin;
 			anims = ANIM_MANAGER.cloneFor(skin);
 			
-			rootJoint = getJoint("Bip01");
+			rootJoint = skin.childrenList as Joint;//getJoint("Bip01");
 			surfaceMovement.setStrafeSpeed(speed_strafe);
 		
 			init();
@@ -266,7 +267,7 @@ package systems.player.a3d
 				skin._rotationZ = Math.PI;
 				skin.transformChanged = true;
 				
-				setAnimation(fullBodyAnims[(_stance == 0 ? "standing" : _stanceString) + "_idle"], fullBodyController, fullBody,   myLastAction == 0 ? .25 : 0);  //_lastStance < 3 && _stance < 3 && 
+				setAnimation(fullBodyAnims[(_stance == 0 ? "standing" : _stanceString) + "_idle"], fullBodyController, fullBody,   myLastAction == 0 ? CROUCH_TIME : 0);  //_lastStance < 3 && _stance < 3 && 
 				if (myLastAction != 0) {
 					crouchTime = 99999999;
 				}
@@ -342,7 +343,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 					}
 				}
 				else {
-					surfaceMovement.setStrafeSpeed(speed_strafe * .25);
+					surfaceMovement.setStrafeSpeed(speed_strafe * CROUCH_TIME);
 					surfaceMovement.WALKBACK_SPEED = _stance != 2 ? (val != PlayerAction.MOVE_BACKWARD_FAST ? speed_backwards : speed_backwards_fast) : speed_backwards * playerSpeedCrouchRatio * SPEED_CROUCHBACK_MULTIPLIER;
 					setAnimation(lowerBodyAnims[(_stance != 0 ? _stanceString : "combat")+"_walkback"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALKBACK_SPEED * (_stance != 2 ? I_SPEED_BACKWARDS : I_SPEED_CROUCH);
 					setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
@@ -403,8 +404,8 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 					//ellipsoid.z = 36;
 				}
 				else {
-					if (crouchTime <= .25) {
-						tarSkinZ = crouchDirection > 0 ? PMath.lerp(0, -17, crouchTime / .25) :  PMath.lerp(-17, 0, crouchTime / .25);
+					if (crouchTime <= CROUCH_TIME) {
+						tarSkinZ = crouchDirection > 0 ? PMath.lerp(0, -17, crouchTime / CROUCH_TIME) :  PMath.lerp(-17, 0, crouchTime / CROUCH_TIME);
 						crouchTime += time;
 					}
 					else {
