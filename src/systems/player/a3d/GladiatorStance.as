@@ -260,7 +260,7 @@ package systems.player.a3d
 			//setAnimation(fullBodyAnims["tumbleleft"], fullBodyController, fullBody, 0).speed = 1;
 				//(fullBodyAnims["jump"] as AnimationClip).time = .5;
 				_curController = fullBodyController;
-				_curController.update();
+				_curController.update(0);
 				return;
 			}	
 			else if (val === PlayerAction.IDLE) {
@@ -367,16 +367,16 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		public function animate(time:Number):void 
 		{
 			if (_curController != null) {
-				_curController.update();  // TODO: inject time into modifed clas
+				_curController.update(time);  // TODO: inject time into modifed clas
 			}
 			else {
 				if (!upperBodyDominant) {
-					upperBodyController.update();
-					lowerBodyController.update();
+					upperBodyController.update(time);
+					lowerBodyController.update(time);
 				}
 				else {
-					lowerBodyController.update();
-					upperBodyController.update();
+					lowerBodyController.update(time);
+					upperBodyController.update(time);
 				}
 			}
 			if (!_idle) {

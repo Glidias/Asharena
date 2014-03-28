@@ -504,7 +504,7 @@ package examples
 
 			
 			thirdPerson.followAzimuth = _orbitKeyDown ? false : true;
-			 thirdPerson.update();
+			 thirdPerson.update(0);
 			 
 			// plane.rotationZ += .005*.04;
 			//teapot.rotationZ -= 0.02;
