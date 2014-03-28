@@ -140,14 +140,16 @@ class EllCollisionResolveSystem extends System
 		
 		public inline function resolveMovableCircle( circle: MovableCircle ): void // #TODO
 		{
-			var dd: Number = r + circle.r;
+			var dd: Number = r + circle.r;  // distance between 2 ellipspids... (this naive approach is because both are perfect circles)
 			var dx: Number = ( x - circle.x ) / dd;
 			var dy: Number = ( y - circle.y ) / dd;
+		
 			
 			var vc0: Vec2D = circle.velocity;
 			var vc1: Vec2D = velocity;
 
-			var energie: Number = ( vc0.x * dx + vc0.y * dy - vc1.x * dx - vc1.y * dy ) * 1;
+			// normal dotProduct of Velocity  -  normal dotProduct of Velocity  (inline expanded...lol) 
+			var energie: Number = ( vc0.x*dx + vc0.y*dy - vc1.x*dx - vc1.y*dy ) * 1;
 			
 			if( energie < .0001 ) energie = .0001;
 			
@@ -157,7 +159,7 @@ class EllCollisionResolveSystem extends System
 			vc0.x -= dx; vc0.y -= dy;
 			vc1.x += dx; vc1.y += dy;
 		}
-		public function resolveMovableCircle( circle: MovableCircle ): void  // immovable
+		public function resolveMovableCircle( circle: MovableCircle ): void  // immovable (use this naive approach for 3d as immovable against a movable circle! )
 		{
 			var rr: Number = r + circle.r;
 			
@@ -176,7 +178,9 @@ class EllCollisionResolveSystem extends System
 			circle.velocity.y -= ny * e;
 		}
 		
-		override public function resolve():void {
+
+		
+		override public function resolve():void { // more complicated resolution taking into account both particle masses, this will NOT be used.
 			// halt total
 			//c1.vx = 0; c1.vy = 0; c1.vz = 0
 			//c2.vx = 0; c2.vy = 0; c2.vz = 0;
@@ -201,8 +205,11 @@ class EllCollisionResolveSystem extends System
 			var cn2:Vector3D = cn.clone();
 			cn2.scaleBy( 1 / p1Mass + 1 / p2Mass );
 		
+			// normal dotProduct of relative velocities / normal dotProduct of impulse normal
+			
 			var impulse:Number = cn.dotProduct( dv  ) / cn.dotProduct( cn2);
-			var multiplier:Number = -impulse / p1Mass;
+			var multiplier:Number = -impulse / p1Mass; // bah...I dun get this!
+			
 			c1.vx += cn.x * multiplier;
 			c1.vy += cn.y  * multiplier;
 			c1.vz += cn.z * multiplier;
@@ -212,6 +219,29 @@ class EllCollisionResolveSystem extends System
 			c2.vz += cn.z * multiplier;
 			
 		}
+		
+		// original 2d version from above
+		public function resolve() : void
+		{
+			
+			//points from 1 -> 2
+			var cn:Vec2D = p2.x.minus( p1.x );
+			
+			cn.normalize();
+			
+			//relative velocity
+			var dv:Vec2D = p2.v.minus( p1.v );
+			
+			//perfectly elastic impulse
+			var impulse:Number = cn.dot( dv.times( -2 ) ) / cn.dot( cn.times( 1 / p1.mass + 1 / p2.mass ) );
+			
+			//scale normal by the impulse
+			p1.v.plusEquals( cn.times( -impulse / p1.mass ) );
+			p2.v.plusEquals( cn.times(  impulse / p2.mass ) );
+			
+		}
+		
+		
 	
 }
 
