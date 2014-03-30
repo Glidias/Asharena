@@ -43,7 +43,7 @@ class EnemyAggro
 	}
 	
 	public inline function dispose():Void {
-		watch = null;
+	
 		target = null;
 		flag = 0;
 	}

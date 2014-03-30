@@ -29,8 +29,7 @@ class EnemyWatch
 	
 	public inline function dispose():Void {
 		target = null;
-		watch = null;
-
+	
 	}
 	
 }

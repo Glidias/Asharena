@@ -40,6 +40,8 @@ package tests.pvp
 	import flash.events.KeyboardEvent;
 	import flash.ui.Keyboard;
 	import flash.utils.setTimeout;
+	import haxe.ds.StringMap;
+	import haxe.io.BytesInput;
 	import input.KeyPoll;
 	import spawners.arena.GladiatorBundle;
 	import systems.animation.IAnimatable;
@@ -113,8 +115,7 @@ package tests.pvp
 		public function PVPDemo() 
 		{
 			haxe.initSwc(this);
-		
-		
+			
 			game = new TheGame(stage);
 	
 			addChild( _template3D = new MainView3D() );

@@ -2,3 +2,4 @@
 -swf-version 10
 -main TheGame
 -D triOnly
+-dce no

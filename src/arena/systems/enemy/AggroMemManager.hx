@@ -16,6 +16,7 @@ import components.Pos;
 import components.Rot;
 import components.tweening.Tween;
 import de.polygonal.ds.BitVector;
+import flash.errors.Error;
 import flash.Vector.Vector;
 import util.geom.PMath;
 
@@ -139,9 +140,14 @@ class AggroMemManager
 		while ( --a > -1) {
 			//ac.mem
 			ac = activeArray[a];
+			
+			
+			if (ac.entity == null) continue;
 			testPos.x = ac.pos.x;
 			testPos.y = ac.pos.y;
 			testPos.z = ac.pos.z + ac.size.z;
+		
+		
 			if ( hasLOSWithFOV(aggroMem.watchSettings.fov, posA, rotA, testPos) ) {
 				aggroMem.bits.set(a);
 			}
@@ -166,7 +172,7 @@ class AggroMemManager
 	
 	
 	// Used for EnemyWatch entities to prioritise end-turn facing over aggro-dist entities. 
-	private inline function findNearestActiveNodeToRot(posA:Pos, rotA:Rot, aggroSqDist:Float):Float {
+	private inline  function findNearestActiveNodeToRot(posA:Pos, rotA:Rot, aggroSqDist:Float):Float {
 		var a:Int = numActive;
 		var ac:AggroMemNode;
 		var result:AggroMemNode = null;
@@ -188,6 +194,7 @@ class AggroMemManager
 		while ( --a > -1) {
 			//ac.mem
 			ac = activeArray[a];
+			if (ac.entity == null) continue;
 			var d:Float = getSqDist(posA, ac.pos);
 			if (d <= aggroSqDist && d < closestD) {
 				 // check LOS 
@@ -237,6 +244,7 @@ class AggroMemManager
 		var i:Int = numAggro;
 		while (--i > -1) {
 			am = aggroArray[i];
+			if (am.entity == null) continue;
 			if (!am.mem.bits.has(plIndex)) {
 				idleMask.set(i);
 			}
@@ -330,6 +338,7 @@ class AggroMemManager
 	public function notifyEndTurn():Void { 
 		
 		// remove idleChange signal...
+		
 		idleList.nodeRemoved.remove( onIdleNodeRemoved);
 		
 		// ROTATION dirty FOV/LOS update
@@ -338,6 +347,7 @@ class AggroMemManager
 		var w:EnemyWatchNode = watchList.head;  
 		var aggroMem:AggroMem;
 		while ( w != null) {
+			
 			if (w.state.rotDirty) {
 				aggroMem = w.entity.get(AggroMem);
 				if (aggroMem!=null) {
@@ -356,7 +366,6 @@ class AggroMemManager
 			a= a.next;
 		}
 		
-		
 		//  for all ENemyWatch entities, turn them to face closest alive one within aggro range (and LOS) using their aggroMemory (by iterating through all bits in the aggro memory and checkign any flagged bits). 
 		w = watchList.head;  
 		while ( w != null) {
@@ -368,13 +377,20 @@ class AggroMemManager
 			w = w.next;
 		}
 		
-		
+	
 		// (optional but good to have.) For all EnemyAggro entities, turn them to face closest alive one within attack bi-vice-versa range if their target no longer lies within bi-attack range
 		a= aggroList.head;  
 		while ( a != null) {
+
+			if (a.state.target.entity == null) {
+			
+				continue;
+				a = a.next;
+			}
+			
 			var plWeap:Weapon = a.state.target.entity.get(Weapon);
 			var distCombat:Float = plWeap!=null ? PMath.maxF(a.weapon.range, plWeap.range ) : a.weapon.range;
-			if ( !HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, a.state.target.pos, distCombat, a.weapon.hitAngle  ) ) {
+			if ( a.state.target.health.hp <=0 || !HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, a.state.target.pos, distCombat, a.weapon.hitAngle  ) ) {
 				a.state.setAttackRange(a.weapon.range);
 				var val:Float = findNearestActiveNodeToRot(a.pos, a.rot, a.state.attackRangeSq);
 				if (val != PMath.FLOAT_MAX) {  // rotate to face rotation value

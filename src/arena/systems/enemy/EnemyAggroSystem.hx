@@ -160,27 +160,34 @@ class EnemyAggroSystem extends System
 		var w:EnemyWatchNode = watchList.head;  
 		while (w != null) {
 			if (w.state.target == node) {
-				w.state.dispose();
+				
 				w.entity.remove(EnemyWatch);
-				//w.entity.add(EnemyIdle);
+				w.entity.add(w.state.watch, EnemyIdle);
 			}
 			
 			w = w.next;
 		}
-		*/
 		
-		/*
+
+		
 		var a:EnemyAggroNode = aggroList.head;
 		while (a != null) {
-			if (a.state.watch.target == node) {
+			if (a.state.target == node) {
 				
+				
+
+				a.weaponState.cancelTrigger();
+				a.state.flag = 0;
 				a.entity.remove(EnemyAggro); // TODO: Revert back to old watch condition
-				a.entity.add(a.state.watch, EnemyWatch);
+				a.entity.add(a.state.watch, EnemyIdle);
 				a.state.dispose();
 			}
-			
+			else throw "FOUDN!";
 			a = a.next;
 		}
+		if (aggroList.head != null) throw "STILL HAV!";
+		
+		
 		*/
 	}
 	
@@ -392,7 +399,7 @@ class EnemyAggroSystem extends System
 					
 				}
 				else {  // weapon is not on cooldown, but swinging
-					
+					//if (a.state.target.health.hp <= 0 ) throw "PLAYER already dEAD!";
 					
 					//if (aWeaponState.cooldown < 0) throw "SHOULD NOT BE2222!";
 					
@@ -402,11 +409,12 @@ class EnemyAggroSystem extends System
 					
 					if ( aWeaponState.attackTime >= strikeTimeAtRange) { // strike has occured
 						currentAttackingEnemy = a.entity;
-				
+						
 							
 						if (actualDist <= aWeapon.range   ) {  // strike hit! 
 						
-							if (Math.random()*100 <= HitFormulas.getPercChanceToHitDefender(a.pos, a.ellipsoid, a.weapon, p.pos, p.rot, p.def, p.size)) {
+							if (Math.random() * 100 <= HitFormulas.getPercChanceToHitDefender(a.pos, a.ellipsoid, a.weapon, p.pos, p.rot, p.def, p.size)) {
+							
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
 								// deal damage to player heath
 								//currentAttackingEnemy = a.entity;

@@ -1,4 +1,7 @@
 package;
+import haxe.io.BytesInput;
+import haxe.io.BytesOutput;
+
 import arena.components.char.HitFormulas;
 import arena.systems.enemy.AggroMemManager;
 import arena.systems.enemy.EnemyAggroSystem;
@@ -100,6 +103,8 @@ class TheGame
 	
 		// Start
 		//ticker.start(); 
+		
+	
 	}
 	
 	public function getSpawner():Spawner {
