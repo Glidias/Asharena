@@ -556,15 +556,17 @@ package systems.collisions;
 			numGeometries++;
 		}
 		
+		
 		/**
 		 * Calculates destination point from given start position and displacement vector.
 		 * @param source Starting point.
 		 * @param displacement Displacement vector.
 		 * @param collidable An IECollidable implementation responsible for collecting geometry for this instance.
+		 * @param timeFrame	 A timeframe used to add t into each collision event (if collision events are enabled)
 		 * @return Destination point.
 		 */
 		///*
-		public function calculateDestination(source:Vector3D, displacement:Vector3D, collidable:IECollidable):Vector3D {
+		public function calculateDestination(source:Vector3D, displacement:Vector3D, collidable:IECollidable, timeFrame:Float=1):Vector3D {
 			
 			if (displacement.length <= threshold) {
 				gotMoved = false;
@@ -577,6 +579,9 @@ package systems.collisions;
 			collidable.collectGeometry(this);
 			loopGeometries();
 			
+			var timeLeft:Float = timeFrame;
+			var timeCollide:Float = 0;
+			
 			collisions = null;
 			
 			//var result:Vector3D;
@@ -586,8 +591,9 @@ package systems.collisions;
 			var i:Int = 0;
 				while (i++ < 50) {
 					if ( (t = checkCollision()) < 1 ) {
-						
-						
+						var timeElapsed:Float = t * timeLeft;  // a collision event always occurs at a fraction of whatever time left is remaining.
+						timeCollide += timeElapsed;
+						timeLeft -= timeElapsed;
 						//collisionPlane.z *= -1; // hack
 						
 					// Transform the point to the global space
@@ -637,17 +643,23 @@ package systems.collisions;
 					resCollisionPlane.normalize();
 					resCollisionPlane.w = resCollisionPoint.x*resCollisionPlane.x + resCollisionPoint.y*resCollisionPlane.y + resCollisionPoint.z*resCollisionPlane.z;
 					//	/*
-						if (requireEvents) {
-							var coll:CollisionEvent = CollisionEvent.GetAs3(resCollisionPoint, resCollisionPlane, resCollisionPlane.w, t, CollisionEvent.GEOMTYPE_POLYGON); 
-							coll.next = collisions;
-							collisions = coll;
-						}
+						
 						//*/
 						// Offset destination point from behind collision plane by radius of the sphere over plane, along the normal
 						var offset:Float = radius + threshold + collisionPlane.w - dest.x*collisionPlane.x - dest.y*collisionPlane.y - dest.z*collisionPlane.z;
 						dest.x += collisionPlane.x*offset;
 						dest.y += collisionPlane.y*offset;
-						dest.z += collisionPlane.z*offset;
+						dest.z += collisionPlane.z * offset;
+						
+						if (requireEvents) {
+							resultVector.x = matrix.a * dest.x + matrix.b * dest.y + matrix.c * dest.z + matrix.d; 
+							resultVector.y = matrix.e * dest.x + matrix.f * dest.y + matrix.g * dest.z + matrix.h;
+							resultVector.z = matrix.i * dest.x + matrix.j * dest.y + matrix.k * dest.z + matrix.l;
+							var coll:CollisionEvent = CollisionEvent.GetAs3(resCollisionPoint, resCollisionPlane, resCollisionPlane.w, timeCollide, resultVector, CollisionEvent.GEOMTYPE_POLYGON); 
+							coll.next = collisions;
+							collisions = coll;
+						}
+						
 						// Fixing up the current sphere coordinates for the next iteration
 						src.x = collisionPoint.x + collisionPlane.x*(radius + threshold);
 						src.y = collisionPoint.y + collisionPlane.y*(radius + threshold);

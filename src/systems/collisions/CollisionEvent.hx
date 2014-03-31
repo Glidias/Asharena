@@ -6,6 +6,7 @@
 
 package systems.collisions;
 import ash.core.Entity;
+import flash.geom.Vector3D;
 import util.geom.Vec3;
 import util.geom.Vec3Utils;
 import util.geom.Vec3;
@@ -18,8 +19,10 @@ class CollisionEvent
     public var offset:Float;
 	public var normal:Vec3;
     
-	public var t:Float;  // actual distance to collision (NOT normalized time!)
+	public var t:Float;  // normalized unit time of collision event
     public var geomtype:Int;
+	public var dest:Vec3;
+	
 		
 	public static inline var GEOMTYPE_POINT:Int = 1;
     public static inline var GEOMTYPE_EDGE:Int = 2;
@@ -40,6 +43,7 @@ class CollisionEvent
 	{
 		pos = new Vec3();
 		normal = new Vec3();
+		dest = new Vec3();
 	}
 	
 	public function getNumEvents():Int {
@@ -62,12 +66,16 @@ class CollisionEvent
 		return c;
 	}
 	
-	public static   function GetAs3(pos:Vector3D, normal:Vector3D, offset:Float, t:Float, geomtype:Int):CollisionEvent {
+	public static   function GetAs3(pos:Vector3D, normal:Vector3D, offset:Float, t:Float, dest:Vector3D, geomtype:Int):CollisionEvent {
 		var c:CollisionEvent = COLLECTOR!= null ? COLLECTOR : (COLLECTOR = new CollisionEvent());
 		COLLECTOR = COLLECTOR.next;
 	
 		Vec3Utils.matchValuesVector3D(c.pos, pos);
 		Vec3Utils.matchValuesVector3D(c.normal, normal);
+		
+		Vec3Utils.matchValuesVector3D(c.dest, dest);
+		
+		
         c.offset = offset;
         c.t = t;
         c.geomtype = geomtype;
@@ -87,6 +95,21 @@ class CollisionEvent
         this.offset = offset;
         this.t = t;
         this.geomtype = geomtype;
+	}
+	
+	public inline function calcFallbackPosition(radiusX:Float, radiusY:Float, radiusZ:Float, resultPosition:Vec3):Void {
+		resultPosition.x = dest.x;
+		resultPosition.y = dest.y;
+		resultPosition.z = dest.z;
+		/*
+		var radius:Float = radiusX;
+		if (radiusY > radius) radius = radiusY;
+		if (radiusZ > radius) radius = radiusZ;
+			
+		resultPosition.x = pos.x + normal.x * radius * radiusX / radius;
+		resultPosition.y = pos.y + normal.y * radius * radiusY / radius;
+		resultPosition.z = pos.z + normal.z * radius * radiusZ / radius;	
+		*/
 	}
 	
 	

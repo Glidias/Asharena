@@ -101,9 +101,23 @@ class Vec3Utils
 		output.z = v1.z - v2.z;
 	}
 	
-	static public function getLength(v:Vec3) :Float
+	inline  public static function getLength(v:Vec3) :Float
 	{
 		return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+	}
+	
+	static public function sqDistBetween(a:Vec3, b:Vec3):Float {
+		var dx:Float = b.x - a.x;
+		var dy:Float = b.y - a.y;
+		var dz:Float = b.z - a.z;
+		return dx * dx + dy * dy + dz * dz;
+	}
+	
+	static public function distBetween(a:Vec3, b:Vec3):Float {
+		var dx:Float = b.x - a.x;
+		var dy:Float = b.y - a.y;
+		var dz:Float = b.z - a.z;
+		return Math.sqrt(dx * dx + dy * dy + dz * dz);
 	}
 
 	

@@ -31,6 +31,8 @@ package tests.pvp
 	import com.greensock.easing.Linear;
 	import components.controller.SurfaceMovement;
 	import components.Health;
+	import components.ImmovableCollidable;
+	import components.MovableCollidable;
 	import components.Pos;
 	import components.Rot;
 	import components.tweening.Tween;
@@ -70,8 +72,6 @@ package tests.pvp
 	 *  WIP pvp demo. This will later act as the main controller, for combat mode encounters in the RPG.
 	 * 
 	 * todo:
-		 * 
-		 * Player2Player Collision blocking
 		 * 
 		 * Integration with attack animation (weaponary) with swing arc blocking
 		 * 
@@ -720,8 +720,10 @@ package tests.pvp
 			else if (targetState === "commander" && game.gameStates.engineState.currentState === game.gameStates.thirdPerson) {
 				_transitCompleteCallback = focusOnCurPlayer;
 				updateTargetCharFocus();
+				if (arenaSpawner.currentPlayerEntity) arenaSpawner.currentPlayerEntity.remove(MovableCollidable);
 				arenaHUD.setTargetChar(null);
-				aggroMemManager.notifyEndTurn();
+				endTurnAI();
+				
 				
 				game.gameStates.engineState.changeState("transiting");
 				arenaHUD.setState("transiting");
@@ -740,6 +742,8 @@ package tests.pvp
 				arenaHUD.setState(targetState);
 			}
 		}
+		
+	
 		
 		private var _targetTransitState:String;
 
@@ -812,23 +816,63 @@ package tests.pvp
 				_transitCompleteCallback = null;
 			}
 		}
-
 		
-		private function activateEnemyAggro():void 
+			private function endTurnAI():void 
 		{
-			aggroMemManager.notifyTurnStarted(arenaSpawner.currentPlayerEntity);
-			/*
-			var otherSide:int = sideIndex == 0 ? 1 : 0;
+			aggroMemManager.notifyEndTurn();
+			
+			
+			var otherSide:int = aggroMemManager.activeSide == 0 ? 1 : 0;
 			var enemySide:Array = arrayOfSides[otherSide];
 			var len:int = enemySide.length;
 			for ( var i:int = 0; i < len; i++) {
 				var e:Entity = enemySide[i];
-			//	if (e.get(WeaponState).trigger) {
-				//	throw new Error("Trigger should have been off!:"+_enemyAggroSystem.updating + ", "+e.get(Object3D).name);
-			//	}
-				e.add(enemyWatchSettings, EnemyIdle);
+				e.remove( ImmovableCollidable );
+			
+			
 			}
-			*/
+			
+			var mySide:Array = arrayOfSides[aggroMemManager.activeSide];
+			len = mySide.length;
+			for ( i = 0; i < len; i++) {
+				e = mySide[i];
+				if (e === arenaSpawner.currentPlayerEntity) continue;
+				e.remove( ImmovableCollidable );
+			
+			
+			}
+			
+			
+		}
+
+		
+		private function activateEnemyAggro():void 
+		{
+			arenaSpawner.currentPlayerEntity.add( new MovableCollidable().init() ); // temp, for testing only
+			aggroMemManager.notifyTurnStarted(arenaSpawner.currentPlayerEntity);
+			
+			// temporary, considering putting this in aggroMemManager???
+			///*
+			var otherSide:int = aggroMemManager.activeSide == 0 ? 1 : 0;
+			var enemySide:Array = arrayOfSides[otherSide];
+			var len:int = enemySide.length;
+			for ( var i:int = 0; i < len; i++) {
+				var e:Entity = enemySide[i];
+				e.add( new ImmovableCollidable().init() );
+			
+			
+			}
+			
+			var mySide:Array = arrayOfSides[aggroMemManager.activeSide];
+			len = mySide.length;
+			for ( i = 0; i < len; i++) {
+				e= mySide[i];
+				if (e === arenaSpawner.currentPlayerEntity) continue;
+				e.add( new ImmovableCollidable().init() );
+			
+			
+			}
+		//	*/
 			
 		}
 		

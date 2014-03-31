@@ -1,4 +1,3 @@
-p2p collision block
 integration with attack animation
 Obstacles and stuffs in environment
 Add variety of units with ranged/guns, against obstacles for arrow/bullet projectiles.
@@ -43,7 +42,7 @@ arena.systems.enemy.AggroMemManager
 
 3a) Aggro can pre-trigger attack at start of turn even if player unit hasn't move yet.
 
-DONE!
+(DONE!)
 ________________________
 
 4) (Optional visibility) Enemy Arc markers (Like in varlkerie chronicles,..) to show enemy alertness to active moving player unit. Unlike Valkerie, the arcs are also  used to determine the arrow/thrown projectile paths, since they have to hom in on the player even if the player moves and tries to evade it, a rolled hit would mean the arrows/thrown projectiles is always destined to hit the player. Depending on the speed of the player with his evasion, or his blocking skill, the chances of being hit is determined accordingly. Using certain formations can provide bonuses against projectiles. It's possible for ranged projectile attacks to miss due to obstacles that get in the way of it's LOS, enroute to target, even if though the roll was a "hit", it can still result in an eventual miss due to projectile colliding against obstacles before hitting the player. THis is handled with the arc being frozen once it's interrupted by an obstacle along it's path (this technique is known as "breaking path").  Thus, it's still possible to dodge projectiles using obstacles (or crouching behind them). A rolled hit simply means "a shot on-target", so you can't evade it unless an obstacle gets in the way. It's possible for other static players to take damage instead of you as a result of this. Blocking a projetile with a shield will cause you some movement points. Perhaps, holding a shield up can use up movement points.

@@ -26,9 +26,11 @@ package
 	import components.ActionIntSignal;
 	import components.controller.SurfaceMovement;
 	import components.Ellipsoid;
+	import components.MovableCollidable;
 	import components.Pos;
 	import components.Rot;
 	import components.Vel;
+	import de.popforge.revive.member.MovableCircle;
 	import flash.display.Stage;
 	import flash.display3D.Context3D;
 	import flash.events.IEventDispatcher;
@@ -316,6 +318,9 @@ package
 			ent.add(gladiatorStance, IAnimatable);
 			
 			ent.add( new AggroMem().init(defaultEnemyWatchMelee, side) );
+			
+			
+		
 			
 			engine.addEntity(ent);
 			
