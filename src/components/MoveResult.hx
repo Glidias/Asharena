@@ -302,6 +302,13 @@ class MoveResult extends Vec3
 		}
 	}
 	
+	inline
+	public function addCollisionEvent(e:CollisionEvent) 
+	{
+		e.next = collisions;
+		collisions = e;
+	}
+	
 
 	
 	

@@ -75,12 +75,12 @@ package tests.pvp
 		 * 
 		 * Integration with attack animation (weaponary) with swing arc blocking
 		 * 
-		 * ((Chance to stun))
+		 * ((Chance to stun, Special abilities like:  Dodge Tumble, Kick, Throw dirt up))
 		 * ______________________
 		 * 
-		 * Obstacles and stuffs in environment
+		 * Obstacles and stuffs in environment. Integrate to terrain?
 		 * 
-		 * Add variety of units with ranged/guns.
+		 * Add variety of units with ranged/guns. 
 		 * 
 		 * PC Top-view command mode with mouse camera scrolling and select individuals with mouse. (RTS style)
 		 * 

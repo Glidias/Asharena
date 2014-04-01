@@ -1,5 +1,6 @@
 package systems.collisions;
 import ash.core.Engine;
+import ash.core.Entity;
 import ash.core.Node;
 import ash.core.NodeList;
 import ash.core.System;
@@ -13,6 +14,7 @@ import components.Vel;
 import flash.errors.Error;
 import flash.geom.Vector3D;
 import input.KeyPoll;
+import systems.collisions.CollisionEvent;
 import systems.collisions.EllipsoidColliderSystem.EllipsoidImmovableNode;
 import systems.collisions.EllipsoidColliderSystem.EllipsoidMovableNode;
 import util.geom.PMath;
@@ -60,6 +62,8 @@ class EllipsoidColliderSystem extends System
 		ray_origin = new Vector3D();
 		
 		zeroVel = new Vec3();
+		collNorm = new Vec3();
+		collPos = new Vec3();
 	}
 
 	
@@ -98,6 +102,7 @@ class EllipsoidColliderSystem extends System
 	
 	override public function update(time:Float):Void
     {
+		
 		var n:EllipsoidNode = nodeList.head;
 		var result:MoveResult;
 		
@@ -160,9 +165,20 @@ class EllipsoidColliderSystem extends System
 				
 				
 				
-				elapseFrameTime = nearestCollisionEvent!= null ? nearestCollisionEvent.t - totalElapsedFrameTime : collTimeResult;// nearestIntersection.dt;
+				elapseFrameTime = nearestCollisionEvent != null ? nearestCollisionEvent.t - totalElapsedFrameTime : collTimeResult;// nearestIntersection.dt;
+				
+				
+				
+
 				remainingFrameTime -= elapseFrameTime;
 				totalElapsedFrameTime += elapseFrameTime;
+				
+				/*
+				if ( nearestCollisionEvent != null) {
+					if (nearestCollisionEvent.t != totalElapsedFrameTime) throw "MISMatch assertion!";
+				}
+				*/
+				
 				//if (totalElapsedFrameTime > 1) throw "SHOULD NOT exceed frame time of 1!!";
 				// either is static collision OR dynamic collision OR both
 				
@@ -180,22 +196,24 @@ class EllipsoidColliderSystem extends System
 					if (circleB != null) {
 						resolveMovableCircleWithAnother(circleA.movable.pos, circleA.movable.vel, circleB.movable.pos, circleB.movable.vel);
 						
+						circleA.result.truncateCollisionEvents(totalElapsedFrameTime);
+						circleB.result.truncateCollisionEvents(totalElapsedFrameTime);
 						
-						//circleA.result.truncateCollisionEvents(totalElapsedFrameTime);
-						//circleB.result.truncateCollisionEvents(totalElapsedFrameTime);
-						
-						//doCalculateDestination(circleA.ellipsoid, circleA.movable.pos, circleA.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleA.result);
-						//doCalculateDestination(circleB.ellipsoid, circleB.movable.pos, circleB.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleB.result);
+						doCalculateDestination(circleA.ellipsoid, circleA.movable.pos, circleA.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleA.result);
+						doCalculateDestination(circleB.ellipsoid, circleB.movable.pos, circleB.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleB.result);
 						//totalElapsedFrameTime
+						
+
+						var aFirst:Bool = (circleA.movable.priority >= circleB.movable.priority);
+						addThingCollisionEvent(totalElapsedFrameTime, aFirst ? circleB.entity : circleA.entity, aFirst ? circleA : circleB);
 					}
 					else {
 						resolveMovableCircleWithImmobile(circleC.pos, circleA.movable.pos, circleA.movable.vel);
 					
-					//	circleA.result.truncateCollisionEvents(totalElapsedFrameTime);
-					//	doCalculateDestination(circleA.ellipsoid, circleA.movable.pos, circleA.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleA.result);
+						circleA.result.truncateCollisionEvents(totalElapsedFrameTime);
+						doCalculateDestination(circleA.ellipsoid, circleA.movable.pos, circleA.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleA.result);
 						
-						// CollisionEvent.Get(
-						//circleA.result.addCollisionEvent(
+						addThingCollisionEvent(totalElapsedFrameTime, circleC.entity, circleA);
 					}
 					
 				}
@@ -212,6 +230,23 @@ class EllipsoidColliderSystem extends System
 			integrateFinal(remainingFrameTime);
 		
     }
+	
+	inline private function addThingCollisionEvent(t:Float, thing:Entity, activeCircle:EllipsoidMovableNode):Void {
+		
+		var radius:Float = activeCircle.ellipsoid.x;
+		if (activeCircle.ellipsoid.y > radius) radius = activeCircle.ellipsoid.y;
+		if (activeCircle.ellipsoid.z > radius) radius = activeCircle.ellipsoid.z;
+		
+		collPos.x = activeCircle.movable.pos.x - collNorm.x * radius * radius / activeCircle.ellipsoid.x;
+		collPos.y= activeCircle.movable.pos.y - collNorm.y * radius * radius / activeCircle.ellipsoid.y;
+		collPos.z = activeCircle.movable.pos.z - collNorm.z * radius * radius / activeCircle.ellipsoid.z;
+		collOffset = collPos.dotProduct(collNorm);
+		var e:CollisionEvent= CollisionEvent.Get(collPos, collNorm, collOffset, t, activeCircle.movable.pos, CollisionEvent.GEOMTYPE_THING);
+		e.thing = thing;
+		activeCircle.result.addCollisionEvent(e);
+	}
+	
+
 	
 	///*
 	inline private  function setupIntegration():Void {
@@ -259,6 +294,11 @@ class EllipsoidColliderSystem extends System
 	private var circleB:EllipsoidMovableNode;
 	private var circleC:EllipsoidImmovableNode;
 	private var collTimeResult:Float;  // dynamic collisions
+	private var collPos:Vec3;
+	private var collNorm:Vec3;
+	private var collOffset:Float;
+
+	
 	private var nearestCollisionEvent:CollisionEvent; 
 	// Always integrate everyone to nearest collision time, whether static or not...Always get velocity at particular time, than itnegreate
 	
@@ -275,11 +315,14 @@ class EllipsoidColliderSystem extends System
 			
 		}
 		
-		
-		if (getNearestEllCollision(nearestCollisionEvent!=null ? nearestCollisionEvent.t-fromTime : timeRemaining)) {  // dynamic collision to resolve (if t <= timeFrame)
-			nearestCollisionEvent = null;
-			
-			
+		//nearestCollisionEvent!=null ? nearestCollisionEvent.t-fromTime : timeRemaining
+		if (getNearestEllCollision(timeRemaining)) {  // dynamic collision to resolve (if t <= timeFrame)
+			if (nearestCollisionEvent != null && nearestCollisionEvent.t < fromTime+collTimeResult) {
+				circleA = null;
+				circleB = null;
+				circleC = null;
+			}
+			else nearestCollisionEvent = null;
 		}
 		
 		
@@ -390,11 +433,17 @@ class EllipsoidColliderSystem extends System
 		nx *= rr;
 		ny *= rr;
 		nz *= rr;
+		
+		collNorm.x = nx;
+		collNorm.y = ny;
+		collNorm.z = nz;
+		//collOffset = nx *
+		
 		var e: Float;
 
 		// elastic .5 would be fine... so 1.5 total computed
 		//( 1 + .5 ) *
-		e =  ( nx * circleVel.x + ny * circleVel.y  + nz*circleVel.z);
+		e = 1.001* ( nx * circleVel.x + ny * circleVel.y  + nz*circleVel.z);
 		
 		if( e > -MIN_REFLECTION ) e = -MIN_REFLECTION;
 		
@@ -413,7 +462,12 @@ class EllipsoidColliderSystem extends System
 		dd = 1 / dd;
 		dx*= dd;
 		dy*= dd;
-		dz*= dd;
+		dz *= dd;
+		
+		collNorm.x = dx;
+		collNorm.y = dy;
+		collNorm.z = dz;
+		
 		// normal dotProduct of Velocity  -  normal dotProduct of Velocity  (inline expanded...lol) 
 		var energie: Float = ( vc0.x * dx + vc0.y * dy + vc0.z * dz - vc1.x * dx - vc1.y * dy - vc1.z * dz ); // * 1;
 		if( energie < .0001 ) energie = .0001;

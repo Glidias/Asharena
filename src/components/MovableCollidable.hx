@@ -15,6 +15,7 @@ class MovableCollidable
 	public var sleepTime:Float;
 	public var pos:Vec3;  // the position to integrate and test over time
 	public var vel:Vec3;  // the velocity used for integration
+	public var priority:Int;
 	
 	public function new() 
 	{
@@ -25,6 +26,7 @@ class MovableCollidable
 		init_i();
 		pos = new Vec3();
 		vel = new Vec3();
+		priority = 0;
 		return this;
 	}
 	

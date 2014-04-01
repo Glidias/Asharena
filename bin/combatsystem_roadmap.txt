@@ -74,7 +74,16 @@ Integration of combat system with animations:
 	  
 	  
 	  
-	2) FOr range attacks, just follow Valkerie style and a bit of 4), with the abilit to animation cancel if enemy changes his mind/
+	2) FOr range attacks, just follow Valkerie style and a bit of 4), with the abilit to animation cancel if enemy changes his mind.
+	
+______________________________________
+
+PVP - Arena/Terrain combat :: with Random convex obstacles: 
+- Barrels, 
+- Oriented Wooden boxes
+- Rocks
+- Trees
+
 
 Possible rule variations:
 _________________________________________
