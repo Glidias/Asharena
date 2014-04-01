@@ -320,7 +320,7 @@ package
 			ent.add( new AggroMem().init(defaultEnemyWatchMelee, side) );
 			
 			
-		
+			//ent.add( new MovableCollidable().init() );
 			
 			engine.addEntity(ent);
 			

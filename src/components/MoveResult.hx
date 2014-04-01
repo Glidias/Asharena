@@ -278,6 +278,30 @@ class MoveResult extends Vec3
 		
 	}
 	
+	inline
+	public function truncateCollisionEvents(afterTime:Float) 
+	{
+		var c:CollisionEvent = collisions;
+		var tailCollisionEvent:CollisionEvent = null;
+		while ( c != null) {  // latest to earlier
+			if (c.t <= afterTime) {
+				break;
+			}
+			tailCollisionEvent = c; 
+			c.thing = null;
+			c = c.next;
+		}
+		
+		if (tailCollisionEvent != null) {
+			var lastHead:CollisionEvent = collisions;
+			collisions = tailCollisionEvent.next;
+			
+			tailCollisionEvent.next = CollisionEvent.COLLECTOR;
+			CollisionEvent.COLLECTOR = lastHead;
+			
+		}
+	}
+	
 
 	
 	

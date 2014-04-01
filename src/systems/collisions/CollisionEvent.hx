@@ -58,10 +58,10 @@ class CollisionEvent
 		
 	// Pooling, linked list and disposal
 
-	public static   function Get(collision:Vec3, normal:Vec3, offset:Float, t:Float, geomtype:Int):CollisionEvent {
+	public static   function Get(collision:Vec3, normal:Vec3, offset:Float, t:Float, dest:Vec3, geomtype:Int):CollisionEvent {
 		var c:CollisionEvent = COLLECTOR!= null ? COLLECTOR : (COLLECTOR = new CollisionEvent());
 		COLLECTOR = COLLECTOR.next;
-		c.write(collision, normal, offset, t, geomtype);
+		c.write(collision, normal, offset, t, dest, geomtype);
 		c.next = null;
 		return c;
 	}
@@ -72,7 +72,6 @@ class CollisionEvent
 	
 		Vec3Utils.matchValuesVector3D(c.pos, pos);
 		Vec3Utils.matchValuesVector3D(c.normal, normal);
-		
 		Vec3Utils.matchValuesVector3D(c.dest, dest);
 		
 		
@@ -85,13 +84,14 @@ class CollisionEvent
 	}
 	
 
-	public static inline function get(pos:Vec3, normal:Vec3, offset:Float, t:Float, geomtype:Int):CollisionEvent {
-		return Get(pos, normal, offset, t, geomtype);
+	public static inline function get(pos:Vec3, normal:Vec3, offset:Float, t:Float, dest:Vec3, geomtype:Int):CollisionEvent {
+		return Get(pos, normal, offset, t, dest, geomtype);
 	}
 	
-	inline public function write(pos:Vec3, normal:Vec3, offset:Float, t:Float, geomtype:Int):Void {
+	inline public function write(pos:Vec3, normal:Vec3, offset:Float, t:Float, dest:Vec3, geomtype:Int):Void {
 		Vec3Utils.matchValues(this.pos, pos);
 		Vec3Utils.matchValues(this.normal, normal);
+		Vec3Utils.matchValues(this.dest, dest);
         this.offset = offset;
         this.t = t;
         this.geomtype = geomtype;

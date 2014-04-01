@@ -566,7 +566,7 @@ package systems.collisions;
 		 * @return Destination point.
 		 */
 		///*
-		public function calculateDestination(source:Vector3D, displacement:Vector3D, collidable:IECollidable, timeFrame:Float=1):Vector3D {
+		public function calculateDestination(source:Vector3D, displacement:Vector3D, collidable:IECollidable, timeFrame:Float=1, fromTime:Float=0):Vector3D {
 			
 			if (displacement.length <= threshold) {
 				gotMoved = false;
@@ -580,7 +580,7 @@ package systems.collisions;
 			loopGeometries();
 			
 			var timeLeft:Float = timeFrame;
-			var timeCollide:Float = 0;
+			var timeCollide:Float = fromTime;
 			
 			collisions = null;
 			

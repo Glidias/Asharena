@@ -71,7 +71,31 @@ class EllipsoidColliderSystem extends System
 		nodeListMovables = engine.getNodeList(EllipsoidMovableNode);
     }
 	
-	private var lastPos:Vector3D;
+	private inline function doCalculateDestination(ellip:Ellipsoid, npos:Vec3, vel:Vec3, time:Float, fromTime:Float, result:MoveResult):Void {
+		pos.x = npos.x;
+		pos.y = npos.y;
+		pos.z = npos.z;
+		
+		disp.x = vel.x * time;
+		disp.y = vel.y * time;
+		disp.z = vel.z * time;
+		
+		var vec:Vector3D =  _collider.calculateDestination(pos, disp, collidable, time, fromTime);
+		
+		if (_collider.collisions != null) {
+			var tailCollision:CollisionEvent = null;
+			var c:CollisionEvent = _collider.collisions;
+			while ( c != null) {
+				tailCollision = c;
+				c = c.next;
+			}
+			tailCollision.next = result.collisions;
+			result.collisions = _collider.collisions;
+			_collider.collisions = null;
+		}
+	}
+	
+	
 	override public function update(time:Float):Void
     {
 		var n:EllipsoidNode = nodeList.head;
@@ -93,12 +117,8 @@ class EllipsoidColliderSystem extends System
 			disp.x = n.vel.x * time;
 			disp.y = n.vel.y * time;
 			disp.z = n.vel.z * time;
-			if (lastPos != null) {
-				
-				n = n.next;
-				continue;
-			}
-			var vec:Vector3D =  _collider.calculateDestination(pos, disp, collidable, 1);
+	
+			var vec:Vector3D =  _collider.calculateDestination(pos, disp, collidable, 1, 0);
 			
 			
 			result.x = vec.x;
@@ -143,7 +163,7 @@ class EllipsoidColliderSystem extends System
 				elapseFrameTime = nearestCollisionEvent!= null ? nearestCollisionEvent.t - totalElapsedFrameTime : collTimeResult;// nearestIntersection.dt;
 				remainingFrameTime -= elapseFrameTime;
 				totalElapsedFrameTime += elapseFrameTime;
-				
+				//if (totalElapsedFrameTime > 1) throw "SHOULD NOT exceed frame time of 1!!";
 				// either is static collision OR dynamic collision OR both
 				
 				//if (elapseFrameTime != 1) throw new Error(":" + nearestCollisionEvent.t);
@@ -161,9 +181,21 @@ class EllipsoidColliderSystem extends System
 						resolveMovableCircleWithAnother(circleA.movable.pos, circleA.movable.vel, circleB.movable.pos, circleB.movable.vel);
 						
 						
+						//circleA.result.truncateCollisionEvents(totalElapsedFrameTime);
+						//circleB.result.truncateCollisionEvents(totalElapsedFrameTime);
+						
+						//doCalculateDestination(circleA.ellipsoid, circleA.movable.pos, circleA.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleA.result);
+						//doCalculateDestination(circleB.ellipsoid, circleB.movable.pos, circleB.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleB.result);
+						//totalElapsedFrameTime
 					}
 					else {
 						resolveMovableCircleWithImmobile(circleC.pos, circleA.movable.pos, circleA.movable.vel);
+					
+					//	circleA.result.truncateCollisionEvents(totalElapsedFrameTime);
+					//	doCalculateDestination(circleA.ellipsoid, circleA.movable.pos, circleA.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleA.result);
+						
+						// CollisionEvent.Get(
+						//circleA.result.addCollisionEvent(
 					}
 					
 				}

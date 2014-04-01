@@ -194,15 +194,18 @@ class AggroMemManager
 		while ( --a > -1) {
 			//ac.mem
 			ac = activeArray[a];
-			if (ac.entity == null) continue;
+			if (ac.entity == null) {
+				continue;
+			}
 			var d:Float = getSqDist(posA, ac.pos);
 			if (d <= aggroSqDist && d < closestD) {
 				 // check LOS 
 				testPos.x = ac.pos.x;
 				testPos.y = ac.pos.y;
 				testPos.z = ac.pos.z + ac.size.z;
-				var h:Health = ac.entity.get(Health);
-				if ( h!= null && h.hp > 0 && hasLOS(posA, testPos) ) {
+				
+				
+				if ( ac.health.hp > 0 && hasLOS(posA, testPos) ) {
 					result = ac;
 					closestD = d;
 					
