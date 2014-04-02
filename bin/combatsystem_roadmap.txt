@@ -76,6 +76,7 @@ Integration of combat system with animations:
 	  
 	2) FOr range attacks, just follow Valkerie style and a bit of 4), with the abilit to animation cancel if enemy changes his mind.
 	
+
 ______________________________________
 
 PVP - Arena/Terrain combat :: with Random convex obstacles: 
@@ -84,6 +85,18 @@ PVP - Arena/Terrain combat :: with Random convex obstacles:
 - Rocks
 - Trees
 
+LOS Arc markers: (LOS arc markers can either vanish or freeze if  no more LOS found (and maybe change color), but still in aggro memory)
+1) Level arc (for melee/gun-slingers) (bezier curve and straight-line stretch)
+2) Arrow/Tracjectory of projectile Arc (for archers/spear thrwoers, etc..) , if still in aggro memory
+APPROACH #1; Determine velocity with constant speed (LOB)
+ -Divide straight line distance to target by SPEED, getting the number of intervals in between
+  -Divide straight line displacement x/y/z by numIntervals to get velocity  without gravity taken into account
+  -  Taking into acccount gravity, need to add more velocity.z altitude: vz += aboveValue*numIntervals*0.5;
+ Total time = numIntervals;
+ Divide total time to
+ APPROACH #2: Determine speed given normalized velocity direction (do some algebraic shifting of above..)
+  Can speed/power of shot be adjusted within range to match required direction?
+ 
 
 Possible rule variations:
 _________________________________________
