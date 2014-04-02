@@ -306,7 +306,7 @@ class EnemyAggroSystem extends System
 				w.entity.remove(EnemyWatch);
 				newAggro = new EnemyAggro();
 				rangeToAttack =HitFormulas.rollRandomAttackRangeForWeapon(w.weapon,p.size);// w.weapon.critMaxRange + Math.random() * ( w.weapon.range - w.weapon.critMaxRange); 
-				newAggro.attackRangeSq = PMath.getSquareDist(rangeToAttack);
+				newAggro.setAttackRange( rangeToAttack);
 				newAggro.watch = w.state.watch;
 				newAggro.target = w.state.target;
 				
@@ -387,7 +387,7 @@ class EnemyAggroSystem extends System
 					if (aWeaponState.cooldown <= 0) {  // cooldown finished. allow trigger to  be pulled again
 						aWeaponState.cancelTrigger();
 						a.state.flag = 0;
-						a.state.attackRangeSq = PMath.getSquareDist( HitFormulas.rollRandomAttackRangeForWeapon(a.weapon, p.size) );
+						a.state.setAttackRange( HitFormulas.rollRandomAttackRangeForWeapon(a.weapon, p.size) );
 						onEnemyReady.dispatch(a.entity);
 					}
 					else {

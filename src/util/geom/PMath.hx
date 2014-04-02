@@ -481,14 +481,5 @@ class PMath
 		return (x < -PI) ? (x - t * PI2) : (x > PI ? x - t * PI2 : x);
 	}
 
-	private static inline var SQ_DIST_SINE:Float = 0.00685383828411102723918684180104; //Math.sin(Math.PI*.125)
-	private static inline var SQ_DIST_COS:Float = 0.99997651217454865478849954406816; //Math.cos(Math.PI*.125)
-	
-	// TODO: Precompute  into a constant
-	public static inline function getSquareDist(dist:Float):Float {
-		var a:Float = SQ_DIST_SINE * dist;
-		var b:Float = SQ_DIST_COS * dist;
-		dist = a * a + b * b;
-		return dist;
-	}
+
 }

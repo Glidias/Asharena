@@ -18,8 +18,8 @@ class EnemyIdle
 	}
 	
 	public function init(alertRange:Float, aggroRange:Float, fov:Float=1.8849555921538759430775860299677):EnemyIdle {
-		alertRangeSq = PMath.getSquareDist(alertRange);
-		aggroRangeSq = PMath.getSquareDist(aggroRange);
+		alertRangeSq = alertRange * alertRange;// PMath.getSquareDist(alertRange);
+		aggroRangeSq = aggroRange * aggroRange;// PMath.getSquareDist(aggroRange);
 		this.fov = fov;
 		return this;
 	}

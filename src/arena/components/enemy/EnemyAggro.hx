@@ -14,6 +14,7 @@ class EnemyAggro
 
 	public var watch:EnemyIdle; 
 	public var flag:Int;  //for debugging or state checking
+	
 	// 0 -idle
 	// 1 - swining weapon (already triggered attack)
 	// 2 - striked already with weapon
@@ -29,7 +30,7 @@ class EnemyAggro
 	public inline function init(target:PlayerAggroNode, attackingRange:Float, watch:EnemyIdle):Void {
 		this.target = target;
 		//flag = 0;
-		attackRangeSq = PMath.getSquareDist(attackingRange);
+		attackRangeSq = attackingRange*attackingRange;
 		this.watch  = watch;
 	}
 	
@@ -39,7 +40,7 @@ class EnemyAggro
 		return this;
 	}
 	public inline function setAttackRange(range:Float):Void {
-		attackRangeSq = PMath.getSquareDist(range);
+		attackRangeSq = range*range;
 	}
 	
 	public inline function dispose():Void {
@@ -48,6 +49,14 @@ class EnemyAggro
 		flag = 0;
 	}
 	
+	/*
+	function get_attackRangeSq():Float
+	{
+		return attackRange*attackRange;
+	}
+	
+	public var attackRangeSq(get_attackRangeSq, null):Float;
+	*/
 	
 	
 }
