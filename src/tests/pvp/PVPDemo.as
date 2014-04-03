@@ -5,6 +5,7 @@ package tests.pvp
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.controller.ThirdPersonTargetingSystem;
+	import alternativa.a3d.objects.ArrowLobMeshSet;
 	import alternativa.engine3d.controllers.OrbitCameraMan;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.FillMaterial;
@@ -123,6 +124,8 @@ package tests.pvp
 			
 			_template3D.visible = false;
 			addChild(_preloader);
+			
+			ArrowLobMeshSet;
 		}
 		
 		

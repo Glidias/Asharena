@@ -443,7 +443,7 @@ class EllipsoidColliderSystem extends System
 
 		// elastic .5 would be fine... so 1.5 total computed
 		//( 1 + .5 ) *
-		e = 1.001* ( nx * circleVel.x + ny * circleVel.y  + nz*circleVel.z);
+		e = 1.000* ( nx * circleVel.x + ny * circleVel.y  + nz*circleVel.z);
 		
 		if( e > -MIN_REFLECTION ) e = -MIN_REFLECTION;
 		
