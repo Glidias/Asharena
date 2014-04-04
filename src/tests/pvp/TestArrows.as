@@ -83,10 +83,20 @@ package tests.pvp
 			//arenaSpawner.addCrossStage(SpawnerBundle.context3D);
 			SpawnerBundle.uploadResources(planeFloor.getResources(true, null));
 			
-			var box:Box = new Box(200, 20, 20, 1, 1, 1, false, null);
-			arrows = new ArrowLobMeshSet(box.geometry, new FillMaterial(0xFF0000, 1), 10);
+			var box:Box = new Box(26, 3, 3, 1, 1, 1, false, null);
+			arrows = new ArrowLobMeshSet(box.geometry, new FillMaterial(0xFF0000, 1), 4);
 			
-			arrows.launchNewProjectile(new Vector3D(0, 0, 0), new Vector3D(300, 131, 32) );
+			var startPosition:Vector3D = new Vector3D();
+			var endPosition:Vector3D = new Vector3D();
+			for (var i:int = 0; i < 120; i++) {
+				endPosition.x = -300 +  Math.random() * 600;
+				endPosition.y = -300 +  Math.random() * 600;
+				endPosition.z = 0;
+				arrows.launchNewProjectile(startPosition, endPosition );
+			}
+			
+			
+			
 			_template3D.scene.addChild ( arrows);
 			
 			SpawnerBundle.uploadResources(arrows.getResources(true, null));
@@ -126,7 +136,10 @@ package tests.pvp
 			game.gameStates.thirdPerson.addInstance(thirdPerson).withPriority(SystemPriorities.postRender);
 			
 			// (Optional) Go straight to 3rd person
-			game.gameStates.engineState.changeState("thirdPerson");
+			//game.gameStates.engineState.changeState("thirdPerson");
+			
+			
+			game.gameStates.engineState.changeState("spectator");
 		}
 		
 		
@@ -181,12 +194,18 @@ package tests.pvp
 		
 
 		
+		private var timePassed:Number = 0;
 		private function tick(time:Number):void 
 		{
-			
+			timePassed += time;
 			game.engine.update(time);
 			arrows.update(time);
 			_template3D.render();
+			
+			if (timePassed >= arrows._maxProjectileTravelTime) {
+				timePassed = 0;
+				arrows.reset();
+			}
 		}
 		
 	}

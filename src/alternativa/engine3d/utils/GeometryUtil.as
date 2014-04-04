@@ -60,7 +60,7 @@ package alternativa.engine3d.utils
 					for (var k:int = 0; k < attribtuesLength; k++) {
 						var attr:int = attributes[k];
 						if (attr == ATTRIBUTE) {
-							destStream.data.writeFloat(constantsPerMesh);
+							destStream.data.writeFloat(0);
 							continue;
 						}
 						if (attr != prev) {
@@ -195,6 +195,7 @@ package alternativa.engine3d.utils
 			var jointIndices:Vector.<Number> = geometry.getAttributeValues(ATTRIBUTE);
 			len = protoJointIndices.length;
 			var duplicateMultiplier:Number =  constantsPerMesh;
+			
 			var totalLen:int = jointIndices.length;
 			for (i = len; i < totalLen; i += len) {
 				for (u = i; u < i+len; u++) {

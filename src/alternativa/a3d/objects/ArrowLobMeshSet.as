@@ -24,7 +24,7 @@ package alternativa.a3d.objects
 	public class ArrowLobMeshSet extends Mesh
 	{
 		private var batchAmount:int;
-		private var _maxProjectileTravelTime:Number;
+		public var _maxProjectileTravelTime:Number;
 		public var _maxProjectileTravelTimeMult:Number;
 		private var sampleNumTris:int;
 		private static var BATCH_AMOUNT:int = 120;
@@ -70,7 +70,7 @@ package alternativa.a3d.objects
 			
 			drawUnit.setVertexBufferAt(vertexShader.getVariableIndex("joint"), geometry.getVertexBuffer(ATTRIBUTE), geometry._attributesOffsets[ATTRIBUTE], Context3DVertexBufferFormat.FLOAT_1);
 	
-			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cVars"), -.5 * gravity, 0, gravity, _maxProjectileTravelTimeMult);
+			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cVars"), -.5 * gravity, 0, gravity, _maxProjectileTravelTime);
 			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cUp"), 0, 0, 1, 0);
 			
 			//drawUnit.setVertexConstantsFromVector(0, toUploadSpriteData, toUploadNumSprites*NUM_REGISTERS_PER_SPR ); 
@@ -85,13 +85,16 @@ package alternativa.a3d.objects
 		}
 		
 		
-		// THis shoudl be seperated out to a different manager
+		// TODO: This should be factored out to a different manager
 		public function update(time:Number):void {
+			
+			
 			var dt:Number = time * _maxProjectileTravelTimeMult;
 			for (var i:int = 0; i < total; i++) {
 				var c:int = (i << 2);
 				var w:Number = toUpload[c + 3];
 				var whole:int = int(w);
+				
 				var frac:Number = w - whole;
 				frac += dt;
 				frac = frac >= 1 ? 0.999999 : frac;
@@ -99,6 +102,17 @@ package alternativa.a3d.objects
 
 			}
 			
+		}
+		
+		public function reset():void {
+			
+			for (var i:int = 0; i < total; i++) {
+				var c:int = (i << 2);
+				var w:Number = toUpload[c + 3];
+		
+				toUpload[c + 3] = int(w);
+
+			}
 		}
 		
 		public function launchNewProjectile(startPosition:Vector3D, endPosition:Vector3D, speed:Number=144):void {
@@ -128,11 +142,11 @@ package alternativa.a3d.objects
   
 			displace.w = Math.round(displace.x*startPosition.x + displace.y*startPosition.y + displace.z*startPosition.z);
 
-			toUpload[c] =displace.x; c++;
-			toUpload[c] =  displace.y; c++;
-			toUpload[c] = displace.z; c++;
+			toUpload[c++] = displace.x;// startPosition.x;// displace.x; 
+			toUpload[c++] = displace.y;
+			toUpload[c++] = displace.z;// displace.z;
 			toUpload[c] = displace.w;
-			
+		//	throw new Error(geometry.getAttributeValues(ATTRIBUTE));
 			total++;
 			getSurface(0).numTriangles = total * sampleNumTris;
 		
@@ -176,16 +190,22 @@ package alternativa.a3d.objects
 					
 				"mul t1.xyz, t1.xyz, t1.www",	// origin launch position into t1 by multiplying velocity over offset
 				"mul t0.w, t0.w, c1.w",  // now, save actual time t of t0.w from fractional by multiplying against MAX_TIME
+	
+				
 				"mul t1.w, t0.x, t0.w, ",  // save out velocity.x*t offset
 				"add t1.x, t1.x, t1.w",		// and add it to the launch position to get actual x arrow origin position
 				"mul t1.w, t0.y, t0.w, ",  // save out velocity.y*t offset
 				"add t1.y, t1.y, t1.w",  // and add it to the launch position to get actual y arrow origin position
-				"mul t1.w, c1.x, t0.w", // save out  -.5*GRAVITY*t*t - velocity.z*t   gravitational offset over time
-				
+			
+				"mul t1.w, c1.x, t0.w", // save out  -.5*GRAVITY*t*t + velocity.z*t   gravitational offset over time
 				"mul t1.w, t1.w, t0.w", 
+				
 				"add t1.z, t1.z, t1.w",  // and  LHS operand done, ADD it in!!
+				
 				"mul t1.w, t0.z, t0.w",
-				"sub t1.z, t1.z, t1.w",	// and RHS operand done, subtract it out to get actual z arrow origin position
+				"add t1.z, t1.z, t1.w",	// and RHS operand done, subtract it out to get actual z arrow origin position
+				
+				///*  // if considering orientation
 				"mul t0.w, c1.z, t0.w",  // multiply gravitaitonal offset over time: GRAVITY*t  
 				"sub t0.z, t0.z, t0.w",	// subtract this from the z alt component velocity to get final unnormalized velocity vector
 			
@@ -200,9 +220,16 @@ package alternativa.a3d.objects
 				"mul t2.xyz, i0.zzz, t0.xyz",  // extend out position along z offset of vertex
 				"add t1.xyz, t1.xyz, t2.xyz",
 				"mov t1.w, c1.z",	// w property of 1 needed?
-				/**/
+				// */
+				
+		
+			// if not considering orientation	
+			//"add t1.xyz, t1.xyz, i0.xyz",
 			
+			
+				"mov t1.w, i0.w",
 				"mov o0, t1"]);
+				
 			res.assignConstantsArray(numMeshes * constantsPerMesh);
 			
 			return res;
