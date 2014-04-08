@@ -9,6 +9,7 @@ package systems.player.a3d
 	import alternativa.engine3d.objects.Skin;
 	import arena.components.weapon.PlayerAttack;
 	import ash.signals.Signal1;
+	import com.greensock.TweenLite;
 	import components.controller.SurfaceMovement;
 	import components.Ellipsoid;
 	import components.Pos;
@@ -544,9 +545,15 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			handleAction(PlayerAction.IDLE);
 		}
 		
-		public function flinch():void 
+		public function flinch():Number 
 		{
-			setAnimation( fullBodyAnims[ FLINCHES[int(Math.random()*FLINCHES.length)] ], fullBodyController, fullBody, .1);
+			var clip:AnimationClip = fullBodyAnims[ FLINCHES[int(Math.random() * FLINCHES.length)] ];
+			clip.time = 0;
+			setAnimation(clip, fullBodyController, fullBody, .1);
+			//throw new Error(clip.length);
+			// temrpoary delayedCall atm
+			TweenLite.delayedCall(clip.length, handleAction, [PlayerAction.IDLE] );
+			return clip.length;
 		}
 			
 		

@@ -728,6 +728,7 @@ WeaponSlots
 			return  dist - Math.sqrt(dx*dx+dy*dy+dz*dz);
 		}
 		
+		private var _lastTargetNode:PlayerTargetNode;
 		public function setTargetChar(node:PlayerTargetNode):void {
 			_targetNode = node;
 			_targetInfo.clearAll();
@@ -738,7 +739,8 @@ WeaponSlots
 				return;
 				
 			}
-		
+			_lastTargetNode = node;
+			
 			var ent:Entity = node.entity;
 			var obj:Object3D = node.obj;
 			
@@ -1266,6 +1268,7 @@ WeaponSlots
 		
 		public function txtPlayerStrike(e:Entity, hp:int, amount:int, killingBlow:Boolean=false):void 
 		{
+			if (amount == 0) return;
 		//	_msgLogInfo.resetAllScrollingMessages()
 			var obj:Object3D = e.get(Object3D) as Object3D;
 			
@@ -1348,7 +1351,7 @@ WeaponSlots
 		
 		public function get targetNode():PlayerTargetNode 
 		{
-			return _targetNode;
+			return _targetNode || _lastTargetNode;
 		}
 		
 		public function get charWeaponEnabled():Boolean 

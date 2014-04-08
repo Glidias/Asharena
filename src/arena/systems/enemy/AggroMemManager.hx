@@ -95,6 +95,13 @@ class AggroMemManager
 		return !idleMask.has(aggroMem.index);
 	}
 	
+	public inline function addToAggroMem(playerEntity:Entity, aggroEntity:Entity):Void {
+		var aggroMem:AggroMem = aggroEntity.get(AggroMem);
+		var playerMem:AggroMem = playerEntity.get(AggroMem);
+		aggroMem.bits.set(playerMem.index);
+		
+	}
+	
 	public function notifyStartPhase(side:Int):Void {
 		numActive= 0;
 		numAggro= 0;

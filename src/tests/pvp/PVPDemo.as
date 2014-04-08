@@ -382,6 +382,7 @@ package tests.pvp
 			
 			AnimAttackSystem.performMeleeAttackAction(PlayerAttack.SWING, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
 			_animAttackSystem.resolved.addOnce(resolveStrikeAction2);
+			aggroMemManager.addToAggroMem(arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity);
 			if (arenaHUD.strikeResult > 0) {
 				var targetHP:Health = (arenaHUD.targetNode.entity.get(Health) as Health);
 				if (targetHP.hp > arenaHUD.playerDmgDealRoll) targetHP.onDamaged.addOnce(onEnemyTargetDamaged);
@@ -390,20 +391,29 @@ package tests.pvp
 		
 		
 		private function onEnemyTargetDamaged(hp:int, amount:int):void {
-			
-			var stance:GladiatorStance = arenaHUD.targetNode.entity.get(IAnimatable) as GladiatorStance;
-			stance.flinch();
+			if (amount > 0) {
+				var stance:GladiatorStance = arenaHUD.targetNode.entity.get(IAnimatable) as GladiatorStance;
+				stance.flinch();
+			}
+			else {
+				
+			}
 		}
 		
 		private function onPlayerDamaged(hp:int, amount:int):void {
-			
-			var stance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
-			stance.flinch();
+			if (amount > 0) {
+				var stance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
+				stance.flinch();
+			}
+			else {
+				
+			}
 		}
 		
 		private function resolveStrikeAction2():void 
 		{
-			TweenLite.delayedCall(.5, resolveStrikeAction3);
+			if (arenaHUD.strikeResult > 0) TweenLite.delayedCall(.5, resolveStrikeAction3);
+			else resolveStrikeAction3();
 		}
 		
 		private function resolveStrikeAction3():void 
@@ -417,13 +427,14 @@ package tests.pvp
 				}
 			}
 			else {
-				resolveStrikeActionFully();
+				resolveStrikeActionFully(true);
 			}
 		}
 		
-		private function resolveStrikeActionFully():void 
+		private function resolveStrikeActionFully(instant:Boolean=false):void 
 		{
-			toggleTargetingMode();
+			if (!instant&& arenaHUD.enemyStrikeResult > 0) TweenLite.delayedCall(.3, toggleTargetingMode)
+			else toggleTargetingMode();
 		}
 		
 		private function testAnim():void 
