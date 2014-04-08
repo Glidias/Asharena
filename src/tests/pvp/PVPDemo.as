@@ -10,6 +10,7 @@ package tests.pvp
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.primitives.PlanarRim;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.BitmapTextureResource;
@@ -21,6 +22,7 @@ package tests.pvp
 	import arena.systems.enemy.AggroMemManager;
 	import arena.systems.enemy.EnemyAggroNode;
 	import arena.systems.enemy.EnemyAggroSystem;
+	import arena.systems.player.AnimAttackSystem;
 	import arena.systems.player.LimitedPlayerMovementSystem;
 	import arena.views.hud.ArenaHUD;
 	import ash.core.Entity;
@@ -126,6 +128,7 @@ package tests.pvp
 			addChild(_preloader);
 			
 			ArrowLobMeshSet;
+			PlanarRim;
 		}
 		
 		
@@ -266,6 +269,9 @@ package tests.pvp
 			w.stunMinRange = 0;
 			w.stunMaxRange = 0;
 			
+			w.matchAnimVarsWithStats();
+			w.anim_fullSwingTime = 0.96;
+			
 			return w;
 		}
 		
@@ -362,6 +368,16 @@ package tests.pvp
 					toggleTargetingMode();
 				}
 			}
+			else if (keyCode === Keyboard.B && !game.keyPoll.isDown(Keyboard.B)) {
+				testAnim();
+			}
+		}
+		
+		private function testAnim():void 
+		{
+			var stance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
+			stance.swing();
+			
 		}
 		
 		private var _targetMode:Boolean = false;
@@ -978,7 +994,9 @@ package tests.pvp
 			arenaHUD.setCamera(_template3D.camera);
 			_template3D.camera.addChild( arenaHUD.hud);
 			
-			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem=new EnemyAggroSystem() ).withPriority(SystemPriorities.stateMachines);
+			
+			game.gameStates.thirdPerson.addInstance( new AnimAttackSystem() ).withPriority(SystemPriorities.stateMachines);
+			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem = new EnemyAggroSystem() ).withPriority(SystemPriorities.stateMachines);
 			//_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
 		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
 		//	_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);

@@ -24,6 +24,7 @@ package
 	import ash.signals.Signal0;
 	import ash.signals.Signal1;
 	import components.ActionIntSignal;
+	import components.ActionUIntSignal;
 	import components.controller.SurfaceMovement;
 	import components.Ellipsoid;
 	import components.MovableCollidable;
@@ -315,6 +316,8 @@ package
 				ent.add(keyPoll, KeyPoll);
 			}
 			actions.add( gladiatorStance.handleAction );
+			var attacks:ActionUIntSignal = ent.get(ActionUIntSignal) as ActionUIntSignal;	
+			attacks.add(gladiatorStance.handleAttack);
 			ent.add(gladiatorStance, IAnimatable);
 			
 			ent.add( new AggroMem().init(defaultEnemyWatchMelee, side) );

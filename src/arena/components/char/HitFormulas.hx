@@ -318,6 +318,11 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 		return PMath.lerp( aWeapon.strikeTimeAtMinRange, aWeapon.strikeTimeAtMaxRange, HitFormulas.calculateOptimalRangeFactor(aWeapon.minRange, aWeapon.range,  actualDist) );
 	}
 	
+	static public inline function calculateAnimStrikeTimeAtRange(aWeapon:Weapon, actualDist:Float):Float
+	{
+		return PMath.lerp( aWeapon.anim_strikeTimeAtMinRange, aWeapon.anim_strikeTimeAtMaxRange, HitFormulas.calculateOptimalRangeFactor(aWeapon.anim_minRange, aWeapon.anim_maxRange,  actualDist) );
+	}
+	
 	
 	
 }

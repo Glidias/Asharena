@@ -29,8 +29,8 @@ package alternativa.a3d.objects
 		private var sampleNumTris:int;
 		private static var BATCH_AMOUNT:int = 120;
 		
-		private var _transformProcedures:Dictionary = new Dictionary();
-		private var _deltaTransformProcedures:Dictionary = new Dictionary();
+		private static var _transformProcedures:Dictionary = new Dictionary();
+		private static var _deltaTransformProcedures:Dictionary = new Dictionary();
 		
 		public var toUpload:Vector.<Number> = new Vector.<Number>();
 		public var total:int = 0;

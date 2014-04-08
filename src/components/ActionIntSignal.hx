@@ -24,4 +24,8 @@ class ActionIntSignal extends Signal1<Int>
 		//return val != current;
 	}
 	
+	public inline function forceSet(val:Int):Void {
+		dispatch(current = val);
+	}
+	
 } 

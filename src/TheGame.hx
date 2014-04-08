@@ -1,4 +1,5 @@
 package;
+import arena.systems.player.AnimAttackSystem;
 import haxe.io.BytesInput;
 import haxe.io.BytesOutput;
 
@@ -99,6 +100,7 @@ class TheGame
 		EnemyAggroSystem;
 		HitFormulas;
 		
+		AnimAttackSystem;
 		// Spawn starting entities
 	
 		// Start

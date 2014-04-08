@@ -5,6 +5,8 @@ import arena.components.char.MovementPoints;
 import arena.components.enemy.EnemyAggro;
 import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
+import arena.components.weapon.AnimAttackMelee;
+import arena.components.weapon.PlayerAttack;
 
 import arena.systems.player.PlayerAggroNode;
 import ash.core.Engine;
@@ -250,6 +252,7 @@ class EnemyAggroSystem extends System
 	
 
 	override public function update(time:Float):Void {
+		var swinger:AnimAttackMelee;
 		updating = true;
 		
 		var p:PlayerAggroNode;
@@ -425,14 +428,30 @@ class EnemyAggroSystem extends System
 										enemyCrit = true;
 									}
 								}
-								p.health.damage(HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
+								a.signalAttack.forceSet(PlayerAttack.SWING);
+								swinger =  new AnimAttackMelee();
+								swinger.init_i_static( a.weapon.anim_strikeTimeAtMaxRange, p.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
+								a.entity.add(swinger);
+								//p.health.damage(HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
+								
 							}
 							else { // strike rolled miss
-								p.health.damage(0);
+								a.signalAttack.forceSet(PlayerAttack.SWING);
+								swinger =  new AnimAttackMelee();
+								//HitFormulas.calculateAnimStrikeTimeAtRange(a.weapon, actualDist)
+								swinger.init_i_static(a.weapon.anim_strikeTimeAtMaxRange, p.health, 0 );
+								a.entity.add(swinger);
+								
+								//p.health.damage(0);
 							}
 						}
 						else {  // considered strike miss due to evading blow... out of range
-							p.health.damage(0);
+							a.signalAttack.forceSet(PlayerAttack.SWING);
+							swinger =  new AnimAttackMelee();
+							//HitFormulas.calculateAnimStrikeTimeAtRange(a.weapon, actualDist)
+								swinger.init_i_static(a.weapon.anim_strikeTimeAtMaxRange, p.health, 0 );
+								a.entity.add(swinger);
+							//p.health.damage(0);
 						}
 						
 						

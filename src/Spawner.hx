@@ -4,6 +4,7 @@ import arena.components.weapon.WeaponState;
 import ash.core.Engine;
 import ash.core.Entity;
 import components.ActionIntSignal;
+import components.ActionUIntSignal;
 import components.CollisionResult;
 import components.controller.SurfaceMovement;
 import components.DirectionVectors;
@@ -51,6 +52,7 @@ class Spawner
 		ent.add( new Health().init() );
 		//.add(  new Ellipsoid(32,32,72)).add( new MoveResult() );
 		
+		ent.add( new ActionUIntSignal() );
 		ent.add( new ActionIntSignal() );
 		ent.add( new WeaponState().init() );
 		ent.add( new CharDefense().init(.5, .5, 45*PMath.DEG_RAD) );

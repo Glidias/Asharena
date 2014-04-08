@@ -1,4 +1,7 @@
 package arena.components.weapon;
+import ash.signals.Signal0;
+import ash.signals.Signal2;
+import components.Health;
 
 /**
  * Base weapon stats. SHarable component between entities.
@@ -31,6 +34,23 @@ class Weapon
 	public var stunEffect:Float;
 	public var stunMinRange:Float;
 	public var stunMaxRange:Float;
+	
+	public var anim_startSwingTime:Float;
+	public var anim_strikeTimeAtMaxRange:Float;
+	public var anim_strikeTimeAtMinRange:Float;
+	public var anim_minRange:Float;
+	public var anim_maxRange:Float;
+	
+	public var anim_fullSwingTime:Float;
+
+	
+	public inline function matchAnimVarsWithStats():Void {
+		anim_startSwingTime = timeToSwing;
+		anim_strikeTimeAtMaxRange = strikeTimeAtMaxRange;
+		anim_strikeTimeAtMinRange = strikeTimeAtMinRange;
+		anim_minRange = minRange;
+		anim_maxRange = range;
+	}
 	
 	//public var  
 

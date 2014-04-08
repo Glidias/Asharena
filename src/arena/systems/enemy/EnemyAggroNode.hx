@@ -3,6 +3,7 @@ import arena.components.enemy.EnemyAggro;
 import arena.components.weapon.Weapon;
 import arena.components.weapon.WeaponState;
 import ash.core.Node;
+import components.ActionUIntSignal;
 import components.Ellipsoid;
 import components.Pos;
 import components.Rot;
@@ -21,5 +22,7 @@ class EnemyAggroNode extends Node<EnemyAggroNode> {
 	public var rot:Rot;
 	
 	public var state:EnemyAggro;
+	public var signalAttack:ActionUIntSignal;
+	
 	//public var stateMachine:EntityStateMachine;
 }

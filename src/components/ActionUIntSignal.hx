@@ -24,4 +24,9 @@ class ActionUIntSignal extends Signal1<Int>
 		//return val != current;
 	}
 	
+	public inline function forceSet(val:UInt):Void {
+		dispatch(current = val);
+		//return val != current;
+	}
+	
 } 

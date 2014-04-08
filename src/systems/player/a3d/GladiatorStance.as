@@ -3,9 +3,11 @@ package systems.player.a3d
 	import alternativa.engine3d.animation.AnimationClip;
 	import alternativa.engine3d.animation.AnimationController;
 	import alternativa.engine3d.animation.AnimationCouple;
+	import alternativa.engine3d.animation.AnimationNode;
 	import alternativa.engine3d.animation.AnimationSwitcher;
 	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Skin;
+	import arena.components.weapon.PlayerAttack;
 	import ash.signals.Signal1;
 	import components.controller.SurfaceMovement;
 	import components.Ellipsoid;
@@ -48,6 +50,14 @@ package systems.player.a3d
 		
 		private var _curController:AnimationController;
 		//public var upperBodyCouple:AnimationCouple = new AnimationCouple();  // for blending 2 animations
+		
+		private var attackAnimCouple:AnimationCouple = new AnimationCouple();
+		private var melee_thrust_up:AnimationClip;
+		private var melee_thrust_down:AnimationClip;
+		private var melee_swing_up:AnimationClip;
+		private var melee_swing_down:AnimationClip;
+		
+		//private 
 		
 		private var _stance:int = 0;
 		private var _lastStance:int = 0;
@@ -120,6 +130,10 @@ package systems.player.a3d
 		
 		private var rootJoint:Joint;
 		
+		private static const FLINCHES:Array = [
+		"flinch_gut","flinch_leftarm","flinch_rightarm","flinch_head","flinch_leftleg","flinch_rightleg"
+		]
+		private var flinches:Array;
 		
 		public function GladiatorStance(skin:Skin, surfaceMovement:SurfaceMovement, ellipsoid:Ellipsoid) 
 		{
@@ -131,12 +145,74 @@ package systems.player.a3d
 			
 			rootJoint = skin.childrenList as Joint;//getJoint("Bip01");
 			surfaceMovement.setStrafeSpeed(speed_strafe);
+			
+			setupAnimations();
+			
+			
+			//throw new Error(anims.getAnimGroups());
+			
 		
 			init();
-			
-
 		}
 		
+		private function setupAnimations():void 
+		{
+			melee_swing_up = anims.getAnimationByName("ref_melee_pair_swing1").clone();
+			melee_swing_down = anims.getAnimationByName("ref_melee_pair_swing2").clone();
+			
+			melee_thrust_up = anims.getAnimationByName("ref_melee_pair_thrust1").clone();
+			melee_thrust_down = anims.getAnimationByName("ref_melee_pair_thrust2").clone();
+			
+			flinches = [];
+			var len:int = FLINCHES.length;
+			for (var i:int = 0; i < len; i++) {
+				flinches[i] =anims.getAnimationByName( FLINCHES[i] );
+			}
+			
+			
+			upperBody.addAnimation(attackAnimCouple);
+			
+		}
+		
+		
+		public function swing(altBalance:Number = .5):void {
+			
+			attackAnimCouple.left = melee_swing_down;
+			attackAnimCouple.right = melee_swing_up;
+			melee_swing_down.time = 0;
+			melee_swing_up.time = 0;
+			attackAnimCouple.balance = 1; altBalance;
+			
+			initiateUpperBodyAttack();
+			
+			
+		}
+		
+		public function thrust(altBalance:Number = .5):void {
+			
+			attackAnimCouple.left = melee_thrust_down;
+			attackAnimCouple.right = melee_thrust_up;
+			melee_thrust_down.time = 0;
+			melee_thrust_up.time = 0;
+			attackAnimCouple.balance = 1; .5;
+			initiateUpperBodyAttack();
+			
+			
+		}
+		
+		public function initiateUpperBodyAttack():void {
+			
+			//setAnimationNode(attackAnimCouple, upperBodyController, upperBody, .3);
+			setAnimationNode( lowerBodyAnims[_stance < 2 ? "combat_idle" : "crouch_idle"], lowerBodyController, lowerBody, 0);
+			lowerBodyController.update(0);
+			
+			setAnimationNode( attackAnimCouple, upperBodyController, upperBody, .3);
+			//_curController = null;
+			
+			upperBodyDominant = true;
+			
+			
+		}
 		
 		
 	
@@ -152,6 +228,7 @@ package systems.player.a3d
 		private function init():void {
 			
 			var groups:Object = ANIM_GROUPS;
+			
 			for (var p:String in groups) {
 				var switcher:AnimationSwitcher = p === "upperbody" ? upperBody : p === "lowerbody" ? lowerBody : fullBody;
 				var dict:Dictionary = p === "upperbody" ? upperBodyAnims : p === "lowerbody" ? lowerBodyAnims : fullBodyAnims;
@@ -161,9 +238,15 @@ package systems.player.a3d
 					dict[str] = anim = anims.getAnimationByName(str);
 					switcher.addAnimation(anim);
 				}
+			
 			}
 			
 			
+			lowerBodyAnims["combat_idle"] = fullBodyAnims["combat_idle"].clone();
+			lowerBodyAnims["crouch_idle"] = fullBodyAnims["crouch_idle"].clone();
+			
+			lowerBody.addAnimation(lowerBodyAnims["combat_idle"] );
+			lowerBody.addAnimation(lowerBodyAnims["crouch_idle"]);
 			
 			fullBodyController.root = fullBody;
 			upperBodyController.root = upperBody;
@@ -171,6 +254,9 @@ package systems.player.a3d
 			
 			_curController = fullBodyController;
 			fullBody.activate( fullBodyAnims["standing_idle"], 0);
+			upperBody.activate( upperBodyAnims["ref_melee_aim"], 0);
+			//lowerBody.activate( lowerBodyAnims[""], 0);
+			
 		}
 		
 		public function switchAnimation(anim:AnimationClip, controller:AnimationController, switcher:AnimationSwitcher, time:Number):void {
@@ -189,6 +275,18 @@ package systems.player.a3d
 
 			return anim;
 		}
+		
+		public function setAnimationNode(anim:AnimationNode, controller:AnimationController, switcher:AnimationSwitcher, time:Number):void {
+			
+			switcher.activate(anim, time);
+			_curController = controller;
+			if (_skinRotated) {
+				skin.rotationZ = Math.PI;
+				_skinRotated = false;
+			}
+
+			
+		}
 				
 
 		public function bindKeys(stage:IEventDispatcher):void {
@@ -197,6 +295,15 @@ package systems.player.a3d
 		}
 		public function unbindKeys(stage:IEventDispatcher):void {
 			stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+		}
+		
+		public function handleAttack(attack:uint):void {
+			if (attack === PlayerAttack.SWING) {
+				swing();
+			}
+			else if (attack === PlayerAttack.THRUST) {
+				thrust();
+			}
 		}
 		
 		
@@ -268,9 +375,11 @@ package systems.player.a3d
 				skin.transformChanged = true;
 				
 				setAnimation(fullBodyAnims[(_stance == 0 ? "standing" : _stanceString) + "_idle"], fullBodyController, fullBody,   myLastAction == 0 ? CROUCH_TIME : 0);  //_lastStance < 3 && _stance < 3 && 
-				if (myLastAction != 0) {
-					crouchTime = 99999999;
-				}
+				
+					crouchTime =  myLastAction != 0 ? 9999999 : 0;
+				
+			
+
 				_curController = fullBodyController;
 				_idle = true;
 				return;
@@ -416,6 +525,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			}
 			else {
 				tarSkinZ = _running || _stance != 2  ? 0 : -17;
+				
 			}
 			
 			if (tarSkinZ != skin._z) {   // above as well
