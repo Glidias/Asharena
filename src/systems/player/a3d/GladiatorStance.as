@@ -543,6 +543,11 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			stance = val;
 			handleAction(PlayerAction.IDLE);
 		}
+		
+		public function flinch():void 
+		{
+			setAnimation( fullBodyAnims[ FLINCHES[int(Math.random()*FLINCHES.length)] ], fullBodyController, fullBody, .1);
+		}
 			
 		
 	}

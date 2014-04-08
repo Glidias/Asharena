@@ -51,7 +51,11 @@ class HitFormulas
 		
 	}
 	
-	
+	public static inline function get2DDist(posA:Pos,  posB:Pos, ellipsoidB:Ellipsoid):Float {
+		var dx:Float = posB.x - posA.x;
+		var dy:Float = posB.y - posA.y;
+		return Math.sqrt(dx * dx + dy * dy)- ellipsoidB.x ;
+	}
 
 	// Used for actual combat..
 	public static inline function getPercChanceToHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {

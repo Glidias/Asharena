@@ -1039,9 +1039,11 @@ WeaponSlots
 		
 		
 		
-		private var strikeResult:int;
-		private var enemyStrikeResult:int;
+		public var strikeResult:int;
+		public var enemyStrikeResult:int;
 		private var ENEMY_ROLL_CRIT:Boolean = EnemyAggroSystem.AGGRO_HAS_CRITICAL;
+		public var playerDmgDealRoll:int;
+		public var enemyDmgDealRoll:int
 		
 		public function checkStrike(keyCode:uint):int 	// TODO: Factor resolving and calculations out to somewhere else...HUD shouldn't handle this! 
 		{
@@ -1081,7 +1083,8 @@ WeaponSlots
 							
 					strikeResult = gotCrit ? 2 :1;
 					// resolve now1
-					health.damage( HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon ) * (gotCrit ? 3 : 1) );	
+					//health.damage( HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon ) * (gotCrit ? 3 : 1) );	
+					playerDmgDealRoll = HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon ) * (gotCrit ? 3 : 1);
 				}
 				else {
 					txtPlayerMisses(_displayChar, targetNode.entity);
@@ -1143,18 +1146,20 @@ WeaponSlots
 						
 						
 						// resolve now 
-						if (strikeResult > 0) health.damage( HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon ) * (gotCrit ? 3 : 1) )
-						else txtPlayerMisses(_displayChar, targetNode.entity);
+						//if (strikeResult > 0) health.damage( HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon ) * (gotCrit ? 3 : 1) )
+						//else txtPlayerMisses(_displayChar, targetNode.entity);
 						
-						playerHealth.damage(dmgInflict);
+						//playerHealth.damage(dmgInflict);
+						if (strikeResult > 0) playerDmgDealRoll = HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon ) * (gotCrit ? 3 : 1);
+						enemyDmgDealRoll = dmgInflict;
 
 						return strikeResult;
 					}
 					else {
 						
 						// resolve now (you will be dead)
-						txtPlayerMisses(_displayChar, targetNode.entity);
-						playerHealth.damage(dmgInflict);
+						//txtPlayerMisses(_displayChar, targetNode.entity);
+						//playerHealth.damage(dmgInflict);
 						
 						strikeResult = -1;
 						return strikeResult;
@@ -1203,15 +1208,18 @@ WeaponSlots
 							}
 							
 							// resolve now
-							health.damage(baseDmg);	
-							playerHealth.damage(dmgInflict);
+							playerDmgDealRoll = baseDmg;
+							enemyDmgDealRoll = dmgInflict;
+							//health.damage(baseDmg);	
+							//playerHealth.damage(dmgInflict);
 							
 							
 							
 						}
 						else {
 							// resolve now, killing enemy ai
-							health.damage(baseDmg);	
+							playerDmgDealRoll = baseDmg;
+							//health.damage(baseDmg);	
 						}
 					
 					
@@ -1232,8 +1240,9 @@ WeaponSlots
 						}
 							
 						// resolve now, player miss and taking damage from enemy if any..
-						txtPlayerMisses(_displayChar, targetNode.entity);
-						playerHealth.damage(dmgInflict);
+						enemyDmgDealRoll = dmgInflict;
+						//txtPlayerMisses(_displayChar, targetNode.entity);
+						//playerHealth.damage(dmgInflict);
 						
 						strikeResult = -1;
 					}

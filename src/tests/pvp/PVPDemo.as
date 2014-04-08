@@ -17,6 +17,7 @@ package tests.pvp
 	import alternterrain.CollidableMesh;
 	import arena.components.char.MovementPoints;
 	import arena.components.enemy.EnemyIdle;
+	import arena.components.weapon.PlayerAttack;
 	import arena.components.weapon.Weapon;
 	import arena.components.weapon.WeaponState;
 	import arena.systems.enemy.AggroMemManager;
@@ -32,6 +33,7 @@ package tests.pvp
 	import com.bit101.components.ProgressBar;
 	import com.greensock.easing.Cubic;
 	import com.greensock.easing.Linear;
+	import com.greensock.TweenLite;
 	import components.controller.SurfaceMovement;
 	import components.Health;
 	import components.ImmovableCollidable;
@@ -364,13 +366,64 @@ package tests.pvp
 			else if (keyCode === Keyboard.F && !game.keyPoll.isDown(Keyboard.F)) {
 				if (  arenaHUD.checkStrike(keyCode) ) {  // for now, HP reduction is insntatneous within this method
 					// remove controls, perform animation, before toggling targeting mode and restoring back controls
-					
-					toggleTargetingMode();
+					resolveStrikeAction();
+					//toggleTargetingMode();
 				}
 			}
 			else if (keyCode === Keyboard.B && !game.keyPoll.isDown(Keyboard.B)) {
 				testAnim();
 			}
+		}
+		
+		
+		
+		private function resolveStrikeAction():void 
+		{
+			
+			AnimAttackSystem.performMeleeAttackAction(PlayerAttack.SWING, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
+			_animAttackSystem.resolved.addOnce(resolveStrikeAction2);
+			if (arenaHUD.strikeResult > 0) {
+				var targetHP:Health = (arenaHUD.targetNode.entity.get(Health) as Health);
+				if (targetHP.hp > arenaHUD.playerDmgDealRoll) targetHP.onDamaged.addOnce(onEnemyTargetDamaged);
+			}
+		}
+		
+		
+		private function onEnemyTargetDamaged(hp:int, amount:int):void {
+			
+			var stance:GladiatorStance = arenaHUD.targetNode.entity.get(IAnimatable) as GladiatorStance;
+			stance.flinch();
+		}
+		
+		private function onPlayerDamaged(hp:int, amount:int):void {
+			
+			var stance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
+			stance.flinch();
+		}
+		
+		private function resolveStrikeAction2():void 
+		{
+			TweenLite.delayedCall(.5, resolveStrikeAction3);
+		}
+		
+		private function resolveStrikeAction3():void 
+		{
+			if (arenaHUD.enemyStrikeResult != 0) {
+				AnimAttackSystem.performMeleeAttackAction(PlayerAttack.SWING, arenaHUD.targetNode.entity, arenaSpawner.currentPlayerEntity, arenaHUD.enemyStrikeResult > 0 ? arenaHUD.enemyDmgDealRoll : 0);
+				_animAttackSystem.resolved.addOnce(resolveStrikeActionFully);
+				if (arenaHUD.enemyStrikeResult > 0) {
+					var targetHP:Health = (arenaSpawner.currentPlayerEntity.get(Health) as Health);
+					if (targetHP.hp > arenaHUD.enemyDmgDealRoll) targetHP.onDamaged.addOnce(onPlayerDamaged);
+				}
+			}
+			else {
+				resolveStrikeActionFully();
+			}
+		}
+		
+		private function resolveStrikeActionFully():void 
+		{
+			toggleTargetingMode();
 		}
 		
 		private function testAnim():void 
@@ -765,6 +818,7 @@ package tests.pvp
 	
 		
 		private var _targetTransitState:String;
+		private var _animAttackSystem:AnimAttackSystem;
 
 
 		
@@ -995,7 +1049,7 @@ package tests.pvp
 			_template3D.camera.addChild( arenaHUD.hud);
 			
 			
-			game.gameStates.thirdPerson.addInstance( new AnimAttackSystem() ).withPriority(SystemPriorities.stateMachines);
+			game.gameStates.thirdPerson.addInstance( _animAttackSystem=  new AnimAttackSystem() ).withPriority(SystemPriorities.stateMachines);
 			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem = new EnemyAggroSystem() ).withPriority(SystemPriorities.stateMachines);
 			//_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
 		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
