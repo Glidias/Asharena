@@ -98,7 +98,10 @@ class AggroMemManager
 	public inline function addToAggroMem(playerEntity:Entity, aggroEntity:Entity):Void {
 		var aggroMem:AggroMem = aggroEntity.get(AggroMem);
 		var playerMem:AggroMem = playerEntity.get(AggroMem);
-		aggroMem.bits.set(playerMem.index);
+		if (!aggroMem.bits.has(playerMem.index)) {
+			aggroMem.bits.set(playerMem.index);
+			if(_turnActive) aggroEntity.add(new EnemyWatch().init(aggroMem.watchSettings, playerAggroList.head) , EnemyWatch);
+		}
 		
 	}
 	
@@ -278,13 +281,13 @@ class AggroMemManager
 		var dy:Float = posB.y - posA.y;
 		return dx * dx + dy * dy;
 	}
-	
+	private var _turnActive:Bool = false;
 	// This is called right after turn is started, where MovementPoints is given to playerEnt after transioinining into player.
 	public function notifyTurnStarted(playerEnt:Entity):Void {
 		// determine which entities in memList should start in Idle, Watch, or Aggro states, if they don't belong to activeSide (ai side) according to playerEnt
 		
 		if (playerAggroList.head == null) throw "Player aggro head node not found! Should be available at this time!";
-		
+		_turnActive = true;
 		var mem:AggroMem = playerEnt.get(AggroMem);
 		var plIndex:Int = mem.index;
 		var playerPos:Pos = playerEnt.get(Pos);
@@ -348,7 +351,7 @@ class AggroMemManager
 	public function notifyEndTurn():Void { 
 		
 		// remove idleChange signal...
-		
+		_turnActive = false;
 		idleList.nodeRemoved.remove( onIdleNodeRemoved);
 		
 		// ROTATION dirty FOV/LOS update

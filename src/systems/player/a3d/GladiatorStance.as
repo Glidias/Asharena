@@ -4,7 +4,9 @@ package systems.player.a3d
 	import alternativa.engine3d.animation.AnimationController;
 	import alternativa.engine3d.animation.AnimationCouple;
 	import alternativa.engine3d.animation.AnimationNode;
+	import alternativa.engine3d.animation.AnimationNotify;
 	import alternativa.engine3d.animation.AnimationSwitcher;
+	import alternativa.engine3d.animation.events.NotifyEvent;
 	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Skin;
 	import arena.components.weapon.PlayerAttack;
@@ -167,12 +169,23 @@ package systems.player.a3d
 			flinches = [];
 			var len:int = FLINCHES.length;
 			for (var i:int = 0; i < len; i++) {
-				flinches[i] =anims.getAnimationByName( FLINCHES[i] );
+				var f:AnimationClip;
+				flinches[i] = f = anims.getAnimationByName( FLINCHES[i] );
+				var fa:AnimationNotify;
+				 fa = f.addNotifyAtEnd(0);
+				fa.addEventListener(NotifyEvent.NOTIFY, onEndFullBodyAnim, false,0,true);
+				
+				
 			}
 			
 			
 			upperBody.addAnimation(attackAnimCouple);
 			
+		}
+		
+		private function onEndFullBodyAnim(e:NotifyEvent):void 
+		{
+			handleAction(lastAction);
 		}
 		
 		
@@ -474,6 +487,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		/* INTERFACE systems.animation.IAnimatable */
 		
 		private var crouchTime:Number = Number.MAX_VALUE;
+	
 		public function animate(time:Number):void 
 		{
 			if (_curController != null) {
@@ -552,7 +566,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			setAnimation(clip, fullBodyController, fullBody, .1);
 			//throw new Error(clip.length);
 			// temrpoary delayedCall atm
-			TweenLite.delayedCall(clip.length, handleAction, [PlayerAction.IDLE] );
+			//TweenLite.delayedCall(clip.length, handleAction, [PlayerAction.IDLE] );
 			return clip.length;
 		}
 			
