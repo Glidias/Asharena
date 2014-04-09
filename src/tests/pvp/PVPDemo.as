@@ -371,7 +371,19 @@ package tests.pvp
 				}
 			}
 			else if (keyCode === Keyboard.B && !game.keyPoll.isDown(Keyboard.B)) {
-				testAnim();
+				testAnim(1);
+			}
+			else if (keyCode === Keyboard.N && !game.keyPoll.isDown(Keyboard.N)) {
+				testAnim2(1);
+			}
+			else if (keyCode === Keyboard.G && !game.keyPoll.isDown(Keyboard.G)) {
+				testAnim(0);
+			}
+			else if (keyCode === Keyboard.Y && !game.keyPoll.isDown(Keyboard.Y)) {
+				testAnim2(0);
+			}
+			else if (keyCode === Keyboard.H && !game.keyPoll.isDown(Keyboard.H)) {
+				testAnim2(.5);
 			}
 		}
 		
@@ -437,10 +449,16 @@ package tests.pvp
 			else toggleTargetingMode();
 		}
 		
-		private function testAnim():void 
+		private function testAnim(blend:Number=.5):void 
 		{
 			var stance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
-			stance.swing();
+			stance.swing(blend);
+			
+		}
+		private function testAnim2(blend:Number=.5):void 
+		{
+			var stance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
+			stance.thrust(blend);
 			
 		}
 		

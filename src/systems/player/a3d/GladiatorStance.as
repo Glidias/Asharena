@@ -160,11 +160,11 @@ package systems.player.a3d
 		
 		private function setupAnimations():void 
 		{
-			melee_swing_up = anims.getAnimationByName("ref_melee_pair_swing1").clone();
-			melee_swing_down = anims.getAnimationByName("ref_melee_pair_swing2").clone();
+			melee_swing_up = anims.getAnimationByName("ref_melee_swing1").clone();
+			melee_swing_down = anims.getAnimationByName("ref_melee_swing2").clone();
 			
-			melee_thrust_up = anims.getAnimationByName("ref_melee_pair_thrust1").clone();
-			melee_thrust_down = anims.getAnimationByName("ref_melee_pair_thrust2").clone();
+			melee_thrust_up = anims.getAnimationByName("ref_melee_thrust1").clone();
+			melee_thrust_down = anims.getAnimationByName("ref_melee_thrust2").clone();
 			
 			flinches = [];
 			var len:int = FLINCHES.length;
@@ -195,7 +195,7 @@ package systems.player.a3d
 			attackAnimCouple.right = melee_swing_up;
 			melee_swing_down.time = 0;
 			melee_swing_up.time = 0;
-			attackAnimCouple.balance = 1; altBalance;
+			attackAnimCouple.balance = altBalance;// 1; altBalance;
 			
 			initiateUpperBodyAttack();
 			
@@ -208,7 +208,7 @@ package systems.player.a3d
 			attackAnimCouple.right = melee_thrust_up;
 			melee_thrust_down.time = 0;
 			melee_thrust_up.time = 0;
-			attackAnimCouple.balance = 1; .5;
+			attackAnimCouple.balance =  altBalance;
 			initiateUpperBodyAttack();
 			
 			
