@@ -69,7 +69,10 @@ package systems.player.a3d
 		
 		public static var ON_STANCE_CHANGE:Signal1 = new Signal1();
 		
+		private var _stanceTemp:Boolean = false;
+		
 		public function set stance(val:int):void {
+			_stanceTemp = false;
 			var lastStance:int = _stance;
 			_lastStance = lastStance;
 			_stanceString = val === 0 ? "stand" : val === 1 ? "combat" : "crouch";
@@ -179,14 +182,28 @@ package systems.player.a3d
 			}
 			
 			
+		//	melee_swing_up.addNotifyAtEnd(0).addEventListener(NotifyEvent.NOTIFY, onEndSwingAnim);
+		//	melee_thrust_up.addNotifyAtEnd(0).addEventListener(NotifyEvent.NOTIFY, onEndSwingAnim);
+			
 			upperBody.addAnimation(attackAnimCouple);
 			
+		}
+		
+		private function onEndSwingAnim(e:NotifyEvent):void {
+			
+				if (_stanceTemp) {
+					stance = 0;
+					
+					handleAction(lastAction);
+					_stanceTemp = false;
+				}
 		}
 		
 		private function onEndFullBodyAnim(e:NotifyEvent):void 
 		{
 			handleAction(lastAction);
 		}
+		
 		
 		
 		public function swing(altBalance:Number = .5):void {
@@ -197,6 +214,12 @@ package systems.player.a3d
 			melee_swing_up.time = 0;
 			attackAnimCouple.balance = altBalance;// 1; altBalance;
 			
+			if (_stance == 0) {
+				
+				setStanceAndRefresh(1);
+				_stanceTemp = true;
+				
+			}
 			initiateUpperBodyAttack();
 			
 			
@@ -209,6 +232,11 @@ package systems.player.a3d
 			melee_thrust_down.time = 0;
 			melee_thrust_up.time = 0;
 			attackAnimCouple.balance =  altBalance;
+			if (_stance == 0) {
+				
+				setStanceAndRefresh(1);
+				_stanceTemp = true;
+			}
 			initiateUpperBodyAttack();
 			
 			
@@ -217,13 +245,15 @@ package systems.player.a3d
 		public function initiateUpperBodyAttack():void {
 			
 			//setAnimationNode(attackAnimCouple, upperBodyController, upperBody, .3);
-			setAnimationNode( lowerBodyAnims[_stance < 2 ? "combat_idle" : "crouch_idle"], lowerBodyController, lowerBody, 0);
-			lowerBodyController.update(0);
+			if (!upperBodyDominant) {
+				setAnimationNode( _stance < 2 ? fullBodyAnims[ "combat_idle"] : fullBodyAnims["crouch_idle"], fullBodyController, fullBody, 0);
+				fullBodyController.update(0);
+			}
 			
 			setAnimationNode( attackAnimCouple, upperBodyController, upperBody, .3);
 			//_curController = null;
-			
-			upperBodyDominant = true;
+			if (upperBodyDominant) _curController = null;
+			//upperBodyDominant = true;
 			
 			
 		}
@@ -256,11 +286,11 @@ package systems.player.a3d
 			}
 			
 			
-			lowerBodyAnims["combat_idle"] = fullBodyAnims["combat_idle"].clone();
-			lowerBodyAnims["crouch_idle"] = fullBodyAnims["crouch_idle"].clone();
+			//lowerBodyAnims["combat_idle"] = fullBodyAnims["combat_idle"].clone();
+			//lowerBodyAnims["crouch_idle"] = fullBodyAnims["crouch_idle"].clone();
 			
-			lowerBody.addAnimation(lowerBodyAnims["combat_idle"] );
-			lowerBody.addAnimation(lowerBodyAnims["crouch_idle"]);
+			//lowerBody.addAnimation(lowerBodyAnims["combat_idle"] );
+			//lowerBody.addAnimation(lowerBodyAnims["crouch_idle"]);
 			
 			fullBodyController.root = fullBody;
 			upperBodyController.root = upperBody;
@@ -429,7 +459,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 							if (_stance != 1) {  // stance 0
 								surfaceMovement.setWalkSpeeds(speed_jog);
 								surfaceMovement.setStrafeSpeed(speed_strafe*.5);
-								setAnimation(fullBodyAnims["jog"], fullBodyController, fullBody, .2).speed = surfaceMovement.WALK_SPEED * I_SPEED_JOG;
+								setAnimation(fullBodyAnims["jog"], fullBodyController, fullBody, .3).speed = surfaceMovement.WALK_SPEED * I_SPEED_JOG;
 								_curController = fullBodyController;
 							}
 							else {  // stance 1
@@ -439,6 +469,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 					setAnimation(lowerBodyAnims[(_stance != 0 ? _stanceString : "combat")+"_walkforward"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALK_SPEED * (I_SPEED_FORWARDS);  // todo: use different walk forward speed for combat
 					setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
 								_curController = null;
+								upperBodyDominant = true;
 							}
 						}
 						else {
@@ -447,6 +478,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 								setAnimation(lowerBodyAnims["crouch_walkforward"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALK_SPEED *  I_SPEED_CROUCH; 
 							setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
 							_curController = null;
+							upperBodyDominant = true;
 						}
 						//setAccelerate(false);
 						
@@ -471,7 +503,9 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 					setAnimation(lowerBodyAnims[(_stance != 0 ? _stanceString : "combat")+"_walkback"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALKBACK_SPEED * (_stance != 2 ? I_SPEED_BACKWARDS : I_SPEED_CROUCH);
 					setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
 				
+				
 					_curController = null;
+					upperBodyDominant = true; 
 				}
 				
 			}
@@ -552,6 +586,11 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		}
 		
 
+		public function setStanceAndRefresh(val:int):void 
+		{
+			stance = val;
+			handleAction(lastAction);
+		}
 		
 		public function setIdleStance(val:int):void 
 		{

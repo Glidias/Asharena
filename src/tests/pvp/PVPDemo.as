@@ -377,13 +377,16 @@ package tests.pvp
 				testAnim2(1);
 			}
 			else if (keyCode === Keyboard.G && !game.keyPoll.isDown(Keyboard.G)) {
-				testAnim(0);
+				testAnim(.5);
 			}
 			else if (keyCode === Keyboard.Y && !game.keyPoll.isDown(Keyboard.Y)) {
 				testAnim2(0);
 			}
 			else if (keyCode === Keyboard.H && !game.keyPoll.isDown(Keyboard.H)) {
 				testAnim2(.5);
+			}
+			else if (keyCode === Keyboard.T && !game.keyPoll.isDown(Keyboard.T)) {
+				testAnim(0);
 			}
 		}
 		
@@ -451,13 +454,15 @@ package tests.pvp
 		
 		private function testAnim(blend:Number=.5):void 
 		{
-			var stance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
+			var stance:GladiatorStance = (arenaSpawner.currentPlayerEntity || curArr[testIndex]).get(IAnimatable) as GladiatorStance;
+			if (stance ==null) stance = curArr[testIndex].get(IAnimatable) as GladiatorStance;
 			stance.swing(blend);
 			
 		}
 		private function testAnim2(blend:Number=.5):void 
 		{
-			var stance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
+			var stance:GladiatorStance = (arenaSpawner.currentPlayerEntity || curArr[testIndex]).get(IAnimatable) as GladiatorStance;
+			if (stance ==null) stance = curArr[testIndex].get(IAnimatable) as GladiatorStance;
 			stance.thrust(blend);
 			
 		}
@@ -1041,7 +1046,7 @@ package tests.pvp
 			movementPointSystem.outOfFuel.add( onOutOfFuel);
 			
 			
-			commanderCameraController =  new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, false );
+			commanderCameraController =  new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, true );
 			//commanderCameraController.thirdPerson.preferedMinDistance = CMD_DIST;
 			commanderCameraController.thirdPerson.instantZoom = CMD_DIST; 
 		////	commanderCameraController.thirdPerson.controller.maxDistance = CMD_DIST;
