@@ -14,6 +14,7 @@ class Weapon
 	public var damage:Int;  // min damage applied
 	public var cooldownTime:Float;
 	public var hitAngle:Float;
+	public var sideOffset:Float;
 	
 	// advanced Arena properties below
 	public var damageRange:Int;		// damage up-range variance
@@ -59,12 +60,13 @@ class Weapon
 		
 	}
 	
-	public function init(name:String, range:Float, damage:Int, cooldownTime:Float, hitAngle:Float):Weapon {
+	public function init(name:String, range:Float, damage:Int, cooldownTime:Float, hitAngle:Float, sideOffset:Float=0):Weapon {
 		this.name = name;
 		this.range = range;
 		this.damage = damage;
 		this.hitAngle = hitAngle;
 		this.cooldownTime = cooldownTime;
+		this.sideOffset = sideOffset;
 		return this;
 	}
 

@@ -78,12 +78,13 @@ package tests.pvp
 	 * 
 	 * todo:
 		 * 
-		 * Integration with attack animation (weaponary) with swing arc blocking
+		 *  Obstacles and stuffs in environment. Integrate to terrain!
+		 *  Attack animation swing arc blocking
 		 * 
 		 * ((Chance to stun, Special abilities like:  Dodge Tumble, Kick, Throw dirt up))
 		 * ______________________
 		 * 
-		 * Obstacles and stuffs in environment. Integrate to terrain?
+		 *
 		 * 
 		 * Add variety of units with ranged/guns. 
 		 * 
