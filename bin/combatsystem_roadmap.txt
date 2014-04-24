@@ -1,5 +1,5 @@
 Obstacles and stuffs in environment
-blocker range sphere/(arc) integration with attack animation (or allow manual dodging with arc/range)
+blocker range sphere/(arc) integration with attack animation 
 Add variety of units with ranged/guns, against obstacles for arrow/bullet projectiles.
 _________________
 Formation group movement
