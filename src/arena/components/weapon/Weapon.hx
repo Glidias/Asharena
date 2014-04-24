@@ -4,23 +4,34 @@ import ash.signals.Signal2;
 import components.Health;
 
 /**
- * Base weapon stats. SHarable component between entities.
- * @author ...
+ * Base weapon/weapon-attack-mode stats. Sharable component between entities. 
+ * @author Glenn Ko
  */
 class Weapon
 {
-	public var name:String;
+	public var name:String;	// used as a primary key as well
 	public var range:Float;
 	public var damage:Int;  // min damage applied
 	public var cooldownTime:Float;
 	public var hitAngle:Float;
 	public var sideOffset:Float;
+	public var heightOffset:Float;
 	
 	// advanced Arena properties below
+	
+	// Firemodes: Positive values indiciate melee attack modes. Zero or Negative values indicates ranged attack mode.
+	public static inline var FIREMODE_THRUST:Int = 1;	 // thrusting motion
+	public static inline var FIREMODE_SWING:Int = 2;	// swing (side) motion 
+	public static inline var FIREMODE_STRIKE:Int = 3; 	 // strike (swing from top) chop motion
+	public static inline var FIREMODE_RAY:Int = 0;		// ray hitscan shot (suitable for bullets and such..)
+	public static inline var FIREMODE_TRAJECTORY:Int = -1;  // for thrown/launched projectiles with trajectory
+	public static inline var FIREMODE_VELOCITY:Int = -2; 	// for velocity projectile weapons
+	public var fireMode:Int;	// the firemode that the weapon uses
+	public var nextFireMode:Weapon; // any next varying fire mode weapon to consider using
+	
 	public var damageRange:Int;		// damage up-range variance
 
 	public var minRange:Float;
-	
 	
 	public var critMinRange:Float;
 	public var critMaxRange:Float;
@@ -60,13 +71,15 @@ class Weapon
 		
 	}
 	
-	public function init(name:String, range:Float, damage:Int, cooldownTime:Float, hitAngle:Float, sideOffset:Float=0):Weapon {
+	public function init(name:String, range:Float, damage:Int, cooldownTime:Float, hitAngle:Float, sideOffset:Float=0, fireMode:Int=0, heightOffset:Float=0):Weapon {
 		this.name = name;
 		this.range = range;
 		this.damage = damage;
 		this.hitAngle = hitAngle;
 		this.cooldownTime = cooldownTime;
 		this.sideOffset = sideOffset;
+		this.fireMode = fireMode;
+		this.heightOffset = heightOffset;
 		return this;
 	}
 

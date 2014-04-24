@@ -242,7 +242,10 @@ package tests.pvp
 			*/
 			
 			var w:Weapon =   new Weapon();
-			w.name = "Some Melee weapon";
+			w.name = "Melee weapon";
+			w.fireMode = thrust ? Weapon.FIREMODE_THRUST : Weapon.FIREMODE_SWING;
+			w.sideOffset = thrust ? 15 : 36;
+			w.heightOffset = 0;
 			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
 			w.minRange = 16;
 			w.damage =  25;
