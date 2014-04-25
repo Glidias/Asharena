@@ -22,7 +22,7 @@ class PlayerTargetingSystem extends System
 	private var ray_travel:Vec3;
 	private var ray_origin:Vec3;
 	
-	private static inline var MAX_VALUE:Float =  1.79e+308;
+	public static inline var MAX_VALUE:Float =  1.79e+308;
 	
 	private var lastHitObj:Object3D;
 	
@@ -54,6 +54,10 @@ class PlayerTargetingSystem extends System
 		
 	}
 	
+	public function getEnv3DIntersectionTime():Float {
+		return MAX_VALUE;
+	}
+	
 	public function isValidTarget(n:PlayerTargetNode):Bool {
 		return true;
 	}
@@ -65,7 +69,7 @@ class PlayerTargetingSystem extends System
 		// we assume all entities are in the same coordinate space
 		
 		var n:PlayerTargetNode = nodeList.head;
-		var nd:Float = MAX_VALUE;
+		var nd:Float =  getEnv3DIntersectionTime();
 		var hitNode:PlayerTargetNode = null;
 		while (n != null) {
 			if (!isValidTarget(n)) {
@@ -78,7 +82,7 @@ class PlayerTargetingSystem extends System
 			targetRayOrigin.z = ray_origin.z - n.pos.z;
 			
 			var d:Float = Intersect3D.rayIntersectsEllipsoid(targetRayOrigin, ray_travel, n.ellipsoid);
-			if (d>=0 && d  < nd) {
+			if (d >= 0 && d  < nd) {
 				hitNode = n;
 				nd = d;
 			}

@@ -23,7 +23,7 @@ class HitFormulas
 
 	
 	
-	public static inline function targetIsWithinArcAndRangeSq2(diffAngle:Float, arcAng:Float, sqDist:Float, rangeSq:Float):Bool {
+	public static inline function targetIsWithinArcAndRangeSq2(diffAngle:Float, arcAng:Float, sqDist:Float, rangeSq:Float):Bool {  // TODO: Depeciate
 
 		return sqDist <= rangeSq && diffAngle <= arcAng;
 		
@@ -40,10 +40,11 @@ class HitFormulas
 	}
 	
 	
-	public static inline function targetIsWithinArcAndRangeSq(posA:Pos, rotA:Rot, posB:Pos, rangeSq:Float, arcAng:Float):Bool {
+	public static inline function targetIsWithinArcAndRangeSq(posA:Pos, rotA:Rot, posB:Pos, rangeSq:Float, arcAng:Float):Bool { // TODO: Convert to 3D
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
-		var withinRange:Bool = dx * dx + dy * dy <= rangeSq;
+		var dz:Float = posB.z - posA.z;
+		var withinRange:Bool = dx * dx + dy * dy  + dz*dz <= rangeSq;
 		
 		var withinAng:Bool = PMath.abs(getDiffAngle(rotA.z, Math.atan2(dy, dx)+ROT_FACING_OFFSET ) ) <= arcAng;
 		
@@ -51,10 +52,14 @@ class HitFormulas
 		
 	}
 	
-	public static inline function get2DDist(posA:Pos,  posB:Pos, ellipsoidB:Ellipsoid):Float {
+	public static inline function get3DDist(posA:Pos,  posB:Pos, ellipsoidB:Ellipsoid):Float {	
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
-		return Math.sqrt(dx * dx + dy * dy)- ellipsoidB.x ;
+		var dz:Float = posB.z - posA.z;
+		var d:Float = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		var dm:Float = 1 / d;
+		
+		return d - PMath.abs(dx*dm*ellipsoidB.x + dy*dm*ellipsoidB.y + dz*dm*ellipsoidB.z);
 	}
 
 	// Used for actual combat..
@@ -63,8 +68,10 @@ class HitFormulas
 		var basePerc:Float = facinPerc=calculateFacingPerc(posA, posB, rotB, defB); 
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
-		var d:Float = Math.sqrt(dx * dx + dy * dy) - ellipsoidB.x; // we assume x and y is the same!
-		
+		var dz:Float = posB.z  - posA.z;
+		var d:Float = Math.sqrt(dx * dx + dy * dy + dz * dz); // we assume x and y is the same!
+		var dm:Float = 1 / d;
+		d -=   PMath.abs(dx*dm*ellipsoidB.x + dy*dm*ellipsoidB.y + dz*dm*ellipsoidB.z);
 
 		
 		//if (facinPerc >60) {
@@ -95,8 +102,10 @@ class HitFormulas
 		var basePerc:Float =  calculateFacingPerc(posA, posB, rotB, defB); 
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
-		var d:Float = Math.sqrt(dx * dx + dy * dy) - ellipsoidB.x; // we assume x and y is the same!
-	
+		var dz:Float = posB.z - posA.z;
+		var d:Float = Math.sqrt(dx * dx + dy * dy + dz*dz); // we assume x and y is the same!
+		var dm:Float = 1 / d;
+		d -= PMath.abs(dx * dm * ellipsoidB.x + dy * dm * ellipsoidB.y + dz * dm * ellipsoidB.z);
 		// Detemine best range to crit for given weapon
 		var  critOptimalRangeFactor:Float = calculateOptimalRangeFactorMidpoint(ellipsoidA.x, weaponA.range, weaponA.critMinRange, weaponA.critMaxRange, d); 
 		basePerc *= PMath.lerp( .3, 1, critOptimalRangeFactor);
@@ -116,6 +125,7 @@ class HitFormulas
 	}
 	
 	
+	// TODO: factor in z value for 3D
 
 	/**
 	 * Used for actual combat...against attacking enemies
@@ -126,8 +136,11 @@ class HitFormulas
 		// determine who will strike faster
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
-		var sqDist:Float =  Math.sqrt(dx * dx + dy * dy) ;
-		var d:Float = sqDist -ellipsoidB.x; // we assume x and y is the same!
+		var dz:Float = posB.z - posA.z;
+		var sqDist:Float =  Math.sqrt(dx * dx + dy * dy + dz * dz) ;
+		var dm:Float = 1 / sqDist;
+		var d:Float = sqDist - PMath.abs(dx * dm * ellipsoidB.x + dy * dm * ellipsoidB.y + dz * dm * ellipsoidB.z); // we assume x and y is the same!
+		
 		
 		var timeFactor:Float;  
 		var totalTimeToHit:Float;
@@ -135,7 +148,7 @@ class HitFormulas
 	
 		totalTimeToHit  = calculateStrikeTimeAtRange(weaponA, d);
 		
-		d = sqDist -ellipsoidA.x;
+		d = sqDist - dx * dm * ellipsoidA.x + dy * dm * ellipsoidA.y + dz * dm * ellipsoidA.z;
 		totalTimeToHit2 = calculateStrikeTimeAtRange(weaponB, d) - weaponBState.attackTime;
 		
 		if (totalTimeToHit2 > totalTimeToHit) {  // enemy strikes first, will he hit you?
@@ -160,9 +173,13 @@ class HitFormulas
 			
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
+		var dz:Float = posB.z - posA.z;
 	
 		var d:Float;
-		d =  Math.sqrt(dx * dx + dy * dy) -ellipsoidA.x;
+		d =  Math.sqrt(dx * dx + dy * dy + dz * dz);
+		var dm:Float = 1 / d;
+		d -= PMath.abs(dx * dm * ellipsoidA.x + dy * dm * ellipsoidA.y + dz * dm * ellipsoidA.z); // ellipsoidA.x;
+		
 		var totalTimeToHit2:Float = calculateStrikeTimeAtRange(weaponB, d) - weaponBState.attackTime;
 		
 			// determine if attacker is going to evade, block or parry, because you will strike  first
@@ -188,8 +205,10 @@ class HitFormulas
 		// determine who will strike faster
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
-		var sqDist:Float =  Math.sqrt(dx * dx + dy * dy) ;
-		var d:Float = sqDist -ellipsoidB.x; // we assume x and y is the same!
+		var dz:Float = posB.z - posA.z;
+		var sqDist:Float =  Math.sqrt(dx * dx + dy * dy + dz*dz) ;
+		var dm:Float = 1 / sqDist;
+		var d:Float = sqDist - PMath.abs(dx * dm * ellipsoidB.x + dy * dm * ellipsoidB.y + dz * dm * ellipsoidB.z); // we assume x and y is the same!
 		
 		var timeFactor:Float;  
 		var totalTimeToHit:Float;
@@ -223,8 +242,10 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 			// determine who will strike faster
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
-		var sqDist:Float =  Math.sqrt(dx * dx + dy * dy) ;
-		var d:Float = sqDist -ellipsoidB.x; // we assume x and y is the same!
+		var dz:Float = posB.z - posA.z;
+		var sqDist:Float =  Math.sqrt(dx * dx + dy * dy + dz * dz) ;
+		var dm:Float = 1 / sqDist;
+		var d:Float = sqDist - PMath.abs(dx * dm * ellipsoidB.x + dy * dm * ellipsoidB.y + dz * dm * ellipsoidB.z); // we assume x and y is the same!
 		
 		var totalTimeToHit:Float;
 		var totalTimeToHit2:Float;

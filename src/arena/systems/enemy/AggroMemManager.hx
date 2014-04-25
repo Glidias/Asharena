@@ -267,19 +267,22 @@ class AggroMemManager
 	private inline function withinSqDist(posA:Pos, posB:Pos, sqDist:Float):Bool {
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
-		return dx * dx + dy * dy <= sqDist;
+		var dz:Float = posB.z - posA.z;
+		return dx * dx + dy * dy + dz*dz <= sqDist;
 	}
 	
 	private inline function withinDist(posA:Pos, posB:Pos, dist:Float):Bool {
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
-		return Math.sqrt(dx * dx + dy * dy) <= dist;
+		var dz:Float = posB.z - posA.z;
+		return Math.sqrt(dx * dx + dy * dy + dz*dz) <= dist;
 	}
 	
 	private inline function getSqDist(posA:Pos, posB:Pos):Float {
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
-		return dx * dx + dy * dy;
+		var dz:Float = posB.z - posA.z;
+		return dx * dx + dy * dy + dz*dz;
 	}
 	private var _turnActive:Bool = false;
 	// This is called right after turn is started, where MovementPoints is given to playerEnt after transioinining into player.

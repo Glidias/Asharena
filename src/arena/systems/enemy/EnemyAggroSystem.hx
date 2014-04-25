@@ -268,7 +268,7 @@ class EnemyAggroSystem extends System
 		var enemyPos:Pos;
 		var dx:Float;
 		var dy:Float;
-		//var dz:Float;
+		var dz:Float;
 		
 		var pTimeElapsed:Float = p.movementPoints.timeElapsed;
 		
@@ -282,8 +282,8 @@ class EnemyAggroSystem extends System
 			rangeSq = i.state.alertRangeSq;
 			dx =  playerPos.x - enemyPos.x;
 			dy = playerPos.y - enemyPos.y;
-			//dz = playerPos.z - enemyPos.z;
-			if (dx * dx + dy * dy <= rangeSq && HitFormulas.targetIsWithinFOV2(dx, dy, i.rot, i.state.fov) && validateVisibility(enemyPos, p) ) {  // TODO: Include rotation facing direction as a factor for EnemyIdle case to allow backstabs
+			dz = playerPos.z - enemyPos.z;
+			if (dx * dx + dy * dy + dz*dz <= rangeSq && HitFormulas.targetIsWithinFOV2(dx, dy, i.rot, i.state.fov) && validateVisibility(enemyPos, p) ) {  // TODO: Include rotation facing direction as a factor for EnemyIdle case to allow backstabs
 				i.entity.remove(EnemyIdle);
 				
 				i.entity.add(new EnemyWatch().init(i.state,p), EnemyWatch); // TODO: Pool ENemyWatch
@@ -302,9 +302,9 @@ class EnemyAggroSystem extends System
 			rangeSq = w.state.watch.aggroRangeSq;
 			dx =  playerPos.x - enemyPos.x;
 			dy = playerPos.y - enemyPos.y;
-			//dz = playerPos.z - enemyPos.z;
+			dz = playerPos.z - enemyPos.z;
 			
-			if (dx * dx + dy * dy <= rangeSq && validateVisibility(enemyPos, p) ) { 
+			if (dx * dx + dy * dy + dz*dz <= rangeSq && validateVisibility(enemyPos, p) ) { 
 				
 				w.entity.remove(EnemyWatch);
 				newAggro = new EnemyAggro();
@@ -335,7 +335,8 @@ class EnemyAggroSystem extends System
 			
 			dx = pTarget.pos.x - a.pos.x;
 			dy = pTarget.pos.y - a.pos.y;
-			var sqDist:Float = dx * dx + dy * dy;
+			dz =  pTarget.pos.z - a.pos.z;
+			var sqDist:Float = dx * dx + dy * dy + dz*dz;
 	
 			
 			// NAive canceling of attack trigger can be done since this isn't a real-time game, and pple wouldnt notice.

@@ -3,6 +3,8 @@ package alternativa.a3d.controller
 	import alternativa.engine3d.controllers.OrbitCameraMan;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.alternativa3d;
+	import alternativa.engine3d.core.RayIntersectionData;
+	import flash.geom.Vector3D;
 	import systems.player.PlayerTargetingSystem;
 	import systems.player.PlayerTargetNode;
 	use namespace alternativa3d;
@@ -14,6 +16,8 @@ package alternativa.a3d.controller
 	public class ThirdPersonTargetingSystem extends PlayerTargetingSystem
 	{
 		public var thirdPerson:OrbitCameraMan;
+		private var myRayTravel:Vector3D = new Vector3D();
+		private var myRayOrigin:Vector3D = new Vector3D();
 		
 		private var maxRangeSquared:Number = Number.MAX_VALUE;
 		public function setMaxRange(val:Number):void {
@@ -23,7 +27,25 @@ package alternativa.a3d.controller
 		public function ThirdPersonTargetingSystem(thirdPerson:OrbitCameraMan) 
 		{
 			this.thirdPerson = thirdPerson;
+			
 		}
+		
+		override public function getEnv3DIntersectionTime():Number {
+			myRayOrigin.x = ray_origin.x;
+			myRayOrigin.y = ray_origin.y;
+			myRayOrigin.z = ray_origin.z;
+			
+			myRayTravel.x = ray_travel.x;
+			myRayTravel.y = ray_travel.y;
+			myRayTravel.z = ray_travel.z;
+		
+			
+			var intersect:RayIntersectionData = thirdPerson.scene.intersectRay(myRayOrigin, myRayTravel);
+			
+			return intersect != null ? intersect.time : MAX_VALUE;
+		}
+		
+		
 		
 		override public function isValidTarget(node:PlayerTargetNode):Boolean {
 

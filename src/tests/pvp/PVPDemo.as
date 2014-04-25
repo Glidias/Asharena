@@ -10,6 +10,7 @@ package tests.pvp
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.primitives.PlanarRim;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
@@ -149,7 +150,16 @@ package tests.pvp
 		
 		private function setupEnvironment():void 
 		{
+			
+			
 			// example visual scene
+			var box:Object3D = new Box(100, 100, 100, 1, 1, 1, false, new FillMaterial(0xCCCCCC) );
+			box.z = 50;
+			
+			
+			
+			SpawnerBundle.uploadResources(box.getResources());
+			
 			var planeFloor:Mesh = new Plane(2048, 2048, 1, 1, false, false, null, new FillMaterial(0xBBBBBB, 1) );
 			_template3D.scene.addChild(planeFloor);
 			//arenaSpawner.addCrossStage(SpawnerBundle.context3D);
@@ -158,10 +168,33 @@ package tests.pvp
 		
 			// collision scene (can be something else)
 			collisionScene = planeFloor;
-			game.colliderSystem.collidable = CollisionUtil.getCollisionGraph(collisionScene);
+			var rootCollisionNode:CollisionBoundNode;
+			game.colliderSystem.collidable =rootCollisionNode =  CollisionUtil.getCollisionGraph(collisionScene);
 			game.colliderSystem._collider.threshold = 0.00001;
 			// (Optional) Enforced ground plane collision
 			//game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(0, true) ).withPriority(SystemPriorities.resolveCollisions);
+			
+			box = planeFloor.addChild(box);
+			box.x = 500;
+			box.y = 300;
+			rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
+			
+			
+				box = planeFloor.addChild(box.clone());
+			box.x = 50;
+			box.y = 300;
+			rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
+			
+				box = planeFloor.addChild(box.clone());
+			box.x = 200;
+			box.y = 300;
+			rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
+			
+				box = planeFloor.addChild(box.clone());
+			box.x = 300;
+			box.y = 300;
+			rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
+			
 
 		}
 		
@@ -201,7 +234,7 @@ package tests.pvp
 		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
 		private var commandPoints:Vector.<int> = new <int>[0,0];
-		private var enemyWatchSettings:EnemyIdle = new EnemyIdle().init(9000, 100);
+		private var enemyWatchSettings:EnemyIdle = new EnemyIdle().init(9000, 100, 1.88495559215388, 28 );
 
 			
 		// Deault weapon stats
@@ -1180,7 +1213,10 @@ package tests.pvp
 				arr = testArr2;
 			}
 			
-			if (removeIndex < 0) throw new Error("COUld not find entity in registry!");
+			if (removeIndex < 0) {
+				//throw new Error("COUld not find entity in registry!");
+				return;
+			}
 			arr.splice(removeIndex, 1);
 			
 			

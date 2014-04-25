@@ -55,7 +55,7 @@ class AnimAttackSystem extends System
 				n.animMelee.curTime += time;
 				if (n.animMelee.fixedStrikeTime >= 0) {
 					
-					var timing:Float = HitFormulas.calculateAnimStrikeTimeAtRange(n.weapon, HitFormulas.get2DDist(n.pos, n.animMelee.targetPos, n.animMelee.targetEllipsoid));
+					var timing:Float = HitFormulas.calculateAnimStrikeTimeAtRange(n.weapon, HitFormulas.get3DDist(n.pos, n.animMelee.targetPos, n.animMelee.targetEllipsoid));
 					if (n.animMelee.curTime >= timing) {
 						n.animMelee.targetHP.damage(n.animMelee.damageDeal);
 						n.animMelee.fixedStrikeTime = -1;

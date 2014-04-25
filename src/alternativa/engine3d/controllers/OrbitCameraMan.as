@@ -40,7 +40,7 @@ package alternativa.engine3d.controllers
         public var followAzimuth:Boolean = false;
         public var followPitch:Boolean = false;
         protected static const ORIGIN:Vector3D = new Vector3D();
-        protected var scene:Object3D;
+        public var scene:Object3D;
         //x:  -45 * (Math.PI / 180)  
         
         public var cameraForward:Vector3D = new Vector3D();

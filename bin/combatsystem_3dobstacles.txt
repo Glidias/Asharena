@@ -8,6 +8,9 @@ Targeting:
   TODO:
 -If got target ellipsoid hit, check 3d geometry raycast distance nearer or further from target ellipisoid hit.
 
+(DONE!)
+
+(TODO later...optimizatoin: Use CollisionBoundNode raycasting instead!)
 ___________ 
 
 Enemy alert detection for EnemyIdle units:  (all tests must pass for EnemyIdle units to become EnemyWatch units)
@@ -20,6 +23,7 @@ Enemy alert detection for EnemyIdle units:  (all tests must pass for EnemyIdle u
 - (Optional) If center of mass position spotted without 3D obstacles blocking, player is treated as automatically spotted. In most cases, at least half of his body is already showing. However, this test might be omitted in favour for the 2nd case when running player unit detection per frame. 
 - If optional first test fails, player is either partially/fully concealed. In per-frame case, periodically perform a random raycast hitscan towards any part of the player ellipsoid. To factor in range deviation (ie. short-sightedness of enemy), can deviate the ray accruacy by a certain angular displacement (based off a enemy's nearsightedness) (<-KIV). This can result in greater chances of "misses" by an opponent, if you are far away from  him and he didn't spot you yet.(If miss deviates out of ellipsoid area, can early out) Hit-scan towards ellisoid can have a slightly lower radius to better fit the target.   A 3-dimensional random box volume raycast can be done for such a naive random raycast case, or a random ellipsoid point volume raycast). For cases where a turn is about to end or a turn is about to start, can perform Optional first test case, thus requirign the player to at least hide his center of mass prior to ending the turn.  (the arc marker can indicate center of mass detection per frame only).
 
+
 _________
 
 3) Hitscan for thrusting/swinging melee weapons  + ranged weapons
@@ -27,17 +31,60 @@ _________
 - Need a 2D straight line range from ellipsoid to ellisoid to be within weapon range.
 TODO:
 For all types of melee attacks:
-- Add z reach check as well, which should be weapon range across 45 degree arc angle. (KIV until got elevation consideration)
+- Convert above 3D Straight line range from ellipsoid to ellipsoid to be 3D within weapon range. (DONE)
 - Need a clear LOS to target ellipsoid from right-handed radial offset of attacking unit, without 3D obstacles blocking the way.
+
 For swinign attack:
 - Swinging weapon requires an extra offset radial offset clearance distance to a right-hander's right 90 top-right quarter-circle, if no such clearance is available, default thrusting animation is used instead where right-handed radial offset always lies within ellipsoid. Tests must be done to see if any polygon geometry edges lie within t he quarter circle segment at mid-chest level, and if so, do now allow weapon swing. Use  AABB tests initially, against full circle and quarter circle..
 -  Thrusting and Swinging attacks are actually 2 differnet weapons having different stats.  Allow a change in fireMode using a nextWeaponMode pointer. Firemodes are sorted according to priority consideration, until default fallback is the last one (ie. the thrust weaponMode).
 - When targetting opponent, ArenaHUD must show available Swinging/Thrusting options. Sort action list according to percentage chance to hit. Let player decide which weapon mode to use on target.
 - EnemyAggroSystem: Reaction fire means triggering the attack according to the range if valid (ie. within range/arc, clearance), otherwise cycling down to the next available option. At the time of "strike", if no longer valid WeaponLOS to target ellipsoid, consider cycling down to next available firemode if avaialbe and re-determine timeOfStrike. Once strike has occured, send either a AnimMelee for melee attacks, or send a projectile/raycast for ranged attacks. Note that any triggering of a range attack, would trigger fire animation accordingly!!
+
 - + (Obstacles/Cover and Flanking) ArenaHUD: For  weapons, if you have valid no-obstacle WeaponLOS to target, but target has no clear-obstacle WeaponLOS on you (based on direct point towards you, not on his current rotation), give target additional evasionUnderCover bonus that makes hitting the target not that easy.  If target hasn't triggered any attack on you, test for both handedness to determine if either blockage is true using ellipsoid radius, and if so, give  evasionUnderCoverBonus bonus if target has triggered. If target has triggered an attack on you, than test for weapon righthandedness WeaponLOS to determine if  he can retailiate. If he can't due to obstacle blockage, cancel the trigger(if needed when he can't retailate attack upon required), and rmb to run evasionUnderCoverBonus using both handedness with ellipsoid radius for such a case to determine final hit percentage. If target has triggered an attack and righthandedness test succeeds, than coverBonus is still applied for both-handedness with ellipsoid radius test, but this is not as effective as evasionUnderCoverBonus.
 - EnemyAggroSystem: evasionUnderCoverBonus also used for players, when guarding against enemy aggro.
 (KIV) Note that some type of curved swords (or curled/boomerang projectiles), may mitigate evasionUnderCover/cover bonuses. 
 Obstacles/Cover bonus and Open Flank determination is used for all types of melee/ranged attacks. It is a crucial aspect of the game where the challenge is often to take out enemies in covered positions by flanking them.
+
+
+________________________________________
+
+The 3rd person camera Fog Of War issue (3D environment LOS target detection should work both ways!)
+
+Every combat phase has a list of:
+1) Seen Enemies
+2) Detected Enemies (Expires after 3 of your phases..)
+
+Your phase:
+	0) Fog of War, Enemy detection raycast, default all set visible=false.
+ - Set visible = true for any visible-check-test on enemy targets (rotation-agnostic).
+ 
+A character's turn (ie. while in 3rd person view):
+1) Undetected enemies only appear out of thin air when they get "detected" by your moving characters FOV, that can be smaller than the third person camera. 
+Once they get detected, they appear there permanently, so long as they aren't moving. Thus, pop ins are only a one-time event and there's no pop outs!
+ This means popping in only happens once. 
+
+Center of  mass raycast is checked. If detected, it means entity is most likely clearly visible, so just show it!
+Otherwise, 2 upper edge corners are checked (<- optional..but maybe good), if not, than random spot periodic checks .
+If detected, flash model in via old-school white-in and notify via text message, as this is a model that is detected halfway while moving character around (or using the "wait" button).
+Depending on distance to center of mass and distance of center of mass raycast hit, clause message can show "from behind cover".
+
+Special cases (hidden attacking enemeis), Aggored are automatically "detected" if they fire upon you, but they may not be seen at the moment and thus their details are unknown....Such areas are marked with question mark upon exiting back out to command view.
+
+Enemy phase:
+2) You can only see what your characters around sees as the enemy moves (rotation agnostic), otherwise, otherwise all movement is hidden. 
+(or you detect shuffling like in VC),
+3) Overhead view shows markers consisting of last seen enemy positions that aren't spotted yet. 
+Markers vanish and become actual models once detected.
+Once models are completely concealed, they become markers. For complete concealment, use 5 point check (center and 4 corners) + periodic random spots.
+
+(Consider ...show markers completely in strategic view...no models seen until transitioning into third person view/spectating view)
+
+
+Your phase:
+	Markers still remain of last known undeteced enemy positions from last phase.
+
+
+(KIV,...for added realism, identifying target details require certain conditions in terms of how much the 3D model is exposed within sight)
 
 _____________________________________ Integration with ranged units
 
