@@ -327,6 +327,7 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 		return sampleRange;
 	}
 	
+	// this is just an approximation, using the rough 2D width added to the range accordingly
 	public static inline function rollRandomAttackRangeForWeapon(w:Weapon, targetSize:Ellipsoid):Float {
 		var range:Float = w.critMaxRange + Math.random() * ( w.range - w.critMaxRange) ;
 		 range= (range +22 < w.range) ? w.range - 22 : range;  // min 22 margin

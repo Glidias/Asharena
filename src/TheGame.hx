@@ -1,4 +1,5 @@
 package;
+import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.player.AnimAttackSystem;
 import haxe.io.BytesInput;
 import haxe.io.BytesOutput;
@@ -101,6 +102,7 @@ class TheGame
 		HitFormulas;
 		
 		AnimAttackSystem;
+		IWeaponLOSChecker;
 		// Spawn starting entities
 	
 		// Start

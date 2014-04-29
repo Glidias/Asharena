@@ -75,7 +75,8 @@ class EllipsoidColliderSystem extends System
 		nodeListMovables = engine.getNodeList(EllipsoidMovableNode);
     }
 	
-	private inline function doCalculateDestination(ellip:Ellipsoid, npos:Vec3, vel:Vec3, time:Float, fromTime:Float, result:MoveResult):Void {
+	//inline
+	private  function doCalculateDestination(ellip:Ellipsoid, npos:Vec3, vel:Vec3, time:Float, fromTime:Float, result:MoveResult):Void {
 		pos.x = npos.x;
 		pos.y = npos.y;
 		pos.z = npos.z;
@@ -85,7 +86,7 @@ class EllipsoidColliderSystem extends System
 		disp.z = vel.z * time;
 		
 		var vec:Vector3D =  _collider.calculateDestination(pos, disp, collidable, time, fromTime);
-		
+	//	if (vec.z < ellip.z) throw "OUTTA BOUNDS:"+vec.z;
 		if (_collider.collisions != null) {
 			var tailCollision:CollisionEvent = null;
 			var c:CollisionEvent = _collider.collisions;
@@ -137,6 +138,8 @@ class EllipsoidColliderSystem extends System
 			
 			n = n.next;
 		}
+		
+		
 		
 		
 		// --------------------------------
@@ -419,7 +422,7 @@ class EllipsoidColliderSystem extends System
 		and tangential zero reflection for curves
 		(which cause no change of velocity while collision resolve)
 	*/
-	private static inline var MIN_REFLECTION: Float = .05;
+	private static inline var MIN_REFLECTION: Float = .005;
 
 	public inline function resolveMovableCircleWithImmobile( immobileCircle:Vec3, circle: Vec3, circleVel:Vec3 ): Void  // immovable (use this naive approach for 3d as immovable against a movable circle! )
 	{

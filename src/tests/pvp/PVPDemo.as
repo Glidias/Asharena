@@ -6,6 +6,7 @@ package tests.pvp
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.controller.ThirdPersonTargetingSystem;
 	import alternativa.a3d.objects.ArrowLobMeshSet;
+	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
 	import alternativa.engine3d.controllers.OrbitCameraMan;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.FillMaterial;
@@ -45,6 +46,7 @@ package tests.pvp
 	import components.Vel;
 	import flash.display.MovieClip;
 	import flash.display.Stage;
+	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.ui.Keyboard;
 	import flash.utils.setTimeout;
@@ -152,8 +154,10 @@ package tests.pvp
 		{
 			
 			
+			_template3D.stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextCreated);
+			
 			// example visual scene
-			var box:Object3D = new Box(100, 100, 100, 1, 1, 1, false, new FillMaterial(0xCCCCCC) );
+			var box:Object3D = new Box(100, 13, 100, 1, 1, 1, false, new FillMaterial(0xCCCCCC) );
 			box.z = 50;
 			
 			
@@ -164,7 +168,7 @@ package tests.pvp
 			_template3D.scene.addChild(planeFloor);
 			//arenaSpawner.addCrossStage(SpawnerBundle.context3D);
 			SpawnerBundle.uploadResources(planeFloor.getResources(true, null));
-			
+				
 		
 			// collision scene (can be something else)
 			collisionScene = planeFloor;
@@ -196,6 +200,11 @@ package tests.pvp
 			rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
 			
 
+		}
+		
+		private function onContextCreated(e:Event):void 
+		{
+			throw new Error("Created again! Context loss earlier");
 		}
 		
 		private var markedTargets:Vector.<Object3D> = new Vector.<Object3D>();
@@ -273,11 +282,12 @@ package tests.pvp
 			
 			return w;
 			*/
+			A3DEnemyAggroSystem;
 			
 			var w:Weapon =   new Weapon();
 			w.name = "Melee weapon";
 			w.fireMode = thrust ? Weapon.FIREMODE_THRUST : Weapon.FIREMODE_SWING;
-			w.sideOffset = thrust ? 15 : 36;
+			w.sideOffset = 15;// thrust ? 15 : 36;
 			w.heightOffset = 0;
 			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
 			w.minRange = 16;
@@ -1121,7 +1131,8 @@ package tests.pvp
 			
 			
 			game.gameStates.thirdPerson.addInstance( _animAttackSystem=  new AnimAttackSystem() ).withPriority(SystemPriorities.stateMachines);
-			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem = new EnemyAggroSystem() ).withPriority(SystemPriorities.stateMachines);
+			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem = new A3DEnemyAggroSystem(transitionCamera.thirdPerson.scene) ).withPriority(SystemPriorities.stateMachines);
+			arenaHUD.weaponLOSCheck = _enemyAggroSystem;
 			//_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
 		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
 		//	_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);

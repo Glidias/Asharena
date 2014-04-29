@@ -28,6 +28,7 @@ package arena.views.hud
 	import arena.components.weapon.WeaponSlot;
 	import arena.components.weapon.WeaponState;
 	import arena.systems.enemy.EnemyAggroSystem;
+	import arena.systems.player.IWeaponLOSChecker;
 	import ash.core.Entity;
 	import assets.fonts.ConsoleFont;
 	import assets.fonts.Fontsheet;
@@ -142,6 +143,7 @@ Components for:
 WeaponSlots
 */
  
+		public var weaponLOSCheck:IWeaponLOSChecker;
 	
 		public function ArenaHUD(stage:Stage) 
 		{

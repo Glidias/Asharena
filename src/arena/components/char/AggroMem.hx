@@ -22,6 +22,8 @@ class AggroMem implements Indexable
 	public var watchSettings:EnemyIdle;
 	public var side:Int;
 	public var index:Int;
+	
+	public var cooldown:Float;
 
 	public function new() 
 	{
@@ -33,6 +35,7 @@ class AggroMem implements Indexable
 		this.watchSettings = watchSettings;
 		this.side = side;
 		index = -1;
+		cooldown = 0;
 		return this;
 	}
 	

@@ -158,7 +158,7 @@ class AggroMemManager
 			testPos.z = ac.pos.z + ac.size.z;
 		
 		
-			if ( hasLOSWithFOV(aggroMem.watchSettings.fov, posA, rotA, testPos) ) {
+			if ( hasFOV(aggroMem.watchSettings.fov, posA, rotA, testPos) ) {
 				aggroMem.bits.set(a);
 			}
 		}
@@ -232,7 +232,10 @@ class AggroMemManager
 		}
 		
 	}
-	
+	public inline function hasFOV(fovA:Float, posA:Pos, rotA:Rot, posB:Pos):Bool {
+		
+		return HitFormulas.targetIsWithinFOV(posA, rotA, posB, fovA) && hasLOS(posA, posB);
+	}
 	
 	public inline function hasLOSWithFOV(fovA:Float, posA:Pos, rotA:Rot, posB:Pos):Bool {
 		
@@ -300,6 +303,7 @@ class AggroMemManager
 		var aggro:EnemyAggro;
 		am = memList.head;
 		while (am != null) {
+			am.mem.cooldown = 0;
 			
 			if (am.mem.side == activeSide) {  // active non-aggro ai side, shoudl be ignored...
 				am = am.next;
@@ -326,7 +330,7 @@ class AggroMemManager
 		// for entities in Aggro state, they are assigned a attack-trigger range based off their weapon's ranges (factor out method to Hitformulas), determine if playerEnt is within trigger range and if so, pull the trigger even before the player moves!
 		var a:EnemyAggroNode = aggroList.head;
 		while ( a != null) {
-			a.state.setAttackRange(HitFormulas.rollRandomAttackRangeForWeapon(a.weapon, playerAggroList.head.size));
+			a.state.setAttackRange( (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(a.weapon, playerAggroList.head.size) : a.weapon.range + playerAggroList.head.size.x );
 			if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, playerAggroList.head.pos, a.state.attackRangeSq, a.weapon.hitAngle) )   {
 				a.state.flag = 1;
 				a.weaponState.pullTrigger();
@@ -365,7 +369,7 @@ class AggroMemManager
 		while ( w != null) {
 			
 			if (w.state.rotDirty) {
-				aggroMem = w.entity.get(AggroMem);
+				aggroMem =  w.entity.get(AggroMem);
 				if (aggroMem!=null) {
 					updateAggroMem(w.entity, aggroMem, w.pos, w.rot);
 				}

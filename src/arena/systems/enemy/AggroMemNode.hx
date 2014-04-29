@@ -18,6 +18,8 @@ class AggroMemNode extends Node<AggroMemNode>
 	public var size:Ellipsoid;
 	public var health:Health;
 	
+	
+	
 	public function new() 
 	{
 		

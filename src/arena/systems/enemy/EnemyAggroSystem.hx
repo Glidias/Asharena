@@ -7,6 +7,7 @@ import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
 import arena.components.weapon.AnimAttackMelee;
 import arena.components.weapon.PlayerAttack;
+import arena.systems.player.IWeaponLOSChecker;
 
 import arena.systems.player.PlayerAggroNode;
 import ash.core.Engine;
@@ -30,7 +31,7 @@ import util.geom.PMath;
  * 
  * @author Glenn Ko
  */
-class EnemyAggroSystem extends System
+class EnemyAggroSystem extends System implements IWeaponLOSChecker
 {
 
 	public var aggroList:NodeList<EnemyAggroNode>;
@@ -54,6 +55,15 @@ class EnemyAggroSystem extends System
 	public var enemyCrit:Bool;
 	public var updating:Bool;
 	
+	
+	// Kiting AI exploit settings
+	public static inline var ALLOW_KITE_RANGE:Int = 1;
+	public static inline var ALLOW_KITE_OBSTACLES:Int = 2;
+	public static inline var KITE_ALLOWANCE:Int = 0;
+	
+	private var _reactCooldown:Float;
+	public static inline var REACT_TIME:Float = .215;  // Average reaction time of human being: 0.215 : 4.65 frames per second
+	
 	public function new() 
 	{
 		super();
@@ -73,6 +83,8 @@ class EnemyAggroSystem extends System
 		
 		playerNodeList = engine.getNodeList(PlayerAggroNode);
 		playerNodeList.nodeRemoved.add(onPlayerNodeRemoved);
+		
+		_reactCooldown = 0;
 		
 		if (aggroList.head != null) throw "AGgro list isn't clean!";
 		if (watchList.head != null) throw "watchList list isn't clean!";
@@ -195,7 +207,11 @@ class EnemyAggroSystem extends System
 	
 	// overwrite this method to include some form of ray-casting/occlusion detection algorithm to detect LOS visiblity
 	
-	public function validateVisibility(enemyPos:Pos, playerNode:PlayerAggroNode):Bool {
+	public function validateVisibility(enemyPos:Pos, enemyEyeHeight:Float, playerNode:PlayerAggroNode):Bool {
+		return true;
+	}
+	
+	public function validateWeaponLOS(attacker:Pos, sideOffset:Float, heightOffset:Float, target:Pos, targetSize:Ellipsoid):Bool {
 		return true;
 	}
 
@@ -272,9 +288,15 @@ class EnemyAggroSystem extends System
 		
 		var pTimeElapsed:Float = p.movementPoints.timeElapsed;
 		
+		
 		if (pTimeElapsed <= 0) return; // being a turn based game, time only passes when player moves
 		
-		var i:EnemyIdleNode = idleList.head;
+		_reactCooldown -= pTimeElapsed;
+		
+		var gotReact:Bool = _reactCooldown <= 0;
+		 _reactCooldown += gotReact ? REACT_TIME : 0;
+		
+		var i:EnemyIdleNode = gotReact  ? idleList.head : null;
 		var rangeSq:Float;
 		
 		while (i != null) {  // assign closest player target to watch
@@ -283,7 +305,7 @@ class EnemyAggroSystem extends System
 			dx =  playerPos.x - enemyPos.x;
 			dy = playerPos.y - enemyPos.y;
 			dz = playerPos.z - enemyPos.z;
-			if (dx * dx + dy * dy + dz*dz <= rangeSq && HitFormulas.targetIsWithinFOV2(dx, dy, i.rot, i.state.fov) && validateVisibility(enemyPos, p) ) {  // TODO: Include rotation facing direction as a factor for EnemyIdle case to allow backstabs
+			if (dx * dx + dy * dy + dz*dz <= rangeSq && HitFormulas.targetIsWithinFOV2(dx, dy, i.rot, i.state.fov) && validateVisibility(enemyPos, i.state.eyeHeightOffset, p) ) {  // TODO: Include rotation facing direction as a factor for EnemyIdle case to allow backstabs
 				i.entity.remove(EnemyIdle);
 				
 				i.entity.add(new EnemyWatch().init(i.state,p), EnemyWatch); // TODO: Pool ENemyWatch
@@ -295,7 +317,7 @@ class EnemyAggroSystem extends System
 		var newAggro:EnemyAggro;
 		var rangeToAttack:Float;
 		
-		var w:EnemyWatchNode = watchList.head;
+		var w:EnemyWatchNode = gotReact   ? watchList.head : null;
 		while (w != null) {  // check closest valid player target, if it's same or different..  and consider aggroing if player gets close enough, 
 			enemyPos = w.pos;
 			
@@ -304,11 +326,11 @@ class EnemyAggroSystem extends System
 			dy = playerPos.y - enemyPos.y;
 			dz = playerPos.z - enemyPos.z;
 			
-			if (dx * dx + dy * dy + dz*dz <= rangeSq && validateVisibility(enemyPos, p) ) { 
+			if (dx * dx + dy * dy + dz*dz <= rangeSq && validateVisibility(enemyPos, w.state.watch.eyeHeightOffset, p) ) { 
 				
 				w.entity.remove(EnemyWatch);
 				newAggro = new EnemyAggro();
-				rangeToAttack =HitFormulas.rollRandomAttackRangeForWeapon(w.weapon,p.size);// w.weapon.critMaxRange + Math.random() * ( w.weapon.range - w.weapon.critMaxRange); 
+				rangeToAttack = ((ALLOW_KITE_RANGE & KITE_ALLOWANCE) != 0) ? HitFormulas.rollRandomAttackRangeForWeapon(w.weapon,p.size) : w.weapon.range + p.size.x;// w.weapon.critMaxRange + Math.random() * ( w.weapon.range - w.weapon.critMaxRange); 
 				newAggro.setAttackRange( rangeToAttack);
 				newAggro.watch = w.state.watch;
 				newAggro.target = w.state.target;
@@ -320,6 +342,7 @@ class EnemyAggroSystem extends System
 			w = w.next;
 		}
 		
+	
 		
 		var a:EnemyAggroNode = aggroList.head; 
 		var aWeaponState:WeaponState; 
@@ -391,7 +414,7 @@ class EnemyAggroSystem extends System
 					if (aWeaponState.cooldown <= 0) {  // cooldown finished. allow trigger to  be pulled again
 						aWeaponState.cancelTrigger();
 						a.state.flag = 0;
-						a.state.setAttackRange( HitFormulas.rollRandomAttackRangeForWeapon(a.weapon, p.size) );
+						a.state.setAttackRange( (((ALLOW_KITE_RANGE & KITE_ALLOWANCE) != 0) ? HitFormulas.rollRandomAttackRangeForWeapon(a.weapon, p.size) : a.weapon.range + p.size.x ) );
 						onEnemyReady.dispatch(a.entity);
 					}
 					else {
@@ -411,14 +434,19 @@ class EnemyAggroSystem extends System
 					var actualDist:Float = Math.sqrt(sqDist) - p.size.x;
 					var strikeTimeAtRange:Float = HitFormulas.calculateStrikeTimeAtRange(aWeapon, actualDist);
 					
+					
+					
 					if ( aWeaponState.attackTime >= strikeTimeAtRange) { // strike has occured
 						currentAttackingEnemy = a.entity;
+						var kite:Int = (ALLOW_KITE_RANGE | ALLOW_KITE_OBSTACLES);
 						
+						// TODO: Also Consider weapon LOS as well, if either test fails (or perhaps LOS only..), considered kited miss OR "silent-cancel"?
+						if (actualDist <= aWeapon.range && validateWeaponLOS(a.pos, a.weapon.sideOffset, a.weapon.heightOffset, p.pos, p.size)  ) {  // strike hit! 
 							
-						if (actualDist <= aWeapon.range   ) {  // strike hit! 
-						
 							if (Math.random() * 100 <= HitFormulas.getPercChanceToHitDefender(a.pos, a.ellipsoid, a.weapon, p.pos, p.rot, p.def, p.size)) {
 							
+								// TODO: if strike occurs  
+								
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
 								// deal damage to player heath
 								//currentAttackingEnemy = a.entity;
@@ -445,22 +473,38 @@ class EnemyAggroSystem extends System
 								
 								//p.health.damage(0);
 							}
+							
+							
 						}
-						else {  // considered strike miss due to evading blow... out of range
-							a.signalAttack.forceSet(PlayerAttack.SWING);
-							swinger =  new AnimAttackMelee();
-							//HitFormulas.calculateAnimStrikeTimeAtRange(a.weapon, actualDist)
+						else {  // considered possible forced strike miss (or silent cancel attack) due to evading blow... 
+
+							kite = actualDist > aWeapon.range ? ALLOW_KITE_RANGE : (ALLOW_KITE_RANGE | ALLOW_KITE_OBSTACLES);
+							kite &= KITE_ALLOWANCE;
+							
+							if (kite != 0) {  // somehow, kiting is allowed in this situation. Simulate deliberate swing miss.
+								a.signalAttack.forceSet(PlayerAttack.SWING);
+								swinger =  new AnimAttackMelee();
 								swinger.init_i_static(a.weapon.anim_strikeTimeAtMaxRange, p.health, 0 );
 								a.entity.add(swinger);
-							//p.health.damage(0);
+							}
+							else { // no kiting allowed in this suitation. Silently cancel attack.
+								a.state.flag = 0;
+								a.weaponState.cancelTrigger();
+							}
+						}
+						
+						// boiler checks
+						if (kite != 0) {
+							if  (a.state.flag != 1) throw "State before strke isn't 1:!" + (a.entity.get(Object3D).name) + ":" + a.state.flag + ", " + aWeaponState.cooldown + ", "+strikeTimeAtRange + ", "+aWeaponState.trigger + ", "+aWeaponState.attackTime;
+							if (a.state.flag == 2) throw "Repeat state 2!";
+							aWeaponState.cooldown = aWeapon.cooldownTime;  
+							a.state.flag = 2;
+							onEnemyStrike.dispatch(a.entity);
 						}
 						
 						
-						if  (a.state.flag != 1) throw "State before strke isn't 1:!" + (a.entity.get(Object3D).name) + ":" + a.state.flag + ", " + aWeaponState.cooldown + ", "+strikeTimeAtRange + ", "+aWeaponState.trigger + ", "+aWeaponState.attackTime;
-						if (a.state.flag == 2) throw "Repeat state 2!";
-						aWeaponState.cooldown = aWeapon.cooldownTime;  
-						a.state.flag = 2;
-						onEnemyStrike.dispatch(a.entity);
+					
+						
 						
 					}
 				
@@ -468,7 +512,7 @@ class EnemyAggroSystem extends System
 			}
 			else {   // consider whether should pull trigger
 			
-				if (  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, a.weapon.hitAngle, sqDist, a.state.attackRangeSq)  ) {
+				if (gotReact &&  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, a.weapon.hitAngle, sqDist, a.state.attackRangeSq) && validateWeaponLOS(a.pos, a.weapon.sideOffset, a.weapon.heightOffset, p.pos, p.size)  ) {  // TODO: Weapon LOS check
 				
 					aWeaponState.pullTrigger();
 					
