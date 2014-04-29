@@ -18,10 +18,12 @@ Enemy alert detection for EnemyIdle units:  (all tests must pass for EnemyIdle u
  Already have:
   - 2D FOV/distance check to center of mass position. (Note: this currently doesn't take into account player ellipoid size, because currently all players are treated as small-enough humanoid chracters that a dot approximation is good enough...).
  TODO:
- - Elevate 2D FOV check to eye-level based off EnemyIdle properties. 
+ - Elevate 2D FOV check to eye-level based off EnemyIdle properties.  (DONE!)
   - (KIV) Center of mass should lower if player is crouched, or using a lower stance than combat. Thus, entity ellipsoid and position needs to alter respectively and height stance changes must be validated against environment.
+  
 - (Optional) If center of mass position spotted without 3D obstacles blocking, player is treated as automatically spotted. In most cases, at least half of his body is already showing. However, this test might be omitted in favour for the 2nd case when running player unit detection per frame. 
 - If optional first test fails, player is either partially/fully concealed. In per-frame case, periodically perform a random raycast hitscan towards any part of the player ellipsoid. To factor in range deviation (ie. short-sightedness of enemy), can deviate the ray accruacy by a certain angular displacement (based off a enemy's nearsightedness) (<-KIV). This can result in greater chances of "misses" by an opponent, if you are far away from  him and he didn't spot you yet.(If miss deviates out of ellipsoid area, can early out) Hit-scan towards ellisoid can have a slightly lower radius to better fit the target.   A 3-dimensional random box volume raycast can be done for such a naive random raycast case, or a random ellipsoid point volume raycast). For cases where a turn is about to end or a turn is about to start, can perform Optional first test case, thus requirign the player to at least hide his center of mass prior to ending the turn.  (the arc marker can indicate center of mass detection per frame only).
+
 
 
 _________
@@ -33,6 +35,7 @@ TODO:
 For all types of melee attacks:
 - Convert above 3D Straight line range from ellipsoid to ellipsoid to be 3D within weapon range. (DONE)
 - Need a clear LOS to target ellipsoid from right-handed radial offset of attacking unit, without 3D obstacles blocking the way.
+(DONE!)
 
 For swinign attack:
 - Swinging weapon requires an extra offset radial offset clearance distance to a right-hander's right 90 top-right quarter-circle, if no such clearance is available, default thrusting animation is used instead where right-handed radial offset always lies within ellipsoid. Tests must be done to see if any polygon geometry edges lie within t he quarter circle segment at mid-chest level, and if so, do now allow weapon swing. Use  AABB tests initially, against full circle and quarter circle..
