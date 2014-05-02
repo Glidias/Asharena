@@ -9,13 +9,17 @@ package tests.pvp
 	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
 	import alternativa.engine3d.controllers.OrbitCameraMan;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.FillMaterial;
+	import alternativa.engine3d.materials.Grid2DMaterial;
+	import alternativa.engine3d.materials.VertexLightTextureMaterial;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.primitives.PlanarRim;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.BitmapTextureResource;
+	import alternativa.engine3d.resources.Geometry;
 	import alternterrain.CollidableMesh;
 	import arena.components.char.MovementPoints;
 	import arena.components.enemy.EnemyIdle;
@@ -44,6 +48,7 @@ package tests.pvp
 	import components.Rot;
 	import components.tweening.Tween;
 	import components.Vel;
+	import flash.display.BitmapData;
 	import flash.display.MovieClip;
 	import flash.display.Stage;
 	import flash.events.Event;
@@ -150,6 +155,14 @@ package tests.pvp
 			_template3D.viewBackgroundColor = 0xDDDDDD;
 		}
 		
+		private function randomiseHeights(amt:Number, geom:Geometry):void {
+			var pos:Vector.<Number> = geom.getAttributeValues(VertexAttributes.POSITION);
+			for (var i:int = 0; i < pos.length; i+=3) {
+				pos[i + 2] = Math.random()*amt;
+			}
+			geom.setAttributeValues(VertexAttributes.POSITION, pos);
+		}
+		
 		private function setupEnvironment():void 
 		{
 			
@@ -164,7 +177,9 @@ package tests.pvp
 			
 			SpawnerBundle.uploadResources(box.getResources());
 			
-			var planeFloor:Mesh = new Plane(2048, 2048, 1, 1, false, false, null, new FillMaterial(0xBBBBBB, 1) );
+			//var mat:VertexLightTextureMaterial = new VertexLightTextureMaterial(new BitmapTextureResource(new BitmapData(4, 4, false, 0xBBBBBB),
+			var planeFloor:Mesh = new Plane(2048, 2048, 8, 8, false, false, null, new Grid2DMaterial(0xBBBBBB, 1) );
+			randomiseHeights(-64,planeFloor.geometry);
 			_template3D.scene.addChild(planeFloor);
 			//arenaSpawner.addCrossStage(SpawnerBundle.context3D);
 			SpawnerBundle.uploadResources(planeFloor.getResources(true, null));

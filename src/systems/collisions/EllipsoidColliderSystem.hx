@@ -13,6 +13,7 @@ import components.Transform3D;
 import components.Vel;
 import flash.errors.Error;
 import flash.geom.Vector3D;
+import haxe.Log;
 import input.KeyPoll;
 import systems.collisions.CollisionEvent;
 import systems.collisions.EllipsoidColliderSystem.EllipsoidImmovableNode;
@@ -76,7 +77,12 @@ class EllipsoidColliderSystem extends System
     }
 	
 	//inline
-	private  function doCalculateDestination(ellip:Ellipsoid, npos:Vec3, vel:Vec3, time:Float, fromTime:Float, result:MoveResult):Void {
+	private  function doCalculateDestination(ellip:Ellipsoid, npos:Vec3, vel:Vec3, time:Float, fromTime:Float, result:MoveResult):Bool {
+		if (npos.z < 36) {
+			//npos.z  = 37;
+			//mytrace("Pre than z Dest:" + pos.z);
+		}
+		
 		pos.x = npos.x;
 		pos.y = npos.y;
 		pos.z = npos.z;
@@ -86,20 +92,32 @@ class EllipsoidColliderSystem extends System
 		disp.z = vel.z * time;
 		
 		var vec:Vector3D =  _collider.calculateDestination(pos, disp, collidable, time, fromTime);
+		
 	//	if (vec.z < ellip.z) throw "OUTTA BOUNDS:"+vec.z;
 		if (_collider.collisions != null) {
 			var tailCollision:CollisionEvent = null;
 			var c:CollisionEvent = _collider.collisions;
 			while ( c != null) {
 				tailCollision = c;
+				if (tailCollision.dest.z < 36) mytrace("Post Lower than z Dest:" + tailCollision.dest.z);
 				c = c.next;
 			}
+			
 			tailCollision.next = result.collisions;
 			result.collisions = _collider.collisions;
+			mytrace("Collisions added! "+ npos + ", " + vel);
 			_collider.collisions = null;
+			return true;
+		}
+		else {
+			mytrace( "No collisions found:" + npos + ", " + vel);
+			return false;
 		}
 	}
 	
+	private inline function mytrace(val:String):Void {
+		//Log.trace(val);
+	}
 	
 	override public function update(time:Float):Void
     {
@@ -202,10 +220,12 @@ class EllipsoidColliderSystem extends System
 						circleA.result.truncateCollisionEvents(totalElapsedFrameTime);
 						circleB.result.truncateCollisionEvents(totalElapsedFrameTime);
 						
-						doCalculateDestination(circleA.ellipsoid, circleA.movable.pos, circleA.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleA.result);
-						doCalculateDestination(circleB.ellipsoid, circleB.movable.pos, circleB.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleB.result);
+						var gotCollideA:Bool = doCalculateDestination(circleA.ellipsoid, circleA.movable.pos, circleA.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleA.result);
+						var gotCollideB:Bool = doCalculateDestination(circleB.ellipsoid, circleB.movable.pos, circleB.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleB.result);
 						//totalElapsedFrameTime
-						
+						if ( (!gotCollideA && !gotCollideB)) {
+							mytrace( "NO collisions found for both!");
+						}
 
 						var aFirst:Bool = (circleA.movable.priority >= circleB.movable.priority);
 						addThingCollisionEvent(totalElapsedFrameTime, aFirst ? circleB.entity : circleA.entity, aFirst ? circleA : circleB);
@@ -264,10 +284,18 @@ class EllipsoidColliderSystem extends System
 	
 	inline private  function integrate(time:Float):Void {
 		var m:EllipsoidMovableNode = nodeListMovables.head;
-		while (m != null) {
-			m.movable.integrate(time);	
-			m = m.next;
-		}
+		
+		//if (time > EPLISON_DT) {
+			while (m != null) {
+				m.movable.integrate(time-EPLISON_DT);
+				if (m.movable.pos.z < 36) {
+				//	mytrace("integrate lower than 36:"+m.movable.pos.z);
+					m.movable.pos.z = 36;
+					
+				}
+				m = m.next;
+			}
+		//}
 		// if integreating to static collision, go through all movable entities whose static collision events match given t, and re-update their velocities to match new path
 		if (nearestCollisionEvent != null) {
 			m = nodeListMovables.head;
@@ -285,7 +313,7 @@ class EllipsoidColliderSystem extends System
 	private  function integrateFinal(time:Float):Void {
 		var m:EllipsoidMovableNode = nodeListMovables.head;
 		while (m != null) {
-			m.movable.integrate(time);	
+			m.movable.integrate(time-EPLISON_DT);	
 			m.result.x = m.movable.pos.x;
 			m.result.y = m.movable.pos.y;
 			m.result.z = m.movable.pos.z;
@@ -320,7 +348,7 @@ class EllipsoidColliderSystem extends System
 		
 		//nearestCollisionEvent!=null ? nearestCollisionEvent.t-fromTime : timeRemaining
 		if (getNearestEllCollision(timeRemaining)) {  // dynamic collision to resolve (if t <= timeFrame)
-			if (nearestCollisionEvent != null && nearestCollisionEvent.t < fromTime+collTimeResult) {
+			if (nearestCollisionEvent != null && nearestCollisionEvent.t <= fromTime+collTimeResult) {
 				circleA = null;
 				circleB = null;
 				circleC = null;
@@ -414,7 +442,7 @@ class EllipsoidColliderSystem extends System
 		avoid float errors
 		(very small penetration will be catched)
 	*/
-	private static inline var EPLISON_DT: Float = -.0000001;
+	private static inline var EPLISON_DT: Float = 0;// 0.00001;
 
 	/*
 		avoid very slow moving objects while contact
@@ -478,6 +506,11 @@ class EllipsoidColliderSystem extends System
 		dx *= energie;
 		dy *= energie;
 		dz *= energie;
+		
+	/*
+	* vc0.x = -dx; vc0.y = -dy; vc0.z = -dz;
+		vc1.x = dx; vc1.y = dy; vc1.z = dz;
+		*/
 		
 		vc0.x -= dx; vc0.y -= dy; vc0.z -= dz;
 		vc1.x += dx; vc1.y += dy; vc1.z += dz;

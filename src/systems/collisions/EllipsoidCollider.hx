@@ -15,6 +15,7 @@ package systems.collisions;
 
 	import components.Transform3D;
 	import flash.geom.Vector3D;
+	import haxe.Log;
 	
 	import util.geom.Geometry;
 	import util.TypeDefs;
@@ -651,19 +652,22 @@ package systems.collisions;
 						dest.y += collisionPlane.y*offset;
 						dest.z += collisionPlane.z * offset;
 						
+						// Fixing up the current sphere coordinates for the next iteration
+						src.x = collisionPoint.x + collisionPlane.x*(radius + threshold);
+						src.y = collisionPoint.y + collisionPlane.y*(radius + threshold);
+						src.z = collisionPoint.z + collisionPlane.z*(radius + threshold);
+						
+						
 						if (requireEvents) {
-							resultVector.x = matrix.a * dest.x + matrix.b * dest.y + matrix.c * dest.z + matrix.d; 
-							resultVector.y = matrix.e * dest.x + matrix.f * dest.y + matrix.g * dest.z + matrix.h;
-							resultVector.z = matrix.i * dest.x + matrix.j * dest.y + matrix.k * dest.z + matrix.l;
+							resultVector.x = matrix.a * src.x + matrix.b * src.y + matrix.c * src.z + matrix.d; 
+							resultVector.y = matrix.e * src.x + matrix.f * src.y + matrix.g * src.z + matrix.h;
+							resultVector.z = matrix.i * src.x + matrix.j * src.y + matrix.k * src.z + matrix.l;
 							var coll:CollisionEvent = CollisionEvent.GetAs3(resCollisionPoint, resCollisionPlane, resCollisionPlane.w, timeCollide, resultVector, CollisionEvent.GEOMTYPE_POLYGON); 
 							coll.next = collisions;
 							collisions = coll;
 						}
 						
-						// Fixing up the current sphere coordinates for the next iteration
-						src.x = collisionPoint.x + collisionPlane.x*(radius + threshold);
-						src.y = collisionPoint.y + collisionPlane.y*(radius + threshold);
-						src.z = collisionPoint.z + collisionPlane.z*(radius + threshold);
+						
 						// Fixing up velocity vector. The result ordered along plane of collision.
 						displ.x = dest.x - src.x;
 						displ.y = dest.y - src.y;
@@ -676,6 +680,7 @@ package systems.collisions;
 					resultVector.x = matrix.a * dest.x + matrix.b * dest.y + matrix.c * dest.z + matrix.d; 
 					resultVector.y = matrix.e * dest.x + matrix.f * dest.y + matrix.g * dest.z + matrix.h;
 					resultVector.z = matrix.i * dest.x + matrix.j * dest.y + matrix.k * dest.z + matrix.l;
+					
 			} else {
 				resultVector.x = source.x  + displacement.x;
 				resultVector.y = source.y + displacement.y;
