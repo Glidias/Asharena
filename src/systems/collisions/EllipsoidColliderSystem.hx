@@ -78,10 +78,10 @@ class EllipsoidColliderSystem extends System
 	
 	//inline
 	private  function doCalculateDestination(ellip:Ellipsoid, npos:Vec3, vel:Vec3, time:Float, fromTime:Float, result:MoveResult):Bool {
-		if (npos.z < 36) {
+		//if (npos.z < 36) {
 			//npos.z  = 37;
 			//mytrace("Pre than z Dest:" + pos.z);
-		}
+	//	}
 		
 		pos.x = npos.x;
 		pos.y = npos.y;
@@ -99,24 +99,25 @@ class EllipsoidColliderSystem extends System
 			var c:CollisionEvent = _collider.collisions;
 			while ( c != null) {
 				tailCollision = c;
-				if (tailCollision.dest.z < 36) mytrace("Post Lower than z Dest:" + tailCollision.dest.z);
+				//if (tailCollision.dest.z < 36) mytrace("Post Lower than z Dest:" + tailCollision.dest.z);
 				c = c.next;
 			}
 			
 			tailCollision.next = result.collisions;
 			result.collisions = _collider.collisions;
-			mytrace("Collisions added! "+ npos + ", " + vel);
+			//mytrace("Collisions added! "+ npos + ", " + vel);
 			_collider.collisions = null;
+			//	result.setIntegrationNewVelAtCollideTime(npos, vel, ellip,fromTime);
 			return true;
 		}
 		else {
-			mytrace( "No collisions found:" + npos + ", " + vel);
+		//	mytrace( "No collisions found:" + npos + ", " + vel);
 			return false;
 		}
 	}
 	
 	private inline function mytrace(val:String):Void {
-		//Log.trace(val);
+		Log.trace(val);
 	}
 	
 	override public function update(time:Float):Void
@@ -159,7 +160,7 @@ class EllipsoidColliderSystem extends System
 		
 		
 		
-		
+		//return;
 		// --------------------------------
 		
 		
@@ -206,7 +207,7 @@ class EllipsoidColliderSystem extends System
 				//if (elapseFrameTime != 1) throw new Error(":" + nearestCollisionEvent.t);
 				//-- step forward to intersection				
 				//for each( movable in movables )
-				integrate(elapseFrameTime);
+				integrate(elapseFrameTime, totalElapsedFrameTime);
 				//}
 				
 				
@@ -223,9 +224,9 @@ class EllipsoidColliderSystem extends System
 						var gotCollideA:Bool = doCalculateDestination(circleA.ellipsoid, circleA.movable.pos, circleA.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleA.result);
 						var gotCollideB:Bool = doCalculateDestination(circleB.ellipsoid, circleB.movable.pos, circleB.movable.vel, remainingFrameTime, totalElapsedFrameTime, circleB.result);
 						//totalElapsedFrameTime
-						if ( (!gotCollideA && !gotCollideB)) {
-							mytrace( "NO collisions found for both!");
-						}
+						//if ( (!gotCollideA && !gotCollideB)) {
+							//mytrace( "NO collisions found for both!");
+						//}
 
 						var aFirst:Bool = (circleA.movable.priority >= circleB.movable.priority);
 						addThingCollisionEvent(totalElapsedFrameTime, aFirst ? circleB.entity : circleA.entity, aFirst ? circleA : circleB);
@@ -282,17 +283,17 @@ class EllipsoidColliderSystem extends System
 	}
 	//*/
 	
-	inline private  function integrate(time:Float):Void {
+	inline private  function integrate(time:Float, totalElapsedTime:Float):Void {
 		var m:EllipsoidMovableNode = nodeListMovables.head;
 		
 		//if (time > EPLISON_DT) {
 			while (m != null) {
-				m.movable.integrate(time-EPLISON_DT);
-				if (m.movable.pos.z < 36) {
+				m.movable.integrate(time);
+				//if (m.movable.pos.z < 36) {
 				//	mytrace("integrate lower than 36:"+m.movable.pos.z);
-					m.movable.pos.z = 36;
+				//	m.movable.pos.z = 36;
 					
-				}
+				//}
 				m = m.next;
 			}
 		//}
@@ -313,7 +314,7 @@ class EllipsoidColliderSystem extends System
 	private  function integrateFinal(time:Float):Void {
 		var m:EllipsoidMovableNode = nodeListMovables.head;
 		while (m != null) {
-			m.movable.integrate(time-EPLISON_DT);	
+			m.movable.integrate(time);	
 			m.result.x = m.movable.pos.x;
 			m.result.y = m.movable.pos.y;
 			m.result.z = m.movable.pos.z;
@@ -442,7 +443,7 @@ class EllipsoidColliderSystem extends System
 		avoid float errors
 		(very small penetration will be catched)
 	*/
-	private static inline var EPLISON_DT: Float = 0;// 0.00001;
+	private static inline var EPLISON_DT: Float = -0.00001;
 
 	/*
 		avoid very slow moving objects while contact
@@ -452,13 +453,79 @@ class EllipsoidColliderSystem extends System
 	*/
 	private static inline var MIN_REFLECTION: Float = .005;
 
+	///*
 	public inline function resolveMovableCircleWithImmobile( immobileCircle:Vec3, circle: Vec3, circleVel:Vec3 ): Void  // immovable (use this naive approach for 3d as immovable against a movable circle! )
 	{
 		var nx:Float = circle.x - immobileCircle.x;
 		var ny:Float = circle.y - immobileCircle.y;
-		var nz:Float = circle.z - immobileCircle.z;
 		
-		var rr: Float = Math.sqrt(nx * nx + ny * ny + nz * nz);
+		
+		var rr: Float = Math.sqrt(nx * nx + ny * ny);
+		rr = 1 / rr;
+			
+		nx *= rr;
+		ny *= rr;
+		
+		
+		collNorm.x = nx;
+		collNorm.y = ny;
+		
+		//collOffset = nx *
+		
+		var e: Float;
+
+		// elastic .5 would be fine... so 1.5 total computed
+		//( 1 + .5 ) *
+		e = 1.5* ( nx * circleVel.x + ny * circleVel.y );
+		
+		if( e > -MIN_REFLECTION ) e = -MIN_REFLECTION;
+		
+		circleVel.x -= nx * e;
+		circleVel.y -= ny * e;
+		circleVel.z = 0;
+		
+		
+	}
+	
+		public inline function resolveMovableCircleWithAnother(myCircle:Vec3, vc1:Vec3,  circle: Vec3, vc0:Vec3 ):Void {
+		var dx:Float = myCircle.x - circle.x;
+		var dy:Float = myCircle.y - circle.y;
+
+		var dd: Float =  Math.sqrt(dx * dx + dy * dy );
+		dd = 1 / dd;
+		dx*= dd;
+		dy*= dd;
+	
+		
+		collNorm.x = dx;
+		collNorm.y = dy;
+		
+		
+		// normal dotProduct of Velocity  -  normal dotProduct of Velocity  (inline expanded...lol) 
+		var energie: Float = 1.5* ( vc0.x * dx + vc0.y * dy - vc1.x * dx - vc1.y * dy ); // * 1;
+		if( energie < .0001 ) energie = .0001;
+		
+		dx *= energie;
+		dy *= energie;
+		
+		
+	
+		
+		vc0.x -= dx; vc0.y -= dy; 
+		vc1.x += dx; vc1.y += dy; 
+		vc0.z = 0;
+		vc1.z = 0;
+	}
+	//*/
+	
+	/*
+		public inline function resolveMovableCircleWithImmobile( immobileCircle:Vec3, circle: Vec3, circleVel:Vec3 ): Void  // immovable (use this naive approach for 3d as immovable against a movable circle! )
+	{
+		var nx:Float = circle.x - immobileCircle.x;
+		var ny:Float = circle.y - immobileCircle.y;
+			var nz:Float = circle.z - immobileCircle.z;
+		
+		var rr: Float = Math.sqrt(nx * nx + ny * ny + nz*nz);
 		rr = 1 / rr;
 			
 		nx *= rr;
@@ -474,18 +541,18 @@ class EllipsoidColliderSystem extends System
 
 		// elastic .5 would be fine... so 1.5 total computed
 		//( 1 + .5 ) *
-		e = 1.000* ( nx * circleVel.x + ny * circleVel.y  + nz*circleVel.z);
+		e = 1.5* ( nx * circleVel.x + ny * circleVel.y + nz*circleVel.z );
 		
 		if( e > -MIN_REFLECTION ) e = -MIN_REFLECTION;
 		
 		circleVel.x -= nx * e;
 		circleVel.y -= ny * e;
-		circleVel.z -= nz * e;
+		circleVel.z -=  nz * e;
 		
 		
 	}
 	
-	public inline function resolveMovableCircleWithAnother(myCircle:Vec3, vc1:Vec3,  circle: Vec3, vc0:Vec3 ):Void {
+		public inline function resolveMovableCircleWithAnother(myCircle:Vec3, vc1:Vec3,  circle: Vec3, vc0:Vec3 ):Void {
 		var dx:Float = myCircle.x - circle.x;
 		var dy:Float = myCircle.y - circle.y;
 		var dz:Float = myCircle.z - circle.z;
@@ -500,25 +567,28 @@ class EllipsoidColliderSystem extends System
 		collNorm.z = dz;
 		
 		// normal dotProduct of Velocity  -  normal dotProduct of Velocity  (inline expanded...lol) 
-		var energie: Float = ( vc0.x * dx + vc0.y * dy + vc0.z * dz - vc1.x * dx - vc1.y * dy - vc1.z * dz ); // * 1;
+		var energie: Float = 1.5*( vc0.x * dx + vc0.y * dy + vc0.z * dz - vc1.x * dx - vc1.y * dy - vc1.z * dz ); // * 1;
 		if( energie < .0001 ) energie = .0001;
 		
 		dx *= energie;
 		dy *= energie;
 		dz *= energie;
 		
-	/*
-	* vc0.x = -dx; vc0.y = -dy; vc0.z = -dz;
-		vc1.x = dx; vc1.y = dy; vc1.z = dz;
-		*/
+	
 		
 		vc0.x -= dx; vc0.y -= dy; vc0.z -= dz;
 		vc1.x += dx; vc1.y += dy; vc1.z += dz;
 	}
+	*/
 	
 	
 
-	//	/*
+
+	
+	
+	
+
+		/*
 	public inline function getCollision(c1Obj:Vec3, c1Ellip:Ellipsoid, c1Vel:Vec3, c2Obj:Vec3,  c2Ellip:Ellipsoid, c2Vel:Vec3, dt:Float):Float {
 			
 			var t:Float;
@@ -572,6 +642,31 @@ class EllipsoidColliderSystem extends System
 				}
 				
 				return t;   // collision happened within timeframe  t<=dt
+		}
+		//*/
+		
+
+		public inline function getCollision(c1Obj:Vec3, c1Ellip:Ellipsoid, c1Vel:Vec3, c2Obj:Vec3,  c2Ellip:Ellipsoid, c2Vel:Vec3, dt:Float):Float {
+			
+		var rr: Float = c1Ellip.x + c2Ellip.x;
+			var r2: Float = rr * rr;
+			var vx: Float = c1Vel.x;
+			var vy: Float = c1Vel.y;
+			var vs: Float = vx * vx + vy * vy;
+			var ex: Float = c2Obj.x - c1Obj.x;
+			var ey: Float = c2Obj.y - c1Obj.y;
+			var ev: Float = ex * vy - ey * vx;
+			var sq: Float = vs * r2 - ev * ev;
+			
+			var t:Float;
+			if ( sq < 0 ) t = PMath.FLOAT_MAX;
+			else {
+				t = -( Math.sqrt( sq ) - ey * vy - ex * vx ) / vs;
+				//if( t > EPLISON_DT && t < 0 ) t = 0;
+				if ( t < 0 ) t= PMath.FLOAT_MAX;
+				else t *= dt;
+			}
+			return t;
 		}
 	
 }

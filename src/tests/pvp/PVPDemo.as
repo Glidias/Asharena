@@ -170,8 +170,8 @@ package tests.pvp
 			_template3D.stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextCreated);
 			
 			// example visual scene
-			var box:Object3D = new Box(100, 13, 100, 1, 1, 1, false, new FillMaterial(0xCCCCCC) );
-			box.z = 50;
+			var box:Object3D = new Box(100, 13, 100 + 64, 1, 1, 1, false, new FillMaterial(0xCCCCCC) );
+			box.z = 0;
 			
 			
 			
@@ -179,7 +179,8 @@ package tests.pvp
 			
 			//var mat:VertexLightTextureMaterial = new VertexLightTextureMaterial(new BitmapTextureResource(new BitmapData(4, 4, false, 0xBBBBBB),
 			var planeFloor:Mesh = new Plane(2048, 2048, 8, 8, false, false, null, new Grid2DMaterial(0xBBBBBB, 1) );
-			randomiseHeights(-64,planeFloor.geometry);
+			randomiseHeights( -177, planeFloor.geometry);
+			planeFloor.calculateBoundBox();
 			_template3D.scene.addChild(planeFloor);
 			//arenaSpawner.addCrossStage(SpawnerBundle.context3D);
 			SpawnerBundle.uploadResources(planeFloor.getResources(true, null));
@@ -253,13 +254,13 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 5;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number =9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
 		private var commandPoints:Vector.<int> = new <int>[0,0];
 		private var enemyWatchSettings:EnemyIdle = new EnemyIdle().init(9000, 100, 1.88495559215388, 28 );
-
+		private var collOtherClass:Class = ImmovableCollidable;
 			
 		// Deault weapon stats
 		private var TEST_MELEE_WEAPON:Weapon = getTestWeapon();
@@ -358,18 +359,18 @@ package tests.pvp
 			
 			arenaSpawner.addTextureResourceSide(SpawnerBundle.context3D, ArenaSpawner.RACE_SAMNIAN, 1, _gladiatorBundle.getSideTexture(1)  );
 			
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, -520, 0, 0, 0, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48, -520, 0, 0, 0, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*2, -520, 0, 0, 0, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48*3, -520, 0, 0, 0, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 4, -520, 0, 0, 0, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, -520, 222, 0, 0, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66, -520, 222, 0, 0, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66*2, -520, 222, 0, 0, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66*3, -520, 222, 0, 0, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 4, -520, 222, 0, 0, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
 
 			
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 6, 520, 0, Math.PI, 1, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 7, 520, 0, Math.PI, 1, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 8, 520, 0, Math.PI, 1, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 9, 520, 0, Math.PI, 1, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 48 * 10, 520, 0, Math.PI, 1, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 6, 520, 222, Math.PI, 1, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 7, 520, 222, Math.PI, 1, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 8, 520, 222, Math.PI, 1, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 9, 520, 222, Math.PI, 1, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 10, 520, 222, Math.PI, 1, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
 			
 			
 			var health:Health;
@@ -996,7 +997,7 @@ package tests.pvp
 			var len:int = enemySide.length;
 			for ( var i:int = 0; i < len; i++) {
 				var e:Entity = enemySide[i];
-				e.remove( ImmovableCollidable );
+				e.remove( collOtherClass );
 			
 			
 			}
@@ -1006,7 +1007,7 @@ package tests.pvp
 			for ( i = 0; i < len; i++) {
 				e = mySide[i];
 				if (e === arenaSpawner.currentPlayerEntity) continue;
-				e.remove( ImmovableCollidable );
+				e.remove( collOtherClass );
 			
 			
 			}
@@ -1027,7 +1028,7 @@ package tests.pvp
 			var len:int = enemySide.length;
 			for ( var i:int = 0; i < len; i++) {
 				var e:Entity = enemySide[i];
-				e.add( new ImmovableCollidable().init() );
+				e.add( new collOtherClass().init() );
 			
 			
 			}
@@ -1037,7 +1038,7 @@ package tests.pvp
 			for ( i = 0; i < len; i++) {
 				e= mySide[i];
 				if (e === arenaSpawner.currentPlayerEntity) continue;
-				e.add( new ImmovableCollidable().init() );
+				e.add( new collOtherClass().init() );
 			
 			
 			}

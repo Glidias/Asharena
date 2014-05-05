@@ -299,6 +299,7 @@ package
 			(ent.get(Rot) as Rot).z = azimuth;
 			
 			var ellipsoid:Ellipsoid = ent.get(Ellipsoid) as Ellipsoid;
+		//	ellipsoid.z = ellipsoid.x = ellipsoid.y = 36;
 			//addRenderEntity(getBoundingBox(bb), ent.get(Pos) as Pos, ent.get(Rot) as Rot);
 			var m:Mesh;
 				//addRenderEntity(m = uploadMesh(new GeoSphere(1, 2, false, new FillMaterial(0xFF0000, .5))), ent.get(Pos) as Pos, ent.get(Rot) as Rot);

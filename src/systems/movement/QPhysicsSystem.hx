@@ -167,7 +167,7 @@ class QPhysicsSystem extends System
 	
 	inline public function processCollision(result:CollisionResult, event:CollisionEvent, velocity:Vec3, flags:Int=0):Void {
 		if (flags & CollisionResult.FLAG_MAX_GROUND_NORMAL != 0) {
-			if (event.normal.z > result.max_ground_normal_threshold)
+			if (event.normal.z > result.max_ground_normal_threshold && event.geomtype != CollisionEvent.GEOMTYPE_THING)
             {
                 if (!result.gotGroundNormal || result.maximum_ground_normal.z < event.normal.z)
                 {
