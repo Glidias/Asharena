@@ -8,7 +8,7 @@ import components.Gravity;
 import components.Vel;
 
 /**
- * ...
+ * A gravity system that takes into consideration ground surface stability
  * @author Glenn Ko
  */
 class GravitySystem extends System
@@ -27,8 +27,14 @@ class GravitySystem extends System
 		var n:GravityNode = nodeList.head;
 		
 		while (n != null) {
-			n.gravity.update(n.vel, time);
-			
+			if (!n.result.gotGroundNormal) {
+				n.gravity.update(n.vel, time);
+				//n.result.grounded = false;
+			}
+			else  {
+				//n.result.grounded = true;
+				//n.vel.z = 0;
+			}
 			n = n.next;
 		}
 	}

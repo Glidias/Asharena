@@ -4,6 +4,7 @@ import ash.core.Entity;
 import ash.core.Node;
 import ash.core.NodeList;
 import ash.core.System;
+import components.CollisionResult;
 import components.Ellipsoid;
 import components.ImmovableCollidable;
 import components.MovableCollidable;
@@ -91,6 +92,8 @@ class EllipsoidColliderSystem extends System
 		disp.y = vel.y * time;
 		disp.z = vel.z * time;
 		
+		
+		
 		var vec:Vector3D =  _collider.calculateDestination(pos, disp, collidable, time, fromTime);
 		
 	//	if (vec.z < ellip.z) throw "OUTTA BOUNDS:"+vec.z;
@@ -130,7 +133,7 @@ class EllipsoidColliderSystem extends System
 		while (n != null) {   
 			result = n.result;
 			
-			
+		
 			_collider.radiusX = n.ellipsoid.x;
 			_collider.radiusY = n.ellipsoid.y;
 			_collider.radiusZ = n.ellipsoid.z;
@@ -676,6 +679,8 @@ class EllipsoidNode extends Node<EllipsoidNode> {
 	public var vel:Vel;
 	public var pos:Pos;
 	public var result:MoveResult;
+	
+	public var collResult:CollisionResult;
 }
 
 class EllipsoidMovableNode extends Node<EllipsoidMovableNode> {  

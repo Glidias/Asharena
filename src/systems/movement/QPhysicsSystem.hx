@@ -75,6 +75,7 @@ class QPhysicsSystem extends System
 		m = moveResultList.head;
 		while (m != null) {
 			result = m.move;
+			
 			result.preventDefault = result.collisions == null || result.preSolve == null ?  false : result.preSolve(m.move, m.vel,  m.entity);
 			m = m.next;
 		}
@@ -111,7 +112,7 @@ class QPhysicsSystem extends System
 		var c:CollisionResultNode = collisionResultList.head;   // process collision events  from moveResult  and set to CollisionResult, if any
 		while (c != null) {
 			cResult = c.result;
-			cResult.gotGroundNormal = false;
+			if (c.vel.lengthSqr() !=0) cResult.gotGroundNormal = false;
 			cResult.gotCollision = false;
 			if ( (cResult.flags & CollisionResult.FLAG_MAX_GROUND_NORMAL) != 0) {  // calc max ground normal
 				processFlags(cResult, c.move.collisions, c.vel, CollisionResult.FLAG_MAX_GROUND_NORMAL);
@@ -139,6 +140,7 @@ class QPhysicsSystem extends System
 				vel = m.vel;
 				pos = m.pos;
 				result = m.move;	
+				
 				vel.x = (result.x - pos.x) * invT; 
 				vel.y = (result.y - pos.y) * invT; 
 				vel.z = (result.z - pos.z) * invT; 
@@ -165,13 +167,17 @@ class QPhysicsSystem extends System
 	}
 	
 	
-	inline public function processCollision(result:CollisionResult, event:CollisionEvent, velocity:Vec3, flags:Int=0):Void {
+	inline public function processCollision(result:CollisionResult, event:CollisionEvent, velocity:Vec3, flags:Int = 0):Void {
+		
 		if (flags & CollisionResult.FLAG_MAX_GROUND_NORMAL != 0) {
 			if (event.normal.z > result.max_ground_normal_threshold && event.geomtype != CollisionEvent.GEOMTYPE_THING)
             {
                 if (!result.gotGroundNormal || result.maximum_ground_normal.z < event.normal.z)
                 {
                     Vec3Utils.matchValues( result.maximum_ground_normal, event.normal);
+					if ( result.gotGroundNormal) {
+						velocity.z = 0;
+					}
 					result.gotGroundNormal = true;
                 }
             }

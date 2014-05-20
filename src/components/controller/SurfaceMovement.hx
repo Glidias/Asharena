@@ -38,6 +38,7 @@ class SurfaceMovement
 	//	public var rightVec:Vec3;
 
 	public var friction:Float;
+	static public inline var STOP_VELOCITY_SQ_LENGTH:Float = 1;
 	
 	
 
@@ -47,7 +48,7 @@ class SurfaceMovement
 		strafe_state = 0;
 		//forwardVec = new Vec3();
 		//rightVec = new Vec3();
-		friction = .25;
+		friction = 0;// .05;  // set this to a value lower than STOP_VELOCITY_SQ_LENGTH to ensure no sliding off surfaces occurs
 		
 		setWalkSpeeds(115, 32);
 		//setWalkSpeeds(150, 32);
@@ -106,6 +107,11 @@ class SurfaceMovement
 		if (ground_normal != null) { // can walk on ground
   
 			Vec3Utils.scale(velocity, friction);
+			if (velocity.lengthSqr() < STOP_VELOCITY_SQ_LENGTH) {
+				velocity.x = 0;
+				velocity.y = 0;
+				velocity.z = 0;
+			}
 			/*
 			 * Math.cos(this.thingBase.azimuth) * Math.cos(this.thingBase.elevation), Math.sin(this.thingBase.azimuth) * Math.cos(this.thingBase.elevation)
 			 */
@@ -136,6 +142,7 @@ class SurfaceMovement
 				velocity.y += rightVec.y * multiplier;
 				velocity.z += rightVec.z * multiplier;
 			}
+			
 		}
 	}
 
