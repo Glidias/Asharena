@@ -736,6 +736,7 @@ WeaponSlots
 			_targetInfo.clearAll();
 			if (node == null) {
 				_gotTargetInRange = false;
+				_gotTargetLOS = false;
 				_targetInfo.drawNow();
 				validateTargetInRange();
 				return;
@@ -755,9 +756,13 @@ WeaponSlots
 			var weapon:Weapon = getWeapon(ent);
 			var pos:Pos = node.pos;
 
+			_gotTargetLOS = false;
+			
 			if (_curCharPos) {
 				_gotTargetInRange =  getRangeToTarget() <= _curWeaponRange;
-				
+				if (_gotTargetInRange) {
+					_gotTargetLOS = weaponLOSCheck == null || checkLOS(_displayChar, node.entity);
+				}
 			}
 			else {
 			
@@ -765,7 +770,7 @@ WeaponSlots
 			
 			}
 			
-			if (_gotTargetInRange && !_stars) {
+			if (_gotTargetInRange && _gotTargetLOS && !_stars) {
 				updateTargetChoices();
 				
 			}
@@ -779,6 +784,12 @@ WeaponSlots
 			_targetInfo.drawNow();
 			
 			validateTargetInRange();
+		}
+		
+		private function checkLOS(entA:Entity, entB:Entity):Boolean 
+		{
+	
+			return weaponLOSCheck.validateWeaponLOS( entA.get(Pos) as Pos, (entA.get(Weapon) as Weapon).sideOffset, (entA.get(Weapon) as Weapon).heightOffset, entB.get(Pos) as Pos, entB.get(Ellipsoid) as Ellipsoid );
 		}
 		
 		private function updateTargetChoices():void {
@@ -845,24 +856,35 @@ WeaponSlots
 			
 			var showLabels:Boolean = false;
 			_actionChoicesBox.clearAll();
-			_actionChoicesBox.appendSpanTagMessage('F - Attack now (<span u="2">'+hitPercResult+'%</span>'+(showLabels ? " hit" : "")+' | <span u="1">'+critPercResult+'%</span>'+(showLabels ? ' critical' : '')+')' + '  ~(<span u="2">'+numHits+'</span>|<span u="1">'+numCritHits+'</span>)'+(aggroing ? "*" : "") );
+			
+			_actionChoicesBox.appendSpanTagMessage('F - Attack now (<span u="2">' + hitPercResult + '%</span>' + (showLabels ? " hit" : "") + ' | <span u="1">' + critPercResult + '%</span>' + (showLabels ? ' critical' : '') + ')' + '  ~(<span u="2">' + numHits + '</span>|<span u="1">' + numCritHits + '</span>)' + (aggroing ? "*" : "") );
+			
 			_actionChoicesBox.drawNow();
 		}
 		
 		private function checkTargetInRange():Boolean {
 			var gotTargetInRange:Boolean;
+			var gotTargetLOS:Boolean;
+				
 			if ( _targetNode && _curCharPos) {
 				gotTargetInRange = getRangeToTarget() <= _curWeaponRange;
-				
+				gotTargetLOS = false;
+				if (gotTargetInRange) {
+					gotTargetLOS = weaponLOSCheck == null || checkLOS(_displayChar, _targetNode.entity);
+				}
 			}
 			else {
-			
-				gotTargetInRange =  true;  //TODO: subjected to weapon condition
-			
-				
+			//	gotTargetLOS = true;
+				//gotTargetInRange =  true;  //TODO: subjected to weapon condition
+				gotTargetLOS = false;
+				gotTargetInRange =  false;  //TODO: subjected to weapon condition
+
 			}
-			if (gotTargetInRange != _gotTargetInRange) {
+		
+			
+			if (gotTargetInRange != _gotTargetInRange || gotTargetLOS != _gotTargetLOS) {
 				_gotTargetInRange = gotTargetInRange
+				_gotTargetLOS = gotTargetLOS;
 				validateTargetInRange();
 				return true;
 			}
@@ -874,7 +896,10 @@ WeaponSlots
 				_textTargetMode.writeFinalData("Z - exit target mode", 0, 0, 2000, true);
 				 _textTurnInfoMini.writeFinalData("", 0, 0, 300, false);
 				 checkTargetModeOptions();
-				 if (_targetNode) updateTargetChoices(); // setTargetChar(_targetNode);
+				 if (_targetNode) {
+					
+					 updateTargetChoices(); // setTargetChar(_targetNode);
+				 }
 			}
 			else  {
 				_textTargetMode.writeFinalData(_cpInfo, 0, 0, 2000, true);
@@ -900,9 +925,9 @@ WeaponSlots
 			//	critPercResult = Math.round(critPercResult);
 			//}
 			
-			_actionChoicesBox.styles[0].spriteSet.visible = _targetMode && _gotTargetInRange && _targetNode;
+			_actionChoicesBox.styles[0].spriteSet.visible = _targetMode && _gotTargetInRange && _gotTargetLOS &&  _targetNode;
 			if (_targetMode || !_targetNode) {  // show valid target options if within range
-				_textTurnInfoMini.writeFinalData(_targetNode && !_gotTargetInRange && _charWeaponEnabled ? "out of range: " + toMeters(getRangeToTarget()) + "m"  : "");
+				_textTurnInfoMini.writeFinalData(_targetNode && !(_gotTargetInRange && _gotTargetLOS) && _charWeaponEnabled ? _gotTargetInRange ? "No Line of Fire!" : "out of range: " + toMeters(getRangeToTarget()) + "m"  : "");
 				if (_targetMode) {
 					checkTargetModeOptions();
 				}
@@ -911,7 +936,7 @@ WeaponSlots
 			
 			
 			
-			_textTurnInfoMini.writeFinalData(_gotTargetInRange  ?  _charWeaponEnabled ? "Z - target mode" : "" :  _charWeaponEnabled ? "out of range: "+toMeters(getRangeToTarget())+"m"  : "" ,0,0,300,false);
+			_textTurnInfoMini.writeFinalData(_gotTargetInRange  ?  _charWeaponEnabled ? _gotTargetLOS ?  "Z - target mode" : "No Line of Fire!" :  _charWeaponEnabled ? "out of range: "+toMeters(getRangeToTarget())+"m"  : "Weapon disabled." : "" ,0,0,300,false);
 		}
 		
 		public function newPhase():void {
@@ -959,7 +984,7 @@ WeaponSlots
 			// check target in range
 			var alreadyValidated:Boolean = checkTargetInRange();
 		
-			if (!alreadyValidated && _targetNode && !_gotTargetInRange && _curCharPos) {
+			if (!alreadyValidated && _targetNode && !(_gotTargetInRange&&_gotTargetLOS) && _curCharPos) {
 				var dx:Number = _curCharPos.x -lastCharPosition.x;
 				var dy:Number = _curCharPos.y - lastCharPosition.y;
 				var dz:Number = _curCharPos.z- lastCharPosition.z;
@@ -1046,6 +1071,7 @@ WeaponSlots
 		public var strikeResult:int;
 		public var enemyStrikeResult:int;
 		private var ENEMY_ROLL_CRIT:Boolean = EnemyAggroSystem.AGGRO_HAS_CRITICAL;
+		private var _gotTargetLOS:Boolean;
 		public var playerDmgDealRoll:int;
 		public var enemyDmgDealRoll:int
 		
@@ -1054,7 +1080,7 @@ WeaponSlots
 			strikeResult = 0;
 			enemyStrikeResult = 0;
 			
-			if (!_charWeaponEnabled || !_targetMode || !_gotTargetInRange || !_targetNode) return 0;
+			if (!_charWeaponEnabled || !_targetMode || !_gotTargetInRange || !_targetNode || !_gotTargetLOS) return 0;
 			
 			// ROLLING
 			var hitPercResult:Number;
