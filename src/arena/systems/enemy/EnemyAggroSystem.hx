@@ -457,7 +457,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker
 										enemyCrit = true;
 									}
 								}
-								a.signalAttack.forceSet(PlayerAttack.SWING);
+								a.signalAttack.forceSet(a.weapon.fireMode);
 								swinger =  new AnimAttackMelee();
 								swinger.init_i_static( a.weapon.anim_strikeTimeAtMaxRange, p.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
 								a.entity.add(swinger);
@@ -465,7 +465,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker
 								
 							}
 							else { // strike rolled miss
-								a.signalAttack.forceSet(PlayerAttack.SWING);
+								a.signalAttack.forceSet(a.weapon.fireMode);
 								swinger =  new AnimAttackMelee();
 								//HitFormulas.calculateAnimStrikeTimeAtRange(a.weapon, actualDist)
 								swinger.init_i_static(a.weapon.anim_strikeTimeAtMaxRange, p.health, 0 );
@@ -482,7 +482,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker
 							kite &= KITE_ALLOWANCE;
 							
 							if (kite != 0) {  // somehow, kiting is allowed in this situation. Simulate deliberate swing miss.
-								a.signalAttack.forceSet(PlayerAttack.SWING);
+								a.signalAttack.forceSet(a.weapon.fireMode);
 								swinger =  new AnimAttackMelee();
 								swinger.init_i_static(a.weapon.anim_strikeTimeAtMaxRange, p.health, 0 );
 								a.entity.add(swinger);
@@ -511,14 +511,17 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker
 				}
 			}
 			else {   // consider whether should pull trigger
-			
-				if (gotReact &&  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, a.weapon.hitAngle, sqDist, a.state.attackRangeSq) && validateWeaponLOS(a.pos, a.weapon.sideOffset, a.weapon.heightOffset, p.pos, p.size)  ) {  // TODO: Weapon LOS check
+				var checkedLOS:Bool = false;
+				if (gotReact &&  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, a.weapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, a.weapon.sideOffset, a.weapon.heightOffset, p.pos, p.size)  ) {  // TODO: Weapon LOS check
 				
 					aWeaponState.pullTrigger();
 					
 					a.state.flag = 1;
 					onEnemyAttack.dispatch(a.entity);
 					
+				}
+				else if (checkedLOS) {
+					a.state.flag = -1;
 				}
 			}
 			//*/

@@ -263,7 +263,7 @@ package tests.pvp
 		private var collOtherClass:Class = ImmovableCollidable;
 			
 		// Deault weapon stats
-		private var TEST_MELEE_WEAPON:Weapon = getTestWeapon();
+		private var TEST_MELEE_WEAPON:Weapon = getTestWeapon(true);
 		private function getTestWeapon(thrust:Boolean=false):Weapon {
 			/*
 			var w:Weapon =   new Weapon();
@@ -307,12 +307,13 @@ package tests.pvp
 			w.heightOffset = 0;
 			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
 			w.minRange = 16;
-			w.damage =  25;
+			w.damage = thrust  ? 10 : 25;
 			w.cooldownTime = thrust ? 0.7 : 0.96;
 			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
 			w.hitAngle =  45 *  PMath.DEG_RAD;
 			
-			w.damageRange = 7;		// damage up-range variance
+			w.damageRange = thrust ? 10 : 5;		// damage up-range variance
+			// Thrust: 10-20 : Swing 25-30
 	
 			w.critMinRange = w.range * .35;
 			w.critMaxRange  = w.range * .70;
@@ -458,7 +459,7 @@ package tests.pvp
 		private function resolveStrikeAction():void 
 		{
 			
-			AnimAttackSystem.performMeleeAttackAction(PlayerAttack.SWING, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
+			AnimAttackSystem.performMeleeAttackAction(arenaHUD.playerWeaponModeForAttack, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
 			_animAttackSystem.resolved.addOnce(resolveStrikeAction2);
 			aggroMemManager.addToAggroMem(arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity);
 			if (arenaHUD.strikeResult > 0) {
@@ -497,7 +498,7 @@ package tests.pvp
 		private function resolveStrikeAction3():void 
 		{
 			if (arenaHUD.enemyStrikeResult != 0) {
-				AnimAttackSystem.performMeleeAttackAction(PlayerAttack.SWING, arenaHUD.targetNode.entity, arenaSpawner.currentPlayerEntity, arenaHUD.enemyStrikeResult > 0 ? arenaHUD.enemyDmgDealRoll : 0);
+				AnimAttackSystem.performMeleeAttackAction(arenaHUD.enemyWeaponModeForAttack, arenaHUD.targetNode.entity, arenaSpawner.currentPlayerEntity, arenaHUD.enemyStrikeResult > 0 ? arenaHUD.enemyDmgDealRoll : 0);
 				_animAttackSystem.resolved.addOnce(resolveStrikeActionFully);
 				if (arenaHUD.enemyStrikeResult > 0) {
 					var targetHP:Health = (arenaSpawner.currentPlayerEntity.get(Health) as Health);
