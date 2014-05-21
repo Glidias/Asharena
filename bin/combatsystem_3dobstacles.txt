@@ -24,7 +24,7 @@ Enemy alert detection for EnemyIdle units:  (all tests must pass for EnemyIdle u
 - (Optional) If center of mass position spotted without 3D obstacles blocking, player is treated as automatically spotted. In most cases, at least half of his body is already showing. However, this test might be omitted in favour for the 2nd case when running player unit detection per frame. 
 - If optional first test fails, player is either partially/fully concealed. In per-frame case, periodically perform a random raycast hitscan towards any part of the player ellipsoid. To factor in range deviation (ie. short-sightedness of enemy), can deviate the ray accruacy by a certain angular displacement (based off a enemy's nearsightedness) (<-KIV). This can result in greater chances of "misses" by an opponent, if you are far away from  him and he didn't spot you yet.(If miss deviates out of ellipsoid area, can early out) Hit-scan towards ellisoid can have a slightly lower radius to better fit the target.   A 3-dimensional random box volume raycast can be done for such a naive random raycast case, or a random ellipsoid point volume raycast). For cases where a turn is about to end or a turn is about to start, can perform Optional first test case, thus requirign the player to at least hide his center of mass prior to ending the turn.  (the arc marker can indicate center of mass detection per frame only).
 
-
+http://stackoverflow.com/questions/18731239/gnuplot-plot-random-points-inside-an-ellipsoid
 
 _________
 
@@ -46,7 +46,7 @@ For swinign attack:
 - + (Obstacles/Cover and Flanking) ArenaHUD: For  weapons, if you have valid no-obstacle WeaponLOS to target, but target has no clear-obstacle WeaponLOS on you (based on direct point towards you, not on his current rotation), give target additional evasionUnderCover bonus that makes hitting the target not that easy.  If target hasn't triggered any attack on you, test for both handedness to determine if either blockage is true using ellipsoid radius, and if so, give  evasionUnderCoverBonus bonus if target has triggered. If target has triggered an attack on you, than test for weapon righthandedness WeaponLOS to determine if  he can retailiate. If he can't due to obstacle blockage, cancel the trigger(if needed when he can't retailate attack upon required), and rmb to run evasionUnderCoverBonus using both handedness with ellipsoid radius for such a case to determine final hit percentage. If target has triggered an attack and righthandedness test succeeds, than coverBonus is still applied for both-handedness with ellipsoid radius test, but this is not as effective as evasionUnderCoverBonus. (DONE)
 - EnemyAggroSystem: evasionUnderCoverBonus also used for players, when guarding against enemy aggro. (DONE)
 (KIV) Note that some type of curved swords (or curled/boomerang projectiles), may mitigate evasionUnderCover/cover bonuses. 
-Obstacles/Cover bonus and Open Flank determination is used for all types of melee/ranged attacks. It is a crucial aspect of the game where the challenge is often to take out enemies in covered positions by flanking them.
+Obstacles/Cover bonus and Open Flank determination is used for all types of melee/ranged attacks. It is a crucial aspect of the game where the challenge is often to take out enemies in covered positions by flanking them. (DONE)
 
 ________________________________________
 
