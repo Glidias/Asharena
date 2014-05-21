@@ -24,6 +24,7 @@ package arena.views.hud
 	import arena.components.char.CharDefense;
 	import arena.components.char.HitFormulas;
 	import arena.components.enemy.EnemyAggro;
+	import arena.components.enemy.EnemyIdle;
 	import arena.components.weapon.Weapon;
 	import arena.components.weapon.WeaponSlot;
 	import arena.components.weapon.WeaponState;
@@ -136,7 +137,10 @@ package arena.views.hud
 		private var _displayChar:Entity;
 		
 		public static const UNIT_METER_SCALE:Number = 0.01905;  // based off Half-life dimensions, a unit in meters, which is 19.05mm (around 2 cm)
-		public static const METER_UNIT_SCALE:Number = 1/UNIT_METER_SCALE; 
+		public static const METER_UNIT_SCALE:Number = 1 / UNIT_METER_SCALE; 
+		
+		static public const EVASION_UNDER_COVER_BONUS:Number = .3;
+		static public const BEING_UNDER_COVER_BONUS:Number = .75;
 /*
 Components for:
 ----------------
@@ -792,6 +796,17 @@ WeaponSlots
 			return weaponLOSCheck.validateWeaponLOS( entA.get(Pos) as Pos, (entA.get(Weapon) as Weapon).sideOffset, (entA.get(Weapon) as Weapon).heightOffset, entB.get(Pos) as Pos, entB.get(Ellipsoid) as Ellipsoid );
 		}
 		
+		private function checkCoverBlockLOS(entA:Entity, entB:Entity):Boolean 
+		{
+	
+			return entA.has(EnemyIdle) ? false :   !weaponLOSCheck.validateWeaponLOS( entA.get(Pos) as Pos, (entB.get(Ellipsoid) as Ellipsoid ).x, 0, entB.get(Pos) as Pos, entB.get(Ellipsoid) as Ellipsoid )
+			 ||  !weaponLOSCheck.validateWeaponLOS( entA.get(Pos) as Pos, -(entB.get(Ellipsoid) as Ellipsoid ).x, 0, entB.get(Pos) as Pos, entB.get(Ellipsoid) as Ellipsoid );
+		}
+		
+		
+		
+		
+		
 		private function updateTargetChoices():void {
 			
 			
@@ -801,9 +816,13 @@ WeaponSlots
 			
 			var aggro:EnemyAggro = _targetNode.entity.get(EnemyAggro) as EnemyAggro;
 			var aggroing:Boolean = false;
+			var checkingLOS:Boolean = false;
+			aggroing = aggro == null || aggro.flag != 1 ? false : (checkingLOS  = aggro!=null) && checkLOS(_targetNode.entity, _displayChar);
 		//	if (aggro != null && aggro.flag == 2) throw new Error("STILL WAITING");
-			if (aggro == null || aggro.flag != 1) {
-				hitPercResult= HitFormulas.getPercChanceToHitDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense,_targetNode.entity.get(Ellipsoid) as Ellipsoid );
+			if (!aggroing) {
+				hitPercResult = HitFormulas.getPercChanceToHitDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid );
+				if (checkingLOS || (aggro && aggro.flag == -1) ) hitPercResult *= EVASION_UNDER_COVER_BONUS
+				else hitPercResult *= checkCoverBlockLOS( _targetNode.entity, _displayChar ) ? BEING_UNDER_COVER_BONUS : 1;
 				critPercResult= HitFormulas.getPercChanceToCritDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense,_targetNode.entity.get(Ellipsoid) as Ellipsoid );
 				
 			}
@@ -936,7 +955,7 @@ WeaponSlots
 			
 			
 			
-			_textTurnInfoMini.writeFinalData(_gotTargetInRange  ?  _charWeaponEnabled ? _gotTargetLOS ?  "Z - target mode" : "No Line of Fire!" :  _charWeaponEnabled ? "out of range: "+toMeters(getRangeToTarget())+"m"  : "Weapon disabled." : "" ,0,0,300,false);
+			_textTurnInfoMini.writeFinalData(_gotTargetInRange  ?  _charWeaponEnabled ? _gotTargetLOS ?  "Z - target mode" : "No Line of Fire!" :  _charWeaponEnabled ? "out of range: "+toMeters(getRangeToTarget())+"m"  : "" : "" ,0,0,300,false);
 		}
 		
 		public function newPhase():void {
@@ -1088,9 +1107,9 @@ WeaponSlots
 			var gotCrit:Boolean
 			
 			var aggro:EnemyAggro = _targetNode.entity.get(EnemyAggro) as EnemyAggro;
-			var aggroing:Boolean = aggro != null && aggro.flag == 1;
-			
-			
+			var checkingLOS:Boolean = false;
+			var aggroing:Boolean = aggro != null && aggro.flag == 1 && (checkingLOS=aggro!=null) && checkLOS(targetNode.entity, _displayChar);
+
 			_charWeaponEnabled = false; 
 			updateCharInfo();
 			
@@ -1109,6 +1128,11 @@ WeaponSlots
 					baseDmg = HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon );
 					
 					percToRoll =  HitFormulas.getPercChanceToCritDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot)	 as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid );
+					if (checkingLOS || (aggro && aggro.flag == -1) ) percToRoll *= EVASION_UNDER_COVER_BONUS
+					else {
+						hitPercResult *= checkCoverBlockLOS( _targetNode.entity, _displayChar ) ? BEING_UNDER_COVER_BONUS : 1;
+					}
+					
 							gotCrit = Math.random() * 100 <= percToRoll;
 							
 					strikeResult = gotCrit ? 2 :1;
