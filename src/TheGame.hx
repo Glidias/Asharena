@@ -1,4 +1,5 @@
 package;
+import arena.components.char.EllipsoidPointSamples;
 import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.player.AnimAttackSystem;
 import haxe.io.BytesInput;
@@ -80,7 +81,7 @@ class TheGame
 		
 		gameStates = new GameStates(engine, colliderSystem, keyPoll);
 		
-		
+		EllipsoidPointSamples;
 		ActionUIntSignal;
 		RenderSystem;
 		FlockingSystem;
