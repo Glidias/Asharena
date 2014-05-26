@@ -253,6 +253,27 @@ class PMath
 		return a + (b - a) * t;
 	}
 	
+	public static inline function lerp3( x:Float,  x1:Float, x2:Float, q00:Float, q01:Float):Float {
+		return ((x2 - x) / (x2 - x1)) * q00 + ((x - x1) / (x2 - x1)) * q01;
+	}
+	 
+	public static inline function biLerp(x, y, q11, q12, q21, q22, x1, x2, y1, y2):Float {
+
+		return lerp3(y, y1, y2, lerp3(x, x1, x2, q11, q21), lerp3(x, x1, x2, q12, q22));
+	}
+	 
+	public static inline function triLerp( x, y, z, q000, q001, q010, q011, q100, q101, q110, q111, x1, x2, y1, y2, z1, z2) {
+		var x00 = lerp3(x, x1, x2, q000, q100);
+		var x10 = lerp3(x, x1, x2, q010, q110);
+		var x01 = lerp3(x, x1, x2, q001, q101);
+		var x11 = lerp3(x, x1, x2, q011, q111);
+		var r0 = lerp3(y, y1, y2, x00, x01);
+		var r1 = lerp3(y, y1, y2, x10, x11);
+	 
+		return lerp3(z, z1, z2, r0, r1);
+	}
+	
+	
 	/**
 	 * Spherically interpolates between two angles.
 	 * see http://www.paradeofrain.com/2009/07/interpolating-2d-rotations/
