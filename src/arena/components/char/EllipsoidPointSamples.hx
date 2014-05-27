@@ -17,9 +17,10 @@ class EllipsoidPointSamples
 {
 
 	private static inline var phi:Float = 3;
-	var a:Float;
-	var b:Float;
-	var c:Float;
+	public var a:Float;
+	public var b:Float;
+	public var c:Float;
+	public var maxD:Float;
 	
 	public var points:Vector<Float>;
 	public var numPoints:Int;
@@ -60,8 +61,11 @@ class EllipsoidPointSamples
 		c *= d;
 		//*/
 		
-		d = max(a, b, c);
+		d = max(a, b, c); 
 	
+		//maxD = d;  // largest unit length
+		maxD = 1 / d;		// scale largest unit length to 1 multiplier   (a or b or c)* (1/maxD)
+		   
 		this.numPoints = numPoints;
 		points = new Vector<Float>(numPoints*3, true);
 	}
@@ -76,6 +80,10 @@ class EllipsoidPointSamples
 		var ry:Float;
 		var rz:Float;
 		
+		var multiplierA:Float = 1 / maxD * 1/a;
+		var multiplierB:Float = 1 / maxD * 1/b;
+		var multiplierC:Float = 1 / maxD * 1/c;
+		
 		for (i in 0...numPoints) {
 		
 			while ( true ) {	
@@ -86,9 +94,9 @@ class EllipsoidPointSamples
 					rx = x * COS_0 - y * SIN_0;
 					ry = (x * SIN_0 + y * COS_0);
 					rz = z;
-					points[count++] = rx;
-					points[count++] = ry;
-					points[count++] = rz;
+					points[count++] = rx*multiplierA;
+					points[count++] = ry*multiplierB;
+					points[count++] = rz*multiplierC;
 					break;
 				}
 			}
@@ -107,6 +115,10 @@ class EllipsoidPointSamples
 		var ry:Float;
 		var rz:Float;
 		
+		var multiplierA:Float = 1 / maxD * 1/a;
+		var multiplierB:Float = 1 / maxD * 1/b;
+		var multiplierC:Float = 1 / maxD * 1/c;
+		
 		for (i in 0...numPoints) {
 		
 			while ( true ) {	
@@ -117,9 +129,9 @@ class EllipsoidPointSamples
 					rx = x * COS_0 - y * SIN_0;
 					ry = (x * SIN_0 + y * COS_0);
 					rz = z;
-					points[count++] = rx;
-					points[count++] = ry;
-					points[count++] = rz;
+					points[count++] = rx*multiplierA;
+					points[count++] = ry*multiplierB;
+					points[count++] = rz*multiplierC;
 					break;
 				}
 			}

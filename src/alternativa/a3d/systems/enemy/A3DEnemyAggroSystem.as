@@ -34,9 +34,16 @@ package alternativa.a3d.systems.enemy
 			src3.x = enemyPos.x;
 			src3.y = enemyPos.y;
 			src3.z = enemyPos.z + enemyEyeHeight;
-			des3.x = playerNode.pos.x - src3.x;
-			des3.y = playerNode.pos.y- src3.y;
-			des3.z =  playerNode.pos.z - src3.z;
+			
+			var randomPt:int = int(Math.random() * playerNode.pointSamples.numPoints);
+			var px:Number = playerNode.pos.x +  playerNode.pointSamples.points[randomPt] * playerNode.size.x * playerNode.pointSamples.maxD;
+			var py:Number = playerNode.pos.y +  playerNode.pointSamples.points[randomPt+1] * playerNode.size.y * playerNode.pointSamples.maxD;
+			var pz:Number = playerNode.pos.z +  playerNode.pointSamples.points[randomPt + 2] * playerNode.size.z * playerNode.pointSamples.maxD;
+			
+			
+			des3.x = px - src3.x;
+			des3.y = py- src3.y;
+			des3.z = pz - src3.z;
 			var dm:Number = 1 /	Math.sqrt( des3.x * des3.x + des3.y * des3.y + des3.z * des3.z );
 			des3.x *= dm;
 			des3.y *= dm;
@@ -52,7 +59,11 @@ package alternativa.a3d.systems.enemy
 			src3.y = enemyPos.y - playerNode.pos.y;
 			src3.z = enemyPos.z - playerNode.pos.z;
 			var d:Number = Intersect3D.rayIntersectsEllipsoid(src3, des3, playerNode.size );
-			if ( d < 0) return false;
+			
+			if ( d < 0) {
+				//throw new Error("Should not really happen...really!")
+				return false;
+			}
 			
 			var data:RayIntersectionData = rayScene.intersectRay(src, dest);
 			//if (data != null) throw new Error("RRRGOT Intersect!");

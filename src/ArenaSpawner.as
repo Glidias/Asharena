@@ -18,6 +18,7 @@ package
 	import arena.components.char.AggroMem;
 	import arena.components.char.ArenaCharacterClass;
 	import arena.components.char.CharDefense;
+	import arena.components.char.EllipsoidPointSamples;
 	import arena.components.enemy.EnemyIdle;
 	import ash.core.Engine;
 	import ash.core.Entity;
@@ -40,6 +41,7 @@ package
 	import systems.animation.IAnimatable;
 	import systems.player.a3d.GladiatorStance;
 	import alternativa.engine3d.alternativa3d;
+	import util.geom.Vec3;
 	use namespace alternativa3d;
 	
 	/**
@@ -70,10 +72,15 @@ package
 		
 		private var defaultEnemyWatchMelee:EnemyIdle = new EnemyIdle().init(9000, 100);
 		
+		private var gladiatorPointSamples:EllipsoidPointSamples;
+		
 		public function ArenaSpawner(engine:Engine, keyPoll:KeyPoll) 
 		{
 			super(engine);
 			this.keyPoll = keyPoll;
+			
+			gladiatorPointSamples = new EllipsoidPointSamples();
+			gladiatorPointSamples.init(new Vec3(32, 32, 72), 100);
 			
 		}
 		
@@ -316,6 +323,8 @@ package
 				currentPlayerEntity = ent;
 				ent.add(keyPoll, KeyPoll);
 			}
+			
+			//ent.add(
 			actions.add( gladiatorStance.handleAction );
 			var attacks:ActionUIntSignal = ent.get(ActionUIntSignal) as ActionUIntSignal;	
 			attacks.add(gladiatorStance.handleAttack);
@@ -323,7 +332,7 @@ package
 			
 			ent.add( new AggroMem().init(defaultEnemyWatchMelee, side) );
 			
-			
+			ent.add(gladiatorPointSamples);
 			//ent.add( new MovableCollidable().init() );
 			
 			engine.addEntity(ent);
