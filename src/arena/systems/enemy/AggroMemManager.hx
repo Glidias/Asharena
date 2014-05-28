@@ -5,6 +5,7 @@ import arena.components.enemy.EnemyAggro;
 import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
 import arena.components.weapon.Weapon;
+import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.player.PlayerAggroNode;
 import ash.core.Engine;
 import ash.core.Entity;
@@ -64,7 +65,8 @@ class AggroMemManager
 	}
 		
 	// init
-	public function init(engine:Engine):Void {
+	public function init(engine:Engine, weaponLOSChecker:IWeaponLOSChecker):Void {
+		this.weaponLOSChecker = weaponLOSChecker;
 		this.engine = engine;
 		//engine.getNodeList(
 		
@@ -242,7 +244,7 @@ class AggroMemManager
 		return HitFormulas.targetIsWithinFOV(posA, rotA, posB, fovA) && hasLOS(posA, posB);
 	}
 	
-	// TODO:
+
 	public function hasLOS(posA:Pos, posB:Pos):Bool {
 		return true;
 	}
@@ -287,6 +289,7 @@ class AggroMemManager
 		var dz:Float = posB.z - posA.z;
 		return dx * dx + dy * dy + dz*dz;
 	}
+	var weaponLOSChecker:IWeaponLOSChecker;
 	private var _turnActive:Bool = false;
 	// This is called right after turn is started, where MovementPoints is given to playerEnt after transioinining into player.
 	public function notifyTurnStarted(playerEnt:Entity):Void {
@@ -332,13 +335,16 @@ class AggroMemManager
 		while ( a != null) {
 			var aWeapon:Weapon = a.weapon;
 			while(aWeapon != null) {
-				a.state.setAttackRange( (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(a.weapon, playerAggroList.head.size) : a.weapon.range + playerAggroList.head.size.x );
-				
-				//&& (checkedLOS=true) && validateWeaponLOS(a.pos, a.weapon.sideOffset, a.weapon.heightOffset, p.pos, p.size)
-				if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, playerAggroList.head.pos, a.state.attackRangeSq, a.weapon.hitAngle) )   { // TODO: validate other LOS factors
+				a.state.setAttackRange( (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, playerAggroList.head.size) : aWeapon.range + playerAggroList.head.size.x );
+				var checkedLOS:Bool = false;
+				//
+				if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, playerAggroList.head.pos, a.state.attackRangeSq, aWeapon.hitAngle) &&  (checkedLOS=true) && weaponLOSChecker.validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, playerAggroList.head.pos, playerAggroList.head.size)  )   { // TODO: validate other LOS factors
 					a.state.flag = 1;
 					a.weaponState.pullTrigger(aWeapon);
 					break;
+				}
+				else if (checkedLOS) {
+					a.state.flag = -1;
 				}
 				aWeapon = aWeapon.nextFireMode;
 			}

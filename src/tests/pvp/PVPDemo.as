@@ -1167,7 +1167,7 @@ package tests.pvp
 			
 			// aggro mem manager
 			aggroMemManager = new AggroMemManager();
-			aggroMemManager.init(game.engine);
+			aggroMemManager.init(game.engine, _enemyAggroSystem);
 			aggroMemManager.aggroList.nodeAdded.add(onEnemyAggroNodeAdded);
 			
 			game.gameStates.engineState.changeState("thirdPerson");
