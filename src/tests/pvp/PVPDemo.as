@@ -23,7 +23,6 @@ package tests.pvp
 	import alternterrain.CollidableMesh;
 	import arena.components.char.MovementPoints;
 	import arena.components.enemy.EnemyIdle;
-	import arena.components.weapon.PlayerAttack;
 	import arena.components.weapon.Weapon;
 	import arena.components.weapon.WeaponState;
 	import arena.systems.enemy.AggroMemManager;
@@ -263,7 +262,17 @@ package tests.pvp
 		private var collOtherClass:Class = ImmovableCollidable;
 			
 		// Deault weapon stats
-		private var TEST_MELEE_WEAPON:Weapon = getTestWeapon(true);
+		private var TEST_MELEE_WEAPON:Weapon = getTestWeaponFireModes();
+		
+		private function getTestWeaponFireModes():Weapon {
+			var head:Weapon;
+			head = getTestWeapon(false);  // swing
+			head.nextFireMode = getTestWeapon(true); // thrust
+			
+			return head;
+		}
+		
+		
 		private function getTestWeapon(thrust:Boolean=false):Weapon {
 			/*
 			var w:Weapon =   new Weapon();
@@ -303,7 +312,7 @@ package tests.pvp
 			var w:Weapon =   new Weapon();
 			w.name = "Melee weapon";
 			w.fireMode = thrust ? Weapon.FIREMODE_THRUST : Weapon.FIREMODE_SWING;
-			w.sideOffset = 15;// thrust ? 15 : 36;
+			w.sideOffset =thrust ?  15 : 36;// thrust ? 15 : 36;
 			w.heightOffset = 0;
 			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
 			w.minRange = 16;

@@ -1,4 +1,5 @@
 package arena.components.weapon;
+import arena.components.weapon.Weapon;
 
 /**
  * Unique weapon state per entity.
@@ -6,6 +7,7 @@ package arena.components.weapon;
  */
 class WeaponState
 {
+	public var fireMode:Weapon;
 	public var cooldown:Float; // recovery before attempting next attempt to strike  (A miss or strike.., cooldown intiated)
 	public var attackTime:Float; //  time elapsed during attack
 	public var trigger:Bool;
@@ -15,16 +17,18 @@ class WeaponState
 		
 	}
 	
-	public inline function pullTrigger():Void {	// for triggering attack animation before hammer-time strike
+	public inline function pullTrigger(fireMode:Weapon):Void {	// for triggering attack animation before hammer-time strike
 		trigger = true;
 		attackTime = 0;
 		cooldown = 0;
+		this.fireMode = fireMode;
 	}
 	
 	public inline function cancelTrigger():Void {  // for attack animation cancelling, or force-resetting/unpulling the trigger
 		trigger = false;
 		attackTime = 0;
 		cooldown = 0;
+		fireMode = null;
 	}
 	
 	public function init():WeaponState {
@@ -36,6 +40,7 @@ class WeaponState
 		cooldown = 0;
 		attackTime = 0;
 		trigger = false;
+		fireMode = null;
 		
 	}
 	
@@ -43,6 +48,7 @@ class WeaponState
 	{
 		attackTime = 9999;
 		cooldown = val;
+		
 	}
 	
 

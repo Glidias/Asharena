@@ -99,16 +99,18 @@ package alternativa.a3d.systems.enemy
 			dest.x = des3.x;
 			dest.y = des3.y;
 			dest.z = des3.z;
-			
-			
-			src3.x = attacker.x - target.x;
-			src3.y = attacker.y - target.y;
-			src3.z = attacker.z - target.z;
+
+			src3.x = src3.x - target.x;
+			src3.y = src3.y - target.y;
+			src3.z = src3.z - target.z;
 			var d:Number = Intersect3D.rayIntersectsEllipsoid(src3, des3, targetSize );
-			if ( d < 0) return false;
+			if ( d < 0) {
+				throw new Error("SHOULD NOT BE! There should be intersection!");
+				return false;
+			}
 			
 			var data:RayIntersectionData = rayScene.intersectRay(src, dest);
-			
+			//data = null;
 			//if (data != null && data.time <= d) throw new Error("BLOCKED!");
 			
 			return data != null ? data.time > d : true;

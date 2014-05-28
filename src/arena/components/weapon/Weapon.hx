@@ -19,7 +19,8 @@ class Weapon
 	
 	// advanced Arena properties below
 	
-	// Firemodes: Positive values indiciate melee attack modes. Zero or Negative values indicates ranged attack mode.
+	// Firemodes: Currently (might change), positive values indiciate melee attack modes. Zero or Negative values indicates ranged attack mode.
+	// Each firemode denotes a unique firing animation
 	public static inline var FIREMODE_THRUST:Int = 1;	 // thrusting motion
 	public static inline var FIREMODE_SWING:Int = 2;	// swing (side) motion 
 	public static inline var FIREMODE_STRIKE:Int = 3; 	 // strike (swing from top) chop motion
@@ -28,6 +29,13 @@ class Weapon
 	public static inline var FIREMODE_VELOCITY:Int = -2; 	// for velocity projectile weapons
 	public var fireMode:Int;	// the firemode that the weapon uses
 	public var nextFireMode:Weapon; // any next varying fire mode weapon to consider using
+	
+	/*
+	public static inline var AREA_EFFECT_IMPACT:Int = 0;	// dot or circular impact
+	public static inline var AREA_EFFECT_ARC:Int = 1;	// for cleaving attack
+	public var splashDamageRange:Float = 0;		// the range of spread
+	public var splashDamageMultiplier:Float = 1;
+	*/
 	
 	public var damageRange:Int;		// damage up-range variance
 

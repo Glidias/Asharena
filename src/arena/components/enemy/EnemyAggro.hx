@@ -1,4 +1,5 @@
 package arena.components.enemy;
+import arena.components.weapon.Weapon;
 import arena.systems.player.PlayerAggroNode;
 import ash.core.Entity;
 import util.geom.PMath;
@@ -32,11 +33,13 @@ class EnemyAggro
 		//flag = 0;
 		attackRangeSq = attackingRange*attackingRange;
 		this.watch  = watch;
+		
 	}
 	
 	public  function initSimple(target:PlayerAggroNode, watch:EnemyIdle):EnemyAggro {
 		this.target = target;
 		this.watch  = watch;
+	
 		return this;
 	}
 	public inline function setAttackRange(range:Float):Void {

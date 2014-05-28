@@ -25,7 +25,6 @@ package arena.views.hud
 	import arena.components.char.HitFormulas;
 	import arena.components.enemy.EnemyAggro;
 	import arena.components.enemy.EnemyIdle;
-	import arena.components.weapon.PlayerAttack;
 	import arena.components.weapon.Weapon;
 	import arena.components.weapon.WeaponSlot;
 	import arena.components.weapon.WeaponState;
@@ -666,8 +665,8 @@ WeaponSlots
 		}
 		
 		private var _charWeaponEnabled:Boolean = true;
-		public var playerWeaponModeForAttack:uint = PlayerAttack.THRUST;
-		public var enemyWeaponModeForAttack:uint = PlayerAttack.THRUST;
+		public var playerWeaponModeForAttack:uint = Weapon.FIREMODE_THRUST;
+		public var enemyWeaponModeForAttack:uint = Weapon.FIREMODE_THRUST;
 		
 		public function setChar(ent:Entity):void {
 			_displayChar = ent;

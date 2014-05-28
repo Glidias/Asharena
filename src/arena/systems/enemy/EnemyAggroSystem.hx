@@ -6,7 +6,6 @@ import arena.components.enemy.EnemyAggro;
 import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
 import arena.components.weapon.AnimAttackMelee;
-import arena.components.weapon.PlayerAttack;
 import arena.systems.player.IWeaponLOSChecker;
 
 import arena.systems.player.PlayerAggroNode;
@@ -305,7 +304,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker
 			dx =  playerPos.x - enemyPos.x;
 			dy = playerPos.y - enemyPos.y;
 			dz = playerPos.z - enemyPos.z;
-			if (dx * dx + dy * dy + dz*dz <= rangeSq && HitFormulas.targetIsWithinFOV2(dx, dy, i.rot, i.state.fov) && validateVisibility(enemyPos, i.state.eyeHeightOffset, p) ) {  // TODO: Include rotation facing direction as a factor for EnemyIdle case to allow backstabs
+			if (dx * dx + dy * dy + dz*dz <= rangeSq && HitFormulas.targetIsWithinFOV2(dx, dy, i.rot, i.state.fov) && validateVisibility(enemyPos, i.state.eyeHeightOffset, p) ) { 
 				i.entity.remove(EnemyIdle);
 				
 				i.entity.add(new EnemyWatch().init(i.state,p), EnemyWatch); // TODO: Pool ENemyWatch
@@ -408,13 +407,15 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker
 			// determine if within "suitable" range to strike/engage player
 			///*
 			if (aWeaponState.trigger) {  // if attack was triggered, 
+				aWeapon = aWeaponState.fireMode;
+				
 				if (aWeaponState.cooldown > 0) {  // weapon is on the  cooldown after strike has occured
 					
 					aWeaponState.cooldown -= pTimeElapsed;
 					if (aWeaponState.cooldown <= 0) {  // cooldown finished. allow trigger to  be pulled again
 						aWeaponState.cancelTrigger();
 						a.state.flag = 0;
-						a.state.setAttackRange( (((ALLOW_KITE_RANGE & KITE_ALLOWANCE) != 0) ? HitFormulas.rollRandomAttackRangeForWeapon(a.weapon, p.size) : a.weapon.range + p.size.x ) );
+						a.state.setAttackRange( (((ALLOW_KITE_RANGE & KITE_ALLOWANCE) != 0) ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, p.size) : aWeapon.range + p.size.x ) );
 						onEnemyReady.dispatch(a.entity);
 					}
 					else {
@@ -426,6 +427,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker
 					
 				}
 				else {  // weapon is not on cooldown, but swinging
+					
 					//if (a.state.target.health.hp <= 0 ) throw "PLAYER already dEAD!";
 					
 					//if (aWeaponState.cooldown < 0) throw "SHOULD NOT BE2222!";
@@ -435,40 +437,37 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker
 					var strikeTimeAtRange:Float = HitFormulas.calculateStrikeTimeAtRange(aWeapon, actualDist);
 					
 					
-					
 					if ( aWeaponState.attackTime >= strikeTimeAtRange) { // strike has occured
 						currentAttackingEnemy = a.entity;
 						var kite:Int = (ALLOW_KITE_RANGE | ALLOW_KITE_OBSTACLES);
 						
-						// TODO: Also Consider weapon LOS as well, if either test fails (or perhaps LOS only..), considered kited miss OR "silent-cancel"?
-						if (actualDist <= aWeapon.range && validateWeaponLOS(a.pos, a.weapon.sideOffset, a.weapon.heightOffset, p.pos, p.size)  ) {  // strike hit! 
+						if (actualDist <= aWeapon.range && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) {  // strike hit! 
 							
-							if (Math.random() * 100 <= HitFormulas.getPercChanceToHitDefender(a.pos, a.ellipsoid, a.weapon, p.pos, p.rot, p.def, p.size)) {
+							if (Math.random() * 100 <= HitFormulas.getPercChanceToHitDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size)) {
 							
-								// TODO: if strike occurs  
-								
+							
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
 								// deal damage to player heath
 								//currentAttackingEnemy = a.entity;
 								if (AGGRO_HAS_CRITICAL) {
 									enemyCrit = false;
-									if ( Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, a.weapon, p.pos, p.rot, p.def, p.size) ) {
+									if ( Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size) ) {
 										
 										enemyCrit = true;
 									}
 								}
-								a.signalAttack.forceSet(a.weapon.fireMode);
+								a.signalAttack.forceSet(aWeapon.fireMode);
 								swinger =  new AnimAttackMelee();
-								swinger.init_i_static( a.weapon.anim_strikeTimeAtMaxRange, p.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
+								swinger.init_i_static( aWeapon.anim_strikeTimeAtMaxRange, p.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
 								a.entity.add(swinger);
 								//p.health.damage(HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
 								
 							}
 							else { // strike rolled miss
-								a.signalAttack.forceSet(a.weapon.fireMode);
+								a.signalAttack.forceSet(aWeapon.fireMode);
 								swinger =  new AnimAttackMelee();
 								//HitFormulas.calculateAnimStrikeTimeAtRange(a.weapon, actualDist)
-								swinger.init_i_static(a.weapon.anim_strikeTimeAtMaxRange, p.health, 0 );
+								swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, p.health, 0 );
 								a.entity.add(swinger);
 								
 								//p.health.damage(0);
@@ -482,9 +481,9 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker
 							kite &= KITE_ALLOWANCE;
 							
 							if (kite != 0) {  // somehow, kiting is allowed in this situation. Simulate deliberate swing miss.
-								a.signalAttack.forceSet(a.weapon.fireMode);
+								a.signalAttack.forceSet(aWeapon.fireMode);
 								swinger =  new AnimAttackMelee();
-								swinger.init_i_static(a.weapon.anim_strikeTimeAtMaxRange, p.health, 0 );
+								swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, p.health, 0 );
 								a.entity.add(swinger);
 							}
 							else { // no kiting allowed in this suitation. Silently cancel attack.
@@ -510,18 +509,22 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker
 				
 				}
 			}
-			else {   // consider whether should pull trigger
-				var checkedLOS:Bool = false;
-				if (gotReact &&  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, a.weapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, a.weapon.sideOffset, a.weapon.heightOffset, p.pos, p.size)  ) {  // TODO: Weapon LOS check
-				
-					aWeaponState.pullTrigger();
-					
-					a.state.flag = 1;
-					onEnemyAttack.dispatch(a.entity);
-					
-				}
-				else if (checkedLOS) {
-					a.state.flag = -1;
+			else if (gotReact) {   // consider whether should pull trigger across the various fire modes
+				aWeapon = a.weapon;
+				while(aWeapon!= null) {
+					var checkedLOS:Bool = false;
+					if ( HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) { 
+						
+						aWeaponState.pullTrigger(aWeapon);
+						
+						a.state.flag = 1;
+						onEnemyAttack.dispatch(a.entity);
+						break;
+					}
+					else if (checkedLOS) {
+						a.state.flag = -1;
+					}
+					aWeapon = aWeapon.nextFireMode;
 				}
 			}
 			//*/

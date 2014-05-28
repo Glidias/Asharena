@@ -330,10 +330,17 @@ class AggroMemManager
 		// for entities in Aggro state, they are assigned a attack-trigger range based off their weapon's ranges (factor out method to Hitformulas), determine if playerEnt is within trigger range and if so, pull the trigger even before the player moves!
 		var a:EnemyAggroNode = aggroList.head;
 		while ( a != null) {
-			a.state.setAttackRange( (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(a.weapon, playerAggroList.head.size) : a.weapon.range + playerAggroList.head.size.x );
-			if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, playerAggroList.head.pos, a.state.attackRangeSq, a.weapon.hitAngle) )   {
-				a.state.flag = 1;
-				a.weaponState.pullTrigger();
+			var aWeapon:Weapon = a.weapon;
+			while(aWeapon != null) {
+				a.state.setAttackRange( (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(a.weapon, playerAggroList.head.size) : a.weapon.range + playerAggroList.head.size.x );
+				
+				//&& (checkedLOS=true) && validateWeaponLOS(a.pos, a.weapon.sideOffset, a.weapon.heightOffset, p.pos, p.size)
+				if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, playerAggroList.head.pos, a.state.attackRangeSq, a.weapon.hitAngle) )   { // TODO: validate other LOS factors
+					a.state.flag = 1;
+					a.weaponState.pullTrigger(aWeapon);
+					break;
+				}
+				aWeapon = aWeapon.nextFireMode;
 			}
 			a = a.next;
 		}

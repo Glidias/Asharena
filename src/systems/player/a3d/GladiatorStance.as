@@ -9,7 +9,7 @@ package systems.player.a3d
 	import alternativa.engine3d.animation.events.NotifyEvent;
 	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Skin;
-	import arena.components.weapon.PlayerAttack;
+	import arena.components.weapon.Weapon;
 	import ash.signals.Signal1;
 	import com.greensock.TweenLite;
 	import components.controller.SurfaceMovement;
@@ -342,11 +342,14 @@ package systems.player.a3d
 		}
 		
 		public function handleAttack(attack:uint):void {
-			if (attack === PlayerAttack.SWING) {
+			if (attack === Weapon.FIREMODE_SWING) {
 				swing();
 			}
-			else if (attack === PlayerAttack.THRUST) {
+			else if (attack === Weapon.FIREMODE_THRUST) {
 				thrust();
+			}
+			else {
+				throw new Error("Could not resolve attack animation code:" + attack );
 			}
 		}
 		
