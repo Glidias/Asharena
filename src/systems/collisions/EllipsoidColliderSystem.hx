@@ -456,7 +456,7 @@ class EllipsoidColliderSystem extends System
 	*/
 	private static inline var MIN_REFLECTION: Float = .005;
 
-	///*
+	/*
 	public inline function resolveMovableCircleWithImmobile( immobileCircle:Vec3, circle: Vec3, circleVel:Vec3 ): Void  // immovable (use this naive approach for 3d as immovable against a movable circle! )
 	{
 		var nx:Float = circle.x - immobileCircle.x;
@@ -519,9 +519,9 @@ class EllipsoidColliderSystem extends System
 		vc0.z = 0;
 		vc1.z = 0;
 	}
-	//*/
+	*/
 	
-	/*
+//	/*
 		public inline function resolveMovableCircleWithImmobile( immobileCircle:Vec3, circle: Vec3, circleVel:Vec3 ): Void  // immovable (use this naive approach for 3d as immovable against a movable circle! )
 	{
 		var nx:Float = circle.x - immobileCircle.x;
@@ -582,7 +582,7 @@ class EllipsoidColliderSystem extends System
 		vc0.x -= dx; vc0.y -= dy; vc0.z -= dz;
 		vc1.x += dx; vc1.y += dy; vc1.z += dz;
 	}
-	*/
+	//*/
 	
 	
 
