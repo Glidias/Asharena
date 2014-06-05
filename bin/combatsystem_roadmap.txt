@@ -1,11 +1,21 @@
 blocker range sphere/(arc) integration with attack animation  (KIV)
 rts select interface instead of just cycling  (KIV)
-____
-Integrate to terrain
-Add variety of units with ranged/guns, against obstacles for arrow/bullet projectiles.
-_________________
-Formation group movement and aggro targeting of entire formation
-__________________
+________________________
+Integrate to terrain. (fenced up areas for arena)
+Add variety of units with ranged/guns, against obstacles for arrow/bullet projectiles.  #1
+Skin terrain #1/#2
+_________________________
+Formation group movement and aggro targeting of entire formation  #1/#2
+__________________________
+Fog of War LOS encountering and ? markers  #1/#2
+_____________________________________
+Add enemy AI  #3
+Add enemy monsters #3
+____________________
+
+Milestone #1: Quick-Arena PVP
+Milestone #2: Scenerio PVP
+Milestone #3: Exploration and Enemy Encounters
 
 
 
