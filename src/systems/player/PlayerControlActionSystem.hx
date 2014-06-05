@@ -137,7 +137,7 @@ class PlayerControlActionSystem extends System
 				}
 				n.action.set(actionToSet);
 			}
-			else { // in air
+			else if (n.vel.z !=0 ) { // in air
 				// TODO: Threshold to determine how long in air or air speed to determine animation to choose
 				//if (n.action.current == PlayerAction.STATE_JUMP) return;  // Player is still in user-induced jumping state, do not cancel it while in air!
 				//n.action.set( n.vel.z >= 0 ? PlayerAction.IN_AIR : PlayerAction.IN_AIR_FALLING );

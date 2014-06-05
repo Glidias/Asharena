@@ -253,7 +253,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number =9999;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 5;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
@@ -312,7 +312,7 @@ package tests.pvp
 			var w:Weapon =   new Weapon();
 			w.name = "Melee weapon";
 			w.fireMode = thrust ? Weapon.FIREMODE_THRUST : Weapon.FIREMODE_SWING;
-			w.sideOffset =thrust ?  15 : 36;// thrust ? 15 : 36;
+			w.sideOffset =thrust ?  15 : 36+16;// thrust ? 15 : 36;
 			w.heightOffset = 0;
 			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
 			w.minRange = 16;
@@ -437,6 +437,13 @@ package tests.pvp
 				endPhase();
 			}
 			else if (keyCode === Keyboard.F && !game.keyPoll.isDown(Keyboard.F)) {
+				if (  arenaHUD.checkStrike(keyCode) ) {  // for now, HP reduction is insntatneous within this method
+					// remove controls, perform animation, before toggling targeting mode and restoring back controls
+					resolveStrikeAction();
+					//toggleTargetingMode();
+				}
+			}
+			else if (keyCode >= Keyboard.NUMBER_1 && keyCode <= Keyboard.NUMBER_9  && !game.keyPoll.isDown(keyCode)  ) {
 				if (  arenaHUD.checkStrike(keyCode) ) {  // for now, HP reduction is insntatneous within this method
 					// remove controls, perform animation, before toggling targeting mode and restoring back controls
 					resolveStrikeAction();

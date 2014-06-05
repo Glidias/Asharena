@@ -6,6 +6,7 @@ import components.Ellipsoid;
 import components.Health;
 import components.Pos;
 import components.Rot;
+import util.TypeDefs;
 import util.geom.PMath;
 
 /**
@@ -122,6 +123,17 @@ class HitFormulas
 		perc *= toDie;
 	
 		return perc;
+	}
+	
+	public static inline function getUnionProbabilityExclusive(vec:Vector<Float>, len:Int = 0):Float {
+		if (len == 0) len  = vec.length;
+		var remainingProb:Float = 1;
+		var result:Float = 0;
+		for (i in 0...len) {
+			result = vec[i] * remainingProb;
+			remainingProb -= result;
+		}
+		return result;
 	}
 	
 	

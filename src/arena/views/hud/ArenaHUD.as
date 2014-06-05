@@ -44,6 +44,7 @@ package arena.views.hud
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.geom.Vector3D;
+	import flash.ui.Keyboard;
 	import flash.utils.Dictionary;
 	import saboteur.spawners.SaboteurHudAssets;
 	import systems.animation.IAnimatable;
@@ -141,6 +142,18 @@ package arena.views.hud
 		
 		static public const EVASION_UNDER_COVER_BONUS:Number = .3;
 		static public const BEING_UNDER_COVER_BONUS:Number = .75;
+		
+		private static function getWeaponModeLabels():Dictionary {
+			var arr:Dictionary = new Dictionary();
+			arr[Weapon.FIREMODE_SWING] = "Swing Weapon";
+			arr[Weapon.FIREMODE_THRUST] = "Thrust Weapon";
+			arr[Weapon.FIREMODE_TRAJECTORY] = "Launch Projectile";
+			arr[Weapon.FIREMODE_VELOCITY] = "Fire Projectile";
+			arr[Weapon.FIREMODE_STRIKE] = "Strike Weapon";
+			arr[Weapon.FIREMODE_RAY] = "Shoot";
+			return arr;
+		}
+		private static var WEAPON_MODE_LABELS:Dictionary = getWeaponModeLabels();
 /*
 Components for:
 ----------------
@@ -489,12 +502,14 @@ WeaponSlots
 			_actionChoicesBox.addToContainer(layoutTopLeft);
 			registerVisStatesOfTextBox("thirdPerson", _actionChoicesBox);
 			_actionChoicesBox.styles[0].spriteSet.alwaysOnTop = true;
+			
 			///*
 			_actionChoicesBox.appendMessage("F - Attack now");
+			
 
 			_actionChoicesBox.drawNow();
 			//*/
-			_actionChoicesBox.moveTo(200+20, _actionChoicesBox._heightOffset + 20);
+			_actionChoicesBox.moveTo(200+20, _actionChoicesBox._heightOffset+ 40);
 			
 			// Command points and Turn info on top center
 			_textTurnInfo = new FontSettings( fontConsole, fontMat, getNewTextSpriteSet(50, fontMat, _textGeometry), "commandPoints" );
@@ -767,7 +782,7 @@ WeaponSlots
 			if (_curCharPos) {
 				_gotTargetInRange =  getRangeToTarget() <= _curWeaponRange;
 				if (_gotTargetInRange) {
-					_gotTargetLOS = weaponLOSCheck == null || checkLOS(_displayChar, node.entity);
+					_gotTargetLOS = weaponLOSCheck == null || checkLOS(_displayChar, _displayChar.get(Weapon) as Weapon, node.entity);
 				}
 			}
 			else {
@@ -792,10 +807,10 @@ WeaponSlots
 			validateTargetInRange();
 		}
 		
-		private function checkLOS(entA:Entity, entB:Entity):Boolean 
+		private function checkLOS(entA:Entity, entAWeapon:Weapon, entB:Entity):Boolean 
 		{
 	
-			return weaponLOSCheck.validateWeaponLOS( entA.get(Pos) as Pos, (entA.get(Weapon) as Weapon).sideOffset, (entA.get(Weapon) as Weapon).heightOffset, entB.get(Pos) as Pos, entB.get(Ellipsoid) as Ellipsoid );
+			return weaponLOSCheck.validateWeaponLOS( entA.get(Pos) as Pos, entAWeapon.sideOffset, entAWeapon.heightOffset, entB.get(Pos) as Pos, entB.get(Ellipsoid) as Ellipsoid );
 		}
 		
 		private function checkCoverBlockLOS(entA:Entity, entB:Entity):Boolean 
@@ -807,19 +822,32 @@ WeaponSlots
 		
 		
 		
+		private var choices:Array = [];
 		
-		
-		private function updateTargetChoices():void {
+		private function updateTargetChoices():void { // TODO: determine best choice (percChanceToHit|damage) and use default F key for choice
 			
-			
+			_actionChoicesBox.clearAll();
+				
 			// ROLLING
 			var hitPercResult:Number;
 			var critPercResult:Number;
+			var bestChoiceIndex:int = 0;
+			var bestDamage:int = 0;
+			var bestPercChanceToHit:Number = 0;
 			
+			
+			var rangeToTarget:Number = getRangeToTarget();
+			
+			var count:int = 0;
+			for (var playerWeapon:Weapon =  _displayChar.get(Weapon) as Weapon; playerWeapon != null; playerWeapon = playerWeapon.nextFireMode) {  // start loop
+			
+			if (playerWeapon.range < rangeToTarget || !checkLOS(_displayChar, playerWeapon, _targetNode.entity)) {
+				continue;
+			}
 			var aggro:EnemyAggro = _targetNode.entity.get(EnemyAggro) as EnemyAggro;
 			var aggroing:Boolean = false;
 			var checkingLOS:Boolean = false;
-			aggroing = aggro == null || aggro.flag != 1 ? false : (checkingLOS  = aggro!=null) && checkLOS(_targetNode.entity, _displayChar);
+			aggroing = aggro == null || aggro.flag != 1 ? false : (checkingLOS  = aggro!=null) && checkLOS(_targetNode.entity, (_targetNode.entity.get(WeaponState) as WeaponState).fireMode, _displayChar);
 		//	if (aggro != null && aggro.flag == 2) throw new Error("STILL WAITING");
 			if (!aggroing) {
 				hitPercResult = HitFormulas.getPercChanceToHitDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid );
@@ -829,23 +857,22 @@ WeaponSlots
 				
 			}
 			else {
+				var aggroWeapon:Weapon =  (_targetNode.entity.get(WeaponState) as WeaponState).fireMode;
 				aggroing = true;
-				
 
-				// TODO: player char rot should get from aggro reference instead
 				//posA:Pos, rotA:Rot, defA:CharDefense, ellipsoidA:Ellipsoid, weaponA:Weapon, healthA:Health, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState)
 				hitPercResult = HitFormulas.getPercChanceToHitAttacker(
 					_curCharPos,
 					_displayChar.get(Rot) as Rot, 
 					_displayChar.get(CharDefense) as CharDefense, 
 					_displayChar.get(Ellipsoid) as Ellipsoid, 
-					_displayChar.get(Weapon) as Weapon, 
+					playerWeapon, 
 					_displayChar.get(Health) as Health, 
 					_targetNode.entity.get(Pos) as Pos, 
 					_targetNode.entity.get(Rot) as Rot, 
 					_targetNode.entity.get(CharDefense) as CharDefense, 
 					_targetNode.entity.get(Ellipsoid) as Ellipsoid, 
-					_targetNode.entity.get(Weapon) as Weapon,
+					aggroWeapon,
 					_targetNode.entity.get(WeaponState) as WeaponState);
 					
 					//posA:Pos, rotA:Rot, defA:CharDefense, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState
@@ -854,12 +881,12 @@ WeaponSlots
 						_displayChar.get(Rot) as Rot, 
 						_displayChar.get(CharDefense) as CharDefense, 
 						_displayChar.get(Ellipsoid) as Ellipsoid, 
-						_displayChar.get(Weapon) as Weapon, 
+						playerWeapon, 
 						_targetNode.entity.get(Pos) as Pos, 
 						_targetNode.entity.get(Rot) as Rot, 
 						_targetNode.entity.get(CharDefense) as CharDefense, 
 						_targetNode.entity.get(Ellipsoid) as Ellipsoid, 
-						_targetNode.entity.get(Weapon) as Weapon,
+						aggroWeapon,
 						_targetNode.entity.get(WeaponState) as WeaponState);
 			}
 			
@@ -871,37 +898,58 @@ WeaponSlots
 			
 			var targetHP:Health = _targetNode.entity.get(Health) as Health;
 			
-			var sampleDmg:int = HitFormulas.rollDamageForWeapon( _displayChar.get(Weapon) as Weapon);
+			var sampleDmg:int = HitFormulas.rollDamageForWeapon(playerWeapon);
 			var numHits:int = Math.ceil(targetHP.hp / sampleDmg);
 			var numCritHits:int = Math.ceil(targetHP.hp / (sampleDmg*3));
 			
 			var showLabels:Boolean = false;
-			_actionChoicesBox.clearAll();
+		
+			//_actionChoicesBox.appendMessage("::");
+			if (hitPercResult > bestPercChanceToHit || (hitPercResult == bestPercChanceToHit && sampleDmg > bestDamage) ) {
+				bestChoiceIndex = count;
+				bestPercChanceToHit = hitPercResult;
+				bestDamage = sampleDmg;
+				_bestChoiceIndex = count;
+			}
 			
-			_actionChoicesBox.appendSpanTagMessage('F - Attack now (<span u="2">' + hitPercResult + '%</span>' + (showLabels ? " hit" : "") + ' | <span u="1">' + critPercResult + '%</span>' + (showLabels ? ' critical' : '') + ')' + '  ~(<span u="2">' + numHits + '</span>|<span u="1">' + numCritHits + '</span>)' + (aggroing ? "*" : "") );
 			
+		
+			choices[count ]  = (count + 1) + ' - ' + WEAPON_MODE_LABELS[playerWeapon.fireMode] + ' (<span u="2">' + hitPercResult + '%</span>' + (showLabels ? " hit" : "") + ' | <span u="1">' + critPercResult + '%</span>' + (showLabels ? ' critical' : '') + ')' + '  ~(<span u="2">' + numHits + '</span>|<span u="1">' + numCritHits + '</span>)' + (aggroing ? "*" : "");
+				count++;
+			}	// end loop
+			
+			for (var i:int = 0; i < count; i++) {
+				_actionChoicesBox.appendSpanTagMessage(choices[i] + (i=== bestChoiceIndex ? " [F]" : "") );
+			}
+		
 			_actionChoicesBox.drawNow();
+			_actionChoicesBox.moveTo(200+20, count*30);
 		}
 		
-		private function checkTargetInRange():Boolean {
-			var gotTargetInRange:Boolean;
-			var gotTargetLOS:Boolean;
-				
-			if ( _targetNode && _curCharPos) {
-				gotTargetInRange = getRangeToTarget() <= _curWeaponRange;
-				gotTargetLOS = false;
-				if (gotTargetInRange) {
-					gotTargetLOS = weaponLOSCheck == null || checkLOS(_displayChar, _targetNode.entity);
+		private function checkTargetInRange():Boolean { 
+			var gotTargetInRange:Boolean = false;
+			var gotTargetLOS:Boolean = false;
+			if (_displayChar == null) return false;
+			for (var playerWeapon:Weapon = _displayChar.get(Weapon) as Weapon; playerWeapon != null; playerWeapon = playerWeapon.nextFireMode) {
+				if ( _targetNode && _curCharPos) {
+					
+					gotTargetInRange = getRangeToTarget() <= _curWeaponRange;
+					gotTargetLOS = false;
+					if (gotTargetInRange) {
+						gotTargetLOS = weaponLOSCheck == null || checkLOS(_displayChar, playerWeapon, _targetNode.entity);
+						if (gotTargetLOS) {
+							break;
+						}
+					}
+				}
+				else {
+				//	gotTargetLOS = true;
+					//gotTargetInRange =  true;  //TODO: subjected to weapon condition
+					gotTargetLOS = false;
+					gotTargetInRange =  false;  //TODO: subjected to weapon condition
+
 				}
 			}
-			else {
-			//	gotTargetLOS = true;
-				//gotTargetInRange =  true;  //TODO: subjected to weapon condition
-				gotTargetLOS = false;
-				gotTargetInRange =  false;  //TODO: subjected to weapon condition
-
-			}
-		
 			
 			if (gotTargetInRange != _gotTargetInRange || gotTargetLOS != _gotTargetLOS) {
 				_gotTargetInRange = gotTargetInRange
@@ -1093,16 +1141,24 @@ WeaponSlots
 		public var enemyStrikeResult:int;
 		private var ENEMY_ROLL_CRIT:Boolean = EnemyAggroSystem.AGGRO_HAS_CRITICAL;
 		private var _gotTargetLOS:Boolean;
+		private var _bestChoiceIndex:uint;
 		public var playerDmgDealRoll:int;
 		public var enemyDmgDealRoll:int
 		
-		public function checkStrike(keyCode:uint):int 	// TODO: Factor resolving and calculations out to somewhere else...HUD shouldn't handle this! 
+		public function checkStrike(keyCode:uint):int 
 		{
 			strikeResult = 0;
 			enemyStrikeResult = 0;
 			
-			if (!_charWeaponEnabled || !_targetMode || !_gotTargetInRange || !_targetNode || !_gotTargetLOS) return 0;
 			
+			if (!_charWeaponEnabled || !_targetMode || !_gotTargetInRange || !_targetNode || !_gotTargetLOS) return 0;
+			if (keyCode == Keyboard.F) keyCode = _bestChoiceIndex
+			else keyCode = keyCode -Keyboard.NUMBER_1;  // get index keyCode for weapon slot
+			var chosenWeapon:Weapon = getWeaponByIndex(_displayChar.get(Weapon) as Weapon, keyCode);
+			if (chosenWeapon == null) return 0;
+			
+			
+			playerWeaponModeForAttack = chosenWeapon.fireMode;
 			// ROLLING
 			var hitPercResult:Number;
 			var critPercResult:Number;
@@ -1110,7 +1166,7 @@ WeaponSlots
 			
 			var aggro:EnemyAggro = _targetNode.entity.get(EnemyAggro) as EnemyAggro;
 			var checkingLOS:Boolean = false;
-			var aggroing:Boolean = aggro != null && aggro.flag == 1 && (checkingLOS=aggro!=null) && checkLOS(targetNode.entity, _displayChar);
+			var aggroing:Boolean = aggro != null && aggro.flag == 1 && (checkingLOS=aggro!=null) && checkLOS(targetNode.entity, (_targetNode.entity.get(WeaponState) as WeaponState).fireMode,  _displayChar);
 
 			_charWeaponEnabled = false; 
 			updateCharInfo();
@@ -1127,7 +1183,7 @@ WeaponSlots
 				
 				//percToRoll = Math.round(hitPercResult);
 				if (Math.random() * 100 <= percToRoll) {  // got hit
-					baseDmg = HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon );
+					baseDmg = HitFormulas.rollDamageForWeapon(chosenWeapon );
 					
 					percToRoll =  HitFormulas.getPercChanceToCritDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot)	 as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid );
 					if (checkingLOS || (aggro && aggro.flag == -1) ) percToRoll *= EVASION_UNDER_COVER_BONUS
@@ -1140,7 +1196,7 @@ WeaponSlots
 					strikeResult = gotCrit ? 2 :1;
 					// resolve now1
 					//health.damage( HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon ) * (gotCrit ? 3 : 1) );	
-					playerDmgDealRoll = HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon ) * (gotCrit ? 3 : 1);
+					playerDmgDealRoll = HitFormulas.rollDamageForWeapon(chosenWeapon) * (gotCrit ? 3 : 1);
 				}
 				else {
 					txtPlayerMisses(_displayChar, targetNode.entity);
@@ -1152,18 +1208,19 @@ WeaponSlots
 			else {  // Both sides attack
 				
 				enemyStrikeResult = -1;
-			
+				var aggroWeapon:Weapon = (_targetNode.entity.get(WeaponState) as WeaponState).fireMode;
+				enemyWeaponModeForAttack = aggroWeapon.fireMode;
 				//posA:Pos, rotA:Rot, defA:CharDefense, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState
 				percToRoll = HitFormulas.getPercChanceToBeHitByAttacker(
 				_curCharPos,
 					_displayChar.get(Rot) as Rot,
 				  _displayChar.get(CharDefense) as CharDefense,
 				  _displayChar.get(Ellipsoid) as Ellipsoid, 
-				  _displayChar.get(Weapon) as Weapon,
+				 chosenWeapon,
 				   _targetNode.entity.get(Pos) as Pos,
 				    _targetNode.entity.get(Rot) as Rot,
 					 _targetNode.entity.get(Ellipsoid) as Ellipsoid,
-					  _targetNode.entity.get(Weapon) as Weapon,
+					 aggroWeapon,
 					   _targetNode.entity.get(WeaponState) as WeaponState
 				);
 				var dmgInflict:int = 0;
@@ -1171,11 +1228,11 @@ WeaponSlots
 				
 				if (percToRoll > 0) {  // ai goes first
 					if (Math.random() * 100 <= percToRoll) {
-						dmgInflict = HitFormulas.rollDamageForWeapon( _targetNode.entity.get(Weapon) as Weapon );
+						dmgInflict = HitFormulas.rollDamageForWeapon( aggroWeapon );
 						enemyStrikeResult = 1;
 						
 						if (ENEMY_ROLL_CRIT) {
-							percToRoll =  HitFormulas.getPercChanceToCritDefender( _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Ellipsoid) as Ellipsoid,  _displayChar.get(Weapon) as Weapon, _displayChar.get(Pos) as Pos, _displayChar.get(Rot)	 as Rot, _displayChar.get(CharDefense) as CharDefense, _displayChar.get(Ellipsoid) as Ellipsoid );
+							percToRoll =  HitFormulas.getPercChanceToCritDefender( _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Ellipsoid) as Ellipsoid,  chosenWeapon, _displayChar.get(Pos) as Pos, _displayChar.get(Rot)	 as Rot, _displayChar.get(CharDefense) as CharDefense, _displayChar.get(Ellipsoid) as Ellipsoid );
 							gotCrit = Math.random() * 100 <= percToRoll;
 							enemyStrikeResult = gotCrit ? 2 : 1;
 							dmgInflict *= gotCrit ? 3 : 1;
@@ -1189,12 +1246,12 @@ WeaponSlots
 						}
 					}
 					if (survived) {
-						percToRoll = HitFormulas.getPercChanceToHitDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid ) 
+						percToRoll = HitFormulas.getPercChanceToHitDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid, aggroWeapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid ) 
 				
 						if (Math.random() * 100 <= percToRoll) { // got hit
-							baseDmg = HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon );
+							baseDmg = HitFormulas.rollDamageForWeapon( chosenWeapon );
 							
-							percToRoll =  HitFormulas.getPercChanceToCritDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot)	 as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid );
+							percToRoll =  HitFormulas.getPercChanceToCritDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  aggroWeapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot)	 as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid );
 							gotCrit = Math.random() * 100 <= percToRoll;
 							strikeResult = gotCrit ? 2 : 1;
 						}
@@ -1202,11 +1259,11 @@ WeaponSlots
 						
 						
 						// resolve now 
-						//if (strikeResult > 0) health.damage( HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon ) * (gotCrit ? 3 : 1) )
+						//if (strikeResult > 0) health.damage( HitFormulas.rollDamageForWeapon(chosenWeapon ) * (gotCrit ? 3 : 1) )
 						//else txtPlayerMisses(_displayChar, targetNode.entity);
 						
 						//playerHealth.damage(dmgInflict);
-						if (strikeResult > 0) playerDmgDealRoll = HitFormulas.rollDamageForWeapon(_displayChar.get(Weapon) as Weapon ) * (gotCrit ? 3 : 1);
+						if (strikeResult > 0) playerDmgDealRoll = HitFormulas.rollDamageForWeapon(chosenWeapon ) * (gotCrit ? 3 : 1);
 						enemyDmgDealRoll = dmgInflict;
 
 						return strikeResult;
@@ -1227,19 +1284,19 @@ WeaponSlots
 						_curCharPos,
 						_displayChar.get(Rot) as Rot,
 					  _displayChar.get(Ellipsoid) as Ellipsoid, 
-					  _displayChar.get(Weapon) as Weapon,
+					 chosenWeapon,
 					   _targetNode.entity.get(Pos) as Pos,
 						_targetNode.entity.get(Rot) as Rot,
 						 _targetNode.entity.get(CharDefense) as CharDefense,
 						  _targetNode.entity.get(Ellipsoid) as Ellipsoid,
-						   _targetNode.entity.get(Weapon) as Weapon,
+						  aggroWeapon,
 						   _targetNode.entity.get(WeaponState) as WeaponState
 					);
 					if (Math.random() * 100 <= percToRoll) {  // got hit
 						
 						// roll for critical
-						percToRoll =  HitFormulas.getPercChanceToCritDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  _targetNode.entity.get(Weapon) as Weapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot)	 as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid );
-						baseDmg = HitFormulas.rollDamageForWeapon( _displayChar.get(Weapon) as Weapon );
+						percToRoll =  HitFormulas.getPercChanceToCritDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  aggroWeapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot)	 as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid );
+						baseDmg = HitFormulas.rollDamageForWeapon(chosenWeapon );
 						gotCrit = Math.random() * 100 <= percToRoll;
 						strikeResult = gotCrit ? 2 : 1;
 						 baseDmg *= (gotCrit ? 3 : 1);
@@ -1249,7 +1306,7 @@ WeaponSlots
 							// give AI a chance to retailaite as well
 							//playerHealth.damage();
 							dmgInflict = 0;
-							percToRoll = HitFormulas.getPercChanceToHitDefender( _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Ellipsoid) as Ellipsoid,  _displayChar.get(Weapon) as Weapon, _displayChar.get(Pos) as Pos, _displayChar.get(Rot) as Rot, _displayChar.get(CharDefense) as CharDefense, _displayChar.get(Ellipsoid) as Ellipsoid ) 
+							percToRoll = HitFormulas.getPercChanceToHitDefender( _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Ellipsoid) as Ellipsoid, chosenWeapon, _displayChar.get(Pos) as Pos, _displayChar.get(Rot) as Rot, _displayChar.get(CharDefense) as CharDefense, _displayChar.get(Ellipsoid) as Ellipsoid ) 
 							if (Math.random() * 100 <= percToRoll) {
 								dmgInflict = HitFormulas.rollDamageForWeapon(_targetNode.entity.get(Weapon) as Weapon);
 							}
@@ -1257,7 +1314,7 @@ WeaponSlots
 							enemyStrikeResult = 1;
 						
 							if (ENEMY_ROLL_CRIT) {
-								percToRoll =  HitFormulas.getPercChanceToCritDefender( _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Ellipsoid) as Ellipsoid,  _displayChar.get(Weapon) as Weapon, _displayChar.get(Pos) as Pos, _displayChar.get(Rot)	 as Rot, _displayChar.get(CharDefense) as CharDefense, _displayChar.get(Ellipsoid) as Ellipsoid );
+								percToRoll =  HitFormulas.getPercChanceToCritDefender( _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Ellipsoid) as Ellipsoid,  chosenWeapon, _displayChar.get(Pos) as Pos, _displayChar.get(Rot)	 as Rot, _displayChar.get(CharDefense) as CharDefense, _displayChar.get(Ellipsoid) as Ellipsoid );
 								gotCrit = Math.random() * 100 <= percToRoll;
 								enemyStrikeResult = gotCrit ? 2 : 1;
 								dmgInflict *= gotCrit ? 3 : 1;
@@ -1282,13 +1339,13 @@ WeaponSlots
 					}
 					else { // miss, enemy retailaites
 						dmgInflict = 0;
-						percToRoll = HitFormulas.getPercChanceToHitDefender( _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Ellipsoid) as Ellipsoid,  _displayChar.get(Weapon) as Weapon, _displayChar.get(Pos) as Pos, _displayChar.get(Rot) as Rot, _displayChar.get(CharDefense) as CharDefense, _displayChar.get(Ellipsoid) as Ellipsoid ) 
+						percToRoll = HitFormulas.getPercChanceToHitDefender( _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Ellipsoid) as Ellipsoid, chosenWeapon, _displayChar.get(Pos) as Pos, _displayChar.get(Rot) as Rot, _displayChar.get(CharDefense) as CharDefense, _displayChar.get(Ellipsoid) as Ellipsoid ) 
 						if (Math.random() * 100 <= percToRoll) {
-							dmgInflict = HitFormulas.rollDamageForWeapon(_targetNode.entity.get(Weapon) as Weapon);
+							dmgInflict = HitFormulas.rollDamageForWeapon(aggroWeapon);
 							enemyStrikeResult = 1;
 						
 							if (ENEMY_ROLL_CRIT) {
-								percToRoll =  HitFormulas.getPercChanceToCritDefender( _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Ellipsoid) as Ellipsoid,  _displayChar.get(Weapon) as Weapon, _displayChar.get(Pos) as Pos, _displayChar.get(Rot)	 as Rot, _displayChar.get(CharDefense) as CharDefense, _displayChar.get(Ellipsoid) as Ellipsoid );
+								percToRoll =  HitFormulas.getPercChanceToCritDefender( _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Ellipsoid) as Ellipsoid,  chosenWeapon, _displayChar.get(Pos) as Pos, _displayChar.get(Rot)	 as Rot, _displayChar.get(CharDefense) as CharDefense, _displayChar.get(Ellipsoid) as Ellipsoid );
 								gotCrit = Math.random() * 100 <= percToRoll;
 								enemyStrikeResult = gotCrit ? 2 : 1;
 								dmgInflict *= gotCrit ? 3 : 1;
@@ -1314,6 +1371,18 @@ WeaponSlots
 			
 			
 		
+		}
+		
+		private function getWeaponByIndex(weapon:Weapon, count:uint):Weapon 
+		{
+		
+			var c:int = 0;
+			while (weapon != null) {
+				if (c >= count) break;
+				weapon = weapon.nextFireMode;
+				c++;
+			}
+			return weapon;
 		}
 		
 		public function getWeapon(ent:Entity):Weapon {

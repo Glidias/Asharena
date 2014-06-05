@@ -1,10 +1,11 @@
-Obstacles and stuffs in environment
-blocker range sphere/(arc) integration with attack animation 
+blocker range sphere/(arc) integration with attack animation  (KIV)
+rts select interface instead of just cycling  (KIV)
+____
+Integrate to terrain
 Add variety of units with ranged/guns, against obstacles for arrow/bullet projectiles.
 _________________
-Formation group movement
+Formation group movement and aggro targeting of entire formation
 __________________
-rts select interface instead of just cycling
 
 
 
@@ -22,11 +23,48 @@ If you deem to strike triggered aggro first, aggro will revenge attack, regardle
 So, this attack runs as per normal as if you were defending. The difference is that you roll against his  evade/block/parry depending on the timing of the attack.
 
 If triggered aggro deemed to strike you first, you either pick evade, block or parry against him, according to timing of his strike. 
+If triggered aggro deemed to strike you first, you either pick evade, block or parry against him, according to timing of his strike. 
 Note that, aggro rolls against you first before you roll, including damage if he hits. If aggro's damage is deemed to kill you, you don't get to roll, and your attack is destined to miss and your turn is concluded with your death by his counter/revenge-strike (with your strike shown as "miss"). If aggro hits you first, you don't get to roll for criticals as well. So, your rolled crit percentage should be as per normal in this case (against defender) since the first aggro hit roll is already factored in.
 
 (DONE)
 
 (Advanced, choice between evade/block can depend on situation, if too close, cannot evade. If not within blocking range (too close/too far), etc.)
+
+Situational Probability:
+________________________________
+	
+	P(H) - Probabily of killing player with 1 hit
+* Probability of damage range being able to kill player
+* Probability of scoring a hit
+
+||
+
+P(C|H) - Probability of killing player with 1 critical hit
+* Probability of scoring a hit
+* Probabilty of scoring a critical hit
+* Probability of critical damage range being able to kill player
+
+
+P(H or C|H) = P(H) + P(C|H) - P(H)*P*(C|H)
+
+____________________________
+
+
+Probabily of n enemies being able to kill player
+
+Based on n number of units:
+for (1...n) {    // get all combinations of Hit/Criticals from all aggroed units
+  var d = 2^n; 
+  for (1...d) {
+     
+   }
+}
+
+Generate
+P(C|H) and P(H) combinations out of
+* Min Total Damage to MAx Total Damage Probability to Kill based on all H/(C|H) hits
+* Probability of all units hitting (multiply all probablies to hit given combination)
+= ere
 
 
 ________________________________

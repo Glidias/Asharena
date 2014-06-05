@@ -649,6 +649,7 @@ class EllipsoidColliderSystem extends System
 		//*/
 		
 
+		
 		public inline function getCollision(c1Obj:Vec3, c1Ellip:Ellipsoid, c1Vel:Vec3, c2Obj:Vec3,  c2Ellip:Ellipsoid, c2Vel:Vec3, dt:Float):Float {
 			
 		var rr: Float = c1Ellip.x + c2Ellip.x;
