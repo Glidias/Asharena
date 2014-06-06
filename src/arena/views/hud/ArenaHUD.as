@@ -823,6 +823,7 @@ WeaponSlots
 		
 		
 		private var choices:Array = [];
+		private var choicesWeapons:Array = [];
 		
 		private function updateTargetChoices():void { // TODO: determine best choice (percChanceToHit|damage) and use default F key for choice
 			
@@ -913,7 +914,7 @@ WeaponSlots
 			}
 			
 			
-		
+			choicesWeapons[count] = playerWeapon;
 			choices[count ]  = (count + 1) + ' - ' + WEAPON_MODE_LABELS[playerWeapon.fireMode] + ' (<span u="2">' + hitPercResult + '%</span>' + (showLabels ? " hit" : "") + ' | <span u="1">' + critPercResult + '%</span>' + (showLabels ? ' critical' : '') + ')' + '  ~(<span u="2">' + numHits + '</span>|<span u="1">' + numCritHits + '</span>)' + (aggroing ? "*" : "");
 				count++;
 			}	// end loop
@@ -921,9 +922,11 @@ WeaponSlots
 			for (var i:int = 0; i < count; i++) {
 				_actionChoicesBox.appendSpanTagMessage(choices[i] + (i=== bestChoiceIndex ? " [F]" : "") );
 			}
+			
+			choices.length = count;
 		
 			_actionChoicesBox.drawNow();
-			_actionChoicesBox.moveTo(200+20, count*30);
+			_actionChoicesBox.moveTo(200+20, 20+count*20);
 		}
 		
 		private function checkTargetInRange():Boolean { 
@@ -1154,7 +1157,7 @@ WeaponSlots
 			if (!_charWeaponEnabled || !_targetMode || !_gotTargetInRange || !_targetNode || !_gotTargetLOS) return 0;
 			if (keyCode == Keyboard.F) keyCode = _bestChoiceIndex
 			else keyCode = keyCode -Keyboard.NUMBER_1;  // get index keyCode for weapon slot
-			var chosenWeapon:Weapon = getWeaponByIndex(_displayChar.get(Weapon) as Weapon, keyCode);
+			var chosenWeapon:Weapon = choicesWeapons[keyCode];
 			if (chosenWeapon == null) return 0;
 			
 			
@@ -1384,6 +1387,7 @@ WeaponSlots
 			}
 			return weapon;
 		}
+		
 		
 		public function getWeapon(ent:Entity):Weapon {
 			return ent.get(Weapon) as Weapon;

@@ -421,7 +421,7 @@ package systems.player.a3d
 				skin._rotationZ = Math.PI;
 				skin.transformChanged = true;
 				
-				setAnimation(fullBodyAnims[(_stance == 0 ? "standing" : _stanceString) + "_idle"], fullBodyController, fullBody,   myLastAction == 0 ? CROUCH_TIME : 0);  //_lastStance < 3 && _stance < 3 && 
+				setAnimation(fullBodyAnims[(_stance == 0 ? "combat" : _stanceString) + "_idle"], fullBodyController, fullBody,   myLastAction == 0 ? CROUCH_TIME : 0);  //_lastStance < 3 && _stance < 3 && 
 				
 					crouchTime =  myLastAction != 0 ? 9999999 : 0;
 				

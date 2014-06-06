@@ -565,6 +565,7 @@ package tests.pvp
 				_lastTargetStance = gladiatorStance.stance;
 			}
 			_targetMode = !_targetMode;
+			
 			gladiatorStance.standEnabled = !_targetMode;
 			arenaHUD.setTargetMode(_targetMode);
 			if (_targetMode) {
@@ -1360,7 +1361,7 @@ package tests.pvp
 		
 		private function tick(time:Number):void 
 		{
-			
+			thirdPersonController.thirdPerson.followAzimuth = !_targetMode;
 			game.engine.update(time);
 			arenaHUD.updateFuel( movementPoints.movementTimeLeft / MAX_MOVEMENT_POINTS );
 			arenaHUD.update();
