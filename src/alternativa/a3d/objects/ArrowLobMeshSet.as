@@ -33,6 +33,8 @@ package alternativa.a3d.objects
 		private static var _deltaTransformProcedures:Dictionary = new Dictionary();
 		
 		public var toUpload:Vector.<Number> = new Vector.<Number>();
+		private var toUploadData:Vector.<Number>;
+		private var tempUploadData:Vector.<Number>;
 		public var total:int = 0;
 		private static const ATTRIBUTE:int = GeometryUtil.ATTRIBUTE;
 		private var constantsPerMesh:int;
@@ -51,7 +53,7 @@ package alternativa.a3d.objects
 			constantsPerMesh = 1;
 			geometry = GeometryUtil.createDuplicateGeometry(arrowGeometry, batchAmount, constantsPerMesh);
 			
-			 addSurface( material, 0, sampleNumTris*total  );
+			mySurface = addSurface( material, 0, sampleNumTris*total  );
 			
 			transformProcedure = calculateTransformProcedure(batchAmount);
 		//	deltaTransformProcedure = calculateDeltaTransformProcedure(batchAmount);
@@ -64,6 +66,8 @@ package alternativa.a3d.objects
 		}
 		
 
+		private var _remainingTotal:int;
+		private var _toUploadAmount:int;
 		
 		alternativa3d override function setTransformConstants(drawUnit:DrawUnit, surface:Surface, vertexShader:Linker, camera:Camera3D):void {
 			
@@ -74,13 +78,17 @@ package alternativa.a3d.objects
 			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cUp"), 0, 0, 1, 0);
 			
 			//drawUnit.setVertexConstantsFromVector(0, toUploadSpriteData, toUploadNumSprites*NUM_REGISTERS_PER_SPR ); 
-			drawUnit.setVertexConstantsFromVector( 0, toUpload, total * constantsPerMesh );
 			
+	
+			drawUnit.setVertexConstantsFromVector( 0, toUploadData, _toUploadAmount*constantsPerMesh );
+	
+			//throw new Error(e.message + ":"+_toUploadAmount + ", " + toUploadData.length);
+	
+	
 			
-			var triCount:int =  total * sampleNumTris;
-			if (triCount != surface.numTriangles) {
-				surface.numTriangles = triCount;
-			}
+			//if (triCount != surface.numTriangles) {
+				surface.numTriangles = _toUploadAmount * sampleNumTris;
+			//}
 					
 		}
 		
@@ -120,6 +128,7 @@ package alternativa.a3d.objects
 		}
 		
 		private var displace:Vector3D = new Vector3D();
+		private var mySurface:Surface;
 		
 		private function launchProjectileAtIndex(index:int, startPosition:Vector3D, endPosition:Vector3D, speed:Number):void {
 
@@ -148,23 +157,66 @@ package alternativa.a3d.objects
 			toUpload[c] = displace.w;
 		//	throw new Error(geometry.getAttributeValues(ATTRIBUTE));
 			total++;
-			getSurface(0).numTriangles = total * sampleNumTris;
+		//	getSurface(0).numTriangles = total * sampleNumTris;
 		
 		
 		}
 		
 			override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 				
-			for (var i:int = 0; i < _surfacesLength; i++) {
-				var surface:Surface = _surfaces[i];
-				if (surface.material != null) {
-					surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, -1);
+				_remainingTotal = total;
+				
+				
+				
+				
+				if (_remainingTotal < batchAmount) {
+					mySurface = _surfaces[0];
+					toUploadData = toUpload;
+					_toUploadAmount = _remainingTotal;
+				
+				//	mySurface.numTriangles = _remainingTotal * sampleNumTris;
+					mySurface.material.collectDraws(camera, mySurface, geometry, lights, lightsLength, useShadow, -1);
 					
 				}
-				// Mouse events
-				//if (listening) camera.view.addSurfaceToMouseEvents(surface, geometry, transformProcedure);
+				else {
+					var count:int = 0;
+					if (tempUploadData == null) tempUploadData = new Vector.<Number>(batchAmount*constantsPerMesh*4, true);
+					
+					toUploadData = tempUploadData;
+					while (_remainingTotal > 0) {
+						if (count >= _surfaces.length) {
+							_surfaces[count] = _surfaces[0].clone();
+							_surfacesLength = count;
+						}
+						mySurface = _surfaces[count];
+						
+						fillTempUploadData( total - _remainingTotal, _remainingTotal);
+						//mySurface.numTriangles = _remainingTotal*sampleNumTris;
+						mySurface.material.collectDraws(camera, mySurface, geometry, lights, lightsLength, useShadow, -1);
+						
+						_remainingTotal -= batchAmount;
+						count++;
+						
+					}
 				}
 			}
+			
+			private function fillTempUploadData(startIndex:int, len:int):void 
+			{
+				if (len > batchAmount) len = batchAmount;
+				_toUploadAmount = len;
+				
+				len *= constantsPerMesh;
+				len *= 4;
+
+				startIndex *= 4;
+				startIndex *= constantsPerMesh;
+				for (var i:int = 0; i < len; i++) {
+					tempUploadData[i] = toUpload[startIndex + i];
+				}
+			}
+			
+			
 		
 		// -------------------
 		
@@ -177,10 +229,10 @@ package alternativa.a3d.objects
 			res = _transformProcedures[numMeshes] = new Procedure(null, "ArrowLobMeshSetTransformProcedure");
 			res.compileFromArray(["#a0=joint", "#c1=cVars", "#c2=cUp",
 			// dummy declarations (can remove once done..)
-			"mov t0, c1",
-			"mov t1, c2",
-			"mov t1, a0",
-			"mov t1, i0",
+			//"mov t0, c1",
+			//"mov t1, c2",
+		//	"mov t1, a0",
+		//	"mov t1, i0",
 			// ----
 
 				"mov t0, c[a0.x]",	// velocity and offset/time

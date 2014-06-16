@@ -85,14 +85,14 @@ package tests.pvp
 			
 			var box:Box = new Box(26, 3, 3, 1, 1, 1, false, null);
 			arrows = new ArrowLobMeshSet(box.geometry, new FillMaterial(0xFF0000, 1), 4);
-			
-			var startPosition:Vector3D = new Vector3D();
+			arrows.setGravity(266*3);
+			var startPosition:Vector3D = new Vector3D(0,0,0);
 			var endPosition:Vector3D = new Vector3D();
-			for (var i:int = 0; i < 120; i++) {
-				endPosition.x = -300 +  Math.random() * 600;
-				endPosition.y = -300 +  Math.random() * 600;
-				endPosition.z = 0;
-				arrows.launchNewProjectile(startPosition, endPosition );
+			for (var i:int = 0; i < 522; i++) {
+				endPosition.x =  0 +  Math.random() * 1333;// 300 +  Math.random() * 1600;
+				endPosition.y =  0 +  Math.random() * 1222;
+				endPosition.z = 55;
+				arrows.launchNewProjectile(startPosition, endPosition, 1044);
 			}
 			
 			
@@ -199,6 +199,7 @@ package tests.pvp
 		{
 			timePassed += time;
 			game.engine.update(time);
+			
 			arrows.update(time);
 			_template3D.render();
 			

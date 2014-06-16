@@ -1361,7 +1361,7 @@ package tests.pvp
 		
 		private function tick(time:Number):void 
 		{
-			thirdPersonController.thirdPerson.followAzimuth = !_targetMode;
+			//thirdPersonController.thirdPerson.followAzimuth = !_targetMode;
 			game.engine.update(time);
 			arenaHUD.updateFuel( movementPoints.movementTimeLeft / MAX_MOVEMENT_POINTS );
 			arenaHUD.update();
