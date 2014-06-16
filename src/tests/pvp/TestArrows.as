@@ -5,6 +5,7 @@ package tests.pvp
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.objects.ArrowLobMeshSet;
+	import alternativa.a3d.objects.UVMeshSet;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.FillMaterial;
@@ -58,6 +59,7 @@ package tests.pvp
 			addChild( _template3D = new MainView3D() );
 			_template3D.onViewCreate.add(onReady3D);
 			
+			UVMeshSet;
 			_template3D.visible = false;
 			addChild(_preloader);
 		}
