@@ -3,12 +3,15 @@ package alternativa.a3d.objects
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.DrawUnit;
 	import alternativa.engine3d.core.Light3D;
+	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.objects.MeshSet;
 	import alternativa.engine3d.objects.Surface;
+	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.utils.GeometryUtil;
 	import alternativa.engine3d.alternativa3d;
@@ -37,7 +40,7 @@ package alternativa.a3d.objects
 		private static const ATTRIBUTE:int = GeometryUtil.ATTRIBUTE;
 		private var constantsPerMesh:int;
 		
-		private var gravity:Number = 266;
+		public var gravity:Number = 266;
 		public function setGravity(val:Number):void {
 			gravity = val;
 		}
@@ -60,6 +63,44 @@ package alternativa.a3d.objects
 			boundBox = null;
 		}
 		
+		public static function createDoubleSidedPlane(mat:Material, segments:int=24,breath:Number=4):Mesh {
+			var plane1:Plane = new Plane(1,breath,segments,1,false,false,mat,mat);
+			var plane2:Plane =new Plane(1,breath,segments,1,false,true,mat,mat);
+			var root:Object3D = new Object3D();
+			root.addChild(plane1);
+			root.addChild(plane2);
+			var combine:MeshSet = new MeshSet(root);
+			alignGeometry(combine.geometry);
+			return combine;
+		}
+		
+		public static function alignGeometry(geom:Geometry):void {
+			var ve:Vector.<Number> = geom.getAttributeValues(VertexAttributes.POSITION);
+			var len:int = ve.length;
+			for (var i:int = 0; i < len; i += 3) {
+				ve[i] += .5;
+			}
+			geom.setAttributeValues(VertexAttributes.POSITION, ve);
+		}
+		
+		
+		public function launchNewProjectile(startPosition:Vector3D, endPosition:Vector3D):void {
+			//launchProjectileAtIndex(total, startPosition, endPosition);
+			var base:int = total * 8;
+			toUpload[base++] = startPosition.x;
+			toUpload[base++] =startPosition.y;
+			toUpload[base++] = startPosition.z;
+			toUpload[base++ ] = 1;
+				
+			toUpload[base++] = endPosition.x;
+			toUpload[base++] =endPosition.y;
+			toUpload[base++] =endPosition.z;
+			toUpload[base++ ] = 1;
+			
+			total++;
+			
+		}
+		
 
 		private var _remainingTotal:int;
 		private var _toUploadAmount:int;
@@ -68,6 +109,9 @@ package alternativa.a3d.objects
 			
 			
 			drawUnit.setVertexBufferAt(vertexShader.getVariableIndex("joint"), geometry.getVertexBuffer(ATTRIBUTE), geometry._attributesOffsets[ATTRIBUTE], Context3DVertexBufferFormat.FLOAT_1);
+			
+			var attrib:int = VertexAttributes.TEXCOORDS[0];
+			drawUnit.setVertexBufferAt(vertexShader.findVariable("aUV"), geometry.getVertexBuffer(attrib), geometry._attributesOffsets[attrib], Context3DVertexBufferFormat.FLOAT_2);
 	
 			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cVars"), -.5 * gravity, 0, gravity, 1);
 			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cUp"), 0, 0, 1, 0);
@@ -155,24 +199,22 @@ package alternativa.a3d.objects
 			var res:Procedure = _transformProcedures[numMeshes];
 			if (res != null) return res;
 			res = _transformProcedures[numMeshes] = new Procedure(null, "UVMeshSetTransformProcedure");
-			res.compileFromArray(["#a0=joint", "#c1=cVars", "#c2=cUp",
+			res.compileFromArray(["#a0=joint", "#a1=aUV", "#c1=cVars", "#c2=cUp",
 			// dummy declarations (can remove once done..)
 			//"mov t0, c1",
 			//"mov t1, c2",
-		//	"mov t1, a0",
+			//"mov t1, a0",
+		//	"mov t1, a1",
 		//	"mov t1, i0",
 			// ----
 
-				"mov t0, c[a0.x]",	// velocity TODO: Detemrine velocity accordingly from start and end Position constants
-				
-				"mov t1, t0",
-				"frc t0.w, t1.w",	// save fractional time into t0.w: TODO: Determie normalized time from UV coordinate
-					
-					
-				"mul t1.xyz, t1.xyz, t1.www",	// TODO: save out origin launch position from constant register
-				"mul t0.w, t0.w, c1.w",  // TODO: now, save actual time t of t0.w by multiplying normalized time over length of constant register w
-	
-				
+				"mov t1, c[a0.x]",	// start position t1
+				"add t0.x, c1.w, a0.x",
+				"mov t0, c[t0.x]",  // end position t0
+			
+				"mov t0.w, a1.x",  // TODO: time t at t0.w, and velocity xyz at t0
+				"sub t0.xyz, t0.xyz, t1.xyz",
+				"sub t0.z, t0.z, c1.x",
 				
 				"mul t1.w, t0.x, t0.w, ",  // save out velocity.x*t offset
 				"add t1.x, t1.x, t1.w",		// and add it to the launch position to get actual x arrow origin position
