@@ -7,6 +7,7 @@ package alternativa.a3d.objects
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
+	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.MeshSet;
@@ -20,10 +21,10 @@ package alternativa.a3d.objects
 	import flash.utils.Dictionary;
 	use namespace alternativa3d;
 	/**
-	 * A UV MeshSet supporting up to 60 independantly oriented arc meshes to be drawn in 1 draw call
+	 * A mirror UVMeshSet2A  child under UVMeshSet to draw straight lines
 	 * @author Glenn Ko
 	 */
-	public class UVMeshSet extends Mesh
+	public class UVMeshSet2a extends Mesh
 	{
 		private var batchAmount:int;
 	
@@ -33,17 +34,15 @@ package alternativa.a3d.objects
 		private static var _transformProcedures:Dictionary = new Dictionary();
 		private static var _deltaTransformProcedures:Dictionary = new Dictionary();
 		
-		public var toUpload:Vector.<Number> = new Vector.<Number>();
+		public var toUpload:Vector.<Number>;
 		private var toUploadData:Vector.<Number>;
 		private var tempUploadData:Vector.<Number>;
 		public var total:int = 0;
 		private static const ATTRIBUTE:int = GeometryUtil.ATTRIBUTE;
 		private var constantsPerMesh:int;
 		
-		public var gravity:Number = 266;
-		public function setGravity(val:Number):void {
-			gravity = val;
-		}
+		public var distanceCap:Number = 200;
+
 		
 		public function cleanup(amountToKeep:int = 0):void {
 			
@@ -63,14 +62,19 @@ package alternativa.a3d.objects
 			}
 		}
 		
-		public function UVMeshSet(arrowGeometry:Geometry, material:Material, reuseGeometry:Geometry=null ) 
+		public function UVMeshSet2a(batchAmount:int, toUpload:Vector.<Number>, arcGeometry:Geometry, material:Material, reuseGeometry:Geometry=null ) 
 		{
 			super();
+			this.toUpload = toUpload;
 			
-			batchAmount = BATCH_AMOUNT;
-			sampleNumTris = arrowGeometry.numTriangles;
+			
+			this.batchAmount = batchAmount;
+			sampleNumTris = arcGeometry.numTriangles;
 			constantsPerMesh = 2;
-			geometry = reuseGeometry!=null ? reuseGeometry :  GeometryUtil.createDuplicateGeometry(arrowGeometry, batchAmount, constantsPerMesh);
+			geometry = reuseGeometry!=null ? reuseGeometry :  GeometryUtil.createDuplicateGeometry(arcGeometry, batchAmount, constantsPerMesh);
+			
+			
+		
 			
 			mySurface = addSurface( material, 0, sampleNumTris*total  );
 			
@@ -81,43 +85,9 @@ package alternativa.a3d.objects
 			boundBox = null;
 		}
 		
-		public static function createDoubleSidedPlane(mat:Material, segments:int=24,breath:Number=4):Geometry {
-			var plane1:Plane = new Plane(1,breath,segments,1,false,false,mat,mat);
-			var plane2:Plane =new Plane(1,breath,segments,1,false,true,mat,mat);
-			var root:Object3D = new Object3D();
-			root.addChild(plane1);
-			root.addChild(plane2);
-			var combine:MeshSet = new MeshSet(root);
-			alignGeometry(combine.geometry);
-			return combine.geometry;
-		}
-		
-		public static function alignGeometry(geom:Geometry):void {
-			var ve:Vector.<Number> = geom.getAttributeValues(VertexAttributes.POSITION);
-			var len:int = ve.length;
-			for (var i:int = 0; i < len; i += 3) {
-				ve[i] += .5;
-			}
-			geom.setAttributeValues(VertexAttributes.POSITION, ve);
-		}
 		
 		
-		public function launchNewProjectile(startPosition:Vector3D, endPosition:Vector3D):void {
-			//launchProjectileAtIndex(total, startPosition, endPosition);
-			var base:int = total * 8;
-			toUpload[base++] = startPosition.x;
-			toUpload[base++] =startPosition.y;
-			toUpload[base++] = startPosition.z;
-			toUpload[base++ ] = 1;
-				
-			toUpload[base++] = endPosition.x;
-			toUpload[base++] =endPosition.y;
-			toUpload[base++] =endPosition.z;
-			toUpload[base++ ] = 1;
-			
-			total++;
-			
-		}
+	
 		
 
 		private var _remainingTotal:int;
@@ -131,7 +101,7 @@ package alternativa.a3d.objects
 			var attrib:int = VertexAttributes.TEXCOORDS[0];
 			drawUnit.setVertexBufferAt(vertexShader.findVariable("aUV"), geometry.getVertexBuffer(attrib), geometry._attributesOffsets[attrib], Context3DVertexBufferFormat.FLOAT_2);
 	
-			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cVars"), -.5 * gravity, 0, gravity, 1);
+			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cVars"), -.5, 2, .5, distanceCap);
 			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cUp"), 0, 0, 1, 0);
 			
 			//drawUnit.setVertexConstantsFromVector(0, toUploadSpriteData, toUploadNumSprites*NUM_REGISTERS_PER_SPR ); 
@@ -155,6 +125,9 @@ package alternativa.a3d.objects
 		
 		
 			override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
+				var parent2:UVMeshSet2 = (parent as UVMeshSet2);
+				total = parent2.total;
+				distanceCap = parent2.distanceCap;
 				
 				_remainingTotal = total;
 				
@@ -162,6 +135,7 @@ package alternativa.a3d.objects
 				if (_remainingTotal < batchAmount) {
 					mySurface = _surfaces[0];
 					toUploadData = toUpload;
+					
 					_toUploadAmount = _remainingTotal;
 				
 				//	mySurface.numTriangles = _remainingTotal * sampleNumTris;
@@ -216,7 +190,7 @@ package alternativa.a3d.objects
 		private function calculateTransformProcedure(numMeshes:int):Procedure {
 			var res:Procedure = _transformProcedures[numMeshes];
 			if (res != null) return res;
-			res = _transformProcedures[numMeshes] = new Procedure(null, "UVMeshSetTransformProcedure");
+			res = _transformProcedures[numMeshes] = new Procedure(null, "UVMeshSet2aTransformProcedure");
 			res.compileFromArray(["#a0=joint", "#a1=aUV", "#c1=cVars", "#c2=cUp",
 			// dummy declarations (can remove once done..)
 			//"mov t0, c1",
@@ -226,20 +200,69 @@ package alternativa.a3d.objects
 		//	"mov t1, i0",
 			// ----
 
-				"mov t1, c[a0.x]",	// start position t1
-				"add t0.x, c1.w, a0.x",
+				"mov t1, c[a0.x]",	// initial position t1
+				"add t0.x, c2.z, a0.x",
 				"mov t0, c[t0.x]",  // end position t0
+				
+				
+			// Find actual start position from initial position t1 and re-save into t1
+				"sub t2.xyz, t1.xyz, t0.xyz",
+				"mov t2.z, c2.x", // Normalize 2D vector
+				"nrm t3.xyz, t2.xyz",
+				
+				//"dp2 t1.w, t2.xy, t1.xy",  // full distance check, dotProduct of normal unit vector t3 over t2 displacement vector.
+				"mul t1.w, t3.x, t2.x",
+				"mul t2.w, t3.y, t2.y",
+				"add t1.w, t1.w, t2.w",
+				"mul t1.w, t1.w, c1.z",
+				"min t1.w, t1.w, c1.w",		// cap full distance to get minimum distance cap
+	
+				
+				"div t3.w, t1.w, c1.w",
+				"sat t3.w, t3.w",
+				"mul t0.w, t3.w, t0.w",
+				
+				// determine startPosition from initialPosition
+				"mul t1.xy t3.xy, t1.ww",    // get scalar vector of t2 normal unit multiplied over scalar
+				"add t1.xy, t1.xy, t0.xy",
+				
+				"add t1.z, t1.z, t0.w",
+				"mov t0, c[a0.x]",
+				
+				// TODO: find required gravity t3.z, given start velocity vector tangent
+					
+				
+				"sub t2.xyz, t0.xyz, t1.xyz",
+				"mov t2.z, c2.x", // Normalize 2D vector
+				"nrm t3.xyz, t2.xyz",  // need to scale velocity unit vector of launcher so that x/y matches endPt.xy
+
+				"sub t2.xyz, t0.xyz, t1.xyz",
+				"div t2.x, t2.x, t3.x",
+				"div t2.y, t2.y, t3.y",
+				"add t2.w, t2.x, t2.y",  // scalar determined with sum of x and y components along 2d distance
+				"mul t2.xyz, t3.xyz, t2.www",  // launch velocity determined
+				// determine gravity with launch velocity
+				"sub t3.z, t0.z, t1.z",
+				"sub t3.z, t3.z, t2.z",
+				"mul t3.z, t3.z, c1.y",  // GRAVITY: t3.w =  2(ey-sy-launchvelocity);
+				"mul t3.x, t3.z, c1.z", // GRAVITY*.5: t3.x
+				
+				/*
+				"mov t3.x, c2.x",
+				"mov t3.z, c2.x",
+				*/
+				
 			
 				"mov t0.w, a1.x",  // TODO: time t at t0.w, and velocity xyz at t0
 				"sub t0.xyz, t0.xyz, t1.xyz",
-				"sub t0.z, t0.z, c1.x",
+				"sub t0.z, t0.z, t3.x",
 				
 				"mul t1.w, t0.x, t0.w, ",  // save out velocity.x*t offset
 				"add t1.x, t1.x, t1.w",		// and add it to the launch position to get actual x arrow origin position
 				"mul t1.w, t0.y, t0.w, ",  // save out velocity.y*t offset
 				"add t1.y, t1.y, t1.w",  // and add it to the launch position to get actual y arrow origin position
 			
-				"mul t1.w, c1.x, t0.w", // save out  -.5*GRAVITY*t*t + velocity.z*t   gravitational offset over time
+				"mul t1.w, t3.x, t0.w", // save out  -.5*GRAVITY*t*t + velocity.z*t   gravitational offset over time
 				"mul t1.w, t1.w, t0.w", 
 				
 				"add t1.z, t1.z, t1.w",  // and  LHS operand done, ADD it in!!
@@ -248,7 +271,7 @@ package alternativa.a3d.objects
 				"add t1.z, t1.z, t1.w",	// and RHS operand done, subtract it out to get actual z arrow origin position
 				
 				///*  // if considering orientation
-				"mul t0.w, c1.z, t0.w",  // multiply gravitaitonal offset over time: GRAVITY*t  
+				"mul t0.w, t3.z, t0.w",  // multiply gravitaitonal offset over time: GRAVITY*t  
 				"sub t0.z, t0.z, t0.w",	// subtract this from the z alt component velocity to get final unnormalized velocity vector
 			
 				"nrm t0.xyz, t0.xyz",  // normalize the vector to get forward vector of arrow...along X direction! (2d east)
@@ -261,7 +284,7 @@ package alternativa.a3d.objects
 				"crs t0.xyz, t0.xyz, t3.xyz",  // cross product right vector with forward vector to get actual UP...along Z direction
 				"mul t2.xyz, i0.zzz, t0.xyz",  // extend out position along z offset of vertex
 				"add t1.xyz, t1.xyz, t2.xyz",
-				"mov t1.w, c1.z",	// w property of 1 needed?
+				"mov t1.w, t3.z",	// w property of 1 needed?
 				// */
 				
 		
@@ -282,7 +305,7 @@ package alternativa.a3d.objects
 		private function calculateDeltaTransformProcedure(numMeshes:int):Procedure {
 			var res:Procedure = _deltaTransformProcedures[numMeshes];
 			if (res != null) return res;
-			res = _deltaTransformProcedures[numMeshes] = new Procedure(null, "UVMeshSetDeltaTransformProcedure");
+			res = _deltaTransformProcedures[numMeshes] = new Procedure(null, "UVMeshSet2aDeltaTransformProcedure");
 			res.compileFromArray(["#a0=joint", "#c1=cVars", "sub t0, a0.x, c1.x", "m33 o0.xyz, i0, c[t0.x]", "mov o0.w, i0.w"]);
 			return res;
 		}

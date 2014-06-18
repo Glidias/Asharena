@@ -6,6 +6,7 @@ package tests.pvp
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.objects.ArrowLobMeshSet;
 	import alternativa.a3d.objects.UVMeshSet;
+	import alternativa.a3d.objects.UVMeshSet2;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.FillMaterial;
@@ -54,7 +55,7 @@ package tests.pvp
 		private var spectatorPerson:SimpleFlyController;
 		private var arenaSpawner:ArenaSpawner;
 		private var collisionScene:Object3D;
-		private var arrows:UVMeshSet;
+		private var arrows:UVMeshSet2;
 		
 		public function TestTrajectoryDrawer() 
 		{
@@ -93,15 +94,7 @@ package tests.pvp
 			geom.setAttributeValues(VertexAttributes.POSITION, ve);
 		}
 		
-		private function createDoubleSidedPlane(mat:Material):Mesh {
-			var plane1:Plane = new Plane(1,4,24,1,false,false,mat,mat);
-			var plane2:Plane =new Plane(1,4,24,1,false,true,mat,mat);
-			var root:Object3D = new Object3D();
-			root.addChild(plane1);
-			root.addChild(plane2);
-			var combine:MeshSet = new MeshSet(root);
-			return combine;
-		}
+		
 		
 		
 		
@@ -114,33 +107,37 @@ package tests.pvp
 			SpawnerBundle.uploadResources(planeFloor.getResources(true, null));
 			
 			var mat:Material = new FillMaterial(0x0000FF, .1);
-			var box:Mesh =  createDoubleSidedPlane(mat) ;// new Plane(1, 15, 12, 1, true, false, mat, mat);
+			var box:Geometry =  UVMeshSet2.createDoubleSidedPlane(mat, 54) ;// new Plane(1, 15, 12, 1, true, false, mat, mat);
 			//var box:Box =  new Box(1, 16,16, 12,1,1, false, mat);
-			alignGeometry(box.geometry);
-			box.calculateBoundBox();
-			arrows = new UVMeshSet(box.geometry, mat);
-			arrows.setGravity(466*3);
+			alignGeometry(box);
 			
-			var startPosition:Vector3D = new Vector3D(0,0,0);
+			arrows = new UVMeshSet2(box, UVMeshSet2.createDoubleSidedPlane(mat, 1),  mat);
+			arrows.defaultZOffset =133;
+			
+		//	arrows.setGravity(466*3);
+			UVMeshSet2;
+			
+			var startPosition:Vector3D = new Vector3D(0,0,72 );
 			var endPosition:Vector3D = new Vector3D(1024, 0, 0);
-			for (var i:int = 0; i < 333; i++) {
-				endPosition.x = Math.random() * 1222;
-				endPosition.y = Math.random() * 1222;
-				endPosition.z = Math.random() * 444;
+			for (var i:int = 0; i < 55; i++) {
+				var randAng:Number = Math.random() * Math.PI * 2;
+				var d:Number = Math.random() * 1111 + 40;
+				d = arrows.distanceCap*1;
+				endPosition.x = Math.cos(randAng)*d;
+				endPosition.y =  Math.sin(randAng) * d;
+				endPosition.z = 72 ;
 				arrows.launchNewProjectile( startPosition, endPosition);
 			}
 			
 			_template3D.scene.addChild ( arrows);
-			var testBox:Object3D = 	_template3D.scene.addChild ( box)
-			testBox.scaleX = 1024;
+			
 			//testBox.scaleY = 44;
 			//testBox.z = 11;
-			arrows.z = 11;
-			arrows.x = 100;
+			
 			//testBox.visible = false;
 			//arrows.setGravity(0);
 			
-			SpawnerBundle.uploadResources(testBox.getResources(true, null));
+		
 			SpawnerBundle.uploadResources(arrows.getResources(true, null));
 		//throw new Error(planeFloor.geometry.getVertexBuffer(VertexAttributes.POSITION));
 			// collision scene (can be something else)
@@ -189,10 +186,10 @@ package tests.pvp
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
 			if (e.keyCode === Keyboard.PAGE_UP) {
-				arrows.gravity-=44;
+				//arrows.gravity-=44;
 			}
 			else if (e.keyCode === Keyboard.PAGE_DOWN) {
-				arrows.gravity += 44;
+				//arrows.gravity += 44;
 				
 			}
 		}
@@ -264,7 +261,7 @@ package tests.pvp
 			}
 			*/
 			
-			arrows.gravity = -800 + Math.sin(timePassed * 4) * 2277;
+			//arrows.gravity = -800 + Math.sin(timePassed * 4) * 2277;
 			
 			game.engine.update(time);
 			

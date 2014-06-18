@@ -161,6 +161,7 @@ WeaponSlots
 */
  
 		public var weaponLOSCheck:IWeaponLOSChecker;
+		public var arcContainer:Object3D;
 	
 		public function ArenaHUD(stage:Stage) 
 		{
@@ -964,6 +965,7 @@ WeaponSlots
 		}
 		public function setTargetMode(val:Boolean):void {
 			_targetMode = val;
+			if (arcContainer) arcContainer.visible = !val;
 			if (val) {
 				_textTargetMode.writeFinalData("Z - exit target mode", 0, 0, 2000, true);
 				 _textTurnInfoMini.writeFinalData("", 0, 0, 300, false);

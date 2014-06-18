@@ -7,6 +7,7 @@ package tests.pvp
 	import alternativa.a3d.controller.ThirdPersonTargetingSystem;
 	import alternativa.a3d.objects.ArrowLobMeshSet;
 	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
+	import alternativa.a3d.systems.enemy.A3DEnemyArcSystem;
 	import alternativa.engine3d.controllers.OrbitCameraMan;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
@@ -308,6 +309,7 @@ package tests.pvp
 			return w;
 			*/
 			A3DEnemyAggroSystem;
+			A3DEnemyArcSystem;
 			
 			var w:Weapon =   new Weapon();
 			w.name = "Melee weapon";
@@ -1112,6 +1114,10 @@ package tests.pvp
 		thirdPersonController.thirdPerson.controller.maxDistance = 240;
 		thirdPersonController.thirdPerson.offsetZ = CHASE_Z_OFFSET;
 			game.gameStates.thirdPerson.addInstance(thirdPersonController).withPriority(SystemPriorities.postRender);
+			
+			var arcSystem:A3DEnemyArcSystem = new A3DEnemyArcSystem(_template3D.scene);
+			arenaHUD.arcContainer = arcSystem.arcs;
+			game.gameStates.thirdPerson.addInstance(arcSystem ).withPriority(SystemPriorities.postRender);
 			
 			
 			// setup targeting system
