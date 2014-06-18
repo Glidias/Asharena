@@ -54,7 +54,7 @@ package alternativa.a3d.systems.enemy
 			var obj:Object3D = new Object3D();
 		
 			aggroArcs = new UVMeshSet2(geom,geom2, mat1=new FillMaterial(0xFF0000, .2) );
-			watchArcs = new UVMeshSet2(geom,geom2, mat2=new FillMaterial(0xAA5311, .2), aggroArcs.geometry );
+			watchArcs = new UVMeshSet2(geom,geom2, mat2=new FillMaterial(0xFFFFFF, .2), aggroArcs.geometry );
 			idleArcs = new UVMeshSet2(geom,geom2, mat3=new FillMaterial(0x0000FF, .2), aggroArcs.geometry );
 			
 			arcs.addChild(aggroArcs);
