@@ -85,6 +85,46 @@ package alternativa.a3d.objects
 			boundBox = null;
 		}
 		
+		/**
+		 * 
+		 * @param	geo
+		 * @param	fromUV A value between 0 and less than 1
+		 */
+		public static function taperGeometryAtStart(geo:Geometry, fromUV:Number=0):void {
+			
+			var pos:Vector.<Number> = geo.getAttributeValues(VertexAttributes.POSITION);
+			var uvs:Vector.<Number> = geo.getAttributeValues(VertexAttributes.TEXCOORDS[0]);
+			var totalVertices:int = geo.numVertices;
+			for (var i:int = 0; i < totalVertices; i++) {
+				var tarScale:Number = uvs[i * 2] - fromUV;
+				if (tarScale < 0) tarScale = 0;
+				tarScale /= (1 - fromUV);
+				pos[i * 3+1] *= tarScale;
+			}
+			geo.setAttributeValues(VertexAttributes.POSITION, pos);
+		}
+		
+		/**
+		 * 
+		 * @param	geo
+		 * @param	fromUV A value between 0 and less than 1
+		 */
+		public static function taperGeometryAtEnd(geo:Geometry, fromUV:Number=0):void {
+			
+			var pos:Vector.<Number> = geo.getAttributeValues(VertexAttributes.POSITION);
+			var uvs:Vector.<Number> = geo.getAttributeValues(VertexAttributes.TEXCOORDS[0]);
+			var totalVertices:int = geo.numVertices;
+			for (var i:int = 0; i < totalVertices; i++) {
+				var tarScale:Number = uvs[i * 2] - fromUV;
+				if (tarScale < 0) tarScale = 0;
+				tarScale /= (1 - fromUV);
+				tarScale = 1 - tarScale;
+				pos[i * 3+1] *= tarScale;
+			}
+			geo.setAttributeValues(VertexAttributes.POSITION, pos);
+		
+		}
+		
 		public static function createDoubleSidedPlane(mat:Material, segments:int=24,breath:Number=4):Geometry {
 			var plane1:Plane = new Plane(1,breath,segments,1,false,false,mat,mat);
 			var plane2:Plane =new Plane(1,breath,segments,1,false,true,mat,mat);
@@ -244,7 +284,7 @@ package alternativa.a3d.objects
 				"mul t1.w, t3.x, t2.x",
 				"mul t2.w, t3.y, t2.y",
 				"add t1.w, t1.w, t2.w",
-				"mul t1.w, t1.w, c1.z",
+				"mul t1.w, t1.w, c1.z","mul t1.w, t1.w, c1.z",
 				"min t1.w, t1.w, c1.w",		// cap full distance to get minimum distance cap
 				
 				"div t3.w, t1.w, c1.w",

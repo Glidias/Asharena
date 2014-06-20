@@ -45,7 +45,9 @@ package alternativa.a3d.systems.enemy
 		private function initUVMeshSets():void 
 		{
 			var geom:Geometry = UVMeshSet2.createDoubleSidedPlane( null, 16, 4);
+			//UVMeshSet2.taperGeometryAtStart(geom, .5);
 			var geom2:Geometry = UVMeshSet2.createDoubleSidedPlane( null, 16, 4);
+			UVMeshSet2.taperGeometryAtEnd(geom2, .96);
 			
 			var mat1:Material;
 			var mat2:Material;
@@ -54,7 +56,7 @@ package alternativa.a3d.systems.enemy
 			var obj:Object3D = new Object3D();
 		
 			aggroArcs = new UVMeshSet2(geom,geom2, mat1=new FillMaterial(0xFF0000, .2) );
-			watchArcs = new UVMeshSet2(geom,geom2, mat2=new FillMaterial(0xFFFFFF, .2), aggroArcs.geometry );
+			watchArcs = new UVMeshSet2(geom,geom2, mat2=new FillMaterial(0xDDBB77, .2), aggroArcs.geometry );
 			idleArcs = new UVMeshSet2(geom,geom2, mat3=new FillMaterial(0x0000FF, .2), aggroArcs.geometry );
 			
 			arcs.addChild(aggroArcs);

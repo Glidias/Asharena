@@ -33,8 +33,7 @@ package alternativa.a3d.objects
 		private static var _deltaTransformProcedures:Dictionary = new Dictionary();
 		
 		public var toUpload:Vector.<Number> = new Vector.<Number>();
-		private var toUploadData:Vector.<Number>;
-		private var tempUploadData:Vector.<Number>;
+
 		public var total:int = 0;
 		private static const ATTRIBUTE:int = GeometryUtil.ATTRIBUTE;
 		private var constantsPerMesh:int;
@@ -69,6 +68,27 @@ package alternativa.a3d.objects
 		private var _remainingTotal:int;
 		private var _toUploadAmount:int;
 		
+			alternativa3d function setVertexConstantsFromVector(drawUnit:DrawUnit, firstRegister:int, data:Vector.<Number>, numRegisters:int, fromParticleIndex:int):void {
+			
+			if (uint(firstRegister) > (128 - numRegisters)) throw new Error("Register index " + firstRegister + " is out of bounds.");
+			var vertexConstants:Vector.<Number> = drawUnit.vertexConstants;
+			fromParticleIndex *= (constantsPerMesh<<2);
+			
+			var offset:int = firstRegister << 2;
+			if (firstRegister + numRegisters > drawUnit.vertexConstantsRegistersCount) {
+				drawUnit.vertexConstantsRegistersCount = firstRegister + numRegisters;
+				vertexConstants.length = drawUnit.vertexConstantsRegistersCount << 2;
+			}
+			
+			for (var i:int = fromParticleIndex, len:int = fromParticleIndex + (numRegisters << 2); i < len; i++) {
+				vertexConstants[offset] = data[i];
+				offset++;
+			}
+		}
+		
+		
+		
+		private var particleDrawCount:int = 0;
 		alternativa3d override function setTransformConstants(drawUnit:DrawUnit, surface:Surface, vertexShader:Linker, camera:Camera3D):void {
 			
 			
@@ -80,7 +100,7 @@ package alternativa.a3d.objects
 			//drawUnit.setVertexConstantsFromVector(0, toUploadSpriteData, toUploadNumSprites*NUM_REGISTERS_PER_SPR ); 
 			
 	
-			drawUnit.setVertexConstantsFromVector( 0, toUploadData, _toUploadAmount*constantsPerMesh );
+			setVertexConstantsFromVector( drawUnit, 0, toUpload, _toUploadAmount*constantsPerMesh, particleDrawCount);
 	
 			//throw new Error(e.message + ":"+_toUploadAmount + ", " + toUploadData.length);
 	
@@ -90,6 +110,7 @@ package alternativa.a3d.objects
 				surface.numTriangles = _toUploadAmount * sampleNumTris;
 			//}
 					
+			particleDrawCount += _toUploadAmount;
 		}
 		
 		
@@ -171,7 +192,7 @@ package alternativa.a3d.objects
 				
 				if (_remainingTotal < batchAmount) {
 					mySurface = _surfaces[0];
-					toUploadData = toUpload;
+				
 					_toUploadAmount = _remainingTotal;
 				
 				//	mySurface.numTriangles = _remainingTotal * sampleNumTris;
@@ -180,9 +201,9 @@ package alternativa.a3d.objects
 				}
 				else {
 					var count:int = 0;
-					if (tempUploadData == null) tempUploadData = new Vector.<Number>(batchAmount*constantsPerMesh*4, true);
+				
 					
-					toUploadData = tempUploadData;
+				
 					while (_remainingTotal > 0) {
 						if (count >= _surfaces.length) {
 							_surfaces[count] = _surfaces[0].clone();
@@ -190,8 +211,10 @@ package alternativa.a3d.objects
 						}
 						mySurface = _surfaces[count];
 						
-						fillTempUploadData( total - _remainingTotal, _remainingTotal);
-						//mySurface.numTriangles = _remainingTotal*sampleNumTris;
+						_toUploadAmount = _remainingTotal;
+						if (_toUploadAmount > batchAmount) _toUploadAmount = batchAmount;
+						
+		
 						mySurface.material.collectDraws(camera, mySurface, geometry, lights, lightsLength, useShadow, -1);
 						
 						_remainingTotal -= batchAmount;
@@ -201,20 +224,7 @@ package alternativa.a3d.objects
 				}
 			}
 			
-			private function fillTempUploadData(startIndex:int, len:int):void 
-			{
-				if (len > batchAmount) len = batchAmount;
-				_toUploadAmount = len;
-				
-				len *= constantsPerMesh;
-				len *= 4;
-
-				startIndex *= 4;
-				startIndex *= constantsPerMesh;
-				for (var i:int = 0; i < len; i++) {
-					tempUploadData[i] = toUpload[startIndex + i];
-				}
-			}
+			
 			
 			
 		

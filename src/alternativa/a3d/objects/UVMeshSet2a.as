@@ -87,6 +87,7 @@ package alternativa.a3d.objects
 		
 		
 		
+		
 	
 		
 
@@ -214,7 +215,7 @@ package alternativa.a3d.objects
 				"mul t1.w, t3.x, t2.x",
 				"mul t2.w, t3.y, t2.y",
 				"add t1.w, t1.w, t2.w",
-				"mul t1.w, t1.w, c1.z",
+				"mul t1.w, t1.w, c1.z", "mul t1.w, t1.w, c1.z",
 				"min t1.w, t1.w, c1.w",		// cap full distance to get minimum distance cap
 	
 				

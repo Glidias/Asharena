@@ -5,6 +5,7 @@ package tests.pvp
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.objects.ArrowLobMeshSet;
+	import alternativa.a3d.objects.ArrowLobMeshSet2;
 	import alternativa.a3d.objects.UVMeshSet;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
@@ -16,6 +17,7 @@ package tests.pvp
 	import alternterrain.CollidableMesh;
 	import ash.core.Entity;
 	import ash.tick.FrameTickProvider;
+	import com.greensock.TweenLite;
 	import components.Pos;
 	import flash.display.MovieClip;
 	import flash.geom.Vector3D;
@@ -47,13 +49,14 @@ package tests.pvp
 		private var spectatorPerson:SimpleFlyController;
 		private var arenaSpawner:ArenaSpawner;
 		private var collisionScene:Object3D;
-		private var arrows:ArrowLobMeshSet;
+		private var arrows:ArrowLobMeshSet2;
 		
 		public function TestArrows() 
 		{
 			haxe.initSwc(this);
 		
 			
+			ArrowLobMeshSet;
 			game = new TheGame(stage);
 	
 			addChild( _template3D = new MainView3D() );
@@ -86,19 +89,17 @@ package tests.pvp
 			SpawnerBundle.uploadResources(planeFloor.getResources(true, null));
 			
 			var box:Box = new Box(26, 3, 3, 1, 1, 1, false, null);
-			arrows = new ArrowLobMeshSet(box.geometry, new FillMaterial(0xFF0000, 1), 4);
+			arrows = new ArrowLobMeshSet2(box.geometry, new FillMaterial(0xFF0000, 1));
 			//arrows.z = 1333;
 			arrows.setGravity(266*3);
-			var startPosition:Vector3D = new Vector3D(0,0,0);
-			var endPosition:Vector3D = new Vector3D();
-			for (var i:int = 0; i < 522; i++) {
-				endPosition.x =  0 +  Math.random() * 1333;// 300 +  Math.random() * 1600;
-				endPosition.y =  0 +  Math.random() * 1222;
-				endPosition.z = 55;
-				arrows.launchNewProjectile(startPosition, endPosition, 1044);
+			startPosition = new Vector3D(0,0,0);
+			endPosition = new Vector3D();
+			for (var i:int = 0; i < 1522; i++) {
+				TweenLite.delayedCall(i*.004, launchProjectile);
+				//arrows.launchNewProjectileWithTimeSpan(startPosition, endPosition, 5);
 			}
 			
-			
+			arrows.setPermanentArrows();
 			
 			_template3D.scene.addChild ( arrows);
 			
@@ -111,6 +112,20 @@ package tests.pvp
 			// (Optional) Enforced ground plane collision
 			//game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(0, true) ).withPriority(SystemPriorities.resolveCollisions);
 
+	
+			spectatorPerson.setObjectPosXYZ(1100, 1400, 133);
+			spectatorPerson.lookAt(new Vector3D(0, 0, 0));
+		}
+		
+		private function launchProjectile():void 
+		{
+			var randAng:Number = Math.random() * Math.PI;
+				var d:Number = Math.random() * 555 + 1410;
+				
+				endPosition.x = Math.cos(randAng)*d;
+				endPosition.y =  Math.sin(randAng) * d;
+				endPosition.z = 72 ;
+				arrows.launchNewProjectile( startPosition, endPosition, 777);
 		}
 		
 		private function setupStartingEntites():void {
@@ -198,6 +213,8 @@ package tests.pvp
 
 		
 		private var timePassed:Number = 0;
+		private var startPosition:Vector3D;
+		private var endPosition:Vector3D;
 		private function tick(time:Number):void 
 		{
 			timePassed += time;
@@ -206,9 +223,9 @@ package tests.pvp
 			arrows.update(time);
 			_template3D.render();
 			
-			if (timePassed >= arrows._maxProjectileTravelTime) {
+			if (timePassed >= 7) {
 				timePassed = 0;
-				arrows.reset();
+				//arrows.reset();
 			}
 		}
 		
