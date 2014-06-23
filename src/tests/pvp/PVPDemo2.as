@@ -6,13 +6,18 @@ package tests.pvp
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.controller.ThirdPersonTargetingSystem;
 	import alternativa.a3d.objects.ArrowLobMeshSet;
+	import alternativa.a3d.rayorcollide.TerrainRaycastImpl;
 	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
 	import alternativa.a3d.systems.enemy.A3DEnemyArcSystem;
 	import alternativa.engine3d.controllers.OrbitCameraMan;
+	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.Grid2DMaterial;
+	import alternativa.engine3d.materials.Material;
+	import alternativa.engine3d.materials.NormalMapSpace;
+	import alternativa.engine3d.materials.StandardTerrainMaterial2;
 	import alternativa.engine3d.materials.VertexLightTextureMaterial;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.primitives.Box;
@@ -59,7 +64,15 @@ package tests.pvp
 	import haxe.io.BytesInput;
 	import input.KeyPoll;
 	import spawners.arena.GladiatorBundle;
+	import spawners.arena.skybox.ClearBlueSkyAssets;
+	import spawners.arena.skybox.SkyboxBase;
+	import spawners.arena.terrain.MistEdge;
 	import spawners.arena.terrain.TerrainBase;
+	import spawners.arena.terrain.TerrainTest;
+	import spawners.arena.water.NormalWaterAssets;
+	import spawners.arena.water.WaterBase;
+	import spawners.grounds.CarribeanTextures;
+	import spawners.grounds.GroundBase;
 	import systems.animation.IAnimatable;
 	import systems.collisions.CollidableNode;
 	import systems.collisions.EllipsoidCollider;
@@ -109,7 +122,7 @@ package tests.pvp
 		 * 
 	 * @author Glidias
 	 */
-	public class PVPDemo extends MovieClip 
+	public class PVPDemo2 extends MovieClip 
 	{
 		private var _template3D:MainView3D;
 		private var game:TheGame;
@@ -126,8 +139,12 @@ package tests.pvp
 		
 		private var aggroMemManager:AggroMemManager;
 		
+			private var _waterBase:WaterBase;
+		private var _skyboxBase:SkyboxBase;
+		private var _terrainBase:TerrainBase;
+		
 	
-		public function PVPDemo() 
+		public function PVPDemo2() 
 		{
 			haxe.initSwc(this);
 			
@@ -143,12 +160,90 @@ package tests.pvp
 			PlanarRim;
 		}
 		
+			private function setupTerrainMaterial():Material {
+			var standardMaterial:StandardTerrainMaterial2 = new StandardTerrainMaterial2(new BitmapTextureResource( new CarribeanTextures.SAND().bitmapData ) , new BitmapTextureResource( _terrainBase.normalMap), null, null  );
+		//	standardMaterial.uvMultiplier2 = _terrainBase.mapScale;
+		
+			//throw new Error([standardMaterial.opaquePass, standardMaterial.alphaThreshold, standardMaterial.transparentPass]);
+			//standardMaterial.transparentPass = false;
+			standardMaterial.normalMapSpace = NormalMapSpace.OBJECT;
+			standardMaterial.specularPower = 0;
+			standardMaterial.glossiness = 0;
+			standardMaterial.mistMap = new BitmapTextureResource(new MistEdge.EDGE().bitmapData);
+			StandardTerrainMaterial2.fogMode = 1;
+			StandardTerrainMaterial2.fogFar =  _terrainBase.FAR_CLIPPING;
+			StandardTerrainMaterial2.fogNear = 256 * 32;
+			StandardTerrainMaterial2.fogColor = _template3D.viewBackgroundColor;
+			standardMaterial.waterLevel = _waterBase.plane.z;
+			standardMaterial.waterMode = 1;
+			//standardMaterial.tileSize = 512;
+			standardMaterial.pageSize = _terrainBase.loadedPage.heightMap.RowWidth - 1;
+			
+			return standardMaterial;
+		}
+		
+		private function setupTerrainLighting():void {
+			 //   _template3D.directionalLight.x = 0;
+         //  _template3D.directionalLight.y = -100;
+        //   _template3D. directionalLight.z = -100;
+				 _template3D.directionalLight.x = 44;
+             _template3D.directionalLight.y = -100;
+             _template3D.directionalLight.z = 100;
+             _template3D.directionalLight.lookAt(0, 0, 0);
+			 _template3D.directionalLight.intensity = .65;
+			 
+			
+             _template3D.ambientLight.intensity = 0.4;
+           
+		}
+		
+		
+		
+		private function setupTerrainAndWater():void 
+		{
+				_waterBase.plane.z =  (-64000 +84);//_terrainBase.loadedPage.Square.MinY + 444;
+			_waterBase.addToScene(_template3D.scene);
+			
+			_skyboxBase.addToScene(_template3D.scene);
+			_waterBase.setupFollowCamera();
+			_waterBase.hideFromReflection.push(_template3D.camera);
+			_waterBase.hideFromReflection.push(arenaHUD.hud);
+			
+			
+			var terrainMat:Material = setupTerrainMaterial();
+			_template3D.scene.addChild( _terrainBase.getNewTerrain(terrainMat , 0, 1) );
+		_terrainBase.terrain.waterLevel = _waterBase.plane.z;
+		//	_terrainBase.terrain.debug = true;
+			
+				var hWidth:Number = (_terrainBase.terrain.boundBox.maxX - _terrainBase.terrain.boundBox.minX) * .5 * _terrainBase.terrain.scaleX;
+					_terrainBase.terrain.x -= hWidth;
+			_terrainBase.terrain.y += hWidth;
+		//throw new Error([(camera.x - terrainLOD.x) / terrainLOD.scaleX, -(camera.y - terrainLOD.y) / terrainLOD.scaleX]);
+		///*
+		var camera:Camera3D = _template3D.camera;
+		_terrainBase.terrain.detail = 1;
+	
+				camera.z = _terrainBase.sampleObjectPos(camera) ;
+
+				//if (camera.z < _waterBase.plane.z) camera.z = _waterBase.plane.z;
+			camera.z += 122;
+			spectatorPerson.setObjectPosXYZ(camera.x, camera.y, camera.z);
+		//	*/
+	
+		_waterBase.plane.z *= _terrainBase.TERRAIN_HEIGHT_SCALE;
+		}
 		
 		// customise methods accordingly here...
 				
 		private function getSpawnerBundles():Vector.<SpawnerBundle> 
 		{
-			return new <SpawnerBundle>[_gladiatorBundle = new GladiatorBundle(arenaSpawner), arenaHUD = new ArenaHUD(stage) ];
+			return new <SpawnerBundle>[_gladiatorBundle = new GladiatorBundle(arenaSpawner), arenaHUD = new ArenaHUD(stage) ,
+			
+				_terrainBase = new TerrainBase(TerrainTest,1),
+				_skyboxBase = new SkyboxBase(ClearBlueSkyAssets),
+				_waterBase = new WaterBase(NormalWaterAssets),
+				new GroundBase([CarribeanTextures])
+			];
 		}
 		
 		private function setupViewSettings():void 
@@ -168,7 +263,7 @@ package tests.pvp
 		{
 			
 			TerrainBase;
-			
+		
 			_template3D.stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextCreated);
 			
 			// example visual scene
@@ -176,47 +271,29 @@ package tests.pvp
 			box.z = 0;
 			
 			
-			
 			SpawnerBundle.uploadResources(box.getResources());
 			
 			//var mat:VertexLightTextureMaterial = new VertexLightTextureMaterial(new BitmapTextureResource(new BitmapData(4, 4, false, 0xBBBBBB),
-			var planeFloor:Mesh = new Plane(2048, 2048, 8, 8, false, false, null, new Grid2DMaterial(0xBBBBBB, 1) );
-			randomiseHeights( -177, planeFloor.geometry);
-			planeFloor.calculateBoundBox();
-			_template3D.scene.addChild(planeFloor);
+		//	var planeFloor:Mesh = new Plane(2048, 2048, 8, 8, false, false, null, new Grid2DMaterial(0xBBBBBB, 1) );
+		//	randomiseHeights( -177, planeFloor.geometry);
+		//	planeFloor.calculateBoundBox();
+		//	_template3D.scene.addChild(planeFloor);
 			//arenaSpawner.addCrossStage(SpawnerBundle.context3D);
-			SpawnerBundle.uploadResources(planeFloor.getResources(true, null));
-				
+			//SpawnerBundle.uploadResources(planeFloor.getResources(true, null));
+			
+			setupTerrainLighting();
+			setupTerrainAndWater();
+		//	_terrainBase.terrain.z = -_terrainBase.terrain.boundBox.minZ;
 		
 			// collision scene (can be something else)
-			collisionScene = planeFloor;
+		
 			var rootCollisionNode:CollisionBoundNode;
-			game.colliderSystem.collidable =rootCollisionNode =  CollisionUtil.getCollisionGraph(collisionScene);
+			game.colliderSystem.collidable = rootCollisionNode =  new CollisionBoundNode();
+			rootCollisionNode.addChild(  _terrainBase.getTerrainCollisionNode() );
+		//	rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(_waterBase.plane)  );
 			game.colliderSystem._collider.threshold = 0.00001;
 			// (Optional) Enforced ground plane collision
-			//game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(0, true) ).withPriority(SystemPriorities.resolveCollisions);
-			
-			box = planeFloor.addChild(box);
-			box.x = 500;
-			box.y = 300;
-			rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
-			
-			
-				box = planeFloor.addChild(box.clone());
-			box.x = 50;
-			box.y = 300;
-			rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
-			
-				box = planeFloor.addChild(box.clone());
-			box.x = 200;
-			box.y = 300;
-			rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
-			
-				box = planeFloor.addChild(box.clone());
-			box.x = 300;
-			box.y = 300;
-			rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
-			
+			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(_waterBase.plane.z, true) ).withPriority(SystemPriorities.resolveCollisions);
 
 		}
 		
@@ -373,18 +450,18 @@ package tests.pvp
 			
 			arenaSpawner.addTextureResourceSide(SpawnerBundle.context3D, ArenaSpawner.RACE_SAMNIAN, 1, _gladiatorBundle.getSideTexture(1)  );
 			
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, -520, 222, 0, 0, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66, -520, 222, 0, 0, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66*2, -520, 222, 0, 0, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66*3, -520, 222, 0, 0, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 4, -520, 222, 0, 0, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, -520, _terrainBase.sample(0,-520)+44, 0, 0, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66, -520, _terrainBase.sample(66,-520)+44, 0, 0, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66*2, -520, _terrainBase.sample(66*2,-520)+44, 0, 0, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66*3, -520, _terrainBase.sample(66*3,-520)+44, 0, 0, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 4, -520, _terrainBase.sample(66*4,-520)+44, 0, 0, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
 
 			
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 6, 520, 222, Math.PI, 1, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 7, 520, 222, Math.PI, 1, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 8, 520, 222, Math.PI, 1, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 9, 520, 222, Math.PI, 1, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 10, 520, 222, Math.PI, 1, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 6, 520, _terrainBase.sample( 66 * 6, 520)+44, Math.PI, 1, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 7, 520, _terrainBase.sample(66 * 7, 520)+44, Math.PI, 1, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 8, 520, _terrainBase.sample(66 * 8, 520)+44, Math.PI, 1, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 9, 520, _terrainBase.sample(66*9,520)+44, Math.PI, 1, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 10, 520, _terrainBase.sample(66*10,520)+44, Math.PI, 1, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
 			
 			
 			var health:Health;
@@ -1094,7 +1171,7 @@ package tests.pvp
 			game.engine.addSystem( new TweenSystem(), SystemPriorities.animate );
 			
 			
-			
+			collisionScene = new Object3D();
 			
 			
 			// Third person
@@ -1110,6 +1187,7 @@ package tests.pvp
 			// possible to  set raycastScene  parameter to something else besides "collisionScene"...
 			thirdPersonController = new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, true);
 			thirdPersonController.thirdPerson.instantZoom = 140;
+			collisionScene.addChild( new TerrainRaycastImpl(_terrainBase.terrain) );
 			
 		thirdPersonController.thirdPerson.preferedMinDistance = 100;
 		thirdPersonController.thirdPerson.controller.minDistance = 0;
@@ -1120,7 +1198,7 @@ package tests.pvp
 			var arcSystem:A3DEnemyArcSystem = new A3DEnemyArcSystem(_template3D.scene);
 			arenaHUD.arcContainer = arcSystem.arcs;
 			game.gameStates.thirdPerson.addInstance(arcSystem ).withPriority(SystemPriorities.postRender);
-			
+			_waterBase.hideFromReflection.push(arenaHUD.arcContainer);
 			
 			// setup targeting system
 			var targetingSystem:ThirdPersonTargetingSystem = new ThirdPersonTargetingSystem(thirdPersonController.thirdPerson);
@@ -1373,8 +1451,21 @@ package tests.pvp
 			game.engine.update(time);
 			arenaHUD.updateFuel( movementPoints.movementTimeLeft / MAX_MOVEMENT_POINTS );
 			arenaHUD.update();
+		
+			var camera:Camera3D = _template3D.camera;
+			
+			_skyboxBase.update(_template3D.camera);
+			
+			_template3D.camera.startTimer();
+
+			// adjust offseted waterlevels
+	
+			_waterBase.waterMaterial.update(_template3D.stage3D, _template3D.camera, _waterBase.plane, _waterBase.hideFromReflection);
+			_template3D.camera.stopTimer();
+
+			// set to default waterLevels
+
 			_template3D.render();
-		;
 			
 		}
 		

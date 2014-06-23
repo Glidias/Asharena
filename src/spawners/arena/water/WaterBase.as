@@ -22,6 +22,8 @@ package spawners.arena.water
 		public static var SIZE:Number = 2048 * 256 * SCALER;
 		public static var SEGMENTS:int = 64;
 		public static var UV_SCALER:Number = 16 * 32 * SCALER;
+		public var hideFromReflection:Vector.<Object3D> = new Vector.<Object3D>();
+		
 		public function WaterBase(assetClasse:Class) 
 		{
 			this.assetClasse = assetClasse;

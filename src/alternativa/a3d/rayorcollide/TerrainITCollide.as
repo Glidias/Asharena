@@ -28,9 +28,13 @@ package alternativa.a3d.rayorcollide
 		public function collectGeometryAndTransforms(collider:EllipsoidCollider, baseTransform:Transform3D):void 
 		{
 			terrain.setupCollisionGeometry(collider.sphere, terrainGeom.vertices, terrainGeom.indices, 0, 0 );	
-			terrainGeom.numVertices = terrain.numCollisionTriangles * 3;
-			terrainGeom.numIndices = terrain.numCollisionTriangles * 3;
+			terrainGeom.numVertices =terrainGeom.numIndices= terrain.numCollisionTriangles * 3;
+			collider.addGeometry(terrainGeom, baseTransform);
+			
 		}
+		
+		
+		
 		
 		/**
 		 * Shortcut method to create a collision bound node for a (already-constructed) TerrainLOD instance

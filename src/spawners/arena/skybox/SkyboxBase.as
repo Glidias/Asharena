@@ -19,7 +19,7 @@ package spawners.arena.skybox
 		public var skybox:SkyBox;
 		
 		
-		public function SkyboxBase(assetClasse:Class, size:Number) 
+		public function SkyboxBase(assetClasse:Class, size:Number=4194304) 
 		{
 			this.size = size;
 			this.assetClasse = assetClasse;

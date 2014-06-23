@@ -65,7 +65,7 @@ package alternativa.a3d.collisions
 		
 
 		
-		alternativa3d function setup(object:Object3D, collidable:ITCollidable):void {
+		alternativa3d function setup(object:Object3D, collidable:ITCollidable):CollisionBoundNode {
 			//this.object = object; // Alternativa3d debugging
 
 			boundBox =  object.boundBox;
@@ -113,6 +113,8 @@ package alternativa.a3d.collisions
 			//transform.compose(object._x, object._y, object._z, object._rotationX, object._rotationY, object._rotationZ, object._scaleX, object._scaleY, object._scaleZ);
 			//inverseTransform.calculateInversion(transform);
 			this.collidable = collidable;
+			
+			return this;
 			
 		}
 		
