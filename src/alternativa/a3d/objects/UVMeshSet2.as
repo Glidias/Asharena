@@ -300,6 +300,8 @@ package alternativa.a3d.objects
 				
 				"mov t1.z, c[a0.x].z",  // set z component and ascend
 				"add t1.z, t1.z, t0.w",
+				"add t3.w, t0.z, t0.w",
+				"max t1.z, t1.z, t3.w",
 			
 				
 				

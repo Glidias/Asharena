@@ -228,6 +228,9 @@ package alternativa.a3d.objects
 				"add t1.xy, t1.xy, t0.xy",
 				
 				"add t1.z, t1.z, t0.w",
+				"add t3.w, t0.z, t0.w",
+				"max t1.z, t1.z, t3.w",
+				
 				"mov t0, c[a0.x]",
 				
 				// TODO: find required gravity t3.z, given start velocity vector tangent

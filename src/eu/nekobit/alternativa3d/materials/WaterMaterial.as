@@ -14,6 +14,7 @@ package eu.nekobit.alternativa3d.materials
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.Geometry;
+	import de.polygonal.ds.BitVector;
 	import eu.nekobit.alternativa3d.resources.RawTextureResource;
 	import alternativa.engine3d.resources.TextureResource;
 	import flash.geom.Point;
@@ -215,6 +216,7 @@ package eu.nekobit.alternativa3d.materials
 			this.normalMap2 = normalMap2;
 		}
 		
+		
 
 		
 		/*---------------------------
@@ -320,16 +322,23 @@ package eu.nekobit.alternativa3d.materials
 			
 			reflectiveRenderPass = true;	
 			
+			var visBits:uint = 0;
+			var count:int = 0;
 			for each(var o:Object3D in hideFromReflection)
 			{
+				visBits |= o.visible ? (1 << count) : 0;
 				o.visible = false;
+				count++;
 			}
 			
 			rCamera.render(stage3D);
 			
+			count = 0;
 			for each(o in hideFromReflection)
 			{
-				o.visible = true;
+				
+				o.visible = (visBits & (1 << count)) !=0;
+				count++
 			}
 			
 			reflectiveRenderPass = false;

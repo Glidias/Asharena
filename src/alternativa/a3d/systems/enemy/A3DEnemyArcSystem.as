@@ -56,7 +56,7 @@ package alternativa.a3d.systems.enemy
 			var obj:Object3D = new Object3D();
 		
 			aggroArcs = new UVMeshSet2(geom,geom2, mat1=new FillMaterial(0xFF0000, .4) );
-			watchArcs = new UVMeshSet2(geom,geom2, mat2=new FillMaterial(0xDDBB77, .4), aggroArcs.geometry );
+			watchArcs = new UVMeshSet2(geom,geom2, mat2=new FillMaterial(0xFFFFFF, .4), aggroArcs.geometry );
 			idleArcs = new UVMeshSet2(geom,geom2, mat3=new FillMaterial(0x0000FF, .4), aggroArcs.geometry );
 			
 			arcs.addChild(aggroArcs);
@@ -109,7 +109,7 @@ package alternativa.a3d.systems.enemy
 		private var playerPosition:Vector3D = new Vector3D();
 		public var playerZOffset:Number =10;
 		public var playerToEnemyZOffset:Number = 10;
-		public var arcZOffset:Number = 0;
+		public var arcZOffset:Number = 124;
 		
 		override public function update(time:Number):void {
 			if (playerList.head == null) return;

@@ -216,8 +216,8 @@ package tests.pvp
 		//	_terrainBase.terrain.debug = true;
 			
 				var hWidth:Number = (_terrainBase.terrain.boundBox.maxX - _terrainBase.terrain.boundBox.minX) * .5 * _terrainBase.terrain.scaleX;
-					_terrainBase.terrain.x -= hWidth;
-			_terrainBase.terrain.y += hWidth;
+					_terrainBase.terrain.x -= hWidth*.5;
+			_terrainBase.terrain.y += hWidth*.5;
 		//throw new Error([(camera.x - terrainLOD.x) / terrainLOD.scaleX, -(camera.y - terrainLOD.y) / terrainLOD.scaleX]);
 		///*
 		var camera:Camera3D = _template3D.camera;
@@ -283,6 +283,9 @@ package tests.pvp
 			
 			setupTerrainLighting();
 			setupTerrainAndWater();
+			
+			
+		//	_gladiatorBundle.textureMat.waterLevel = _waterBase.plane.z;
 		//	_terrainBase.terrain.z = -_terrainBase.terrain.boundBox.minZ;
 		
 			// collision scene (can be something else)
@@ -293,7 +296,7 @@ package tests.pvp
 		//	rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(_waterBase.plane)  );
 			game.colliderSystem._collider.threshold = 0.00001;
 			// (Optional) Enforced ground plane collision
-			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(_waterBase.plane.z, true) ).withPriority(SystemPriorities.resolveCollisions);
+			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(_waterBase.plane.z-20, true) ).withPriority(SystemPriorities.resolveCollisions);
 
 		}
 		
@@ -333,7 +336,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 5;// 9999;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 12;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
@@ -1015,6 +1018,7 @@ package tests.pvp
 		
 		private var _targetTransitState:String;
 		private var _animAttackSystem:AnimAttackSystem;
+		private var arcSystem:A3DEnemyArcSystem;
 
 
 		
@@ -1195,10 +1199,10 @@ package tests.pvp
 		thirdPersonController.thirdPerson.offsetZ = CHASE_Z_OFFSET;
 			game.gameStates.thirdPerson.addInstance(thirdPersonController).withPriority(SystemPriorities.postRender);
 			
-			var arcSystem:A3DEnemyArcSystem = new A3DEnemyArcSystem(_template3D.scene);
-			arenaHUD.arcContainer = arcSystem.arcs;
+			arcSystem = new A3DEnemyArcSystem(_template3D.scene);
+			//arenaHUD.arcContainer = arcSystem.arcs;
 			game.gameStates.thirdPerson.addInstance(arcSystem ).withPriority(SystemPriorities.postRender);
-			_waterBase.hideFromReflection.push(arenaHUD.arcContainer);
+			_waterBase.hideFromReflection.push(arcSystem.arcs);
 			
 			// setup targeting system
 			var targetingSystem:ThirdPersonTargetingSystem = new ThirdPersonTargetingSystem(thirdPersonController.thirdPerson);
