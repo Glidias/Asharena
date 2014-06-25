@@ -160,7 +160,7 @@ Components for:
 WeaponSlots
 */
  
-		public var weaponLOSCheck:IWeaponLOSChecker;
+		public var weaponLOSCheck:IWeaponLOSChecker = new DummyWeaponLOSCheck();
 		public var arcContainer:Object3D;
 	
 		public function ArenaHUD(stage:Stage) 
@@ -810,7 +810,7 @@ WeaponSlots
 		
 		private function checkLOS(entA:Entity, entAWeapon:Weapon, entB:Entity):Boolean 
 		{
-	
+			
 			return weaponLOSCheck.validateWeaponLOS( entA.get(Pos) as Pos, entAWeapon.sideOffset, entAWeapon.heightOffset, entB.get(Pos) as Pos, entB.get(Ellipsoid) as Ellipsoid );
 		}
 		
@@ -1495,4 +1495,16 @@ WeaponSlots
 		
 	}
 
+}
+import arena.systems.player.IWeaponLOSChecker;
+import components.Ellipsoid;
+import components.Pos;
+
+
+class DummyWeaponLOSCheck implements IWeaponLOSChecker {
+	public function validateWeaponLOS (attacker:Pos, sideOffset:Number, heightOffset:Number, target:Pos, targetSize:Ellipsoid) : Boolean {
+		return true;
+	}
+	
+	
 }

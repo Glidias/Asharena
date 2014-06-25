@@ -6,6 +6,7 @@ import arena.components.enemy.EnemyAggro;
 import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
 import arena.components.weapon.AnimAttackMelee;
+import arena.systems.player.IVisibilityChecker;
 import arena.systems.player.IWeaponLOSChecker;
 
 import arena.systems.player.PlayerAggroNode;
@@ -30,7 +31,7 @@ import util.geom.PMath;
  * 
  * @author Glenn Ko
  */
-class EnemyAggroSystem extends System implements IWeaponLOSChecker
+class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IVisibilityChecker
 {
 
 	public var aggroList:NodeList<EnemyAggroNode>;

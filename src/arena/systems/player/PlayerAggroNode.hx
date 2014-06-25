@@ -27,5 +27,10 @@ class PlayerAggroNode extends Node<PlayerAggroNode> {
 	public var def:CharDefense;
 	
 	
+	public function new() {
+		
+		
+	}
+	
 	
 }

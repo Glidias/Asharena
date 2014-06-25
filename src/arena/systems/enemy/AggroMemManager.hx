@@ -1,10 +1,12 @@
 package arena.systems.enemy;
 import arena.components.char.AggroMem;
+import arena.components.char.EllipsoidPointSamples;
 import arena.components.char.HitFormulas;
 import arena.components.enemy.EnemyAggro;
 import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
 import arena.components.weapon.Weapon;
+import arena.systems.player.IVisibilityChecker;
 import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.player.PlayerAggroNode;
 import ash.core.Engine;
@@ -65,9 +67,10 @@ class AggroMemManager
 	}
 		
 	// init
-	public function init(engine:Engine, weaponLOSChecker:IWeaponLOSChecker):Void {
+	public function init(engine:Engine, weaponLOSChecker:IWeaponLOSChecker, visibilityChecker:IVisibilityChecker=null):Void {
 		this.weaponLOSChecker = weaponLOSChecker;
 		this.engine = engine;
+		this.visibilityChecker = visibilityChecker;
 		//engine.getNodeList(
 		
 		aggroList = engine.getNodeList(EnemyAggroNode);
@@ -86,6 +89,8 @@ class AggroMemManager
 		
 		idleMask = new BitVector(32);
 		testPos = new Pos();
+		
+		_dummyPlayerNode = new PlayerAggroNode();
 		
 	}
 	
@@ -159,8 +164,10 @@ class AggroMemManager
 			testPos.y = ac.pos.y;
 			testPos.z = ac.pos.z + ac.size.z;
 		
-		
-			if ( hasFOV(aggroMem.watchSettings.fov, posA, rotA, testPos) ) {
+			_dummyPlayerNode.pos = ac.pos;
+				_dummyPlayerNode.size = ac.size;
+				_dummyPlayerNode.pointSamples = ac.entity.get(EllipsoidPointSamples);
+			if ( hasFOVWithLOS(aggroMem.watchSettings.fov, posA, rotA, testPos, ac.mem.watchSettings.eyeHeightOffset) ) {
 				aggroMem.bits.set(a);
 			}
 		}
@@ -184,7 +191,7 @@ class AggroMemManager
 	
 	
 	// Used for EnemyWatch entities to prioritise end-turn facing over aggro-dist entities. 
-	private inline  function findNearestActiveNodeToRot(posA:Pos, rotA:Rot, aggroSqDist:Float):Float {
+	private inline  function findNearestActiveNodeToRot(posA:Pos, rotA:Rot, aggroSqDist:Float, eyeHeight:Float):Float {
 		var a:Int = numActive;
 		var ac:AggroMemNode;
 		var result:AggroMemNode = null;
@@ -212,12 +219,16 @@ class AggroMemManager
 			var d:Float = getSqDist(posA, ac.pos);
 			if (d <= aggroSqDist && d < closestD) {
 				 // check LOS 
+				// /*
 				testPos.x = ac.pos.x;
 				testPos.y = ac.pos.y;
-				testPos.z = ac.pos.z + ac.size.z;
-				
-				
-				if ( ac.health.hp > 0 && hasLOS(posA, testPos) ) {
+				testPos.z = ac.pos.z;// + ac.size.z;
+				//	*/
+		
+				_dummyPlayerNode.pos = ac.pos;
+				_dummyPlayerNode.size = ac.size;
+				_dummyPlayerNode.pointSamples = ac.entity.get(EllipsoidPointSamples);
+				if ( ac.health.hp > 0 && hasLOS(posA, testPos, eyeHeight) ) {
 					result = ac;
 					closestD = d;
 					
@@ -234,19 +245,34 @@ class AggroMemManager
 		}
 		
 	}
+	
+	/**
+	 * 
+	 * @param	fovA
+	 * @param	posA
+	 * @param	rotA
+	 * @param	posB	
+	 * @return
+	 */
 	public inline function hasFOV(fovA:Float, posA:Pos, rotA:Rot, posB:Pos):Bool {
 		
-		return HitFormulas.targetIsWithinFOV(posA, rotA, posB, fovA) && hasLOS(posA, posB);
+		return HitFormulas.targetIsWithinFOV(posA, rotA, posB, fovA);  // && hasLOS(posA, posB)
 	}
 	
-	public inline function hasLOSWithFOV(fovA:Float, posA:Pos, rotA:Rot, posB:Pos):Bool {
+	public inline function hasFOVWithLOS(fovA:Float, posA:Pos, rotA:Rot, posB:Pos, eyeHeight:Float):Bool {
 		
-		return HitFormulas.targetIsWithinFOV(posA, rotA, posB, fovA) && hasLOS(posA, posB);
+		return HitFormulas.targetIsWithinFOV(posA, rotA, posB, fovA) && hasLOS(posA, posB, eyeHeight);  // && hasLOS(posA, posB)
 	}
+	
+	
 	
 
-	public function hasLOS(posA:Pos, posB:Pos):Bool {
-		return true;
+	public inline function hasLOS(posA:Pos, posB:Pos, posAEyeHeight:Float):Bool {
+			
+		//_dummyPlayerNode.pointSamples
+		//validateVisibility(enemyPos:Pos, enemyEyeHeight:Float, playerNode:PlayerAggroNode):Bool;
+		return visibilityChecker != null ? visibilityChecker.validateVisibility(posA, posAEyeHeight, _dummyPlayerNode) : true;
+		
 	}
 	
 	/**
@@ -289,8 +315,11 @@ class AggroMemManager
 		var dz:Float = posB.z - posA.z;
 		return dx * dx + dy * dy + dz*dz;
 	}
-	var weaponLOSChecker:IWeaponLOSChecker;
+	public var weaponLOSChecker:IWeaponLOSChecker;
 	private var _turnActive:Bool = false;
+	private var _dummyPlayerNode:PlayerAggroNode;
+	public var visibilityChecker:IVisibilityChecker;
+	
 	// This is called right after turn is started, where MovementPoints is given to playerEnt after transioinining into player.
 	public function notifyTurnStarted(playerEnt:Entity):Void {
 		// determine which entities in memList should start in Idle, Watch, or Aggro states, if they don't belong to activeSide (ai side) according to playerEnt
@@ -402,7 +431,7 @@ class AggroMemManager
 		//  for all ENemyWatch entities, turn them to face closest alive one within aggro range (and LOS) using their aggroMemory (by iterating through all bits in the aggro memory and checkign any flagged bits). 
 		w = watchList.head;  
 		while ( w != null) {
-			var val:Float = findNearestActiveNodeToRot(w.pos, w.rot, w.state.watch.aggroRangeSq);
+			var val:Float = findNearestActiveNodeToRot(w.pos, w.rot, w.state.watch.aggroRangeSq, w.state.watch.eyeHeightOffset);
 			if (val != PMath.FLOAT_MAX) {  // rotate to face rotation value
 				
 				engine.addEntity( new Entity().add( new Tween(w.rot, 1.3, { z:val } ) ) );
@@ -425,7 +454,7 @@ class AggroMemManager
 			var distCombat:Float = plWeap!=null ? PMath.maxF(a.weapon.range, plWeap.range ) : a.weapon.range;
 			if ( a.state.target.health.hp <=0 || !HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, a.state.target.pos, distCombat, a.weapon.hitAngle  ) ) {
 				a.state.setAttackRange(a.weapon.range);
-				var val:Float = findNearestActiveNodeToRot(a.pos, a.rot, a.state.attackRangeSq);
+				var val:Float = findNearestActiveNodeToRot(a.pos, a.rot, a.state.attackRangeSq, a.state.watch.eyeHeightOffset);
 				if (val != PMath.FLOAT_MAX) {  // rotate to face rotation value
 					engine.addEntity( new Entity().add( new Tween(a.rot, 1.7, { z:val } ) ) );
 				}

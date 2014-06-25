@@ -143,6 +143,8 @@ package tests.pvp
 		private var _skyboxBase:SkyboxBase;
 		private var _terrainBase:TerrainBase;
 		
+		
+		
 		public var SHOW_PREFERED_STANCES_ENDTURN:int = 2;
 		
 	
@@ -188,7 +190,7 @@ package tests.pvp
 			 //   _template3D.directionalLight.x = 0;
          //  _template3D.directionalLight.y = -100;
         //   _template3D. directionalLight.z = -100;
-				 _template3D.directionalLight.x = 44;
+			_template3D.directionalLight.x = 44;
              _template3D.directionalLight.y = -100;
              _template3D.directionalLight.z = 100;
              _template3D.directionalLight.lookAt(0, 0, 0);
@@ -336,6 +338,8 @@ package tests.pvp
 		private var _transitCompleteCallback:Function;
 		
 		
+		private var sceneLocked:Boolean = false;
+		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
 		private  var MAX_MOVEMENT_POINTS:Number = 7;// 9999;// 7;
@@ -343,7 +347,6 @@ package tests.pvp
 		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
 		private var commandPoints:Vector.<int> = new <int>[0,0];
-		private var enemyWatchSettings:EnemyIdle = new EnemyIdle().init(9000, 100, 1.88495559215388, 28 );
 		private var collOtherClass:Class = ImmovableCollidable;
 			
 		// Deault weapon stats
@@ -499,10 +502,13 @@ package tests.pvp
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
-			if (game.gameStates.engineState.currentState === engineStateTransiting) {
+			if ( game.gameStates.engineState.currentState === engineStateTransiting || sceneLocked) {
 				// for now until interupt case is available
 				return;
 			}
+			
+		
+			
 			
 			var keyCode:uint = e.keyCode;
 			if (keyCode === Keyboard.TAB  &&   !game.keyPoll.isDown(keyCode)  ) {
@@ -563,7 +569,7 @@ package tests.pvp
 		
 		private function resolveStrikeAction():void 
 		{
-			
+			sceneLocked = true;
 			AnimAttackSystem.performMeleeAttackAction(arenaHUD.playerWeaponModeForAttack, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
 			_animAttackSystem.resolved.addOnce(resolveStrikeAction2);
 			aggroMemManager.addToAggroMem(arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity);
@@ -617,8 +623,20 @@ package tests.pvp
 		
 		private function resolveStrikeActionFully(instant:Boolean=false):void 
 		{
-			if (!instant&& arenaHUD.enemyStrikeResult > 0) TweenLite.delayedCall(.3, toggleTargetingMode)
-			else toggleTargetingMode();
+			if (!instant && arenaHUD.enemyStrikeResult > 0) {
+				TweenLite.delayedCall(.3, resolveToggleTargetingMode);
+				
+			}
+			else {
+				toggleTargetingMode();
+				sceneLocked = false;
+			}
+		}
+		
+		private function resolveToggleTargetingMode():void 
+		{
+			toggleTargetingMode();
+			sceneLocked = false;
 		}
 		
 		private function testAnim(blend:Number=.5):void 
@@ -1331,8 +1349,8 @@ package tests.pvp
 			
 			
 			game.gameStates.thirdPerson.addInstance( _animAttackSystem=  new AnimAttackSystem() ).withPriority(SystemPriorities.stateMachines);
-			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem = new A3DEnemyAggroSystem(transitionCamera.thirdPerson.scene) ).withPriority(SystemPriorities.stateMachines);
-			arenaHUD.weaponLOSCheck = _enemyAggroSystem;
+			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem = new A3DEnemyAggroSystem(collisionScene) ).withPriority(SystemPriorities.stateMachines);
+	
 			//_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
 		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
 		//	_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
@@ -1341,7 +1359,9 @@ package tests.pvp
 			
 			// aggro mem manager
 			aggroMemManager = new AggroMemManager();
-			aggroMemManager.init(game.engine, _enemyAggroSystem);
+			aggroMemManager.weaponLOSChecker = _enemyAggroSystem;
+			arenaHUD.weaponLOSCheck = _enemyAggroSystem;
+			aggroMemManager.init(game.engine, _enemyAggroSystem, _enemyAggroSystem);
 			aggroMemManager.aggroList.nodeAdded.add(onEnemyAggroNodeAdded);
 			
 			game.gameStates.engineState.changeState("thirdPerson");
