@@ -570,6 +570,7 @@ package tests.pvp
 		private function resolveStrikeAction():void 
 		{
 			sceneLocked = true;
+			thirdPersonController.thirdPerson.followAzimuth = false;
 			AnimAttackSystem.performMeleeAttackAction(arenaHUD.playerWeaponModeForAttack, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
 			_animAttackSystem.resolved.addOnce(resolveStrikeAction2);
 			aggroMemManager.addToAggroMem(arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity);
@@ -630,6 +631,7 @@ package tests.pvp
 			else {
 				toggleTargetingMode();
 				sceneLocked = false;
+				thirdPersonController.thirdPerson.followAzimuth = true;
 			}
 		}
 		
@@ -637,6 +639,7 @@ package tests.pvp
 		{
 			toggleTargetingMode();
 			sceneLocked = false;
+			thirdPersonController.thirdPerson.followAzimuth = true;
 		}
 		
 		private function testAnim(blend:Number=.5):void 
@@ -748,7 +751,11 @@ package tests.pvp
 			var len:int = arr.length;
 			for (var i:int = 0; i < len; i++) {
 				var stance:GladiatorStance = arr[i].get(IAnimatable) as GladiatorStance;
-				if (stance != null) stance.danger = true;
+				if (stance != null) {
+					stance.danger = true;
+					stance.setStanceAndRefresh(stance.preferedStance);
+				}
+				
 			}
 		}
 		
