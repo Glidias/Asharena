@@ -141,6 +141,9 @@ package systems.player.a3d
 		]
 		private var flinches:Array;
 		
+		public var preferedStance:int = 0;
+		public var danger:Boolean = false;
+		
 		public function GladiatorStance(skin:Skin, surfaceMovement:SurfaceMovement, ellipsoid:Ellipsoid) 
 		{
 				this.surfaceMovement = surfaceMovement;
@@ -384,13 +387,18 @@ package systems.player.a3d
 			
 			if (keyCode === Keyboard.Q ) {
 				raiseStanceToggle();
+				preferedStance = _stance;
 			}
 			else if (keyCode === Keyboard.CONTROL) {
 				lowerStanceToggle();
+				preferedStance = _stance;
 			}
 			else if (_stance ==1  && keyCode === KeyBindings.ACCELERATE) {
 				raiseStanceToggle();
+				preferedStance = _stance;
 			}
+			
+			
 		}
 
 		
@@ -421,7 +429,7 @@ package systems.player.a3d
 				skin._rotationZ = Math.PI;
 				skin.transformChanged = true;
 				
-				setAnimation(fullBodyAnims[(_stance == 0 ? "combat" : _stanceString) + "_idle"], fullBodyController, fullBody,   myLastAction == 0 ? CROUCH_TIME : 0);  //_lastStance < 3 && _stance < 3 && 
+				setAnimation(fullBodyAnims[(_stance == 0 ? (danger ? "combat" : "standing") : _stanceString) + "_idle"], fullBodyController, fullBody,   myLastAction == 0 ? CROUCH_TIME : 0);  //_lastStance < 3 && _stance < 3 && 
 				
 					crouchTime =  myLastAction != 0 ? 9999999 : 0;
 				
@@ -588,7 +596,9 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			}
 		}
 		
-
+		public function crouch():void {
+			setStanceAndRefresh(2);
+		}
 		public function setStanceAndRefresh(val:int):void 
 		{
 			stance = val;

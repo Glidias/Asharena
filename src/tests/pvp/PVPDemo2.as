@@ -143,6 +143,8 @@ package tests.pvp
 		private var _skyboxBase:SkyboxBase;
 		private var _terrainBase:TerrainBase;
 		
+		public var SHOW_PREFERED_STANCES_ENDTURN:int = 2;
+		
 	
 		public function PVPDemo2() 
 		{
@@ -284,7 +286,7 @@ package tests.pvp
 			setupTerrainLighting();
 			setupTerrainAndWater();
 			
-			
+
 		//	_gladiatorBundle.textureMat.waterLevel = _waterBase.plane.z;
 		//	_terrainBase.terrain.z = -_terrainBase.terrain.boundBox.minZ;
 		
@@ -336,7 +338,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 12;// 9999;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 7;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
@@ -503,24 +505,24 @@ package tests.pvp
 			}
 			
 			var keyCode:uint = e.keyCode;
-			if (keyCode === Keyboard.TAB  &&   !game.keyPoll.isDown(Keyboard.TAB)  ) {
+			if (keyCode === Keyboard.TAB  &&   !game.keyPoll.isDown(keyCode)  ) {
 				cyclePlayerChoice();
 			}
-			else if (keyCode === Keyboard.L &&   !game.keyPoll.isDown(Keyboard.L) ) {
+			else if (keyCode === Keyboard.L &&   !game.keyPoll.isDown(keyCode) ) {
 				changeCameraView("commander");
 			}
-			else if (keyCode === Keyboard.K &&   !game.keyPoll.isDown(Keyboard.K) ) {
+			else if (keyCode === Keyboard.K &&   !game.keyPoll.isDown(keyCode) ) {
 				if (commandPoints[sideIndex] - getDeductionCP()  >= 0 ) {
 					switchToPlayer();
 				}
 			}
-			else if (keyCode === Keyboard.Z && !game.keyPoll.isDown(Keyboard.Z) ) {
+			else if (keyCode === Keyboard.Z && !game.keyPoll.isDown(keyCode) ) {
 				if (arenaHUD.charWeaponEnabled) toggleTargetingMode();
 			}
-			else if (keyCode === Keyboard.BACKSPACE && !game.keyPoll.isDown(Keyboard.BACKSPACE)) {
+			else if (keyCode === Keyboard.BACKSPACE && !game.keyPoll.isDown(keyCode)) {
 				endPhase();
 			}
-			else if (keyCode === Keyboard.F && !game.keyPoll.isDown(Keyboard.F)) {
+			else if (keyCode === Keyboard.F && !game.keyPoll.isDown(keyCode)) {
 				if (  arenaHUD.checkStrike(keyCode) ) {  // for now, HP reduction is insntatneous within this method
 					// remove controls, perform animation, before toggling targeting mode and restoring back controls
 					resolveStrikeAction();
@@ -534,23 +536,26 @@ package tests.pvp
 					//toggleTargetingMode();
 				}
 			}
-			else if (keyCode === Keyboard.B && !game.keyPoll.isDown(Keyboard.B)) {
+			else if (keyCode === Keyboard.B && !game.keyPoll.isDown(keyCode)) {
 				testAnim(1);
 			}
-			else if (keyCode === Keyboard.N && !game.keyPoll.isDown(Keyboard.N)) {
+			else if (keyCode === Keyboard.N && !game.keyPoll.isDown(keyCode)) {
 				testAnim2(1);
 			}
-			else if (keyCode === Keyboard.G && !game.keyPoll.isDown(Keyboard.G)) {
+			else if (keyCode === Keyboard.G && !game.keyPoll.isDown(keyCode)) {
 				testAnim(.5);
 			}
-			else if (keyCode === Keyboard.Y && !game.keyPoll.isDown(Keyboard.Y)) {
+			else if (keyCode === Keyboard.Y && !game.keyPoll.isDown(keyCode)) {
 				testAnim2(0);
 			}
-			else if (keyCode === Keyboard.H && !game.keyPoll.isDown(Keyboard.H)) {
+			else if (keyCode === Keyboard.H && !game.keyPoll.isDown(keyCode)) {
 				testAnim2(.5);
 			}
-			else if (keyCode === Keyboard.T && !game.keyPoll.isDown(Keyboard.T)) {
+			else if (keyCode === Keyboard.T && !game.keyPoll.isDown(keyCode)) {
 				testAnim(0);
+			}
+			else if (keyCode === Keyboard.P &&  !game.keyPoll.isDown(keyCode)) {
+				if ( game.gameStates.engineState.currentState === engineStateCommander ) showPreferedStances();
 			}
 		}
 		
@@ -696,8 +701,15 @@ package tests.pvp
 		
 		private function startPhase():void {
 			
+			
 			sideIndex = 0;
 			curArr = arrayOfSides[sideIndex];
+			
+			// TODO: Naive vs Exploratory version
+			//setSideDanger(curArr);
+			for (var i:int = 0; i < arrayOfSides.length; i++) {
+				setSideDanger( arrayOfSides[i] );
+			}
 			
 			commandPoints[sideIndex] += COMMAND_POINTS_PER_TURN;
 			if (commandPoints[sideIndex] > MAX_COMMAND_POINTS) commandPoints[sideIndex] = MAX_COMMAND_POINTS;
@@ -711,6 +723,15 @@ package tests.pvp
 			}
 			
 			aggroMemManager.notifyStartPhase(sideIndex);
+		}
+		
+		private function setSideDanger(arr:Array):void 
+		{
+			var len:int = arr.length;
+			for (var i:int = 0; i < len; i++) {
+				var stance:GladiatorStance = arr[i].get(IAnimatable) as GladiatorStance;
+				if (stance != null) stance.danger = true;
+			}
 		}
 		
 		private function selectFirstMan():void {
@@ -738,7 +759,11 @@ package tests.pvp
 			
 	
 			var oldArr:Array = arrayOfSides[sideIndex];
-			
+			len = oldArr.length;
+			for (i = 0; i < len; i++ ) {
+				var stance:GladiatorStance = oldArr[i].get(IAnimatable) as GladiatorStance;
+				if (stance !=null && stance.stance != stance.preferedStance) stance.setStanceAndRefresh(stance.preferedStance);
+			}
 
 			sideIndex++;
 			if (sideIndex >= commandPoints.length) {
@@ -952,6 +977,26 @@ package tests.pvp
 			if (arenaSpawner.currentPlayerEntity) arenaSpawner.currentPlayerEntity.remove(MovementPoints);
 			arenaSpawner.switchPlayer(curArr[testIndex], stage);
 			
+			var stance:GladiatorStance;
+		
+			
+			
+			
+			
+			
+			for (var i:int = 0; i < curArr.length; i++) {
+				if (i != testIndex) {
+					stance = curArr[i].get(IAnimatable) as GladiatorStance;
+					if (stance == null) continue;
+					if (stance.stance==0) stance.setStanceAndRefresh(1);
+					//setTimeout(stance.crouch, Math.random() * 600);
+					stance.setStanceAndRefresh(2);
+					
+				}
+			}
+			
+			
+			
 			
 			var counter:Counter = arenaSpawner.currentPlayerEntity.get(Counter) as Counter;
 			movementPoints.movementTimeLeft = MAX_MOVEMENT_POINTS / (1 << counter.value);
@@ -983,7 +1028,7 @@ package tests.pvp
 			
 			if (targetState === "thirdPerson" && game.gameStates.engineState.currentState === engineStateCommander) {
 		
-				
+				_transitCompleteCallback = onCharacterZoomedInTurnStartl
 				game.gameStates.engineState.changeState("transiting");
 				arenaHUD.setState("transiting");
 				transitionCameras(commanderCameraController.thirdPerson, thirdPersonController.thirdPerson, targetState);
@@ -1012,6 +1057,23 @@ package tests.pvp
 				game.gameStates.engineState.changeState(targetState);
 				arenaHUD.setState(targetState);
 			}
+		}
+		
+		private function onCharacterZoomedInTurnStartl():void 
+		{
+			var stance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
+			if (stance.stance != stance.preferedStance) stance.setStanceAndRefresh(stance.preferedStance);
+			
+			/*
+			for (var i:int = 0; i < curArr.length; i++) {
+				if (i != testIndex) {
+					var stance:GladiatorStance = curArr[i].get(IAnimatable) as GladiatorStance;
+					if (stance.stance==0) stance.setStanceAndRefresh(1);
+					setTimeout(stance.crouch, Math.random() * 600);
+					
+				}
+			}
+			*/
 		}
 		
 	
@@ -1078,6 +1140,9 @@ package tests.pvp
 			}
 			else  {
 				arenaHUD.showStars();
+				if (SHOW_PREFERED_STANCES_ENDTURN==2) {
+					showPreferedStances();
+				}
 				if (arenaSpawner.currentPlayerEntity) arenaSpawner.currentPlayerEntity.remove(MovementPoints);
 			}
 			
@@ -1110,12 +1175,23 @@ package tests.pvp
 			for ( i = 0; i < len; i++) {
 				e = mySide[i];
 				if (e === arenaSpawner.currentPlayerEntity) continue;
+				
 				e.remove( collOtherClass );
-			
 			
 			}
 			
 			
+			if (SHOW_PREFERED_STANCES_ENDTURN==1) showPreferedStances();
+		
+		}
+		
+		private function showPreferedStances():void {
+			var i:int;
+			var len:int = curArr.length;
+			for (i = 0; i < len; i++) {
+				var stance:GladiatorStance = curArr[i].get(IAnimatable) as GladiatorStance;
+				if (stance.stance != stance.preferedStance) stance.setStanceAndRefresh(stance.preferedStance);
+			}
 		}
 
 		
@@ -1281,7 +1357,7 @@ package tests.pvp
 			if (gStance != null && gStance.stance == 0) {
 				gStance.stance = 1;
 				
-				gStance.setIdleStance( 1);
+				gStance.setIdleStance(1);
 			}
 		}
 		
