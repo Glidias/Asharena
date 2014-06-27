@@ -8,7 +8,7 @@ package recast
 	 */
 	public class RecastWorkerBridgeProps 
 	{
-		public var MAX_AGENTS:int = 60;
+		public var MAX_AGENTS:int = 32;
 		public var MAX_AGENT_RADIUS:Number = 0.24*RecastWorkerBridge.WORLD_SCALE;
 		public var MAX_SPEED:Number = 3.5*3
 		public var MAX_ACCEL:Number = 8.0 * 3

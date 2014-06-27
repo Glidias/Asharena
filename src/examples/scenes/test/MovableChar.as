@@ -10,12 +10,12 @@ package examples.scenes.test
 	public class MovableChar extends MovableCircle 
 	{
 		private var color:uint;
-		public static const COLORS:Vector.<uint> = new <uint>[0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00];
+		public static const COLORS:Vector.<uint> = new <uint>[0xFF0000, 0xFF0000, 0x00FF00, 0x0000FF];
 		public var following:int = -1;
 		public var offsetX:Number = 0;
 		public var offsetY:Number = 0;
 		public var slot:int = 0;
-		public var flankScale:Number=0.5;
+		public var flankScale:Number=.5;
 		
 		public function MovableChar( x: Number, y: Number, r: Number, index:int=0 ) 
 		{

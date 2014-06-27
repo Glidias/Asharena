@@ -44,10 +44,10 @@ package alternativa.a3d.systems.enemy
 		
 		private function initUVMeshSets():void 
 		{
-			var geom:Geometry = UVMeshSet2.createDoubleSidedPlane( null, 16, 4);
+			var geom:Geometry = UVMeshSet2.createDoubleSidedPlane( null, 16, 5);
 			//UVMeshSet2.taperGeometryAtStart(geom, .5);
-			var geom2:Geometry = UVMeshSet2.createDoubleSidedPlane( null, 16, 4);
-			UVMeshSet2.taperGeometryAtEnd(geom2, .96);
+			var geom2:Geometry = UVMeshSet2.createDoubleSidedPlane( null, 16, 5);
+			UVMeshSet2.taperGeometryAtEnd(geom2, .67);
 			
 			var mat1:Material;
 			var mat2:Material;

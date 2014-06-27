@@ -100,7 +100,7 @@ package recast
 			bridge = bridgeChannels.props;
 			bridge.MAX_SPEED = 5.2 * 1.6;
 			bridge.MAX_ACCEL = 10.0 * 16;
-			bridge.MAX_AGENT_RADIUS = 1.02;
+			bridge.MAX_AGENT_RADIUS = 1;// .5;
 			
 			worker1 = createPrimodialWorker(workerBytes);
 			
@@ -397,8 +397,9 @@ package recast
 				var curCircle:MovableChar = partyStartup.memberCircleLookup[i];
 				var tarCircle:MovableChar = curCircle.following != -2 ? curCircle : partyStartup.movableA;
 				if (curCircle.slot >= 0 ) {
-					bridge.targetAgentPosBytes.writeInt(i);
+					
 					preferedPositions[i] = curCircle.slot;
+					bridge.targetAgentPosBytes.writeInt(curCircle.slot);
 					//_worker.moveAgent(curCircle.slot, tarCircle.x + tarCircle.offsetX, 0,  tarCircle.y + tarCircle.offsetY); 
 					bridge.targetAgentPosBytes.writeFloat(tarCircle.x + tarCircle.offsetX);
 					bridge.targetAgentPosBytes.writeFloat(0);
@@ -452,7 +453,16 @@ package recast
 				recenter();
 			}
 			else if (e.keyCode === Keyboard.P) {
-			throw new Error(numChildren);
+				throw new Error(numChildren);
+			}
+			else if (e.keyCode === Keyboard.NUMBER_1) {
+				partyStartup.setSpreadMode(0);
+			}
+			else if (e.keyCode === Keyboard.NUMBER_2) {
+				partyStartup.setSpreadMode(1);
+			}
+			else if (e.keyCode === Keyboard.NUMBER_3) {
+				partyStartup.setSpreadMode(2);
 			}
 		}
 		

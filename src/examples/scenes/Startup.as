@@ -71,7 +71,8 @@ package examples.scenes
 		private var personB:Person = new Person(MovableChar.COLORS[1], "person b", SMALL_RADIUS);
 		private var personC:Person = new Person(MovableChar.COLORS[2], "person c", SMALL_RADIUS);
 		private var personD:Person = new Person(MovableChar.COLORS[3], "person d", SMALL_RADIUS);
-		private var footing:int = new Vector.<int>(3,true);
+		private var footing:int = new Vector.<int>(3, true);
+		private var allRanks:Array = [];
 		
 		public function Startup()
 		{
@@ -119,7 +120,16 @@ package examples.scenes
 			removeEventListener(Event.ENTER_FRAME, onEnterFrame);
 		}
 		
-		private function createParty():void 
+		
+		public function stickCloseFormation():void {
+			targetSpringRest =  LARGE_RADIUS  + 1;
+		}
+		
+		public function spreadOutFormation():void {
+			targetSpringRest =  LARGE_RADIUS * 2 + 1;
+		}
+		
+		private function createParty(spreadSetting:int=1):void 
 		{
 			var pos:Array = POSITIONS_COLUMN_JITTERD;
 			
@@ -155,7 +165,7 @@ package examples.scenes
 			var force: IForce;
 			var tension:Number =1;
 			
-			targetSpringRest =  mainhead * 2 + 1;
+			setSpreadMode(spreadSetting);
 			var restLength:Number = targetSpringRest;// -1;// mainhead * 2 + 1;
 			
 			if (!FOLLOW_LEADER_SPRING) {
@@ -188,6 +198,8 @@ package examples.scenes
 				simulation.addForce( force );
 				springs.push(force);
 				fixedSprings.push(force);
+				
+				
 				
 				/*
 				force = new Spring( movableB, movableC, tension);
@@ -349,8 +361,8 @@ package examples.scenes
 				}
 				else {
 							// add to valid
-							movableB.following = 0;
-					validMembers[numValid++] = 0;
+						movableB.following = 0;
+						validMembers[numValid++] = 0;
 						switchSpring(0, fixedSprings[0]);
 							
 				}
@@ -571,11 +583,12 @@ package examples.scenes
 					}
 				
 			// move guys to match formation points
+			/*
 			personA.x = movableA.x; personA.y = movableA.y;
 			personB.moveToTargetLocation(movableB.x, movableB.y);
 			personC.moveToTargetLocation(movableC.x, movableC.y);
 			personD.moveToTargetLocation(movableD.x, movableD.y);
-			
+			*/
 			//
 			
 			
@@ -723,11 +736,13 @@ package examples.scenes
 			}
 			
 			rearGuard.slot = 2;
+			
 			// else  flankers form an acute angle that needs some spreading out.
 			
 			// move rearguard back
 			rearGuard.offsetX = rearGuard.x - movableA.x;
 			rearGuard.offsetY = rearGuard.y - movableA.y;
+		
 			dx = Math.sqrt(rearGuard.offsetX * rearGuard.offsetX + rearGuard.offsetY * rearGuard.offsetY);
 			dx = (rearGuard.r  / dx);
 			rearGuard.offsetX *= dx;
@@ -753,6 +768,8 @@ package examples.scenes
 			flanker2.offsetX *= flanker2.flankScale; flanker2.offsetY *= flanker2.flankScale;
 			
 	
+		
+			
 			
 			var intersect:DynamicIntersection;
 		
@@ -776,7 +793,26 @@ package examples.scenes
 			flanker2.offsetX *= dx;
 			flanker2.offsetY *= dx;
 			
-			
+			if (spreadMode == 0) {
+				flanker1.offsetX = movableA.x - flanker1.x;
+				flanker1.offsetY = movableA.y - flanker1.y;
+				flanker2.offsetX =movableA.x - flanker2.x;
+				flanker2.offsetY = movableA.y - flanker2.y;
+				
+				dx = Math.sqrt(flanker1.offsetX * flanker1.offsetX + flanker1.offsetY * flanker1.offsetY);
+				dx = (flanker1.r *1 / dx);
+				flanker1.offsetX *= dx;
+				flanker1.offsetY *= dx;
+				
+				dx = Math.sqrt(flanker2.offsetX * flanker2.offsetX + flanker2.offsetY * flanker2.offsetY);
+				dx = (flanker2.r *1  / dx);
+				flanker2.offsetX *= dx;
+				flanker2.offsetY *= dx;
+				
+				rearGuard.offsetX =0;
+				rearGuard.offsetY =0;
+				
+			}
 			
 			//flanker1.offsetX =0; 	flanker1.offsetY =0;
 			//flanker2.offsetX = 0; flanker2.offsetY = 0;
@@ -834,6 +870,25 @@ package examples.scenes
 		private var springs:Array = [];
 		private var footStepThreshold:Number = 16 * 16;
 		private var _formationState:int;
+		private var spreadMode:int = 0;
+		public function setSpreadMode(val:int):void {
+			if (val ==0) {
+				spreadMode = val;
+				targetSpringRest = LARGE_RADIUS * 1 + 1;
+				
+			}
+			else if (val == 1) {
+				spreadMode = val;
+				targetSpringRest =  LARGE_RADIUS * 1 + 1;
+				
+			}
+			else  {
+				spreadMode = 2;
+				targetSpringRest =  LARGE_RADIUS * 2 + 1;
+			}
+			
+		}
+		
 		public var lastRearGuardSlot:int=2;
 		
 		public function setFootstepThreshold(val:Number):void {
@@ -1001,6 +1056,8 @@ class Person extends Sprite {
 		
 		alpha = name != "leader" ? 0: .2 ;
 	//	visible = name === "leader";
+	
+	visible = false;
 	}
 	
 	public function moveToTargetLocation(targetX:Number, targetY:Number):void {
