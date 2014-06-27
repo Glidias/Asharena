@@ -277,12 +277,11 @@ package recast
 			updateWorldThreshold *= updateWorldThreshold;
 			
 			
+			
 			//partyStartup.targetSpringRest = Startup.LARGE_RADIUS *2;
 			partyStartup.setFootstepThreshold(2);
-			partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableA, .15*.5));
-			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableB, .15*.5));
-			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableC, .15*.5));
-			//partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableD, .15*.5));
+			partyStartup.simulation.addForce(_arrowsKeys = new ArrowKeys(partyStartup.movableA, .15*.5));
+			
 			
 			partyStartup.movableA.x = 0;
 			partyStartup.movableA.y = 0;
@@ -453,7 +452,10 @@ package recast
 				recenter();
 			}
 			else if (e.keyCode === Keyboard.P) {
-				throw new Error(numChildren);
+			//	throw new Error(numChildren);
+				partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableB, .15*.5));
+				partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableC, .15*.5));
+				partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableD, .15*.5));
 			}
 			else if (e.keyCode === Keyboard.NUMBER_1) {
 				partyStartup.setSpreadMode(0);
@@ -783,12 +785,13 @@ package recast
 		private var _lastLeaderX:Number = 0;
 		private var _lastLeaderY:Number = 0;
 		private var _debugField:TextField;
+		private var _arrowsKeys:ArrowKeys;
 		
 		
 		private function onEnterFrame(e:Event):void 
 		{
 			
-		
+		//	if (!_arrowsKeys.gotMovement()) return;
 			
 			partyStartup.tickPreview();
 		

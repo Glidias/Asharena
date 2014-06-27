@@ -53,6 +53,10 @@ package de.popforge.revive.forces
 			movable.velocity.y += force.y;
 		}
 		
+		public function gotMovement():Boolean {
+			return PopKeys.isDown(Keyboard.UP) || PopKeys.isDown(Keyboard.DOWN)  || PopKeys.isDown(Keyboard.LEFT) || PopKeys.isDown(Keyboard.RIGHT);
+		}
+		
 		/* INTERFACE de.popforge.revive.display.IDrawAble */
 		
 		public function draw(g:Graphics):void 

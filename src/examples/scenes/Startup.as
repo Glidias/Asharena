@@ -13,6 +13,7 @@ package examples.scenes
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.geom.Point;
+	import flash.geom.Vector3D;
 	import flash.ui.Keyboard;
 
 	/*  
@@ -72,7 +73,6 @@ package examples.scenes
 		private var personC:Person = new Person(MovableChar.COLORS[2], "person c", SMALL_RADIUS);
 		private var personD:Person = new Person(MovableChar.COLORS[3], "person d", SMALL_RADIUS);
 		private var footing:int = new Vector.<int>(3, true);
-		private var allRanks:Array = [];
 		
 		public function Startup()
 		{
@@ -296,7 +296,7 @@ package examples.scenes
 	
 		private var freqFootsteps:int = 0;
 		public var footsteps:Vector.<Number> = new Vector.<Number>();
-		
+		public var snakeFootsteps:Vector.<Number> = new Vector.<Number>();
 		
 		public function tick():void {
 			onEnterFrame(null);
@@ -534,7 +534,7 @@ package examples.scenes
 			*/
 			
 			i = fixedSprings.length;
-				while (--i > -1) {f
+				while (--i > -1) {
 					
 						
 						fixedSprings[i].x = movableA.x;
@@ -543,6 +543,7 @@ package examples.scenes
 					
 				}
 				
+				var lastForwardW:Number = forwardVector.w;
 				
 				
 					// now, determine pos standing offsets for memberCircles, based off current formation links
@@ -572,6 +573,11 @@ package examples.scenes
 						lastRearGuardSlot = rearGuard.slot;
 						rearGuard.slot = 2;
 						
+						forwardVector.x = movableA.x - rearGuard.x;
+						forwardVector.y = movableA.y - rearGuard.y;
+						forwardVector.normalize();
+						forwardVector.w = 0;
+						
 					}
 					else if ( f == 2) {  // a column is used, determine rearguard only
 						_formationState = 2;
@@ -579,6 +585,11 @@ package examples.scenes
 						rearGuard = (movableD.following > 0 && memberCircleLookup[movableD.following].following > 0 ? movableD : movableC.following > 0 &&  memberCircleLookup[movableC.following].following > 0 ? movableC : movableB)
 						lastRearGuardSlot = rearGuard.slot;
 						rearGuard.slot = 2;
+						
+						forwardVector.x = movableA.x - rearGuard.x;
+						forwardVector.y = movableA.y - rearGuard.y;
+						forwardVector.normalize();
+						forwardVector.w = 0;
 						
 					}
 				
@@ -592,8 +603,47 @@ package examples.scenes
 			//
 			
 			
+			if (forwardVector.w == 0) {
+				mShape.graphics.lineStyle(1, 0xFF0000, 1);
+				mShape.graphics.moveTo(movableA.x, movableA.y);
+				mShape.graphics.lineTo(movableA.x + forwardVector.x * 32, movableA.y + forwardVector.y * 32);
+				
+				
+				//if (forwardVector.x+movableA
+				// TODO: optimize this once done
+				lastX = snakeFootsteps[snakeFootsteps.length - 2];
+				lastY = snakeFootsteps[snakeFootsteps.length - 1];
+				lastX  = movableA.x - lastX;
+				lastY  = movableA.y - lastY;
+				lastX *= lastX;
+				lastY *= lastY;
+				
+				testVec.x = ( movableA.x - lastX) / Math.sqrt(lastX + lastY);
+				testVec.y = ( movableA.y - lastY) / Math.sqrt(lastX + lastY);
+				
+				if ( (lastForwardW==-1 || testVec.dotProduct(forwardVector) >= .7) && lastX + lastY > footStepThreshold) {
+					snakeFootsteps.push(movableA.x);
+					snakeFootsteps.push(movableA.y);
+				}
+				
+				var limit:int = snakeFootsteps.length  - (16)*2;
+				if (limit < 1) limit = 1;
+				mShape.graphics.lineStyle(null, 0, 0);
+				mShape.graphics.beginFill(0xFF0000, 1);
+				for (i = snakeFootsteps.length - 1; i >= limit;  i-=2) {
+					mShape.graphics.drawCircle( snakeFootsteps[i-1], snakeFootsteps[i], .2)
+				}
+			}
+			
+			
+						
+			
+			
 			// check for temporary BCD springs that can afford to be removed (ie. completed)
 		}
+		
+		
+		private var testVec:Vector3D = new Vector3D();
 		
 		private function resolveTriFormation():void 
 		{
@@ -732,6 +782,7 @@ package examples.scenes
 					movableB.slot = -1;
 					movableC.slot = -1;
 					movableD.slot = -1;
+					forwardVector.w = -1;
 					return;
 			}
 			
@@ -814,10 +865,20 @@ package examples.scenes
 				
 			}
 			
+			
+			
 			//flanker1.offsetX =0; 	flanker1.offsetY =0;
 			//flanker2.offsetX = 0; flanker2.offsetY = 0;
+			forwardVector.x = movableA.x - rearGuard.x;
+			forwardVector.y = movableA.y - rearGuard.y;
+			forwardVector.normalize();
+			forwardVector.w = 0;
 			
+
+				
 		}
+		
+		private var forwardVector:Vector3D = new Vector3D();
 		
 		private var testLeader:MovableCircle = new MovableCircle(1, 1, 1);
 		
@@ -992,6 +1053,8 @@ package examples.scenes
 		footsteps.length = 0;
 		footsteps[0] = movableA.x;
 		footsteps[1] = movableA.y;
+		snakeFootsteps[0] = movableA.x;
+		snakeFootsteps[1] = movableA.y;
 		
 		// or update all footsteps
 		
