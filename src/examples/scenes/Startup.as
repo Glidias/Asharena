@@ -296,7 +296,7 @@ package examples.scenes
 	
 		private var freqFootsteps:int = 0;
 		public var footsteps:Vector.<Number> = new Vector.<Number>();
-		public var snakeFootsteps:Vector.<Number> = new Vector.<Number>();
+	
 		
 		public function tick():void {
 			onEnterFrame(null);
@@ -320,6 +320,10 @@ package examples.scenes
 			
 			
 			if (enableFootsteps) {
+				if (footsteps.length == 0) {
+					footsteps[0] = movableA.x;
+					footsteps[1] = movableA.y;
+				}
 				var lastX:Number = footsteps[footsteps.length - 2];
 				var lastY:Number = footsteps[footsteps.length - 1];
 				lastX  = movableA.x - lastX;
@@ -608,7 +612,7 @@ package examples.scenes
 				mShape.graphics.moveTo(movableA.x, movableA.y);
 				mShape.graphics.lineTo(movableA.x + forwardVector.x * 32, movableA.y + forwardVector.y * 32);
 				
-				
+				/*
 				//if (forwardVector.x+movableA
 				// TODO: optimize this once done
 				lastX = snakeFootsteps[snakeFootsteps.length - 2];
@@ -618,21 +622,27 @@ package examples.scenes
 				lastX *= lastX;
 				lastY *= lastY;
 				
-				testVec.x = ( movableA.x - lastX) / Math.sqrt(lastX + lastY);
-				testVec.y = ( movableA.y - lastY) / Math.sqrt(lastX + lastY);
+				testVec.x = ( movableA.x - snakeFootsteps[snakeFootsteps.length - 2]) / Math.sqrt(lastX + lastY);
+				testVec.y = ( movableA.y - snakeFootsteps[snakeFootsteps.length - 1]) / Math.sqrt(lastX + lastY);
 				
-				if ( (lastForwardW==-1 || testVec.dotProduct(forwardVector) >= .7) && lastX + lastY > footStepThreshold) {
+				if ( (lastForwardW==-1 || (testVec.dotProduct(forwardVector)) >= .8) && lastX + lastY > footStepThreshold) {
 					snakeFootsteps.push(movableA.x);
 					snakeFootsteps.push(movableA.y);
 				}
+				*/
+				var snakeFootsteps:Vector.<Number>  = footsteps;
 				
 				var limit:int = snakeFootsteps.length  - (16)*2;
 				if (limit < 1) limit = 1;
-				mShape.graphics.lineStyle(null, 0, 0);
+				mShape.graphics.lineStyle(undefined, 0, 0);
 				mShape.graphics.beginFill(0xFF0000, 1);
 				for (i = snakeFootsteps.length - 1; i >= limit;  i-=2) {
 					mShape.graphics.drawCircle( snakeFootsteps[i-1], snakeFootsteps[i], .2)
 				}
+			}
+			else {
+				
+				footsteps.length = 0;
 			}
 			
 			
@@ -1053,8 +1063,8 @@ package examples.scenes
 		footsteps.length = 0;
 		footsteps[0] = movableA.x;
 		footsteps[1] = movableA.y;
-		snakeFootsteps[0] = movableA.x;
-		snakeFootsteps[1] = movableA.y;
+		//snakeFootsteps[0] = movableA.x;
+		//snakeFootsteps[1] = movableA.y;
 		
 		// or update all footsteps
 		
