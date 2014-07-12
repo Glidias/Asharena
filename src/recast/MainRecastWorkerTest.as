@@ -281,7 +281,7 @@ package recast
 			//partyStartup.targetSpringRest = Startup.LARGE_RADIUS *2;
 			partyStartup.setFootstepThreshold(2);
 			partyStartup.simulation.addForce(_arrowsKeys = new ArrowKeys(partyStartup.movableA, .15*.5));
-			
+			lockAngleForces = [new ArrowKeys(partyStartup.movableB, .15*.5), new ArrowKeys(partyStartup.movableC, .15*.5), new ArrowKeys(partyStartup.movableD, .15*.5)]
 			
 			partyStartup.movableA.x = 0;
 			partyStartup.movableA.y = 0;
@@ -446,6 +446,8 @@ package recast
 			//child.y = y;
 		}
 		
+		public var _lockAngleToggle:Boolean = false;
+		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
 			if (e.keyCode === Keyboard.U) {
@@ -453,9 +455,7 @@ package recast
 			}
 			else if (e.keyCode === Keyboard.P) {
 			//	throw new Error(numChildren);
-				partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableB, .15*.5));
-				partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableC, .15*.5));
-				partyStartup.simulation.addForce(new ArrowKeys(partyStartup.movableD, .15*.5));
+				toggleFixedAngle();
 			}
 			else if (e.keyCode === Keyboard.NUMBER_1) {
 				partyStartup.setSpreadMode(0);
@@ -465,6 +465,25 @@ package recast
 			}
 			else if (e.keyCode === Keyboard.NUMBER_3) {
 				partyStartup.setSpreadMode(2);
+			}
+		}
+		
+		private var lockAngleForces:Array;
+		
+		public function toggleFixedAngle():void 
+		{
+			if (_lockAngleToggle) {
+			
+				partyStartup.simulation.removeForce(lockAngleForces[0]);
+				partyStartup.simulation.removeForce(lockAngleForces[1]);
+				partyStartup.simulation.removeForce(lockAngleForces[2]);
+			
+			}
+			_lockAngleToggle = !_lockAngleToggle;
+			if (_lockAngleToggle) {
+				partyStartup.simulation.addForce(lockAngleForces[0]);
+				partyStartup.simulation.addForce(lockAngleForces[1]);
+				partyStartup.simulation.addForce(lockAngleForces[2]);
 			}
 		}
 		
@@ -823,7 +842,6 @@ package recast
 				lastLeaderX = partyStartup.movableA.x;
 				lastLeaderY = partyStartup.movableA.y;
 				onLeaderFootstep();
-				
 			
 			}
 			

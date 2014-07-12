@@ -17,62 +17,37 @@ package examples.scenes
 	import flash.ui.Keyboard;
 
 	/*  
-	 
-	ROADMAP:
-	
-	PHASE 1: Within blob
-	- Test Wedge Followers 3D / 2D
-	
-	  -  unlink members that do not have a footing ( determine this with tribit check against bitgrid and fake-slide them down by trinormal,  (or with actual bot movement) until they've halted their velocity (ie. exited the triangle or blocked) and so the force can be removed.
-			Do not re-add the force in the next frame, unless he ventures into another new triangle.
-	   - disable foosteps when leader has no footing (eg. sliding off slope), or continue to add foosteps there..not sure which is better..
-	   but the latter approach would mean members would "foolishly" follow leader and slide down slope with him. Perhaps,
-	   they need to consider the extent of the "fall" and determine if it's wise to slide down with him, or not fall off at all.	 
-		  
-		What happens if they can't find foosteps towards leader?
-		- terrain edge pathfinding as a final resort if footsteps cannot be found. Simply use heightmap to determine traversability of edge slopes.
-			- Cop out teleport. So long as you look away from follower, follower will teleport behind you when you turn around..
-			 (or , if this case  is rare,.....consider losing a command point to move follower as well..assuming he was genuinely lost, especially in cases where there is no clear safe path for him to follow leader)
-	
-		__________________
-	To do the above:
-			 	- Leader position is a fixed spring position. Create blocking triangles for all members (ie.sloping triangles), when trying to find path-find towards leader. When a leader enters a steep triangle, no footstep is recorded, and since he's inside a solid tri-block, and so links will automatically be broken. 
-		- All members should temporarily halt at this time, and avoid even linking to the next leader's foostep.
-		- Once leader regains a footing, attempt to resolve this by regular following procedures, or pathfinding if regular following procedures fail.  Realistically, members should be able to visually see leader in order to execute pathfinding to his location, and the route towards the leader should be something his trekking skill can handle. Otherwise , a command point is effectivley lost having to micromanage that member that was "lost". If the sliding down is deemed "safe", a regular following procedure can be used by disabling the triangle for members wishing to slide down, running straight towards the leader, ignoring the triangle. 
-		- At anytime where no striaght route towards leader can be found, have to use pathfinding.
-	
-	 
-	- Do up follower spread out recovery check and resolution. Test 2D/3D.
-	   -Clean up foostep memory
-	- Do up Column followers lock
-	- Do up strict circle formation.
-	
-	PHASE 2: Outside Blob
-	- Do up strict block formation with timed rotation mechanics.
-	- Extend followers outside blob for Column (should be trivial)
-	- Extend followers outside blob for Wedge (need to test this.).
-	
-	NOTES:
-	____________	
-	Within Blob: ( <= 4-man team)
-	1) Strict Circle formation (fully rotatable formation with minimal/zero rotation time penalty)
-	2) Wedge followers (vanguard-leading, will still use columns/semi-columns in certain areas)
-	3) Column followers (fixed column with either vanguard/rearguard leading movement)
-	____________
-	Outside Blob ( > 4-men)
-	1) Strict Block Formation
-	2) Wedge follower extension (vanguard leading, will still use columns/semi-columns in certain areas)
-	3) Column followers extension (fixed column with either vanguard/rearguard leading movement)
+		2D Party/squad formation utility control gizmo
 	*/
 			
 	public class Startup extends SceneContainer
 	{
 		
 		private var personA:Person = new Person(MovableChar.COLORS[0], "leader", SMALL_RADIUS);
-		private var personB:Person = new Person(MovableChar.COLORS[1], "person b", SMALL_RADIUS);
-		private var personC:Person = new Person(MovableChar.COLORS[2], "person c", SMALL_RADIUS);
+		private var personB:Person = new Person(MovableChar.COLORS[1], "person b", SMALL_RADIUS);	
+		private var personC:Person = new Person(MovableChar.COLORS[2], "person c", SMALL_RADIUS)
 		private var personD:Person = new Person(MovableChar.COLORS[3], "person d", SMALL_RADIUS);
+
+		
 		private var footing:int = new Vector.<int>(3, true);
+		
+		
+		// Formation fill-order schemes:
+		// FORMATION_DIAMOND_WEDGE :: Diamond (n mid determined per add), Frontal Wedge, Filled Wedge (Delta)
+		// FORMATION_FILE :: Column-Snake, Column-Straight, Line, Phalanx-Balanced(n front), Phalanx-Left(n front), Phalanx-Right(n front)
+		// FORMATION_VEE :: Frontal Vee (Inverse frontal wedge), Filled Vee (Cone/Inverse-Delta)
+		
+		// Formation projection shape schemes
+		public static const FORMATION_DIAMOND_WEDGE:int = 0;
+		public static const FORMATION_FILE:int = 1;
+		public static const FORMATION_VEE:int = 2;
+		public var formationShape:int = FORMATION_DIAMOND_WEDGE;  
+		public var columnMembers:Vector.<Number> = new Vector.<Number>();  // for >4 members
+		public var columnMemberPositions:Vector.<Number> = new Vector.<Number>();
+		public var columnBias:Boolean = false;  // whether formation should be biased to conforming to fall-back column vs conforming to actual formation positions
+
+
+		
 		
 		public function Startup()
 		{
@@ -291,6 +266,9 @@ package examples.scenes
 			//if (forcer.restLength != (forcer.targetLength >= 0 ? forcer.targetLength : for
 			return force;
 		}
+		
+		
+	
 		
 		
 	
@@ -721,8 +699,8 @@ package examples.scenes
 				dx=movableA.x - movableD.x;
 				dy=movableA.y - movableD.y;
 				temp = dx;
-			dx = -dy;
-			dy = temp;
+				dx = -dy;
+				dy = temp;
 			
 				dx2 = movableC.x - movableD.x;
 				dy2 = movableC.y - movableD.y;
@@ -748,6 +726,7 @@ package examples.scenes
 					movableB.slot = -1;
 					movableC.slot = -1;
 					movableD.slot = -1;
+					//forwardVector.w = -2;
 				
 				//throw new Error("numflanks:"+numFlankers);
 				//if (numFlankers == 0) throw new Error("NO FLANKERS");
@@ -798,7 +777,27 @@ package examples.scenes
 			
 			rearGuard.slot = 2;
 			
+			/*
+			// fix, let flanker wingers always look for nearest circle slot
+			dx = memberCharLookup[flanker1.slot].x - flanker1.x;
+			dy = memberCharLookup[flanker1.slot].y - flanker1.y;
+			dx = dx * dx + dy * dy;
+			
+			
+			dx2 = memberCharLookup[flanker2.slot].x - flanker1.x;
+			dy2 = memberCharLookup[flanker2.slot].y - flanker1.y;
+			dy = dx2 * dx2 + dy2 * dy2;
+			
+			if (dx < dy) {
+			//	var tempSlot:int = flanker1.slot;
+				//flanker1.slot = flanker2.slot;
+			//	flanker2.slot = tempSlot;
+			}
+			*/
+			
 			// else  flankers form an acute angle that needs some spreading out.
+			
+			
 			
 			// move rearguard back
 			rearGuard.offsetX = rearGuard.x - movableA.x;
@@ -828,10 +827,7 @@ package examples.scenes
 			flanker1.offsetX *= flanker1.flankScale; flanker1.offsetY *= flanker1.flankScale;
 			flanker2.offsetX *= flanker2.flankScale; flanker2.offsetY *= flanker2.flankScale;
 			
-	
-		
-			
-			
+
 			var intersect:DynamicIntersection;
 		
 			testCircle.x = flanker1.x;
@@ -876,13 +872,63 @@ package examples.scenes
 			}
 			
 			
-			
+
 			//flanker1.offsetX =0; 	flanker1.offsetY =0;
 			//flanker2.offsetX = 0; flanker2.offsetY = 0;
 			forwardVector.x = movableA.x - rearGuard.x;
 			forwardVector.y = movableA.y - rearGuard.y;
 			forwardVector.normalize();
 			forwardVector.w = 0;
+			
+			if (formationShape == FORMATION_FILE) {  // move up flanker offset positions along formation direction
+				//temp = forwardVector.x;
+				//forwardVector.x = -forwardVector.y;
+				//forwardVector.y = temp;
+				
+				// dotProduct of forward vector over
+				dx = movableA.x - flanker1.x - flanker1.offsetX;
+				dy = movableA.y - flanker1.y - flanker1.offsetY;
+				temp = dx * forwardVector.x + dy * forwardVector.y;
+				//dx2 = flanker1.offsetX  * forwardVector.x + flanker1.offsetY * forwardVector.y;
+				//temp =temp / dx2;
+				flanker1.offsetX += temp * forwardVector.x;
+				flanker1.offsetY += temp * forwardVector.y;
+				
+				
+				dx = movableA.x - flanker2.x - flanker2.offsetX;
+				dy = movableA.y - flanker2.y - flanker2.offsetY;
+				temp = dx * forwardVector.x + dy * forwardVector.y;
+				
+				flanker2.offsetX += temp * forwardVector.x;
+				flanker2.offsetY += temp * forwardVector.y;
+				
+				rearGuard.offsetX = 0;
+				rearGuard.offsetY = 0;
+			
+			}
+			else if (formationShape == FORMATION_VEE) {  // project forward flankers
+				dx = movableA.x - flanker1.x - flanker1.offsetX;
+				dy = movableA.y - flanker1.y - flanker1.offsetY;
+				temp = dx * forwardVector.x + dy * forwardVector.y;
+				temp *= 2;
+				//dx2 = flanker1.offsetX  * forwardVector.x + flanker1.offsetY * forwardVector.y;
+				//temp =temp / dx2;
+				flanker1.offsetX += temp * forwardVector.x;
+				flanker1.offsetY += temp * forwardVector.y;
+				
+				
+				dx = movableA.x - flanker2.x - flanker2.offsetX;
+				dy = movableA.y - flanker2.y - flanker2.offsetY;
+				temp = dx * forwardVector.x + dy * forwardVector.y;
+				temp *= 2;
+				
+				flanker2.offsetX += temp * forwardVector.x;
+				flanker2.offsetY += temp * forwardVector.y;
+				
+				rearGuard.offsetX = 0;
+				rearGuard.offsetY = 0;
+				
+			}
 			
 
 				
@@ -1060,15 +1106,15 @@ package examples.scenes
 			
 			
 		// todo: shorten footstep length only, but this can be done preioduically...//ny existing footstep springs...
-		footsteps.length = 0;
-		footsteps[0] = movableA.x;
-		footsteps[1] = movableA.y;
+		//footsteps.length = 0;
+		//footsteps[0] = movableA.x;
+		//footsteps[1] = movableA.y;
 		//snakeFootsteps[0] = movableA.x;
 		//snakeFootsteps[1] = movableA.y;
 		
 		// or update all footsteps
 		
-		/*
+		///*
 		i = footsteps.length  - 1;
 		while ( i > 0) {
 			footsteps[i] += y;
@@ -1076,7 +1122,7 @@ package examples.scenes
 
 			i -= 2;
 		}
-		*/
+	//	*/
 			
 			
 			
@@ -1153,3 +1199,4 @@ class Person extends Sprite {
 	}
 	
 }
+
