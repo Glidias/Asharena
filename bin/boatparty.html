@@ -70,7 +70,7 @@
 		}
 		
 		function getPowerIndex(val) {
-			return val === 3 ? 2 : val === 10 ? 0 : val === 5 ? 1 : val === 1 ?  3 : -1;
+			return val === 3 ? 2 : val === 10 ? 0 : val === 5 ? 1 : val === 0 ?  3 : -1;
 		}
 		
 		function onPartyMemberClick() {
@@ -253,7 +253,7 @@
 			<h3>Zeta (3)↓</h3>
 			<li data-p="3">Berserker</li>	
 			<h3>Beta (1)↓</h3>
-			<li data-p="1">Gestir</li>
+			<li data-p="0">Gestir</li>
 			<a rel="c">50</a>
 			<a rel="p">30</a>
 			<a rel="g">20</a>
@@ -267,7 +267,7 @@
 			<h3>Omega (5)↓</h3>
 			<li data-p="5">Sharpshooter</li>	
 			<h3>Beta (1)↓</h3>
-			<li data-p="1">Skirmisher</li>
+			<li data-p="0">Skirmisher</li>
 			<a rel="v">45</a>
 			<a rel="c">45</a>
 			<a rel="g">10</a>
@@ -278,8 +278,8 @@
 			<h3>Omega (5)↓</h3>
 			<li data-p="5">Knight</li>
 			<h3>Beta (1)↓</h3>
-			<li data-p="1">Man-At-Arms</li>
-			<li data-p="1">Archer</li>	
+			<li data-p="0">Man-At-Arms</li>
+			<li data-p="0">Archer</li>	
 			<a rel="v">45</a>
 			<a rel="p">30</a>
 			<a rel="g">30</a>
@@ -293,7 +293,7 @@
 			<h3>Omega (5)↓</h3>
 			<li data-p="5">Samnian</li>
 			<h3>Beta (1)↓</h3>
-			<li data-p="1">Slavus</li>
+			<li data-p="0">Slavus</li>
 			<a rel="c">50</a>
 			<a rel="p">30</a>
 			<a rel="v">20</a>
@@ -368,7 +368,7 @@
 	
 		<li><b>Alpha -</b> 10 command points per person. Such a person can command up to 10 men of varying classes. Alphas dominate/coerce Betas into doing their will due to their standing/position. Alphas don't get along well with other Alphas due to their strong personalities, regardless of similar ideals. The only thing they might share in common is their shared interest in dominating Betas. They appear in the smallest of numbers.</li>
 
-<li><b>Beta -</b> 1 command point per person. Such a person Can only command up to 17 men of the same class and division so long as no alphas/omegas are around due to good rapport/similarity among themselves. They are basically the masses. They look similar to other regular crowd-based NPCs. When it comes to raw manpower, Beta is a necessity.</li>
+<li><b>Beta -</b> 0 command point per person. Such a person Can only command up to 17 men of the same class and division so long as no alphas/omegas are around due to good rapport/similarity among themselves. They are basically the masses. They look similar to other regular crowd-based NPCs. When it comes to raw manpower, Beta is a necessity.</li>
 
 <li><b>Omega -</b> 5 command points per person. Such a person can command up to 4 men of varying classes. Omegas are amiable, charismatic, and lead and convince betas through rhetoric and ideas. Omegas tend to submit to Alphas, but can often not get along well with other Omegas of differing ideas. They appear in small to medium numbers.</li>
 
@@ -384,3 +384,76 @@
 	</div>
 </body>
 </html>
+
+<!--[CDATA[
+PATHFINDING/Crowd-control engine approaches
+1) Revive Formation & Recast/Detour Pathfinding/Physics
+2) Revive Formation/Pathfinding/Physics
+3) Revive Formation & Little Pathfinding/Physics+ReviveEnv
+
+_______________
+
+Valk Individual/Men MU
+
+Turn based system:
+
+For any number of men. (With CP)
+0) Valk individual MU, 1,2,3
+1) Valk Men MU: 1,2,3   .... Valk Men No MU 
+
+For 4-6 men. 4 men reccomended. (No CP) Good for recon, light skirmish missions.
+2) Queue based shining ark mu individuals: 1,2,3
+3) Queue based divinity tu individuals: 1,2,3  ( TU onwards from here)
+4) Fluid Free-switch grid tu individuals: 1*,2,3 (Grid onwards from here)
+5) Queue based grid tu individuals: 1*,2,3
+
+* Not available with henchmen
+Henchmen* units usage of TUs are based off:
+- Union movable region from leader chain  - henchmen must regroup into zone before leader moves, stragglers will use individual TUs and highest among them be represpenseative of unit TUs being used. Also this doesn't work with reducing region based off enemy reaction fire.Just point and click prefered facing direction to move and attack if possible, once done.
+- Highest among them  - for best cohesiveness, but woudl result in a full stop with no recovery. 
+- Average among them -for best cohesiveness, but woudl result in a full stop with no recovery
+- Individuals TUs - may result in halter/blockers and screwed up formations with no recovery
+- Individual movable region 2,3 - may be difficult to keep track, may result in halters/blockers which screw up formations
+
+For any number of men.
+(With CP used for orders)
+6) CP RTS TU: 1,2,3
+7) CP RTS Grid: 2,3
+
+_________________________________-
+
+Start character generation:
+
+4-Men command slots 
+
+[], [], [], []
+1) Select your men into Alpha, Gamma, Beta sets, attempting to ensure boat party is harmonoius.
+For 4 men implementations:
+2) Choose any beta soldier you wish to promote to core party commander slots if there's any remaining. There can only be 1 party commander slot for each beta type.
+3) You then assign any remaining men under their command as followers by default . 
+4) You're done! Stats and personality will be generated for men in these 4 slots. 
+
+
+Asharena:
+
+PROGRESSION:
+1) Valk Men MU only up to 4 men in party follower and boatparty (>=4 men party campaign), Plain 4 men without henchmen (4 men party campaign)
+- Men MU can support the 4 men combat party following + Linked attack (even without followers)
+    - Men MU Support 4 men  for exploration mode and move seperately within screen distance from leader.
+    - Go up against, with disorganised henchmen without formations using Union fill.
+    - Multi 4 extensions with Startup they can move seperately or as group fireteams.
+      (So this means up to 13 men on the hunting party in Brothers in Arms style ala Filthy 13) COmmanding up to 4 groups (of 3 men each) is supported.
+_______________________
+
+- Test simple henchmen Union region fill with waypoints
+- else use highest among them or individual TUs MOB (without formations)
+2) Valk Men MU or 4 men with henchmen  (allow formations of >4 men)  (>4 men army campaign)
+
+
+Potentially disorganised henchmen:
+--------------------------------
+Skirmisher
+Slavus
+Archer (modified)
+Huscarl/Gestir (modified)
+-->
