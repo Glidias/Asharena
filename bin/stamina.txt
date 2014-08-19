@@ -1,0 +1,34 @@
+7 seconds worth of time stamina for fit men, just like 7 seconds worth of movement points per CP.
+
+For a fresh person, here are the stats:
+
+Running: 1/8 -------- 56 seconds before being exhausted in the turn. (terrain incline will incur penalties up to 1/8 to 1/4)
+Dashing: 1/2 ---- 14 seconds before being exhausted in the turn. (terrain incline will incur penalitites from 1/2 to 1)
+Energy Used: ~ 1/2 of time taken for action
+11 continous swings with an average-weighted weapon.
+17 continuous thrusts with an average-weighted weapon. 
+2 running jumps
+4 steady climbing jumps
+_________________________________
+
+Every turn phase provides 2 seconds worth stamina. (7 / 3 = 2.3333 ~ 2 *2 = 4)
+This means +4 seconds worth of time stamina for either one of the following:
+2 seconds worth of dashing.
+32 seconds worth of running.
+3 swing attacks with a average-weighted weapon.
+5 thrusting attacks with a average-weighted weapon.
+until being exhausted again. (ie. if you were exhausted in the previous turn)
+
+
+The running men icon at stamina bar will predict/indicate the stamina weight being used.
+
+When you get tired...You can only move in Cautious mode (with either one of the 3 labels below)
+Conserving Energy! (You have reached your action cap limit of >2 actions..)
+Fatiqued! (You have reached your action cap limit of only 1 or 2 actions left before being exhausted)
+Exhausted! (You have zero energy left and can only walk slowly)
+
+In real-time ticking, a fit person recovers stamina according to the (time passed/3). This means 21 seconds before recovering back stamina fully again. You can choose to deliberately rest while idle or walk around slowly to try and recover back stamina until you feel ready to run/sprint again. Note that when in Exploring Mode, the weight might be tweaked accordingly for Sprinting (1/4 possibly) and running does not use up stamina to stimulate free-exploration (ie. running is treated as Jogging) even thought he speeds are the same, however, you will only have 4 seconds worth of max stamina in your bar as tactical conservation. This means only waiting  up to 12 seconds before recovering back stamina fully. Since only 4 seconds worth of stamina is maximally available while exploring, you will always conserve at least 3 seconds worth of stamina for combat situations.
+
+This is a basic outline of stamina. Usually, stamina penalities for sprinting/Jogging accordingly might be adjusted accordingly by halves depending on the situation. For now, the feature is there to balance the use of sprinting vs running in combat situations.
+
+Weightier stamina usage penalties are used over classes that attempt to carry weapons/load that are too heavy for them, and can act as a natural way to restrict the effectiveness of certain individuals unfit for certain items/load. Special manuevers like tumbling, rolling and jumping will also incur stamina costs accordingly.
