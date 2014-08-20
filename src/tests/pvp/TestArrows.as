@@ -9,16 +9,23 @@ package tests.pvp
 	import alternativa.a3d.objects.UVMeshSet;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
+	import alternativa.engine3d.loaders.ParserA3D;
 	import alternativa.engine3d.materials.FillMaterial;
+	import alternativa.engine3d.materials.Material;
+	import alternativa.engine3d.materials.StandardMaterial;
+	import alternativa.engine3d.materials.TextureMaterial;
+	import alternativa.engine3d.materials.VertexLightTextureMaterial;
 	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
+	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternterrain.CollidableMesh;
 	import ash.core.Entity;
 	import ash.tick.FrameTickProvider;
 	import com.greensock.TweenLite;
 	import components.Pos;
+	import flash.display.Bitmap;
 	import flash.display.MovieClip;
 	import flash.geom.Vector3D;
 	import systems.collisions.CollidableNode;
@@ -51,6 +58,13 @@ package tests.pvp
 		private var collisionScene:Object3D;
 		private var arrows:ArrowLobMeshSet2;
 		
+		[Embed(source="../../../bin/assets/models/pvk/projectiles/arrow/model.a3d", mimeType="application/octet-stream")]
+		private var MODEL:Class;
+		
+		[Embed(source="../../../bin/assets/models/pvk/projectiles/arrow/texture.jpg")]
+		private var TEXTURE:Class;
+		
+		
 		public function TestArrows() 
 		{
 			haxe.initSwc(this);
@@ -77,7 +91,7 @@ package tests.pvp
 		
 		private function setupViewSettings():void 
 		{
-			_template3D.viewBackgroundColor = 0xDDDDDD;
+			_template3D.viewBackgroundColor = 0xEEEEEE;
 		}
 		
 		private function setupEnvironment():void 
@@ -88,8 +102,14 @@ package tests.pvp
 			//arenaSpawner.addCrossStage(SpawnerBundle.context3D);
 			SpawnerBundle.uploadResources(planeFloor.getResources(true, null));
 			
-			var box:Box = new Box(26, 3, 3, 1, 1, 1, false, null);
-			arrows = new ArrowLobMeshSet2(box.geometry, new FillMaterial(0xFF0000, 1));
+			//var box:Box = new Box(26, 3, 3, 1, 1, 1, false, null);
+			var parser:ParserA3D = new ParserA3D();
+			parser.parse(new MODEL());
+		
+			var box:Mesh =   parser.objects[1] as Mesh || parser.objects[0] as Mesh;
+			
+			var mat:Material  =new TextureMaterial( new BitmapTextureResource(new TEXTURE().bitmapData) ) ;
+			arrows = new ArrowLobMeshSet2(box.geometry, mat);
 			//arrows.z = 1333;
 			arrows.setGravity(266*3);
 			startPosition = new Vector3D(0,0,0);
