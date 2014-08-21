@@ -1,92 +1,125 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <data>
-	<!-- Lower body animations -->
-	<anims loop="true" suffix="lowerbody">
-		<a f="1-25" id="stand_walkforward" /> <!-- walk lower body, ref -->
-		<!--<a f="" id="stand_runforward" /> -->
-		<a f="1-25" id="stand_walkback" />  <!-- walk -->
-		<a f="1-25" id="stand_runback" />   <!-- walk, same as above -->
-		<!--
-		<a f="" id="stand_moveleft" />
-		<a f="" id="stand_moveright" />
-		-->
-		
-		<a f="26-51" id="combat_walkforward" />    <!-- combat_walk -->
-		<a f="52-74" id="combat_runforward" />  <!-- run -->
-		<a f="26-51" id="combat_walkback" />  <!-- combat_walk -->
-		<a f="26-51" id="combat_runback" />  <!--  combat_walk , same as above -->
-		<a f="75-115" id="combat_moveleft" />  <!-- strafeleft -->
-		<a f="116-156" id="combat_moveright" /> <!-- straferight -->
-		
-		<a f="157-173" id="crouch_walkforward" /> <!-- crawl -->
-		<a f="157-173" id="crouch_runforward" />  <!-- crawl, same as above-->
-		<a f="174-190" id="crouch_walkback" /> <!-- crouch_back -->
-		<a f="174-190" id="crouch_runback" />   <!-- crouch_back, same as above -->
-		<a f="191-207" id="crouch_moveleft" />  <!-- crouch_left -->
-		<a f="208-224" id="crouch_moveright" />  <!-- crouch_right -->
-	</anims>
 	
-	<anims loop="true" suffix="fullbody">
-		<!-- Full body animations -->
-		<a f="1-112" id="standing_idle"  /> 
-		<a f="113-153" id="combat_idle" />
-		<a f="154-194" id="crouch_idle" />
-		<a f="195-220" id="run" />  <!-- run2 : full-body sprinting motion, can also use this range for stand/combat_runforward -->
-		<a f="221-250" id="jog" />   <!-- walk2handed : full-body jogging motion -->
-		<a f="251-292" id="kick" loop="false" />
-		<a f="293-333" id="sandkick" loop="false" />
-		<a f="334-379" id="rubeyes" loop="false" />
-		<a f="380-460" id="cheer" loop="false" />   <!-- may be possible to use this as an upper body animation as well -->
-		<a f="461-471" id="mercy" loop="false" />
-		<a f="472-505" id="jump" loop="false" />
-		<a f="506-542" id="longjump" loop="false" />
-		<a f="543-576" id="tumbleleft" loop="false" />
-		<a f="577-610" id="tumbleright" loop="false" />
-		<a f="611-637" id="swim" />
-		<a f="638-669" id="treadwater" />
-	</anims>
+	<animations>
+		<anims loop="true" suffix="lowerbody">
+			<!-- Lower body animations -->
+			<a f="1-25" id="stand_walkforward" /> <!-- walk lower body, ref -->
+			<!--<a f="" id="stand_runforward" /> -->
+			<a f="1-25" id="stand_walkback" />  <!-- walk -->
+			<a f="1-25" id="stand_runback" />   <!-- walk, same as above -->
+			<!--
+			<a f="" id="stand_moveleft" />
+			<a f="" id="stand_moveright" />
+			-->
+			
+			<a f="26-51" id="combat_walkforward" />    <!-- combat_walk -->
+			<a f="52-74" id="combat_runforward" />  <!-- run -->
+			<a f="26-51" id="combat_walkback" />  <!-- combat_walk -->
+			<a f="26-51" id="combat_runback" />  <!--  combat_walk , same as above -->
+			<a f="75-115" id="combat_moveleft" />  <!-- strafeleft -->
+			<a f="116-156" id="combat_moveright" /> <!-- straferight -->
+			
+			<a f="157-173" id="crouch_walkforward" /> <!-- crawl -->
+			<a f="157-173" id="crouch_runforward" />  <!-- crawl, same as above-->
+			<a f="174-190" id="crouch_walkback" /> <!-- crouch_back -->
+			<a f="174-190" id="crouch_runback" />   <!-- crouch_back, same as above -->
+			<a f="191-207" id="crouch_moveleft" />  <!-- crouch_left -->
+			<a f="208-224" id="crouch_moveright" />  <!-- crouch_right -->
+			
+			<a f="225-255" id="legs_straight" /> 
+			<a f="256-286" id="hunker_crawl" />
+			
+		</anims>
 		
-	<anims loop="true" suffix="upperbody">
-		<!-- Upper body animations -->
-		<a f="1-32" id="ref_melee_hold" />  <!-- ref_aim, without any idle animations -->
-		<a f="33-73" id="ref_melee_aim" /> <!-- ref_combat_aim, also used when in crouched state -->
-		<a f="74-102" id="ref_melee_swing1" loop="false" />
-		<a f="103-131" id="ref_melee_swing2" loop="false" />
-		<a f="132-152" id="ref_melee_thrust1" loop="false" />
-		<a f="153-173" id="ref_melee_thrust2" loop="false" />
-		<a f="174-202" id="ref_melee_pair_swing1" loop="false" />
-		<a f="203-233" id="ref_melee_pair_swing2" loop="false" />
-		<a f="234-264" id="ref_melee_pair_thrust1" loop="false" />
-		<a f="265-295" id="ref_melee_pair_thrust2" loop="false" />
-		<a f="296-316" id="ref_shield_bash1" loop="false" />
-		<a f="317-337" id="ref_shield_bash2" loop="false" />
-		<a f="338-368" id="ref_shield_block1"  />
-		<a f="369-399" id="ref_shield_block2"  />
-	</anims>
-		
+		<anims loop="true" suffix="fullbody">
+			<!-- Full body animations -->
+			<a f="1-112" id="standing_idle"  /> 
+			<a f="113-153" id="combat_idle" />
+			<a f="154-194" id="crouch_idle" />
+			<a f="195-220" id="run" />  <!-- run2 : full-body sprinting motion, can also use this range for stand/combat_runforward -->
+			<a f="221-250" id="jog" />   <!-- walk2handed : full-body jogging motion -->
+			<a f="251-292" id="kick" loop="false" />
+			<a f="293-333" id="sandkick" loop="false" />
+			<a f="334-379" id="rubeyes" loop="false" />
+			<a f="380-460" id="cheer" loop="false" />   <!-- may be possible to use this as an upper body animation as well -->
+			<a f="461-471" id="mercy" loop="false" />
+			<a f="472-505" id="jump" loop="false" />
+			<a f="506-542" id="longjump" loop="false" />
+			<a f="543-576" id="tumbleleft" loop="false" />
+			<a f="577-610" id="tumbleright" loop="false" />
+			<a f="611-637" id="swim" />
+			<a f="638-669" id="treadwater" />
+			<a f="670-700" id="crouch_aim_bow_blend1" loop="false" />
+			<a f="701-731" id="crouch_aim_bow_blend2" loop="false" />
+			<a f="732-742" id="crouch_aim_bow2_blend1" loop="false" />
+			<a f="743-753" id="crouch_aim_bow2_blend2" loop="false" />
+			<a f="754-784" id="crouch_aim_crossbow_blend1" loop="false" />
+			<a f="785-815" id="crouch_aim_crossbow_blend2" loop="false" />
+			<a f="816-846" id="crouch_aim_crossbow2_blend1" loop="false" />
+			<a f="847-877" id="crouch_aim_crossbow2_blend2" loop="false" />
+			
+			
+			
+		</anims>
+			
+		<anims loop="true" suffix="upperbody">
+			<!-- Upper body animations -->
+			<a f="1-32" id="ref_melee_hold" />  <!-- ref_aim, without any idle animations -->
+			<a f="33-73" id="ref_melee_aim" /> <!-- ref_combat_aim, also used when in crouched state -->
+			<a f="74-102" id="ref_melee_swing1" loop="false" />
+			<a f="103-131" id="ref_melee_swing2" loop="false" />
+			<a f="132-152" id="ref_melee_thrust1" loop="false" />
+			<a f="153-173" id="ref_melee_thrust2" loop="false" />
+			<a f="174-202" id="ref_melee_pair_swing1" loop="false" />
+			<a f="203-233" id="ref_melee_pair_swing2" loop="false" />
+			<a f="234-264" id="ref_melee_pair_thrust1" loop="false" />
+			<a f="265-295" id="ref_melee_pair_thrust2" loop="false" />
+			<a f="296-316" id="ref_shield_bash1" loop="false" />
+			<a f="317-337" id="ref_shield_bash2" loop="false" />
+			<a f="338-368" id="ref_shield_block1" loop="false" />
+			<a f="369-399" id="ref_shield_block2" loop="false" />
+			<a f="400-430" id="ref_aim_bow_blend1" loop="false" />
+			<a f="431-461" id="ref_aim_bow_blend2" loop="false"  />
+			<a f="462-487" id="ref_aim_bow2_blend1" loop="false"  />
+			<a f="488-513" id="ref_aim_bow2_blend2" loop="false"  />
+			<a f="514-544" id="ref_aim_crossbow_blend1" loop="false"  />
+			<a f="545-575" id="ref_aim_crossbow_blend2" loop="false"  />
+			<a f="576-606" id="ref_aim_crossbow2_blend1" loop="false"  />
+			<a f="607-637" id="ref_aim_crossbow2_blend2" loop="false"  />
+			<a f="638-663" id="ref_shoot_bow_blend1" loop="false"  />
+			<a f="664-689" id="ref_shoot_bow_blend2" loop="false"  />
+			<a f="690-700" id="ref_shoot_crossbow_blend1" loop="false"  />
+			<a f="701-711" id="ref_shoot_crossbow_blend2" loop="false"  />
+			<a f="712-722" id="ref_shoot_crossbow2_blend1" loop="false"  />
+			<a f="723-733" id="ref_shoot_crossbow2_blend2" loop="false"  />
+		</anims>
+			
 
-	<anims loop="true" suffix="paindeath">
-		<!-- Damage/death animations -->
-		<a f="1-22" id="flinch_gut" loop="false" g="ACT_FLINCH" />
-		<a f="23-43" id="flinch_leftarm" loop="false" g="ACT_FLINCH" />
-		<a f="44-64" id="flinch_rightarm" loop="false" g="ACT_FLINCH" />
-		<a f="65-85" id="flinch_head" loop="false" g="ACT_FLINCH" />
-		<a f="86-106" id="flinch_leftleg" loop="false" g="ACT_FLINCH" />
-		<a f="107-127" id="flinch_rightleg" loop="false" g="ACT_FLINCH" />
-		
-		<a f="128-146" id="die_simple" loop="false" g="ACT_DIE" />
-		<a f="147-171" id="die_backwards1" loop="false" g="ACT_DIE" />
-		<a f="172-207" id="die_backwards" loop="false" g="ACT_DIE" />
-		<a f="208-226" id="die_forwards" loop="false" g="ACT_DIE" />
-		<a f="227-247" id="die_spin" loop="false" g="ACT_DIE" />
-		<a f="248-285" id="die_gutshot" loop="false" g="ACT_DIE" />
-		<a f="286-313" id="headshot" loop="false" g="ACT_DIE" />
-		
-		<a f="314-315" id="deadback" loop="false" g="ACT_DEAD_GROUND"/>
-		<a f="316-317" id="deadsitting" loop="false" />
-		<a f="318-319" id="deadstomach" loop="false"  g="ACT_DEAD_GROUND" />
-		<a f="320-350" id="deadtable" loop="false" />
-	</anims>
+		<anims loop="true" suffix="paindeath">
+			<!-- Damage/death animations -->
+			<a f="1-22" id="flinch_gut" loop="false" g="ACT_FLINCH" />
+			<a f="23-43" id="flinch_leftarm" loop="false" g="ACT_FLINCH" />
+			<a f="44-64" id="flinch_rightarm" loop="false" g="ACT_FLINCH" />
+			<a f="65-85" id="flinch_head" loop="false" g="ACT_FLINCH" />
+			<a f="86-106" id="flinch_leftleg" loop="false" g="ACT_FLINCH" />
+			<a f="107-127" id="flinch_rightleg" loop="false" g="ACT_FLINCH" />
+			
+			<a f="128-146" id="die_simple" loop="false" g="ACT_DIE" />
+			<a f="147-171" id="die_backwards1" loop="false" g="ACT_DIE" />
+			<a f="172-207" id="die_backwards" loop="false" g="ACT_DIE" />
+			<a f="208-226" id="die_forwards" loop="false" g="ACT_DIE" />
+			<a f="227-247" id="die_spin" loop="false" g="ACT_DIE" />
+			<a f="248-285" id="die_gutshot" loop="false" g="ACT_DIE" />
+			<a f="286-313" id="headshot" loop="false" g="ACT_DIE" />
+			
+			<a f="314-315" id="deadback" loop="false" g="ACT_DEAD_GROUND"/>
+			<a f="316-317" id="deadsitting" loop="false" />
+			<a f="318-319" id="deadstomach" loop="false"  g="ACT_DEAD_GROUND" />
+			<a f="320-350" id="deadtable" loop="false" />
+		</anims>
+	</animations>
+	
 	 <actions>
 		<a id="IDLE" str="idle"></a>
 		
@@ -106,39 +139,3 @@
 
 	</actions>
 </data>
-
-
-<!--
-GLADIATOR MOVEMENT RULES
--------------------------
-
-walk  - non-combat/crouch backwards  with slower speed, (or forward with de-accelerate key being pressed).
-run - alternative lower-body jogging animation if in combat state. (may/may not use...23 frames) 
-walk2handed - jogging   (only forwards allowed)  Regular speed. (Default) (30 frames). This may/may not be a full body anim depending on whether the above "run" animation is used.
-run2 - sprinting   (only forwards allowed)  (If accelerate key being pressed). This is a full body anim.
-
-// depending on which directional key is triggered first, (forawrd/back vs strafe), the priority should take precidence to either use a strafing animation or forward/back animation, depending on which key was held down first. Thus, in the event where both keys are pressed, we determine which one was held down first and we use that animation instead.
-
-
-Choose either:
-
-// Special case for gladiator:
-
-// all idle animations use full body animations
-
-// there is no runleft/runright animation. For stafing at acelerated speed, the character turns briefly and and runs/moves quickly in the direction of the strafing motion, dependong on whether he is standing/crouching. It would be good to  have a sideways swing attack animation as well (like calvary attack animation).
-
-if (standing & runforward) { 
-	always use full-body "jog" (walk2handed) animation. 
-}
-// aesthetically, while in combat mode, your default forward movement could be walk speed, accelerate to jog, double tab accelerate to sprint....
-Jogging will not recover stamina.
-// it woudl be good to have a combat_runback animation, to allow for backpedaling motion (a backpedal jog), with no recovering of stamina.
-
-else if (standing & strafing animations being used) {
-   always use combat/crouch_moveleft/moveright, since no standing_moveleft/moveright, avaialbe..
-}
-else use:
-stance_lowbody_weapon | stance_lowbody
-
--->
