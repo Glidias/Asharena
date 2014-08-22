@@ -342,7 +342,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 5;// 9999;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 9999;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
@@ -646,8 +646,8 @@ package tests.pvp
 		{
 			var stance:GladiatorStance = (arenaSpawner.currentPlayerEntity || curArr[testIndex]).get(IAnimatable) as GladiatorStance;
 			if (stance ==null) stance = curArr[testIndex].get(IAnimatable) as GladiatorStance;
-			stance.swing(blend);
-			
+			//stance.swing(blend);
+			stance.switchToRanged("bow", blend);
 		}
 		private function testAnim2(blend:Number=.5):void 
 		{

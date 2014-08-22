@@ -52,7 +52,7 @@ package systems.player.a3d
 		private var lowerBodyAnims:Dictionary =  new Dictionary();
 		
 		private var _curController:AnimationController;
-		//public var upperBodyCouple:AnimationCouple = new AnimationCouple();  // for blending 2 animations
+		public var aimCouple:AnimationCouple = new AnimationCouple();  // for blending 2 animations
 		
 		private var attackAnimCouple:AnimationCouple = new AnimationCouple();
 		private var melee_thrust_up:AnimationClip;
@@ -189,7 +189,7 @@ package systems.player.a3d
 		//	melee_thrust_up.addNotifyAtEnd(0).addEventListener(NotifyEvent.NOTIFY, onEndSwingAnim);
 			
 			upperBody.addAnimation(attackAnimCouple);
-			
+			upperBody.addAnimation(aimCouple);
 		}
 		
 		private function onEndSwingAnim(e:NotifyEvent):void {
@@ -207,6 +207,24 @@ package systems.player.a3d
 			handleAction(lastAction);
 		}
 		
+		
+		public function switchToRanged(weaponName:String, altBalance:Number = .5):void {
+	//		throw new Error(upperBodyAnims["ref_aim__" + weaponName + "_blend1"] + ", "+anims.getAnimationByName("ref_aim" + weaponName + "_blend1"));
+			aimCouple.left = upperBodyAnims["ref_aim_"+weaponName+"_blend1"];
+			aimCouple.right = upperBodyAnims["ref_aim_" + weaponName + "_blend2"];
+	
+			upperBodyAnims["ref_aim_"+weaponName+"_blend1"].time = 0;
+			upperBodyAnims["ref_aim_"+weaponName+"_blend2"].time = 0;
+			aimCouple.balance = altBalance;// 1; altBalance;
+			
+			if (_stance == 0) {
+				
+				setStanceAndRefresh(1);
+				_stanceTemp = true;
+				
+			}
+			initiateUpperBodyAim();
+		}
 		
 		
 		public function swing(altBalance:Number = .5):void {
@@ -243,6 +261,19 @@ package systems.player.a3d
 			initiateUpperBodyAttack();
 			
 			
+		}
+		
+		public function initiateUpperBodyAim():void {
+			//setAnimationNode(attackAnimCouple, upperBodyController, upperBody, .3);
+			if (!upperBodyDominant) {
+				setAnimationNode( _stance < 2 ? fullBodyAnims[ "combat_idle"] : fullBodyAnims["crouch_idle"], fullBodyController, fullBody, 0);
+				fullBodyController.update(0);
+			}
+			
+			setAnimationNode( aimCouple, upperBodyController, upperBody, .3);
+			//_curController = null;
+			if (upperBodyDominant) _curController = null;
+			//upperBodyDominant = true;
 		}
 		
 		public function initiateUpperBodyAttack():void {
@@ -592,8 +623,10 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 				skin._z = tarSkinZ;
 				skin.transform.l = tarSkinZ;
 				skin.inverseTransform.l = -tarSkinZ;
+				
 				skin.transformChanged = true;  // this is required for water plane update notification
 			}
+			//skin.rotationZ = Math.PI- .7;
 		}
 		
 		public function crouch():void {
