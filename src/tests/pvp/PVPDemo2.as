@@ -27,6 +27,7 @@ package tests.pvp
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.Geometry;
 	import alternterrain.CollidableMesh;
+	import arena.components.char.HitFormulas;
 	import arena.components.char.MovementPoints;
 	import arena.components.enemy.EnemyIdle;
 	import arena.components.weapon.Weapon;
@@ -354,10 +355,58 @@ package tests.pvp
 		
 		private function getTestWeaponFireModes():Weapon {
 			var head:Weapon;
-			head = getTestWeapon(false);  // swing
-			head.nextFireMode = getTestWeapon(true); // thrust
+			var tail:Weapon;
 			
+			head = getTestWeapon(false);  // swing
+			head.nextFireMode =  tail = getTestWeapon(true); // thrust
+			
+			tail.nextFireMode = tail =  getTestRangedWeapon();
 			return head;
+		}
+		
+		private function getTestRangedWeapon():Weapon {
+			var w:Weapon =   new Weapon();
+			w.projectileSpeed = 256;
+
+			
+			w.name = "Ranged fireMode";
+			w.fireMode =  Weapon.FIREMODE_RAY;
+			w.sideOffset =11;
+			w.heightOffset = 20;
+		
+			
+			w.minRange = 16;
+			w.damage =  10;
+			w.cooldownTime = 0.7;
+			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
+			w.hitAngle =  45 *  PMath.DEG_RAD;
+			
+			w.damageRange =  10;		// damage up-range variance
+			// Thrust: 10-20 : Swing 25-30
+	
+			w.critMinRange = 800;
+			w.critMaxRange  = 1600;
+		
+			w.deviation = .25; 
+			w.range  = ArenaHUD.METER_UNIT_SCALE * 50;
+			w.deviation = HitFormulas.getDeviationForRange(512, 16);
+			
+			
+			w.timeToSwing  = 0;
+			w.strikeTimeAtMaxRange = 0; //0.0001;
+			w.strikeTimeAtMinRange = 0;// 0.0001;
+		
+			
+			w.parryEffect = .4;
+			
+			w.stunEffect = 0;
+			w.stunMinRange = 0;
+			w.stunMaxRange = 0;
+			
+			w.matchAnimVarsWithStats();
+			w.anim_fullSwingTime = 0.96;
+			
+			return w;	
 		}
 		
 		
@@ -399,6 +448,9 @@ package tests.pvp
 			A3DEnemyArcSystem;
 			
 			var w:Weapon =   new Weapon();
+			w.projectileSpeed = 0;
+			w.deviation = 0;
+			
 			w.name = "Melee weapon";
 			w.fireMode = thrust ? Weapon.FIREMODE_THRUST : Weapon.FIREMODE_SWING;
 			w.sideOffset =thrust ?  15 : 36+16;// thrust ? 15 : 36;

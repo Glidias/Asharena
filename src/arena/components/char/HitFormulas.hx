@@ -97,6 +97,22 @@ class HitFormulas
 		return basePerc;
 	}
 	
+	public static inline function getPercChanceToRangeHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {
+		
+		var prob:Float = getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, defense, timeToHitOffset) / 100;
+		prob *= getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB);
+		return Math.ceil(prob * 100);
+		
+	}
+	
+	public static function getPercChanceToHitDefenderMethod(weapon:Weapon):Pos->Ellipsoid->Weapon->Pos->Rot->CharDefense-> Ellipsoid->Float->Float->Float {
+		return weapon.fireMode <= 0 ? getPercChanceToRangeHitDefender : getPercChanceToHitDefender;
+		
+	}
+	
+	
+	
+	
 	// Used for actual combat...
 	public static inline function getPercChanceToCritDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid):Float {
 
@@ -113,6 +129,11 @@ class HitFormulas
 
 		return basePerc;
 	}
+	
+
+	
+	
+	
 	
 	// a prediction only...not an actual roll against. Doesn't count critical strikes, only regular hits.
 	public static inline function getPercChanceForHitToKillDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, healthB:Health, defense:Float=0):Float {
@@ -135,6 +156,33 @@ class HitFormulas
 		}
 		return result;
 	}
+	
+	public static inline function getChanceToRangeHitWithinCone(posA:Pos, weaponA:Weapon, posB:Pos, ellipsoidB:Ellipsoid):Float {
+		
+		var dx:Float = posB.x - posA.x;
+		var dy:Float = posB.y - posA.y;
+		var dz:Float = posB.z - posA.z;
+		var dist:Float =  Math.sqrt(dx * dx + dy * dy + dz * dz) ;
+	//	weaponA.deviation = 99999999;
+		// naive squuare difference
+		dist = HitFormulas.getDeviationForRange(dist, ellipsoidB.x);
+		dist = dist  / weaponA.deviation;
+		
+		dist = dist > 1 ? 1 : dist < 0 ? 0 : dist;
+		return dist;
+	}
+	
+	public static inline function getRangeForDeviation(deviation:Float, size:Float):Float {
+		return size / deviation;
+	}
+	
+	
+	
+	public static inline function getDeviationForRange(range:Float, size:Float):Float {
+		//range = size/deviation
+		return size / range;
+	}
+	
 	
 	
 	// TODO: factor in z value for 3D
@@ -177,6 +225,10 @@ class HitFormulas
 		}
 	}
 	
+
+	
+	
+
 	/**
 	 * Used for actual combat.....against attacking enemies
 	 *	This is the roll against slower attacker,  assuming you will strike first.
@@ -201,6 +253,33 @@ class HitFormulas
 			weaponBState.forceCooldown(weaponB.cooldownTime);
 			
 			return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, d);
+		}
+		
+		// same as above but different method below
+		public static inline function getPercChanceToRangeHitSlowerAttacker(posA:Pos, rotA:Rot, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState):Float {
+			
+		var dx:Float = posB.x - posA.x;
+		var dy:Float = posB.y - posA.y;
+		var dz:Float = posB.z - posA.z;
+	
+		var d:Float;
+		d =  Math.sqrt(dx * dx + dy * dy + dz * dz);
+		var dm:Float = 1 / d;
+		d -= PMath.abs(dx * dm * ellipsoidA.x + dy * dm * ellipsoidA.y + dz * dm * ellipsoidA.z); // ellipsoidA.x;
+		
+		var totalTimeToHit2:Float = calculateStrikeTimeAtRange(weaponB, d) - weaponBState.attackTime;
+		
+			// determine if attacker is going to evade, block or parry, because you will strike  first
+			// for 0 timefactor case, enemy would cancel his attack...
+			d = weaponBState.attackTime < weaponB.timeToSwing ? 0 : calculateOptimalRangeFactor(weaponB.timeToSwing, weaponB.strikeTimeAtMaxRange, totalTimeToHit2) < CAN_BLOCK_THRESHOLD ? defB.block : weaponB.parryEffect;
+			
+			weaponBState.forceCooldown(weaponB.cooldownTime);
+			
+			return getPercChanceToRangeHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, d);
+		}
+		
+		public static function getPercChanceToHitSlowerAttackerMethod(weaponCheck:Weapon):Pos->Rot->Ellipsoid->Weapon->Pos->Rot->CharDefense->Ellipsoid->Weapon->WeaponState->Float {
+			return weaponCheck.fireMode < 0 ? getPercChanceToRangeHitSlowerAttacker : getPercChanceToHitSlowerAttacker;
 		}
 		
 		
@@ -276,6 +355,47 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 		
 		return chanceToCritPerc;
 	}
+	
+	public static inline function getPercChanceToRangeHitAttacker(posA:Pos, rotA:Rot, defA:CharDefense, ellipsoidA:Ellipsoid, weaponA:Weapon, healthA:Health,  posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState):Float {
+		// determine who will strike faster
+		var dx:Float = posB.x - posA.x;
+		var dy:Float = posB.y - posA.y;
+		var dz:Float = posB.z - posA.z;
+		var sqDist:Float =  Math.sqrt(dx * dx + dy * dy + dz*dz) ;
+		var dm:Float = 1 / sqDist;
+		var d:Float = sqDist - PMath.abs(dx * dm * ellipsoidB.x + dy * dm * ellipsoidB.y + dz * dm * ellipsoidB.z); // we assume x and y is the same!
+		
+		var timeFactor:Float;  
+		var totalTimeToHit:Float;
+		var totalTimeToHit2:Float;
+	
+		totalTimeToHit  = calculateStrikeTimeAtRange(weaponA, d);
+		
+		d = sqDist -ellipsoidA.x;
+		totalTimeToHit2 = calculateStrikeTimeAtRange(weaponB, d) - weaponBState.attackTime;
+		
+		if (totalTimeToHit2 > totalTimeToHit) {  // in most cases, if both guys have the same weapon, this would occur, attacker would hit you first because you intiaited the attack later than him, so you have to defend his blow first (by either evading/blocking/parrying) before attacking him back. Time factor affects whether you evade/block/parry accordingly.
+			
+			timeFactor = totalTimeToHit2 < weaponA.timeToSwing ? 0 :  defA.block;
+			var prematurelyKilledFactor:Float =getPercChanceForHitToKillDefender(posB, ellipsoidB, weaponB, posA, rotA, defA, ellipsoidA, healthA, timeFactor)  / 100;
+			
+			return getPercChanceToRangeHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, 0, 0) * prematurelyKilledFactor;
+			
+		}
+		else {
+			// determine if attacker is going to evade, block or parry, because you will strike  first
+			// for 0 timefactor case, enemy would cancel his attack...and might retaliate similar to getPercChanceToHitdefender
+			timeFactor = weaponBState.attackTime < weaponB.timeToSwing ? 0 : calculateOptimalRangeFactor(weaponB.timeToSwing, weaponB.strikeTimeAtMaxRange, totalTimeToHit2) < CAN_BLOCK_THRESHOLD ? defB.block : weaponB.parryEffect;
+return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, timeFactor);
+		}
+	}
+	
+	public static function getPercChanceToHitAttackerMethod(weapon:Weapon):Pos->Rot->CharDefense->Ellipsoid->Weapon->Health->Pos->Rot->CharDefense->Ellipsoid->Weapon->WeaponState->Float {
+		return weapon.fireMode <= 0 ? getPercChanceToRangeHitAttacker : getPercChanceToHitAttacker;
+		
+	}
+	
+	
 	
 	// HELPERS:
 	
@@ -353,7 +473,17 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 	
 	static public inline function calculateStrikeTimeAtRange(aWeapon:Weapon, actualDist:Float):Float
 	{
-		return PMath.lerp( aWeapon.strikeTimeAtMinRange, aWeapon.strikeTimeAtMaxRange, HitFormulas.calculateOptimalRangeFactor(aWeapon.minRange, aWeapon.range,  actualDist) );
+		var result:Float;
+		
+		if (aWeapon.fireMode > 0) {
+			result = PMath.lerp( aWeapon.strikeTimeAtMinRange, aWeapon.strikeTimeAtMaxRange, HitFormulas.calculateOptimalRangeFactor(aWeapon.minRange, aWeapon.range,  actualDist) );
+		}
+		else {
+			result = aWeapon.strikeTimeAtMaxRange + actualDist / (aWeapon.projectileSpeed != 0 ? aWeapon.projectileSpeed : -1);
+			if (result < 0) result = 0;
+		}
+		
+		return result;
 	}
 	
 	static public inline function calculateAnimStrikeTimeAtRange(aWeapon:Weapon, actualDist:Float):Float

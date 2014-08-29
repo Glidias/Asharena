@@ -626,7 +626,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 				
 				skin.transformChanged = true;  // this is required for water plane update notification
 			}
-			//skin.rotationZ = Math.PI- .7;
+			skin.rotationZ = Math.PI- .7;
 		}
 		
 		public function crouch():void {

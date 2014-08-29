@@ -30,6 +30,8 @@ class Weapon
 	public var fireMode:Int;	// the firemode that the weapon uses
 	public var nextFireMode:Weapon; // any next varying fire mode weapon to consider using
 	
+	public var fireModeLabel:String;
+	
 	/*
 	public static inline var AREA_EFFECT_IMPACT:Int = 0;	// dot or circular impact
 	public static inline var AREA_EFFECT_ARC:Int = 1;	// for cleaving attack
@@ -62,6 +64,9 @@ class Weapon
 	public var anim_maxRange:Float;
 	
 	public var anim_fullSwingTime:Float;
+	
+	public var deviation:Float;
+	public var projectileSpeed:Float;
 
 	
 	public inline function matchAnimVarsWithStats():Void {
@@ -79,7 +84,7 @@ class Weapon
 		
 	}
 	
-	public function init(name:String, range:Float, damage:Int, cooldownTime:Float, hitAngle:Float, sideOffset:Float=0, fireMode:Int=0, heightOffset:Float=0):Weapon {
+	public function init(name:String, range:Float, damage:Int, cooldownTime:Float, hitAngle:Float, sideOffset:Float=0, fireMode:Int=0, heightOffset:Float=0, deviation:Float=0, projectileSpeed:Float=0):Weapon {
 		this.name = name;
 		this.range = range;
 		this.damage = damage;
@@ -88,6 +93,8 @@ class Weapon
 		this.sideOffset = sideOffset;
 		this.fireMode = fireMode;
 		this.heightOffset = heightOffset;
+		this.deviation = deviation;
+		this.projectileSpeed = projectileSpeed;
 		return this;
 	}
 

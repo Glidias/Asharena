@@ -514,7 +514,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				aWeapon = a.weapon;
 				while(aWeapon!= null) {
 					var checkedLOS:Bool = false;
-					if ( HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) { 
+					if ( aWeapon.fireMode > 0 && HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) { 
 						
 						aWeaponState.pullTrigger(aWeapon);
 						
