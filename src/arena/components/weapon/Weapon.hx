@@ -63,7 +63,7 @@ class Weapon
 	public var anim_minRange:Float;
 	public var anim_maxRange:Float;
 	
-	public var anim_fullSwingTime:Float;
+	public var anim_fullSwingTime:Float;  // or anim_cooldownTime for ranged
 	
 	public var deviation:Float;
 	public var projectileSpeed:Float;

@@ -62,6 +62,17 @@ class HitFormulas
 		
 		return d - PMath.abs(dx*dm*ellipsoidB.x + dy*dm*ellipsoidB.y + dz*dm*ellipsoidB.z);
 	}
+	
+	public static inline function get3DDistOffseted(posA:Pos,  posB:Pos, ellipsoidB:Ellipsoid, ox:Float, oy:Float, oz:Float ):Float {	
+		
+		var dx:Float = posB.x - posA.x;
+		var dy:Float = posB.y - posA.y;
+		var dz:Float = posB.z - posA.z;
+		var d:Float = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		var dm:Float = 1 / d;
+		
+		return d - PMath.abs(dx*dm*ellipsoidB.x + dy*dm*ellipsoidB.y + dz*dm*ellipsoidB.z);
+	}
 
 	// Used for actual combat..
 	public static inline function getPercChanceToHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {
@@ -490,6 +501,8 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 	{
 		return PMath.lerp( aWeapon.anim_strikeTimeAtMinRange, aWeapon.anim_strikeTimeAtMaxRange, HitFormulas.calculateOptimalRangeFactor(aWeapon.anim_minRange, aWeapon.anim_maxRange,  actualDist) );
 	}
+	
+	
 	
 	
 	
