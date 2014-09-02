@@ -115,7 +115,9 @@ package tests.pvp
 			startPosition = new Vector3D(0,0,0);
 			endPosition = new Vector3D();
 			for (var i:int = 0; i < 1522; i++) {
-				TweenLite.delayedCall(i*.004, launchProjectile);
+				//TweenLite.delayedCall(i*.004, launchProjectile);
+				
+				launchProjectile();
 				//arrows.launchNewProjectileWithTimeSpan(startPosition, endPosition, 5);
 			}
 			

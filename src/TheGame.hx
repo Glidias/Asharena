@@ -1,5 +1,6 @@
 package;
 import arena.components.char.EllipsoidPointSamples;
+import arena.systems.player.IStance;
 import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.player.AnimAttackSystem;
 import haxe.io.BytesInput;
@@ -104,6 +105,7 @@ class TheGame
 		
 		AnimAttackSystem;
 		IWeaponLOSChecker;
+		IStance;
 		// Spawn starting entities
 	
 		// Start

@@ -2,6 +2,7 @@ package ash.core;
 
 import ash.ClassMap;
 import ash.signals.Signal2;
+import ash.signals.Signal3;
 
 /**
  * An entity is composed from components. As such, it is essentially a collection object for components.
@@ -32,7 +33,7 @@ class Entity
     /**
      * This signal is dispatched when a component is added to the entity.
      */
-    public var componentAdded(default, null):Signal2<Entity, Class<Dynamic>>;
+    public var componentAdded(default, null):Signal3<Entity, Class<Dynamic>, Bool>;
     /**
      * This signal is dispatched when a component is removed from the entity.
      */
@@ -48,7 +49,7 @@ class Entity
 
     public function new(name:String = "")
     {
-        componentAdded = new Signal2<Entity, Class<Dynamic>>();
+        componentAdded = new Signal3<Entity, Class<Dynamic>, Bool>();
         componentRemoved = new Signal2<Entity, Class<Dynamic>>();
         nameChanged = new Signal2<Entity, String>();
         components = new ClassMap();
@@ -71,7 +72,7 @@ class Entity
     }
 
     /**
-     * Add a component to the entity.
+     * Add a component to the entity or switches a currently existing component to a new one if it already has a component of the same type.
      *
      * @param component The component object to add.
      * @param componentClass The class of the component. This is only necessary if the component
@@ -91,11 +92,15 @@ class Entity
         if (componentClass == null)
             componentClass = #if flash untyped component.constructor; #else Type.getClass(component); #end
 
-        if (components.exists(componentClass))
-            remove(componentClass);
+        if (components.exists(componentClass)) {
+           // remove(componentClass);
+			 components.set(componentClass, component);
+			 componentAdded.dispatch(this, componentClass, true);
+			return this;
+		}
 
         components.set(componentClass, component);
-        componentAdded.dispatch(this, componentClass);
+        componentAdded.dispatch(this, componentClass, false);
         return this;
     }
 

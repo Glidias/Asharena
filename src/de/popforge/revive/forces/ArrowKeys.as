@@ -14,7 +14,7 @@ package de.popforge.revive.forces
 	 */
 	public class ArrowKeys implements IForce, IDrawAble
 	{
-		private var movable:MovableParticle;
+		public var movable:MovableParticle;
 		public var speed:Number;
 		public function ArrowKeys(movable:MovableParticle, speed:Number=.5) 
 		{
@@ -25,7 +25,7 @@ package de.popforge.revive.forces
 		}
 		
 		/* INTERFACE de.popforge.revive.forces.IForce */
-		private var force:Vec2D = new Vec2D(0,0);
+		public var force:Vec2D = new Vec2D(0,0);
 		public function solve():void 
 		{
 			force.x = 0;
@@ -49,8 +49,8 @@ package de.popforge.revive.forces
 			force.x *= speed;
 			force.y *= speed;
 			
-			movable.velocity.x += force.x;
-			movable.velocity.y += force.y;
+			movable.velocity.x = force.x;
+			movable.velocity.y = force.y;
 		}
 		
 		public function gotMovement():Boolean {

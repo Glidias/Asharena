@@ -3,6 +3,7 @@ import arena.components.char.AggroMem;
 import arena.components.enemy.EnemyWatch;
 import arena.components.weapon.Weapon;
 import arena.systems.enemy.EnemyWatchNode;
+import arena.systems.player.IStance;
 import ash.core.Node;
 import components.Pos;
 import components.Rot;
@@ -20,6 +21,7 @@ class EnemyWatchNode extends Node<EnemyWatchNode> {
 	public var weapon:Weapon;
 	
 	public var state:EnemyWatch;	
+	public var stance:IStance;
 	//public var aggroMem:AggroMem;
 	//public var stateMachine:EntityStateMachine;
 }

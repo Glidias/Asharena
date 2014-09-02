@@ -2,6 +2,7 @@ package arena.systems.enemy;
 import arena.components.enemy.EnemyAggro;
 import arena.components.weapon.Weapon;
 import arena.components.weapon.WeaponState;
+import arena.systems.player.IStance;
 import ash.core.Node;
 import components.ActionUIntSignal;
 import components.Ellipsoid;
@@ -20,6 +21,8 @@ class EnemyAggroNode extends Node<EnemyAggroNode> {
 	public var weapon:Weapon;
 	public var weaponState:WeaponState;
 	public var rot:Rot;
+	
+	public var stance:IStance;
 	
 	public var state:EnemyAggro;
 	public var signalAttack:ActionUIntSignal;

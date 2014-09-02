@@ -9,7 +9,9 @@ import components.Health;
  */
 class Weapon
 {
-	public var name:String;	// used as a primary key as well
+	public var name:String;	// Label, can be  used as a primary key as well.
+	public var id:String; // Identifier, can be used as a primary key as well. Good to look up animation names.
+	
 	public var range:Float;
 	public var damage:Int;  // min damage applied
 	public var cooldownTime:Float;
@@ -32,6 +34,12 @@ class Weapon
 	
 	public var fireModeLabel:String;
 	
+	public static inline var RANGEMODE_MELEE:Int = 0;
+	public static inline var RANGEMODE_GUN:Int = 1;
+	public static inline var RANGEMODE_BOW:Int = 2;
+	
+	public var rangeMode:Int;
+	
 	/*
 	public static inline var AREA_EFFECT_IMPACT:Int = 0;	// dot or circular impact
 	public static inline var AREA_EFFECT_ARC:Int = 1;	// for cleaving attack
@@ -42,6 +50,9 @@ class Weapon
 	public var damageRange:Int;		// damage up-range variance
 
 	public var minRange:Float;
+	
+	public var minPitch:Float;
+	public var maxPitch:Float;
 	
 	public var critMinRange:Float;
 	public var critMaxRange:Float;
@@ -84,7 +95,7 @@ class Weapon
 		
 	}
 	
-	public function init(name:String, range:Float, damage:Int, cooldownTime:Float, hitAngle:Float, sideOffset:Float=0, fireMode:Int=0, heightOffset:Float=0, deviation:Float=0, projectileSpeed:Float=0):Weapon {
+	public function init(name:String, range:Float, damage:Int, cooldownTime:Float, hitAngle:Float, sideOffset:Float=0, fireMode:Int=0, heightOffset:Float=0, deviation:Float=0, projectileSpeed:Float=0, minPitch:Float=0, maxPitch:Float=0):Weapon {
 		this.name = name;
 		this.range = range;
 		this.damage = damage;
@@ -95,6 +106,9 @@ class Weapon
 		this.heightOffset = heightOffset;
 		this.deviation = deviation;
 		this.projectileSpeed = projectileSpeed;
+		this.minPitch = minPitch;
+		this.maxPitch = maxPitch;
+		this.rangeMode = 0;
 		return this;
 	}
 

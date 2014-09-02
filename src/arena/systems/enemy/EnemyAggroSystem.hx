@@ -269,7 +269,13 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 	
 
 	override public function update(time:Float):Void {
+		var sqDist:Float;
+		var aWeapon:Weapon;
+		var targRotZ:Float;
+		var diffAngle:Float;
 		var swinger:AnimAttackMelee;
+		var shooter:AnimAttackRanged;
+		
 		updating = true;
 		
 		var p:PlayerAggroNode;
@@ -311,6 +317,10 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				
 				i.entity.add(new EnemyWatch().init(i.state,p), EnemyWatch); // TODO: Pool ENemyWatch
 			}
+			else {
+				i.stance.setPitchAim( .5, pTimeElapsed );
+				i.stance.updateTension( -1, pTimeElapsed);
+			}
 			i = i.next;
 		}
 		
@@ -318,7 +328,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		var newAggro:EnemyAggro;
 		var rangeToAttack:Float;
 		
-		var w:EnemyWatchNode = gotReact   ? watchList.head : null;
+		var w:EnemyWatchNode =  watchList.head;
 		while (w != null) {  // check closest valid player target, if it's same or different..  and consider aggroing if player gets close enough, 
 			enemyPos = w.pos;
 			
@@ -326,8 +336,8 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 			dx =  playerPos.x - enemyPos.x;
 			dy = playerPos.y - enemyPos.y;
 			dz = playerPos.z - enemyPos.z;
-			
-			if (dx * dx + dy * dy + dz*dz <= rangeSq && validateVisibility(enemyPos, w.state.watch.eyeHeightOffset, p) ) { 
+			sqDist = dx * dx + dy * dy + dz * dz;
+			if (gotReact &&  sqDist <= rangeSq && validateVisibility(enemyPos, w.state.watch.eyeHeightOffset, p) ) { 
 				
 				w.entity.remove(EnemyWatch);
 				newAggro = new EnemyAggro();
@@ -339,6 +349,41 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				w.entity.add(newAggro, EnemyAggro);
 				
 			}
+			else {
+				if (!w.state.engaged) {
+					//w.stance.updateTension(
+					aWeapon = w.weapon;
+					if (aWeapon.maxPitch - aWeapon.minPitch != 0) {
+						diffAngle = Math.atan2(   playerPos.z - enemyPos.z, Math.sqrt(dx * dx + dy * dy) );
+						//trace(diffAngle);
+						diffAngle  = diffAngle < aWeapon.minPitch ? aWeapon.minPitch : diffAngle > aWeapon.maxPitch ? aWeapon.maxPitch : diffAngle;
+						w.stance.setPitchAim(  (diffAngle-aWeapon.minPitch) / (aWeapon.maxPitch - aWeapon.minPitch), pTimeElapsed);
+					}
+					else {
+						w.stance.setPitchAim( 0, pTimeElapsed );
+					}
+					
+					
+				
+					targRotZ =  Math.atan2(dy, dx) + ROT_FACING_OFFSET;
+					diffAngle = getDiffAngle(w.rot.z, targRotZ);
+					w.rot.z = getDestAngle2D(w.rot.z, targRotZ, ROT_PER_SEC * pTimeElapsed, diffAngle);  // getDestAngleDirection(a.rot.z, targRotZ)  * (2 * PMath.DEG_RAD) * pTimeElapsed;
+				
+					
+					//  // setTension
+					if (sqDist  < w.state.watch.tensionRangeSq && sqDist >= w.state.watch.aggroRangeSq) {
+						diffAngle = Math.sqrt(sqDist);
+						//trace( (diffAngle-w.state.watch.aggroRange) + ", "+ w.state.watch.tensionVincity);
+						w.stance.updateTension( 1 -(diffAngle - w.state.watch.aggroRange) / w.state.watch.tensionVincity, pTimeElapsed);
+						//w.stance.updateTension(0, pTimeElapsed);
+					}
+					else {
+						
+						
+						w.stance.updateTension( -1, pTimeElapsed);
+					}
+				}
+			}
 			
 			w = w.next;
 		}
@@ -347,7 +392,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		
 		var a:EnemyAggroNode = aggroList.head; 
 		var aWeaponState:WeaponState; 
-		var aWeapon:Weapon;
+		
 		while (a != null) { 
 			
 			aWeaponState = a.weaponState;
@@ -360,7 +405,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 			dx = pTarget.pos.x - a.pos.x;
 			dy = pTarget.pos.y - a.pos.y;
 			dz =  pTarget.pos.z - a.pos.z;
-			var sqDist:Float = dx * dx + dy * dy + dz*dz;
+			sqDist = dx * dx + dy * dy + dz*dz;
 	
 			
 			// NAive canceling of attack trigger can be done since this isn't a real-time game, and pple wouldnt notice.
@@ -399,10 +444,23 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 			
 			// always rotate enemy to face player target
 
-			var targRotZ:Float =  Math.atan2(dy, dx) + ROT_FACING_OFFSET;
-		//	targRotZ = getDestAngle(a.rot.z, targRotZ);
 			
-			var diffAngle:Float = getDiffAngle(a.rot.z, targRotZ);
+			aWeapon = aWeaponState.fireMode != null ? aWeaponState.fireMode :  a.weapon; 
+			if (aWeapon.maxPitch - aWeapon.minPitch != 0) {
+				diffAngle = Math.atan2(  pTarget.pos.z - a.pos.z, Math.sqrt(dx * dx + dy * dy) );
+				diffAngle  = diffAngle < aWeapon.minPitch ? aWeapon.minPitch : diffAngle > aWeapon.maxPitch ? aWeapon.maxPitch : diffAngle;
+				//trace( (diffAngle-aWeapon.minPitch) / (aWeapon.maxPitch - aWeapon.minPitch));
+				
+				a.stance.setPitchAim(  (diffAngle-aWeapon.minPitch) / (aWeapon.maxPitch - aWeapon.minPitch), pTimeElapsed);
+			}
+			else {
+				a.stance.setPitchAim( .5, pTimeElapsed );
+			}
+			a.stance.updateTension(1, pTimeElapsed);
+			
+			
+			targRotZ =  Math.atan2(dy, dx) + ROT_FACING_OFFSET;
+			diffAngle = getDiffAngle(a.rot.z, targRotZ);
 			a.rot.z = getDestAngle2D(a.rot.z, targRotZ, ROT_PER_SEC * pTimeElapsed, diffAngle);  // getDestAngleDirection(a.rot.z, targRotZ)  * (2 * PMath.DEG_RAD) * pTimeElapsed;
 			diffAngle = PMath.abs( diffAngle);
 			
@@ -436,7 +494,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 					
 					aWeaponState.attackTime  += pTimeElapsed;
 					var actualDist:Float = Math.sqrt(sqDist) - p.size.x;
-					var strikeTimeAtRange:Float = HitFormulas.calculateStrikeTimeAtRange(aWeapon, actualDist);
+					var strikeTimeAtRange:Float = aWeapon.fireMode > 0 ? HitFormulas.calculateStrikeTimeAtRange(aWeapon, actualDist) : aWeapon.strikeTimeAtMaxRange*(1-a.stance.getTension());
 					
 					
 					if ( aWeaponState.attackTime >= strikeTimeAtRange) { // strike has occured
@@ -459,6 +517,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 									}
 								}
 								a.signalAttack.forceSet(aWeapon.fireMode);
+								
 								swinger =  new AnimAttackMelee();
 								swinger.init_i_static( aWeapon.anim_strikeTimeAtMaxRange, p.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
 								a.entity.add(swinger);
@@ -467,6 +526,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 							}
 							else { // strike rolled miss
 								a.signalAttack.forceSet(aWeapon.fireMode);
+								
 								swinger =  new AnimAttackMelee();
 								//HitFormulas.calculateAnimStrikeTimeAtRange(a.weapon, actualDist)
 								swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, p.health, 0 );
@@ -484,9 +544,11 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 							
 							if (kite != 0) {  // somehow, kiting is allowed in this situation. Simulate deliberate swing miss.
 								a.signalAttack.forceSet(aWeapon.fireMode);
+								
 								swinger =  new AnimAttackMelee();
 								swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, p.health, 0 );
 								a.entity.add(swinger);
+								
 							}
 							else { // no kiting allowed in this suitation. Silently cancel attack.
 								a.state.flag = 0;

@@ -140,7 +140,7 @@ package tests.pvp
 		
 		private var aggroMemManager:AggroMemManager;
 		
-			private var _waterBase:WaterBase;
+		private var _waterBase:WaterBase;
 		private var _skyboxBase:SkyboxBase;
 		private var _terrainBase:TerrainBase;
 		
@@ -351,8 +351,10 @@ package tests.pvp
 		private var collOtherClass:Class = ImmovableCollidable;
 			
 		// Deault weapon stats
-		private var TEST_MELEE_WEAPON:Weapon = getTestWeaponFireModes();
+		private var TEST_MELEE_WEAPON:Weapon = getTestRangedWeapon();// getTestWeaponFireModes();
 		
+		private var testRangeWeapon:Weapon;
+
 		private function getTestWeaponFireModes():Weapon {
 			var head:Weapon;
 			var tail:Weapon;
@@ -360,9 +362,11 @@ package tests.pvp
 			head = getTestWeapon(false);  // swing
 			head.nextFireMode =  tail = getTestWeapon(true); // thrust
 			
-			tail.nextFireMode = tail =  getTestRangedWeapon();
+			tail.nextFireMode = tail =  testRangeWeapon = getTestRangedWeapon();
 			return head;
 		}
+		
+		
 		
 		private function getTestRangedWeapon():Weapon {
 			var w:Weapon =   new Weapon();
@@ -392,7 +396,8 @@ package tests.pvp
 			w.deviation = HitFormulas.getDeviationForRange(512, 16);
 			
 			
-			w.timeToSwing  = 0;
+			w.timeToSwing  = .3;
+			
 			w.strikeTimeAtMaxRange = 0; //0.0001;
 			w.strikeTimeAtMinRange = 0;// 0.0001;
 		
@@ -405,6 +410,11 @@ package tests.pvp
 			
 			w.matchAnimVarsWithStats();
 			w.anim_fullSwingTime = 0.96;
+			
+			w.minPitch = -Math.PI*.2;
+			w.maxPitch = Math.PI * .2;
+			
+			w.id = "bow2";
 			
 			return w;	
 		}
@@ -448,6 +458,9 @@ package tests.pvp
 			A3DEnemyArcSystem;
 			
 			var w:Weapon =   new Weapon();
+		w.minPitch = -Math.PI*.25;
+			w.maxPitch = Math.PI*.25;
+			
 			w.projectileSpeed = 0;
 			w.deviation = 0;
 			
@@ -510,18 +523,18 @@ package tests.pvp
 			
 			arenaSpawner.addTextureResourceSide(SpawnerBundle.context3D, ArenaSpawner.RACE_SAMNIAN, 1, _gladiatorBundle.getSideTexture(1)  );
 			
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, -520, _terrainBase.sample(0,-520)+44, 0, 0, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon); testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66, -520, _terrainBase.sample(66,-520)+44, 0, 0, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66*2, -520, _terrainBase.sample(66*2,-520)+44, 0, 0, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66*3, -520, _terrainBase.sample(66*3,-520)+44, 0, 0, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 4, -520, _terrainBase.sample(66*4,-520)+44, 0, 0, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 0, -520, _terrainBase.sample(0,-520)+44, 0, 0, "0", TEST_MELEE_WEAPON); testArr.push(curPlayer);  
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66, -520, _terrainBase.sample(66,-520)+44, 0, 0, "1", TEST_MELEE_WEAPON); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66*2, -520, _terrainBase.sample(66*2,-520)+44, 0, 0, "2", TEST_MELEE_WEAPON); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66*3, -520, _terrainBase.sample(66*3,-520)+44, 0, 0, "3", TEST_MELEE_WEAPON); testArr.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 4, -520, _terrainBase.sample(66*4,-520)+44, 0, 0, "4", TEST_MELEE_WEAPON); testArr.push(curPlayer);
 
 			
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 6, 520, _terrainBase.sample( 66 * 6, 520)+44, Math.PI, 1, "0"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 7, 520, _terrainBase.sample(66 * 7, 520)+44, Math.PI, 1, "1"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 8, 520, _terrainBase.sample(66 * 8, 520)+44, Math.PI, 1, "2"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 9, 520, _terrainBase.sample(66*9,520)+44, Math.PI, 1, "3"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
-			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 10, 520, _terrainBase.sample(66*10,520)+44, Math.PI, 1, "4"); curPlayer.add(TEST_MELEE_WEAPON, Weapon);testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 6, 520, _terrainBase.sample( 66 * 6, 520)+44, Math.PI, 1, "0", TEST_MELEE_WEAPON); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 7, 520, _terrainBase.sample(66 * 7, 520)+44, Math.PI, 1, "1", TEST_MELEE_WEAPON); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 8, 520, _terrainBase.sample(66 * 8, 520)+44, Math.PI, 1, "2", TEST_MELEE_WEAPON); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 9, 520, _terrainBase.sample(66*9,520)+44, Math.PI, 1, "3", TEST_MELEE_WEAPON); testArr2.push(curPlayer);
+			curPlayer = arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, null, 66 * 10, 520, _terrainBase.sample(66*10,520)+44, Math.PI, 1, "4", TEST_MELEE_WEAPON); testArr2.push(curPlayer);
 			
 			
 			var health:Health;
@@ -683,6 +696,7 @@ package tests.pvp
 			else {
 				toggleTargetingMode();
 				sceneLocked = false;
+				
 				thirdPersonController.thirdPerson.followAzimuth = true;
 			}
 		}
@@ -699,7 +713,8 @@ package tests.pvp
 			var stance:GladiatorStance = (arenaSpawner.currentPlayerEntity || curArr[testIndex]).get(IAnimatable) as GladiatorStance;
 			if (stance ==null) stance = curArr[testIndex].get(IAnimatable) as GladiatorStance;
 			//stance.swing(blend);
-			stance.switchToRanged("bow", blend);
+			//stance.switchToRanged(null, blend);
+			
 		}
 		private function testAnim2(blend:Number=.5):void 
 		{
@@ -730,6 +745,7 @@ package tests.pvp
 			
 			gladiatorStance.standEnabled = !_targetMode;
 			arenaHUD.setTargetMode(_targetMode);
+			
 			if (_targetMode) {
 				thirdPersonController.thirdPerson.preferedZoom = TARGET_MODE_ZOOM;
 				thirdPersonController.thirdPerson.controller.disableMouseWheel();
@@ -750,7 +766,7 @@ package tests.pvp
 				exitTargetMode();
 				gladiatorStance.setIdleStance( _lastTargetStance);
 			}
-			
+			gladiatorStance.setTargetMode(_targetMode);
 		}
 		
 		private function exitTargetMode():void 
@@ -765,6 +781,7 @@ package tests.pvp
 		
 			
 			if (movementPoints.movementTimeLeft > 0) arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll);
+				gladiatorStance.setTargetMode(_targetMode);
 		}
 		
 		
@@ -1042,6 +1059,7 @@ package tests.pvp
 			
 			_targetMode = false;
 			arenaHUD.setTargetMode(_targetMode);
+			
 			commandPoints[sideIndex] -= getDeductionCP();
 			updateCP();
 			
@@ -1056,8 +1074,8 @@ package tests.pvp
 			
 			var stance:GladiatorStance;
 		
-			
-			
+			stance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
+			stance.setTargetMode(_targetMode);
 			
 			
 			
@@ -1158,7 +1176,7 @@ package tests.pvp
 		private var _targetTransitState:String;
 		private var _animAttackSystem:AnimAttackSystem;
 		private var arcSystem:A3DEnemyArcSystem;
-
+		
 
 		
 		private function transitionCameras(fromCamera:OrbitCameraMan, toCamera:OrbitCameraMan, targetState:String=null, customX:Number=Number.NaN, customY:Number = Number.NaN, customZ:Number = Number.NaN, customEase:Function=null, duration:Number=1):void 

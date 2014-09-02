@@ -1,4 +1,5 @@
 package ash.core;
+import ash.core.Entity;
 
 /**
  * The interface for classes that are used to manage NodeLists (set as the familyClass property
@@ -32,9 +33,15 @@ interface IFamily<TNode:Node<TNode>>
      * NodeList should be modified.
      */
     function componentRemovedFromEntity( entity:Entity, componentClass:Class<Dynamic> ):Void;
+	  /**
+     * A component has changed from an entity. Test whether the component reference in this family's
+     * NodeList should be modified.
+     */
+	function componentChangedFromEntity(entity:Entity, componentClass:Class<Dynamic>):Void;
     /**
      * The family is about to be discarded. Clean up all properties as necessary. Usually, you will
      * want to empty the NodeList at this time.
      */
     function cleanUp():Void;
+	
 }

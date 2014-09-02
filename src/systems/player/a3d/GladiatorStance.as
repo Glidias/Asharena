@@ -10,7 +10,9 @@ package systems.player.a3d
 	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Skin;
 	import arena.components.weapon.Weapon;
+	import arena.systems.player.IStance;
 	import ash.signals.Signal1;
+	import com.greensock.easing.Cubic;
 	import com.greensock.TweenLite;
 	import components.controller.SurfaceMovement;
 	import components.Ellipsoid;
@@ -31,7 +33,7 @@ package systems.player.a3d
 	 * ...
 	 * @author Glenn Ko
 	 */
-	public class GladiatorStance implements IAnimatable
+	public class GladiatorStance implements IAnimatable, IStance
 	{
 		private var skin:Skin;
 		private var anims:AnimationManager;
@@ -53,6 +55,9 @@ package systems.player.a3d
 		
 		private var _curController:AnimationController;
 		public var aimCouple:AnimationCouple = new AnimationCouple();  // for blending 2 animations
+		public var tensionCouple:AnimationCouple = new AnimationCouple();
+		public var aimCouple2:AnimationCouple = new AnimationCouple();
+		
 		
 		private var attackAnimCouple:AnimationCouple = new AnimationCouple();
 		private var melee_thrust_up:AnimationClip;
@@ -88,6 +93,27 @@ package systems.player.a3d
 		public function get stance():int 
 		{
 			return _stance;
+		}
+		
+		public function get aimReady():Boolean 
+		{
+			return _aimReady;
+		}
+		
+		public function set aimReady(value:Boolean):void 
+		{
+			if (_aimReady == value) return;
+			_aimReady = value;
+			if (value) {
+				switchToRanged(weaponId, -1);
+			}
+			else {
+			
+				setAnimationNode(upper_idleCombat , upperBodyController, upperBody, .3);
+			
+
+				TweenLite.to(skin, .3, { rotationZ:Math.PI, ease:Cubic.easeOut } );
+			}
 		}
 	
 		
@@ -162,6 +188,50 @@ package systems.player.a3d
 			
 		
 			init();
+			
+		}
+		
+		public function setTargetMode(val:Boolean):void {
+			if (_ranged) {
+				if (val) {
+					skin.rotationZ = Math.PI;// - .7;
+					
+					//setAnimationNode(upper_idleCombat , upperBodyController, upperBody, 0);
+					handleAction(PlayerAction.IDLE);
+					
+					////setAnimationNode(upper_idleCombat , upperBodyController, upperBody, 0);
+					//handleAction(PlayerAction.IDLE);
+					//aimReady = val;
+					
+					
+					switchToRanged(weaponId, .5);
+				}
+				else {
+					
+					skin.rotationZ = Math.PI;
+					
+					setAnimationNode(upper_idleCombat , upperBodyController, upperBody, 0);
+					
+					//upperBodyController.update(1);
+				//	_curController = fullBodyController;
+					//upperBodyController.update(0);
+					
+					//setAnimationNode( _stance < 2 ? fullBodyAnims[ "combat_idle"] : fullBodyAnims["crouch_idle"], fullBodyController, fullBody, 0);
+					
+					//handleAction(PlayerAction.IDLE);
+					
+					
+					
+					//_curController = fullBodyController;
+					//_aimReady = false;
+				}
+				
+			}
+		}
+		
+		public function setAimReady(val:Boolean):void {
+			_aimReady = !val;
+			aimReady = val;
 		}
 		
 		private function setupAnimations():void 
@@ -190,6 +260,11 @@ package systems.player.a3d
 			
 			upperBody.addAnimation(attackAnimCouple);
 			upperBody.addAnimation(aimCouple);
+			upperBody.addAnimation(aimCouple2);
+			upperBody.addAnimation(tensionCouple);
+			
+			
+		
 		}
 		
 		private function onEndSwingAnim(e:NotifyEvent):void {
@@ -209,32 +284,56 @@ package systems.player.a3d
 		
 		
 		public function switchToRanged(weaponName:String, altBalance:Number = .5):void {
-	//		throw new Error(upperBodyAnims["ref_aim__" + weaponName + "_blend1"] + ", "+anims.getAnimationByName("ref_aim" + weaponName + "_blend1"));
-			aimCouple.left = upperBodyAnims["ref_aim_"+weaponName+"_blend1"];
-			aimCouple.right = upperBodyAnims["ref_aim_" + weaponName + "_blend2"];
-	
-			upperBodyAnims["ref_aim_"+weaponName+"_blend1"].time = 0;
-			upperBodyAnims["ref_aim_"+weaponName+"_blend2"].time = 0;
-			aimCouple.balance = altBalance;// 1; altBalance;
+				
+			if (altBalance >= 0) {
+				aimCouple.balance = altBalance;// 1; altBalance;
+				aimCouple2.balance = altBalance;
+			}
 			
+			if (weaponName != null) {
+		//		throw new Error(upperBodyAnims["ref_aim__" + weaponName + "_blend1"] + ", "+anims.getAnimationByName("ref_aim" + weaponName + "_blend1"));
+				aimCouple.left = upperBodyAnims["ref_aim_"+weaponName+"_blend1"];
+				aimCouple.right = upperBodyAnims["ref_aim_" + weaponName + "_blend2"];
+		
+				upperBodyAnims["ref_aim_"+weaponName+"_blend1"].time = 0;
+				upperBodyAnims["ref_aim_" + weaponName+"_blend2"].time = 0;
+			}
+			
+			var coupleRoot:AnimationCouple = aimCouple;
+			
+			if (weaponRangeMode == Weapon.RANGEMODE_BOW) {
+				aimCouple2.left = upperBodyAnims["ref_aim_"+weaponName+"2_blend1"];
+				aimCouple2.right = upperBodyAnims["ref_aim_" + weaponName + "2_blend2"];
+				
+				upperBodyAnims["ref_aim_"+weaponName+"2_blend1"].time = 0;
+				upperBodyAnims["ref_aim_" + weaponName+"2_blend2"].time = 0;
+				
+				tensionCouple.left = aimCouple;
+				tensionCouple.right = aimCouple2;
+				coupleRoot = tensionCouple;
+			}
+			
+		
 			if (_stance == 0) {
 				
 				setStanceAndRefresh(1);
 				_stanceTemp = true;
 				
 			}
-			initiateUpperBodyAim();
+			initiateUpperBodyAim(coupleRoot);
 		}
 		
 		
 		public function swing(altBalance:Number = .5):void {
-			
+			altBalance = altBalance < 0 ? pitchAimRatio : altBalance;
+				
 			attackAnimCouple.left = melee_swing_down;
 			attackAnimCouple.right = melee_swing_up;
 			melee_swing_down.time = 0;
 			melee_swing_up.time = 0;
 			attackAnimCouple.balance = altBalance;// 1; altBalance;
-			
+		
+
 			if (_stance == 0) {
 				
 				setStanceAndRefresh(1);
@@ -247,12 +346,14 @@ package systems.player.a3d
 		}
 		
 		public function thrust(altBalance:Number = .5):void {
+			altBalance = altBalance < 0 ? pitchAimRatio : altBalance;
 			
 			attackAnimCouple.left = melee_thrust_down;
 			attackAnimCouple.right = melee_thrust_up;
 			melee_thrust_down.time = 0;
 			melee_thrust_up.time = 0;
 			attackAnimCouple.balance =  altBalance;
+		
 			if (_stance == 0) {
 				
 				setStanceAndRefresh(1);
@@ -263,14 +364,20 @@ package systems.player.a3d
 			
 		}
 		
-		public function initiateUpperBodyAim():void {
+		private function initiateUpperBodyAim(customCouple:AnimationCouple):void {
+			
+			//skin._rotationZ = Math.PI - .7;
+
+			TweenLite.to(skin, readyAimTime, { rotationZ:Math.PI-.7, ease:Cubic.easeOut } );
+			skin.transformChanged = true;
+			
 			//setAnimationNode(attackAnimCouple, upperBodyController, upperBody, .3);
 			if (!upperBodyDominant) {
 				setAnimationNode( _stance < 2 ? fullBodyAnims[ "combat_idle"] : fullBodyAnims["crouch_idle"], fullBodyController, fullBody, 0);
 				fullBodyController.update(0);
 			}
 			
-			setAnimationNode( aimCouple, upperBodyController, upperBody, .3);
+			setAnimationNode( customCouple, upperBodyController, upperBody, readyAimTime);
 			//_curController = null;
 			if (upperBodyDominant) _curController = null;
 			//upperBodyDominant = true;
@@ -317,6 +424,7 @@ package systems.player.a3d
 					switcher.addAnimation(anim);
 				}
 			
+				
 			}
 			
 			
@@ -334,6 +442,9 @@ package systems.player.a3d
 			fullBody.activate( fullBodyAnims["standing_idle"], 0);
 			upperBody.activate( upperBodyAnims["ref_melee_aim"], 0);
 			//lowerBody.activate( lowerBodyAnims[""], 0);
+			
+			upperBody.addAnimation(upper_idleCombat=fullBodyAnims["combat_idle"].clone());
+			upperBody.addAnimation(upper_idleCrouch = fullBodyAnims["crouch_idle"].clone());
 			
 		}
 		
@@ -447,6 +558,12 @@ package systems.player.a3d
 				upperBodyDominant = false;
 			_running = false;
 			_idle = false;
+			
+			//skin._rotationZ = Math.PI + skinIdleRotOffset;
+			//skin.transformChanged = true;
+			//skin._rotationZ =  Math.PI;
+			//skin.transformChanged = true;
+				
 			if (val === PlayerAction.STATE_JUMP) {
 				setAnimation(fullBodyAnims["jump"], fullBodyController, fullBody, 0).speed = 1;
 			
@@ -457,8 +574,10 @@ package systems.player.a3d
 				return;
 			}	
 			else if (val === PlayerAction.IDLE) {
-				skin._rotationZ = Math.PI;
-				skin.transformChanged = true;
+				
+				
+				//skin._rotationZ = Math.PI;
+				//skin.transformChanged = true;
 				
 				setAnimation(fullBodyAnims[(_stance == 0 ? (danger ? "combat" : "standing") : _stanceString) + "_idle"], fullBodyController, fullBody,   myLastAction == 0 ? CROUCH_TIME : 0);  //_lastStance < 3 && _stance < 3 && 
 				
@@ -487,7 +606,7 @@ else surfaceMovement.setStrafeSpeed( (mask & MASK_STRAFE_FAST) ? speed_strafe*pl
 surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CROUCHSTRAFE_MULTIPLIER);
 	// TODO: do full body turn run for speed_strafe_fast instead!
 					setAnimation(lowerBodyAnims[ (_stance != 2 ?  "combat" : _stanceString) + ( val===PlayerAction.STRAFE_LEFT || val === PlayerAction.STRAFE_LEFT_FAST ? "_moveleft" : "_moveright")], lowerBodyController, lowerBody, 0).speed = surfaceMovement.STRAFE_SPEED * (upperBodyDominant ? I_SPEED_STRAFE_UPPER : I_SPEED_STRAFE_LOWER);
-				setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
+				setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, 0);
 					_curController = null;
 					
 					
@@ -509,7 +628,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 					surfaceMovement.WALK_SPEED = (val != PlayerAction.MOVE_FORWARD_FAST ? speed_jog : speed_run) * playerSpeedCombatRatio;
 					
 					setAnimation(lowerBodyAnims[(_stance != 0 ? _stanceString : "combat")+"_walkforward"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALK_SPEED * (I_SPEED_FORWARDS);  // todo: use different walk forward speed for combat
-					setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
+					setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, 0);
 								_curController = null;
 								upperBodyDominant = true;
 							}
@@ -518,7 +637,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 							//ref_melee_aim
 								surfaceMovement.setAllSpeeds( (val != PlayerAction.MOVE_FORWARD_FAST ? speed_jog : speed_run)*SPEED_CROUCH_MULTIPLIER* playerSpeedCrouchRatio );
 								setAnimation(lowerBodyAnims["crouch_walkforward"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALK_SPEED *  I_SPEED_CROUCH; 
-							setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
+							setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, 0);
 							_curController = null;
 							upperBodyDominant = true;
 						}
@@ -543,7 +662,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 					surfaceMovement.setStrafeSpeed(speed_strafe * CROUCH_TIME);
 					surfaceMovement.WALKBACK_SPEED = _stance != 2 ? (val != PlayerAction.MOVE_BACKWARD_FAST ? speed_backwards : speed_backwards_fast) : speed_backwards * playerSpeedCrouchRatio * SPEED_CROUCHBACK_MULTIPLIER;
 					setAnimation(lowerBodyAnims[(_stance != 0 ? _stanceString : "combat")+"_walkback"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALKBACK_SPEED * (_stance != 2 ? I_SPEED_BACKWARDS : I_SPEED_CROUCH);
-					setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .3);
+					setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, 0);
 				
 				
 					_curController = null;
@@ -563,6 +682,10 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		/* INTERFACE systems.animation.IAnimatable */
 		
 		private var crouchTime:Number = Number.MAX_VALUE;
+		private var pitchAimRatio:Number = 0;
+		private var weaponId:String = "bow";
+		private var readyAimTime:Number  = .3;
+		public var skinIdleRotOffset:Number= 0;
 	
 		public function animate(time:Number):void 
 		{
@@ -626,7 +749,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 				
 				skin.transformChanged = true;  // this is required for water plane update notification
 			}
-			skin.rotationZ = Math.PI- .7;
+			//skin.rotationZ = Math.PI- .7;
 		}
 		
 		public function crouch():void {
@@ -641,6 +764,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		public function setIdleStance(val:int):void 
 		{
 			stance = val;
+			
 			handleAction(PlayerAction.IDLE);
 		}
 		
@@ -653,6 +777,77 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			// temrpoary delayedCall atm
 			//TweenLite.delayedCall(clip.length, handleAction, [PlayerAction.IDLE] );
 			return clip.length;
+		}
+		
+		/* INTERFACE arena.systems.player.IStance */
+		
+		private var tensionSetting:Number = -1;
+		private var tensionSpeed:Number = .1;
+		private var _ranged:Boolean = true;
+		
+		private var _aimReady:Boolean = false;
+		private var weaponRangeMode:int = Weapon.RANGEMODE_BOW;
+		private var upper_idleCombat:AnimationClip;
+		private var upper_idleCrouch:AnimationClip;
+		
+		public function updateTension(ratio:Number, time:Number):void 
+		{
+			if (tensionSetting == ratio) return;
+			
+			if (ratio >= 0) {  //
+				var amt:Number =  tensionSpeed * time;
+				
+				tensionSetting = ratio;
+				tensionCouple.balance = tensionSetting;
+				//TweenLite.to(tensionCouple, 1, { balance:tensionSetting } );
+				//tensionSetting += ratio > tensionSetting ? amt 
+				if (_ranged) {
+					aimReady = true;
+				}
+			}
+			else {   //
+				if (_ranged) {
+					aimReady = false;
+				}
+				tensionSetting = 0;
+				tensionCouple.balance = 0;
+			}
+		}
+		
+		public function setTorsoTwist(ratio:Number, time:Number):void 
+		{
+			
+		}
+		
+		public function setPitchAim(ratio:Number, time:Number):void 
+		{
+			pitchAimRatio = ratio;
+			aimCouple.balance = aimCouple2.balance = ratio;
+			
+		}
+		
+		public function getTension():Number 
+		{
+			return tensionSetting;
+		}
+		
+		public function switchWeapon(weapon:Weapon):void {
+			weaponId = weapon.id;
+			weaponRangeMode = weapon.rangeMode;
+			
+			if (weapon.fireMode <= 0) { // ranged
+				readyAimTime = weapon.timeToSwing;
+				tensionSpeed = weapon.strikeTimeAtMaxRange != 0 ?  1/weapon.strikeTimeAtMaxRange : 1;
+		
+				_ranged = true;
+					aimReady = true;
+			aimReady = false;
+				
+			}
+			else { // melee
+				_ranged = false;
+				skinIdleRotOffset = 0;
+			}
 		}
 			
 		

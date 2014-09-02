@@ -14,16 +14,19 @@ class EnemyWatch
 	public var watch:EnemyIdle;  // the old previous idle watch state  settings
 	public var rotDirty:Bool;  // normally used if transitioning from EnemyAggro state
 
+	public var engaged:Bool;
+	
 	public function new() 
 	{
 		
 	}
 	
-	public function init(watch:EnemyIdle, target:PlayerAggroNode, rotDirty:Bool=false):EnemyWatch {
+	public function init(watch:EnemyIdle, target:PlayerAggroNode, rotDirty:Bool=false, engaged:Bool=false):EnemyWatch {
 		//target = null;
 		this.watch = watch;
 		this.target = target;
 		this.rotDirty = rotDirty;
+		this.engaged = engaged;
 		return this;
 	}
 	

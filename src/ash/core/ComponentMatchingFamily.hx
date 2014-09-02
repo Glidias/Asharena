@@ -86,6 +86,19 @@ class ComponentMatchingFamily<TNode:Node<TNode>> implements IFamily<TNode>
             removeIfMatch(entity);
         }
     }
+	
+	/**
+     * Called by the engine when a component has changed from an entity.
+     */
+    public function componentChangedFromEntity(entity:Entity, componentClass:Class<Dynamic>):Void
+    {
+        if (components.exists(componentClass))
+        {
+             for (node in nodeList) {
+				Reflect.setField(node, components.get(componentClass), entity.get(componentClass));
+			 }
+        }
+    }
 
     /**
      * Called by the engine when an entity has been rmoved from it. We check if the entity is in

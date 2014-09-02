@@ -22,6 +22,7 @@ class AnimAttackSystem extends System
 {
 	private var nodeList:NodeList<AnimAttackNode>;
 	private var _engine:Engine;
+	private var _notResolved:Int;
 	//public var count:Int = -1;
 	public var resolved:Signal0;
 //
@@ -46,9 +47,18 @@ class AnimAttackSystem extends System
 		
 	}
 	
+	public var projectileTimeLeft:Float;
+	
 	override public function update(time:Float):Void {
 		var n:AnimAttackNode = nodeList.head;
-		var notResolved:Int = n!=null ? -1 :  0;
+		var notResolved:Int = n != null ? -1 :  0;
+		
+		// process fixed rangedTime accordingly
+		
+		
+		// process dynamic rangedTime accordingly
+		
+		
 		
 		while ( n != null) {
 			if (n.animMelee.targetPos != null) {
@@ -70,9 +80,7 @@ class AnimAttackSystem extends System
 					n.animMelee.fixedStrikeTime = -1;
 					
 					
-				}
-				
-				
+				}	
 			}
 			
 			if (n.animMelee.curTime >= n.weapon.anim_fullSwingTime) {
@@ -85,6 +93,8 @@ class AnimAttackSystem extends System
 			n = n.next;
 		}
 		
+		
+		_notResolved = notResolved;
 		if (notResolved  == -1) {
 			_engine.updateComplete.addOnce( notifyFinish);
 		}

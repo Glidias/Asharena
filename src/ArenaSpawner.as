@@ -20,6 +20,8 @@ package
 	import arena.components.char.CharDefense;
 	import arena.components.char.EllipsoidPointSamples;
 	import arena.components.enemy.EnemyIdle;
+	import arena.components.weapon.Weapon;
+	import arena.systems.player.IStance;
 	import ash.core.Engine;
 	import ash.core.Entity;
 	import ash.signals.Signal0;
@@ -121,6 +123,8 @@ package
 			
 			keyPoll.resetAllStates();
 			currentPlayerEntity.add(keyPoll, KeyPoll);
+			
+			
 			
 			_currentPlayerEntityChanged.dispatch(currentPlayerEntity);
 			
@@ -261,7 +265,7 @@ package
 			addRenderEntity( upload( new Box(900, 10, 10, 1, 1, 1, false, new FillMaterial(0x00FF00) ),  context3D), pos || new Pos(), rot || new Rot() );
 		}
 		
-		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0, azimuth:Number=0, side:int=0, name:String=null):Entity {
+		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0, azimuth:Number=0, side:int=0, name:String=null, weapon:Weapon=null, watchSettings:EnemyIdle=null):Entity {
 			var ent:Entity = getGladiatorBase(x,y,z, 0,0,0, playerStage!=null);
 			var skProto:Skin = skinDict[race];
 			var sk:Skin = skProto.clone() as Skin;
@@ -329,13 +333,26 @@ package
 			var attacks:ActionUIntSignal = ent.get(ActionUIntSignal) as ActionUIntSignal;	
 			attacks.add(gladiatorStance.handleAttack);
 			ent.add(gladiatorStance, IAnimatable);
+			ent.add(gladiatorStance, IStance);
 			
-			ent.add( new AggroMem().init(defaultEnemyWatchMelee, side) );
+		
 			
 			ent.add(gladiatorPointSamples);
 			//ent.add( new MovableCollidable().init() );
 			
+			if (weapon != null) {
+				ent.add(weapon);
+				gladiatorStance.switchWeapon(weapon);
+				if (watchSettings == null) {
+			//		watchSettings = new EnemyIdle().init(9000, weapon.range);
+				}
+			}
+			ent.add( new AggroMem().init( (watchSettings || defaultEnemyWatchMelee), side) );
+				
+			
 			engine.addEntity(ent);
+			
+			
 			
 			return ent;
 		}

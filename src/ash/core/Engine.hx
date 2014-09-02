@@ -140,11 +140,23 @@ class Engine
      * @private
      */
 
-    private function componentAdded(entity:Entity, componentClass:Class<Dynamic>):Void
+    private function componentAdded(entity:Entity, componentClass:Class<Dynamic>, switchOnly:Bool):Void
     {
+		if (switchOnly) {
+			componentChanged(entity, componentClass);
+			return;
+		}
         for (family in families)
         {
             family.componentAddedToEntity(entity, componentClass);
+        }
+    }
+	
+	 private function componentChanged(entity:Entity, componentClass:Class<Dynamic>):Void
+    {
+        for (family in families)
+        {
+            family.componentChangedFromEntity(entity, componentClass);
         }
     }
 
