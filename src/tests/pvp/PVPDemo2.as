@@ -1104,7 +1104,7 @@ package tests.pvp
 			//arenaSpawner.currentPlayerSkin.getSurface(0).material as 
 			//arenaSpawner.currentPlayerSkin.getSurface(0).material
 			thirdPersonController.thirdPerson.setFollowComponents( arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Rot) as Rot);
-			thirdPersonAiming.setCameraParameters(thirdPersonController.thirdPerson.followTarget, _template3D.camera, thirdPersonController.thirdPerson.cameraForward, thirdPersonController.thirdPerson.offsetX, thirdPersonController.thirdPerson.offsetY, thirdPersonController.thirdPerson.offsetZ);
+			thirdPersonAiming.setCameraParameters(thirdPersonController.thirdPerson.followTarget, _template3D.camera, thirdPersonController.thirdPerson.cameraForward);
 			thirdPersonAiming.setEntity( arenaSpawner.currentPlayerEntity);
 			
 			changeCameraView("thirdPerson");		

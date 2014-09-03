@@ -27,9 +27,7 @@ package systems.player.a3d
 		private const ORIGIN:Vector3D = new Vector3D();
 		private var camera:Camera3D;
 		private var followObject:Object3D;
-		private var offsetX:Number = 0;
-		private var offsetY:Number = 0;
-		private var offsetZ:Number = 0;
+	
 		private var spherePos:Vector3D = new Vector3D();
 		private var sphereSideOffset:Number;
 		private var sphereHeightOffset:Number;
@@ -50,7 +48,7 @@ package systems.player.a3d
 		
 		
 		
-		public function setCameraParameters(followObject:Object3D, camera:Camera3D, camForward:Vector3D, offsetX:Number=0, offsetY:Number=0, offsetZ:Number=0):void {
+		public function setCameraParameters(followObject:Object3D, camera:Camera3D, camForward:Vector3D):void {
 			this.followObject = followObject;
 			this.camera = camera;
 			this.camForward = camForward;
@@ -71,15 +69,24 @@ package systems.player.a3d
 			cameraRay._orig.y = camera._y;
 			cameraRay._orig.z = camera._z;
 			
-			cameraRay._orig.x = camForward.x;
-			cameraRay._orig.y = camForward.y;
-			cameraRay._orig.z = camForward.z;
+			if (camForward.lengthSquared != 0){
+			cameraRay._dir.x = camForward.x;
+			cameraRay._dir.y = camForward.y;
+			cameraRay._dir.z = camForward.z;
+			}
+			else {
+				camera.calculateRay( new Vector3D(), cameraRay._dir, camera.view._width * .5, camera.view._height * .5);
+			}
 			
 			spherePos.x = followObject._x;
 			spherePos.y = followObject._y;
 			spherePos.z = followObject._z;
 
 			
+			if (!cameraRay.intersectsSphere( cameraRay._orig, cameraRay._dir, spherePos, maxRange) ) {
+				throw new Error("SHOuld intersect!:" + (cameraRay._orig.subtract(spherePos).length < maxRange) + ", "+cameraRay._dir );
+				return;
+			}
 			var vec:Vector3D = cameraRay.getRayToSphereIntersection(cameraRay._orig, cameraRay._dir, spherePos, maxRange);
 				
 			var dx:Number = vec.x - spherePos.x;
@@ -87,10 +94,10 @@ package systems.player.a3d
 			var dz:Number = vec.z - spherePos.z;
 			
 		
-			var diffAngle:Number = Math.atan2(dz, Math.sqrt( dx * dx + dy * dz) );
+			var diffAngle:Number = Math.atan2(dz, Math.sqrt( dx * dx + dy * dy) );
 			
 			diffAngle  = diffAngle < minPitch ? minPitch : diffAngle > maxPitch ? maxPitch : diffAngle;
-			
+			//Log.trace(diffAngle+  ", " +(diffAngle-minPitch) / (maxPitch - minPitch) + ", "+ cameraRay._a);
 			stance.setPitchAim((diffAngle-minPitch) / (maxPitch - minPitch), time)
 			//if (vec.x*vec.x + vec.y*vec.y + vec.z*vec.z <=
 		}

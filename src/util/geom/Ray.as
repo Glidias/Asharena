@@ -1,7 +1,6 @@
 package util.geom
 {
 	import flash.geom.Vector3D;
-	import haxe.Log;
 	
 	public class Ray{
 		
@@ -13,7 +12,7 @@ package util.geom
 		private var _w:Vector3D = new Vector3D();
 		private var _pn:Vector3D = new Vector3D();
 		private var _npn:Vector3D = new Vector3D();
-		private var _a:Number;
+		public var _a:Number;
 		private var _b:Number;
 		private var _c:Number;
 		private var _d:Number;
@@ -117,7 +116,7 @@ package util.geom
 			_intersect.x = pOrig.x + (_pn.x* t);
 			_intersect.y = pOrig.y + (_pn.y* t);
 			_intersect.z = pOrig.z + (_pn.z* t);
-			// Log.trace( _pn);
+			
 			//todo, add dist return. var dist:Number = Math.sqrt(a)*t;
 			
 			if(bNormal){
@@ -127,7 +126,7 @@ package util.geom
 				
 				return _pn;
 			}
-			
+			 
 			return _intersect;
 		}
 	
