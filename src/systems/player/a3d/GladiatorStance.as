@@ -487,14 +487,21 @@ package systems.player.a3d
 		}
 		
 		public function handleAttack(attack:uint):void {
-			if (attack === Weapon.FIREMODE_SWING) {
-				swing();
-			}
-			else if (attack === Weapon.FIREMODE_THRUST) {
-				thrust();
+			
+			if (_ranged) {
+				
+				
 			}
 			else {
-				throw new Error("Could not resolve attack animation code:" + attack );
+				if (attack === Weapon.FIREMODE_SWING) {
+					swing();
+				}
+				else if (attack === Weapon.FIREMODE_THRUST) {
+					thrust();
+				}
+				else {
+					throw new Error("Could not resolve attack animation code:" + attack );
+				}
 			}
 		}
 		
