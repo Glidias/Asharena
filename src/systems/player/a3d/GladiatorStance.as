@@ -204,7 +204,7 @@ package systems.player.a3d
 					//aimReady = val;
 					
 					
-					switchToRanged(weaponId, .5);
+					switchToRanged(weaponId, -1);
 				}
 				else {
 					
@@ -599,7 +599,7 @@ package systems.player.a3d
 					
 					// Else
 					//Log.trace(val === PlayerAction.STRAFE_LEFT);
-					if (_stance != 2 && !(mask & MASK_STRAFE_FAST)) upperBodyDominant = true;
+					 upperBodyDominant = true;
 					
 					if (_stance != 2) surfaceMovement.setStrafeSpeed( (mask & MASK_STRAFE_FAST) ? speed_strafe_fast : speed_strafe );
 else surfaceMovement.setStrafeSpeed( (mask & MASK_STRAFE_FAST) ? speed_strafe*playerSpeedCrouchRatio*SPEED_CROUCHSTRAFE_MULTIPLIER : speed_strafe*playerSpeedCrouchRatio*SPEED_CROUCHSTRAFE_MULTIPLIER );

@@ -79,6 +79,7 @@ package tests.pvp
 	import systems.collisions.EllipsoidCollider;
 	import systems.collisions.GroundPlaneCollisionSystem;
 	import systems.player.a3d.GladiatorStance;
+	import systems.player.a3d.ThirdPersonAiming;
 	import systems.player.PlayerAction;
 	import systems.player.PlayerTargetingSystem;
 	import systems.player.PlayerTargetNode;
@@ -332,7 +333,7 @@ package tests.pvp
 		
 		private static const CHASE_Z_OFFSET:Number = 44;
 		private static const CMD_Z_OFFSET:Number = 72 + 40;
-		 private var TARGET_MODE_ZOOM:Number = 40;
+		 private var TARGET_MODE_ZOOM:Number = 55;
 		private static var CMD_DIST:Number = 730;
 		private var transitionCamera:ThirdPersonController;
 		private var centerPlayerTween:Tween;
@@ -712,8 +713,8 @@ package tests.pvp
 		{
 			var stance:GladiatorStance = (arenaSpawner.currentPlayerEntity || curArr[testIndex]).get(IAnimatable) as GladiatorStance;
 			if (stance ==null) stance = curArr[testIndex].get(IAnimatable) as GladiatorStance;
-			//stance.swing(blend);
-			//stance.switchToRanged(null, blend);
+			stance.swing(blend);
+			
 			
 		}
 		private function testAnim2(blend:Number=.5):void 
@@ -1103,6 +1104,9 @@ package tests.pvp
 			//arenaSpawner.currentPlayerSkin.getSurface(0).material as 
 			//arenaSpawner.currentPlayerSkin.getSurface(0).material
 			thirdPersonController.thirdPerson.setFollowComponents( arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Rot) as Rot);
+			thirdPersonAiming.setCameraParameters(thirdPersonController.thirdPerson.followTarget, _template3D.camera, thirdPersonController.thirdPerson.cameraForward, thirdPersonController.thirdPerson.offsetX, thirdPersonController.thirdPerson.offsetY, thirdPersonController.thirdPerson.offsetZ);
+			thirdPersonAiming.setEntity( arenaSpawner.currentPlayerEntity);
+			
 			changeCameraView("thirdPerson");		
 			
 			
@@ -1176,6 +1180,7 @@ package tests.pvp
 		private var _targetTransitState:String;
 		private var _animAttackSystem:AnimAttackSystem;
 		private var arcSystem:A3DEnemyArcSystem;
+		private var thirdPersonAiming:ThirdPersonAiming;
 		
 
 		
@@ -1368,7 +1373,10 @@ package tests.pvp
 		thirdPersonController.thirdPerson.controller.minDistance = 0;
 		thirdPersonController.thirdPerson.controller.maxDistance = 240;
 		thirdPersonController.thirdPerson.offsetZ = CHASE_Z_OFFSET;
+		//thirdPersonController.thirdPerson.offsetX = 22;
+			game.gameStates.thirdPerson.addInstance( thirdPersonAiming = new ThirdPersonAiming() ).withPriority(SystemPriorities.preRender);
 			game.gameStates.thirdPerson.addInstance(thirdPersonController).withPriority(SystemPriorities.postRender);
+			
 			
 			arcSystem = new A3DEnemyArcSystem(_template3D.scene);
 			//arenaHUD.arcContainer = arcSystem.arcs;
