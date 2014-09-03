@@ -192,6 +192,19 @@ class AnimAttackSystem extends System implements IProjectileHitResolver
 			sig.forceSet(attackAction);
 	}
 	
+	public static inline function performRangedAttackAction(attackAction:UInt, attackerEntity:Entity, targetEntity:Entity, targetDamage:Int):Void {
+		var shooter = new AnimAttackRanged();
+		var weap:Weapon = attackerEntity.get(Weapon);
+		var pos:Pos = attackerEntity.get(Pos);
+		var targetPos:Pos = targetEntity.get(Pos);
+		var stance:IStance = attackerEntity.get(IStance);
+		var ratio:Float = stance!= null ? 1 - stance.getTension() : 0;
+		shooter.init_i( pos.x, pos.y, pos.z + weap.heightOffset, targetEntity, targetEntity.get(Pos), targetEntity.get(Ellipsoid), weap.rangeMode != Weapon.RANGEMODE_BOW ?  weap.strikeTimeAtMaxRange : weap.strikeTimeAtMinRange + weap.strikeTimeAtMaxRange * ratio,  weap.projectileSpeed, weap.projectileDomain);
+		
+		var sig:ActionUIntSignal = attackerEntity.get(ActionUIntSignal);
+		sig.forceSet(attackAction);
+	}
+	
 	/* INTERFACE arena.systems.weapon.IProjectileHitResolver */
 	
 	public function processHit(srcEntity:Entity, targetEntity:Entity, targetDamage:Int, ex:Float = 0, ey:Float = 0, ez:Float = 0):Void 

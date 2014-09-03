@@ -6,6 +6,7 @@ package tests.pvp
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.controller.ThirdPersonTargetingSystem;
 	import alternativa.a3d.objects.ArrowLobMeshSet;
+	import alternativa.a3d.objects.ProjectileDomain;
 	import alternativa.a3d.rayorcollide.TerrainRaycastImpl;
 	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
 	import alternativa.a3d.systems.enemy.A3DEnemyArcSystem;
@@ -457,6 +458,7 @@ package tests.pvp
 			*/
 			A3DEnemyAggroSystem;
 			A3DEnemyArcSystem;
+			ProjectileDomain;
 			
 			var w:Weapon =   new Weapon();
 		w.minPitch = -Math.PI*.25;

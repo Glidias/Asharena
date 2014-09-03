@@ -21,7 +21,7 @@ package alternativa.a3d.objects
 	 * We determine arrow position and orientation, from velocity, offset and time...within GPU itself.
 	 * @author Glenn Ko
 	 */
-	public class ArrowLobMeshSet2 extends Mesh
+	public class ArrowLobMeshSet2 extends Mesh implements IProjectileLauncher
 	{
 		private var batchAmount:int;
 		
@@ -215,6 +215,25 @@ package alternativa.a3d.objects
 			
 		}
 		
+		public function getLastLaunchedIndex():int {
+			return total - 1;
+		}
+		
+		public function getIndexSize():int {
+			return 8;
+		}
+		
+		public function getDataVector():Vector.<Number> {
+			return toUpload;
+		}
+		
+		public function getTimeStampOffset():int {
+			return 3;
+		}
+		public function getTotalTimeOffset():int {
+			return 7;
+		}
+		
 		public function launchNewProjectileWithTimeSpan(startPosition:Vector3D, endPosition:Vector3D, time:Number=1 ):void {
 			//launchProjectileAtIndex(total, startPosition, endPosition);
 		
@@ -233,6 +252,13 @@ package alternativa.a3d.objects
 			
 			total++;
 			
+		}
+		
+		/* INTERFACE alternativa.a3d.objects.IProjectileLauncher */
+		
+		public function getTime():Number 
+		{
+			return timeStamp;
 		}
 		
 		private var displace:Vector3D = new Vector3D();
