@@ -814,16 +814,22 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			}
 		}
 		
-		public function setTorsoTwist(ratio:Number, time:Number):void 
+		public function setTorsoTwist(ratio:Number):void 
 		{
 			
 		}
+		public function getTorsoTwist():Number {
+			return 0;
+		}
 		
-		public function setPitchAim(ratio:Number, time:Number):void 
+		public function setPitchAim(ratio:Number):void 
 		{
 			pitchAimRatio = ratio;
 			aimCouple.balance = aimCouple2.balance = ratio;
 			
+		}
+		public function getPitchAim():Number {
+			return pitchAimRatio;
 		}
 		
 		public function getTension():Number 

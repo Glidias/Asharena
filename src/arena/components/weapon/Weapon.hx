@@ -95,6 +95,16 @@ class Weapon
 		
 	}
 	
+	public static inline function getPitchRatio(dx:Float, dy:Float, dz:Float, minPitch:Float, maxPitch:Float):Float {
+
+		var sz:Float = Math.atan2(dz, Math.sqrt( dx * dx + dy * dy) );
+		
+		sz  = sz < minPitch ? minPitch : sz > maxPitch ? maxPitch : sz;
+		return (sz-minPitch) / (maxPitch - minPitch);
+	}
+	
+	
+	
 	public function init(name:String, range:Float, damage:Int, cooldownTime:Float, hitAngle:Float, sideOffset:Float=0, fireMode:Int=0, heightOffset:Float=0, deviation:Float=0, projectileSpeed:Float=0, minPitch:Float=0, maxPitch:Float=0):Weapon {
 		this.name = name;
 		this.range = range;

@@ -33,11 +33,16 @@ class Entity
     /**
      * This signal is dispatched when a component is added to the entity.
      */
-    public var componentAdded(default, null):Signal3<Entity, Class<Dynamic>, Bool>;
+    public var componentAdded(default, null):Signal2<Entity, Class<Dynamic>>;
     /**
      * This signal is dispatched when a component is removed from the entity.
      */
     public var componentRemoved(default, null):Signal2<Entity, Class<Dynamic>>;
+	
+	 /**
+     * This signal is dispatched when a component is changed from the entity.
+     */
+    public var componentChanged(default, null):Signal2<Entity, Class<Dynamic>>;
     /**
      * Dispatched when the name of the entity changes. Used internally by the engine to track entities based on their names.
      */
@@ -49,8 +54,9 @@ class Entity
 
     public function new(name:String = "")
     {
-        componentAdded = new Signal3<Entity, Class<Dynamic>, Bool>();
+        componentAdded = new Signal2<Entity, Class<Dynamic>>();
         componentRemoved = new Signal2<Entity, Class<Dynamic>>();
+		componentChanged = new Signal2<Entity, Class<Dynamic>>();
         nameChanged = new Signal2<Entity, String>();
         components = new ClassMap();
 
@@ -93,14 +99,33 @@ class Entity
             componentClass = #if flash untyped component.constructor; #else Type.getClass(component); #end
 
         if (components.exists(componentClass)) {
-           // remove(componentClass);
+            remove(componentClass);
+			
+			// components.set(componentClass, component);
+			// componentAdded.dispatch(this, componentClass, true);
+			//return this;
+		}
+
+        components.set(componentClass, component);
+        componentAdded.dispatch(this, componentClass);
+        return this;
+    }
+	
+	public function addOrChange<T>(component:T, componentClass:Class<Dynamic> = null):Entity
+    {
+        if (componentClass == null)
+            componentClass = #if flash untyped component.constructor; #else Type.getClass(component); #end
+
+        if (components.exists(componentClass)) {
+            //remove(componentClass);
+			
 			 components.set(componentClass, component);
-			 componentAdded.dispatch(this, componentClass, true);
+			 componentChanged.dispatch(this, componentClass);
 			return this;
 		}
 
         components.set(componentClass, component);
-        componentAdded.dispatch(this, componentClass, false);
+        componentAdded.dispatch(this, componentClass);
         return this;
     }
 
@@ -118,6 +143,18 @@ class Entity
         {
             components.remove(componentClass);
             componentRemoved.dispatch(this, componentClass);
+            return component;
+        }
+        return null;
+    }
+	
+	public function removeNoSignal<T>(componentClass:Class<Dynamic>):T
+    {
+        var component:T = components.get(componentClass);
+        if (component != null)
+        {
+            components.remove(componentClass);
+           
             return component;
         }
         return null;

@@ -69,6 +69,7 @@ class Engine
 		
         entity.componentAdded.add(componentAdded);
         entity.componentRemoved.add(componentRemoved);
+		entity.componentChanged.add(componentChanged);
         entity.nameChanged.add(entityNameChanged);
         for (family in families)
         {
@@ -87,6 +88,7 @@ class Engine
     {
         entity.componentAdded.remove(componentAdded);
         entity.componentRemoved.remove(componentRemoved);
+		 entity.componentChanged.remove(componentChanged);
         entity.nameChanged.remove(entityNameChanged);
         for (family in families)
         {
@@ -140,19 +142,15 @@ class Engine
      * @private
      */
 
-    private function componentAdded(entity:Entity, componentClass:Class<Dynamic>, switchOnly:Bool):Void
+    private function componentAdded(entity:Entity, componentClass:Class<Dynamic>):Void
     {
-		if (switchOnly) {
-			componentChanged(entity, componentClass);
-			return;
-		}
         for (family in families)
         {
             family.componentAddedToEntity(entity, componentClass);
         }
     }
 	
-	 private function componentChanged(entity:Entity, componentClass:Class<Dynamic>):Void
+	private function componentChanged(entity:Entity, componentClass:Class<Dynamic>):Void
     {
         for (family in families)
         {

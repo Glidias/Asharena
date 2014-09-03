@@ -318,7 +318,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				i.entity.add(new EnemyWatch().init(i.state,p), EnemyWatch); // TODO: Pool ENemyWatch
 			}
 			else {
-				i.stance.setPitchAim( .5, pTimeElapsed );
+				i.stance.setPitchAim( .5 );
 				i.stance.updateTension( -1, pTimeElapsed);
 			}
 			i = i.next;
@@ -357,10 +357,10 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 						diffAngle = Math.atan2(   playerPos.z - enemyPos.z, Math.sqrt(dx * dx + dy * dy) );
 						//trace(diffAngle);
 						diffAngle  = diffAngle < aWeapon.minPitch ? aWeapon.minPitch : diffAngle > aWeapon.maxPitch ? aWeapon.maxPitch : diffAngle;
-						w.stance.setPitchAim(  (diffAngle-aWeapon.minPitch) / (aWeapon.maxPitch - aWeapon.minPitch), pTimeElapsed);
+						w.stance.setPitchAim(  (diffAngle-aWeapon.minPitch) / (aWeapon.maxPitch - aWeapon.minPitch));
 					}
 					else {
-						w.stance.setPitchAim( 0, pTimeElapsed );
+						w.stance.setPitchAim( 0 );
 					}
 					
 					
@@ -451,10 +451,10 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				diffAngle  = diffAngle < aWeapon.minPitch ? aWeapon.minPitch : diffAngle > aWeapon.maxPitch ? aWeapon.maxPitch : diffAngle;
 				//trace( (diffAngle-aWeapon.minPitch) / (aWeapon.maxPitch - aWeapon.minPitch));
 				
-				a.stance.setPitchAim(  (diffAngle-aWeapon.minPitch) / (aWeapon.maxPitch - aWeapon.minPitch), pTimeElapsed);
+				a.stance.setPitchAim(  (diffAngle-aWeapon.minPitch) / (aWeapon.maxPitch - aWeapon.minPitch));
 			}
 			else {
-				a.stance.setPitchAim( .5, pTimeElapsed );
+				a.stance.setPitchAim( .5 );
 			}
 			a.stance.updateTension(1, pTimeElapsed);
 			

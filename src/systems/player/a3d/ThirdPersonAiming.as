@@ -41,7 +41,8 @@ package systems.player.a3d
 			maxPitch = weapon.maxPitch;
 			if (maxPitch == minPitch) maxPitch++;
 			
-			sphereSideOffset = weapon.sideOffset;
+			 // the below isn't used atm, just put it here first
+			sphereSideOffset = weapon.sideOffset; 
 			sphereHeightOffset = weapon.heightOffset;
 			
 		}
@@ -106,13 +107,8 @@ package systems.player.a3d
 			dy = vec.y - spherePos.y;
 			dz = vec.z - spherePos.z;
 			
-		
-			var diffAngle:Number = Math.atan2(dz, Math.sqrt( dx * dx + dy * dy) );
-			
-			diffAngle  = diffAngle < minPitch ? minPitch : diffAngle > maxPitch ? maxPitch : diffAngle;
-			//Log.trace(diffAngle+  ", " +(diffAngle-minPitch) / (maxPitch - minPitch) + ", "+ cameraRay._a);
-			stance.setPitchAim((diffAngle-minPitch) / (maxPitch - minPitch), time)
-			//if (vec.x*vec.x + vec.y*vec.y + vec.z*vec.z <=
+			stance.setPitchAim( Weapon.getPitchRatio(dx,dy,dz,minPitch, maxPitch) )
+
 		}
 		
 	}

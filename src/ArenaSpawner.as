@@ -344,7 +344,7 @@ package
 				ent.add(weapon);
 				gladiatorStance.switchWeapon(weapon);
 				if (watchSettings == null) {
-			//		watchSettings = new EnemyIdle().init(9000, weapon.range);
+					watchSettings = new EnemyIdle().init(9000, weapon.range);
 				}
 			}
 			ent.add( new AggroMem().init( (watchSettings || defaultEnemyWatchMelee), side) );

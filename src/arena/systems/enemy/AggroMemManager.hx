@@ -6,6 +6,7 @@ import arena.components.enemy.EnemyAggro;
 import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
 import arena.components.weapon.Weapon;
+import arena.systems.enemy.AggroMemNode;
 import arena.systems.player.IVisibilityChecker;
 import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.player.PlayerAggroNode;
@@ -237,7 +238,7 @@ class AggroMemManager
 		}
 		
 		if (result != null) {
-			
+			_result = result;
 			return  getRotDestAngle(posA, rotA, result.pos);
 		}
 		else {
@@ -318,6 +319,7 @@ class AggroMemManager
 	public var weaponLOSChecker:IWeaponLOSChecker;
 	private var _turnActive:Bool = false;
 	private var _dummyPlayerNode:PlayerAggroNode;
+	private var _result:AggroMemNode;
 	public var visibilityChecker:IVisibilityChecker;
 	
 	// This is called right after turn is started, where MovementPoints is given to playerEnt after transioinining into player.
@@ -367,7 +369,7 @@ class AggroMemManager
 				a.state.setAttackRange( (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, playerAggroList.head.size) : aWeapon.range + playerAggroList.head.size.x );
 				var checkedLOS:Bool = false;
 				//
-				if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, playerAggroList.head.pos, a.state.attackRangeSq, aWeapon.hitAngle) &&  (checkedLOS=true) && weaponLOSChecker.validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, playerAggroList.head.pos, playerAggroList.head.size)  )   { // TODO: validate other LOS factors
+				if ( aWeapon.fireMode > 0 && HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, playerAggroList.head.pos, a.state.attackRangeSq, aWeapon.hitAngle) &&  (checkedLOS=true) && weaponLOSChecker.validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, playerAggroList.head.pos, playerAggroList.head.size)  )   { // TODO: validate other LOS factors
 					a.state.flag = 1;
 					a.weaponState.pullTrigger(aWeapon);
 					break;
@@ -416,6 +418,7 @@ class AggroMemManager
 					updateAggroMem(w.entity, aggroMem, w.pos, w.rot);
 				}
 			}
+		//	w.stance.updateTension( -1, 1);
 			w = w.next;
 		}
 
@@ -425,6 +428,7 @@ class AggroMemManager
 			if (aggroMem!=null) {
 				updateAggroMem(a.entity, aggroMem, a.pos, a.rot);
 			}
+		//	a.stance.updateTension(-1, 1);
 			a= a.next;
 		}
 		
@@ -435,6 +439,8 @@ class AggroMemManager
 			if (val != PMath.FLOAT_MAX) {  // rotate to face rotation value
 				
 				engine.addEntity( new Entity().add( new Tween(w.rot, 1.3, { z:val } ) ) );
+				//w.stance.setPitchAim( Weapon.getPitchRatio(_result.pos.x- w.pos.x, _result.pos.y - w.pos.y, _result.pos.z-w.pos.z, w.weapon.minPitch, w.weapon.maxPitch));
+				engine.addEntity( new Entity().add( new Tween(w.stance, 1.3, { setPitchAim:Weapon.getPitchRatio(_result.pos.x- w.pos.x, _result.pos.y - w.pos.y, _result.pos.z-w.pos.z, w.weapon.minPitch, w.weapon.maxPitch) } ) ) );
 			}
 			w = w.next;
 		}
@@ -456,7 +462,9 @@ class AggroMemManager
 				a.state.setAttackRange(a.weapon.range);
 				var val:Float = findNearestActiveNodeToRot(a.pos, a.rot, a.state.attackRangeSq, a.state.watch.eyeHeightOffset);
 				if (val != PMath.FLOAT_MAX) {  // rotate to face rotation value
-					engine.addEntity( new Entity().add( new Tween(a.rot, 1.7, { z:val } ) ) );
+					engine.addEntity( new Entity().add( new Tween(a.rot, 1.3, { z:val } ) ) );
+					//a.stance.setPitchAim( Weapon.getPitchRatio(_result.pos.x- a.pos.x, _result.pos.y - a.pos.y, _result.pos.z-a.pos.z, a.weapon.minPitch, a.weapon.maxPitch));
+					engine.addEntity( new Entity().add( new Tween(a.stance, 1.3, { setPitchAim:Weapon.getPitchRatio(_result.pos.x- a.pos.x, _result.pos.y - a.pos.y, _result.pos.z-a.pos.z, a.weapon.minPitch, a.weapon.maxPitch) } ) ) );
 				}
 			}
 			a = a.next;
