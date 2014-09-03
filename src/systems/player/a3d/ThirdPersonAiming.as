@@ -61,6 +61,9 @@ package systems.player.a3d
 		}
 		
 		override public function update(time:Number):void {
+			var dz:Number;
+			var dy:Number;
+			var dx:Number;
 			//stance.setPitchAim();
 			
 			if (stance == null || camera == null) return;
@@ -82,16 +85,26 @@ package systems.player.a3d
 			spherePos.y = followObject._y;
 			spherePos.z = followObject._z;
 
-			
+			/*
 			if (!cameraRay.intersectsSphere( cameraRay._orig, cameraRay._dir, spherePos, maxRange) ) {
 				throw new Error("SHOuld intersect!:" + (cameraRay._orig.subtract(spherePos).length < maxRange) + ", "+cameraRay._dir );
 				return;
 			}
-			var vec:Vector3D = cameraRay.getRayToSphereIntersection(cameraRay._orig, cameraRay._dir, spherePos, maxRange);
+			*/
+			dx = cameraRay._orig.x - spherePos.x;
+			dy = cameraRay._orig.y - spherePos.y;
+			dz = cameraRay._orig.z - spherePos.z;
+			/*
+			if (( dx * dx + dy * dy + dz * dz > maxRange * maxRange) ) {
+				Log.trace("Assert inside failed!");
+			}
+			*/
+			
+			var vec:Vector3D = cameraRay.getRayToSphereIntersection(cameraRay._orig, cameraRay._dir, spherePos, maxRange, dx*dx+dy*dy+dz*dz > maxRange*maxRange );
 				
-			var dx:Number = vec.x - spherePos.x;
-			var dy:Number = vec.y - spherePos.y;
-			var dz:Number = vec.z - spherePos.z;
+			dx = vec.x - spherePos.x;
+			dy = vec.y - spherePos.y;
+			dz = vec.z - spherePos.z;
 			
 		
 			var diffAngle:Number = Math.atan2(dz, Math.sqrt( dx * dx + dy * dy) );

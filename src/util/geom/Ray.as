@@ -109,7 +109,7 @@ package util.geom
 			
 			_d = Math.sqrt(_d);
 			
-			var t:Number = (bNearest)? ( -0.5) * (_b + _d) / _a : ( -0.5) * (_b - _d) / _a ;
+			var t:Number = (bNearest)?  ( -0.5) * (_b - _d) / _a : ( -0.5) * (_b + _d) / _a;
 				
 			if (t == 0.0) return null;
 			
