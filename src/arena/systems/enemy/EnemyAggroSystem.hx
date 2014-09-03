@@ -5,8 +5,8 @@ import arena.components.char.MovementPoints;
 import arena.components.enemy.EnemyAggro;
 import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
-import arena.components.weapon.AnimAttack;
 import arena.components.weapon.AnimAttackMelee;
+import arena.components.weapon.AnimAttackRanged;
 import arena.systems.player.IVisibilityChecker;
 import arena.systems.player.IWeaponLOSChecker;
 

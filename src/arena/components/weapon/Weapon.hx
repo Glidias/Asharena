@@ -1,4 +1,5 @@
 package arena.components.weapon;
+import arena.systems.weapon.IProjectileDomain;
 import ash.signals.Signal0;
 import ash.signals.Signal2;
 import components.Health;
@@ -78,6 +79,8 @@ class Weapon
 	
 	public var deviation:Float;
 	public var projectileSpeed:Float;
+	public var projectileDomain:IProjectileDomain;
+	
 
 	
 	public inline function matchAnimVarsWithStats():Void {

@@ -43,7 +43,7 @@ package alternativa.a3d.objects
 		
 		public function adjustArrowLifeSettings(idleTimeBeforeCleanup:Number = 4, registryFlushTime:Number = 4 ):void {
 			idleArrowLifetime = idleTimeBeforeCleanup;
-			maxTimeInterval = 4;
+			maxTimeInterval = registryFlushTime;
 		}
 		
 		public function setPermanentArrows():void {
@@ -189,7 +189,7 @@ package alternativa.a3d.objects
 			
 		}
 		
-		public function launchNewProjectile(startPosition:Vector3D, endPosition:Vector3D, speed:Number=1044 ):void {
+		public function launchNewProjectile(startPosition:Vector3D, endPosition:Vector3D, speed:Number=1044 ):Number {
 			//launchProjectileAtIndex(total, startPosition, endPosition);
 				displace.x = endPosition.x - startPosition.x;
 			displace.y = endPosition.y - startPosition.y;
@@ -210,6 +210,8 @@ package alternativa.a3d.objects
 			toUpload[base++ ] = totalTime;
 			
 			total++;
+			
+			return totalTime;
 			
 		}
 		

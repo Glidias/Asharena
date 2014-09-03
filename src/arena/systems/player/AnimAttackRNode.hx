@@ -1,5 +1,5 @@
 package arena.systems.player;
-import arena.components.weapon.AnimAttackMelee;
+import arena.components.weapon.AnimAttackRanged;
 import arena.components.weapon.Weapon;
 import ash.core.Node;
 import components.ActionIntSignal;
@@ -10,9 +10,9 @@ import components.Pos;
  * ...
  * @author Glidias
  */
-class AnimAttackNode extends Node<AnimAttackNode>
+class AnimAttackRNode extends Node<AnimAttackRNode>
 {
-	public var animMelee:AnimAttackMelee;
+	public var animRanged:AnimAttackRanged;
 	public var signal:ActionIntSignal;
 	public var weapon:Weapon;
 	public var pos:Pos;
