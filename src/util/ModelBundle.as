@@ -27,19 +27,32 @@ package util
 		}
 		
 		override protected function init():void {
+			
+			var len:int = savedAssets.length;
+			
+			var parser:ParserA3D = new ParserA3D();
+			
+			for (var i:int = 0; i < len; i++) {
+				var classe:Object = savedAssets[i];
+				
+				processClasse(parser, classe);
+						
+			}
+			
+			uploadAll();
+			super.init();
+		}
+		
+		public function processClasse(parser:ParserA3D, classe:Object):void 
+		{
 			var mesh:Mesh;
 			var type:String;
 			var n:XML;
 			var ider:String;
 			var nameSpl:Array;
 			var namer:String;
-			var len:int = savedAssets.length;
 			var xml:XML;
-			var parser:ParserA3D = new ParserA3D();
-			
-			for (var i:int = 0; i < len; i++) {
-				var classe:Object = savedAssets[i];
-				xml = describeType(classe);
+			xml = describeType(classe);
 				var variables : XMLList = xml.variable;
 				
 				for each(n in variables) { 
@@ -71,11 +84,6 @@ package util
 						mesh.setMaterialToAllSurfaces( material );
 					}
 				}
-						
-			}
-			
-			uploadAll();
-			super.init();
 		}
 		
 		public function getModel(id:String):Mesh {
@@ -87,7 +95,7 @@ package util
 		}
 		
 		///*
-		private function uploadAll():void {
+		public function uploadAll():void {
 			for (var id:String in modelHash) {
 				
 				uploadResources( (modelHash[id] as Mesh).getResources() );

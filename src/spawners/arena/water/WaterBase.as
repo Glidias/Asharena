@@ -49,6 +49,8 @@ package spawners.arena.water
 			var size:Number = SIZE;
 			var uvScale:Number = UV_SCALER;
 			plane = new Plane(size, size, SEGMENTS, SEGMENTS, false, false, null, waterMaterial);
+			//plane.transformProcedure
+			
 			var uvs:Vector.<Number>= plane.geometry.getAttributeValues(VertexAttributes.TEXCOORDS[0]);
 			for (var i:int = 0; i < uvs.length; i++) {
 				uvs[i] *= uvScale;
