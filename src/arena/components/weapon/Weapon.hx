@@ -1,8 +1,14 @@
 package arena.components.weapon;
+import arena.systems.player.IStance;
 import arena.systems.weapon.IProjectileDomain;
+import arena.systems.weapon.ITimeChecker;
+import ash.core.Entity;
 import ash.signals.Signal0;
 import ash.signals.Signal2;
+import components.ActionUIntSignal;
+import components.Ellipsoid;
 import components.Health;
+import components.Pos;
 
 /**
  * Base weapon/weapon-attack-mode stats. Sharable component between entities. 
@@ -30,6 +36,7 @@ class Weapon
 	public static inline var FIREMODE_RAY:Int = 0;		// ray hitscan shot (suitable for bullets and such..)
 	public static inline var FIREMODE_TRAJECTORY:Int = -1;  // for thrown/launched projectiles with trajectory
 	public static inline var FIREMODE_VELOCITY:Int = -2; 	// for velocity projectile weapons
+	
 	public var fireMode:Int;	// the firemode that the weapon uses
 	public var nextFireMode:Weapon; // any next varying fire mode weapon to consider using
 	
@@ -123,6 +130,31 @@ class Weapon
 		this.maxPitch = maxPitch;
 		this.rangeMode = 0;
 		return this;
+	}
+	
+
+	public static inline function shootWeapon(attackAction:UInt, attackerEntity:Entity, targetEntity:Entity, targetDamage:Int, timeChecker:ITimeChecker):Void {
+		
+		var weap:Weapon = attackerEntity.get(Weapon);
+		var pos:Pos = attackerEntity.get(Pos);
+		var targetPos:Pos = targetEntity.get(Pos);
+		var time:Float = 0;
+		
+		if (weap.projectileDomain != null) {
+			if (targetDamage == 0) {
+				time = weap.projectileDomain.launchStaticProjectile(pos.x, pos.y, pos.z + weap.heightOffset, targetPos.x, targetPos.y, targetPos.z, weap.projectileSpeed);
+			}
+			else {
+				time = weap.projectileDomain.launchStaticProjectile(pos.x, pos.y, pos.z + weap.heightOffset, targetPos.x, targetPos.y, targetPos.z, weap.projectileSpeed);
+			}
+		}
+		
+		
+		var sig:ActionUIntSignal = attackerEntity.get(ActionUIntSignal);
+		sig.forceSet(attackAction);
+		
+		
+		timeChecker.checkTime(time);
 	}
 
 }

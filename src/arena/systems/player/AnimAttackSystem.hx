@@ -5,6 +5,7 @@ import arena.components.weapon.AnimAttackRanged;
 import arena.components.weapon.Weapon;
 import arena.systems.weapon.IProjectileDomain;
 import arena.systems.weapon.IProjectileHitResolver;
+import arena.systems.weapon.ITimeChecker;
 import ash.core.Engine;
 import ash.core.Entity;
 import ash.core.Node;
@@ -22,7 +23,7 @@ import systems.player.PlayerAction;
  * Delayed damage dealing system for melee/ranged attack animations and projectiles
  * @author Glidias
  */
-class AnimAttackSystem extends System implements IProjectileHitResolver
+class AnimAttackSystem extends System implements IProjectileHitResolver implements ITimeChecker
 {
 	private var nodeList:NodeList<AnimAttackNode>;
 	private var _engine:Engine;
@@ -190,6 +191,10 @@ class AnimAttackSystem extends System implements IProjectileHitResolver
 			
 			var sig:ActionUIntSignal = attackerEntity.get(ActionUIntSignal);
 			sig.forceSet(attackAction);
+	}
+	
+	public inline function checkTime(val:Float):Void {
+		if (val > projectileTimeLeft) projectileTimeLeft = val;
 	}
 	
 	public static inline function performRangedAttackAction(attackAction:UInt, attackerEntity:Entity, targetEntity:Entity, targetDamage:Int):Void {

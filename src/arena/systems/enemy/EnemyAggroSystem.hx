@@ -9,6 +9,7 @@ import arena.components.weapon.AnimAttackMelee;
 import arena.components.weapon.AnimAttackRanged;
 import arena.systems.player.IVisibilityChecker;
 import arena.systems.player.IWeaponLOSChecker;
+import arena.systems.weapon.ITimeChecker;
 
 import arena.systems.player.PlayerAggroNode;
 import ash.core.Engine;
@@ -32,7 +33,7 @@ import util.geom.PMath;
  * 
  * @author Glenn Ko
  */
-class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IVisibilityChecker
+class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IVisibilityChecker implements ITimeChecker
 {
 
 	public var aggroList:NodeList<EnemyAggroNode>;
@@ -62,6 +63,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 	public static inline var ALLOW_KITE_OBSTACLES:Int = 2;
 	public static inline var KITE_ALLOWANCE:Int = 0;
 	
+	public var timeChecker:ITimeChecker;
 	private var _reactCooldown:Float;
 	public static inline var REACT_TIME:Float = .215;  // Average reaction time of human being: 0.215 : 4.65 frames per second
 	
@@ -74,6 +76,8 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		onEnemyStrike = new Signal1<Entity>();
 		
 		onEnemyCooldown = new Signal2<Entity,Float>();
+		
+		timeChecker = this;
 	}
 	
 	
@@ -494,7 +498,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 					
 					aWeaponState.attackTime  += pTimeElapsed;
 					var actualDist:Float = Math.sqrt(sqDist) - p.size.x;
-					var strikeTimeAtRange:Float = aWeapon.fireMode > 0 ? HitFormulas.calculateStrikeTimeAtRange(aWeapon, actualDist) : aWeapon.strikeTimeAtMaxRange*(1-a.stance.getTension());
+					var strikeTimeAtRange:Float = aWeapon.fireMode > 0 ? HitFormulas.calculateStrikeTimeAtRange(aWeapon, actualDist) : aWeapon.timeToSwing*(1-a.stance.getTension()) + aWeapon.strikeTimeAtMaxRange;
 					
 					
 					if ( aWeaponState.attackTime >= strikeTimeAtRange) { // strike has occured
@@ -518,19 +522,29 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								}
 								a.signalAttack.forceSet(aWeapon.fireMode);
 								
-								swinger =  new AnimAttackMelee();
-								swinger.init_i_static( aWeapon.anim_strikeTimeAtMaxRange, p.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
-								a.entity.add(swinger);
+								if (a.weapon.fireMode > 0) {
+									swinger =  new AnimAttackMelee();
+									swinger.init_i_static( aWeapon.anim_strikeTimeAtMaxRange, p.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
+									a.entity.add(swinger);
+								}
+								else {
+									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, p.entity, HitFormulas.rollDamageForWeapon(aWeapon) * (enemyCrit ? 3 : 1), timeChecker );
+								}
 								//p.health.damage(HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
 								
 							}
 							else { // strike rolled miss
 								a.signalAttack.forceSet(aWeapon.fireMode);
 								
-								swinger =  new AnimAttackMelee();
-								//HitFormulas.calculateAnimStrikeTimeAtRange(a.weapon, actualDist)
-								swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, p.health, 0 );
-								a.entity.add(swinger);
+								if (a.weapon.fireMode > 0) {
+									swinger =  new AnimAttackMelee();
+									//HitFormulas.calculateAnimStrikeTimeAtRange(a.weapon, actualDist)
+									swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, p.health, 0 );
+									a.entity.add(swinger);
+								}
+								else {
+									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, p.entity, 0, timeChecker );
+								}
 								
 								//p.health.damage(0);
 							}
@@ -577,7 +591,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				aWeapon = a.weapon;
 				while(aWeapon!= null) {
 					var checkedLOS:Bool = false;
-					if ( aWeapon.fireMode > 0 && HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) { 
+					if (  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) { 
 						
 						aWeaponState.pullTrigger(aWeapon);
 						
@@ -607,6 +621,13 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		
 		
 		
+		
+	}
+	
+	/* INTERFACE arena.systems.weapon.ITimeChecker */
+	
+	public function checkTime(val:Float):Void 
+	{
 		
 	}
 	

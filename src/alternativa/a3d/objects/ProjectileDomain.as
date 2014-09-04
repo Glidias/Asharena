@@ -36,8 +36,14 @@ package alternativa.a3d.objects
 		private var endPosOffset:int;
 
 		
-		public function ProjectileDomain(launcher:IProjectileLauncher) 
+		public function ProjectileDomain(launcher:IProjectileLauncher=null) 
 		{
+			if (launcher != null) {
+				init(launcher);
+			}
+		}
+		
+		public function init(launcher:IProjectileLauncher):void {
 			this.launcher = launcher;
 			
 			data = launcher.getDataVector();
@@ -45,7 +51,6 @@ package alternativa.a3d.objects
 			timeStampOffset = launcher.getTimeStampOffset();
 			totalTimeOffset = launcher.getTotalTimeOffset();
 			endPosOffset = launcher.getEndPositionOffset();
-			
 		}
 		
 		/* INTERFACE arena.systems.weapon.IProjectileDomain */

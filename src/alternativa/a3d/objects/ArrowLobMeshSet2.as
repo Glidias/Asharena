@@ -194,6 +194,8 @@ package alternativa.a3d.objects
 				displace.x = endPosition.x - startPosition.x;
 			displace.y = endPosition.y - startPosition.y;
 			displace.z = endPosition.z - startPosition.z;
+			
+			
       
            var totalTime:Number =  displace.length / speed;
 		 
@@ -259,6 +261,13 @@ package alternativa.a3d.objects
 		public function getTime():Number 
 		{
 			return timeStamp;
+		}
+		
+		/* INTERFACE alternativa.a3d.objects.IProjectileLauncher */
+		
+		public function getEndPositionOffset():int 
+		{
+			return 4;
 		}
 		
 		private var displace:Vector3D = new Vector3D();

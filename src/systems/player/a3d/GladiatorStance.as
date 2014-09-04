@@ -59,6 +59,8 @@ package systems.player.a3d
 		public var aimCouple2:AnimationCouple = new AnimationCouple();
 		
 		
+		
+		
 		private var attackAnimCouple:AnimationCouple = new AnimationCouple();
 		private var melee_thrust_up:AnimationClip;
 		private var melee_thrust_down:AnimationClip;
@@ -364,6 +366,33 @@ package systems.player.a3d
 			
 		}
 		
+		// FIre weapon from ready position
+		private function shoot():void {
+			//setAnimationNode( customCouple, upperBodyController, upperBody, readyAimTime);
+			var stanceId:String = _stance != 2 ? "ref" : "crouch";
+			var attackDown:AnimationClip = upperBodyAnims[stanceId+"_shoot_" + weaponId + "_blend1" ];
+			var attackUp:AnimationClip = upperBodyAnims[stanceId + "_shoot_" + weaponId + "_blend2" ];
+			//if (attackDown == null) throw new Error("COuld not find weapon: "+stanceId+"_shoot_" + weaponId + "_blend1");
+			attackDown.speed = .8;
+			attackUp.speed = .8;
+			
+			attackAnimCouple.left = attackDown;
+			attackAnimCouple.right = attackUp;
+			attackDown.time = 0;
+			attackUp.time = 0;
+			attackAnimCouple.balance = pitchAimRatio;// 1; altBalance;
+		
+			/*
+			if (_stance == 0) {
+				
+				setStanceAndRefresh(1);
+				_stanceTemp = true;
+				
+			}
+			*/
+			setAnimationNode( attackAnimCouple, upperBodyController, upperBody, .3);
+		}
+		
 		private function initiateUpperBodyAim(customCouple:AnimationCouple):void {
 			
 			//skin._rotationZ = Math.PI - .7;
@@ -489,8 +518,7 @@ package systems.player.a3d
 		public function handleAttack(attack:uint):void {
 			
 			if (_ranged) {
-				
-				
+				shoot();
 			}
 			else {
 				if (attack === Weapon.FIREMODE_SWING) {

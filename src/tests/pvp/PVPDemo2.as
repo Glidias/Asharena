@@ -5,7 +5,7 @@ package tests.pvp
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.controller.ThirdPersonTargetingSystem;
-	import alternativa.a3d.objects.ArrowLobMeshSet;
+	import alternativa.a3d.objects.ArrowLobMeshSet2;
 	import alternativa.a3d.objects.ProjectileDomain;
 	import alternativa.a3d.rayorcollide.TerrainRaycastImpl;
 	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
@@ -38,6 +38,7 @@ package tests.pvp
 	import arena.systems.enemy.EnemyAggroSystem;
 	import arena.systems.player.AnimAttackSystem;
 	import arena.systems.player.LimitedPlayerMovementSystem;
+	import arena.systems.weapon.IProjectileDomain;
 	import arena.views.hud.ArenaHUD;
 	import ash.core.Entity;
 	import ash.fsm.EngineState;
@@ -66,6 +67,7 @@ package tests.pvp
 	import haxe.io.BytesInput;
 	import input.KeyPoll;
 	import spawners.arena.GladiatorBundle;
+	import spawners.arena.projectiles.Projectiles;
 	import spawners.arena.skybox.ClearBlueSkyAssets;
 	import spawners.arena.skybox.SkyboxBase;
 	import spawners.arena.terrain.MistEdge;
@@ -88,6 +90,7 @@ package tests.pvp
 	import systems.SystemPriorities;
 	import systems.tweening.TweenSystem;
 	import util.geom.PMath;
+	import util.ModelBundle;
 	import util.SpawnerBundle;
 	import util.SpawnerBundleLoader;
 	import views.engine3d.MainView3D;
@@ -132,6 +135,7 @@ package tests.pvp
 		private var ticker:FrameTickProvider;
 		private var _preloader:PreloaderBar = new PreloaderBar()
 		private var bundleLoader:SpawnerBundleLoader;
+		private var _modelBundle:ModelBundle;
 		
 		private var spectatorPerson:SimpleFlyController;
 		private var arenaSpawner:ArenaSpawner;
@@ -146,6 +150,7 @@ package tests.pvp
 		private var _skyboxBase:SkyboxBase;
 		private var _terrainBase:TerrainBase;
 		
+		private var arrowProjectileDomain:ProjectileDomain = new ProjectileDomain();
 		
 		
 		public var SHOW_PREFERED_STANCES_ENDTURN:int = 2;
@@ -163,7 +168,7 @@ package tests.pvp
 			_template3D.visible = false;
 			addChild(_preloader);
 			
-			ArrowLobMeshSet;
+			ArrowLobMeshSet2;
 			PlanarRim;
 		}
 		
@@ -245,7 +250,7 @@ package tests.pvp
 		private function getSpawnerBundles():Vector.<SpawnerBundle> 
 		{
 			return new <SpawnerBundle>[_gladiatorBundle = new GladiatorBundle(arenaSpawner), arenaHUD = new ArenaHUD(stage) ,
-			
+				_modelBundle = new ModelBundle([Projectiles]),
 				_terrainBase = new TerrainBase(TerrainTest,1),
 				_skyboxBase = new SkyboxBase(ClearBlueSkyAssets),
 				_waterBase = new WaterBase(NormalWaterAssets),
@@ -270,6 +275,8 @@ package tests.pvp
 		{
 			
 			TerrainBase;
+			
+
 		
 			_template3D.stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextCreated);
 			
@@ -288,6 +295,7 @@ package tests.pvp
 			//arenaSpawner.addCrossStage(SpawnerBundle.context3D);
 			//SpawnerBundle.uploadResources(planeFloor.getResources(true, null));
 			
+			
 			setupTerrainLighting();
 			setupTerrainAndWater();
 			
@@ -305,6 +313,20 @@ package tests.pvp
 			// (Optional) Enforced ground plane collision
 			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(_waterBase.plane.z-20, true) ).withPriority(SystemPriorities.resolveCollisions);
 
+		}
+		
+		private function setupProjectiles():void 
+		{
+			
+			 game.engine.addEntity( new Entity().add(arrowProjectileDomain, IProjectileDomain) );
+			  arrowProjectileDomain.setHitResolver(_animAttackSystem);
+			 
+			 var arrowLob:ArrowLobMeshSet2 =  new ArrowLobMeshSet2(_modelBundle.getModel("arrow").geometry, _modelBundle.getMaterial("arrow"));
+			_template3D.scene.addChild(arrowLob);
+			 arrowProjectileDomain.init( arrowLob );
+			 arrowLob.setGravity(266 * 3);
+			
+			 arrowLob.setPermanentArrows();
 		}
 		
 		private function onContextCreated(e:Event):void 
@@ -372,10 +394,10 @@ package tests.pvp
 		
 		private function getTestRangedWeapon():Weapon {
 			var w:Weapon =   new Weapon();
-			w.projectileSpeed = 256;
+			w.projectileSpeed = 777;
 
 			
-			w.name = "Ranged fireMode";
+			w.name = "Longbow";
 			w.fireMode =  Weapon.FIREMODE_RAY;
 			w.sideOffset =11;
 			w.heightOffset = 20;
@@ -383,7 +405,7 @@ package tests.pvp
 			
 			w.minRange = 16;
 			w.damage =  10;
-			w.cooldownTime = 0.7;
+			w.cooldownTime = 1.74;
 			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
 			w.hitAngle =  45 *  PMath.DEG_RAD;
 			
@@ -416,7 +438,10 @@ package tests.pvp
 			w.minPitch = -Math.PI*.2;
 			w.maxPitch = Math.PI * .2;
 			
-			w.id = "bow2";
+			w.rangeMode = Weapon.RANGEMODE_BOW;
+			w.id = "bow";
+			
+			w.projectileDomain = arrowProjectileDomain;
 			
 			return w;	
 		}
@@ -1183,6 +1208,8 @@ package tests.pvp
 		private var _animAttackSystem:AnimAttackSystem;
 		private var arcSystem:A3DEnemyArcSystem;
 		private var thirdPersonAiming:ThirdPersonAiming;
+
+		
 		
 
 		
@@ -1610,7 +1637,7 @@ package tests.pvp
 			setupInterface();
 			setupStartingEntites();
 			setupGameplay();
-
+			setupProjectiles();
 			
 			ticker = new FrameTickProvider(stage);
 			ticker.add(tick);
