@@ -22,6 +22,9 @@ package recast
 		public var originPosBytes:ByteArray; // center origin world position written from primodial
 		public var leaderIndex:int = 3;
 		
+		public var timeCounter:ByteArray;
+		public var timeCounterMutex:Mutex;
+		
 		public var usingChannel2:Boolean = false;
 		public var toWorkerVertexBuffer:ByteArray;  
 		public var toWorkerIndexBuffer:ByteArray; 

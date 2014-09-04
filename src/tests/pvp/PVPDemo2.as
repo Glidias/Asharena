@@ -325,6 +325,7 @@ package tests.pvp
 			_template3D.scene.addChild(arrowLob);
 			 arrowProjectileDomain.init( arrowLob );
 			 arrowLob.setGravity(266 * 3);
+			 SpawnerBundle.uploadResources(arrowLob.getResources());
 			
 			 arrowLob.setPermanentArrows();
 		}
@@ -400,7 +401,7 @@ package tests.pvp
 			w.name = "Longbow";
 			w.fireMode =  Weapon.FIREMODE_RAY;
 			w.sideOffset =11;
-			w.heightOffset = 20;
+			w.heightOffset = 13;
 		
 			
 			w.minRange = 16;

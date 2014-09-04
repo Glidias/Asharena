@@ -4,11 +4,16 @@ package tests.water
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.loaders.ParserA3D;
+	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.materials.TextureZClipMaterial;
+	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.primitives.Plane;
+	import alternativa.engine3d.primitives.PlaneWavy;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.TextureResource;
+	import flash.geom.Vector3D;
 	import spawners.arena.water.WaterUIAdjust;
 	import util.ModelBundle;
 
@@ -66,6 +71,9 @@ package tests.water
 		private var hideFromReflection:Vector.<Object3D> = null;// new Vector.<Object3D>();
 		private var spectatorPerson:SimpleFlyController;
 		private var _modelBundle:ModelBundle;
+		private var waterPlaneWavy:PlaneWavy;
+		private var testPlane:PlaneWavy;
+		private var shipModel:Mesh;
 
 		
 		public function WaterShipTest() 
@@ -93,7 +101,8 @@ package tests.water
 			
 				_template3D.camera.farClipping = FAR_CLIP_DIST*256;
 		
-			_water = new WaterBase(NormalWaterAssets);
+			_water = new WaterBase(NormalWaterAssets, PlaneWavy);  //
+			
 			_skybox = new SkyboxBase(ClearBlueSkyAssets, WaterBase.SIZE);
 			
 			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[
@@ -109,10 +118,17 @@ package tests.water
 		{
 			removeChild(_preloader);			
 			_template3D.visible = true;
-			_water.setupFollowCamera();
-		
-		
+		//	_water.setupFollowCamera();
+	
+			waterPlaneWavy = _water.plane as PlaneWavy;
 			int.MAX_VALUE
+			
+			var plane:PlaneWavy = new PlaneWavy(500, 500, 32, 32, false, false, new FillMaterial(0xFF0000), new FillMaterial(0xFF0000));
+			testPlane = plane;
+			SpawnerBundle.uploadResources(plane.getResources());
+			//_template3D.scene.addChild(plane);
+			
+			
 		
 			_modelBundle.processClasse(new ParserA3D(), Assets);
 			_modelBundle.uploadAll();
@@ -163,7 +179,7 @@ package tests.water
 				_water.plane.z = mat.waterLevel;
 				
 			
-				_template3D.scene.addChild(_modelBundle.getModel("ship"));
+				_template3D.scene.addChild(shipModel=_modelBundle.getModel("ship"));
 		
 			//addChild(exploreSystem.debugShape);
 			//addChild(exploreSystem.debugSprite);
@@ -191,10 +207,16 @@ package tests.water
 			}
 		}
 
+		private var testPos:Vector3D = new Vector3D();
 		
 		private function tick(time:Number):void 
 		{
 			game.engine.update(time);
+			if (waterPlaneWavy) waterPlaneWavy.update(time);
+			if (testPlane) testPlane.update(time);
+			//shipModel.rotationX += .002;
+		//	waterPlaneWavy.updatePosition(
+			
 			var camera:Camera3D = _template3D.camera;
 			
 				_skybox.update(_template3D.camera);
@@ -208,6 +230,7 @@ package tests.water
 
 			// set to default waterLevels
 
+			
 			_template3D.render();
 		}
 		

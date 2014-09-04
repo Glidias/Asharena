@@ -542,8 +542,10 @@ package eu.nekobit.alternativa3d.materials
 				
 				vertexLinker.declareVariable(positionVar, VariableType.ATTRIBUTE);
 				
+				
 				if(object.transformProcedure != null)
 				{
+					
 					positionVar = appendPositionTransformProcedure(object.transformProcedure, vertexLinker);
 				}
 				
@@ -552,9 +554,11 @@ package eu.nekobit.alternativa3d.materials
 				// Prerender pass
 				if(refractiveRenderPass)
 				{
+					
 					// Vertex
 					vertexLinker.addProcedure(prerenderVertexProcedure);
 					vertexLinker.setInputParams(prerenderVertexProcedure, positionVar);
+					//throw new Error(positionVar);
 					
 					// Fragment
 					fragmentLinker.addProcedure(prerenderFragmentProcedure);
@@ -718,11 +722,12 @@ package eu.nekobit.alternativa3d.materials
 		static alternativa3d const prerenderVertexProcedure:Procedure = new Procedure(
 			[
 				// Declarations
-				"#a0=aPosition",			
+				//"#a0=aPosition",			
 				"#c0=cWorldViewProjMatrix",
+				//"mov t0 a0",
 				
 				// Multiply by MVP matrix
-				"m44 t0 a0 c0",
+				"m44 t0 i0 c0",
 				// Set transformed vertex position as output
 				"mov o0 t0"
 			], "vertexProcedure");
@@ -733,7 +738,7 @@ package eu.nekobit.alternativa3d.materials
 		static alternativa3d const vertexProcedure:Procedure = new Procedure(
 			[
 				// Declarations
-				"#a0=aPosition",			
+				//"#a0=aPosition",			
 				"#a1=aNormalMapUV",
 				"#c0=cWorldViewProjMatrix",
 				"#c1=cBumpOffset12",
@@ -744,8 +749,12 @@ package eu.nekobit.alternativa3d.materials
 				"#v2=vWorldPos",
 				"#v3=vNormalMapUV2",				
 				
+				//"mov t0 a0",
+				
 				// Multiply by MVP matrix
-				"m44 t0 a0 c0",
+				"m44 t0 i0 c0",
+				
+				
 				// Move transformed vertex position to varying-0
 				"mov v0 t0",
 				
@@ -768,7 +777,7 @@ package eu.nekobit.alternativa3d.materials
 				// .. not used currently
 				
 				// Transform vertex pos to world space and move into varying-2
-				"m44 v2 a0 c3",
+				"m44 v2 i0 c3",
 				// Set transformed vertex position as output
 				"mov o0 t0"
 			], "vertexProcedure");

@@ -139,13 +139,14 @@ class Weapon
 		var pos:Pos = attackerEntity.get(Pos);
 		var targetPos:Pos = targetEntity.get(Pos);
 		var time:Float = 0;
+		var targetEllipsoid:Ellipsoid = targetEntity.get(Ellipsoid);
 		
 		if (weap.projectileDomain != null) {
 			if (targetDamage == 0) {
-				time = weap.projectileDomain.launchStaticProjectile(pos.x, pos.y, pos.z + weap.heightOffset, targetPos.x, targetPos.y, targetPos.z, weap.projectileSpeed);
+				time = weap.projectileDomain.launchStaticProjectile(pos.x, pos.y, pos.z + weap.heightOffset, targetPos.x, targetPos.y, targetPos.z-targetEllipsoid.z, weap.projectileSpeed);
 			}
 			else {
-				time = weap.projectileDomain.launchStaticProjectile(pos.x, pos.y, pos.z + weap.heightOffset, targetPos.x, targetPos.y, targetPos.z, weap.projectileSpeed);
+				time = weap.projectileDomain.launchStaticProjectile(pos.x, pos.y, pos.z + weap.heightOffset, targetPos.x, targetPos.y, targetPos.z-targetEllipsoid.z, weap.projectileSpeed);
 			}
 		}
 		

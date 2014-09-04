@@ -1,5 +1,6 @@
 package recast
 {
+	import ash.tick.FrameTickProvider;
 	import de.polygonal.math.PM_PRNG;
 	import de.popforge.revive.forces.ArrowKeys;
 	import de.popforge.revive.member.Immovable;
@@ -57,7 +58,7 @@ package recast
 		
 		private var preferedPositions:Vector.<int> = new Vector.<int>(3, true);
 		
-		private var partyStartup:Startup;
+		public var partyStartup:Startup;
 		
 		private var prng:PM_PRNG = new PM_PRNG();
 		
@@ -82,6 +83,11 @@ package recast
 			field.autoSize = "left";
 			field.text = "Please wait while we load AS3 Recast/Detour pathfinding workers and maps...";
 			addChild(field);
+			
+			ticker = new FrameTickProvider(this);
+			ticker.signal.add(tick);
+			
+			
 		}
 		
 		private function onLoadComplete(e:Event):void 
@@ -98,9 +104,15 @@ package recast
 			
 			bridgeChannels = new RecastWorkerBridge();
 			bridge = bridgeChannels.props;
+			/*
 			bridge.MAX_SPEED = 5.2 * 1.6;
 			bridge.MAX_ACCEL = 10.0 * 16;
 			bridge.MAX_AGENT_RADIUS = 1;// .5;
+			*/
+			
+			bridge.MAX_SPEED = .8 * 16;
+			bridge.MAX_ACCEL = 322.0 * 16;
+			bridge.MAX_AGENT_RADIUS = 1;// .5;// .5;
 			
 			worker1 = createPrimodialWorker(workerBytes);
 			
@@ -166,7 +178,7 @@ package recast
 		//	removeChildAt(0);
 			_debugField.text = "";
 			
-			addEventListener(Event.ENTER_FRAME, onEnterFrame);
+			ticker.start();
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 			
 			partyStartup.manualInit2DPreview(previewer);
@@ -191,6 +203,8 @@ package recast
 			// for everyone
 			bridgeChannels.setupErrorThrowHandler();
 			bridgeChannels.toMainChannel.addEventListener(Event.CHANNEL_MESSAGE, onWorkerNavMeshBuild);		
+			
+			bridge.timeCounter.writeFloat(0);
 			
 			worker.start();
 			return worker;
@@ -411,7 +425,7 @@ package recast
 					bridge.targetAgentPosBytes.writeFloat(0);
 					bridge.targetAgentPosBytes.writeFloat(tarCircle.y + tarCircle.offsetY);
 				}
-				
+			
 				// NOTE: this does not determine flank averages...
 			}
 			
@@ -457,6 +471,10 @@ package recast
 			//	throw new Error(numChildren);
 				toggleFixedAngle();
 			}
+			else if (e.keyCode === Keyboard.L) {
+				
+				partyStartup.formationShape = Startup.FORMATION_FILE;
+			}
 			else if (e.keyCode === Keyboard.NUMBER_1) {
 				partyStartup.setSpreadMode(0);
 			}
@@ -469,7 +487,12 @@ package recast
 		}
 		
 		private var lockAngleForces:Array;
-		
+		public function setLockAngleForceSpeed(val:Number):void {
+			
+			lockAngleForces[0].speed = val;
+			lockAngleForces[1].speed = val;
+			lockAngleForces[2].speed = val;
+		}
 		public function toggleFixedAngle():void 
 		{
 			if (_lockAngleToggle) {
@@ -805,12 +828,18 @@ package recast
 		private var _lastLeaderY:Number = 0;
 		private var _debugField:TextField;
 		private var _arrowsKeys:ArrowKeys;
+		private var ticker:FrameTickProvider;
 		
 		
-		private function onEnterFrame(e:Event):void 
+		private var basePlayerSpeed:Number = 5;
+		
+		private function tick(time:Number):void 
 		{
 			
 		//	if (!_arrowsKeys.gotMovement()) return;
+	
+			_arrowsKeys.speed = basePlayerSpeed * time;
+			if (_lockAngleToggle) setLockAngleForceSpeed(_arrowsKeys.speed);
 			
 			partyStartup.tickPreview();
 		
@@ -822,6 +851,15 @@ package recast
 			if (!workersInactive && sqDist >= updateWorldThreshold ) {
 				recenter();
 			}
+			
+			//if (_arrowsKeys.force.x != 0 || _arrowsKeys.force.y != 0) {
+				bridge.timeCounterMutex.lock();
+				bridge.timeCounter.position = 0;
+				var val:Number = bridge.timeCounter.readFloat();
+				bridge.timeCounter.position = 0;
+				bridge.timeCounter.writeFloat(val+time);
+				bridge.timeCounterMutex.unlock();
+			//}
 			
 			// async
 			bridge.leaderPosBytes.position = 0;
