@@ -147,3 +147,51 @@ package alternativa.engine3d.primitives
 	}
 
 }
+
+/*
+void main(void)
+{
+   float height = sin( 1.0 * (gl_Vertex.x + (windDir.x * fTime0_X)));
+   height += 1.0;
+   height = pow( max(0.0, height), roughness);
+   
+   float height2 = sin( 0.01 * (gl_Vertex.y + (windDir.y * fTime0_X)));
+   height2 += 1.0;
+   height2 = pow( max(0.0, height2), roughness);
+
+   
+   vec4 pos = gl_Vertex;
+   pos.z = waveHeight * ((height + height2) / 2.0);
+   
+   gl_Position = gl_ModelViewProjectionMatrix * pos.xzyw;
+   
+   
+   
+   vec4 ref = normalize(reflect( (vViewPosition - pos.xzyw), vec4(0.0, 0.0, 1.0, 1.0)));
+   ref += vec4(1.0,1.0,1.0,1.0);
+   ref *= 0.5;
+   
+   gl_TexCoord[1] = ref;
+   
+   gl_TexCoord[0].xy = 4.0 * (gl_MultiTexCoord0.yx + vec2(0.0, fTime0_X * 0.01));
+   
+   //
+   //   Find Surface Normal
+   vec3 binormal = normalize(vec3( cos(1.0 * (gl_Vertex.x + (windDir.x * fTime0_X))),
+                         1.0,
+                         0.0));
+                         
+   vec3 tangent = normalize( 
+                              vec3( 0.0,
+                                    1.0,
+                                     0.01 * cos(0.01 * (gl_Vertex.y + (windDir.y * fTime0_X))))
+                         );
+   vec3 normal = cross(binormal, tangent);
+   normal += vec3(1.0,1.0,1.0);
+   normal *= 0.5;
+   
+   tanSpace = mat3( vec3(1.0, 0.0, 0.0)
+                     , normal,
+                     vec3(0.0, 0.0, 1.0));
+					
+		*/
