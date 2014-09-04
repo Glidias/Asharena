@@ -320,11 +320,12 @@ package tests.pvp
 			
 			 game.engine.addEntity( new Entity().add(arrowProjectileDomain, IProjectileDomain) );
 			  arrowProjectileDomain.setHitResolver(_animAttackSystem);
-			 
+		
 			 var arrowLob:ArrowLobMeshSet2 =  new ArrowLobMeshSet2(_modelBundle.getModel("arrow").geometry, _modelBundle.getMaterial("arrow"));
-			_template3D.scene.addChild(arrowLob);
 			 arrowProjectileDomain.init( arrowLob );
-			 arrowLob.setGravity(266 * 3);
+			_template3D.scene.addChild(arrowLob);
+			 arrowLob.setGravity(266 * 2);
+			 SpawnerBundle.uploadResources(arrowLob.getResources(false, null));
 			
 			 arrowLob.setPermanentArrows();
 		}
@@ -400,7 +401,7 @@ package tests.pvp
 			w.name = "Longbow";
 			w.fireMode =  Weapon.FIREMODE_RAY;
 			w.sideOffset =11;
-			w.heightOffset = 20;
+			w.heightOffset = 10;
 		
 			
 			w.minRange = 16;

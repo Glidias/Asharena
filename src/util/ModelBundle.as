@@ -1,5 +1,6 @@
 package util 
 {
+	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.loaders.ParserA3D;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.TextureMaterial;
@@ -9,6 +10,8 @@ package util
 	import flash.display.BitmapData;
 	import flash.utils.describeType;
 	import flash.utils.Dictionary;
+	import alternativa.engine3d.alternativa3d;
+	use namespace alternativa3d;
 	/**
 	 * ...
 	 * @author Glidias
@@ -53,6 +56,9 @@ package util
 						
 						parser.parse(new (classe[namer])());
 						mesh = parser.objects[1] as Mesh || parser.objects[0] as Mesh;
+						
+						//throw new Error(mesh.geometry.numTriangles
+					
 						modelHash[ider] = mesh;
 						
 					}
@@ -91,6 +97,7 @@ package util
 			for (var id:String in modelHash) {
 				
 				uploadResources( (modelHash[id] as Mesh).getResources() );
+				//	if ((modelHash[id] as Mesh).geometry.getVertexBuffer(VertexAttributes.POSITION) == null) throw new Error("Missing");
 				
 			}
 		}

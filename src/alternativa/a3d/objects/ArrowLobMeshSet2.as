@@ -119,13 +119,13 @@ package alternativa.a3d.objects
 			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cUp"), 0, 0, 1, 0);
 			
 			//drawUnit.setVertexConstantsFromVector(0, toUploadSpriteData, toUploadNumSprites*NUM_REGISTERS_PER_SPR ); 
-			
+		
 	
 			setVertexConstantsFromVector(drawUnit, 0, toUpload, _toUploadAmount*constantsPerMesh, particleDrawCount  );
 	
 			//throw new Error(e.message + ":"+_toUploadAmount + ", " + toUploadData.length);
 	
-	
+			
 			
 			//if (triCount != surface.numTriangles) {
 				surface.numTriangles = _toUploadAmount * sampleNumTris;
@@ -290,7 +290,7 @@ package alternativa.a3d.objects
 				
 				//	mySurface.numTriangles = _remainingTotal * sampleNumTris;
 					mySurface.material.collectDraws(camera, mySurface, geometry, lights, lightsLength, useShadow, -1);
-					
+				
 				}
 				else {
 					var count:int = 0;
