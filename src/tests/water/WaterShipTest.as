@@ -13,6 +13,8 @@ package tests.water
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.TextureResource;
+	import flash.geom.Matrix3D;
+
 	import flash.geom.Vector3D;
 	import spawners.arena.water.WaterUIAdjust;
 	import util.ModelBundle;
@@ -73,7 +75,7 @@ package tests.water
 		private var _modelBundle:ModelBundle;
 		private var waterPlaneWavy:PlaneWavy;
 		private var testPlane:PlaneWavy;
-		private var shipModel:Mesh;
+		private var shipModel:Object3D;
 
 		
 		public function WaterShipTest() 
@@ -121,10 +123,18 @@ package tests.water
 		//	_water.setupFollowCamera();
 	
 			waterPlaneWavy = _water.plane as PlaneWavy;
+		
+			windDirUV = waterPlaneWavy.windDir.clone();
+			windDirUV.normalize();
+			windDirUV.scaleBy(.005*.3);
+			_water.waterMaterial.windDirectionUV = windDirUV;
 			int.MAX_VALUE
 			
 			var plane:PlaneWavy = new PlaneWavy(500, 500, 32, 32, false, false, new FillMaterial(0xFF0000), new FillMaterial(0xFF0000));
 			testPlane = plane;
+		//	plane.randomiseVertices();
+			
+			//_water.waterMaterial.windShadeDirector = plane.windDir;
 			SpawnerBundle.uploadResources(plane.getResources());
 			//_template3D.scene.addChild(plane);
 			
@@ -178,8 +188,11 @@ package tests.water
 				_skybox.addToScene(_template3D.scene);
 				_water.plane.z = mat.waterLevel;
 				
+			shipModel = new Object3D();
 			
-				_template3D.scene.addChild(shipModel=_modelBundle.getModel("ship"));
+			var child:Object3D = shipModel.addChild(_modelBundle.getModel("ship"));
+			child.rotationY = Math.PI * .5;
+				_template3D.scene.addChild(shipModel);
 		
 			//addChild(exploreSystem.debugShape);
 			//addChild(exploreSystem.debugSprite);
@@ -208,14 +221,64 @@ package tests.water
 		}
 
 		private var testPos:Vector3D = new Vector3D();
+		private var accumT:Number = 0;
+		private var windDirUV:Vector3D = new Vector3D();
+		
+		
+		private function adjustBoatOrientation():void {
+			var NUM_DETAILS:int = WaterBase.SEGMENTS + 1;
+			var MESH_SIZE:Number = _water.plane.boundBox.maxX * 2;
+			var segmentSize:Number = MESH_SIZE / WaterBase.SEGMENTS;
+			 var duckX:Number = shipModel.y;
+            var duckY:Number = shipModel.x;
+            var i:int = NUM_DETAILS * (duckX + 0.5 * MESH_SIZE) / MESH_SIZE;
+            var j:int = NUM_DETAILS * (duckY + 0.5 * MESH_SIZE) / MESH_SIZE;
+            i = Math.min (NUM_DETAILS - 2, Math.max (1, i));
+            j = Math.min (NUM_DETAILS - 2, Math.max (1, j));
+            var duckZ:Number = waterPlaneWavy.getHeightAt( i*segmentSize,j*segmentSize);
+			
+			
+			        // water normal (idea stolen from reflection code,
+            // so I'm not even sure this is correct formula :)
+            var n:Vector3D = new Vector3D (
+                waterPlaneWavy.getHeightAt( i*segmentSize,(j+1)*segmentSize) - waterPlaneWavy.getHeightAt( i*segmentSize,(j-1)*segmentSize) * 0.005,
+                ( waterPlaneWavy.getHeightAt( (i+1)*segmentSize,j*segmentSize) - waterPlaneWavy.getHeightAt( (i-1)*segmentSize,j*segmentSize) ) * 0.005,
+                1
+            ); n.normalize ();
+
+            // duck tilt matrix corresponding to this normal
+            var m:Matrix3D = new Matrix3D();
+            var r:Vector3D = n.crossProduct (Vector3D.Z_AXIS);
+            if (r.length > 0.00001) {
+                r.normalize ();
+                m.prependRotation (
+                    Math.acos (n.dotProduct (Vector3D.Z_AXIS)) * 180 / Math.PI,
+                    r
+                );
+            }
+
+            shipModel.matrix = m;
+			shipModel.x = duckX;
+			shipModel.y = duckY;
+			shipModel.z = duckZ - 10;
+		//	shipModel.rotationY += Math.PI * .5;
+		}
 		
 		private function tick(time:Number):void 
 		{
 			game.engine.update(time);
-			if (waterPlaneWavy) waterPlaneWavy.update(time);
+			
+			if (waterPlaneWavy) {
+				
+				waterPlaneWavy.update(time);
+				adjustBoatOrientation();
+			}
 			if (testPlane) testPlane.update(time);
 			//shipModel.rotationX += .002;
 		//	waterPlaneWavy.updatePosition(
+		accumT += time;
+	//	shipModel.rotationX= Math.cos( accumT / 400 ) * 6 *Math.PI/180;
+		//	shipModel.rotationY= Math.cos( accumT / 300 ) * 6*Math.PI/180;
 			
 			var camera:Camera3D = _template3D.camera;
 			
@@ -229,7 +292,7 @@ package tests.water
 			_template3D.camera.stopTimer();
 
 			// set to default waterLevels
-
+			
 			
 			_template3D.render();
 		}

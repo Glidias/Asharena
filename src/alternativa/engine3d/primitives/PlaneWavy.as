@@ -22,17 +22,17 @@ package alternativa.engine3d.primitives
 		private var fTime0_X:Number = 0;
 		/*
 		private var waveHeight:Number = 20;
-		private  var windDir:Vector3D = new Vector3D(3,2);
+		public  var windDir:Vector3D = new Vector3D(3,2);
 		private var  roughness:Number = 2;
 		*/
 		
 		// 128, .25
 		//private var waveHeight:Number = 44;
-		//private  var windDir:Vector3D = new Vector3D(3,2);
+		//public  var windDir:Vector3D = new Vector3D(3,2);
 		//private var  roughness:Number = 2;
 		
 		private var waveHeight:Number = 14;
-		private  var windDir:Vector3D = new Vector3D(3,2);
+		public  var windDir:Vector3D = new Vector3D(3,2);
 		private var  roughness:Number = 2;
 
 		private static var TRANSFORM_PROCEDURE:Procedure;
@@ -76,6 +76,12 @@ package alternativa.engine3d.primitives
 			  // vec4 pos = gl_Vertex;
 			   v.z = waveHeight * ((height + height2) * .5);
 		
+		}
+		public function getHeightAt(x:Number, y:Number):Number {
+			dummyVec.x = x;
+			dummyVec.y = y;
+			updatePosition(dummyVec);
+			return dummyVec.z;
 		}
 		
 		private function randomiseVertices():void 

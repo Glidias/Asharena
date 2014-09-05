@@ -183,6 +183,8 @@ package eu.nekobit.alternativa3d.materials
 			return (1 / size) * uvOffsetScaling;
 		}
 		
+		public var windDirectionUV:Vector3D = new Vector3D();
+		
 		/**
 		 * Sets up water plane to follow camera and offset UVs to simulate camera movement.
 		 * This allows for an infinitely scrolling water plane, good for oceans.
@@ -238,7 +240,8 @@ package eu.nekobit.alternativa3d.materials
 				return;
 			}
 			
-			
+			originU += windDirectionUV.x * uOffsetScaling;
+			originV += windDirectionUV.y * vOffsetScaling;
 			
 			
 			if (followCamera  ) {
@@ -582,6 +585,8 @@ package eu.nekobit.alternativa3d.materials
 			return program;
 		}
 		
+		public var reflectNormal:Vector3D = new Vector3D(0, 0, 1);
+		
 		/**
 		 * Gets drawUnit for final render.
 		 */
@@ -605,9 +610,9 @@ package eu.nekobit.alternativa3d.materials
 			var drawUnit:DrawUnit = camera.renderer.createDrawUnit(object, program.program, geometry._indexBuffer, surface.indexBegin, surface.numTriangles, program);
 			
 			// Get first normal of the mesh and transform it to world space
-			var geometry:Geometry = (object as Mesh).geometry;
-			var normals:Vector.<Number> = geometry.getAttributeValues(VertexAttributes.NORMAL);
-			var normal:Vector3D = new Vector3D(normals[0], normals[1], normals[2]);
+
+			var normal:Vector3D = reflectNormal;
+			
 			var normalTransform:Matrix3D = object.matrix.clone();
 			normalTransform.invert();
 			normalTransform.transpose();
