@@ -26,6 +26,11 @@ package alternativa.engine3d.primitives
 		private var  roughness:Number = 2;
 		*/
 		
+		// 128, .25
+		//private var waveHeight:Number = 44;
+		//private  var windDir:Vector3D = new Vector3D(3,2);
+		//private var  roughness:Number = 2;
+		
 		private var waveHeight:Number = 14;
 		private  var windDir:Vector3D = new Vector3D(3,2);
 		private var  roughness:Number = 2;
@@ -50,7 +55,8 @@ package alternativa.engine3d.primitives
 			//throw new Error("A");
 						transformProcedure = getTransformProcedure();
 						
-			//windDir.normalize();
+			windDir.normalize();
+			windDir.scaleBy(2)
 			//randomiseVertices();
 		}
 		
