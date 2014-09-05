@@ -214,7 +214,11 @@ package recast
 			}
 			bridge.targetAgentPosMutex.unlock();
 			
+		
+			
 		}
+		
+
 		
 		private function respond_setAgents():void 
 		{
@@ -645,8 +649,30 @@ package recast
 				setAgentX(bridge.leaderIndex, bridge.leaderPosBytes.readFloat());
 				setAgentZ(bridge.leaderIndex, bridge.leaderPosBytes.readFloat());
 			}
+			var timeElapsed:Number = 0.03;
 			
-			lib.update(0.03); //pass dt in seconds
+			
+				bridge.timeCounterMutex.lock();
+				bridge.timeCounter.position = 0;
+				
+			var val:Number = bridge.timeCounter.readFloat();
+			timeElapsed = val < timeElapsed ? val : timeElapsed;
+				// dd
+			
+			bridge.timeCounterMutex.unlock();
+				
+			
+			
+			if (timeElapsed > 0) lib.update(timeElapsed); //pass dt in seconds
+			
+			// if the agents did move significantly, can deplete time.
+			
+				val -= timeElapsed;
+				bridge.timeCounter.position = 0;
+				bridge.timeCounter.writeFloat(val >= 0 ? val : 0);
+			
+			
+			
 			if (bridge != null) {
 				bridge.toMainAgentPosMutex.lock();
 				bridge.toMainAgentPosBytes.position = 0;
