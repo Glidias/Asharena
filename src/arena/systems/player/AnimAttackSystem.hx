@@ -17,6 +17,7 @@ import components.ActionUIntSignal;
 import components.Ellipsoid;
 import components.Health;
 import components.Pos;
+import flash.errors.Error;
 import systems.player.PlayerAction;
 
 /**
@@ -215,9 +216,10 @@ class AnimAttackSystem extends System implements IProjectileHitResolver implemen
 	public function processHit(srcEntity:Entity, targetEntity:Entity, targetDamage:Int, ex:Float = 0, ey:Float = 0, ez:Float = 0):Void 
 	{
 		
-		var hp:Health = targetEntity.get(Health);
+		var hp:Health = targetEntity.get(Health);	
 		if (hp != null) {
 			hp.damage(targetDamage);
+		
 		}
 	}
 	

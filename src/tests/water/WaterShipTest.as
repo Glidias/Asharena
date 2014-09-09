@@ -228,78 +228,7 @@ package tests.water
 		private var windDirUV:Vector3D = new Vector3D();
 		
 		
-		private function adjustBoatOrientation():void {
-			testPos.x = shipModel.x;
-			testPos.y = shipModel.y;
-			
-			
-			var n:Vector3D = waterPlaneWavy.getHeightAndNormalAtSpot(testPos);
-		
-			
-			//n.scaleBy(0.01);
-			 /*
-			var m:Matrix3D = new Matrix3D;
-            var r:Vector3D = n.crossProduct (Vector3D.Z_AXIS);
-            if (r.length > 0.00001) {
-                r.normalize ();
-                m.prependRotation (
-                    Math.acos (n.dotProduct (Vector3D.Z_AXIS)) * 180 / Math.PI,
-                    r
-                );
-            }
-			shipModel.matrix = m;
-			
-		/*
-			var north:Vector3D = n.crossProduct(Vector3D.X_AXIS);
-			var east:Vector3D = north.crossProduct(n);
-			north = n.crossProduct(east);
-			///*
-			var matrix:Matrix3D = new Matrix3D(
-			new <Number>[
-				east.x, north.x, n.x, 0,
-				east.y, north.y, n.y, 0,
-				east.z, north.z, n.z, 0,
-				0, 0, 0, 0
-				]);
-				
-			matrix.prependRotation( -90, Vector3D.X_AXIS);
-		
-			//*/
-			
-			/*
-			var matrix:Matrix3D = new Matrix3D(
-			new <Number>[
-				east.x, east.y, east.z, 0,
-				n.x, n.y, n.z, 0,
-				north.x, north.y, north.z, 0,
-				0, 0, 0, 0
-				]);
-		
-			*/
 
-           // shipModel.matrix = matrix;
-			
-			
-			shipModel.x = testPos.x;
-			shipModel.y = testPos.y;
-			shipModel.z = testPos.z;
-			/*
-			var	up:Vector3D = 		n;
-			var	right:Vector3D =	up.crossProduct(Vector3D.X_AXIS);
-
-			// watch out when the look vector is almost equal to the up vector the right
-			// vector gets close to zeroed, normalize it
-			right.normalize();
-
-			// the billboard won't actually face the direction odddde
-			// created earlier, that was just used as a tempory vector to create the
-			// right vector so we could calculate the correct look vector from that.
-			look = right.crossProduct(up);
-			*/
-
-
-			
-		}
 		
 		
 	//	/*

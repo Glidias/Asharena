@@ -11,6 +11,7 @@ class WeaponState
 	public var cooldown:Float; // recovery before attempting next attempt to strike  (A miss or strike.., cooldown intiated)
 	public var attackTime:Float; //  time elapsed during attack
 	public var trigger:Bool;
+	public var randomDelay:Float;
 	
 	public function new() 
 	{
@@ -41,6 +42,7 @@ class WeaponState
 		attackTime = 0;
 		trigger = false;
 		fireMode = null;
+		randomDelay =1.4;
 		
 	}
 	

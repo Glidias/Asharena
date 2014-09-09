@@ -64,24 +64,44 @@ package alternativa.a3d.objects
 			launcher.update(time);
 			var timeStamp:Number = launcher.getTime();
 			
-			// TODO:
+	
 			// cleanup
 			for (i = 0; i < removeCount; i++) {
 				totalIndices--;
+				index = toRemoveIndices[i];
+				
+				if (index != totalIndices) {  // pop back
+					dynamicIndices[index] = dynamicIndices[totalIndices];
+				}
 			}	
 			removeCount = 0;
 			
-			// determine any resolvers to trigger
+			//if (totalIndices > 0) throw new Error("A");
+			// determine any resolvers to trigger'
+			
+			
 			for (var i:int = 0; i < totalIndices; i++ ) {
 				//dynamicIndices[i];
 				var index:int = dynamicIndices[i];
 				var baseI:int = index * indexSize;
-				var endTime:Number = dataHash[baseI + timeStampOffset] + dataHash[baseI + totalTimeOffset];
+				var arr:Array = dataHash[index];
+				var pos:Pos = arr[3];
+				data[baseI + endPosOffset] = pos.x;
+				data[baseI + endPosOffset+1] = pos.y;
+				data[baseI + endPosOffset+2] = pos.z;
+				
+				var endTime:Number = data[baseI + timeStampOffset] + data[baseI + totalTimeOffset];
 				if (timeStamp  >= endTime ) {
-					var arr:Array = dataHash[index];
 					delete dataHash[index];
 					toRemoveIndices[removeCount++] = i;
 					resolver.processHit( arr[0], arr[1], arr[2], data[baseI + endPosOffset], data[baseI + endPosOffset + 1], data[baseI + endPosOffset + 2] ); 
+					data[baseI + endPosOffset] = 9999999999999;
+					data[baseI + endPosOffset+1] =9999999999999;
+					data[baseI + endPosOffset + 2] = 9999999999999;
+					data[baseI ] = 9999999999999;
+					data[baseI +1] =9999999999999;
+					data[baseI +2] = 9999999999999;
+					
 				}
 				
 			}
@@ -118,7 +138,7 @@ package alternativa.a3d.objects
 			var result:Number = launcher.launchNewProjectile(startPos, endPos, speed);
 			var indexer:int =  launcher.getLastLaunchedIndex();
 			dynamicIndices[totalIndices++] = indexer;
-			dataHash[indexer ] = [launcherEntity, targetEntity,  hpDeal];
+			dataHash[indexer ] = [launcherEntity, targetEntity,  hpDeal, pos];
 			return result;
 		}
 		

@@ -146,7 +146,7 @@ class Weapon
 				time = weap.projectileDomain.launchStaticProjectile(pos.x, pos.y, pos.z + weap.heightOffset, targetPos.x, targetPos.y, targetPos.z-targetEllipsoid.z, weap.projectileSpeed);
 			}
 			else {
-				time = weap.projectileDomain.launchStaticProjectile(pos.x, pos.y, pos.z + weap.heightOffset, targetPos.x, targetPos.y, targetPos.z-targetEllipsoid.z, weap.projectileSpeed);
+				time = weap.projectileDomain.launchDynamicProjectile(pos.x, pos.y, pos.z + weap.heightOffset, targetPos, weap.projectileSpeed, attackerEntity, targetEntity, targetEllipsoid, targetDamage);
 			}
 		}
 		

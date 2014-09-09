@@ -848,7 +848,7 @@ WeaponSlots
 			var aggro:EnemyAggro = _targetNode.entity.get(EnemyAggro) as EnemyAggro;
 			var aggroing:Boolean = false;
 			var checkingLOS:Boolean = false;
-			aggroing = aggro == null || aggro.flag != 1 ? false : (checkingLOS  = aggro!=null) && checkLOS(_targetNode.entity, (_targetNode.entity.get(WeaponState) as WeaponState).fireMode, _displayChar);
+			aggroing = aggro == null || aggro.flag != 1 || (_targetNode.entity.get(WeaponState) as WeaponState).fireMode.fireMode <=0 ? false : (checkingLOS  = aggro!=null) && checkLOS(_targetNode.entity, (_targetNode.entity.get(WeaponState) as WeaponState).fireMode, _displayChar);
 		//	if (aggro != null && aggro.flag == 2) throw new Error("STILL WAITING");
 			if (!aggroing) {
 				hitPercResult = HitFormulas.getPercChanceToHitDefenderMethod(playerWeapon)( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid, playerWeapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid );
@@ -1170,7 +1170,7 @@ WeaponSlots
 			
 			var aggro:EnemyAggro = _targetNode.entity.get(EnemyAggro) as EnemyAggro;
 			var checkingLOS:Boolean = false;
-			var aggroing:Boolean = aggro != null && aggro.flag == 1 && (checkingLOS=aggro!=null) && checkLOS(targetNode.entity, (_targetNode.entity.get(WeaponState) as WeaponState).fireMode,  _displayChar);
+			var aggroing:Boolean = aggro != null && aggro.flag == 1 && (_targetNode.entity.get(WeaponState) as WeaponState).fireMode.fireMode > 0 && (checkingLOS=aggro!=null) && checkLOS(targetNode.entity, (_targetNode.entity.get(WeaponState) as WeaponState).fireMode,  _displayChar);
 
 			_charWeaponEnabled = false; 
 			updateCharInfo();

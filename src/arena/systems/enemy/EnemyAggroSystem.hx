@@ -500,6 +500,8 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 					var actualDist:Float = Math.sqrt(sqDist) - p.size.x;
 					var strikeTimeAtRange:Float = aWeapon.fireMode > 0 ? HitFormulas.calculateStrikeTimeAtRange(aWeapon, actualDist) : aWeapon.timeToSwing*(1-a.stance.getTension()) + aWeapon.strikeTimeAtMaxRange;
 					
+					var getPercChanceToHitDefender =  HitFormulas.getPercChanceToHitDefenderMethod(aWeapon);
+				
 					
 					if ( aWeaponState.attackTime >= strikeTimeAtRange) { // strike has occured
 						currentAttackingEnemy = a.entity;
@@ -507,7 +509,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 						
 						if (actualDist <= aWeapon.range && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) {  // strike hit! 
 							
-							if (Math.random() * 100 <= HitFormulas.getPercChanceToHitDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size)) {
+							if (Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size)) {
 							
 							
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
@@ -517,7 +519,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 									enemyCrit = false;
 									if ( Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size) ) {
 										
-										enemyCrit = true;
+										enemyCrit = aWeapon.fireMode > 0;
 									}
 								}
 								a.signalAttack.forceSet(aWeapon.fireMode);
@@ -594,6 +596,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 					if (  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) { 
 						
 						aWeaponState.pullTrigger(aWeapon);
+						if (aWeapon.fireMode <= 0) aWeaponState.attackTime = -Math.random() * aWeaponState.randomDelay;
 						
 						a.state.flag = 1;
 						onEnemyAttack.dispatch(a.entity);

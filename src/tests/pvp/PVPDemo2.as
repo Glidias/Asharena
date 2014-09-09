@@ -368,7 +368,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 9999;// 9999;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 7;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
@@ -395,7 +395,7 @@ package tests.pvp
 		
 		private function getTestRangedWeapon():Weapon {
 			var w:Weapon =   new Weapon();
-			w.projectileSpeed = 777;
+			w.projectileSpeed = 977;
 
 			
 			w.name = "Longbow";
@@ -405,12 +405,12 @@ package tests.pvp
 		
 			
 			w.minRange = 16;
-			w.damage =  10;
+			w.damage =  8;
 			w.cooldownTime = 1.74;
 			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
 			w.hitAngle =  45 *  PMath.DEG_RAD;
 			
-			w.damageRange =  10;		// damage up-range variance
+			w.damageRange =  6;		// damage up-range variance
 			// Thrust: 10-20 : Swing 25-30
 	
 			w.critMinRange = 800;
