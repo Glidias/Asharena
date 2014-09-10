@@ -4,24 +4,12 @@ _____________________________
 1. AttackAnimSystem 
 
 Realistic action settings:...
-(KIV) Blocking it with shield while in crouched/cautious/combat-idle stance (or having it be blocked by a KIV obstacle) may result in a min time 
-
-penalty  being incurred based off the time you didn't move while the projectile is travelling from the time it was launched. 
+(KIV) Blocking it with shield while in crouched/cautious/combat-idle stance (or having it be blocked by a KIV obstacle) may result in a min time penalty  being incurred based off the time you didn't move while the projectile is travelling from the time it was launched. 
 
 Evasion should shuold be considered against moving velocity target (sideway shot displacement) at the time the weapon was launched.
-(KIV consider experiement) This could be factored into spending enough movement time units moving against the weapon time direction perpendically, 
+(KIV consider experiement) This could be factored into spending enough movement time units moving against the weapon time direction perpendically, allowing the fire to be converted to a miss.....
 
-allowing the fire to be converted to a miss.....
-
-2. (KIV for 1. comment for Reflex Urgency mode) Zooming in to target mode can get moving projectiles to pause based off capped time units grid. 
-
-Projectiles will only travel further for remaining time it takes to raise ranged weapon up for aiming against time unit grid. This allows player 
-
-to launch projectile or slash before being hit by others' reaction fire. Note that using this mode means you will lose time in real-time so long 
-
-as there are enemy moving projectiles. However, you are able to block projectiles in this mode without lost of TUs as well. So, the only 
-
-disadvantage is that real-time always passes whenever there are enemy reaction projectiles/swings occuring.
+2. (KIV for 1. comment for Reflex Urgency mode) Zooming in to target mode can get moving projectiles to pause based off capped time units grid. Projectiles will only travel further for remaining time it takes to raise ranged weapon up for aiming against time unit grid. This allows player to launch projectile or slash before being hit by others' reaction fire. Note that using this mode means you will lose time in real-time so long as there are enemy moving projectiles. However, you are able to block projectiles in this mode without lost of TUs as well. So, the only disadvantage is that real-time always passes whenever there are enemy reaction projectiles/swings occuring.
 
 
 3. Syncronoised player action ranged attack *
