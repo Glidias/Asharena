@@ -1,116 +1,135 @@
-Integrate 3D Obstacles/3D environment into combat system:
---------------------------------------------------------------
+TODO list:
+_____________________________
 
-Targeting:
-1) PlayerTargetingSystem to factor in 3D geometry blocking ray to target
-  Already have:
-  - direct raycast to any potential target ellipsoid
-  TODO:
--If got target ellipsoid hit, check 3d geometry raycast distance nearer or further from target ellipisoid hit.
+1. AttackAnimSystem 
 
-(DONE!)
+Realistic action settings:...
+(KIV) Blocking it with shield while in crouched/cautious/combat-idle stance (or having it be blocked by a KIV obstacle) may result in a min time 
 
-(TODO later...optimizatoin: Use CollisionBoundNode raycasting instead!)
-___________ 
+penalty  being incurred based off the time you didn't move while the projectile is travelling from the time it was launched. 
 
-Enemy alert detection for EnemyIdle units:  (all tests must pass for EnemyIdle units to become EnemyWatch units)
-2) EnemyAggroSystem to factor in 3D geometry blocking target fully/partially, thus whether can spot him or not
- Already have:
-  - 2D FOV/distance check to center of mass position. (Note: this currently doesn't take into account player ellipoid size, because currently all players are treated as small-enough humanoid chracters that a dot approximation is good enough...).
- TODO:
- - Elevate 2D FOV check to eye-level based off EnemyIdle properties.  (DONE!)
-  - (KIV) Center of mass should lower if player is crouched, or using a lower stance than combat. Thus, entity ellipsoid and position needs to alter respectively and height stance changes must be validated against environment.
-  
-- (Optional) If center of mass position spotted without 3D obstacles blocking, player is treated as automatically spotted. In most cases, at least half of his body is already showing. However, this test might be omitted in favour for the 2nd case when running player unit detection per frame. 
-- If optional first test fails, player is either partially/fully concealed. In per-frame case, periodically perform a random raycast hitscan towards any part of the player ellipsoid. To factor in range deviation (ie. short-sightedness of enemy), can deviate the ray accruacy by a certain angular displacement (based off a enemy's nearsightedness) (<-KIV). This can result in greater chances of "misses" by an opponent, if you are far away from  him and he didn't spot you yet.(If miss deviates out of ellipsoid area, can early out) Hit-scan towards ellisoid can have a slightly lower radius to better fit the target.   A 3-dimensional random box volume raycast can be done for such a naive random raycast case, or a random ellipsoid point volume raycast). For cases where a turn is about to end or a turn is about to start, can perform Optional first test case, thus requirign the player to at least hide his center of mass prior to ending the turn.  (the arc marker can indicate center of mass detection per frame only).
+Evasion should shuold be considered against moving velocity target (sideway shot displacement) at the time the weapon was launched.
+(KIV consider experiement) This could be factored into spending enough movement time units moving against the weapon time direction perpendically, 
 
-http://stackoverflow.com/questions/18731239/gnuplot-plot-random-points-inside-an-ellipsoid
+allowing the fire to be converted to a miss.....
 
-_________
+2. (KIV for 1. comment for Reflex Urgency mode) Zooming in to target mode can get moving projectiles to pause based off capped time units grid. 
 
-3) Hitscan for thrusting/swinging melee weapons  + ranged weapons
-(Already have)
-- Need a 2D straight line range from ellipsoid to ellisoid to be within weapon range.
-TODO:
-For all types of melee attacks:
-- Convert above 3D Straight line range from ellipsoid to ellipsoid to be 3D within weapon range. (DONE)
-- Need a clear LOS to target ellipsoid from right-handed radial offset of attacking unit, without 3D obstacles blocking the way.
-(DONE!)
+Projectiles will only travel further for remaining time it takes to raise ranged weapon up for aiming against time unit grid. This allows player 
 
-For swinign attack:
-- Swinging weapon requires an extra offset radial offset clearance distance to a right-hander's right 90 top-right quarter-circle, if no such clearance is available, default thrusting animation is used instead where right-handed radial offset always lies within ellipsoid. Tests must be done to see if any polygon geometry edges lie within t he quarter circle segment at mid-chest level, and if so, do now allow weapon swing. Use  AABB tests initially, against full circle and quarter circle.. (KIV)
--  Thrusting and Swinging attacks are actually 2 differnet weapons having different stats.  Allow a change in fireMode using a nextWeaponMode pointer. Firemodes are sorted according to priority consideration, until default fallback is the last one (ie. the thrust weaponMode).  (DONE)
-- When targetting opponent, ArenaHUD must show available Swinging/Thrusting options. Sort action list according to percentage chance to hit. Let player decide which weapon mode to use on target. (DONE)
-- EnemyAggroSystem: Reaction fire means triggering the attack according to the range if valid (ie. within range/arc, clearance), otherwise cycling down to the next available option. At the time of "strike", if no longer valid WeaponLOS to target ellipsoid, consider cycling down to next available firemode if avaialbe and re-determine timeOfStrike. Once strike has occured, send either a AnimMelee for melee attacks, or send a projectile/raycast for ranged attacks.   (DONE)
+to launch projectile or slash before being hit by others' reaction fire. Note that using this mode means you will lose time in real-time so long 
 
-- + (Obstacles/Cover and Flanking) ArenaHUD: For  weapons, if you have valid no-obstacle WeaponLOS to target, but target has no clear-obstacle WeaponLOS on you (based on direct point towards you, not on his current rotation), give target additional evasionUnderCover bonus that makes hitting the target not that easy.  If target hasn't triggered any attack on you, test for both handedness to determine if either blockage is true using ellipsoid radius, and if so, give  evasionUnderCoverBonus bonus if target has triggered. If target has triggered an attack on you, than test for weapon righthandedness WeaponLOS to determine if  he can retailiate. If he can't due to obstacle blockage, cancel the trigger(if needed when he can't retailate attack upon required), and rmb to run evasionUnderCoverBonus using both handedness with ellipsoid radius for such a case to determine final hit percentage. If target has triggered an attack and righthandedness test succeeds, than coverBonus is still applied for both-handedness with ellipsoid radius test, but this is not as effective as evasionUnderCoverBonus. (DONE,)
-- EnemyAggroSystem: evasionUnderCoverBonus also used for players, when guarding against enemy aggro. (DONE)
-(KIV) Note that some type of curved swords (or curled/boomerang projectiles), may mitigate evasionUnderCover/cover bonuses. 
-Obstacles/Cover bonus and Open Flank determination is used for all types of melee/ranged attacks. It is a crucial aspect of the game where the challenge is often to take out enemies in covered positions by flanking them. (DONE)
+as there are enemy moving projectiles. However, you are able to block projectiles in this mode without lost of TUs as well. So, the only 
+
+disadvantage is that real-time always passes whenever there are enemy reaction projectiles/swings occuring.
+
+
+3. Syncronoised player action ranged attack *
+
+________________________
+
+SHIFt key in target Mode and left/right keys to perform auto-aiming cycling.  *
+
+_____________________
+
+Include death animation *
+
+_______________________
+
+Health Bar for all the units  *
+
+___________________
+
+
+0. Weapon attachment 
+
+1. WeaponList  and WeaponListSystem for all EnemyAggro with Weapon switching for player
+
+2. Include the rest of the units and weapn animations/models!
+
+and
+
+3. AI aggro weapon switching logic. (KIV)
+
+
+Hook weapon models to hand
 
 ________________________________________
 
-The 3rd person camera Fog Of War issue (3D environment LOS target detection should work both ways!)
 
-Every combat phase has a list of:
-1) Seen Enemies
-2) Detected Enemies (Expires after 3 of your phases..)
+// 1. Ensure Line of Fire OVer Blocking ELlipsoid is used for Swing, but Thrust can have concession *
 
-Your phase:
-	0) Fog of War, Enemy detection raycast, default all set visible=false.
- - Set visible = true for any visible-check-test on enemy targets (rotation-agnostic).
- 
-A character's turn (ie. while in 3rd person view):
-1) Undetected enemies only appear out of thin air when they get "detected" by your moving characters FOV, that can be smaller than the third person camera. 
-Once they get detected, they appear there permanently, so long as they aren't moving. Thus, pop ins are only a one-time event and there's no pop outs!
- This means popping in only happens once. 
-
-Center of  mass raycast is checked. If detected, it means entity is most likely clearly visible, so just show it!
-Otherwise, 2 upper edge corners are checked (<- optional..but maybe good), if not, than random spot periodic checks .
-If detected, flash model in via old-school white-in and notify via text message, as this is a model that is detected halfway while moving character around (or using the "wait" button).
-Depending on distance to center of mass and distance of center of mass raycast hit, clause message can show "from behind cover".
-
-Special cases (hidden attacking enemeis), Aggored are automatically "detected" if they fire upon you, but they may not be seen at the moment and thus their details are unknown....Such areas are marked with question mark upon exiting back out to command view.
-
-Enemy phase:
-2) You can only see what your characters around sees as the enemy moves (rotation agnostic), otherwise, otherwise all movement is hidden. 
-(or you detect shuffling like in VC),
-3) Overhead view shows markers consisting of last seen enemy positions that aren't spotted yet. 
-Markers vanish and become actual models once detected.
-Once models are completely concealed, they become markers. For complete concealment, use 5 point check (center and 4 corners) + periodic random spots.
-
-(Consider ...show markers completely in strategic view...no models seen until transitioning into third person view/spectating view)
+______________________________________
 
 
-Your phase:
-	Markers still remain of last known undeteced enemy positions from last phase.
+1.  Watch engaged check cases.... for aggro AI *
 
 
-(KIV,...for added realism, identifying target details require certain conditions in terms of how much the 3D model is exposed within sight)
+(Far-sighted reaction) (Default)
 
-_____________________________________ Integration with ranged units
+Ranged vs melee:
+Ranged units are engaged only when THEY are within range of another enemy melee's weapon range.
+This effectively locks them down and they cannot turn to shoot someone else.
 
-- (KIV) Allow actual switching of weapon componetns across all Family nodes with Entity itself. This can be done via copy+paste approach instead. A change in weapon should be notified on the Weapon header signal...
+Ranged vs Ranged:
+Ranged units are engaged only when THEY are within range of another ranged enemy melee's weapon range.
+This effectively locks them down and they cannot turn to shoot someone else.
 
+OR
 
-4) Hitscan for straight-line ray weapon 
-- Standard RayIntersection hit test from weapon muzzle origin.
+(Near-sighted reaction)
+Ranged units are only engaged against the closest target within a certain kind of pseudo-melee aggro range. 
+They will automatically turn to face active moving unit in that range.
 
-5) Hitscan for homing/constant velocity projectile weapon 
-- EllipsoidColliderSystem velocity hit test prior to hitting player ellipsoid (with event callback)
-//  -OR-
-//Simpler projectile overlap test system
+OR 
 
-6) Hitscan for homing trajectory projectile weapon before TOI
-(If got interruption for determined homing path, actual homing path isn't updated. Instead, trajectory is permanently frozen to "dumb-fire" mode from previous homing path.)
-- Straight-line 2D DDA raycast against terrain edges if  any, to get intersection heights of terrain and whether got any interruption at time T.
-- Straight-line 2D time test within enter time of any other ellipsoids to get interruption at time T. Must be  Projectile Ellipsoid/Pos not above Target Ellipsoid at given time
-- Straight-line 2D time test against 3D obstacle bounding boxes to get interupttion at time T in/out. Must be  Projectile Ellipsoid/Pos not above target boundign box.z at given times, but if so, test against 3D convex hull to see if got  hit.
-
-For any given line trajectory beign generated, pre-determine potential hit time-spans for last case (to iterate over seperate list), otherwise, cap T to lowest and feed trajectory data into particle system.
-
-For any arrows that have reached their TOI, set their velocity and offset to aim at the point of impact and move them to non-moving arrow particle system. Non-moving arrow particle system will clear alway arrows once global time exceeds arrow time, by setting their x/y/z position out of the way so they won't be able to be seen on the screen.
+Random sighted reaction...
 
 
-7) Hitscan for trajectory dumb-fire projectile weapon
-Truncate trajectory to lowest time T, similar to above trajectory tests. 
+For Melee: How to lock down a melee character......
+---------------------------------------------------
+
+(Far-sighted reaction) (Default)
+Melee vs Melee:
+Melee units are engaged only by other enemy melees within their weapon ranges or can engage another melee by their own weapon range.
+
+Melee vs Ranged:
+Melee units are engaged only by another ranged by their own weapon range or another ranged enemy's melee weapon range.
+
+OR
+
+(Near-sighted reaction)
+Melee units are only engaged against the closest target within their aggro range (or a certain kind of aggro range).
+
+OR 
+
+Random sighted reaction...
+
+
+
+Melee units will still turn to face any active moving units within their aggro range regardless and cannot be locked down by passive units.
+
+_______________________________________________
+
+End turn reaction facing: *
+Disable turning   / Enable turning /  Random Turning(unless within engagement range), Absolutely Random Turning
+
+
+
+
+Aesthetics:
+---------------
+
+1. Add rocks /obstacles/trees/jetty bounds/ship etc.  *
+2. Splat terrain   (required) *
+
+(KIV)
+3. Include some take damage effect from aggro (maybe blood, or flinching with upper body...i dunno)
+
+
+
+Gameplay: 
+
+1. AI should alert presence of player to nearby unengaged men within a certain distance. 
+2.Provide HTML to launch units into Flash. 
+3. Enable melee/miniAggro-ranged linked attacks. (KIV)
