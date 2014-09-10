@@ -8,6 +8,7 @@ package spawners.arena.water
 	import alternativa.engine3d.materials.VertexLightTextureMaterial;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.BitmapTextureResource;
+	import alternterrain.materials.CheckboardFillMaterial;
 	import eu.nekobit.alternativa3d.materials.WaterMaterial;
 	import flash.display.BitmapData;
 	
@@ -41,6 +42,8 @@ package spawners.arena.water
 		private var planeClasse:Class;
 		private var uvFollowOffsetScale:Number = 1;
 		
+		
+		
 		override protected function init():void {
 
 			var normalRes:BitmapTextureResource = new BitmapTextureResource(new assetClasse.NORMAL().bitmapData);
@@ -57,7 +60,10 @@ package spawners.arena.water
 			var scaler:Number = SCALER;
 			var size:Number = SIZE;
 			var uvScale:Number = UV_SCALER;
-			//var testMat:Material = new StandardMaterial(new BitmapTextureResource(new BitmapData(16, 16, false, 0xFFFFFF)),new BitmapTextureResource(new BitmapData(16, 16, false, 0x0000FF)) );
+			var testMat:Material =  new CheckboardFillMaterial();// new StandardMaterial(new BitmapTextureResource(new BitmapData(16, 16, false, 0xFFFFFF)), new BitmapTextureResource(new BitmapData(16, 16, false, 0x0000FF)) );
+			
+			//size = 10000;
+			
 			plane = new planeClasse(size, size, SEGMENTS, SEGMENTS, false, false, null, waterMaterial);
 			//plane.transformProcedure
 			

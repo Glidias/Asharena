@@ -45,6 +45,7 @@ package tests.pvp
 	import ash.tick.FrameTickProvider;
 	import com.bit101.components.Label;
 	import com.bit101.components.ProgressBar;
+	import com.flashartofwar.fcss.utils.FSerialization;
 	import com.greensock.easing.Cubic;
 	import com.greensock.easing.Linear;
 	import com.greensock.TweenLite;
@@ -154,11 +155,16 @@ package tests.pvp
 		
 		
 		public var SHOW_PREFERED_STANCES_ENDTURN:int = 2;
+		private var waterSettings:String = "XwaterMaterial { perturbReflectiveBy:0.5; perturbRefractiveBy:0.5; waterTintAmount:0.3; fresnelMultiplier:0.43; reflectionMultiplier:0.5; waterColorR:0; waterColorG:0.15; waterColorB:0.115;  }";
 		
 	
 		public function PVPDemo2() 
 		{
 			haxe.initSwc(this);
+			
+			if (root.loaderInfo.parameters.waterSettings) {
+				waterSettings = root.loaderInfo.parameters.waterSettings;
+			}
 			
 			game = new TheGame(stage);
 	
@@ -167,6 +173,7 @@ package tests.pvp
 			
 			_template3D.visible = false;
 			addChild(_preloader);
+			
 			
 			ArrowLobMeshSet2;
 			PlanarRim;
@@ -213,6 +220,8 @@ package tests.pvp
 		
 		private function setupTerrainAndWater():void 
 		{
+				FSerialization.applyStyle(_waterBase.waterMaterial, FSerialization.parseStylesheet(waterSettings).getStyle("waterMaterial") );
+				
 				_waterBase.plane.z =  (-64000 +84);//_terrainBase.loadedPage.Square.MinY + 444;
 			_waterBase.addToScene(_template3D.scene);
 			
@@ -364,7 +373,7 @@ package tests.pvp
 		private var _transitCompleteCallback:Function;
 		
 		
-		private var sceneLocked:Boolean = false;
+		private var _sceneLocked:Boolean = false;
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
@@ -596,7 +605,7 @@ package tests.pvp
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
-			if ( game.gameStates.engineState.currentState === engineStateTransiting || sceneLocked) {
+			if ( game.gameStates.engineState.currentState === engineStateTransiting || _sceneLocked) {
 				// for now until interupt case is available
 				return;
 			}
@@ -617,7 +626,7 @@ package tests.pvp
 				}
 			}
 			else if (keyCode === Keyboard.Z && !game.keyPoll.isDown(keyCode) ) {
-				if (arenaHUD.charWeaponEnabled) toggleTargetingMode();
+				if (arenaHUD.charWeaponEnabled ) toggleTargetingMode();
 			}
 			else if (keyCode === Keyboard.BACKSPACE && !game.keyPoll.isDown(keyCode)) {
 				endPhase();
@@ -663,8 +672,23 @@ package tests.pvp
 		
 		private function resolveStrikeAction():void 
 		{
+			
 			sceneLocked = true;
+		
+			
 			thirdPersonController.thirdPerson.followAzimuth = false;
+					if (!_animAttackSystem.getResolved()) {
+					
+					arenaHUD.appendSpanTagMessage("Resolving action...");
+					_animAttackSystem.resolved.addOnce(resolveStrikeAction);
+					return;
+				}
+				
+				if ( arenaSpawner.currentPlayerEntity.get(Health) == null) { // assumed player has died before action can be executed!
+					return;
+				}
+				
+			arenaHUD.appendSpanTagMessage("Player executed action!");
 			AnimAttackSystem.performMeleeAttackAction(arenaHUD.playerWeaponModeForAttack, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
 			_animAttackSystem.resolved.addOnce(resolveStrikeAction2);
 			aggroMemManager.addToAggroMem(arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity);
@@ -724,6 +748,7 @@ package tests.pvp
 			}
 			else {
 				toggleTargetingMode();
+				
 				sceneLocked = false;
 				
 				thirdPersonController.thirdPerson.followAzimuth = true;
@@ -779,10 +804,7 @@ package tests.pvp
 				thirdPersonController.thirdPerson.preferedZoom = TARGET_MODE_ZOOM;
 				thirdPersonController.thirdPerson.controller.disableMouseWheel();
 				
-				(arenaSpawner.currentPlayerEntity.get(SurfaceMovement) as SurfaceMovement).resetAllStates();
-				game.keyPoll.resetAllStates(); 
-				
-				arenaSpawner.currentPlayerEntity.remove(KeyPoll); 
+				disablePlayerMovement();
 				
 				
 				if (gladiatorStance.stance == 0) {
@@ -796,6 +818,14 @@ package tests.pvp
 				gladiatorStance.setIdleStance( _lastTargetStance);
 			}
 			gladiatorStance.setTargetMode(_targetMode);
+		}
+		
+		private function disablePlayerMovement():void 
+		{
+			(arenaSpawner.currentPlayerEntity.get(SurfaceMovement) as SurfaceMovement).resetAllStates();
+				game.keyPoll.resetAllStates(); 
+				
+			arenaSpawner.currentPlayerEntity.remove(KeyPoll); 
 		}
 		
 		private function exitTargetMode():void 
@@ -823,6 +853,7 @@ package tests.pvp
 			
 			sideIndex = 0;
 			curArr = arrayOfSides[sideIndex];
+			_newPhase = true;
 			
 			// TODO: Naive vs Exploratory version
 			//setSideDanger(curArr);
@@ -869,11 +900,11 @@ package tests.pvp
 		
 		private function endPhase():void {
 			
+		
+			
 			
 			if (game.gameStates.engineState.currentState != engineStateCommander) {
-				
-				_transitCompleteCallback = endPhase;
-				changeCameraView("commander");
+				doEndTurn();
 				return;
 			}
 			
@@ -1161,16 +1192,7 @@ package tests.pvp
 				transitionCameras(commanderCameraController.thirdPerson, thirdPersonController.thirdPerson, targetState);
 			}
 			else if (targetState === "commander" && game.gameStates.engineState.currentState === game.gameStates.thirdPerson) {
-				_transitCompleteCallback = focusOnCurPlayer;
-				updateTargetCharFocus();
-				if (arenaSpawner.currentPlayerEntity) arenaSpawner.currentPlayerEntity.remove(MovableCollidable);
-				arenaHUD.setTargetChar(null);
-				endTurnAI();
-				
-				
-				game.gameStates.engineState.changeState("transiting");
-				arenaHUD.setState("transiting");
-				transitionCameras(thirdPersonController.thirdPerson, commanderCameraController.thirdPerson, targetState, NaN, NaN, NaN, Cubic.easeIn);
+				doEndTurn();
 			}
 			/*
 			else if (targetState === "commander" && game.gameStates.engineState.currentState === game.gameStates.spectator) {
@@ -1184,6 +1206,39 @@ package tests.pvp
 				game.gameStates.engineState.changeState(targetState);
 				arenaHUD.setState(targetState);
 			}
+		}
+		
+		private function doEndTurn():void 
+		{
+			///*
+			if (!_animAttackSystem.getResolved()) {
+					disablePlayerMovement();
+					sceneLocked = true;
+					thirdPersonController.thirdPerson.followAzimuth = false;
+					arenaHUD.appendSpanTagMessage("Resolving turn...");
+					_animAttackSystem.resolved.addOnce(doEndTurn);
+					return;
+				}
+			
+				thirdPersonController.thirdPerson.followAzimuth = true;
+				var targetState:String = "commander";
+				//throw new Error("A");
+				if (!_newPhase) arenaHUD.appendSpanTagMessage("Turn resolved!");
+				//*/
+				
+				_newPhase = false;
+			
+				sceneLocked = false;
+			_transitCompleteCallback = focusOnCurPlayer;
+				updateTargetCharFocus();
+				if (arenaSpawner.currentPlayerEntity) arenaSpawner.currentPlayerEntity.remove(MovableCollidable);
+				arenaHUD.setTargetChar(null);
+				endTurnAI();
+				
+				
+				game.gameStates.engineState.changeState("transiting");
+				arenaHUD.setState("transiting");
+				transitionCameras(thirdPersonController.thirdPerson, commanderCameraController.thirdPerson, targetState, NaN, NaN, NaN, Cubic.easeIn);
 		}
 		
 		private function onCharacterZoomedInTurnStartl():void 
@@ -1209,6 +1264,7 @@ package tests.pvp
 		private var _animAttackSystem:AnimAttackSystem;
 		private var arcSystem:A3DEnemyArcSystem;
 		private var thirdPersonAiming:ThirdPersonAiming;
+		private var _newPhase:Boolean;
 
 		
 		
@@ -1287,6 +1343,9 @@ package tests.pvp
 		
 			private function endTurnAI():void 
 		{
+		
+			
+			
 			aggroMemManager.notifyEndTurn();
 			
 			
@@ -1463,9 +1522,10 @@ package tests.pvp
 			_template3D.camera.addChild( arenaHUD.hud);
 			
 			
-			game.gameStates.thirdPerson.addInstance( _animAttackSystem=  new AnimAttackSystem() ).withPriority(SystemPriorities.stateMachines);
+			game.gameStates.thirdPerson.addInstance( _animAttackSystem =  new AnimAttackSystem() ).withPriority(SystemPriorities.stateMachines);
+		//	game.gameStates.( _animAttackSystem=  new AnimAttackSystem() ).withPriority(SystemPriorities.stateMachines);
 			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem = new A3DEnemyAggroSystem(collisionScene) ).withPriority(SystemPriorities.stateMachines);
-	
+			_enemyAggroSystem.timeChecker = _animAttackSystem;
 			//_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
 		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
 		//	_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
@@ -1682,6 +1742,16 @@ package tests.pvp
 
 			_template3D.render();
 			
+		}
+		
+		public function get sceneLocked():Boolean 
+		{
+			return _sceneLocked;
+		}
+		
+		public function set sceneLocked(value:Boolean):void 
+		{
+			_sceneLocked = value;
 		}
 		
 	}

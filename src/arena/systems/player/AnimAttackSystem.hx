@@ -169,14 +169,16 @@ class AnimAttackSystem extends System implements IProjectileHitResolver implemen
 		
 		
 		_notResolved = notResolved;
-		if (notResolved  == -1) {
+		if ( notResolved != 1 ) {
 			_engine.updateComplete.addOnce( notifyFinish);
 		}
 	}
 	
 	public inline function getResolved():Bool {
-		return _notResolved == 0;
+		return _notResolved != 1;
 	}
+	
+	
 	
 	private function notifyFinish() 
 	{

@@ -13,6 +13,9 @@ package tests.water
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.TextureResource;
+	import com.flashartofwar.fcss.utils.FSerialization;
+	import flash.desktop.Clipboard;
+	import flash.desktop.ClipboardFormats;
 	import flash.geom.Matrix3D;
 
 	import flash.geom.Vector3D;
@@ -77,6 +80,7 @@ package tests.water
 		private var testPlane:PlaneWavy;
 		private var shipModel:Object3D;
 
+		private var waterSettings:String = "waterMaterial { waterTintAmount:0; fresnelMultiplier:0.43; waterColorR:0; waterColorG:0.15; waterColorB:0.115; reflectionMultiplier:0; perturbReflectiveBy:0.5; perturbRefractiveBy:0.5;  }";
 		
 		public function WaterShipTest() 
 		{
@@ -92,7 +96,7 @@ package tests.water
 			_template3D.visible = false;
 			addChild(_preloader);
 			
-		
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		
 		}
 		
@@ -103,6 +107,10 @@ package tests.water
 			
 				_template3D.camera.farClipping = FAR_CLIP_DIST*256;
 		
+				WaterBase.SEGMENTS = 200;
+				WaterBase.SCALER *= .01;
+				WaterBase.SIZE = 10000;
+				WaterBase.UV_SCALER *= .01;
 			_water = new WaterBase(NormalWaterAssets, PlaneWavy);  //
 			
 			_skybox = new SkyboxBase(ClearBlueSkyAssets, WaterBase.SIZE);
@@ -123,12 +131,15 @@ package tests.water
 		//	_water.setupFollowCamera();
 	
 			waterPlaneWavy = _water.plane as PlaneWavy;
+			_water.waterMaterial.forceRenderPriority = -1;
+			
+			FSerialization.applyStyle(_water.waterMaterial, FSerialization.parseStylesheet(waterSettings).getStyle("waterMaterial") );
 		
 			windDirUV = waterPlaneWavy.windDir.clone();
 			windDirUV.normalize();
-			windDirUV.scaleBy(.005);
+			windDirUV.scaleBy(.003);
 			_water.waterMaterial.windDirectionUV = windDirUV;
-			int.MAX_VALUE
+			
 			
 			var plane:PlaneWavy = new PlaneWavy(500, 500, 32, 32, false, false, new FillMaterial(0xFF0000), new FillMaterial(0xFF0000));
 			testPlane = plane;
@@ -181,7 +192,7 @@ package tests.water
 
 	
 		
-		addChild( new WaterUIAdjust(_water.waterMaterial) );
+		addChild(_waterUIAdjust  = new WaterUIAdjust(_water.waterMaterial) );
 			
 
 			_water.addToScene(_template3D.scene);
@@ -204,7 +215,7 @@ package tests.water
 			ticker.add(tick);
 			ticker.start();
 		
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			
 			
 			
 		}
@@ -219,13 +230,14 @@ package tests.water
 				spectatorPerson.minPitch = -Math.PI*.5;
 			}
 			else if (e.keyCode === Keyboard.I) {
-				
+				Clipboard.generalClipboard.setData( ClipboardFormats.TEXT_FORMAT , _waterUIAdjust.saveMaterialSettings() );
 			}
 		}
 
 		private var testPos:Vector3D = new Vector3D();
 		private var accumT:Number = 0;
 		private var windDirUV:Vector3D = new Vector3D();
+		private var _waterUIAdjust:WaterUIAdjust;
 		
 		
 
@@ -242,14 +254,14 @@ package tests.water
             var j:int = NUM_DETAILS * (duckY + 0.5 * MESH_SIZE) / MESH_SIZE;
             i = Math.min (NUM_DETAILS - 2, Math.max (1, i));
             j = Math.min (NUM_DETAILS - 2, Math.max (1, j));
-            var duckZ:Number = waterPlaneWavy.getHeightAt( i*segmentSize,j*segmentSize);
+            var duckZ:Number = waterPlaneWavy.getHeightAt( shipModel.x, shipModel.y);
 			
 			
 			        // water normal (idea stolen from reflection code,
             // so I'm not even sure this is correct formula :)
             var n:Vector3D = new Vector3D (
-                waterPlaneWavy.getHeightAt( i*segmentSize,(j+1)*segmentSize) - waterPlaneWavy.getHeightAt( i*segmentSize,(j-1)*segmentSize) * 0.005,
-                ( waterPlaneWavy.getHeightAt( (i+1)*segmentSize,j*segmentSize) - waterPlaneWavy.getHeightAt( (i-1)*segmentSize,j*segmentSize) ) * 0.005,
+                waterPlaneWavy.getHeightAt( i*segmentSize,(j+1)*segmentSize) - waterPlaneWavy.getHeightAt( i*segmentSize,(j-1)*segmentSize) * 0.010,
+                ( waterPlaneWavy.getHeightAt( (i+1)*segmentSize,j*segmentSize) - waterPlaneWavy.getHeightAt( (i-1)*segmentSize,j*segmentSize) ) * 0.025,
                 1
             ); n.normalize ();
 			
@@ -258,7 +270,7 @@ package tests.water
             // duck tilt matrix corresponding to this normal
             var m:Matrix3D = new Matrix3D();
             var r:Vector3D = n.crossProduct (Vector3D.Z_AXIS);
-			
+		//	/*
             if (r.length > 0.00001) {
                 r.normalize ();
                 m.prependRotation (
@@ -269,9 +281,11 @@ package tests.water
 			m.appendRotation(90, Vector3D.X_AXIS);
 
             shipModel.matrix = m;
+			//*/
+			
 			shipModel.x = duckX;
 			shipModel.y = duckY;
-			shipModel.z = duckZ;
+			shipModel.z = duckZ + 20;
 			shipModel.rotationZ  = 0;
 
 		}

@@ -5,6 +5,7 @@ package spawners.arena.water
 	import com.bit101.components.Style;
 	import com.bit101.components.Window;
 	import com.bit101.utils.MinimalConfigurator;
+	import com.flashartofwar.fcss.utils.FSerialization;
 	import eu.nekobit.alternativa3d.materials.WaterMaterial;
 	import flash.display.Sprite;
 	import flash.display.StageDisplayState;
@@ -140,9 +141,17 @@ public var reflectClipOffset:Number = 0;
 			e.stopPropagation();
 		}
 		
+
 		/*---------------------
 GUI event handlers
 ---------------------*/
+
+public function saveMaterialSettings():String {
+	return FSerialization.getStyleStringOfObject("waterMaterial", waterMaterial, 
+		FSerialization.createHashFromArray(["waterColorR", "waterColorG", "waterColorB", "fresnelMultiplier", "reflectionMultiplier", "perturbReflectiveBy", "perturbRefractiveBy", "waterTintAmount" ]) );
+	
+}
+
 public function onWaterColorChange(e:Event):void
 {
 waterMaterial.waterColorR = parseFloat(waterColorR.text);

@@ -92,15 +92,19 @@ package alternativa.a3d.objects
 				
 				var endTime:Number = data[baseI + timeStampOffset] + data[baseI + totalTimeOffset];
 				if (timeStamp  >= endTime ) {
-					delete dataHash[index];
+
+					resolver.processHit( arr[0], arr[1], arr[2], data[baseI + endPosOffset], data[baseI + endPosOffset + 1], data[baseI + endPosOffset + 2] );
+					
+					 delete dataHash[index];
 					toRemoveIndices[removeCount++] = i;
-					resolver.processHit( arr[0], arr[1], arr[2], data[baseI + endPosOffset], data[baseI + endPosOffset + 1], data[baseI + endPosOffset + 2] ); 
 					data[baseI + endPosOffset] = 9999999999999;
 					data[baseI + endPosOffset+1] =9999999999999;
 					data[baseI + endPosOffset + 2] = 9999999999999;
 					data[baseI ] = 9999999999999;
 					data[baseI +1] =9999999999999;
 					data[baseI +2] = 9999999999999;
+					
+					
 					
 				}
 				

@@ -3,6 +3,7 @@ package alternativa.engine3d.primitives
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.DrawUnit;
+	import alternativa.engine3d.core.RayIntersectionData;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
@@ -31,37 +32,139 @@ package alternativa.engine3d.primitives
 		//public  var windDir:Vector3D = new Vector3D(3,2);
 		//private var  roughness:Number = 2;
 		
-		private var waveHeight:Number = 14;
-		public  var windDir:Vector3D = new Vector3D(3,2);
+		private var waveHeight:Number = 24;
+		public  var windDir:Vector3D = new Vector3D(-2,-2);
 		private var  roughness:Number = 2;
-
+		
+		/*
+		private var threeSixtyRads:Number = 360 * (Math.PI / 180);
+		private var _frequency:Number = 100 * (Math.PI / 180);
+		private var _frequencyY:Number =70 * (Math.PI / 180);
+		private var _amplitudeY:Number = 42;
+		private var _amplitude:Number = 22;
+		private var _speed:Number = .3;
+*/
+		
+		private var threeSixtyRads:Number = 360 * (Math.PI / 180);
+		private var _frequency:Number = 10 * (Math.PI / 180);
+		private var _frequencyY:Number = 6 * (Math.PI / 180);
+		private var _amplitude:Number = 20;
+		private var _amplitudeY:Number = 40;
+		
+		private var _speed:Number = 1;
+		
 		private static var TRANSFORM_PROCEDURE:Procedure;
 		
 		
 		
-		alternativa3d override function setTransformConstants(drawUnit:DrawUnit, surface:Surface, vertexShader:Linker, camera:Camera3D):void {
-			
-			
-		
-			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cVars"), waveHeight, roughness, 0.01, 1);
-			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cWindDir"), windDir.x*fTime0_X, windDir.y*fTime0_X, .5, 0);
-	
-		}
+
 		
 		
 		public function PlaneWavy(width:Number=100, length:Number=100, widthSegments:uint=1, lengthSegments:uint=1, twoSided:Boolean=true, reverse:Boolean=false, bottom:Material=null, top:Material=null) 
 		{
+			_widthSeg = width / widthSegments;
+			_heightSeg = length / lengthSegments;
+			_widthSeg_i = 1 / _widthSeg;
+			_heightSeg_i = 1 / _heightSeg;
+			
 			super(width, length, widthSegments, lengthSegments, twoSided, reverse, bottom, top);
 			//throw new Error("A");
-						transformProcedure = getTransformProcedure();
+			transformProcedure = getTransformProcedure();
 						
 			windDir.normalize();
 			windDir.scaleBy(2)
+			
+			fortyFiveDegree = new Vector3D(1, 1, 0);
+			fortyFiveDegree.normalize();
 			//randomiseVertices();
 		}
 		
+	
+		
+		public function getHeightAndNormalAtSpot(spot:Vector3D):Vector3D {
+			var scaler:Number;
+			var result:Vector3D;
+			var gridX:int = Math.floor(spot.x * _widthSeg_i);
+			var gridY:int = Math.floor(spot.y * _heightSeg_i);
+	
+			
+			dummyVec.x = gridX * _widthSeg + _widthSeg;
+			dummyVec.y  = gridY * _heightSeg;
+			dummyVec.z = 0;
+			
+			//throw new Error(dummyVec.x);
+			
+			dummyVec3.x = spot.x - dummyVec.x;
+			dummyVec3.y = spot.y - dummyVec.y;
+			dummyVec3.z =  0;
+			
+			if ( dummyVec3.dotProduct(fortyFiveDegree) > 0 ) {  // bottom right
+				dummyVec2.x = dummyVec.x - _widthSeg;
+				dummyVec2.y = dummyVec.y - _heightSeg;  // leftward
+				dummyVec2.z = dummyVec.z;
+				
+				dummyVec3.x = dummyVec.x;			// rightward
+				dummyVec3.y = dummyVec.y - _heightSeg;
+				dummyVec3.z = dummyVec.z;
+				
+				
+				
+				
+			}
+			else {  // top left 
+				dummyVec2.x = dummyVec.x - _widthSeg;
+				dummyVec2.y = dummyVec.y;  // leftward
+				dummyVec2.z = dummyVec.z;
+				
+				dummyVec3.x = dummyVec.x - _widthSeg;			// rightward
+				dummyVec3.y = dummyVec.y - _heightSeg;
+				dummyVec3.z = dummyVec.z;
+			}
+			
+			updatePosition(dummyVec);
+			updatePosition(dummyVec2);
+			updatePosition(dummyVec3);
+			
+			
+			dummyVec2.x -= dummyVec.x;
+			dummyVec2.y -= dummyVec.y;
+			dummyVec2.z -= dummyVec.z;
+			
+			dummyVec3.x -= dummyVec.x;
+			dummyVec3.y -= dummyVec.y;
+			dummyVec3.z -= dummyVec.z;
+				
+			result = dummyVec.crossProduct(dummyVec3);
+		//	result = new Vector3D(0, 0, 1);
+			result.normalize();
+			
+		
+			dummyVec2.x = spot.x - dummyVec.x;
+			dummyVec2.y = spot.y - dummyVec.y;
+			dummyVec2.z = 0; // spot.z - dummyVec.z;
+				
+			scaler = dummyVec2.dotProduct(result);
+			//spot.x = dummyVec.x + scaler * result.x;
+			//spot.y = dummyVec.y + scaler * result.y;
+			spot.z = dummyVec.z + scaler * result.z;
+			//throw new Error(spot);
+			
+			
+			return result;
+		}
+		
 		private var dummyVec:Vector3D = new Vector3D();
+		private var dummyVec2:Vector3D = new Vector3D();
+		private var dummyVec3:Vector3D = new Vector3D();
 		private var dummyVerts:Vector.<Number>
+		private var _widthSeg:Number;
+		private var _heightSeg:Number;
+			private var _widthSeg_i:Number;
+		private var _heightSeg_i:Number;
+		private var fortyFiveDegree:Vector3D;
+		private var waveCycle:Number=0;
+		
+		///*
 		 public function updatePosition(v:Vector3D):void
 		{
 			
@@ -77,6 +180,20 @@ package alternativa.engine3d.primitives
 			   v.z = waveHeight * ((height + height2) * .5);
 		
 		}
+	//	*/
+		
+	/*
+		public function updatePosition(v:Vector3D):void {
+			// multiply by the sine of the x coordinate, plus offset for animation (normalized to be 0-360 degrees)
+				v.z= Math.sin(((v.x + waveCycle) / 100) * (threeSixtyRads * _frequency) )  * _amplitude;
+				// add harmonic from Y frequency
+				v.z += Math.sin(((v.y + waveCycle) / 100) * (threeSixtyRads * _frequencyY) )  * _amplitudeY;
+		}
+		*/
+		
+		
+			
+			
 		public function getHeightAt(x:Number, y:Number):Number {
 			dummyVec.x = x;
 			dummyVec.y = y;
@@ -96,16 +213,26 @@ package alternativa.engine3d.primitives
 			}
 			
 			geometry.setAttributeValues(VertexAttributes.POSITION, vPosition);
-			geometry.calculateNormals();
-			geometry.calculateTangents(0);
+			//geometry.calculateNormals();
+			//geometry.calculateTangents(0);
 			geometry.upload( SpawnerBundle.context3D);
 			
 		}
 		
 		public function update(time:Number):void {
 			fTime0_X += time;
-			
+			waveCycle += _speed;
 			//randomiseVertices();
+		}
+		
+		
+		alternativa3d override function setTransformConstants(drawUnit:DrawUnit, surface:Surface, vertexShader:Linker, camera:Camera3D):void {
+			
+			
+		
+			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cVars"), waveHeight, roughness, 0.01, 1);
+			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cWindDir"), windDir.x*fTime0_X, windDir.y*fTime0_X, .5, 0);
+	
 		}
 		
 		private static function getTransformProcedure():Procedure {

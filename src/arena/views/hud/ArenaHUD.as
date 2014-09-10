@@ -550,7 +550,7 @@ WeaponSlots
 			
 			// Message log on bottom left
 			_msgLogInfo = new TextBoxChannel( new <FontSettings>[ getNewFontSettings(fontConsole, fontMat, 30) ], 8, -1, 3); 
-			registerVisStatesOfTextBox("thirdPerson", _msgLogInfo);
+			//registerVisStatesOfTextBox("thirdPerson", _msgLogInfo);
 			_msgLogInfo.moveTo(5, -82);
 			_msgLogInfo.addToContainer(layoutBottomLeft);
 			/*
@@ -664,6 +664,7 @@ WeaponSlots
 		
 		public function hideStars():void {
 			_stars = false;
+			clearLog();
 			hideList(_cpMeter);
 			_textTurnInfo.spriteSet.visible = false;
 			
@@ -1020,7 +1021,7 @@ WeaponSlots
 		}
 		public function showStars():void {
 			_stars = true;
-			clearLog();
+			//clearLog();
 			showList(_cpMeter);
 			_textTurnInfo.spriteSet.visible = true;
 			
@@ -1415,6 +1416,7 @@ WeaponSlots
 		
 		}
 		
+		
 		// this could be due to a block/parry or something, we determine description here
 		///*
 		private function txtPlayerMisses(e:Entity, targetEntity:Entity):void 
@@ -1438,7 +1440,7 @@ WeaponSlots
 			
 			if (e == null) {
 				
-				appenSpanTagMessage(killingBlow ? 'Player died due to <span u="1">'+amount+'</span>'+describeDmg+' damage!' : amount!= 0 ? 'Player took <span u="1">' + amount + '</span> points of '+describeDmg+'damage.' : 'Player avoided enemy strike');
+				appendSpanTagMessage(killingBlow ? 'Player died due to <span u="1">'+amount+'</span>'+describeDmg+' damage!' : amount!= 0 ? 'Player took <span u="1">' + amount + '</span> points of '+describeDmg+'damage.' : 'Player avoided enemy strike');
 				updateCharInfo();
 				return;
 				
@@ -1446,7 +1448,7 @@ WeaponSlots
 				var obj:Object3D = e.get(Object3D) as Object3D;
 				//var player:Object3D = 
 			
-			appenSpanTagMessage(amount == 0 ? '<span u="1">' + obj.name + '</span> misses player.': !killingBlow ? 'Player took ' + amount + describeDmg+' damage from <span u="1">' + obj.name + '</span>!' : 
+			appendSpanTagMessage(amount == 0 ? '<span u="1">' + obj.name + '</span> misses player.': !killingBlow ? 'Player took ' + amount + describeDmg+' damage from <span u="1">' + obj.name + '</span>!' : 
 					 'Player was killed by <span u="1">' + obj.name + '</span>!' 
 				);
 			
@@ -1470,7 +1472,7 @@ WeaponSlots
 				_msgLogInfo.drawNow();
 		}
 		
-		public function appenSpanTagMessage(string:String):void 
+		public function appendSpanTagMessage(string:String):void 
 		{
 			//_msgLogInfo.appendMessage("_"+	string	);
 				_msgLogInfo.appendSpanTagMessage(	string	);
