@@ -396,7 +396,7 @@ package tests.pvp
 			head = getTestWeapon(false);  // swing
 			head.nextFireMode =  tail = getTestWeapon(true); // thrust
 			
-			tail.nextFireMode = tail =  testRangeWeapon = getTestRangedWeapon();
+			//tail.nextFireMode = tail =  testRangeWeapon = getTestRangedWeapon();
 			return head;
 		}
 		
@@ -413,7 +413,7 @@ package tests.pvp
 			w.heightOffset = 13;
 		
 			
-			w.minRange = 16;
+			w.minRange = 40;
 			w.damage =  8;
 			w.cooldownTime = 1.74;
 			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
@@ -689,13 +689,37 @@ package tests.pvp
 				}
 				
 			arenaHUD.appendSpanTagMessage("Player executed action!");
-			AnimAttackSystem.performMeleeAttackAction(arenaHUD.playerWeaponModeForAttack, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
+			
+			delayTimeElapsed = 0;
+			
+			
+
+			if (arenaHUD.playerChosenWeaponStrike.fireMode > 0) {
+				
+				AnimAttackSystem.performMeleeAttackAction(arenaHUD.playerWeaponModeForAttack, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
+				//game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
+				 delayTimeElapsed =  Math.random()*.3  + arenaHUD.playerChosenWeaponStrike.strikeTimeAtMaxRange;
+			}
+			else {
+			
+				 Weapon.shootWeapon( arenaHUD.playerChosenWeaponStrike.rangeMode, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity,  arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0, _animAttackSystem, true);
+				
+				 	//game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
+				 delayTimeElapsed =  arenaHUD.playerChosenWeaponStrike.timeToSwing + Math.random()*1 ;
+			}
 			_animAttackSystem.resolved.addOnce(resolveStrikeAction2);
 			aggroMemManager.addToAggroMem(arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity);
 			if (arenaHUD.strikeResult > 0) {
 				var targetHP:Health = (arenaHUD.targetNode.entity.get(Health) as Health);
 				if (targetHP.hp > arenaHUD.playerDmgDealRoll) targetHP.onDamaged.addOnce(onEnemyTargetDamaged);
 			}
+		}
+		
+		private var delayTimeElapsed:Number;
+		
+		private function onUpdateTimeActionDone():void 
+		{
+			movementPoints.timeElapsed = 0;
 		}
 		
 		
@@ -721,12 +745,19 @@ package tests.pvp
 		
 		private function resolveStrikeAction2():void 
 		{
-			if (arenaHUD.strikeResult > 0) TweenLite.delayedCall(.5, resolveStrikeAction3);
+			if (arenaHUD.strikeResult == -1) {
+				arenaHUD.notifyPlayerActionMiss();
+			}
+			
+			 if (arenaHUD.strikeResult > 0) TweenLite.delayedCall(.5, resolveStrikeAction3);
 			else resolveStrikeAction3();
 		}
 		
 		private function resolveStrikeAction3():void 
 		{
+		//	resolveStrikeActionFully(true);
+		//	return;
+			
 			if (arenaHUD.enemyStrikeResult != 0) {
 				AnimAttackSystem.performMeleeAttackAction(arenaHUD.enemyWeaponModeForAttack, arenaHUD.targetNode.entity, arenaSpawner.currentPlayerEntity, arenaHUD.enemyStrikeResult > 0 ? arenaHUD.enemyDmgDealRoll : 0);
 				_animAttackSystem.resolved.addOnce(resolveStrikeActionFully);
@@ -742,16 +773,21 @@ package tests.pvp
 		
 		private function resolveStrikeActionFully(instant:Boolean=false):void 
 		{
-			if (!instant && arenaHUD.enemyStrikeResult > 0) {
-				TweenLite.delayedCall(.3, resolveToggleTargetingMode);
+			// new stuff here
+			instant = false;
+			
+			if (delayTimeElapsed > 0) {
+				game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
+				movementPoints.timeElapsed = delayTimeElapsed;
+				
+			}
+			
+			if (!instant ) {  //&& arenaHUD.enemyStrikeResult > 0
+				TweenLite.delayedCall(delayTimeElapsed, resolveToggleTargetingMode);
 				
 			}
 			else {
-				toggleTargetingMode();
-				
-				sceneLocked = false;
-				
-				thirdPersonController.thirdPerson.followAzimuth = true;
+				resolveToggleTargetingMode();
 			}
 		}
 		
@@ -1582,10 +1618,10 @@ package tests.pvp
 		private function onDamaged(e:Entity, hp:int, amount:int):void 
 		{
 			if (e != arenaSpawner.currentPlayerEntity) {  // assume damage taken from active currentPlayerEntity
-				arenaHUD.txtPlayerStrike(e, hp, amount);
+				 arenaHUD.txtPlayerStrike(e, hp, amount);
 			}
 			else {  // assume damage taken from entity under aggro system
-				arenaHUD.txtTookDamageFrom(_enemyAggroSystem.currentAttackingEnemy, hp, amount); 
+				if (amount > 0)  arenaHUD.txtTookDamageFrom(_enemyAggroSystem.currentAttackingEnemy, hp, amount); 
 			}
 		}
 		

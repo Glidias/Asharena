@@ -9,6 +9,7 @@ class MovementPoints
 	
 	public var movementTimeLeft:Float;
 	public var timeElapsed:Float;  // recorded time elapsed per frame
+	public var moveOnGround:Bool;
 
 	public function new() 
 	{

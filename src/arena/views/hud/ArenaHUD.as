@@ -1140,6 +1140,9 @@ WeaponSlots
 			_textTurnInfo.finaliseWrittenData();
 		}
 		
+		public function notifyPlayerActionMiss():void {
+			txtPlayerMisses(_displayChar, targetNode.entity);
+		}
 		
 		
 		public var strikeResult:int;
@@ -1147,6 +1150,8 @@ WeaponSlots
 		private var ENEMY_ROLL_CRIT:Boolean = EnemyAggroSystem.AGGRO_HAS_CRITICAL;
 		private var _gotTargetLOS:Boolean;
 		private var _bestChoiceIndex:uint;
+		private var _targetStrikeEntity:Entity;
+		public var playerChosenWeaponStrike:Weapon;
 		public var playerDmgDealRoll:int;
 		public var enemyDmgDealRoll:int
 		
@@ -1162,8 +1167,9 @@ WeaponSlots
 			var chosenWeapon:Weapon = choicesWeapons[keyCode];
 			if (chosenWeapon == null) return 0;
 			
-			
+			playerChosenWeaponStrike = chosenWeapon;
 			playerWeaponModeForAttack = chosenWeapon.fireMode;
+			_targetStrikeEntity = _targetNode.entity;
 			// ROLLING
 			var hitPercResult:Number;
 			var critPercResult:Number;
@@ -1204,7 +1210,7 @@ WeaponSlots
 					playerDmgDealRoll = HitFormulas.rollDamageForWeapon(chosenWeapon) * (gotCrit ? 3 : 1);
 				}
 				else {
-					txtPlayerMisses(_displayChar, targetNode.entity);
+					//txtPlayerMisses(_displayChar, targetNode.entity);
 					strikeResult = -1;
 				}
 	
@@ -1399,14 +1405,16 @@ WeaponSlots
 		{
 			if (amount == 0) return;
 		//	_msgLogInfo.resetAllScrollingMessages()
+		
 			var obj:Object3D = e.get(Object3D) as Object3D;
-			
+
 			var crit:Boolean  = strikeResult == 2;
 			_msgLogInfo.appendSpanTagMessage(!killingBlow  ? '<span u="2">Player</span> hits <span u="1">'+obj.name + '</span> for <span u="'+(crit ? 1 : 2)+'">'+amount + '</span> points of '+(crit ? '<span u="1">critical</span> ': '')+'damage.' : '<span u="2">Player kills</span> <span u="1">'+obj.name + '</span>'+(crit ? ' with a <span u="1">critical</span> hit' : "")+'!');
 			_msgLogInfo.drawNow();
-			if ( e === _targetNode.entity) {
+
+			if ( e === _targetStrikeEntity) {
 				if (!killingBlow ) {
-					setTargetChar(_targetNode);
+				//	setTargetChar(_targetStrikeNode);
 					
 				}
 				else if (killingBlow) {

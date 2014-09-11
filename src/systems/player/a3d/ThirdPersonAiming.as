@@ -61,13 +61,15 @@ package systems.player.a3d
 			
 		}
 		
+		private var originPos:Vector3D = new Vector3D();
+		
 		override public function update(time:Number):void {
 			var dz:Number;
 			var dy:Number;
 			var dx:Number;
 			//stance.setPitchAim();
 			
-			if (stance == null || camera == null) return;
+			if (stance == null || camera == null || followObject == null) return;
 			
 			cameraRay._orig.x = camera._x;
 			cameraRay._orig.y = camera._y;
@@ -79,7 +81,10 @@ package systems.player.a3d
 			cameraRay._dir.z = camForward.z;
 			}
 			else {
-				camera.calculateRay( new Vector3D(), cameraRay._dir, camera.view._width * .5, camera.view._height * .5);
+				originPos.x = 0;
+				originPos.y = 0;
+				originPos.z = 0;
+				camera.calculateRay( originPos, cameraRay._dir, camera.view._width * .5, camera.view._height * .5);
 			}
 			
 			spherePos.x = followObject._x;
@@ -101,8 +106,11 @@ package systems.player.a3d
 			}
 			*/
 			
+			
+			
 			var vec:Vector3D = cameraRay.getRayToSphereIntersection(cameraRay._orig, cameraRay._dir, spherePos, maxRange, dx*dx+dy*dy+dz*dz > maxRange*maxRange );
 				
+			if (vec == null) return;
 			dx = vec.x - spherePos.x;
 			dy = vec.y - spherePos.y;
 			dz = vec.z - spherePos.z;

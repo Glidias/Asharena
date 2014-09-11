@@ -23,6 +23,7 @@ class PlayerAction
 	
 	public static inline var IN_AIR:Int = 9;
 	public static inline var IN_AIR_FALLING:Int = 10;
+	public static inline var ON_GROUND_SLIDING:Int = 12;
 	
 	public static inline var STATE_JUMP:Int = -11;
 	

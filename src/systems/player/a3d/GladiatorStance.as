@@ -156,6 +156,7 @@ package systems.player.a3d
 		public var upperBodyDominant:Boolean = false;
 		public var ellipsoid:Ellipsoid;
 		
+		private static const MASK_DISABLED:int =  (1 << PlayerAction.IN_AIR) | (1 << PlayerAction.IN_AIR_FALLING) | (1 << PlayerAction.ON_GROUND_SLIDING);
 		private static const MASK_STRAFE:int = ( (1 << PlayerAction.STRAFE_LEFT_FAST) | (1 << PlayerAction.STRAFE_RIGHT_FAST) | (1 << PlayerAction.STRAFE_LEFT) | (1 << PlayerAction.STRAFE_RIGHT));
 		private static const MASK_STRAFE_LEFT:int = ((1 << PlayerAction.STRAFE_LEFT_FAST) | (1 << PlayerAction.STRAFE_LEFT));
 		private static const MASK_WALK:int = ( (1<<PlayerAction.MOVE_FORWARD) | (1<<PlayerAction.MOVE_FORWARD_FAST) | (1<<PlayerAction.MOVE_BACKWARD) | (1<<PlayerAction.MOVE_BACKWARD_FAST));
@@ -588,9 +589,15 @@ package systems.player.a3d
 		
 		// handles any changes in action!
 			public function handleAction(val:int):void {
+				if ( (1 << val) &  MASK_DISABLED ) {
+					//throw new Error("A");
+					return;
+				}
 				var myLastAction:int = lastAction;
+				if (val != PlayerAction.IDLE && lastAction == val) return;
 				lastAction = val;
 				upperBodyDominant = false;
+			
 			_running = false;
 			_idle = false;
 			

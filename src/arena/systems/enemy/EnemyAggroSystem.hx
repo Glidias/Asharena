@@ -300,7 +300,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		var pTimeElapsed:Float = p.movementPoints.timeElapsed;
 		
 		
-		if (pTimeElapsed <= 0) return; // being a turn based game, time only passes when player moves
+		if (pTimeElapsed <= 0) return; // KIV: group movement consideration, now treat sole player only
 		
 		_reactCooldown -= pTimeElapsed;
 		
@@ -530,7 +530,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 									a.entity.add(swinger);
 								}
 								else {
-									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, p.entity, HitFormulas.rollDamageForWeapon(aWeapon) * (enemyCrit ? 3 : 1), timeChecker );
+									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, p.entity, HitFormulas.rollDamageForWeapon(aWeapon) * (enemyCrit ? 3 : 1), timeChecker, true );
 								}
 								//p.health.damage(HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
 								
@@ -545,7 +545,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 									a.entity.add(swinger);
 								}
 								else {
-									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, p.entity, 0, timeChecker );
+									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, p.entity, 0, timeChecker, !a.state.target.movementPoints.moveOnGround  );
 								}
 								
 								//p.health.damage(0);

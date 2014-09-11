@@ -78,16 +78,18 @@ class LimitedPlayerMovementSystem extends System
 			if (displacement == 0) return;
 			
 			displacement = Math.sqrt(displacement);
+			n.movementPoints.moveOnGround = false;
 			
 			// determine time passed by comparing velocity and surfaceMovement speeds
 			//moveStats.WALK_SPEED
 			var testMoveState:Int = ( 1 << n.action.current );
 			if (testMoveState == 0) return;
-			var baseSpeed:Float = (testMoveState  & STATE_MOVE_MASK )!=0? n.moveStats.WALK_SPEED : (testMoveState & STATE_STRAFE_MASK )!=0 ? n.moveStats.STRAFE_SPEED : (testMoveState & STATE_MOVEBACK_MASK )!=0 ? n.moveStats.WALKBACK_SPEED : (testMoveState & STATE_FALLING_MASK)!=0 ? n.gravity.force : 0; 
+			var baseSpeed:Float = (testMoveState  & STATE_MOVE_MASK )!=0? n.moveStats.WALK_SPEED : (testMoveState & STATE_STRAFE_MASK )!=0 ? n.moveStats.STRAFE_SPEED : (testMoveState & STATE_MOVEBACK_MASK )!=0 ? n.moveStats.WALKBACK_SPEED : (testMoveState & STATE_FALLING_MASK)!=0 ? -1 : 0; 
+			//if ((testMoveState & STATE_FALLING_MASK) != 0) throw "A";
 			if (baseSpeed == 0) return;
 			
-			
-			n.movementPoints.deplete(  displacement / baseSpeed * time);
+			n.movementPoints.moveOnGround =  baseSpeed >= 0;  // not really true, since unit could be sliding on ground. May need another PlayerAction for sliding because now currently using FALLING_IN_AIR for it!
+			n.movementPoints.deplete( n.movementPoints.moveOnGround ? displacement / baseSpeed * time : time);
 			
 			if (n.movementPoints.movementTimeLeft <= 0) {  // this mayb e slightly exploitable if moiving, should cap the velocity???
 				_playerPointsOut = n.movementPoints;

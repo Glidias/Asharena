@@ -72,7 +72,7 @@ package
 			return _currentPlayerEntityChanged;
 		}
 		
-		private var defaultEnemyWatchMelee:EnemyIdle = new EnemyIdle().init(9000, 100);
+		private var defaultEnemyWatchMelee:EnemyIdle = new EnemyIdle().init(9000, 200);
 		
 		private var gladiatorPointSamples:EllipsoidPointSamples;
 		
@@ -343,7 +343,7 @@ package
 			if (weapon != null) {
 				ent.add(weapon);
 				gladiatorStance.switchWeapon(weapon);
-				if (watchSettings == null) {
+				if (weapon.fireMode <= 0 && watchSettings == null) {
 					watchSettings = new EnemyIdle().init(9000, weapon.range);
 				}
 			}

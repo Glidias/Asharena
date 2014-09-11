@@ -19,7 +19,7 @@ package alternativa.a3d.objects
 		private var startPos:Vector3D = new Vector3D();
 		private var endPos:Vector3D = new Vector3D();
 		
-		public var zOffsetRatio:Number = .5;
+		public var zOffsetRatio:Number = 0;// .5;
 		
 		private var dynamicIndices:Vector.<int> = new Vector.<int>();
 		private var totalIndices:int = 0;
@@ -86,9 +86,10 @@ package alternativa.a3d.objects
 				var baseI:int = index * indexSize;
 				var arr:Array = dataHash[index];
 				var pos:Pos = arr[3];
+				var hpDeal:int = arr[2];
 				data[baseI + endPosOffset] = pos.x;
 				data[baseI + endPosOffset+1] = pos.y;
-				data[baseI + endPosOffset+2] = pos.z;
+				data[baseI + endPosOffset + 2] = hpDeal != 0 ?   pos.z + zOffsetRatio * arr[4] :  pos.z  - arr[4];
 				
 				var endTime:Number = data[baseI + timeStampOffset] + data[baseI + totalTimeOffset];
 				if (timeStamp  >= endTime ) {
@@ -138,11 +139,11 @@ package alternativa.a3d.objects
 			startPos.z = sz;
 			endPos.x = pos.x;
 			endPos.y = pos.y;
-			endPos.z = pos.z + zOffsetRatio * targetEllipsoid.z;
+			endPos.z =hpDeal != 0 ?   pos.z + zOffsetRatio * targetEllipsoid.z :  pos.z - targetEllipsoid.z;
 			var result:Number = launcher.launchNewProjectile(startPos, endPos, speed);
 			var indexer:int =  launcher.getLastLaunchedIndex();
 			dynamicIndices[totalIndices++] = indexer;
-			dataHash[indexer ] = [launcherEntity, targetEntity,  hpDeal, pos];
+			dataHash[indexer ] = [launcherEntity, targetEntity,  hpDeal, pos, targetEllipsoid.z];
 			return result;
 		}
 		

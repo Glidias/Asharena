@@ -133,7 +133,7 @@ class Weapon
 	}
 	
 
-	public static inline function shootWeapon(attackAction:UInt, attackerEntity:Entity, targetEntity:Entity, targetDamage:Int, timeChecker:ITimeChecker):Void {
+	public static inline function shootWeapon(attackAction:UInt, attackerEntity:Entity, targetEntity:Entity, targetDamage:Int, timeChecker:ITimeChecker, isDynamic:Bool):Float {
 		
 		var weap:Weapon = attackerEntity.get(Weapon);
 		var pos:Pos = attackerEntity.get(Pos);
@@ -142,7 +142,7 @@ class Weapon
 		var targetEllipsoid:Ellipsoid = targetEntity.get(Ellipsoid);
 		
 		if (weap.projectileDomain != null) {
-			if (targetDamage == 0) {
+			if ( !isDynamic ) {
 				time = weap.projectileDomain.launchStaticProjectile(pos.x, pos.y, pos.z + weap.heightOffset, targetPos.x, targetPos.y, targetPos.z-targetEllipsoid.z, weap.projectileSpeed);
 			}
 			else {
@@ -156,6 +156,8 @@ class Weapon
 		
 		
 		timeChecker.checkTime(time);
+		
+		return time;
 	}
 
 }
