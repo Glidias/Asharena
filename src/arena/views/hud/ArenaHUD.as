@@ -1141,7 +1141,7 @@ WeaponSlots
 		}
 		
 		public function notifyPlayerActionMiss():void {
-			txtPlayerMisses(_displayChar, targetNode.entity);
+			txtPlayerMisses(_displayChar, _targetStrikeEntity);
 		}
 		
 		
@@ -1177,12 +1177,12 @@ WeaponSlots
 			
 			var aggro:EnemyAggro = _targetNode.entity.get(EnemyAggro) as EnemyAggro;
 			var checkingLOS:Boolean = false;
-			var aggroing:Boolean = aggro != null && aggro.flag == 1 && (_targetNode.entity.get(WeaponState) as WeaponState).fireMode.fireMode > 0 && (checkingLOS=aggro!=null) && checkLOS(targetNode.entity, (_targetNode.entity.get(WeaponState) as WeaponState).fireMode,  _displayChar);
+			var aggroing:Boolean = aggro != null && aggro.flag == 1 && (_targetNode.entity.get(WeaponState) as WeaponState).fireMode.fireMode > 0 && (checkingLOS=aggro!=null) && checkLOS(_targetNode.entity, (_targetNode.entity.get(WeaponState) as WeaponState).fireMode,  _displayChar);
 
 			_charWeaponEnabled = false; 
 			updateCharInfo();
 			
-			var health:Health = targetNode.entity.get(Health) as Health;
+			var health:Health = _targetNode.entity.get(Health) as Health;
 			
 			var gotHit:Boolean = false;
 			var percToRoll:Number;
@@ -1487,9 +1487,16 @@ WeaponSlots
 				_msgLogInfo.drawNow();
 		}
 		
+		/*
 		public function get targetNode():PlayerTargetNode 
 		{
 			return _targetNode || _lastTargetNode;
+		}
+		*/
+		
+		public function get targetEntity():Entity 
+		{
+			return  _targetStrikeEntity;
 		}
 		
 		public function get charWeaponEnabled():Boolean 

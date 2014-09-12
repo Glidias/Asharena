@@ -42,7 +42,7 @@ class WeaponState
 		attackTime = 0;
 		trigger = false;
 		fireMode = null;
-		randomDelay =1.4;
+		randomDelay =1;
 		
 	}
 	

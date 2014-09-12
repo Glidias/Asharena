@@ -369,9 +369,10 @@ class AggroMemManager
 				a.state.setAttackRange( (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, playerAggroList.head.size) : aWeapon.range + playerAggroList.head.size.x );
 				var checkedLOS:Bool = false;
 				//
-				if ( aWeapon.fireMode > 0 && HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, playerAggroList.head.pos, a.state.attackRangeSq, aWeapon.hitAngle) &&  (checkedLOS=true) && weaponLOSChecker.validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, playerAggroList.head.pos, playerAggroList.head.size)  )   { // TODO: validate other LOS factors
+				if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, playerAggroList.head.pos, a.state.attackRangeSq, aWeapon.hitAngle) &&  (checkedLOS=true) && weaponLOSChecker.validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, playerAggroList.head.pos, playerAggroList.head.size)  )   { // TODO: validate other LOS factors
 					a.state.flag = 1;
 					a.weaponState.pullTrigger(aWeapon);
+					if (aWeapon.fireMode <= 0) a.weaponState.attackTime = -Math.random() * a.weaponState.randomDelay;
 					break;
 				}
 				else if (checkedLOS) {

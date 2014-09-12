@@ -532,6 +532,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								else {
 									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, p.entity, HitFormulas.rollDamageForWeapon(aWeapon) * (enemyCrit ? 3 : 1), timeChecker, true );
 								}
+								a.stance.updateTension(0, pTimeElapsed);
 								//p.health.damage(HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
 								
 							}

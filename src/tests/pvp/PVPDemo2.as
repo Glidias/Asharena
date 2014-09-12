@@ -37,6 +37,7 @@ package tests.pvp
 	import arena.systems.enemy.EnemyAggroNode;
 	import arena.systems.enemy.EnemyAggroSystem;
 	import arena.systems.player.AnimAttackSystem;
+	import arena.systems.player.IStance;
 	import arena.systems.player.LimitedPlayerMovementSystem;
 	import arena.systems.weapon.IProjectileDomain;
 	import arena.views.hud.ArenaHUD;
@@ -696,21 +697,21 @@ package tests.pvp
 
 			if (arenaHUD.playerChosenWeaponStrike.fireMode > 0) {
 				
-				AnimAttackSystem.performMeleeAttackAction(arenaHUD.playerWeaponModeForAttack, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
+				AnimAttackSystem.performMeleeAttackAction(arenaHUD.playerWeaponModeForAttack, arenaSpawner.currentPlayerEntity, arenaHUD.targetEntity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
 				//game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
 				 delayTimeElapsed =  Math.random()*.3  + arenaHUD.playerChosenWeaponStrike.strikeTimeAtMaxRange;
 			}
 			else {
 			
-				 Weapon.shootWeapon( arenaHUD.playerChosenWeaponStrike.rangeMode, arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity,  arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0, _animAttackSystem, true);
+				 Weapon.shootWeapon( arenaHUD.playerChosenWeaponStrike.rangeMode, arenaSpawner.currentPlayerEntity, arenaHUD.targetEntity,  arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0, _animAttackSystem, true);
 				
 				 	//game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
-				 delayTimeElapsed =  arenaHUD.playerChosenWeaponStrike.timeToSwing + Math.random()*1 ;
+				 delayTimeElapsed =  arenaHUD.playerChosenWeaponStrike.timeToSwing  + Math.random()*1 + .1
 			}
 			_animAttackSystem.resolved.addOnce(resolveStrikeAction2);
-			aggroMemManager.addToAggroMem(arenaSpawner.currentPlayerEntity, arenaHUD.targetNode.entity);
+			aggroMemManager.addToAggroMem(arenaSpawner.currentPlayerEntity, arenaHUD.targetEntity);
 			if (arenaHUD.strikeResult > 0) {
-				var targetHP:Health = (arenaHUD.targetNode.entity.get(Health) as Health);
+				var targetHP:Health = (arenaHUD.targetEntity.get(Health) as Health);
 				if (targetHP.hp > arenaHUD.playerDmgDealRoll) targetHP.onDamaged.addOnce(onEnemyTargetDamaged);
 			}
 		}
@@ -725,7 +726,8 @@ package tests.pvp
 		
 		private function onEnemyTargetDamaged(hp:int, amount:int):void {
 			if (amount > 0) {
-				var stance:GladiatorStance = arenaHUD.targetNode.entity.get(IAnimatable) as GladiatorStance;
+				var stance:GladiatorStance = arenaHUD.targetEntity.get(IAnimatable) as GladiatorStance;
+				stance.updateTension( -1*Math.random(), 0);
 				stance.flinch();
 			}
 			else {
@@ -748,6 +750,13 @@ package tests.pvp
 			if (arenaHUD.strikeResult == -1) {
 				arenaHUD.notifyPlayerActionMiss();
 			}
+			else {
+				var weapState:WeaponState = arenaHUD.targetEntity.get(WeaponState) as WeaponState;
+				if (weapState!=null && weapState.trigger && weapState.fireMode != null && weapState.fireMode.fireMode<=0) {
+					weapState.cancelTrigger();
+				}
+				
+			}
 			
 			 if (arenaHUD.strikeResult > 0) TweenLite.delayedCall(.5, resolveStrikeAction3);
 			else resolveStrikeAction3();
@@ -759,7 +768,7 @@ package tests.pvp
 		//	return;
 			
 			if (arenaHUD.enemyStrikeResult != 0) {
-				AnimAttackSystem.performMeleeAttackAction(arenaHUD.enemyWeaponModeForAttack, arenaHUD.targetNode.entity, arenaSpawner.currentPlayerEntity, arenaHUD.enemyStrikeResult > 0 ? arenaHUD.enemyDmgDealRoll : 0);
+				AnimAttackSystem.performMeleeAttackAction(arenaHUD.enemyWeaponModeForAttack, arenaHUD.targetEntity, arenaSpawner.currentPlayerEntity, arenaHUD.enemyStrikeResult > 0 ? arenaHUD.enemyDmgDealRoll : 0);
 				_animAttackSystem.resolved.addOnce(resolveStrikeActionFully);
 				if (arenaHUD.enemyStrikeResult > 0) {
 					var targetHP:Health = (arenaSpawner.currentPlayerEntity.get(Health) as Health);

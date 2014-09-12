@@ -402,10 +402,12 @@ package systems.player.a3d
 			skin.transformChanged = true;
 			
 			//setAnimationNode(attackAnimCouple, upperBodyController, upperBody, .3);
+			///*
 			if (!upperBodyDominant) {
 				setAnimationNode( _stance < 2 ? fullBodyAnims[ "combat_idle"] : fullBodyAnims["crouch_idle"], fullBodyController, fullBody, 0);
 				fullBodyController.update(0);
 			}
+			//*/
 			
 			setAnimationNode( customCouple, upperBodyController, upperBody, readyAimTime);
 			//_curController = null;
@@ -838,8 +840,13 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			
 			if (ratio >= 0) {  //
 				var amt:Number =  tensionSpeed * time;
-				
-				tensionSetting = ratio;
+				if (time ==0 ) {
+					tensionSetting = ratio;
+				}
+				else {
+					tensionSetting = tensionSetting < ratio ? ratio + amt >= tensionSetting ? tensionSetting : ratio + amt
+						:  ratio - amt < tensionSetting ? tensionSetting : ratio - amt;
+				}
 				tensionCouple.balance = tensionSetting;
 				//TweenLite.to(tensionCouple, 1, { balance:tensionSetting } );
 				//tensionSetting += ratio > tensionSetting ? amt 
