@@ -597,7 +597,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 					if (  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) { 
 						
 						aWeaponState.pullTrigger(aWeapon);
-						if (aWeapon.fireMode <= 0) aWeaponState.attackTime = -Math.random() * aWeaponState.randomDelay;
+						if (aWeapon.fireMode <= 0 && aWeaponState.attackTime >= 0) aWeaponState.attackTime = -Math.random() * aWeaponState.randomDelay;
 						
 						a.state.flag = 1;
 						onEnemyAttack.dispatch(a.entity);

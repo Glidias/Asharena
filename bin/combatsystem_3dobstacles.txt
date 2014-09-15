@@ -27,6 +27,34 @@ Health Bar for all the units  *
 
 ___________________
 
+Support fire/linked attack mechanics *
+
+__________________________
+
+Time taken to strike with weapon by player should be minused off the MU bar if available. Threshold markers should be shown for each firemode. * 
+
+_____________
+
+
+<= 4 men linked movement for combat system (KIV) 
+  - AI men have step-based time units, when they move up to a certain threshold, their own personal TU is depleted. 
+  - Time unit used against all aggro units is based off either analog leader player movement (if leader is moving), else against highest time unit expended among squad AI if available.
+ - Later , this should considerabily evolve to step-based  movement for leader player as well for easier cheat-free server-side checking.
+  - AI Men also stops moving when you go into target mode, equalavent to a pause, this might be delayed if too abusable.
+  AI time unit steps are normalized to jogging mode...unless everyone is moving cautiously.
+
+During group movement, there are 2 time unit bars. THe standard leader analog time unit bar and the AI followers' stepped time unit bar, which is set according to the 
+maximum expended step-units used so far by any individual among  the AI follower units. At anytime the AI bar's amount happens to drop below the leader's time unit amount, the leader's time unit amount will always tick down in real time until it matches the AI bar's time unit value.  All AI unit's steps will be normalized either to sprinting, jogging or cautious-walking/crouch moving speeds accordingly based on the movement order given to them on the leader's cue. Usually, ticking doesn't happen often unless you got very faraway stray units that are travelling back to the leader's location.
+
+Goign to target mode while time is ticking down in this manner will attempt to freeze  all AI follower unit movement at exactly the current/next lower time unit step to prevent further accidental ticking off time by AI stepped unit bar reduction.  Player action can be executed then. 
+
+ All non target mode pauses will use orbit noFollow azimuth.
+
+__________________________
+
+If ground normal is lost, target mode should be turned off. Target mode only available when feet planted on ground. (KIV exploit fix)
+_________
+
 
 0. Weapon attachment 
 
