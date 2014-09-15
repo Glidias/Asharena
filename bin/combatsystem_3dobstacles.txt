@@ -32,7 +32,6 @@ Support fire/linked attack mechanics *
 __________________________
 
 Time taken to strike with weapon by player should be minused off the MU bar if available. Threshold markers should be shown for each firemode. * 
-
 _____________
 
 
@@ -40,15 +39,19 @@ _____________
   - AI men have step-based time units, when they move up to a certain threshold, their own personal TU is depleted. 
   - Time unit used against all aggro units is based off either analog leader player movement (if leader is moving), else against highest time unit expended among squad AI if available.
  - Later , this should considerabily evolve to step-based  movement for leader player as well for easier cheat-free server-side checking.
-  - AI Men also stops moving when you go into target mode, equalavent to a pause, this might be delayed if too abusable.
+  - AI Men also stops moving when you go into target mode, equalavent to a pause, this would  be delayed to prevent abuse.
   AI time unit steps are normalized to jogging mode...unless everyone is moving cautiously.
 
-During group movement, there are 2 time unit bars. THe standard leader analog time unit bar and the AI followers' stepped time unit bar, which is set according to the 
-maximum expended step-units used so far by any individual among  the AI follower units. At anytime the AI bar's amount happens to drop below the leader's time unit amount, the leader's time unit amount will always tick down in real time until it matches the AI bar's time unit value.  All AI unit's steps will be normalized either to sprinting, jogging or cautious-walking/crouch moving speeds accordingly based on the movement order given to them on the leader's cue. Usually, ticking doesn't happen often unless you got very faraway stray units that are travelling back to the leader's location.
+During group/friendly-AI-unit movement, there are 2 time unit bars. THe standard leader analog time unit bar and the AI followers/units' stepped time unit bar, which is set according to the 
+maximum expended step-units used so far by any individual among  the AI follower units. At anytime the AI bar's amount happens to drop below the leader's time unit amount, the leader's time unit amount will always tick down in real time(or used up analog time) until it matches the AI bar's time unit value (actually, this might either deplete or not deplete the leader's time unit bar permanently to that level as well, but time will still tick accordingly in order for AI aggro to react. Generally though, i think it should still deplete leader's time unit bar as well to simulate leader wasting his time waiting on the spot while the rest of the men happens to be moving, particularly in cases where men move to independantly assigned positions or move ahead of the leader, and this can be a balancing caveat with group-based movement, even though on the flipside it shouldn't affect the leader's TU at all since all TUs are individualised anyway...we'll see about this but i think forcing movement points of the leader to be wasted while real time is occuring is forcing a more urgency twitch/reaction-based kind of gameplay. However, doing this can normalize the time being taken for each CP usage turn. 
+
+All AI unit's steps will be normalized either to sprinting, jogging or cautious-walking/crouch moving speeds accordingly based on the movement order given to them on the leader's cue. Usually, ticking doesn't happen often unless you got very faraway stray units that are travelling back to the leader's location.
 
 Goign to target mode while time is ticking down in this manner will attempt to freeze  all AI follower unit movement at exactly the current/next lower time unit step to prevent further accidental ticking off time by AI stepped unit bar reduction.  Player action can be executed then. 
 
  All non target mode pauses will use orbit noFollow azimuth.
+ 
+ For any AI unit that expended all their time units, they halt on the spot immediately. Depending on the rules, they can continue to draw aggro reaction fire or be removed from reaction fire list.
 
 __________________________
 
