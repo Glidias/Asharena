@@ -6,10 +6,12 @@ package tests.pvp
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.controller.ThirdPersonTargetingSystem;
 	import alternativa.a3d.objects.ArrowLobMeshSet2;
+	import alternativa.a3d.objects.HealthBarSet;
 	import alternativa.a3d.objects.ProjectileDomain;
 	import alternativa.a3d.rayorcollide.TerrainRaycastImpl;
 	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
 	import alternativa.a3d.systems.enemy.A3DEnemyArcSystem;
+	import alternativa.a3d.systems.hud.HealthBarRenderSystem;
 	import alternativa.engine3d.controllers.OrbitCameraMan;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
@@ -1713,13 +1715,24 @@ package tests.pvp
 			bundleLoader.loadBeginSignal.add( _preloader.setLabel );		
 		}
 		
+		private function createHPBarSet():HealthBarSet {
+			var hpBarSet:HealthBarSet = new HealthBarSet(120, new FillMaterial(0xFFFFFF, 1), 10, 64, 5);
+			
+			SpawnerBundle.uploadResources(hpBarSet.getResources());
+			_template3D.scene.addChild(hpBarSet);
+			_waterBase.hideFromReflection.push(hpBarSet);
+			return hpBarSet;
+		}
+		
 		
 		private function onSpawnerBundleLoaded():void 
 		{
 			removeChild(_preloader);			
 			_template3D.visible = true;
 			
-			
+		
+		//	_template3D.scene.addChild( 
+			game.engine.addSystem( new HealthBarRenderSystem( createHPBarSet() ), SystemPriorities.render );
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 
 			
@@ -1780,6 +1793,7 @@ package tests.pvp
 
 			// adjust offseted waterlevels
 	
+			
 			_waterBase.waterMaterial.update(_template3D.stage3D, _template3D.camera, _waterBase.plane, _waterBase.hideFromReflection);
 			_template3D.camera.stopTimer();
 

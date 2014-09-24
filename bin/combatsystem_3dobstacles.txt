@@ -34,8 +34,12 @@ __________________________
 Time taken to strike with weapon by player should be minused off the MU bar if available. Threshold markers should be shown for each firemode. * 
 _____________
 
+Area strike linked attack mechanics (barrage) (KIV) 
 
-<= 4 men linked movement for combat system (KIV) 
+_______________________
+
+
+<= 4 men linked movement for combat system (possible KIV, but good to include in for current balance against AI reactions!) 
   - AI men have step-based time units, when they move up to a certain threshold, their own personal TU is depleted. 
   - Time unit used against all aggro units is based off either analog leader player movement (if leader is moving), else against highest time unit expended among squad AI if available.
  - Later , this should considerabily evolve to step-based  movement for leader player as well for easier cheat-free server-side checking.
@@ -52,8 +56,11 @@ Goign to target mode while time is ticking down in this manner will attempt to f
  All non target mode pauses will use orbit noFollow azimuth.
  
  For any AI unit that expended all their time units, they halt on the spot immediately. Depending on the rules, they can continue to draw aggro reaction fire or be removed from reaction fire list.
+ 
+ 
+ > 4 men linked movement extension (KIV)
 
-__________________________
+_____________________________
 
 If ground normal is lost, target mode should be turned off. Target mode only available when feet planted on ground. (KIV exploit fix)
 _________
@@ -148,6 +155,5 @@ Aesthetics:
 
 Gameplay: 
 
-1. AI should alert presence of player to nearby unengaged men within a certain distance. 
+1. AI should alert presence of player to nearby unengaged men within a certain distance. (KIV)
 2.Provide HTML to launch units into Flash. 
-3. Enable melee/miniAggro-ranged linked attacks. (KIV)

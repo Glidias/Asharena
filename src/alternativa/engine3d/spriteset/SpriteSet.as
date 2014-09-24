@@ -27,20 +27,23 @@ package alternativa.engine3d.spriteset
 	 * 
 	 * @author Glenn Ko
 	 */
-	public class SpriteSet extends Object3D
+	public class SpriteSet extends Object3D implements ISpriteSet
 	{
 		/**
 		 * Raw sprite data to upload to GPU if number of renderable sprites is lower than batch
 		 */
 		public var spriteData:Vector.<Number>;
+		public function getSpriteData():Vector.<Number> {
+			return spriteData;
+		}
 		/**
 		 * Raw sprite data to upload to GPU in batches if number of renderable sprite is higher than batch amount. (If you called bakeSpriteData(), this is automatically created)
 		 */
 		public var staticBatches:Vector.<Vector.<Number>>;
 		
 		alternativa3d var uploadSpriteData:Vector.<Number>;
-		private var toUploadSpriteData:Vector.<Number>;
-		private var toUploadNumSprites:int;
+		protected var toUploadSpriteData:Vector.<Number>;
+		protected var toUploadNumSprites:int;
 		alternativa3d var maxSprites:int;
 		alternativa3d var _numSprites:int;
 		
@@ -49,8 +52,8 @@ package alternativa.engine3d.spriteset
 
 	
 		
-		private var material:Material;
-		private var surface:Surface;
+		protected var material:Material;
+		protected var surface:Surface;
 		public function setMaterial(mat:Material):void {
 			this.material = mat;
 			surface.material = mat;
@@ -58,7 +61,7 @@ package alternativa.engine3d.spriteset
 		
 		public var alwaysOnTop:Boolean = false;
 		
-		private static var _transformProcedures:Dictionary = new Dictionary();
+		protected static var _transformProcedures:Dictionary = new Dictionary();
 		public var geometry:Geometry;
 		
 		/**
@@ -68,14 +71,16 @@ package alternativa.engine3d.spriteset
 		
 		alternativa3d var NUM_REGISTERS_PER_SPR:int = 1;
 		
-		private var viewAligned:Boolean = false;
+		protected var viewAligned:Boolean = false;
 		/**
 		 * An alternative to "z-locking", if viewAligned is enabled, this flag can be used to lock axis along the local up (z) direction, but still keep the rightward-aligned orientation to camera view.
 		 */
 		public var viewAlignedLockUp:Boolean = false;
 	
-		private static var UP:Vector3D = new Vector3D(0, 0, 1);
+		protected static var UP:Vector3D = new Vector3D(0, 0, 1);
 
+		protected var NUM_VERTICES_PER_SPRITE:int = 4;
+		protected var NUM_TRIANGLES_PER_SPRITE:int = 2;
 		
 		public var axis:Vector3D;
 
@@ -181,11 +186,11 @@ package alternativa.engine3d.spriteset
 			}
 			if (transformProcedure == null) validateTransformProcedure();
 		
-
+				// TODO: optimizeational offset
 				if (numSprites  <= maxSprites) {
 					toUploadSpriteData = spriteData;
 					toUploadNumSprites = numSprites;
-					surface.numTriangles = (toUploadNumSprites << 1);
+					surface.numTriangles = (toUploadNumSprites * NUM_TRIANGLES_PER_SPRITE);
 					 surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objRenderPriority);
 				}
 				else if (staticBatches) {
@@ -193,7 +198,7 @@ package alternativa.engine3d.spriteset
 					for (i = 0; i < staticBatches.length; i++) {
 						toUploadSpriteData = staticBatches[i];
 						toUploadNumSprites = toUploadSpriteData.length / spriteDataSize;
-						surface.numTriangles = (toUploadNumSprites << 1);
+						surface.numTriangles = (toUploadNumSprites *NUM_TRIANGLES_PER_SPRITE);
 						surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objRenderPriority);
 					}
 				}
@@ -213,7 +218,7 @@ package alternativa.engine3d.spriteset
 							var d:int = spriteDataSize;
 							while (--d > -1) toUploadSpriteData[count++] = spriteData[bu++];
 						}
-						surface.numTriangles = (toUploadNumSprites << 1);
+						surface.numTriangles = (toUploadNumSprites * NUM_TRIANGLES_PER_SPRITE);
 					
 						surface.material.collectDraws(camera, surface, geometry, lights, lightsLength, useShadow, objRenderPriority);
 				
@@ -285,8 +290,24 @@ package alternativa.engine3d.spriteset
 			spriteData.length  = ((value * NUM_REGISTERS_PER_SPR) << 2);
 			spriteData.fixed = true;
 			_numSprites = value;
-
-				
+		}
+		
+		public function setNumSprites(val:int):void {
+			/*
+			var len:int = (val * NUM_REGISTERS_PER_SPR) << 2);
+			if (spriteData.length < len) {
+				spriteData.fixed = false;
+				spriteData.length  = len
+				spriteData.fixed = true;
+			}
+			*/
+			_numSprites = val;
+		}
+		
+		
+		public function get numSprites():int 
+		{
+			return _numSprites;
 		}
 		
 		
@@ -353,7 +374,7 @@ package alternativa.engine3d.spriteset
 		}
 		
 		
-		private function getTransformProcedure(maxSprites:int):Procedure {
+		protected function getTransformProcedure(maxSprites:int):Procedure {
 			var key:String = maxSprites + "_" + (maxSprites * NUM_REGISTERS_PER_SPR) + "_z";
 			var res:Procedure = _transformProcedures[key];
 			if (res != null) return res;
@@ -400,7 +421,7 @@ package alternativa.engine3d.spriteset
 			return res;
 		}
 		
-		private function getAxisAlignedTransformProcedure(maxSprites:int):Procedure {
+		protected function getAxisAlignedTransformProcedure(maxSprites:int):Procedure {
 			var key:String = maxSprites + "_" + (maxSprites * NUM_REGISTERS_PER_SPR) + "_axis";
 			var res:Procedure = _transformProcedures[key];
 			if (res != null) return res;
@@ -446,7 +467,7 @@ package alternativa.engine3d.spriteset
 			return res;
 		}
 		
-		private function getViewAlignedTransformProcedure(maxSprites:int):Procedure {
+		protected function getViewAlignedTransformProcedure(maxSprites:int):Procedure {
 			var key:String = maxSprites + "_" + (maxSprites * NUM_REGISTERS_PER_SPR) + "_view";
 			var res:Procedure = _transformProcedures[key];
 			if (res != null) return res;
