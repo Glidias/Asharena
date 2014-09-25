@@ -15,19 +15,20 @@ Evasion should shuold be considered against moving velocity target (sideway shot
 
 ________________________
 
-SHIFt key in target Mode and left/right keys to perform auto-aiming cycling.  *
+SHIFt key in target Mode and left/right keys to perform auto-aiming cycling. (important!) *
 
 _____________________
 
-Include death animation *
+Include death animation (important!) *
 
 ___________________
 
-Support fire/linked attack mechanics *
+Support fire/linked attack mechanics (important!)  *
 
 __________________________
 
-Time taken to strike with weapon by player should be minused off the MU bar if available. Threshold markers should be shown for each firemode. * 
+Time taken to strike with weapon by player should be minused off the MU bar if available. *
+Threshold markers should be shown for each firemode.  (KIV)
 _____________
 
 Area strike linked attack mechanics (barrage) (KIV) 
@@ -35,7 +36,7 @@ Area strike linked attack mechanics (barrage) (KIV)
 _______________________
 
 
-<= 4 men linked movement for combat system (possible KIV, but good to include in for current balance against AI reactions!) 
+<= 4 men linked movement for combat system (possible KIV, but good to include in for current balance against AI reactions!)  *
   - AI men have step-based time units, when they move up to a certain threshold, their own personal TU is depleted. 
   - Time unit used against all aggro units is based off either analog leader player movement (if leader is moving), else against highest time unit expended among squad AI if available.
  - Later , this should considerabily evolve to step-based  movement for leader player as well for easier cheat-free server-side checking.
@@ -62,11 +63,11 @@ If ground normal is lost, target mode should be turned off. Target mode only ava
 _________
 
 
-0. Weapon attachment 
+0. Weapon attachment    *
 
 1. WeaponList  and WeaponListSystem for all EnemyAggro with Weapon switching for player
 
-2. Include the rest of the units and weapn animations/models!
+2. Include the rest of the units and weapn animations/models! 
 
 and
 
