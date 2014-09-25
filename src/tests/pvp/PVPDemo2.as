@@ -31,6 +31,7 @@ package tests.pvp
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.Geometry;
 	import alternterrain.CollidableMesh;
+	import arena.components.char.HealthFlags;
 	import arena.components.char.HitFormulas;
 	import arena.components.char.MovementPoints;
 	import arena.components.enemy.EnemyIdle;
@@ -1158,7 +1159,19 @@ package tests.pvp
 	
 
 		
+		private function unsetPlayerHP():void {
+			var hp:Health = arenaSpawner.currentPlayerEntity.get(Health) as Health;
+			if (hp != null) {
+				hp.unsetFlags( HealthFlags.FLAG_PLAYER );
+			}
+		}
 		
+		private function setPlayerHP():void {
+			var hp:Health = arenaSpawner.currentPlayerEntity.get(Health) as Health;
+			if (hp != null) {
+				hp.setFlags( HealthFlags.FLAG_PLAYER );
+			}
+		}
 		
 		private function switchToPlayer():void {
 			if (game.gameStates.engineState.currentState === game.gameStates.thirdPerson) {
@@ -1177,7 +1190,11 @@ package tests.pvp
 		
 			
 			
-			if (arenaSpawner.currentPlayerEntity) arenaSpawner.currentPlayerEntity.remove(MovementPoints);
+			if (arenaSpawner.currentPlayerEntity) {
+				
+				arenaSpawner.currentPlayerEntity.remove(MovementPoints);
+				unsetPlayerHP();
+			}
 			arenaSpawner.switchPlayer(curArr[testIndex], stage);
 			
 			var stance:GladiatorStance;
@@ -1206,6 +1223,7 @@ package tests.pvp
 			
 			counter.value++;
 			
+			setPlayerHP();
 			arenaSpawner.currentPlayerEntity.add( movementPoints, MovementPoints);
 			//var untyped:* = arenaSpawner.currentPlayerSkin.getSurface(0).material;
 			//arenaSpawner.currentPlayerSkin.getSurface(0).material as 
@@ -1377,7 +1395,10 @@ package tests.pvp
 				if (SHOW_PREFERED_STANCES_ENDTURN==2) {
 					showPreferedStances();
 				}
-				if (arenaSpawner.currentPlayerEntity) arenaSpawner.currentPlayerEntity.remove(MovementPoints);
+				if (arenaSpawner.currentPlayerEntity) {
+					unsetPlayerHP();
+					arenaSpawner.currentPlayerEntity.remove(MovementPoints);
+				}
 			}
 			
 		
@@ -1734,7 +1755,7 @@ package tests.pvp
 			
 		
 		//	_template3D.scene.addChild( 
-			game.engine.addSystem( new HealthBarRenderSystem( createHPBarSet() ), SystemPriorities.render );
+			game.engine.addSystem( new HealthBarRenderSystem( createHPBarSet(), ~HealthFlags.FLAG_PLAYER ), SystemPriorities.render );
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 
 			

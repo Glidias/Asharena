@@ -34,6 +34,7 @@ package alternativa.a3d.objects
 		static public const INDICES:Vector.<uint> = new <uint>[7,8,9,7,4,8,10,8,3,10,11,8,0,2,3,0,1,2,0,5,6,0,4,5  ,12,13,15, 13,14,15];
 		public var fillMaterial:Material;
 		
+		
 		public function HealthBarSet(numSprites:int, outlineMaterial:Material, width:Number, maxWidth:Number, height:Number,  geometry:Geometry=null ) 
 		{
 

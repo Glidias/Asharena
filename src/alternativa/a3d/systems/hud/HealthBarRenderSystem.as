@@ -29,9 +29,12 @@ package alternativa.a3d.systems.hud
 		private var data:Vector.<Number>;
 		private var spriteSet:ISpriteSet;
 		
-		public function HealthBarRenderSystem(spriteSet:ISpriteSet) 
+		public var maskValue:uint;
+		
+		public function HealthBarRenderSystem(spriteSet:ISpriteSet, mask:uint=0) 
 		{
 			this.spriteSet = spriteSet;
+			this.maskValue = mask;
 			
 			data = spriteSet.getSpriteData();
 			
@@ -50,7 +53,7 @@ package alternativa.a3d.systems.hud
 			//var noHealth:Number = epsilon;
 			var count:int = 0;
 			for (var n:HPBarNode = nodeList.head as HPBarNode; n != null; n = n.next as HPBarNode) {
-				if (n.entity.has(MovementPoints)) {
+				if ( n.health.flags != 0 && !(n.health.flags & maskValue) ) {  //n.entity.has(MovementPoints)
 					continue;
 				}
 				var hpRatio:Number = n.health.hp / n.health.maxHP;

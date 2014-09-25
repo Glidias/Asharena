@@ -13,7 +13,7 @@ class Health
 	public var hp:Int;
 	public var onDamaged:Signal2<Int,Int>;
 	public var onMurdered:Signal2<Int,Int>;
-	
+	public var flags:UInt;  // generic misc var to hold flags and any game-specific info
 	
 	public function new() 
 	{
@@ -26,7 +26,16 @@ class Health
 		maxHP = max;
 		minHP = min;
 		hp = amount;
+		flags = 0;
 		return this;
+	}
+	
+	public inline function setFlags(val:UInt):Void {
+		flags |= val;
+	}
+	
+	public inline function unsetFlags(val:UInt):Void {
+		flags &= ~(val);
 	}
 	
 	
