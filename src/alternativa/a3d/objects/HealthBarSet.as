@@ -1,11 +1,13 @@
 package alternativa.a3d.objects 
 {
+	import alternativa.a3d.materials.HealthBarFillMaterial;
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.DrawUnit;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.compiler.Linker;
 	import alternativa.engine3d.materials.compiler.Procedure;
+	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.Geometry;
@@ -26,17 +28,21 @@ package alternativa.a3d.objects
 		static private var NUM_SPRITES:int;
 		
 		public var maxWidth:Number = Number.MAX_VALUE;
-		public var borderThickness:Number=1;
-		static public const POSITIONS:Vector.<Number> = new <Number>[-1,1,0,-1,1,1,1,1,1,1,1,0,-1,-1,0,-1,-1,1,-1,1,1,-1,-1,1,1,-1,0,1,-1,1,1,1,1,1,-1,1];
-		static public const INDICES:Vector.<uint> = new <uint>[7,8,9,7,4,8,10,8,3,10,11,8,0,2,3,0,1,2,0,5,6,0,4,5];
+		public var borderThickness:Number = 1;
+	
+		static public const POSITIONS:Vector.<Number> = new <Number>[-1,1,0,-1,1,1,1,1,1,1,1,0,-1,-1,0,-1,-1,1,-1,1,1,-1,-1,1,1,-1,0,1,-1,1,1,1,1,1,-1,1    ,-1,1,-1,  -1,1,1,  -1,-1,1,  -1,-1,-1];
+		static public const INDICES:Vector.<uint> = new <uint>[7,8,9,7,4,8,10,8,3,10,11,8,0,2,3,0,1,2,0,5,6,0,4,5  ,12,13,15, 13,14,15];
+		public var fillMaterial:Material;
 		
 		public function HealthBarSet(numSprites:int, outlineMaterial:Material, width:Number, maxWidth:Number, height:Number,  geometry:Geometry=null ) 
 		{
-			
-			super(numSprites, true, outlineMaterial, width, height, 120, 1, (geometry != null ? geometry : getGeometry(120)) );
+
+
+			super(numSprites, true, outlineMaterial, width, height, 110, 1, (geometry != null ? geometry : getGeometry(120)) );
 			this.maxWidth = maxWidth;
 				 NUM_VERTICES_PER_SPRITE = POSITIONS.length /3;
 					NUM_TRIANGLES_PER_SPRITE = INDICES.length / 3;
+					
 		}
 		
 		
@@ -46,7 +52,7 @@ package alternativa.a3d.objects
 			drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cameraPos"), cameraToLocalTransform.d, cameraToLocalTransform.h, cameraToLocalTransform.l, camera.focalLength);	
 			drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("up"), -cameraToLocalTransform.b, -cameraToLocalTransform.f, -cameraToLocalTransform.j, 0)
 				
-			drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("right"), cameraToLocalTransform.a, cameraToLocalTransform.e, cameraToLocalTransform.i, 0);  
+			drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("right"), cameraToLocalTransform.a, cameraToLocalTransform.e, cameraToLocalTransform.i, 2);  
 			
 			drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("spriteSet"), width*.5, height*.5, maxWidth*.5, borderThickness);  
 			drawUnit.setVertexConstantsFromVector(0, toUploadSpriteData, toUploadNumSprites*NUM_REGISTERS_PER_SPR ); 
@@ -107,13 +113,11 @@ package alternativa.a3d.objects
 			  vertices.endian = Endian.LITTLE_ENDIAN;
 			
 			  var pos:Vector.<Number> = POSITIONS;
-			   var uvs:Vector.<Number> =  new <Number>[ 0,0,0.25,0.25,0.75,0.25,1,0,0,1,0.25,0.75,0.25,0.25,0.25,0.75,1,1,0.75,0.75,0.75,0.25,0.75,0.75];
+			   var uvs:Vector.<Number> =  new <Number>[ 0,0,0.25,0.25,0.75,0.25,1,0,0,1,0.25,0.75,0.25,0.25,0.25,0.75,1,1,0.75,0.75,0.75,0.25,0.75,0.75,  -1,-1, -1,-1, -1,-1, -1,-1];
 			  var indices:Vector.<uint> = INDICES;
 			  
-			 
-			
-			    var numGeomVertices:int =  pos.length / 3;
-			
+
+			  var numGeomVertices:int =  pos.length / 3;			
 				
 			  var i:int;
 			  var v:int;
@@ -174,39 +178,57 @@ package alternativa.a3d.objects
 				
 				"mul t1.xyz, t1.xyz, t1.www",  // convert pixel space to unit space  // to get constraints
 	
+				"frc t0.w, t2.w",	
+				"sub t2.w, t2.w, t0.w",  // get whole portion
+				
 				"min t1.x, t2.w, t1.x",   // apply maxWidth constraint x onto actual t2.spriteWidth   // remove this to fixWidth
 				"mul t1.z, c3.x, t1.w",  // set minWidth constraint to unit space
 				
-				"max t1.x, t1.x, t1.z", // apply minWidth constraint   // remove this to fixWidth
 				
+				"max t1.x, t1.x, t1.z", // apply minWidth constraint   // remove this to fixWidth
 				//"sge t1.z, t1.x, t1.z",		// or hide vis
 				//"mul t1.x, t1.x, t1.z",
+				
+				"mul t0.w, t0.w, t1.x",  // apply health ratio width onto target display width to get actual health width
+				"sub t0.w, t0.w, t1.w",  // remove off thickness padding
+			
+				"mul t0.w, t0.w, c2.w",  // double up width to fill fullbar 
 			
 				
 				"mul t0.xyz, c2.xyz, i0.xxx",
 				"mul t0.xyz, t0.xyz, t1.xxx", // scale according to spriteset setting (right vector)
 				"add t2.xyz, t2.xyz, t0.xyz",
 				
-				// move inner
-				"mul t0.xyz, t0.xyz, i0.zzz",
+				//"add t2.w, i0.z, c2.w",
+				"abs t2.w, i0.z",  // convert i0.z=-1 to 1 if required...
+				
+				// move inner border
+				"mul t0.xyz, t0.xyz, t2.www",
 				"nrm t0.xyz, t0.xyz",
 				"mul t0.xyz, t0.xyz, t1.www",
 				"mul t0.xyz, t0.xyz, c3.www",
 				"sub t2.xyz, t2.xyz, t0.xyz",
 				
+				// move up health guage along right vector
+				"mul t0.xyz, c2.xyz, t0.www",
+				"slt t0.w, i0.z, c1.w",
+				"mul t0.xyz, t0.xyz, t0.www",  
+				"add t2.xyz, t2.xyz, t0.xyz",
 				
-				//"mul t0.z, tg0
+				
+				// ------------------------
 				
 				"mul t0.xyz, c1.xyz, i0.yyy",
 				"mul t0.xyz, t0.xyz, t1.yyy",  // scale according to spriteset setting  (up vector)
 				"add t2.xyz, t2.xyz, t0.xyz",
 				
-				// move inner
-				"mul t0.xyz, t0.xyz, i0.zzz",
+				// move inner border
+				"mul t0.xyz, t0.xyz, t2.www",
 				"nrm t0.xyz, t0.xyz",
 				"mul t0.xyz, t0.xyz, t1.www",
 				"mul t0.xyz, t0.xyz, c3.www",
 				"sub t2.xyz, t2.xyz, t0.xyz",
+				
 				
 				// DONE!
 				"mov t2.w, i0.w",	

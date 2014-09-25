@@ -41,19 +41,24 @@ package alternativa.a3d.systems.hud
 			nodeList = engine.getNodeList(HPBarNode);
 		}
 		
-		
+			private var epsilon:Number = 0.000001;
+			
 		override public function update(time:Number):void {
 			data.fixed = false;
 			var totalSprites:int = 0;
+			var fullHealth:Number = 1 - epsilon
+			//var noHealth:Number = epsilon;
 			var count:int = 0;
 			for (var n:HPBarNode = nodeList.head as HPBarNode; n != null; n = n.next as HPBarNode) {
 				if (n.entity.has(MovementPoints)) {
 					continue;
 				}
+				var hpRatio:Number = n.health.hp / n.health.maxHP;
+				hpRatio = hpRatio >= 1 ? fullHealth : hpRatio;
 				data[count++] = n.pos.x;
 				data[count++] = n.pos.y ;
 				data[count++] = n.pos.z + n.size.z + 22;
-				data[count++] = n.size.x;
+				data[count++] = int(n.size.x) + hpRatio;
 				totalSprites++;			
 			}
 

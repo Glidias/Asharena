@@ -21,10 +21,6 @@ _____________________
 
 Include death animation *
 
-_______________________
-
-Health Bar for all the units  *
-
 ___________________
 
 Support fire/linked attack mechanics *
@@ -82,7 +78,7 @@ Hook weapon models to hand
 ________________________________________
 
 
-// 1. Ensure Line of Fire OVer Blocking ELlipsoid is used for Swing, but Thrust can have concession *
+// 1. Ensure Line of Fire OVer Blocking ELlipsoid is used for Swing, but Thrust can have concession (KIV) 
 
 ______________________________________
 

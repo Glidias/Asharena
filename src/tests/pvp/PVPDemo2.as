@@ -5,6 +5,7 @@ package tests.pvp
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.controller.ThirdPersonTargetingSystem;
+	import alternativa.a3d.materials.HealthBarFillMaterial;
 	import alternativa.a3d.objects.ArrowLobMeshSet2;
 	import alternativa.a3d.objects.HealthBarSet;
 	import alternativa.a3d.objects.ProjectileDomain;
@@ -1716,7 +1717,8 @@ package tests.pvp
 		}
 		
 		private function createHPBarSet():HealthBarSet {
-			var hpBarSet:HealthBarSet = new HealthBarSet(120, new FillMaterial(0xFFFFFF, 1), 10, 64, 5);
+			
+			var hpBarSet:HealthBarSet = new HealthBarSet(100, new HealthBarFillMaterial(0xFFFFFF, 1), 10, 64, 4);
 			
 			SpawnerBundle.uploadResources(hpBarSet.getResources());
 			_template3D.scene.addChild(hpBarSet);
