@@ -52,6 +52,7 @@ package alternativa.a3d.materials {
 		 * @private
 		 * Pass health color to the fragment shader procedure
 		 */
+		/*
 		static alternativa3d const _passColorProcedure:Procedure = new Procedure([
 		"#a0=aUV", "#a1=joint", "#c1=cColor", "#v0=vColor", "#c2=cPreCalc",
 		//"#c0=
@@ -99,6 +100,66 @@ package alternativa.a3d.materials {
 		
 		"mov v0, t0"], "passColorProcedure");
 		
+		*/
+		
+		
+		/*
+		 *   var sin:Number = Math.sin (power * Math.PI);
+            
+            var green:Number = (power < 0.5) ?  sin : 255;
+            var red:Number = (power > 0.5) ?  sin : 255; 
+            return (red << 16) | (green << 8);
+			*/
+		
+	//	/*
+		static alternativa3d const _passColorProcedure:Procedure = new Procedure([
+		"#a0=aUV", "#a1=joint", "#c1=cColor", "#v0=vColor", "#c2=cPreCalc",
+		//"#c0=
+		//"mov t0, a0", 
+		
+		"sge t1.x, a0.y, c2.y",  // if uv y is lower than zero, it means Healthbar will be colored proecdurally according to HP. This is the flag for it!
+		
+		 // get health fraction
+		"mov t1.w, c[a1.x].w",
+		"frc t1.w, t1.w",	
+		
+		
+		// get health color t2
+	//	"sub t1.w, c2.w, t1.w", // get complement of health for power
+		
+		"sge t2.z, t1.w, c2.x",  // >=0.5  // flag sge
+		
+		"mul t2.w, t1.w, c2.z",	 // power * Math.PI
+		"sin t2.w, t2.w",		// sin of above
+		
+		"mul t2.x, t2.w, t2.z",  // 
+		
+		"mov t1.z, t2.z",  // save out flag
+		"sub t2.z, c2.w, t2.z", // get complement of flag sge
+		
+		"mul t2.z, t2.z, c2.w",
+		"add t2.x, t2.x, t2.z",  // add 1  if required
+		
+		"mul t2.y, t2.w, t2.z",
+		"mul t2.z, t1.z, c2.w",
+		"add t2.y, t2.y, t2.z", // add 1  if required
+		
+		"mov t2.z, c2.y",  // blue = 0
+		
+		
+		"mov t0, c1",  // get rgba of default color
+		"mul t0.xyz, t0.xyz, t1.xxx",
+		
+		"sub t1.x, c2.w, t1.x",  // get complement of flag
+		"mul t2.xyz, t2.xyz, t1.xxx",
+		
+		"add t0.xyz, t0.xyz, t2.xyz",
+		
+
+		"mov t0.w, c1.w",  // default alpha
+		
+		"mov v0, t0"], "passColorProcedure");
+	//	*/
 
 		
 		
@@ -202,8 +263,9 @@ package alternativa.a3d.materials {
 			object.setTransformConstants(drawUnit, surface, program.vertexShader, camera);
 			drawUnit.setProjectionConstants(camera, program.cProjMatrix, object.localToCameraTransform);
 			drawUnit.setVertexConstantsFromNumbers(program.cColor, red, green, blue, alpha);
-			drawUnit.setVertexConstantsFromNumbers(program.cPreCalc, 0.5, 0, .2, 1);
-
+			//drawUnit.setVertexConstantsFromNumbers(program.cPreCalc, 0.5, 0, .2, 1);
+			drawUnit.setVertexConstantsFromNumbers(program.cPreCalc, 0.5, 0, Math.PI, 1);
+			
 			// Send to render
 			if (alpha < 1) {
 				drawUnit.blendSource = Context3DBlendFactor.SOURCE_ALPHA;
