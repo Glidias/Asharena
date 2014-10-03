@@ -3,6 +3,9 @@ import arena.components.char.EllipsoidPointSamples;
 import arena.systems.player.IStance;
 import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.player.AnimAttackSystem;
+import ash.tick.FixedTickProvider;
+import ash.tick.MultiUnitTickProvider;
+import ash.tick.UnitTickProvider;
 import haxe.io.BytesInput;
 import haxe.io.BytesOutput;
 
@@ -72,8 +75,8 @@ class TheGame
 		engine = new Engine();
 		this.stage = stage;
 		spawner =  getSpawner();
-		
 
+		
 		// Craete ticker
 		ticker = new FrameTickProvider(stage, 1000/15);
 		ticker.add(engine.update);
