@@ -699,6 +699,14 @@ WeaponSlots
 				return;
 			}
 			
+			var weap:Weapon  = ent.get(Weapon) as Weapon;
+			if (weap != null) {
+				var weapSlot:WeaponSlot = ent.get(WeaponSlot) as WeaponSlot;
+				if (weapSlot != null) {
+					weapIndex = weapSlot.slots.indexOf(weap);
+				}
+			}
+			
 			_curCharPos = ent.get(Pos) as Pos;
 			
 			lastCharPosition.x = _curCharPos.x;
@@ -709,6 +717,8 @@ WeaponSlots
 			
 			var gSa:GladiatorStance = ent.get(IAnimatable) as GladiatorStance;
 			setStance(gSa.stance);
+			
+			
 		}
 		
 		public function cycleWeapon():int {

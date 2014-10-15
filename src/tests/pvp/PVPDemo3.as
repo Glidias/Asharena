@@ -403,9 +403,9 @@ package tests.pvp
 		private var testRangeWeapon:Weapon;
 		
 		private function getTestWeaponList():WeaponSlot {
-			var weapSlot:WeaponSlot = new WeaponSlot().init(2);
-			weapSlot.slots[1] = getTestRangedWeapon();
-			weapSlot.slots[0] = getTestWeaponFireModes();
+			var weapSlot:WeaponSlot = new WeaponSlot().init();
+			weapSlot.slots[0] = getTestRangedWeapon();
+			weapSlot.slots[1] = getTestWeaponFireModes();
 			return weapSlot;
 		}
 
