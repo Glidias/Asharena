@@ -28,4 +28,7 @@ interface IStance
   
   /* Weapon switching */
   function switchWeapon(weapon:Weapon):Void;
+  
+  // killdeath anim
+  function kill(id:Int):Void;
 }

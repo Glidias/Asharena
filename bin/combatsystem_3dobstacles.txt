@@ -15,28 +15,31 @@ Evasion should shuold be considered against moving velocity target (sideway shot
 
 ________________________
 
-SHIFt key in target Mode and left/right keys to perform auto-aiming cycling. (important!) *
+SHIFt key in target Mode and left/right keys to perform auto-aiming cycling. (important! frontend) *
 
 _____________________
 
-Include death animation (important!) *
-
-___________________
-
-Support fire/linked attack mechanics (important!)  *
+Support fire/linked attack mechanics (important! gameplay)  *
 
 __________________________
 
-Time taken to strike with weapon by player should be minused off the MU bar if available. *
 Threshold markers should be shown for each firemode.  (KIV)
 _____________
+
+DecalSet -> footsteps, ground markers etc. (KIV)
+
+_______________
 
 Area strike linked attack mechanics (barrage) (KIV) 
 
 _______________________
 
+Include more detailed death animations (KIV)
 
-<= 4 men linked movement for combat system (possible KIV, but good to include in for current balance against AI reactions!)  *
+__________________
+
+
+<= 4 men linked movement for combat system (gameplaypossible KIV, but good to include in for current balance against AI reactions!)  *
   - AI men have step-based time units, when they move up to a certain threshold, their own personal TU is depleted. 
   - Time unit used against all aggro units is based off either analog leader player movement (if leader is moving), else against highest time unit expended among squad AI if available.
  - Later , this should considerabily evolve to step-based  movement for leader player as well for easier cheat-free server-side checking.
@@ -63,7 +66,7 @@ If ground normal is lost, target mode should be turned off. Target mode only ava
 _________
 
 
-0. Weapon attachment    *
+0. Weapon attachment  *
 
 1. WeaponList  and WeaponListSystem for all EnemyAggro with Weapon switching for player
 
@@ -84,58 +87,12 @@ ________________________________________
 ______________________________________
 
 
-1.  Watch engaged check cases.... for aggro AI *
+1.  Watch engaged check cases.... for aggro AI (gameplay) *
 
+___________________
 
-(Far-sighted reaction) (Default)
-
-Ranged vs melee:
-Ranged units are engaged only when THEY are within range of another enemy melee's weapon range.
-This effectively locks them down and they cannot turn to shoot someone else.
-
-Ranged vs Ranged:
-Ranged units are engaged only when THEY are within range of another ranged enemy melee's weapon range.
-This effectively locks them down and they cannot turn to shoot someone else.
-
-OR
-
-(Near-sighted reaction)
-Ranged units are only engaged against the closest target within a certain kind of pseudo-melee aggro range. 
-They will automatically turn to face active moving unit in that range.
-
-OR 
-
-Random sighted reaction...
-
-
-For Melee: How to lock down a melee character......
----------------------------------------------------
-
-(Far-sighted reaction) (Default)
-Melee vs Melee:
-Melee units are engaged only by other enemy melees within their weapon ranges or can engage another melee by their own weapon range.
-
-Melee vs Ranged:
-Melee units are engaged only by another ranged by their own weapon range or another ranged enemy's melee weapon range.
-
-OR
-
-(Near-sighted reaction)
-Melee units are only engaged against the closest target within their aggro range (or a certain kind of aggro range).
-
-OR 
-
-Random sighted reaction...
-
-
-
-Melee units will still turn to face any active moving units within their aggro range regardless and cannot be locked down by passive units.
-
-_______________________________________________
-
-End turn reaction facing: *
-Disable turning   / Enable turning /  Random Turning(unless within engagement range), Absolutely Random Turning
-
+1. End turn reaction facing options: (KIV)
+Disable turning   / Enable turning  /  Random Turning(unless within engagement range), Absolutely Random Turning
 
 
 
@@ -150,7 +107,42 @@ Aesthetics:
 
 
 
-Gameplay: 
+Gameplay: (gameplay)
 
 1. AI should alert presence of player to nearby unengaged men within a certain distance. (KIV)
-2.Provide HTML to launch units into Flash. 
+2.Provide HTML to launch units into Flash.  *
+
+
+
+
+GROUPED SUMMARY OF FEATURES:
+	
+_____________________________________________________
+Frontend features:
+---------------
+auto-aim targetting
+drip away time passing during enemy return fire
+weapon attachment
+terrain splatting
+terrain decor for arena space
+include the rest of the units
+
+____________________________________________________
+
+
+Gameplay features from various similar turn-based action games:
+---------------------------------------------------------------
+Support fire/linked attack mechanics
+Linked follower movement
+Engaged unit lock reaction mechanics
+weapon switching key
+
+Core gameplay/backend:
+-------------------------
+A cheat-free Server send footsteps/actions...calculate reactions
+  -> Approach #1: Key strokes across fixed timesteps
+
+What currently cannot be replicated on the server?
+---------------------------------------------
+1) 3D raycast detection (uses AS3 code, but can convert easily to Haxe, the collision part is already in HAxe, just need to use the raycast one)
+2) Linked follower movement (uses C++ alchemy code for Recast/Detour). Unless a simplified version is used for server side. 

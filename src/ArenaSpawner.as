@@ -20,6 +20,7 @@ package
 	import arena.components.char.CharDefense;
 	import arena.components.char.EllipsoidPointSamples;
 	import arena.components.enemy.EnemyIdle;
+	import arena.components.enemy.EnemyWatch;
 	import arena.components.weapon.Weapon;
 	import arena.systems.player.IStance;
 	import ash.core.Engine;
@@ -30,6 +31,7 @@ package
 	import components.ActionUIntSignal;
 	import components.controller.SurfaceMovement;
 	import components.Ellipsoid;
+	import components.Health;
 	import components.MovableCollidable;
 	import components.Pos;
 	import components.Rot;
@@ -355,6 +357,55 @@ package
 			
 			
 			return ent;
+		}
+		
+		/*
+		public function XkillGladiator(ent:Entity):void {
+			
+			// todo: only send signal later...
+			ent.remove(Health);
+			
+			ent.remove(Ellipsoid); // prevent any form of targeting
+			ent.remove(Vel);  // stop enemy dead in tracks, prevent gravity from affecting (this might change for airborne enemies)
+			
+			ent.remove(Weapon);
+			ent.remove(AggroMem);
+			
+			
+			//ent.remove(SurfaceMovement);
+			//ent.remove(Rot);
+			
+			var stance:IStance = ent.get(IStance) as IStance;
+			if (stance != null) {
+				stance.kill(0);
+			}
+		}
+		*/
+		
+		public function killGladiator2(ent:Entity, deadScene:Object3D):void {
+			
+			var obj:Object3D = ent.get(Object3D) as Object3D;
+			if (obj != null) deadScene.addChild(obj);
+			
+			var stance:IStance = ent.get(IStance) as IStance;
+			var anim:IAnimatable = ent.get(IAnimatable) as IAnimatable;
+			
+			
+			
+
+			engine.removeEntity(ent);
+			ent.remove(Health);
+			
+			// TODO: if gladiator/entity is airborne, need to wait for gladiator to drop to ground first prior to removal,
+			// so need to re-add  or consider (Ellipsoid, Pos, Gravity, Vel, SurfaceMovement)
+			
+			if (stance != null && stance === anim) {
+				engine.addEntity( new Entity().add(anim, IAnimatable) );
+				stance.kill(0);
+			}
+			
+			//ent.remove(SurfaceMovement);
+			//ent.remove(Rot);
 		}
 		
 		public function disableStanceControls(stage:Stage):void 

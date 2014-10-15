@@ -715,6 +715,11 @@ WeaponSlots
 		{
 			var ent:Entity = _displayChar;
 				var health:Health = ent.get(Health) as Health;
+				if (health == null) {
+					
+					setDeadCharInfo();
+					return;
+				}
 			var obj:Object3D = ent.get(Object3D) as Object3D;
 		
 			
@@ -732,6 +737,26 @@ WeaponSlots
 			_curCharInfo.appendMessage(weaponSlots ? "'C' to cycle attack modes. (1/" + weaponSlots.slots.length + ")" : _stars ? "Press 'TAB' to cycle character." : " " ); //"'C' to switch attack mode. (1/2)" //"Attack completed."
 			if (!_charWeaponEnabled && !_stars) _curCharInfo.appendSpanTagMessage('<span u="2">Done!</span>');
 			 _curCharInfo.appendMessage(_stars ?  numStars > 0 ?  MSG_START_ACTION_TURN : " " : MSG_END_ACTION_TURN);
+			_curCharInfo.drawNow();
+		}
+		
+		private function setDeadCharInfo():void {
+			var ent:Entity = _displayChar;
+			
+			var obj:Object3D = ent.get(Object3D) as Object3D;
+		
+			
+			var charClass:ArenaCharacterClass = ent.get(ArenaCharacterClass) as ArenaCharacterClass;
+
+
+			//ent.get(ArenaChar
+
+			_curCharInfo.appendMessage("Name: "+obj.name);
+			_curCharInfo.appendSpanTagMessage('<span u="2">Dead!</span>');
+			_curCharInfo.appendMessage("Class: " + charClass.name);
+			//_curCharInfo.appendMessage("Press 'TAB' to switch to new character."); //"'C' to switch attack mode. (1/2)" //"Attack completed."
+			//if (!_charWeaponEnabled && !_stars) _curCharInfo.appendSpanTagMessage('<span u="2">Done!</span>');
+		//	 _curCharInfo.appendMessage(_stars ?  numStars > 0 ?  MSG_START_ACTION_TURN : " " : MSG_END_ACTION_TURN);
 			_curCharInfo.drawNow();
 		}
 		
@@ -811,7 +836,7 @@ WeaponSlots
 		private function checkLOS(entA:Entity, entAWeapon:Weapon, entB:Entity):Boolean 
 		{
 			
-			return weaponLOSCheck.validateWeaponLOS( entA.get(Pos) as Pos, entAWeapon.sideOffset, entAWeapon.heightOffset, entB.get(Pos) as Pos, entB.get(Ellipsoid) as Ellipsoid );
+			return entAWeapon!= null ? weaponLOSCheck.validateWeaponLOS( entA.get(Pos) as Pos, entAWeapon.sideOffset, entAWeapon.heightOffset, entB.get(Pos) as Pos, entB.get(Ellipsoid) as Ellipsoid ) : false;
 		}
 		
 		private function checkCoverBlockLOS(entA:Entity, entB:Entity):Boolean 
@@ -1485,6 +1510,12 @@ WeaponSlots
 			//_msgLogInfo.appendMessage("_"+	string	);
 				_msgLogInfo.appendSpanTagMessage(	string	);
 				_msgLogInfo.drawNow();
+		}
+		
+		public function killPlayer():void 
+		{
+			_charWeaponEnabled = false;
+			setDeadCharInfo();
 		}
 		
 		/*

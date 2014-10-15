@@ -195,6 +195,7 @@ package systems.player.a3d
 		}
 		
 		public function setTargetMode(val:Boolean):void {
+			if (dead) return;
 			if (_ranged) {
 				if (val) {
 					skin.rotationZ = Math.PI;// - .7;
@@ -591,7 +592,7 @@ package systems.player.a3d
 		
 		// handles any changes in action!
 			public function handleAction(val:int):void {
-				if ( (1 << val) &  MASK_DISABLED ) {
+				if ( ((1 << val) &  MASK_DISABLED) || dead ) {
 					//throw new Error("A");
 					return;
 				}
@@ -833,6 +834,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		private var weaponRangeMode:int = Weapon.RANGEMODE_BOW;
 		private var upper_idleCombat:AnimationClip;
 		private var upper_idleCrouch:AnimationClip;
+		private var dead:Boolean=false;
 		
 		public function updateTension(ratio:Number, time:Number):void 
 		{
@@ -903,6 +905,17 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 				_ranged = false;
 				skinIdleRotOffset = 0;
 			}
+		}
+		
+		/* INTERFACE arena.systems.player.IStance */
+		
+		public function kill(id:int):void 
+		{
+			dead = true;
+			//handleAction(PlayerAction.IDLE);
+			var anim:AnimationClip = anims.getAnimationByName("die_simple");
+			anim.time = 0;
+			setAnimation( anim, fullBodyController, fullBody, .2);
 		}
 			
 		

@@ -18,6 +18,6 @@ class EnemyIdleNode extends Node<EnemyIdleNode> {
 	
 	public var state:EnemyIdle;	
 	public var stance:IStance;
-	//public var aggroMem:AggroMem;
+	public var aggroMem:AggroMem;
 	//public var stateMachine:EntityStateMachine;
 }

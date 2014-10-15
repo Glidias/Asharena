@@ -140,6 +140,7 @@ package tests.pvp
 	public class PVPDemo3 extends MovieClip 
 	{
 		private var _template3D:MainView3D;
+		private var deadScene:Object3D = new Object3D();
 		private var game:TheGame;
 		private var ticker:FrameTickProvider;
 		private var _preloader:PreloaderBar = new PreloaderBar()
@@ -149,6 +150,7 @@ package tests.pvp
 		private var spectatorPerson:SimpleFlyController;
 		private var arenaSpawner:ArenaSpawner;
 		private var collisionScene:Object3D;
+		
 		
 		private var _gladiatorBundle:GladiatorBundle;
 		private var arenaHUD:ArenaHUD;
@@ -294,7 +296,8 @@ package tests.pvp
 			TerrainBase;
 			
 
-		
+			_template3D.scene.addChild(deadScene);
+			
 			_template3D.stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextCreated);
 			
 			// example visual scene
@@ -393,7 +396,7 @@ package tests.pvp
 		private var collOtherClass:Class = ImmovableCollidable;
 			
 		// Deault weapon stats
-		private var TEST_MELEE_WEAPON:Weapon = getTestRangedWeapon();// getTestWeaponFireModes();
+		private var TEST_MELEE_WEAPON:Weapon = getTestRangedWeapon(); //getTestWeaponFireModes(); //
 		
 		private var testRangeWeapon:Weapon;
 
@@ -678,6 +681,8 @@ package tests.pvp
 		
 		
 		
+		
+		
 		private function resolveStrikeAction():void 
 		{
 			
@@ -692,7 +697,7 @@ package tests.pvp
 					return;
 				}
 				
-				if ( arenaSpawner.currentPlayerEntity.get(Health) == null) { // assumed player has died before action can be executed!
+				if ( isPlayerDead() ) { // assumed player has died before action can be executed!
 					return;
 				}
 				
@@ -700,20 +705,24 @@ package tests.pvp
 			
 			delayTimeElapsed = 0;
 			
-			
+			var timeToDeplete:Number;
 
 			if (arenaHUD.playerChosenWeaponStrike.fireMode > 0) {
 				
 				AnimAttackSystem.performMeleeAttackAction(arenaHUD.playerWeaponModeForAttack, arenaSpawner.currentPlayerEntity, arenaHUD.targetEntity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
 				//game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
-				 delayTimeElapsed =  Math.random()*.3  + arenaHUD.playerChosenWeaponStrike.strikeTimeAtMaxRange;
+				
+				 delayTimeElapsed =  Math.random() * .3  + arenaHUD.playerChosenWeaponStrike.strikeTimeAtMaxRange;
+				 timeToDeplete = arenaHUD.playerChosenWeaponStrike.strikeTimeAtMaxRange + arenaHUD.playerChosenWeaponStrike.timeToSwing;
 			}
 			else {
 			
 				 Weapon.shootWeapon( arenaHUD.playerChosenWeaponStrike.rangeMode, arenaSpawner.currentPlayerEntity, arenaHUD.targetEntity,  arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0, _animAttackSystem, true);
 				
 				 	//game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
-				 delayTimeElapsed =  arenaHUD.playerChosenWeaponStrike.timeToSwing  + Math.random()*1 + .1
+					
+				 delayTimeElapsed =  arenaHUD.playerChosenWeaponStrike.timeToSwing  + Math.random() * 1 + .1
+				 timeToDeplete =  arenaHUD.playerChosenWeaponStrike.timeToSwing;
 			}
 			_animAttackSystem.resolved.addOnce(resolveStrikeAction2);
 			aggroMemManager.addToAggroMem(arenaSpawner.currentPlayerEntity, arenaHUD.targetEntity);
@@ -721,6 +730,16 @@ package tests.pvp
 				var targetHP:Health = (arenaHUD.targetEntity.get(Health) as Health);
 				if (targetHP.hp > arenaHUD.playerDmgDealRoll) targetHP.onDamaged.addOnce(onEnemyTargetDamaged);
 			}
+			
+			var tarTimeLeft:Number = movementPoints.movementTimeLeft - timeToDeplete;
+			if (tarTimeLeft < 0) tarTimeLeft = 0;
+			TweenLite.to( movementPoints, delayTimeElapsed, { movementTimeLeft:tarTimeLeft } );
+		}
+		
+		private function isPlayerDead():Boolean 
+		{
+			var hp:Health = arenaSpawner.currentPlayerEntity.get(Health) as Health;
+			return hp == null || hp.hp <= 0;
 		}
 		
 		private var delayTimeElapsed:Number;
@@ -775,6 +794,7 @@ package tests.pvp
 		//	return;
 			
 			if (arenaHUD.enemyStrikeResult != 0) {
+			
 				AnimAttackSystem.performMeleeAttackAction(arenaHUD.enemyWeaponModeForAttack, arenaHUD.targetEntity, arenaSpawner.currentPlayerEntity, arenaHUD.enemyStrikeResult > 0 ? arenaHUD.enemyDmgDealRoll : 0);
 				_animAttackSystem.resolved.addOnce(resolveStrikeActionFully);
 				if (arenaHUD.enemyStrikeResult > 0) {
@@ -783,6 +803,7 @@ package tests.pvp
 				}
 			}
 			else {
+				
 				resolveStrikeActionFully(true);
 			}
 		}
@@ -811,7 +832,8 @@ package tests.pvp
 		{
 			toggleTargetingMode();
 			sceneLocked = false;
-			thirdPersonController.thirdPerson.followAzimuth = true;
+			thirdPersonController.thirdPerson.followAzimuth = (arenaSpawner.currentPlayerEntity.get(Health) != null);
+			
 		}
 		
 		private function testAnim(blend:Number=.5):void 
@@ -1666,8 +1688,10 @@ package tests.pvp
 			if (e != arenaSpawner.currentPlayerEntity) {  // assume active currentPlayerEntity killed entity
 				arenaHUD.txtPlayerStrike(e, hp, amount, true);
 				unregisterEntity(e);
-				game.engine.removeEntity(e);
 				
+				arenaSpawner.killGladiator2(e, deadScene);
+			
+			
 			}
 			else {  // assume currentePlayerNEtity killed by entity under aggro system!
 				arenaHUD.txtTookDamageFrom(_enemyAggroSystem.currentAttackingEnemy, hp, amount, true);
@@ -1676,7 +1700,13 @@ package tests.pvp
 					testIndex = 0;
 					//throw new Error("null pointer after unregistration...");
 				}
-				game.engine.removeEntity(arenaSpawner.currentPlayerEntity);
+				
+				arenaSpawner.killGladiator2(arenaSpawner.currentPlayerEntity, deadScene);
+				
+				thirdPersonController.thirdPerson.followAzimuth = false;
+				arenaHUD.killPlayer();
+				
+				//game.engine.removeEntity(arenaSpawner.currentPlayerEntity);
 			}
 		}
 		
