@@ -22,6 +22,6 @@ class EnemyWatchNode extends Node<EnemyWatchNode> {
 	
 	public var state:EnemyWatch;	
 	public var stance:IStance;
-	//public var aggroMem:AggroMem;
+	public var aggroMem:AggroMem;
 	//public var stateMachine:EntityStateMachine;
 }

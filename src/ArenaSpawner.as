@@ -22,6 +22,7 @@ package
 	import arena.components.enemy.EnemyIdle;
 	import arena.components.enemy.EnemyWatch;
 	import arena.components.weapon.Weapon;
+	import arena.components.weapon.WeaponSlot;
 	import arena.systems.player.IStance;
 	import ash.core.Engine;
 	import ash.core.Entity;
@@ -267,10 +268,15 @@ package
 			addRenderEntity( upload( new Box(900, 10, 10, 1, 1, 1, false, new FillMaterial(0x00FF00) ),  context3D), pos || new Pos(), rot || new Rot() );
 		}
 		
-		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0, azimuth:Number=0, side:int=0, name:String=null, weapon:Weapon=null, watchSettings:EnemyIdle=null):Entity {
+		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0, azimuth:Number=0, side:int=0, name:String=null, weapon:Weapon=null, watchSettings:EnemyIdle=null, weaponList:WeaponSlot=null):Entity {
 			var ent:Entity = getGladiatorBase(x,y,z, 0,0,0, playerStage!=null);
 			var skProto:Skin = skinDict[race];
 			var sk:Skin = skProto.clone() as Skin;
+			if (weaponList != null) {
+				ent.add(weaponList);
+				if (weapon == null) weapon = weaponList.slots[0];
+			}
+			
 			
 			
 			var def:CharDefense = ent.get(CharDefense) as CharDefense;
@@ -294,6 +300,8 @@ package
 			
 			obj.addChild(sk);
 			ent.add(obj, Object3D);
+			
+			
 			
 			ent.add(charClasses[race], ArenaCharacterClass);
 			

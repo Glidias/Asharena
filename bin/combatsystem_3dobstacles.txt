@@ -68,9 +68,9 @@ _________
 
 0. Weapon attachment  *
 
-1. WeaponList  and WeaponListSystem for all EnemyAggro with Weapon switching for player
+1.  WeaponListSystem for all EnemyAggro (KIV)
 
-2. Include the rest of the units and weapn animations/models! 
+2. Include the rest of the units and weapn animations/models! *
 
 and
 
@@ -135,7 +135,6 @@ Gameplay features from various similar turn-based action games:
 Support fire/linked attack mechanics
 Linked follower movement
 Engaged unit lock reaction mechanics
-weapon switching key
 
 Core gameplay/backend:
 -------------------------

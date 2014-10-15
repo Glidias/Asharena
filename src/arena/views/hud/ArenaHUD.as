@@ -711,6 +711,32 @@ WeaponSlots
 			setStance(gSa.stance);
 		}
 		
+		public function cycleWeapon():int {
+			if (_displayChar == null) return -1;
+			var weaponSlots:WeaponSlot = _displayChar.get(WeaponSlot) as WeaponSlot;
+			if (weaponSlots == null) return -1;
+			
+			weapIndex++;
+			if (weapIndex >= weaponSlots.slots.length) {
+				weapIndex = 0;
+			}
+			
+			
+			//_displayChar.removeNoSignal(Weapon);
+			_displayChar.addOrChange(weaponSlots.slots[weapIndex], Weapon);
+			setWeapon(weapIndex);
+			return weapIndex;
+		}
+		
+		private function setWeapon(index:int):void {
+			weapIndex = index;
+			updateCharInfo();
+			
+			 if (_targetNode && _targetMode) {
+				 updateTargetChoices(); 
+			 }
+		}
+		
 		private function updateCharInfo():void 
 		{
 			var ent:Entity = _displayChar;
@@ -734,7 +760,7 @@ WeaponSlots
 			_curCharInfo.appendMessage("Class: " + charClass.name);
 			var rangeInMeters:Number = int(weapon.range * UNIT_METER_SCALE * 100) / 100;
 			_curCharInfo.appendMessage((_charWeaponEnabled ? "Attack: " : "" )+weapon.name+" ("+rangeInMeters+"m)");
-			_curCharInfo.appendMessage(weaponSlots ? "'C' to cycle attack modes. (1/" + weaponSlots.slots.length + ")" : _stars ? "Press 'TAB' to cycle character." : " " ); //"'C' to switch attack mode. (1/2)" //"Attack completed."
+			_curCharInfo.appendMessage(weaponSlots && !_targetMode ? "'V' to cycle weapons. ("+(weapIndex+1)+"/" + weaponSlots.slots.length + ")" : _stars ? "Press 'TAB' to cycle character." : " " ); //"'Z' to switch attack mode. (1/2)" //"Attack completed."
 			if (!_charWeaponEnabled && !_stars) _curCharInfo.appendSpanTagMessage('<span u="2">Done!</span>');
 			 _curCharInfo.appendMessage(_stars ?  numStars > 0 ?  MSG_START_ACTION_TURN : " " : MSG_END_ACTION_TURN);
 			_curCharInfo.drawNow();
@@ -1004,6 +1030,7 @@ WeaponSlots
 				_textTargetMode.writeFinalData(_cpInfo, 0, 0, 2000, true);
 				
 			}
+			updateCharInfo();
 			validateTargetInRange();
 		}
 		
@@ -1176,6 +1203,7 @@ WeaponSlots
 		private var _gotTargetLOS:Boolean;
 		private var _bestChoiceIndex:uint;
 		private var _targetStrikeEntity:Entity;
+		private var weapIndex:int = 0;
 		public var playerChosenWeaponStrike:Weapon;
 		public var playerDmgDealRoll:int;
 		public var enemyDmgDealRoll:int

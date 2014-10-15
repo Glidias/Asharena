@@ -292,6 +292,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		
 		
 		var playerPos:Pos = p.pos;
+		var pWeapon:Weapon = p.entity.get(Weapon);
 		var enemyPos:Pos;
 		var dx:Float;
 		var dy:Float;
@@ -386,6 +387,15 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 						
 						w.stance.updateTension( -1, pTimeElapsed);
 					}
+				}
+				else {
+					
+					diffAngle = pWeapon != null ? pWeapon.fireMode > 0 ? EnemyIdle.DEFAULT_AGGRO_RANGE_SQ : -1 : PMath.FLOAT_MAX;
+					//if ( <= diffAngle) {
+						w.state.engaged = sqDist >= diffAngle;
+					//}
+					//w.aggro 
+					//
 				}
 			}
 			

@@ -322,6 +322,27 @@ class AggroMemManager
 	private var _result:AggroMemNode;
 	public var visibilityChecker:IVisibilityChecker;
 	
+	private function findEngagement(w:EnemyWatchNode, distCombat:Float):Bool {
+		///*
+		var playerPos:Pos;
+		for ( i in 0...numActive) {
+			//if (w.aggroMem.bits.has(i)) {
+				playerPos = activeArray[i].pos;
+				if ( HitFormulas.targetIsWithinArcAndRangeSq(w.pos, w.rot, playerPos, distCombat, w.weapon.hitAngle ) ) return true;
+			//}
+		}
+		//*/
+		//var val:Float = findNearestActiveNodeToRot(w.pos, w.rot, distCombat, w.state.watch.eyeHeightOffset);
+		//return (val != PMath.FLOAT_MAX)
+		return false;
+	}
+	
+	private inline function findThreateningRange(weap:Weapon):Float {
+		return PMath.maxF(weap.range, weap.rangeMode > 0 ? EnemyIdle.DEFAULT_AGGRO_RANGE : weap.range);
+	}
+	
+	
+	
 	// This is called right after turn is started, where MovementPoints is given to playerEnt after transioinining into player.
 	public function notifyTurnStarted(playerEnt:Entity):Void {
 		// determine which entities in memList should start in Idle, Watch, or Aggro states, if they don't belong to activeSide (ai side) according to playerEnt
@@ -331,11 +352,16 @@ class AggroMemManager
 		var mem:AggroMem = playerEnt.get(AggroMem);
 		var plIndex:Int = mem.index;
 		var playerPos:Pos = playerEnt.get(Pos);
+		var plWeap:Weapon = playerEnt.get(Weapon);
+		var plWeapTRange:Float = plWeap != null ? findThreateningRange(plWeap) : 0;
+		
 		curPlayerIndex = plIndex;
 		
 		var am:AggroMemNode;
 		var aggro:EnemyAggro;
 		am = memList.head;
+		
+
 		while (am != null) {
 			am.mem.cooldown = 0;
 			
@@ -358,6 +384,15 @@ class AggroMemManager
 				am.entity.add(am.mem.watchSettings, EnemyIdle);
 			}
 			am = am.next;
+		}
+		
+		var w:EnemyWatchNode = watchList.head;
+		while ( w != null) {
+			var distCombat:Float = plWeap != null ? PMath.maxF( findThreateningRange(w.weapon), plWeapTRange) : findThreateningRange(w.weapon);
+			w.state.engaged = findEngagement(w, distCombat);  
+			if (w.state.engaged ) throw "GOt engageed..remove comment!";
+			//else throw "MISSING";
+			w = w.next;
 		}
 		
 	
@@ -441,7 +476,8 @@ class AggroMemManager
 				
 				engine.addEntity( new Entity().add( new Tween(w.rot, 1.3, { z:val } ) ) );
 				//w.stance.setPitchAim( Weapon.getPitchRatio(_result.pos.x- w.pos.x, _result.pos.y - w.pos.y, _result.pos.z-w.pos.z, w.weapon.minPitch, w.weapon.maxPitch));
-				engine.addEntity( new Entity().add( new Tween(w.stance, 1.3, { setPitchAim:Weapon.getPitchRatio(_result.pos.x- w.pos.x, _result.pos.y - w.pos.y, _result.pos.z-w.pos.z, w.weapon.minPitch, w.weapon.maxPitch) } ) ) );
+				engine.addEntity( new Entity().add( new Tween(w.stance, 1.3, { setPitchAim:Weapon.getPitchRatio(_result.pos.x - w.pos.x, _result.pos.y - w.pos.y, _result.pos.z - w.pos.z, w.weapon.minPitch, w.weapon.maxPitch) } ) ) );
+				
 			}
 			w = w.next;
 		}

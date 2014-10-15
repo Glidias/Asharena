@@ -96,7 +96,6 @@ class ComponentMatchingFamily<TNode:Node<TNode>> implements IFamily<TNode>
         {
              for (node in nodeList) {
 				Reflect.setField(node, components.get(componentClass), entity.get(componentClass));
-				throw "A:"+entity.get(componentClass);
 			 }
         }
     }
