@@ -5,6 +5,7 @@ package systems.player.a3d
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
 	import arena.components.weapon.Weapon;
+	import arena.components.weapon.WeaponSlot;
 	import arena.systems.player.IStance;
 	import ash.core.Entity;
 	import ash.core.System;
@@ -33,9 +34,26 @@ package systems.player.a3d
 		private var sphereHeightOffset:Number;
 		private var camForward:Vector3D;
 		
+			
+		
+			
+		
 		public function setEntity(entity:Entity):void {
+			if (_entity) {
+				_entity.componentChanged.remove(checkWeaponChange)
+			}
+			_entity = entity;
+			_entity.componentChanged.add(checkWeaponChange);
+			
 			stance = entity.get(IStance) as IStance;
-			var weapon:Weapon = entity.get(Weapon) as Weapon;
+			updateWeapon(entity.get(Weapon) as Weapon);
+			
+		}
+		
+		private function updateWeapon(weapon:Weapon):void 
+		{
+			
+		
 			maxRange = weapon.range;
 			minPitch = weapon.minPitch;
 			maxPitch = weapon.maxPitch;
@@ -44,7 +62,15 @@ package systems.player.a3d
 			 // the below isn't used atm, just put it here first
 			sphereSideOffset = weapon.sideOffset; 
 			sphereHeightOffset = weapon.heightOffset;
+		}
+		
+		private function checkWeaponChange(entity:Entity, type:Class):void 
+		{
+			if (type === Weapon) {
+				
+				updateWeapon(entity.get(Weapon) as Weapon);
 			
+			}
 		}
 		
 		
@@ -62,6 +88,8 @@ package systems.player.a3d
 		}
 		
 		private var originPos:Vector3D = new Vector3D();
+
+		private var _entity:Entity;
 		
 		override public function update(time:Number):void {
 			var dz:Number;
