@@ -50,6 +50,7 @@ package tests.pvp
 	import ash.fsm.EngineState;
 	import ash.tick.FixedTickProvider;
 	import ash.tick.FrameTickProvider;
+	import ash.tick.ITickProvider;
 	import ash.tick.MultiUnitTickProvider;
 	import ash.tick.UnitTickProvider;
 	import com.bit101.components.Label;
@@ -705,8 +706,8 @@ package tests.pvp
 			if (gladiatorStance != null) {
 				
 				if (_targetMode) {  // kiv
-					//toReset = true;
-					//toggleTargetingMode();
+					toReset = true;
+					toggleTargetingMode();
 					//gladiatorStance.setIdleStance( _lastTargetStance);
 				}
 				gladiatorStance.switchWeapon( weapSlot.slots[index] );
@@ -1859,7 +1860,7 @@ package tests.pvp
 			ticker.add(renderTick);
 			ticker.start();
 			
-			updateTicker = new UnitTickProvider(stage, fixedTime);
+			updateTicker =  new FrameTickProvider(stage);// new UnitTickProvider(stage, fixedTime);
 			updateTicker.add(updateTick);
 			updateTicker.start();
 		}
@@ -1867,7 +1868,7 @@ package tests.pvp
 		private var fixedTime:Number = 1 / 40;
 
 		
-		private var updateTicker:UnitTickProvider;
+		private var updateTicker:ITickProvider;
 		
 		private function setupInterface():void 
 		{

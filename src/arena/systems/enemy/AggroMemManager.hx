@@ -338,7 +338,7 @@ class AggroMemManager
 	}
 	
 	private inline function findThreateningRange(weap:Weapon):Float {
-		return PMath.maxF(weap.range, weap.rangeMode > 0 ? EnemyIdle.DEFAULT_AGGRO_RANGE : weap.range);
+		return PMath.maxF(weap.range, weap.fireMode <= 0 ? EnemyIdle.DEFAULT_AGGRO_RANGE : weap.range);
 	}
 	
 	

@@ -105,18 +105,9 @@ package systems.player.a3d
 		public function set aimReady(value:Boolean):void 
 		{
 			if (_aimReady == value) return;
-			_aimReady = value;
-			if (value) {
-				switchToRanged(weaponId, -1);
-			}
-			else {
-			
-				setAnimationNode(upper_idleCombat , upperBodyController, upperBody, .3);
-			
-
-				TweenLite.to(skin, .3, { rotationZ:Math.PI, ease:Cubic.easeOut } );
-			}
+			setAimReady(value, true);
 		}
+	
 	
 		
 		public static const SPEED_BACKWARDS:Number = 60;
@@ -233,9 +224,18 @@ package systems.player.a3d
 			}
 		}
 		
-		public function setAimReady(val:Boolean):void {
-			_aimReady = !val;
-			aimReady = val;
+		public function setAimReady(value:Boolean, cpu:Boolean=false ):void {
+			_aimReady = value;
+			if (value) {
+				switchToRanged(weaponId, -1, cpu);
+			}
+			else {
+			
+				setAnimationNode(upper_idleCombat , upperBodyController, upperBody, .3);
+			
+
+				TweenLite.to(skin, .3, { rotationZ:Math.PI, ease:Cubic.easeOut } );
+			}
 		}
 		
 		private function setupAnimations():void 
@@ -287,7 +287,7 @@ package systems.player.a3d
 		}
 		
 		
-		public function switchToRanged(weaponName:String, altBalance:Number = .5):void {
+		public function switchToRanged(weaponName:String, altBalance:Number = .5, cpu:Boolean=false):void {
 				
 			if (altBalance >= 0) {
 				aimCouple.balance = altBalance;// 1; altBalance;
@@ -318,13 +318,14 @@ package systems.player.a3d
 			}
 			
 		
-			if (_stance == 0) {
+			if (cpu && _stance == 0) {
 				
 				setStanceAndRefresh(1);
 				_stanceTemp = true;
 				
 			}
 			initiateUpperBodyAim(coupleRoot);
+			
 		}
 		
 		
@@ -486,8 +487,10 @@ package systems.player.a3d
 			_curController = controller;
 		}
 		
+		private var _anim:AnimationClip;
 		public function setAnimation(anim:AnimationClip, controller:AnimationController, switcher:AnimationSwitcher, time:Number):AnimationClip {
-			anim.time = 0;
+			if (	switcher.active != anim) anim.time = 0;
+		
 			switcher.activate(anim, time);
 			_curController = controller;
 			if (_skinRotated) {
@@ -597,7 +600,7 @@ package systems.player.a3d
 					return;
 				}
 				var myLastAction:int = lastAction;
-				if (val != PlayerAction.IDLE && lastAction == val) return;
+				//if (val != PlayerAction.IDLE && lastAction == val) return;
 				lastAction = val;
 				upperBodyDominant = false;
 			
@@ -897,14 +900,17 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 				tensionSpeed = weapon.strikeTimeAtMaxRange != 0 ?  1/weapon.strikeTimeAtMaxRange : 1;
 		
 				_ranged = true;
-					aimReady = true;
-			aimReady = false;
+				
+				setAimReady(true);
+				setAimReady(false);
 				
 			}
 			else { // melee
 				_ranged = false;
 				skinIdleRotOffset = 0;
 			}
+			
+			
 		}
 		
 		/* INTERFACE arena.systems.player.IStance */
