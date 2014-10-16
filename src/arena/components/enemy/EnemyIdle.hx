@@ -7,6 +7,8 @@ import util.geom.PMath;
  */
 class EnemyIdle
 {
+	// the threshold range from which enemies will be alerted and can trigger turn-based combat against you. Also dictates fast-travel/free-travel ability.
+	public var alertRange:Float;  
 	public var alertRangeSq:Float;  // the threshold range in order to go to alert EnemyWatch state.
 	public var aggroRangeSq:Float;	 // the threshold range in order to go to aggressive EnemyAggro state.
 	public var tensionRange:Float;
@@ -26,6 +28,7 @@ class EnemyIdle
 	}
 	
 	public function init(alertRange:Float, aggroRange:Float, fov:Float=1.8849555921538759430775860299677, eyeHeightOffset:Float=0):EnemyIdle {
+		this.alertRange = alertRange;
 		alertRangeSq = alertRange * alertRange;// PMath.getSquareDist(alertRange);
 		aggroRangeSq = aggroRange * aggroRange;// PMath.getSquareDist(aggroRange);
 		tensionRange = aggroRange + DEFAULT_TENSION_RANGE;
