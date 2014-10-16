@@ -337,7 +337,7 @@ package systems.player.a3d
 			melee_swing_down.time = 0;
 			melee_swing_up.time = 0;
 			attackAnimCouple.balance = altBalance;// 1; altBalance;
-		
+	
 
 			if (_stance == 0) {
 				
@@ -489,8 +489,10 @@ package systems.player.a3d
 		
 		private var _anim:AnimationClip;
 		public function setAnimation(anim:AnimationClip, controller:AnimationController, switcher:AnimationSwitcher, time:Number):AnimationClip {
-			if (	switcher.active != anim) anim.time = 0;
-		
+			
+			if (_anim!=anim) anim.time = 0;
+			_anim = anim;
+			
 			switcher.activate(anim, time);
 			_curController = controller;
 			if (_skinRotated) {
@@ -600,7 +602,7 @@ package systems.player.a3d
 					return;
 				}
 				var myLastAction:int = lastAction;
-				//if (val != PlayerAction.IDLE && lastAction == val) return;
+				if (upperBodyDominant && val != PlayerAction.IDLE && lastAction == val ) return;
 				lastAction = val;
 				upperBodyDominant = false;
 			
