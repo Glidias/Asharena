@@ -20,6 +20,7 @@ package arena.views.hud
 	import alternativa.engine3d.spriteset.SpriteSet;
 	import alternativa.engine3d.spriteset.util.SpriteGeometryUtil;
 	import alternativa.types.Float;
+	import arena.components.char.AggroMem;
 	import arena.components.char.ArenaCharacterClass;
 	import arena.components.char.CharDefense;
 	import arena.components.char.HitFormulas;
@@ -890,6 +891,24 @@ WeaponSlots
 		private function updateTargetChoices():void { // TODO: determine best choice (percChanceToHit|damage) and use default F key for choice
 			
 			_actionChoicesBox.clearAll();
+			
+			if (_targetNode == null) {
+					choices.length = 0;
+					_actionChoicesBox.drawNow();
+					return;
+			}
+			//_targetNode = _targetNode || _lastTargetNode;
+			//if (!_targetNode.entity.get(
+			var aggroTarget:AggroMem = _targetNode.entity.get(AggroMem) as AggroMem;
+			var aggroSide:int = aggroTarget != null ? aggroTarget.side : -1;
+			var aggroPlayer:AggroMem = _displayChar.get(AggroMem) as AggroMem;
+			var playerSide:int = aggroPlayer != null ? aggroPlayer.side : -1;
+			if ( (playerSide == aggroSide) || aggroSide == -1 ) {
+				choices.length = 0;
+				_actionChoicesBox.drawNow();
+				return;  // kiv: shoudld redirect to healing/non-threathening options for friendly side!
+				
+			}
 				
 			// ROLLING
 			var hitPercResult:Number;
@@ -1227,6 +1246,7 @@ WeaponSlots
 			if (!_charWeaponEnabled || !_targetMode || !_gotTargetInRange || !_targetNode || !_gotTargetLOS) return 0;
 			if (keyCode == Keyboard.F) keyCode = _bestChoiceIndex
 			else keyCode = keyCode -Keyboard.NUMBER_1;  // get index keyCode for weapon slot
+			if (keyCode >= choices.length) return 0;
 			var chosenWeapon:Weapon = choicesWeapons[keyCode];
 			if (chosenWeapon == null) return 0;
 			

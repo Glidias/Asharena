@@ -324,6 +324,7 @@ package systems.player.a3d
 				_stanceTemp = true;
 				
 			}
+			_coupleRoot = coupleRoot;
 			initiateUpperBodyAim(coupleRoot);
 			
 		}
@@ -396,6 +397,9 @@ package systems.player.a3d
 			setAnimationNode( attackAnimCouple, upperBodyController, upperBody, .3);
 		}
 		
+		public function attemptUpperBodyAim():void {
+			if (_coupleRoot) initiateUpperBodyAim(_coupleRoot);
+		}
 		private function initiateUpperBodyAim(customCouple:AnimationCouple):void {
 			
 			//skin._rotationZ = Math.PI - .7;
@@ -840,6 +844,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		private var upper_idleCombat:AnimationClip;
 		private var upper_idleCrouch:AnimationClip;
 		private var dead:Boolean=false;
+		private var _coupleRoot:AnimationCouple;
 		
 		public function updateTension(ratio:Number, time:Number):void 
 		{
