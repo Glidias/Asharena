@@ -330,7 +330,7 @@ class AggroMemManager
 			if (w.mem.bits.has(i)) {
 				playerPos = activeArray[i].pos;
 				
-				if ( HitFormulas.targetIsWithinArcAndRangeSq(w.pos, w.rot, playerPos, distCombat, Math.PI*3 ) ) return true;
+				if ( HitFormulas.targetIsWithinArcAndRangeSq(w.pos, w.rot, playerPos, distCombat, Math.PI*.15 ) ) return true;
 			}
 		}
 		//*/
