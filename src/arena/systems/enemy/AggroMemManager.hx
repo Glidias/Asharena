@@ -325,12 +325,14 @@ class AggroMemManager
 	private function findEngagement(w:AggroMemNode, distCombat:Float):Bool {
 		///*
 		var playerPos:Pos;
-		if (numActive == 0) throw "No active";
+		//if (numActive == 0) throw "No active";
+
 		for ( i in 0...numActive) {
 			//if (w.mem.bits.has(i)) {
 				playerPos = activeArray[i].pos;
+				//throw "ERROR" + (Math.sqrt(distCombat));
 				
-				if ( HitFormulas.targetIsWithinArcAndRangeSq(w.pos, w.rot, playerPos, distCombat, Math.PI*.15 ) ) return true;
+				if ( HitFormulas.targetIsWithinArcAndRangeSq(w.pos, w.rot, playerPos, distCombat, Math.PI*.15 ) &&  hasLOS(w.pos, playerPos, 15) ) return true;
 			//}
 		}
 		//*/
@@ -340,7 +342,7 @@ class AggroMemManager
 	}
 	
 	private inline function findThreateningRange(weap:Weapon):Float {
-		return weap != null ? PMath.maxF(weap.range, weap.fireMode <= 0 ? EnemyIdle.DEFAULT_AGGRO_RANGE : weap.range) : -1;
+		return weap != null ? weap.fireMode <= 0 ? EnemyIdle.DEFAULT_AGGRO_RANGE : weap.range : 0;
 	}
 	
 	private inline function findAggroEngagedRangeSq(weap:Weapon, defaultVal:Float):Float {
@@ -379,12 +381,14 @@ class AggroMemManager
 			var distCombat:Float = plWeap != null ? PMath.maxF( findThreateningRange(am.entity.get(Weapon)), plWeapTRange) : findThreateningRange(am.entity.get(Weapon));
 			distCombat *= distCombat;
 			am.mem.engaged = findEngagement(am, distCombat);  
-		//	if (am.mem.engaged) throw "Got engaged";
+			//t
+			//if (am.mem.engaged) throw "Got engaged:"+Math.sqrt(distCombat);
 			var rangeSq:Float = am.mem.engaged ? findAggroEngagedRangeSq(am.entity.get(Weapon), am.mem.watchSettings.aggroRangeSq) : am.mem.watchSettings.aggroRangeSq;
 			
 			if (am.mem.bits.has(plIndex)) {  // place AI in either watch/aggro
 				if (withinSqDist(playerPos, am.pos, am.mem.watchSettings.aggroRangeSq) ) {
 					//	
+					am.mem.engaged = false;
 					// determine if need to pre-trigger
 					am.entity.add(new EnemyAggro().initSimple(playerAggroList.head,am.mem.watchSettings ) , EnemyAggro);
 				}

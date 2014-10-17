@@ -343,7 +343,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 			dz = playerPos.z - enemyPos.z;
 			sqDist = dx * dx + dy * dy + dz * dz;
 			if (gotReact &&  sqDist <= rangeSq && validateVisibility(enemyPos, w.state.watch.eyeHeightOffset, p) ) { 
-				
+				w.aggroMem.engaged = false;
 				w.entity.remove(EnemyWatch);
 				newAggro = new EnemyAggro();
 			//	if (w.aggroMem.engaged) throw "SWRONG";
