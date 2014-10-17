@@ -19,7 +19,7 @@ class EnemyIdle
 	public var eyeHeightOffset:Float;
 	public static inline var DEFAULT_FOV:Float = 1.8849555921538759430775860299677;// (PMath.PI * .6);
 	public static inline var DEFAULT_TENSION_RANGE:Float = 300;
-	public static inline var DEFAULT_AGGRO_RANGE:Float = 288;
+	public static inline var DEFAULT_AGGRO_RANGE:Float = 256;
 	public static inline var DEFAULT_AGGRO_RANGE_SQ:Float = DEFAULT_AGGRO_RANGE*DEFAULT_AGGRO_RANGE;
 	
 	public function new() 

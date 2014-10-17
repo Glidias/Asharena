@@ -5,6 +5,7 @@ package alternativa.a3d.systems.enemy
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.resources.Geometry;
+	import arena.components.char.AggroMem;
 	import arena.systems.enemy.EnemyAggroNode;
 	import arena.systems.enemy.EnemyIdleNode;
 	import arena.systems.enemy.EnemyWatchNode;
@@ -133,6 +134,7 @@ package alternativa.a3d.systems.enemy
 			count = 0;
 			dataList = aggroArcs.toUpload;
 			for (var a:EnemyAggroNode = aggroList.head as EnemyAggroNode; a != null; a = a.next as EnemyAggroNode) {
+				//if (a.entity.get(AggroMem).engaged) continue;
 				dataList[index++] = a.state.target.pos.x;
 				dataList[index++] = a.state.target.pos.y;
 				dataList[index++] = a.state.target.pos.z + a.state.target.size.z + playerZOffset;
@@ -174,7 +176,7 @@ package alternativa.a3d.systems.enemy
 			dataList = watchArcs.toUpload;
 			for (var w:EnemyWatchNode = watchList.head as EnemyWatchNode; w != null; w = w.next as EnemyWatchNode) {
 		
-				
+				//if (w.aggroMem.engaged) continue;
 				dataList[index++] = playerPosition.x;
 				dataList[index++] = playerPosition.y;
 				dataList[index++] = playerPosition.z;

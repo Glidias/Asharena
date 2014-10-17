@@ -346,6 +346,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				
 				w.entity.remove(EnemyWatch);
 				newAggro = new EnemyAggro();
+			//	if (w.aggroMem.engaged) throw "SWRONG";
 				rangeToAttack = ((ALLOW_KITE_RANGE & KITE_ALLOWANCE) != 0) ? HitFormulas.rollRandomAttackRangeForWeapon(w.weapon,p.size) : w.weapon.range + p.size.x;// w.weapon.critMaxRange + Math.random() * ( w.weapon.range - w.weapon.critMaxRange); 
 				newAggro.setAttackRange( rangeToAttack);
 				newAggro.watch = w.state.watch;
