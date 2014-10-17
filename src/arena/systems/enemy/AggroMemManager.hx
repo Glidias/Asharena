@@ -344,7 +344,7 @@ class AggroMemManager
 	}
 	
 	private inline function findAggroEngagedRangeSq(weap:Weapon, defaultVal:Float):Float {
-		return weap != null ? weap.fireMode <= 0  ? 0 : defaultVal : -1;  //EnemyIdle.DEFAULT_AGGRO_RANGE_SQ
+		return weap != null ? weap.fireMode <= 0  ? EnemyIdle.DEFAULT_AGGRO_RANGE_SQ : defaultVal : -1;  //EnemyIdle.DEFAULT_AGGRO_RANGE_SQ
 	}
 	
 	
