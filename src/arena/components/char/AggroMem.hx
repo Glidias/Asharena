@@ -24,6 +24,9 @@ class AggroMem implements Indexable
 	public var index:Int;
 	
 	public var cooldown:Float;
+	
+	
+	public var engaged:Bool;
 
 	public function new() 
 	{

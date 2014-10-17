@@ -87,10 +87,6 @@ ________________________________________
 ______________________________________
 
 
-1.  Watch engaged check cases.... for aggro AI (gameplay) *
-
-___________________
-
 1. End turn reaction facing options: (KIV)
 Disable turning   / Enable turning  /  Random Turning(unless within engagement range), Absolutely Random Turning
 
@@ -121,11 +117,11 @@ _____________________________________________________
 Frontend features:
 ---------------
 auto-aim targetting
-drip away time passing during enemy return fire
-weapon attachment
 terrain splatting
 terrain decor for arena space
+(semi-gameplay)
 include the rest of the units
+weapon attachment
 
 ____________________________________________________
 
@@ -134,7 +130,6 @@ Gameplay features from various similar turn-based action games:
 ---------------------------------------------------------------
 Support fire/linked attack mechanics
 Linked follower movement
-Engaged unit lock reaction mechanics
 
 Fix bugs:
 Hangups	(often some null references)

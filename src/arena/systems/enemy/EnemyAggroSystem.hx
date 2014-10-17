@@ -337,7 +337,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		while (w != null) {  // check closest valid player target, if it's same or different..  and consider aggroing if player gets close enough, 
 			enemyPos = w.pos;
 			
-			rangeSq = w.state.watch.aggroRangeSq;
+			rangeSq = w.weapon.fireMode <= 0 && w.aggroMem.engaged ? EnemyIdle.DEFAULT_AGGRO_RANGE_SQ : w.state.watch.aggroRangeSq;
 			dx =  playerPos.x - enemyPos.x;
 			dy = playerPos.y - enemyPos.y;
 			dz = playerPos.z - enemyPos.z;
@@ -354,8 +354,8 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				w.entity.add(newAggro, EnemyAggro);
 				
 			}
-			else {
-				if (!w.state.engaged) {
+			else if (!w.aggroMem.engaged) {
+				 //{
 					//w.stance.updateTension(
 					aWeapon = w.weapon;
 					if (aWeapon.maxPitch - aWeapon.minPitch != 0) {
@@ -387,16 +387,8 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 						
 						w.stance.updateTension( -1, pTimeElapsed);
 					}
-				}
-				else {
-					
-					diffAngle = pWeapon != null ? pWeapon.fireMode > 0 ? EnemyIdle.DEFAULT_AGGRO_RANGE_SQ : -1 : PMath.FLOAT_MAX;
-					//if ( <= diffAngle) {
-						w.state.engaged = sqDist >= diffAngle;
-					//}
-					//w.aggro 
-					//
-				}
+				//}
+				
 			}
 			
 			w = w.next;

@@ -322,14 +322,16 @@ class AggroMemManager
 	private var _result:AggroMemNode;
 	public var visibilityChecker:IVisibilityChecker;
 	
-	private function findEngagement(w:EnemyWatchNode, distCombat:Float):Bool {
+	private function findEngagement(w:AggroMemNode, distCombat:Float):Bool {
 		///*
 		var playerPos:Pos;
+		if (numActive == 0) throw "No active";
 		for ( i in 0...numActive) {
-			//if (w.aggroMem.bits.has(i)) {
+			if (w.mem.bits.has(i)) {
 				playerPos = activeArray[i].pos;
-				if ( HitFormulas.targetIsWithinArcAndRangeSq(w.pos, w.rot, playerPos, distCombat, w.weapon.hitAngle ) ) return true;
-			//}
+				
+				if ( HitFormulas.targetIsWithinArcAndRangeSq(w.pos, w.rot, playerPos, distCombat, Math.PI*3 ) ) return true;
+			}
 		}
 		//*/
 		//var val:Float = findNearestActiveNodeToRot(w.pos, w.rot, distCombat, w.state.watch.eyeHeightOffset);
@@ -338,7 +340,7 @@ class AggroMemManager
 	}
 	
 	private inline function findThreateningRange(weap:Weapon):Float {
-		return PMath.maxF(weap.range, weap.fireMode <= 0 ? EnemyIdle.DEFAULT_AGGRO_RANGE : weap.range);
+		return weap != null ? PMath.maxF(weap.range, weap.fireMode <= 0 ? EnemyIdle.DEFAULT_AGGRO_RANGE : weap.range) : -1;
 	}
 	
 	
@@ -383,17 +385,14 @@ class AggroMemManager
 			else {   // place AI in idle state
 				am.entity.add(am.mem.watchSettings, EnemyIdle);
 			}
+			
+			var distCombat:Float = plWeap != null ? PMath.maxF( findThreateningRange(am.entity.get(Weapon)), plWeapTRange) : findThreateningRange(am.entity.get(Weapon));
+			am.mem.engaged = findEngagement(am, distCombat);  
+			//if (am.mem.engaged) throw "Got engaged";
 			am = am.next;
 		}
 		
-		var w:EnemyWatchNode = watchList.head;
-		while ( w != null) {
-			var distCombat:Float = plWeap != null ? PMath.maxF( findThreateningRange(w.weapon), plWeapTRange) : findThreateningRange(w.weapon);
-			w.state.engaged = findEngagement(w, distCombat);  
-			if (w.state.engaged ) throw "GOt engageed..remove comment!";
-			//else throw "MISSING";
-			w = w.next;
-		}
+		
 		
 	
 		// for entities in Aggro state, they are assigned a attack-trigger range based off their weapon's ranges (factor out method to Hitformulas), determine if playerEnt is within trigger range and if so, pull the trigger even before the player moves!
