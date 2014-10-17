@@ -136,6 +136,11 @@ Support fire/linked attack mechanics
 Linked follower movement
 Engaged unit lock reaction mechanics
 
+Fix bugs:
+Resurrected counterattack
+Hangups	(often some null references)
+
+
 Core gameplay/backend:
 -------------------------
 A cheat-free Server send footsteps/actions...calculate reactions

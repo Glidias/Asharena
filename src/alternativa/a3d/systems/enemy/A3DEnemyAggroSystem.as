@@ -105,7 +105,7 @@ package alternativa.a3d.systems.enemy
 			src3.z = src3.z - target.z;
 			var d:Number = Intersect3D.rayIntersectsEllipsoid(src3, des3, targetSize );
 			if ( d < 0) {
-				throw new Error("SHOULD NOT BE! There should be intersection!");
+				//throw new Error("SHOULD NOT BE! There should be intersection!");
 				return false;
 			}
 			
