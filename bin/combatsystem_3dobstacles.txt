@@ -137,7 +137,6 @@ Linked follower movement
 Engaged unit lock reaction mechanics
 
 Fix bugs:
-Resurrected counterattack
 Hangups	(often some null references)
 
 

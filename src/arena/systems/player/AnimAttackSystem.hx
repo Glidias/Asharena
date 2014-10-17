@@ -186,14 +186,16 @@ class AnimAttackSystem extends System implements IProjectileHitResolver implemen
 		resolved.dispatch();
 	}
 	
-	public static inline function performMeleeAttackAction(attackAction:UInt, attackerEntity:Entity, targetEntity:Entity, targetDamage:Int):Void {
+	public static inline function performMeleeAttackAction(attackAction:UInt, attackerEntity:Entity, targetEntity:Entity, targetDamage:Int):Float {
 			var swinger = new AnimAttackMelee();
-			
-			swinger.init_i_static(attackerEntity.get(Weapon).anim_strikeTimeAtMaxRange, targetEntity.get(Health), targetDamage );
+			var timeTaken:Float = attackerEntity.get(Weapon).anim_strikeTimeAtMaxRange;
+			swinger.init_i_static(timeTaken, targetEntity.get(Health), targetDamage );
 			attackerEntity.add(swinger);
 			
 			var sig:ActionUIntSignal = attackerEntity.get(ActionUIntSignal);
 			sig.forceSet(attackAction);
+			
+			return timeTaken;
 	}
 	
 	public inline function checkTime(val:Float):Void {

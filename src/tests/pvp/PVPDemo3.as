@@ -728,6 +728,8 @@ package tests.pvp
 		{
 			
 			sceneLocked = true;
+			
+			
 		
 			
 			thirdPersonController.thirdPerson.followAzimuth = false;
@@ -746,8 +748,31 @@ package tests.pvp
 			
 			delayTimeElapsed = 0;
 			
-			var timeToDeplete:Number;
-
+			
+			var showSimult:Boolean = showAttacksSimulatenously();
+			//arenaHUD.appendMessage("ENemy is aggroing? " + (arenaHUD.enemyStrikeResult!=0) + ", "+ showSimult);
+			arenaHUD.delayEnemyStrikeT = 0;
+		
+			
+			if (showSimult) {
+				var timeEnemySwing:Number = performEnemyCounterAttack();
+				
+				// ensure always player strikes last
+				var delayPlayer:Number = arenaHUD.playerChosenWeaponStrike.anim_fullSwingTime > timeEnemySwing  ?  .3 :  timeEnemySwing -  arenaHUD.playerChosenWeaponStrike.anim_fullSwingTime + .3;
+				//_animAttackSystem.checkTime(.3);
+				game.engine.addEntity( new Entity().add(new Tween(arenaHUD, delayPlayer, { delayEnemyStrikeT:1 }, {onComplete:doPlayerStrikeAction} ) ) );
+			}
+			else {
+				doPlayerStrikeAction();
+			}
+			
+			
+			
+			
+		}
+		
+		private function doPlayerStrikeAction():void {
+						var timeToDeplete:Number;
 			if (arenaHUD.playerChosenWeaponStrike.fireMode > 0) {
 				
 				AnimAttackSystem.performMeleeAttackAction(arenaHUD.playerWeaponModeForAttack, arenaSpawner.currentPlayerEntity, arenaHUD.targetEntity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
@@ -765,16 +790,25 @@ package tests.pvp
 				 delayTimeElapsed =  arenaHUD.playerChosenWeaponStrike.timeToSwing  + Math.random() * 1 + .1
 				 timeToDeplete =  arenaHUD.playerChosenWeaponStrike.timeToSwing;
 			}
+			var tarTimeLeft:Number = movementPoints.movementTimeLeft - timeToDeplete;
+			if (tarTimeLeft < 0) tarTimeLeft = 0;
+			TweenLite.to( movementPoints, delayTimeElapsed, { movementTimeLeft:tarTimeLeft } );
 			_animAttackSystem.resolved.addOnce(resolveStrikeAction2);
 			aggroMemManager.addToAggroMem(arenaSpawner.currentPlayerEntity, arenaHUD.targetEntity);
 			if (arenaHUD.strikeResult > 0) {
 				var targetHP:Health = (arenaHUD.targetEntity.get(Health) as Health);
 				if (targetHP.hp > arenaHUD.playerDmgDealRoll) targetHP.onDamaged.addOnce(onEnemyTargetDamaged);
 			}
-			
-			var tarTimeLeft:Number = movementPoints.movementTimeLeft - timeToDeplete;
-			if (tarTimeLeft < 0) tarTimeLeft = 0;
-			TweenLite.to( movementPoints, delayTimeElapsed, { movementTimeLeft:tarTimeLeft } );
+		}
+		
+		private function showAttacksSimulatenously():Boolean 
+		{
+			return arenaHUD.enemyStrikeResult != 0 && arenaHUD.strikeResult > 0 &&  arenaHUD.enemyGoesFirst
+		}
+		
+		private function performEnemyCounterAttack():Number 
+		{
+			return AnimAttackSystem.performMeleeAttackAction(arenaHUD.enemyWeaponModeForAttack, arenaHUD.targetEntity, arenaSpawner.currentPlayerEntity, arenaHUD.enemyStrikeResult > 0 ? arenaHUD.enemyDmgDealRoll : 0);
 		}
 		
 		private function isPlayerDead():Boolean 
@@ -834,14 +868,26 @@ package tests.pvp
 		//	resolveStrikeActionFully(true);
 		//	return;
 			
-			if (arenaHUD.enemyStrikeResult != 0) {
-			
-				AnimAttackSystem.performMeleeAttackAction(arenaHUD.enemyWeaponModeForAttack, arenaHUD.targetEntity, arenaSpawner.currentPlayerEntity, arenaHUD.enemyStrikeResult > 0 ? arenaHUD.enemyDmgDealRoll : 0);
+			if ( arenaHUD.enemyStrikeResult != 0 && !showAttacksSimulatenously() ) {
+				//if (arenaHUD.targetEntity.get(Health) == null  || arenaHUD.targetEntity.get(Health).hp <= 0) {
+					
+				//	throw new Error("Exception healthdeead");
+				//}
+				
+				
+					AnimAttackSystem.performMeleeAttackAction(arenaHUD.enemyWeaponModeForAttack, arenaHUD.targetEntity, arenaSpawner.currentPlayerEntity, arenaHUD.enemyStrikeResult > 0 ? arenaHUD.enemyDmgDealRoll : 0);
 				_animAttackSystem.resolved.addOnce(resolveStrikeActionFully);
+				
 				if (arenaHUD.enemyStrikeResult > 0) {
+					
 					var targetHP:Health = (arenaSpawner.currentPlayerEntity.get(Health) as Health);
 					if (targetHP.hp > arenaHUD.enemyDmgDealRoll) targetHP.onDamaged.addOnce(onPlayerDamaged);
 				}
+				/*
+				else {
+					resolveStrikeActionFully(true);
+				}
+				*/
 			}
 			else {
 				

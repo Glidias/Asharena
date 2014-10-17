@@ -1236,6 +1236,8 @@ WeaponSlots
 		public var playerChosenWeaponStrike:Weapon;
 		public var playerDmgDealRoll:int;
 		public var enemyDmgDealRoll:int
+		public var enemyGoesFirst:Boolean = false;
+		public var delayEnemyStrikeT:Number = 0;
 		
 		public function checkStrike(keyCode:uint):int 
 		{
@@ -1321,6 +1323,7 @@ WeaponSlots
 				var survived:Boolean = true;
 				
 				if (percToRoll > 0) {  // ai goes first
+					enemyGoesFirst = true;
 					if (Math.random() * 100 <= percToRoll) {
 						dmgInflict = HitFormulas.rollDamageForWeapon( aggroWeapon );
 						enemyStrikeResult = 1;
@@ -1359,6 +1362,7 @@ WeaponSlots
 						//playerHealth.damage(dmgInflict);
 						if (strikeResult > 0) playerDmgDealRoll = HitFormulas.rollDamageForWeapon(chosenWeapon ) * (gotCrit ? 3 : 1);
 						enemyDmgDealRoll = dmgInflict;
+						
 
 						return strikeResult;
 					}
@@ -1373,7 +1377,9 @@ WeaponSlots
 					}
 				}
 				else {  // you go first
+					enemyGoesFirst = false;
 					//posA:Pos, rotA:Rot, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState
+					
 					percToRoll = HitFormulas.getPercChanceToHitSlowerAttacker(
 						_curCharPos,
 						_displayChar.get(Rot) as Rot,
@@ -1386,7 +1392,7 @@ WeaponSlots
 						  aggroWeapon,
 						   _targetNode.entity.get(WeaponState) as WeaponState
 					);
-					if (Math.random() * 100 <= percToRoll) {  // got hit
+					if (Math.random() * 100 <= percToRoll) {  // got hit enemy
 						
 						// roll for critical
 						percToRoll =  HitFormulas.getPercChanceToCritDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  aggroWeapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot)	 as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid );
@@ -1396,7 +1402,7 @@ WeaponSlots
 						 baseDmg *= (gotCrit ? 3 : 1);
 						 
 					
-						if (baseDmg < (_displayChar.get(Health) as Health).hp ) { // 
+						if (baseDmg < (_targetNode.entity.get(Health) as Health).hp ) { // enemy can retailate because he'll still be alive after getting hit
 							// give AI a chance to retailaite as well
 							//playerHealth.damage();
 							dmgInflict = 0;
@@ -1426,6 +1432,8 @@ WeaponSlots
 						else {
 							// resolve now, killing enemy ai
 							playerDmgDealRoll = baseDmg;
+							enemyDmgDealRoll = 0;
+							enemyStrikeResult = 0;
 							//health.damage(baseDmg);	
 						}
 					
