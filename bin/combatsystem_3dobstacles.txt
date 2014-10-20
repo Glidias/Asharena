@@ -118,21 +118,25 @@ Frontend features:
 ---------------
 auto-aim targetting
 terrain splatting
-terrain decor for arena space
+terrain decor/obstacles for arena space *
 (semi-gameplay)
-include the rest of the units
+include the rest of the units * (use pre-defined weapons for now...)
 weapon attachment
 
 ____________________________________________________
 
 
-Gameplay features from various similar turn-based action games:
+Gameplay features 
 ---------------------------------------------------------------
+Add in cover *
+Situaional block vs evasion usage ( encourages Cautious/Crouched movement). When crouching, 70% is multiped over pec change to hit regardless. Exposure is determined accordingly based on square ellipsoid size. When moving cautiously, block rating is doubled against ranged units and increased by 150% against melee units.
 Support fire/linked attack mechanics
 Linked follower movement
 
 Fix bugs:
 Hangups	(often some null references)
+Rotation appearance when shooting
+
 
 
 Core gameplay/backend:

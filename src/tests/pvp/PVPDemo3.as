@@ -51,8 +51,8 @@ package tests.pvp
 	import ash.tick.FixedTickProvider;
 	import ash.tick.FrameTickProvider;
 	import ash.tick.ITickProvider;
-	import ash.tick.MultiUnitTickProvider;
-	import ash.tick.UnitTickProvider;
+	//import ash.tick.MultiUnitTickProvider;
+	//import ash.tick.UnitTickProvider;
 	import com.bit101.components.Label;
 	import com.bit101.components.ProgressBar;
 	import com.flashartofwar.fcss.utils.FSerialization;
@@ -390,7 +390,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 7;// 9999;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 6;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 100;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
@@ -435,12 +435,12 @@ package tests.pvp
 		
 			
 			w.minRange = 40;
-			w.damage =  8;
-			w.cooldownTime = 1.74;
+			w.damage =  13;
+			w.cooldownTime = 1.2;
 			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
 			w.hitAngle =  45 *  PMath.DEG_RAD;
 			
-			w.damageRange =  6;		// damage up-range variance
+			w.damageRange =  5;		// damage up-range variance
 			// Thrust: 10-20 : Swing 25-30
 	
 			w.critMinRange = 800;
@@ -529,7 +529,7 @@ package tests.pvp
 			w.heightOffset = 0;
 			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
 			w.minRange = 16;
-			w.damage = thrust  ? 10 : 25;
+			w.damage = thrust  ? 13 : 25;
 			w.cooldownTime = thrust ? 0.7 : 0.96;
 			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
 			w.hitAngle =  45 *  PMath.DEG_RAD;
@@ -1424,6 +1424,7 @@ package tests.pvp
 		{
 			var stance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
 			if (stance.stance != stance.preferedStance) stance.setStanceAndRefresh(stance.preferedStance);
+			stance.enableFast = true
 			
 			/*
 			for (var i:int = 0; i < curArr.length; i++) {
@@ -1767,7 +1768,16 @@ package tests.pvp
 				 arenaHUD.txtPlayerStrike(e, hp, amount);
 			}
 			else {  // assume damage taken from entity under aggro system
-				if (amount > 0)  arenaHUD.txtTookDamageFrom(_enemyAggroSystem.currentAttackingEnemy, hp, amount); 
+				if (amount > 0)  {
+					arenaHUD.txtTookDamageFrom(_enemyAggroSystem.currentAttackingEnemy, hp, amount);
+					movementPoints.movementTimeLeft -= .5;
+					if ( movementPoints.movementTimeLeft < 0) movementPoints.movementTimeLeft = 0;
+					var gladiatorStance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IStance) as GladiatorStance;
+					if (gladiatorStance != null) {
+						gladiatorStance.enableFast = false;
+					}
+				}
+				
 			}
 		}
 		

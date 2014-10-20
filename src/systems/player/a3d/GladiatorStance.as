@@ -107,6 +107,33 @@ package systems.player.a3d
 			if (_aimReady == value) return;
 			setAimReady(value, true);
 		}
+		
+		public function get enableFast():Boolean 
+		{
+			return _enableFast;
+		}
+		
+		public function set enableFast(value:Boolean):void 
+		{
+			_enableFast = value;
+			
+			if ( (1 << lastAction) & MASK_FAST) {
+				if (lastAction === PlayerAction.MOVE_FORWARD_FAST ) {
+					lastAction = PlayerAction.MOVE_FORWARD;
+				}
+				else if (lastAction === PlayerAction.STRAFE_LEFT_FAST) {
+					lastAction = PlayerAction.STRAFE_LEFT;
+				}
+				else if (lastAction === PlayerAction.STRAFE_RIGHT_FAST) {
+					lastAction = PlayerAction.STRAFE_RIGHT;
+				}
+				else if (lastAction === PlayerAction.MOVE_BACKWARD_FAST) {
+					lastAction = PlayerAction.MOVE_BACKWARD;
+				}
+				handleAction(lastAction);
+			
+			}
+		}
 	
 	
 		
@@ -153,6 +180,8 @@ package systems.player.a3d
 		private static const MASK_WALK:int = ( (1<<PlayerAction.MOVE_FORWARD) | (1<<PlayerAction.MOVE_FORWARD_FAST) | (1<<PlayerAction.MOVE_BACKWARD) | (1<<PlayerAction.MOVE_BACKWARD_FAST));
 		private static const MASK_WALK_FORWARD:int = ( (1 << PlayerAction.MOVE_FORWARD) | (1 << PlayerAction.MOVE_FORWARD_FAST) );
 		private static const MASK_STRAFE_FAST:int = ( (1 << PlayerAction.STRAFE_LEFT_FAST) | (1 << PlayerAction.STRAFE_RIGHT_FAST) );
+		
+			private static const MASK_FAST:uint = ( (1 << PlayerAction.STRAFE_LEFT_FAST) | (1 << PlayerAction.STRAFE_RIGHT_FAST) ) | (1 << PlayerAction.MOVE_FORWARD_FAST) | (1<<PlayerAction.MOVE_BACKWARD_FAST);
 		
 		private var rootJoint:Joint;
 		
@@ -605,10 +634,14 @@ package systems.player.a3d
 					//throw new Error("A");
 					return;
 				}
+				
 				var myLastAction:int = lastAction;
 				if (upperBodyDominant && val != PlayerAction.IDLE && lastAction == val ) return;
+				
 				lastAction = val;
 				upperBodyDominant = false;
+				
+			
 			
 			_running = false;
 			_idle = false;
@@ -645,6 +678,10 @@ package systems.player.a3d
 			}
 			
 			var mask:uint = (1 << val);
+			if (!_enableFast) {
+					mask &= ~MASK_FAST;
+					
+				}
 			// TODO:: 0 or some blend time >0, depending on whether stance change was changed earlier (crouching to combat/combat to crouching currently set to zero to avoid height discrepancies!)
 			
 			if ( mask & MASK_STRAFE ) {
@@ -740,6 +777,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		private var weaponId:String = "bow";
 		private var readyAimTime:Number  = .3;
 		public var skinIdleRotOffset:Number= 0;
+		private var _enableFast:Boolean =true;
 	
 		public function animate(time:Number):void 
 		{

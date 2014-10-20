@@ -511,18 +511,20 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 						var kite:Int = (ALLOW_KITE_RANGE | ALLOW_KITE_OBSTACLES);
 						
 						if (actualDist <= aWeapon.range && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) {  // strike hit! 
-							
-							if (Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size)) {
+							//Pos->Ellipsoid->Weapon->Pos->Rot->CharDefense-> Ellipsoid->Float->Float->Float {
+							if (Math.random() * 100 <= getPercChanceToHitDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size, 0, 0 ) ) {
 							
 							
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
 								// deal damage to player heath
 								//currentAttackingEnemy = a.entity;
-								if (AGGRO_HAS_CRITICAL) {
-									enemyCrit = false;
-									if ( Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size) ) {
-										
-										enemyCrit = aWeapon.fireMode > 0;
+								if (Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size) ) {
+									if (AGGRO_HAS_CRITICAL) {
+										enemyCrit = false;
+										if ( Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size) ) {
+											
+											enemyCrit =  aWeapon.fireMode > 0;
+										}
 									}
 								}
 								a.signalAttack.forceSet(aWeapon.fireMode);

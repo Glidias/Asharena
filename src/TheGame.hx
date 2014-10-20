@@ -4,8 +4,8 @@ import arena.systems.player.IStance;
 import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.player.AnimAttackSystem;
 import ash.tick.FixedTickProvider;
-import ash.tick.MultiUnitTickProvider;
-import ash.tick.UnitTickProvider;
+//import ash.tick.MultiUnitTickProvider;
+//import ash.tick.UnitTickProvider;
 import haxe.io.BytesInput;
 import haxe.io.BytesOutput;
 

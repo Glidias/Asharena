@@ -91,27 +91,30 @@ class HitFormulas
 			
 			// Detemine overall time taken  for weapon to strike target in seconds, according to range to target
 			var rangeFactor:Float =  calculateOptimalRangeFactor(weaponA.minRange, weaponA.range, d);
-			var totalTimeToHit:Float = PMath.lerp(weaponA.strikeTimeAtMinRange, weaponA.strikeTimeAtMaxRange, rangeFactor) - timeToHitOffset;// weaponA.timeToSwing+ rangeFactor * (weaponA.strikeTimeAtMaxRange - weaponA.strikeTimeAtMinRange); 
+			var totalTimeToHit:Float = weaponA.fireMode <= 0 ? d / 512 : PMath.lerp(weaponA.strikeTimeAtMinRange, weaponA.strikeTimeAtMaxRange, rangeFactor) - timeToHitOffset;// weaponA.timeToSwing+ rangeFactor * (weaponA.strikeTimeAtMaxRange - weaponA.strikeTimeAtMinRange); 
 			var totalTimeToHitInSec:Float = totalTimeToHit;
-			if (totalTimeToHitInSec > 1) totalTimeToHitInSec = 1;
+			if (totalTimeToHitInSec > 1 ) totalTimeToHitInSec = 1; //|| weaponA.fireMode<=0
 			
 			totalTimeToHit = 1 - calculateOptimalRangeFactor( 0, 1, totalTimeToHit);
 	
 		
 			totalTimeToHit = PMath.lerp(.3, 1, totalTimeToHit);
-			if (facinPerc <= 67) basePerc *= totalTimeToHit;   // Based off ~ frontal aspect of character
+		//	if (facinPerc < 67) basePerc *= totalTimeToHit;   // Based off ~ frontal aspect of character
 			
 			//Enemy's /Block/Evade factor , if facing in a direction where he can react, determine how fast/effective he can evade/block the blow in time to cushion any possible impact. Based off ~ peripherical vision of character
-			if  (facinPerc <= 90 )basePerc *=  PMath.lerp( 1, .1, (defense!=0 ? defense : defB.evasion > defB.block ? defB.evasion : defB.block)*totalTimeToHitInSec);
-		//}
+				if  (facinPerc <= 90 ) {
+		basePerc *=  PMath.lerp( 1, .1, (defense != 0 ? defense : defB.evasion > defB.block ? defB.evasion : defB.block) * totalTimeToHitInSec);
+				}
+		
 		
 		return basePerc;
 	}
 	
 	public static inline function getPercChanceToRangeHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {
 		
-		var prob:Float = getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, defense, timeToHitOffset) / 100;
-		prob *= getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB);
+		var prob:Float = getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, 0, timeToHitOffset) / 100;
+		//return prob;
+		 prob *= prob>0 ? getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB) : 1;
 		return Math.ceil(prob * 100);
 		
 	}

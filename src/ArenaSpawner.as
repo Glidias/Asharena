@@ -73,7 +73,7 @@ package
 		private var _currentPlayerEntityChanged:Signal1 = new Signal1();
 		public function get playerEntityChanged():Signal1 {
 			return _currentPlayerEntityChanged;
-		}
+		}	
 		
 		private var defaultEnemyWatchMelee:EnemyIdle = new EnemyIdle().init(9000, 200);
 		
@@ -280,8 +280,8 @@ package
 			
 			
 			var def:CharDefense = ent.get(CharDefense) as CharDefense;
-			def.evasion = 0.25;
-			def.block = 0.25;
+			def.evasion =1; //0.25;
+			def.block =1;// 0.25;
 			
 			if (side > 0) {
 				var customMat:Material = getMaterialSide(race, side);
