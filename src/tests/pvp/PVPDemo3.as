@@ -859,6 +859,7 @@ package tests.pvp
 				}
 				
 			}
+			EnemyAggroSystem.AGGRO_HAS_CRITICAL = false;
 			
 			 if (arenaHUD.strikeResult > 0) TweenLite.delayedCall(.5, resolveStrikeAction3);
 			else resolveStrikeAction3();
@@ -868,7 +869,7 @@ package tests.pvp
 		{
 		//	resolveStrikeActionFully(true);
 		//	return;
-			
+			EnemyAggroSystem.AGGRO_HAS_CRITICAL = true;
 			if ( arenaHUD.enemyStrikeResult != 0 && !showAttacksSimulatenously() ) {
 				//if (arenaHUD.targetEntity.get(Health) == null  || arenaHUD.targetEntity.get(Health).hp <= 0) {
 					

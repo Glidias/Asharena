@@ -216,6 +216,11 @@ package systems.player.a3d
 		
 		public function setTargetMode(val:Boolean):void {
 			if (dead) return;
+			if (val && _stance == 2) {
+				
+				preferedStance = 1;
+				setIdleStance(1);
+			}
 			if (_ranged) {
 				if (val) {
 					skin.rotationZ = Math.PI;// - .7;
@@ -454,7 +459,9 @@ package systems.player.a3d
 			
 			//setAnimationNode(attackAnimCouple, upperBodyController, upperBody, .3);
 			if (!upperBodyDominant) {
-				setAnimationNode( _stance < 2 ? fullBodyAnims[ "combat_idle"] : fullBodyAnims["crouch_idle"], fullBodyController, fullBody, 0);
+				var anim:AnimationClip =  _stance < 2 ? fullBodyAnims[ "combat_idle"] : fullBodyAnims["crouch_idle"];
+				//anim.time = 0;
+				setAnimationNode(anim, fullBodyController, fullBody, 0);
 				fullBodyController.update(0);
 			}
 			
@@ -520,11 +527,11 @@ package systems.player.a3d
 			_curController = controller;
 		}
 		
-		private var _anim:AnimationClip;
+		//private var _anim:AnimationClip;
 		public function setAnimation(anim:AnimationClip, controller:AnimationController, switcher:AnimationSwitcher, time:Number):AnimationClip {
 			
-			if (_anim!=anim) anim.time = 0;
-			_anim = anim;
+			if ( anim != switcher.active ) anim.time = 0; //&& (_anim && !_anim.loop)
+		//	_anim = anim;
 			
 			switcher.activate(anim, time);
 			_curController = controller;
@@ -635,8 +642,11 @@ package systems.player.a3d
 					return;
 				}
 				
+				
 				var myLastAction:int = lastAction;
-				if (upperBodyDominant && val != PlayerAction.IDLE && lastAction == val ) return;
+				
+				// dunny why strafe left cannot swing at the same time
+				//if ( (1 << val) & MASK_STRAFE_LEFT && upperBodyDominant && val != PlayerAction.IDLE && lastAction == val ) return; // hack
 				
 				lastAction = val;
 				upperBodyDominant = false;
