@@ -448,7 +448,7 @@ package tests.pvp
 		
 			w.deviation = .25; 
 			w.range  = ArenaHUD.METER_UNIT_SCALE * 50;
-			w.deviation = HitFormulas.getDeviationForRange(512, 16);
+			w.deviation =  HitFormulas.getDeviationForRange(512, 16);
 			
 			
 			w.timeToSwing  = .3;
@@ -456,7 +456,8 @@ package tests.pvp
 			w.strikeTimeAtMaxRange = 0; //0.0001;
 			w.strikeTimeAtMinRange = 0;// 0.0001;
 		
-			
+			w.muzzleVelocity = 512;
+			w.muzzleLength = 40;
 			w.parryEffect = .4;
 			
 			w.stunEffect = 0;
@@ -548,7 +549,7 @@ package tests.pvp
 			
 			w.timeToSwing  = thrust ? 0.13333333333333333333333333333333 : 0.26666666666666666666666666666667;
 			w.strikeTimeAtMaxRange =  thrust ? 0.4 : 0.6; 
-			w.strikeTimeAtMinRange = thrust ? 0.33 : 0.5;  // usually close to time to swing
+			w.strikeTimeAtMinRange = w.timeToSwing;  // usually close to time to swing
 			
 			
 			w.parryEffect = .4;

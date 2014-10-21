@@ -77,7 +77,9 @@ class HitFormulas
 	// Used for actual combat..
 	public static inline function getPercChanceToHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {
 		var facinPerc:Float ;
-		var basePerc:Float = facinPerc=calculateFacingPerc(posA, posB, rotB, defB); 
+		var basePerc:Float = facinPerc = calculateFacingPerc(posA, posB, rotB, defB); 
+		basePerc  = 75 + ((facinPerc - 60)*0.01)*25;  // renoramlzie to diff range
+		//basePerc = 100;
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
 		var dz:Float = posB.z  - posA.z;
@@ -91,9 +93,21 @@ class HitFormulas
 			
 			// Detemine overall time taken  for weapon to strike target in seconds, according to range to target
 			var rangeFactor:Float =  calculateOptimalRangeFactor(weaponA.minRange, weaponA.range, d);
-			var totalTimeToHit:Float = weaponA.fireMode <= 0 ? d / 512 : PMath.lerp(weaponA.strikeTimeAtMinRange, weaponA.strikeTimeAtMaxRange, rangeFactor) - timeToHitOffset;// weaponA.timeToSwing+ rangeFactor * (weaponA.strikeTimeAtMaxRange - weaponA.strikeTimeAtMinRange); 
+			var totalTimeToHit:Float = weaponA.fireMode <= 0 ? (d > weaponA.muzzleLength ? d : weaponA.muzzleLength) / weaponA.muzzleVelocity + weaponA.timeToSwing : PMath.lerp(weaponA.strikeTimeAtMinRange, weaponA.strikeTimeAtMaxRange, rangeFactor) - timeToHitOffset;// weaponA.timeToSwing+ rangeFactor * (weaponA.strikeTimeAtMaxRange - weaponA.strikeTimeAtMinRange); 
 			var totalTimeToHitInSec:Float = totalTimeToHit;
+			
+			//
+			
 			if (totalTimeToHitInSec > 1 ) totalTimeToHitInSec = 1; //|| weaponA.fireMode<=0
+		
+			/*
+			if (weaponA.fireMode <= 0) {
+				if (totalTimeToHitInSec < .3) totalTimeToHitInSec = .2;
+				totalTimeToHitInSec += defB.block * .5 * .2;
+			}
+			*/
+			//totalTimeToHitInSec
+		
 			
 			totalTimeToHit = 1 - calculateOptimalRangeFactor( 0, 1, totalTimeToHit);
 	

@@ -2,7 +2,11 @@ package alternativa.a3d.systems.enemy
 {
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.RayIntersectionData;
+	import arena.systems.enemy.AggroMemNode;
 	import arena.systems.player.IWeaponLOSChecker;
+	import ash.core.Engine;
+	import ash.core.Node;
+	import ash.core.NodeList;
 	import flash.geom.Vector3D;
 	import systems.collisions.Intersect3D;
 	import util.geom.Vec3;
@@ -23,10 +27,18 @@ package alternativa.a3d.systems.enemy
 		private var src:Vector3D = new Vector3D();
 		private var dest:Vector3D = new Vector3D();
 		
+		public var aggroMemList:NodeList;
+		
 		public function A3DEnemyAggroSystem(rayScene:Object3D) 
 		{
 			this.rayScene = rayScene;
 		}
+		
+		override public function addToEngine (engine:Engine) : void {
+			super.addToEngine(engine);
+			aggroMemList = engine.getNodeList(AggroMemNode);
+		}
+		
 	//	/*
 		override public function validateVisibility(enemyPos:Pos, enemyEyeHeight:Number, playerNode:PlayerAggroNode) : Boolean {
 			// compare ray from eye to ellipsoid distance vs distance of RayIntersectionData distance
@@ -73,6 +85,7 @@ package alternativa.a3d.systems.enemy
 		
 	//	/*
 		override public function validateWeaponLOS (attacker:Pos, sideOffset:Number, heightOffset:Number, target:Pos, targetSize:Ellipsoid) : Boolean {
+			var dm:Number;
 			// compare ray from weapon origin to ellipsoid distance vs distance of RayIntersectionData distance
 			
 			des3.x =  (target.y - attacker.y);
@@ -92,7 +105,7 @@ package alternativa.a3d.systems.enemy
 			des3.y =   target.y- src3.y;
 			des3.z =    target.z - src3.z;
 			
-			var dm:Number = 1 /	Math.sqrt( des3.x * des3.x + des3.y * des3.y + des3.z * des3.z );
+			dm = 1 /	Math.sqrt( des3.x * des3.x + des3.y * des3.y + des3.z * des3.z );
 			des3.x *= dm;
 			des3.y *= dm;
 			des3.z *= dm;
@@ -108,6 +121,41 @@ package alternativa.a3d.systems.enemy
 				//throw new Error("SHOULD NOT BE! There should be intersection!");
 				return false;
 			}
+			
+			/*
+			var playerTarget:Pos = target;
+			
+			for (var n:AggroMemNode = aggroMemList.head as AggroMemNode; n != null; n = n.next as AggroMemNode) {
+				if (n.pos === playerTarget  || n.pos === attacker) {
+					
+					continue;
+				}
+				
+				target = n.pos;
+				targetSize = n.size;
+				
+
+				des3.x =  target.x - src.x;
+				des3.y =   target.y- src.y;
+				des3.z =   target.z - src.z;
+				
+				dm = 1 /	Math.sqrt( des3.x * des3.x + des3.y * des3.y + des3.z * des3.z );
+				des3.x *= dm;
+				des3.y *= dm;
+				des3.z *= dm;
+				
+				src3.x = 	src.x - target.x;
+				src3.y = 	src.y - target.y;
+				src3.z = 	src.z - target.z;
+				
+				var tryD:Number;
+				if ( (tryD= Intersect3D.rayIntersectsEllipsoid(src3, des3, targetSize )) >= 0 ) {   // todo: Consider ray box query checklist
+					//throw new Error("A:"+tryD);
+					return false;
+				}
+			}
+			*/
+			
 			
 			var data:RayIntersectionData = rayScene.intersectRay(src, dest);
 			//data = null;

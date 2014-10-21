@@ -88,6 +88,8 @@ class Weapon
 	public var projectileSpeed:Float;
 	public var projectileDomain:IProjectileDomain;
 	
+	public var muzzleVelocity:Float;
+	public var muzzleLength:Float;
 
 	
 	public inline function matchAnimVarsWithStats():Void {
@@ -128,6 +130,8 @@ class Weapon
 		this.projectileSpeed = projectileSpeed;
 		this.minPitch = minPitch;
 		this.maxPitch = maxPitch;
+		this.muzzleVelocity = 512;
+		this.muzzleLength = 40;
 		this.rangeMode = 0;
 		return this;
 	}

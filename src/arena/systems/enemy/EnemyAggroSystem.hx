@@ -53,7 +53,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 	public var onEnemyStrike:Signal1<Entity>;
 	public var onEnemyCooldown:Signal2<Entity, Float>;
 	
-	public static inline var AGGRO_HAS_CRITICAL:Bool = true;
+	public static  var AGGRO_HAS_CRITICAL:Bool = true;
 	public var enemyCrit:Bool;
 	public var updating:Bool;
 	
@@ -518,15 +518,14 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
 								// deal damage to player heath
 								//currentAttackingEnemy = a.entity;
-								if (Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size) ) {
-									if (AGGRO_HAS_CRITICAL) {
-										enemyCrit = false;
-										if ( Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size) ) {
-											
-											enemyCrit =  aWeapon.fireMode > 0;
-										}
+							
+									enemyCrit = false;
+									if (AGGRO_HAS_CRITICAL && Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size) ) {
+										
+										enemyCrit =  aWeapon.fireMode > 0;
 									}
-								}
+								//}
+								
 								a.signalAttack.forceSet(aWeapon.fireMode);
 								
 								if (a.weapon.fireMode > 0) {
