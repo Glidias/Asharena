@@ -156,7 +156,7 @@ package
 		private var keyPoll:KeyPoll;
 		public const DUMMY_MATERIAL:FillMaterial = new FillMaterial(0xDD64AA);
 		private var dummyBox:Box;
-		private function getNewDummyBox(context3D:Context3D):Box {
+		public function getNewDummyBox(context3D:Context3D):Box {
 			dummyBox = new Box(32, 32, 72, 1, 1, 1, false, DUMMY_MATERIAL);
 			dummyBox.geometry.upload(context3D);
 			return dummyBox;
@@ -330,6 +330,8 @@ package
 			
 			var actions:ActionIntSignal = ent.get(ActionIntSignal) as ActionIntSignal;	
 			var gladiatorStance:GladiatorStance = new GladiatorStance(sk, ent.get(SurfaceMovement) as SurfaceMovement, ellipsoid );
+			//gladiatorStance.boneShield.addChild( dummyBox );
+			
 			if (playerStage != null) {
 				gladiatorStance.bindKeys(playerStage);
 				currentPlayer = obj;

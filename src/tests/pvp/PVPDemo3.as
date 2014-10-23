@@ -297,6 +297,7 @@ package tests.pvp
 			
 			TerrainBase;
 			
+			arenaSpawner.getNewDummyBox(SpawnerBundle.context3D);
 
 			_template3D.scene.addChild(deadScene);
 			
@@ -788,7 +789,7 @@ package tests.pvp
 				
 				 	//game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
 					
-				 delayTimeElapsed =  arenaHUD.playerChosenWeaponStrike.timeToSwing  + Math.random() * .7 + .1
+				 delayTimeElapsed =  arenaHUD.playerChosenWeaponStrike.timeToSwing  + Math.random() * .6 + .1
 				 timeToDeplete =  arenaHUD.playerChosenWeaponStrike.timeToSwing;
 			}
 			var tarTimeLeft:Number = movementPoints.movementTimeLeft - timeToDeplete;
