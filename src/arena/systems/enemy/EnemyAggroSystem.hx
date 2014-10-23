@@ -482,7 +482,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 					if (aWeaponState.cooldown <= 0) {  // cooldown finished. allow trigger to  be pulled again
 						aWeaponState.cancelTrigger();
 						a.state.flag = 0;
-						a.state.setAttackRange( (((ALLOW_KITE_RANGE & KITE_ALLOWANCE) != 0) ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, p.size) : aWeapon.range + p.size.x ) );
+						a.state.setAttackRange( (((ALLOW_KITE_RANGE & KITE_ALLOWANCE) != 0) ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, pTarget.size) : aWeapon.range + pTarget.size.x ) );
 						onEnemyReady.dispatch(a.entity);
 					}
 					else {
@@ -500,7 +500,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 					//if (aWeaponState.cooldown < 0) throw "SHOULD NOT BE2222!";
 					
 					aWeaponState.attackTime  += pTimeElapsed;
-					var actualDist:Float = Math.sqrt(sqDist) - p.size.x;
+					var actualDist:Float = Math.sqrt(sqDist) - pTarget.size.x;
 					var strikeTimeAtRange:Float = aWeapon.fireMode > 0 ? HitFormulas.calculateStrikeTimeAtRange(aWeapon, actualDist) : aWeapon.timeToSwing*(1-a.stance.getTension()) + aWeapon.strikeTimeAtMaxRange;
 					
 					var getPercChanceToHitDefender =  HitFormulas.getPercChanceToHitDefenderMethod(aWeapon);
@@ -510,9 +510,9 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 						currentAttackingEnemy = a.entity;
 						var kite:Int = (ALLOW_KITE_RANGE | ALLOW_KITE_OBSTACLES);
 						
-						if (actualDist <= aWeapon.range && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) {  // strike hit! 
+						if (actualDist <= aWeapon.range && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)  ) {  // strike hit! 
 							//Pos->Ellipsoid->Weapon->Pos->Rot->CharDefense-> Ellipsoid->Float->Float->Float {
-							if (Math.random() * 100 <= getPercChanceToHitDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size, 0, 0 ) ) {
+							if (Math.random() * 100 <= getPercChanceToHitDefender(a.pos, a.ellipsoid, aWeapon,pTarget.pos, pTarget.rot, pTarget.def, pTarget.size, !pTarget.stance.isAttacking() ? HitFormulas.getDefenseForMovingStance(pTarget.pos, a.pos, pTarget.def, pTarget.stance, pTarget.vel, aWeapon.fireMode <= 0) : 0, 0 ) ) {
 							
 							
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
@@ -520,7 +520,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								//currentAttackingEnemy = a.entity;
 							
 									enemyCrit = false;
-									if (AGGRO_HAS_CRITICAL && Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, p.pos, p.rot, p.def, p.size) ) {
+									if (AGGRO_HAS_CRITICAL && Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, pTarget.pos, pTarget.rot, pTarget.def,pTarget.size) ) {
 										
 										enemyCrit =  aWeapon.fireMode > 0;
 									}
@@ -534,7 +534,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 									a.entity.add(swinger);
 								}
 								else {
-									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, p.entity, HitFormulas.rollDamageForWeapon(aWeapon) * (enemyCrit ? 3 : 1), timeChecker, true );
+									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, pTarget.entity, HitFormulas.rollDamageForWeapon(aWeapon) * (enemyCrit ? 3 : 1), timeChecker, true );
 								}
 								a.stance.updateTension(0, pTimeElapsed);
 								//p.health.damage(HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
@@ -598,7 +598,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				aWeapon = a.weapon;
 				while(aWeapon!= null) {
 					var checkedLOS:Bool = false;
-					if (  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, p.pos, p.size)  ) { 
+					if (  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)  ) { 
 						
 						aWeaponState.pullTrigger(aWeapon);
 						if (aWeapon.fireMode <= 0 && aWeaponState.attackTime >= 0) aWeaponState.attackTime = -Math.random() * aWeaponState.randomDelay;

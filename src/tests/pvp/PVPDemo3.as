@@ -729,7 +729,7 @@ package tests.pvp
 		{
 			
 			sceneLocked = true;
-			
+			(arenaSpawner.currentPlayerEntity.get(IStance) as GladiatorStance).attacking = true;
 			
 		
 			
@@ -788,7 +788,7 @@ package tests.pvp
 				
 				 	//game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
 					
-				 delayTimeElapsed =  arenaHUD.playerChosenWeaponStrike.timeToSwing  + Math.random() * 1 + .1
+				 delayTimeElapsed =  arenaHUD.playerChosenWeaponStrike.timeToSwing  + Math.random() * .7 + .1
 				 timeToDeplete =  arenaHUD.playerChosenWeaponStrike.timeToSwing;
 			}
 			var tarTimeLeft:Number = movementPoints.movementTimeLeft - timeToDeplete;
@@ -823,6 +823,7 @@ package tests.pvp
 		private function onUpdateTimeActionDone():void 
 		{
 			movementPoints.timeElapsed = 0;
+			
 		}
 		
 		
@@ -902,6 +903,8 @@ package tests.pvp
 			// new stuff here
 			instant = false;
 			
+			
+			
 			if (delayTimeElapsed > 0) {
 				game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
 				movementPoints.timeElapsed = delayTimeElapsed;
@@ -921,6 +924,7 @@ package tests.pvp
 		{
 			toggleTargetingMode();
 			sceneLocked = false;
+			(arenaSpawner.currentPlayerEntity.get(IStance) as GladiatorStance).attacking = false;
 			thirdPersonController.thirdPerson.followAzimuth = (arenaSpawner.currentPlayerEntity.get(Health) != null);
 			
 		}
@@ -1582,7 +1586,7 @@ package tests.pvp
 			for ( var i:int = 0; i < len; i++) {
 				var e:Entity = enemySide[i];
 				e.add( new collOtherClass().init() );
-			
+				(e.get(IStance) as GladiatorStance).attacking = true;
 			
 			}
 			
@@ -1592,7 +1596,7 @@ package tests.pvp
 				e= mySide[i];
 				if (e === arenaSpawner.currentPlayerEntity) continue;
 				e.add( new collOtherClass().init() );
-			
+				(e.get(IStance) as GladiatorStance).attacking = false;
 			
 			}
 		//	*/

@@ -7,6 +7,7 @@ import components.Ellipsoid;
 import components.Health;
 import components.Pos;
 import components.Rot;
+import components.Vel;
 
 /**
  * ...
@@ -25,6 +26,10 @@ class PlayerAggroNode extends Node<PlayerAggroNode> {
 	public var health:Health;
 	public var rot:Rot;
 	public var def:CharDefense;
+	
+	public var vel:Vel;
+	
+	public var stance:IStance;
 	
 	
 	public function new() {

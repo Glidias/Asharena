@@ -112,6 +112,11 @@ class Vec3Utils
 		var dz:Float = b.z - a.z;
 		return dx * dx + dy * dy + dz * dz;
 	}
+	static public function sqDist2DBetween(a:Vec3, b:Vec3):Float {
+		var dx:Float = b.x - a.x;
+		var dy:Float = b.y - a.y;
+		return dx * dx + dy * dy;
+	}
 	
 	static public function distBetween(a:Vec3, b:Vec3):Float {
 		var dx:Float = b.x - a.x;

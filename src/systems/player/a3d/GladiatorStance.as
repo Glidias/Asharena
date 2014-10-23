@@ -58,9 +58,6 @@ package systems.player.a3d
 		public var tensionCouple:AnimationCouple = new AnimationCouple();
 		public var aimCouple2:AnimationCouple = new AnimationCouple();
 		
-		
-		
-		
 		private var attackAnimCouple:AnimationCouple = new AnimationCouple();
 		private var melee_thrust_up:AnimationClip;
 		private var melee_thrust_down:AnimationClip;
@@ -662,6 +659,7 @@ package systems.player.a3d
 			//skin.transformChanged = true;
 				
 			if (val === PlayerAction.STATE_JUMP) {
+				_movingSlow = false;
 				setAnimation(fullBodyAnims["jump"], fullBodyController, fullBody, 0).speed = 1;
 			
 			//setAnimation(fullBodyAnims["tumbleleft"], fullBodyController, fullBody, 0).speed = 1;
@@ -671,6 +669,7 @@ package systems.player.a3d
 				return;
 			}	
 			else if (val === PlayerAction.IDLE) {
+				_movingSlow = false;
 				
 				
 				//skin._rotationZ = Math.PI;
@@ -695,6 +694,7 @@ package systems.player.a3d
 			// TODO:: 0 or some blend time >0, depending on whether stance change was changed earlier (crouching to combat/combat to crouching currently set to zero to avoid height discrepancies!)
 			
 			if ( mask & MASK_STRAFE ) {
+					_movingSlow = !(mask & MASK_STRAFE_FAST);
 					// always do fast turn run animation
 					// Am i in runmode or not and is it fast enough to warrant a fast move??
 					
@@ -719,12 +719,14 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 					
 						if (_stance != 2) {
 							if (_stance != 1) {  // stance 0
+								_movingSlow = false;
 								surfaceMovement.setWalkSpeeds(speed_jog);
 								surfaceMovement.setStrafeSpeed(speed_strafe*.5);
 								setAnimation(fullBodyAnims["jog"], fullBodyController, fullBody, .3).speed = surfaceMovement.WALK_SPEED * I_SPEED_JOG;
 								_curController = fullBodyController;
 							}
 							else {  // stance 1
+								_movingSlow = true;
 								surfaceMovement.setStrafeSpeed(speed_strafe * .5);
 					surfaceMovement.WALK_SPEED = (val != PlayerAction.MOVE_FORWARD_FAST ? speed_jog : speed_run) * playerSpeedCombatRatio;
 					
@@ -735,6 +737,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 							}
 						}
 						else {
+							_movingSlow = true;
 							//ref_melee_aim
 								surfaceMovement.setAllSpeeds( (val != PlayerAction.MOVE_FORWARD_FAST ? speed_jog : speed_run)*SPEED_CROUCH_MULTIPLIER* playerSpeedCrouchRatio );
 								setAnimation(lowerBodyAnims["crouch_walkforward"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALK_SPEED *  I_SPEED_CROUCH; 
@@ -747,7 +750,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 						//_running = true;
 					}
 					else { // sprinting
-
+						_movingSlow = false;
 						_skinRotated = false;
 						_running = true;
 						setAnimation(fullBodyAnims["run"], fullBodyController, fullBody, .1).speed = speed_run * I_SPEED_RUN;
@@ -760,6 +763,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 					}
 				}
 				else {
+					_movingSlow = val != PlayerAction.MOVE_BACKWARD_FAST;
 					surfaceMovement.setStrafeSpeed(speed_strafe * CROUCH_TIME);
 					surfaceMovement.WALKBACK_SPEED = _stance != 2 ? (val != PlayerAction.MOVE_BACKWARD_FAST ? speed_backwards : speed_backwards_fast) : speed_backwards * playerSpeedCrouchRatio * SPEED_CROUCHBACK_MULTIPLIER;
 					setAnimation(lowerBodyAnims[(_stance != 0 ? _stanceString : "combat")+"_walkback"], lowerBodyController, lowerBody, 0).speed = surfaceMovement.WALKBACK_SPEED * (_stance != 2 ? I_SPEED_BACKWARDS : I_SPEED_CROUCH);
@@ -977,6 +981,24 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 			var anim:AnimationClip = anims.getAnimationByName("die_simple");
 			anim.time = 0;
 			setAnimation( anim, fullBodyController, fullBody, .2);
+		}
+		
+		/* INTERFACE arena.systems.player.IStance */
+		private var _movingSlow:Boolean = false;
+		//private var _rangedShielded:Boolean = false;
+		
+		public function movingSlow():Boolean 
+		{
+			return _movingSlow;
+		}
+		
+		public function getJoggingSpeed():Number {
+			return speed_jog;
+		}
+		
+		public var attacking:Boolean = false;
+		public function isAttacking():Boolean {
+			return attacking;
 		}
 			
 		

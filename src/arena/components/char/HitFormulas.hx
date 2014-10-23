@@ -2,10 +2,15 @@ package arena.components.char;
 import arena.components.enemy.EnemyAggro;
 import arena.components.weapon.Weapon;
 import arena.components.weapon.WeaponState;
+import arena.systems.player.IStance;
+import ash.core.Entity;
 import components.Ellipsoid;
 import components.Health;
 import components.Pos;
 import components.Rot;
+import components.Vel;
+import haxe.Log;
+import util.geom.Vec3Utils;
 import util.TypeDefs;
 import util.geom.PMath;
 
@@ -77,6 +82,9 @@ class HitFormulas
 	// Used for actual combat..
 	public static inline function getPercChanceToHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {
 		var facinPerc:Float ;
+		var facingNotRequired:Bool = defense < 0;
+		defense = facingNotRequired ? -defense : defense;
+		
 		var basePerc:Float = facinPerc = calculateFacingPerc(posA, posB, rotB, defB); 
 		basePerc  = 75 + ((facinPerc - 60)*0.01)*25;  // renoramlzie to diff range
 		//basePerc = 100;
@@ -116,7 +124,8 @@ class HitFormulas
 		//	if (facinPerc < 67) basePerc *= totalTimeToHit;   // Based off ~ frontal aspect of character
 			
 			//Enemy's /Block/Evade factor , if facing in a direction where he can react, determine how fast/effective he can evade/block the blow in time to cushion any possible impact. Based off ~ peripherical vision of character
-				if  (facinPerc <= 90 ) {
+			
+				if  (facinPerc <= 90 || facingNotRequired ) {
 		basePerc *=  PMath.lerp( 1, .1, (defense != 0 ? defense : defB.evasion > defB.block ? defB.evasion : defB.block) * totalTimeToHitInSec);
 				}
 		
@@ -126,12 +135,18 @@ class HitFormulas
 	
 	public static inline function getPercChanceToRangeHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {
 		
-		var prob:Float = getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, 0, timeToHitOffset) / 100;
+		var prob:Float = getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, defense, timeToHitOffset) / 100;
 		//return prob;
-		 prob *= prob>0 ? getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB) : 1;
+		 prob *= prob > 0 ? getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB) : 1;
+		 // provide block bonus if crouched and with at least 256 units of 2D space apart. Defense !=0
+		 if ( defense > 0 && Vec3Utils.sqDist2DBetween(posA, posB) >= CROUCH_EFFECT_RANGE_SQ ) {
+			 prob *= .7;
+		 }
 		return Math.ceil(prob * 100);
 		
 	}
+	
+	private static inline var CROUCH_EFFECT_RANGE_SQ:Float = 256 * 256;
 	
 	public static function getPercChanceToHitDefenderMethod(weapon:Weapon):Pos->Ellipsoid->Weapon->Pos->Rot->CharDefense-> Ellipsoid->Float->Float->Float {
 		return weapon.fireMode <= 0 ? getPercChanceToRangeHitDefender : getPercChanceToHitDefender;
@@ -517,6 +532,38 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 	static public inline function calculateAnimStrikeTimeAtRange(aWeapon:Weapon, actualDist:Float):Float
 	{
 		return PMath.lerp( aWeapon.anim_strikeTimeAtMinRange, aWeapon.anim_strikeTimeAtMaxRange, HitFormulas.calculateOptimalRangeFactor(aWeapon.anim_minRange, aWeapon.anim_maxRange,  actualDist) );
+	}
+	
+	static public inline function getDefenseForMovingStance(posA:Pos, posB:Pos, defB:CharDefense, stanceB:IStance, velB:Vel, ranged:Bool):Float 
+	{
+		return stanceB.movingSlow() ? defB.block * 2 : ranged ? getRangedEvasionRating(posA, posB, defB, velB, stanceB) : defB.evasion;
+	}
+	
+	/*
+	static  public function getDefenseForEntity(entA:Entity, entB:Entity):Float {
+		return getDefenseForStance(entA.get(Pos), entB.get(Pos), entB.get(CharDefense), entB.get(IStance));
+	}
+	*/
+	
+	static public function getRangedEvasionRating(posA:Pos, posB:Pos, defB:CharDefense, velB:Vel, stanceB:IStance):Float {
+		var dx:Float = posB.x - posA.x;
+		var dy:Float = posB.y - posA.y;
+		var dz:Float = posB.z - posA.z;
+		//stanceB.getJoggingSpeed() 
+		var d:Float = 1 / Math.sqrt(dx * dx + dy * dy + dz * dz);
+		dx *= d;
+		dy *= d;
+		dz *= d;
+		
+		var len:Float = velB.length();
+		var d:Float = 1 / len;
+		var vx:Float = velB.x * d;
+		var vy:Float = velB.y * d;
+		var vz:Float = velB.z * d;
+		d = PMath.lerp( .5 * defB.evasion, 2 * defB.evasion, 1 - PMath.abs( vx * dx + vy * dy + vz * dz) );
+		d *=  len / stanceB.getJoggingSpeed();
+
+		return -d;
 	}
 	
 	

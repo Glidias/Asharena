@@ -129,7 +129,6 @@ ____________________________________________________
 Gameplay features 
 ---------------------------------------------------------------
 Add in cover *
-Situaional block vs evasion usage ( encourages Cautious/Crouched movement). When crouching, 70% is multiped over pec change to hit regardless. Exposure is determined accordingly based on square ellipsoid size. When moving cautiously, block rating is doubled against ranged units and increased by 150% against melee units.
 Support fire/linked attack mechanics
 Linked follower movement
 
