@@ -1,12 +1,16 @@
 package arena.systems.enemy;
 import arena.components.char.AggroMem;
+import arena.components.char.CharDefense;
 import arena.components.char.EllipsoidPointSamples;
 import arena.components.char.HitFormulas;
+import arena.components.char.MovementPoints;
 import arena.components.enemy.EnemyAggro;
 import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
 import arena.components.weapon.Weapon;
 import arena.systems.enemy.AggroMemNode;
+import arena.systems.enemy.EnemyAggroNode;
+import arena.systems.player.IStance;
 import arena.systems.player.IVisibilityChecker;
 import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.player.PlayerAggroNode;
@@ -15,14 +19,17 @@ import ash.core.Entity;
 import ash.core.NodeList;
 import ash.signals.Signal0;
 import ash.signals.Signal1;
+import components.Ellipsoid;
 import components.Health;
 import components.Pos;
 import components.Rot;
 import components.tweening.Tween;
+import components.Vel;
 import de.polygonal.ds.BitVector;
 import flash.errors.Error;
 import flash.Vector.Vector;
 import util.geom.PMath;
+import util.geom.Vec3Utils;
 
 
 
@@ -65,6 +72,63 @@ class AggroMemManager
 	{
 		
 		
+	}
+	
+	private var _supportCount:Int = 0;
+	private var _maxSupport:Int = 3;
+	public function setupSupportFireOnTarget(target:Entity, leaderEntity:Entity):Void {
+		_supportCount = 0;
+		// forget about distance check from leader for now..TODO: add in basic like distance check
+		var aggroTarget:PlayerAggroNode = new PlayerAggroNode(); 
+		aggroTarget.health = target.get(Health);
+		if (aggroTarget.health == null) return;
+		aggroTarget.entity = target;
+		aggroTarget.movementPoints = leaderEntity.get(MovementPoints);
+		aggroTarget.pointSamples = target.get(EllipsoidPointSamples);
+		aggroTarget.pos = target.get(Pos);
+		aggroTarget.rot = target.get(Rot);
+		aggroTarget.size  = target.get(Ellipsoid);
+		aggroTarget.stance = target.get(IStance);
+		aggroTarget.vel = target.get(Vel);
+		aggroTarget.def = target.get(CharDefense);
+		
+		var len:Int = activeArray.length;
+		var movementTime:MovementPoints = leaderEntity.get(MovementPoints);
+		aggroList.nodeAdded.add( processAggroNode);
+		
+		var leaderPos:Pos = leaderEntity.get(Pos);
+		//var limit:Int = 4;
+		//var count:Int = 0;
+		for (i in 0...len) {
+			var activeNode:AggroMemNode = activeArray[i];
+			if (activeNode.entity == leaderEntity) continue;
+			if (Vec3Utils.sqDistBetween(leaderPos, activeNode.pos) <= 512*512 ) {
+				var a:EnemyAggro = new EnemyAggro();
+				a.target = aggroTarget;
+				a.watch = null;
+				a.fixed = true;
+			
+				activeNode.entity.add( a);		
+				
+			}
+		}
+		
+		aggroList.nodeAdded.remove( processAggroNode);
+	}
+	
+
+	
+	public function removeSupportFire(leaderEntity:Entity):Void {
+		// forget about distance check from leader for now..TODO: add in basic like distance check
+		var len:Int = activeArray.length;
+		for (i in 0...len) {
+			var activeNode:AggroMemNode = activeArray[i];
+			if (activeNode.entity == leaderEntity) continue;
+			activeNode.entity.remove(EnemyAggro);
+			var stance:IStance = activeNode.entity.get(IStance);
+			stance.setStance(2);
+			
+		}
 	}
 		
 	// init
@@ -411,15 +475,39 @@ class AggroMemManager
 		// for entities in Aggro state, they are assigned a attack-trigger range based off their weapon's ranges (factor out method to Hitformulas), determine if playerEnt is within trigger range and if so, pull the trigger even before the player moves!
 		var a:EnemyAggroNode = aggroList.head;
 		while ( a != null) {
-			var aWeapon:Weapon = a.weapon;
+			processAggroNode(a);
+			a = a.next;
+		}
+		
+		// Add idleChange signal to listen...this signal is used to automatically add playerEnt to aggroMem if triggering occurs, among other things like hud indiciator changes! EnemyIdle indicates units oblivious to the active playerEnt's position.
+		idleList.nodeRemoved.add( onIdleNodeRemoved);
+	}
+	
+	inline function processAggroNode(a:EnemyAggroNode):Void 
+	{
+		var aWeapon:Weapon = a.weapon;
+
+		var pTarget:PlayerAggroNode = a.state.target;
 			while(aWeapon != null) {
-				a.state.setAttackRange( (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, playerAggroList.head.size) : aWeapon.range + playerAggroList.head.size.x );
+				a.state.setAttackRange(a.state.fixed ? aWeapon.range :   (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, pTarget.size) : aWeapon.range + pTarget.size.x );
 				var checkedLOS:Bool = false;
 				//
-				if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, playerAggroList.head.pos, a.state.attackRangeSq, aWeapon.hitAngle) &&  (checkedLOS=true) && weaponLOSChecker.validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, playerAggroList.head.pos, playerAggroList.head.size)  )   { // TODO: validate other LOS factors
+				if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, pTarget.pos, a.state.attackRangeSq, aWeapon.hitAngle) &&  (checkedLOS=true) && weaponLOSChecker.validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)  )   { // TODO: validate other LOS factors
 					a.state.flag = 1;
 					a.weaponState.pullTrigger(aWeapon);
 					if (aWeapon.fireMode <= 0 && a.weaponState.attackTime >= 0) a.weaponState.attackTime = -Math.random() * a.weaponState.randomDelay;
+					if (a.state.fixed) { 
+						a.weaponState.attackTime = 5;
+						if (_supportCount > _maxSupport) {
+							a.weaponState.cancelTrigger();
+							a.state.setAttackRange(0);
+						}
+						else {
+							engine.addEntity( new Entity().add( new Tween(0, Math.random() * .35, {  }, { onComplete:a.stance.standAndFight}  ) ) );
+							a.stance.setStance(1);
+						}
+						_supportCount++;
+					}
 					break;
 				}
 				else if (checkedLOS) {
@@ -427,11 +515,6 @@ class AggroMemManager
 				}
 				aWeapon = aWeapon.nextFireMode;
 			}
-			a = a.next;
-		}
-		
-		// Add idleChange signal to listen...this signal is used to automatically add playerEnt to aggroMem if triggering occurs, among other things like hud indiciator changes! EnemyIdle indicates units oblivious to the active playerEnt's position.
-		idleList.nodeRemoved.add( onIdleNodeRemoved);
 	}
 	
 	

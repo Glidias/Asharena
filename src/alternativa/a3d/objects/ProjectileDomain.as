@@ -79,7 +79,7 @@ package alternativa.a3d.objects
 			//if (totalIndices > 0) throw new Error("A");
 			// determine any resolvers to trigger'
 			
-			
+				
 			for (var i:int = 0; i < totalIndices; i++ ) {
 				//dynamicIndices[i];
 				var index:int = dynamicIndices[i];
@@ -93,7 +93,7 @@ package alternativa.a3d.objects
 				
 				var endTime:Number = data[baseI + timeStampOffset] + data[baseI + totalTimeOffset];
 				if (timeStamp  >= endTime ) {
-
+	
 					resolver.processHit( arr[0], arr[1], arr[2], data[baseI + endPosOffset], data[baseI + endPosOffset + 1], data[baseI + endPosOffset + 2] );
 					
 					 delete dataHash[index];
@@ -143,6 +143,7 @@ package alternativa.a3d.objects
 			var result:Number = launcher.launchNewProjectile(startPos, endPos, speed);
 			var indexer:int =  launcher.getLastLaunchedIndex();
 			dynamicIndices[totalIndices++] = indexer;
+			if (launcherEntity == null || targetEntity == null || pos == null) throw new Error("NULl data!");
 			dataHash[indexer ] = [launcherEntity, targetEntity,  hpDeal, pos, targetEllipsoid.z];
 			return result;
 		}

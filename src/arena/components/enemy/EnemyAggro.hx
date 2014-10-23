@@ -5,16 +5,18 @@ import ash.core.Entity;
 import util.geom.PMath;
 
 /**
- * Component state for possible activated enemies that will attack/engage if possible.
+ * Component state for possible activated enemies that will attack/engage if possible. 
+ * This can be used to trick friendly targets to attack enemy targets as well during support/assist fire situation.
  * @author ...
  */
 class EnemyAggro
 {
-	public var target:PlayerAggroNode; 
+	public var target:PlayerAggroNode;   // the target to aim at
 	public var attackRangeSq:Float; // this is variable, randomly assign prefered attackRange within attack range margin before any attack.
 
 	public var watch:EnemyIdle; 
 	public var flag:Int;  //for debugging or state checking
+	public var fixed:Bool;  // a flag to indicate permanent locking to this state or no changing of state
 	
 	// 0 -idle
 	// 1 - swining weapon (already triggered attack)
@@ -33,13 +35,14 @@ class EnemyAggro
 		//flag = 0;
 		attackRangeSq = attackingRange*attackingRange;
 		this.watch  = watch;
+		this.fixed = false;
 		
 	}
 	
 	public  function initSimple(target:PlayerAggroNode, watch:EnemyIdle):EnemyAggro {
 		this.target = target;
 		this.watch  = watch;
-	
+		this.fixed = false;
 		return this;
 	}
 	public inline function setAttackRange(range:Float):Void {

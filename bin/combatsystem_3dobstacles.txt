@@ -129,11 +129,10 @@ ____________________________________________________
 Gameplay features 
 ---------------------------------------------------------------
 Add in cover *
-Support fire/linked attack mechanics
-Linked follower movement
+Linked follower movement (possible KIV)
 
 Fix bugs:
-Hangups	(often some null references)
+Hangups	( critical null references at ProjectileDomain)
 Rotation appearance when shooting
 
 

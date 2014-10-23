@@ -414,7 +414,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 			dz =  pTarget.pos.z - a.pos.z;
 			sqDist = dx * dx + dy * dy + dz*dz;
 	
-			
+
 			// NAive canceling of attack trigger can be done since this isn't a real-time game, and pple wouldnt notice.
 			if (pTimeElapsed < 0) { // player is dead, find new player to aggro for multi-character mode
 				//throw "DEAD";
@@ -423,15 +423,14 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				a.state.flag = 0;
 				aWeaponState.cancelTrigger();
 				a.entity.remove(EnemyAggro);
-				a.entity.add(a.state.watch); // TODO: Pool ENemyWatch
-				
+				if (!a.state.fixed) a.entity.add(a.state.watch); // TODO: Pool ENemyWatch
 				
 				a = a.next;
-					continue;
+				continue;
 			}
 			else {  // find nearest valid target , if it's diff or not, and change accordingly
 				// consider if player is out of aggro range to go back to watch
-				rangeSq = a.state.watch.aggroRangeSq + 40;  // the +40 threshold should be a good enough measure to prevent oscillation
+				rangeSq = a.state.watch != null ? a.state.watch.aggroRangeSq + 40 : PMath.FLOAT_MAX;  // the +40 threshold should be a good enough measure to prevent oscillation
 				///*
 				if (sqDist > rangeSq) {  
 					// revert back for now, forget about finding another target
@@ -439,7 +438,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 					aWeaponState.cancelTrigger();
 					a.state.flag = 0;
 					a.entity.remove(EnemyAggro);
-					a.entity.add(new EnemyWatch().init(a.state.watch, a.state.target, true), EnemyWatch); // TODO: Pool ENemyWatch
+					if (!a.state.fixed) a.entity.add(new EnemyWatch().init(a.state.watch, a.state.target, true), EnemyWatch); // TODO: Pool ENemyWatch
 					
 					a = a.next;
 					continue;
@@ -451,7 +450,6 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 			
 			// always rotate enemy to face player target
 
-			
 			aWeapon = aWeaponState.fireMode != null ? aWeaponState.fireMode :  a.weapon; 
 			if (aWeapon.maxPitch - aWeapon.minPitch != 0) {
 				diffAngle = Math.atan2(  pTarget.pos.z - a.pos.z, Math.sqrt(dx * dx + dy * dy) );
@@ -511,6 +509,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 						var kite:Int = (ALLOW_KITE_RANGE | ALLOW_KITE_OBSTACLES);
 						
 						if (actualDist <= aWeapon.range && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)  ) {  // strike hit! 
+							
 							//Pos->Ellipsoid->Weapon->Pos->Rot->CharDefense-> Ellipsoid->Float->Float->Float {
 							if (Math.random() * 100 <= getPercChanceToHitDefender(a.pos, a.ellipsoid, aWeapon,pTarget.pos, pTarget.rot, pTarget.def, pTarget.size, !pTarget.stance.isAttacking() ? HitFormulas.getDefenseForMovingStance(pTarget.pos, a.pos, pTarget.def, pTarget.stance, pTarget.vel, aWeapon.fireMode <= 0) : 0, 0 ) ) {
 							
@@ -518,7 +517,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
 								// deal damage to player heath
 								//currentAttackingEnemy = a.entity;
-							
+								
 									enemyCrit = false;
 									if (AGGRO_HAS_CRITICAL && Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, pTarget.pos, pTarget.rot, pTarget.def,pTarget.size) ) {
 										
@@ -530,7 +529,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								
 								if (a.weapon.fireMode > 0) {
 									swinger =  new AnimAttackMelee();
-									swinger.init_i_static( aWeapon.anim_strikeTimeAtMaxRange, p.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
+									swinger.init_i_static( aWeapon.anim_strikeTimeAtMaxRange, pTarget.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
 									a.entity.add(swinger);
 								}
 								else {
@@ -546,11 +545,11 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								if (a.weapon.fireMode > 0) {
 									swinger =  new AnimAttackMelee();
 									//HitFormulas.calculateAnimStrikeTimeAtRange(a.weapon, actualDist)
-									swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, p.health, 0 );
+									swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, pTarget.health, 0 );
 									a.entity.add(swinger);
 								}
 								else {
-									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, p.entity, 0, timeChecker, !a.state.target.movementPoints.moveOnGround  );
+									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, pTarget.entity, 0, timeChecker, !a.state.target.movementPoints.moveOnGround  );
 								}
 								
 								//p.health.damage(0);
@@ -567,7 +566,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								a.signalAttack.forceSet(aWeapon.fireMode);
 								
 								swinger =  new AnimAttackMelee();
-								swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, p.health, 0 );
+								swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, pTarget.health, 0 );
 								a.entity.add(swinger);
 								
 							}
@@ -599,9 +598,9 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				while(aWeapon!= null) {
 					var checkedLOS:Bool = false;
 					if (  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)  ) { 
-						
+						//if (a.state.fixed) throw "Got friendly trigger!";
 						aWeaponState.pullTrigger(aWeapon);
-						if (aWeapon.fireMode <= 0 && aWeaponState.attackTime >= 0) aWeaponState.attackTime = -Math.random() * aWeaponState.randomDelay;
+						if (aWeapon.fireMode <= 0 && aWeaponState.attackTime >= 0 ) aWeaponState.attackTime = -Math.random() * aWeaponState.randomDelay;
 						
 						a.state.flag = 1;
 						onEnemyAttack.dispatch(a.entity);
@@ -625,6 +624,12 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 			
 			a = a.next;
 		}
+		
+		/*
+		public function canFireAtTarget(entA:Entity, entB:Entity, rangedWeaponLOSChecker:IWeaponLOSChecker=null):Bool {
+			return HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)
+		}
+		*/
 		
 		
 		

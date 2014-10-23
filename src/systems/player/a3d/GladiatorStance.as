@@ -415,10 +415,10 @@ package systems.player.a3d
 		// FIre weapon from ready position
 		private function shoot():void {
 			//setAnimationNode( customCouple, upperBodyController, upperBody, readyAimTime);
-			var stanceId:String = _stance != 2 ? "ref" : "crouch";
+			var stanceId:String = "ref"; // _stance != 2 ? "ref" : "crouch";
 			var attackDown:AnimationClip = upperBodyAnims[stanceId+"_shoot_" + weaponId + "_blend1" ];
 			var attackUp:AnimationClip = upperBodyAnims[stanceId + "_shoot_" + weaponId + "_blend2" ];
-			//if (attackDown == null) throw new Error("COuld not find weapon: "+stanceId+"_shoot_" + weaponId + "_blend1");
+			if (attackDown == null) throw new Error("COuld not find weapon: "+stanceId+"_shoot_" + weaponId + "_blend1");
 			attackDown.speed = .8;
 			attackUp.speed = .8;
 			
@@ -1060,6 +1060,22 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		
 		public function getStance():int {
 			return _stance;
+		}
+		
+		/* INTERFACE arena.systems.player.IStance */
+		
+		public function setStance(val:int):void 
+		{
+			stance = val;
+			handleAction(lastAction);
+		}
+		
+		/* INTERFACE arena.systems.player.IStance */
+		
+		public function standAndFight():void 
+		{
+				stance = 1;
+			handleAction(lastAction);
 		}
 			
 		

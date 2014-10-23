@@ -26,14 +26,18 @@ interface IStance
   function updateTension(ratio:Float, time:Float):Void;
   function getTension():Float;
   
+
   function isAttacking():Bool;
   function movingSlow():Bool;
   function getJoggingSpeed():Float;
   function getStance():Int;
+  function setStance(val:Int):Void;
   
   /* Weapon switching */
   function switchWeapon(weapon:Weapon):Void;
   
   // killdeath anim
   function kill(id:Int):Void;
+  
+  function standAndFight():Void;
 }

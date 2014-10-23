@@ -31,6 +31,7 @@ package tests.pvp
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.Geometry;
 	import alternterrain.CollidableMesh;
+	import arena.components.char.AggroMem;
 	import arena.components.char.HealthFlags;
 	import arena.components.char.HitFormulas;
 	import arena.components.char.MovementPoints;
@@ -730,6 +731,7 @@ package tests.pvp
 		{
 			
 			sceneLocked = true;
+			playerStriking = true;
 			(arenaSpawner.currentPlayerEntity.get(IStance) as GladiatorStance).attacking = true;
 			
 		
@@ -824,6 +826,7 @@ package tests.pvp
 		private function onUpdateTimeActionDone():void 
 		{
 			movementPoints.timeElapsed = 0;
+		
 			
 		}
 		
@@ -851,6 +854,9 @@ package tests.pvp
 		
 		private function resolveStrikeAction2():void 
 		{
+			
+			
+			
 			if (arenaHUD.strikeResult == -1) {
 				arenaHUD.notifyPlayerActionMiss();
 			}
@@ -861,17 +867,22 @@ package tests.pvp
 				}
 				
 			}
-			EnemyAggroSystem.AGGRO_HAS_CRITICAL = false;
 			
-			 if (arenaHUD.strikeResult > 0) TweenLite.delayedCall(.5, resolveStrikeAction3);
+			
+			
+			 if (arenaHUD.strikeResult > 0) {
+				 TweenLite.delayedCall(.5, resolveStrikeAction3);
+			 }
 			else resolveStrikeAction3();
 		}
 		
 		private function resolveStrikeAction3():void 
 		{
+			
+			
 		//	resolveStrikeActionFully(true);
 		//	return;
-			EnemyAggroSystem.AGGRO_HAS_CRITICAL = true;
+			
 			if ( arenaHUD.enemyStrikeResult != 0 && !showAttacksSimulatenously() ) {
 				//if (arenaHUD.targetEntity.get(Health) == null  || arenaHUD.targetEntity.get(Health).hp <= 0) {
 					
@@ -903,17 +914,29 @@ package tests.pvp
 		{
 			// new stuff here
 			instant = false;
+			EnemyAggroSystem.AGGRO_HAS_CRITICAL = false;
+			(arenaHUD.targetEntity.get(IStance) as GladiatorStance).attacking = true;
+			aggroMemManager.setupSupportFireOnTarget(arenaHUD.targetEntity, arenaSpawner.currentPlayerEntity);
+			playerStriking = false;
 			
 			
 			
+			if (aggroMemManager._supportCount != 0) {
+				TweenLite.delayedCall(.3, resolveStrikeActionFully2, [instant]);
+			}
+			else resolveStrikeActionFully2(instant);
+			
+		}
+		
+		private function resolveStrikeActionFully2(instant:Boolean):void {
 			if (delayTimeElapsed > 0) {
 				game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
-				movementPoints.timeElapsed = delayTimeElapsed;
-				
+				movementPoints.timeElapsed = delayTimeElapsed;	
 			}
 			
+			//instant = true;
 			if (!instant ) {  //&& arenaHUD.enemyStrikeResult > 0
-				TweenLite.delayedCall(delayTimeElapsed, resolveToggleTargetingMode);
+				TweenLite.delayedCall(delayTimeElapsed+.3, resolveToggleTargetingMode);
 				
 			}
 			else {
@@ -923,11 +946,24 @@ package tests.pvp
 		
 		private function resolveToggleTargetingMode():void 
 		{
+			if ( !_animAttackSystem.getResolved()  ) {
+				_animAttackSystem.resolved.addOnce(resolveToggleTargetingMode2);
+			}
+			else {
+				resolveToggleTargetingMode2();
+			}
+			
+		}
+		
+		private function resolveToggleTargetingMode2():void {
+			playerStriking = true;
+			EnemyAggroSystem.AGGRO_HAS_CRITICAL = true;
+			aggroMemManager.removeSupportFire(arenaSpawner.currentPlayerEntity);
+			
 			toggleTargetingMode();
 			sceneLocked = false;
 			(arenaSpawner.currentPlayerEntity.get(IStance) as GladiatorStance).attacking = false;
 			thirdPersonController.thirdPerson.followAzimuth = (arenaSpawner.currentPlayerEntity.get(Health) != null);
-			
 		}
 		
 		private function testAnim(blend:Number=.5):void 
@@ -1392,6 +1428,7 @@ package tests.pvp
 				game.gameStates.engineState.changeState(targetState);
 				arenaHUD.setState(targetState);
 			}
+		
 		}
 		
 		private function doEndTurn():void 
@@ -1614,6 +1651,7 @@ package tests.pvp
 			arenaHUD.outOfFuel();
 		}
 		
+	
 		
 		private function onStanceChange(val:int):void {
 			arenaHUD.setStance(val);
@@ -1769,12 +1807,21 @@ package tests.pvp
 			arenaHUD.appendMessage(obj.name+" is ready to attack!");
 		}
 		
+		private var playerStriking:Boolean = false;
+		
+		
 		private function onDamaged(e:Entity, hp:int, amount:int):void 
 		{
-			if (e != arenaSpawner.currentPlayerEntity) {  // assume damage taken from active currentPlayerEntity
-				 arenaHUD.txtPlayerStrike(e, hp, amount);
+			if (e != arenaSpawner.currentPlayerEntity) {  // assume damage inflicted by active currentPlayerEntity
+				if ( playerStriking ) {
+					arenaHUD.txtPlayerStrike(e, hp, amount);
+				}
+				else {
+					arenaHUD.txtEnemyGotHit(e, hp, amount);
+				}
 			}
 			else {  // assume damage taken from entity under aggro system
+				
 				if (amount > 0)  {
 					arenaHUD.txtTookDamageFrom(_enemyAggroSystem.currentAttackingEnemy, hp, amount);
 					movementPoints.movementTimeLeft -= .5;

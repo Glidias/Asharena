@@ -1516,6 +1516,29 @@ WeaponSlots
 		
 		}
 		
+		public function txtEnemyGotHit(e:Entity, hp:int, amount:int, killingBlow:Boolean=false):void 
+		{
+			if (amount == 0) return;
+		//	_msgLogInfo.resetAllScrollingMessages()
+		
+			var obj:Object3D = e.get(Object3D) as Object3D;
+
+			var crit:Boolean  = strikeResult == 2;
+			_msgLogInfo.appendSpanTagMessage(!killingBlow  ? '<span u="1">'+obj.name + '</span> took <span u="1">'+amount+'</span> points of assisted damage.' : '<span u="2">'+obj.name + '</span> was killed by friendly assist!');
+			_msgLogInfo.drawNow();
+
+			if ( e === _targetStrikeEntity) {
+				if (!killingBlow ) {
+				//	setTargetChar(_targetStrikeNode);
+					
+				}
+				else if (killingBlow) {
+					setTargetChar(null );
+				}
+			}
+		
+		}
+		
 		
 		// this could be due to a block/parry or something, we determine description here
 		///*
