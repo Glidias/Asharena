@@ -57,9 +57,11 @@ package alternativa.a3d.objects
 		
 		public function update(time:Number):Number 
 		{
-			
+		
 			var remainingTime:Number = 0;
 			var testTime:Number;
+			
+			if (launcher == null || resolver==null) throw new Error("NULL LAUNCHER");
 			
 			launcher.update(time);
 			var timeStamp:Number = launcher.getTime();
@@ -79,6 +81,7 @@ package alternativa.a3d.objects
 			//if (totalIndices > 0) throw new Error("A");
 			// determine any resolvers to trigger'
 			
+			try {
 				
 			for (var i:int = 0; i < totalIndices; i++ ) {
 				//dynamicIndices[i];
@@ -87,6 +90,10 @@ package alternativa.a3d.objects
 				var arr:Array = dataHash[index];
 				var pos:Pos = arr[3];
 				var hpDeal:int = arr[2];
+				if (pos == null) throw new Error("NULL");
+				if (arr == null) throw new Error("AWRWAR");
+				if (data == null) throw new Error("2222222AWTWAT");
+				
 				data[baseI + endPosOffset] = pos.x;
 				data[baseI + endPosOffset+1] = pos.y;
 				data[baseI + endPosOffset + 2] = hpDeal != 0 ?   pos.z + zOffsetRatio * arr[4] :  pos.z  - arr[4];
@@ -109,6 +116,11 @@ package alternativa.a3d.objects
 					
 				}
 				
+			}
+			}
+			catch (e:Error) {
+				
+				throw new Error("CAUGHT!:"+e.message);
 			}
 			
 			return 0;
