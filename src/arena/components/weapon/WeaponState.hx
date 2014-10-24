@@ -12,6 +12,7 @@ class WeaponState
 	public var attackTime:Float; //  time elapsed during attack
 	public var trigger:Bool;
 	public var randomDelay:Float;
+	public var delay:Float;
 	
 	public function new() 
 	{
@@ -43,7 +44,7 @@ class WeaponState
 		trigger = false;
 		fireMode = null;
 		randomDelay =.3;
-		
+		delay = 0;
 	}
 	
 	public function forceCooldown(val:Float) 

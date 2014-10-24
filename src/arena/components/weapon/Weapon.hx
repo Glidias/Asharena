@@ -90,6 +90,8 @@ class Weapon
 	
 	public var muzzleVelocity:Float;
 	public var muzzleLength:Float;
+	
+	
 
 	
 	public inline function matchAnimVarsWithStats():Void {

@@ -129,17 +129,22 @@ ____________________________________________________
 Gameplay features 
 ---------------------------------------------------------------
 Add in cover *
-Linked follower movement (possible KIV)
+Linked follower movement (possible KIV..but this needs to be included for balancing and giving advantage to attacking side)
 
-Fix bugs:
-Rotation appearance when shooting
+Fix aesthetic bugs:
+Rotation appearance when shooting (possible KIV)
 
 
+HTML Balance demo *
+
+
+__________________________
 
 Core gameplay/backend:
 -------------------------
 A cheat-free Server send footsteps/actions...calculate reactions
   -> Approach #1: Key strokes across fixed timesteps
+ Need some re-factoring of code here to make it server-side friendly
 
 What currently cannot be replicated on the server?
 ---------------------------------------------

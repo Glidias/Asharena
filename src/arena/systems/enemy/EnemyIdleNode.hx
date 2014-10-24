@@ -1,6 +1,7 @@
 package arena.systems.enemy;
 import arena.components.char.AggroMem;
 import arena.components.enemy.EnemyIdle;
+import arena.components.weapon.WeaponState;
 import arena.systems.player.IStance;
 import ash.core.Node;
 import components.Pos;
@@ -19,5 +20,7 @@ class EnemyIdleNode extends Node<EnemyIdleNode> {
 	public var state:EnemyIdle;	
 	public var stance:IStance;
 	public var aggroMem:AggroMem;
+	
+	public var weaponState:WeaponState;
 	//public var stateMachine:EntityStateMachine;
 }

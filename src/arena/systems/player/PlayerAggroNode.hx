@@ -2,6 +2,7 @@ package arena.systems.player;
 import arena.components.char.CharDefense;
 import arena.components.char.EllipsoidPointSamples;
 import arena.components.char.MovementPoints;
+import arena.components.weapon.WeaponState;
 import ash.core.Node;
 import components.Ellipsoid;
 import components.Health;
@@ -30,6 +31,8 @@ class PlayerAggroNode extends Node<PlayerAggroNode> {
 	public var vel:Vel;
 	
 	public var stance:IStance;
+	
+	public var weaponState:WeaponState;
 	
 	
 	public function new() {

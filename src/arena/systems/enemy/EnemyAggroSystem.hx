@@ -103,10 +103,18 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		currentAttackingEnemy = null;
 		updating = false;
 		
+		/*
+		var p:PlayerAggroNode = playerNodeList.head;
+		while (p != null) {
+			p.weaponState.delay = p.weaponState.cooldown > 0 ? p.weaponState.cooldown : 0;
+			p = p.next;
+		}
+		*/
+		
 		// clean up all lists
 		var i:EnemyIdleNode = idleList.head;  
-		i = idleList.head;
 		while ( i != null) {
+			//i.weaponState.delay = i.weaponState.cooldown > 0 ? i.weaponState.cooldown : 0;
 			i.entity.remove(EnemyIdle);
 			i = i.next;
 		}
@@ -114,6 +122,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		
 		var w:EnemyWatchNode = watchList.head;  
 		while (w != null) {
+				//w.weaponState.delay = w.weaponState.cooldown > 0 ? w.weaponState.cooldown : 0;
 				/*
 				if (w.entity.get(WeaponState).trigger) {
 					throw "SHOULD Not have trigger if on watch state!";
@@ -135,7 +144,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		var a:EnemyAggroNode = aggroList.head;
 		while (a != null) {
 			
-				
+				//a.weaponState.delay = a.weaponState.cooldown > 0 ? a.weaponState.cooldown : 0;
 				a.weaponState.cancelTrigger();
 				a.state.dispose();
 				/*
@@ -283,12 +292,23 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		updating = true;
 		
 		var p:PlayerAggroNode;
+		
 		currentAttackingEnemy = null;
 		
 		if (playerNodeList.head == null) return;
 		
 		p = playerNodeList.head;
+		var pTimeElapsed:Float = p.movementPoints.timeElapsed;
+		if (pTimeElapsed <= 0) return; // KIV: group movement consideration, now treat sole player only
 		
+		
+		
+		while (p != null) {
+			p.weaponState.cooldown -= pTimeElapsed;
+			p = p.next;
+		}
+		
+		p = playerNodeList.head;
 		
 		
 		var playerPos:Pos = p.pos;
@@ -298,10 +318,10 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		var dy:Float;
 		var dz:Float;
 		
-		var pTimeElapsed:Float = p.movementPoints.timeElapsed;
 		
 		
-		if (pTimeElapsed <= 0) return; // KIV: group movement consideration, now treat sole player only
+		
+		
 		
 		_reactCooldown -= pTimeElapsed;
 		
@@ -314,6 +334,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		while (i != null) {  // assign closest player target to watch
 			enemyPos = i.pos;
 			rangeSq = i.state.alertRangeSq;
+		//	i.weaponState.delay -= pTimeElapsed;
 			dx =  playerPos.x - enemyPos.x;
 			dy = playerPos.y - enemyPos.y;
 			dz = playerPos.z - enemyPos.z;
@@ -336,7 +357,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		var w:EnemyWatchNode =  watchList.head;
 		while (w != null) {  // check closest valid player target, if it's same or different..  and consider aggroing if player gets close enough, 
 			enemyPos = w.pos;
-			
+		//	w.weaponState.delay -= pTimeElapsed;
 			rangeSq = w.weapon.fireMode <= 0 && w.aggroMem.engaged ? EnemyIdle.DEFAULT_AGGRO_RANGE_SQ : w.state.watch.aggroRangeSq;
 			dx =  playerPos.x - enemyPos.x;
 			dy = playerPos.y - enemyPos.y;
@@ -403,7 +424,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		while (a != null) { 
 			
 			aWeaponState = a.weaponState;
-			
+			//aWeaponState.delay -= pTimeElapsed;
 			aWeapon = a.weapon;
 			var pTarget:PlayerAggroNode = a.state.target;
 			pTimeElapsed = pTarget.movementPoints.timeElapsed;
@@ -599,8 +620,11 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 					var checkedLOS:Bool = false;
 					if (  HitFormulas.targetIsWithinArcAndRangeSq2(diffAngle, aWeapon.hitAngle, sqDist, a.state.attackRangeSq) && (checkedLOS=true) && validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)  ) { 
 						//if (a.state.fixed) throw "Got friendly trigger!";
+						
 						aWeaponState.pullTrigger(aWeapon);
+						
 						if (aWeapon.fireMode <= 0 && aWeaponState.attackTime >= 0 ) aWeaponState.attackTime = -Math.random() * aWeaponState.randomDelay;
+						aWeaponState.attackTime -= aWeaponState.delay > 0 ? aWeaponState.delay : 0;
 						
 						a.state.flag = 1;
 						onEnemyAttack.dispatch(a.entity);

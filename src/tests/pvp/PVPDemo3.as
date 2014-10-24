@@ -149,7 +149,7 @@ package tests.pvp
 		private var _preloader:PreloaderBar = new PreloaderBar()
 		private var bundleLoader:SpawnerBundleLoader;
 		private var _modelBundle:ModelBundle;
-		
+		private var _followAzimuth:Boolean = false;
 		private var spectatorPerson:SimpleFlyController;
 		private var arenaSpawner:ArenaSpawner;
 		private var collisionScene:Object3D;
@@ -458,7 +458,7 @@ package tests.pvp
 			w.strikeTimeAtMaxRange = 0; //0.0001;
 			w.strikeTimeAtMinRange = 0;// 0.0001;
 		
-			w.muzzleVelocity = 512;
+			w.muzzleVelocity =  ArenaHUD.METER_UNIT_SCALE *  197.206;
 			w.muzzleLength = 40;
 			w.parryEffect = .4;
 			
@@ -641,7 +641,7 @@ package tests.pvp
 			if (keyCode === Keyboard.TAB  &&   !game.keyPoll.isDown(keyCode)  ) {
 				cyclePlayerChoice();
 			}
-			else if (keyCode === Keyboard.V  &&   !game.keyPoll.isDown(keyCode)  ) {
+			else if (keyCode === Keyboard.B  &&   !game.keyPoll.isDown(keyCode)  ) {
 				if ( game.gameStates.engineState.currentState === game.gameStates.thirdPerson && !sceneLocked && !_targetMode ) {  //
 					cycleWeapon();
 				}
@@ -674,6 +674,7 @@ package tests.pvp
 					//toggleTargetingMode();
 				}
 			}
+			/*
 			else if (keyCode === Keyboard.B && !game.keyPoll.isDown(keyCode)) {
 				testAnim(1);
 			}
@@ -692,9 +693,11 @@ package tests.pvp
 			else if (keyCode === Keyboard.T && !game.keyPoll.isDown(keyCode)) {
 				testAnim(0);
 			}
+			
 			else if (keyCode === Keyboard.P &&  !game.keyPoll.isDown(keyCode)) {
 				if ( game.gameStates.engineState.currentState === engineStateCommander ) showPreferedStances();
 			}
+			*/
 		}
 		
 		private function cycleWeapon():void 
@@ -736,7 +739,7 @@ package tests.pvp
 			
 		
 			
-			thirdPersonController.thirdPerson.followAzimuth = false;
+			_followAzimuth = false;
 					if (!_animAttackSystem.getResolved()) {
 					
 					arenaHUD.appendSpanTagMessage("Resolving action...");
@@ -963,7 +966,7 @@ package tests.pvp
 			toggleTargetingMode();
 			sceneLocked = false;
 			(arenaSpawner.currentPlayerEntity.get(IStance) as GladiatorStance).attacking = false;
-			thirdPersonController.thirdPerson.followAzimuth = (arenaSpawner.currentPlayerEntity.get(Health) != null);
+			_followAzimuth = (arenaSpawner.currentPlayerEntity.get(Health) != null);
 		}
 		
 		private function testAnim(blend:Number=.5):void 
@@ -1437,13 +1440,13 @@ package tests.pvp
 			if (!_animAttackSystem.getResolved()) {
 					disablePlayerMovement();
 					sceneLocked = true;
-					thirdPersonController.thirdPerson.followAzimuth = false;
+					_followAzimuth = false;
 					arenaHUD.appendSpanTagMessage("Resolving turn...");
 					_animAttackSystem.resolved.addOnce(doEndTurn);
 					return;
 				}
 			
-				thirdPersonController.thirdPerson.followAzimuth = true;
+				_followAzimuth = true;
 				var targetState:String = "commander";
 				//throw new Error("A");
 				if (!_newPhase) arenaHUD.appendSpanTagMessage("Turn resolved!");
@@ -1855,7 +1858,7 @@ package tests.pvp
 				
 				arenaSpawner.killGladiator2(arenaSpawner.currentPlayerEntity, deadScene);
 				
-				thirdPersonController.thirdPerson.followAzimuth = false;
+				_followAzimuth = false;
 				arenaHUD.killPlayer();
 				
 				//game.engine.removeEntity(arenaSpawner.currentPlayerEntity);
@@ -2020,7 +2023,7 @@ package tests.pvp
 		
 		private function tick(time:Number):void 
 		{
-			//thirdPersonController.thirdPerson.followAzimuth = !_targetMode;
+			thirdPersonController.thirdPerson.followAzimuth = _followAzimuth || game.keyPoll.isDown(Keyboard.V);
 			game.engine.update(time);
 			arenaHUD.updateFuel( movementPoints.movementTimeLeft / MAX_MOVEMENT_POINTS );
 			arenaHUD.update();

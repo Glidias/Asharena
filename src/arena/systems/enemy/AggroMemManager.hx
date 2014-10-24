@@ -494,8 +494,10 @@ class AggroMemManager
 				//
 				if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, pTarget.pos, a.state.attackRangeSq, aWeapon.hitAngle) &&  (checkedLOS=true) && weaponLOSChecker.validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)  )   { // TODO: validate other LOS factors
 					a.state.flag = 1;
+					var cooldown:Float = a.weaponState.cooldown;
 					a.weaponState.pullTrigger(aWeapon);
 					if (aWeapon.fireMode <= 0 && a.weaponState.attackTime >= 0) a.weaponState.attackTime = -Math.random() * a.weaponState.randomDelay;
+					a.weaponState.attackTime -=  a.weaponState.delay > 0 ? a.weaponState.delay : 0;
 					if (a.state.fixed) { 
 						a.weaponState.attackTime = 5;
 						if (_supportCount > _maxSupport) {

@@ -71,9 +71,13 @@ package alternativa.a3d.objects
 			for (i = 0; i < removeCount; i++) {
 				totalIndices--;
 				index = toRemoveIndices[i];
-				delete dataHash[index];
+				
 				if (index != totalIndices) {  // pop back
 					dynamicIndices[index] = dynamicIndices[totalIndices];
+					//delete dataHash[dynamicIndices[totalIndices]];
+				}
+				else {  // regular pop
+					delete dataHash[index];
 				}
 			}	
 			removeCount = 0;
@@ -87,7 +91,7 @@ package alternativa.a3d.objects
 				var index:int = dynamicIndices[i];
 				var baseI:int = index * indexSize;
 				var arr:Array = dataHash[index];
-					//if (arr == null) throw new Error("AWRWAR");
+					if (arr == null) throw new Error("Null arr found!");
 				var pos:Pos = arr[3];
 				var hpDeal:int = arr[2];
 			
