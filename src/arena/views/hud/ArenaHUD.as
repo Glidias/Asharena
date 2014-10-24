@@ -772,7 +772,7 @@ WeaponSlots
 			_curCharInfo.appendMessage("Class: " + charClass.name);
 			var rangeInMeters:Number = int(weapon.range * UNIT_METER_SCALE * 100) / 100;
 			_curCharInfo.appendMessage((_charWeaponEnabled ? "Attack: " : "" )+weapon.name+" ("+rangeInMeters+"m)");
-			_curCharInfo.appendMessage(weaponSlots && !_targetMode ? "'V' to cycle weapons. ("+(weapIndex+1)+"/" + weaponSlots.slots.length + ")" : _stars ? "Press 'TAB' to cycle character." : " " ); //"'Z' to switch attack mode. (1/2)" //"Attack completed."
+			_curCharInfo.appendMessage(weaponSlots && !_targetMode ? "'B' to cycle weapons. ("+(weapIndex+1)+"/" + weaponSlots.slots.length + ")" : _stars ? "Press 'TAB' to cycle character." : " " ); //"'Z' to switch attack mode. (1/2)" //"Attack completed."
 			if (!_charWeaponEnabled && !_stars) _curCharInfo.appendSpanTagMessage('<span u="2">Done!</span>');
 			 _curCharInfo.appendMessage(_stars ?  numStars > 0 ?  MSG_START_ACTION_TURN : " " : MSG_END_ACTION_TURN);
 			_curCharInfo.drawNow();

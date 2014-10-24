@@ -1998,12 +1998,14 @@ package tests.pvp
 
 		private function updateTick(time:Number):void {
 			//if (time != 1 / 60) throw new Error("DIFF");
+			thirdPersonController.thirdPerson.followAzimuth = _followAzimuth || game.keyPoll.isDown(Keyboard.V);
 			game.engine.update(time);
 			arenaHUD.updateFuel( movementPoints.movementTimeLeft / MAX_MOVEMENT_POINTS );
 			arenaHUD.update();
 		}
 		
 		private function renderTick(time:Number):void {
+			
 			var camera:Camera3D = _template3D.camera;
 			
 			_skyboxBase.update(_template3D.camera);
