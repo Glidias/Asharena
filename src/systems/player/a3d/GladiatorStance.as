@@ -10,7 +10,7 @@ package systems.player.a3d
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Skin;
-	import alternativa.engine3d.utils.A3DUtils;
+	//import alternativa.engine3d.utils.A3DUtils;
 	import alternativa.engine3d.utils.Object3DUtils;
 	import arena.components.weapon.Weapon;
 	import arena.systems.player.IStance;
@@ -212,7 +212,7 @@ package systems.player.a3d
 			setupAnimations();
 			
 			//throw new Error(   );
-			boneShield = A3DUtils.findDescendantObjByNameRecursive(skin, "bone_shield");
+			//boneShield = A3DUtils.findDescendantObjByNameRecursive(skin, "bone_shield");
 			
 			//throw new Error(anims.getAnimGroups());
 			

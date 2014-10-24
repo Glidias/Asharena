@@ -132,7 +132,6 @@ Add in cover *
 Linked follower movement (possible KIV)
 
 Fix bugs:
-Hangups	( critical null references at ProjectileDomain)
 Rotation appearance when shooting
 
 

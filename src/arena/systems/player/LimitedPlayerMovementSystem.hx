@@ -97,7 +97,7 @@ class LimitedPlayerMovementSystem extends System
 				n.movementPoints.movementTimeLeft = 0;
 				n.keyPoll.resetAllStates();
 				n.moveStats.resetAllStates();
-			
+				n.movementPoints.timeElapsed = 0;
 			//	n.moveStats.setAllSpeeds(0);
 				
 				n.entity.remove(KeyPoll);

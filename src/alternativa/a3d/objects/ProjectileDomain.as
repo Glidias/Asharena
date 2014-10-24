@@ -61,7 +61,7 @@ package alternativa.a3d.objects
 			var remainingTime:Number = 0;
 			var testTime:Number;
 			
-			if (launcher == null || resolver==null) throw new Error("NULL LAUNCHER");
+			
 			
 			launcher.update(time);
 			var timeStamp:Number = launcher.getTime();
@@ -71,7 +71,7 @@ package alternativa.a3d.objects
 			for (i = 0; i < removeCount; i++) {
 				totalIndices--;
 				index = toRemoveIndices[i];
-				
+				delete dataHash[index];
 				if (index != totalIndices) {  // pop back
 					dynamicIndices[index] = dynamicIndices[totalIndices];
 				}
@@ -81,18 +81,17 @@ package alternativa.a3d.objects
 			//if (totalIndices > 0) throw new Error("A");
 			// determine any resolvers to trigger'
 			
-			try {
-				
+
 			for (var i:int = 0; i < totalIndices; i++ ) {
 				//dynamicIndices[i];
 				var index:int = dynamicIndices[i];
 				var baseI:int = index * indexSize;
 				var arr:Array = dataHash[index];
+					//if (arr == null) throw new Error("AWRWAR");
 				var pos:Pos = arr[3];
 				var hpDeal:int = arr[2];
-				if (pos == null) throw new Error("NULL");
-				if (arr == null) throw new Error("AWRWAR");
-				if (data == null) throw new Error("2222222AWTWAT");
+			
+				
 				
 				data[baseI + endPosOffset] = pos.x;
 				data[baseI + endPosOffset+1] = pos.y;
@@ -103,7 +102,7 @@ package alternativa.a3d.objects
 	
 					resolver.processHit( arr[0], arr[1], arr[2], data[baseI + endPosOffset], data[baseI + endPosOffset + 1], data[baseI + endPosOffset + 2] );
 					
-					 delete dataHash[index];
+					 
 					toRemoveIndices[removeCount++] = i;
 					data[baseI + endPosOffset] = 9999999999999;
 					data[baseI + endPosOffset+1] =9999999999999;
@@ -117,11 +116,8 @@ package alternativa.a3d.objects
 				}
 				
 			}
-			}
-			catch (e:Error) {
-				
-				throw new Error("CAUGHT!:"+e.message);
-			}
+			
+	
 			
 			return 0;
 		}
