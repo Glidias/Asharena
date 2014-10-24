@@ -437,8 +437,8 @@ package tests.pvp
 		
 			
 			w.minRange = 40;
-			w.damage =  13;
-			w.cooldownTime = 1.2;
+			w.damage =  11;
+			w.cooldownTime = 1.4;
 			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
 			w.hitAngle =  45 *  PMath.DEG_RAD;
 			
@@ -915,7 +915,7 @@ package tests.pvp
 			// new stuff here
 			instant = false;
 			EnemyAggroSystem.AGGRO_HAS_CRITICAL = false;
-			(arenaHUD.targetEntity.get(IStance) as GladiatorStance).attacking = true;
+			//(arenaHUD.targetEntity.get(IStance) as GladiatorStance).attacking = true;
 			aggroMemManager.setupSupportFireOnTarget(arenaHUD.targetEntity, arenaSpawner.currentPlayerEntity);
 			playerStriking = false;
 			
@@ -1357,7 +1357,7 @@ package tests.pvp
 		
 			stance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
 			stance.setTargetMode(_targetMode);
-			
+			stance.attacking = false;
 			
 			
 			for (var i:int = 0; i < curArr.length; i++) {

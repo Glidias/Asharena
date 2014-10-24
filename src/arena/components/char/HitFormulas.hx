@@ -545,6 +545,10 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 	}
 	*/
 	
+	static public inline function getFullyDefensiveRating(def:CharDefense):Float {
+		return def.block * 2 > def.evasion ? def.block * 2 : def.evasion;
+	}
+	
 	static public function getRangedEvasionRating(posA:Pos, posB:Pos, defB:CharDefense, velB:Vel, stanceB:IStance):Float {
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
@@ -564,6 +568,11 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 		d *=  len / stanceB.getJoggingSpeed();
 
 		return -d;
+	}
+	
+	static public inline function fullyAggroing(ent:Entity):Bool
+	{
+		return ent.has(EnemyAggro) && ent.get(EnemyAggro).flag > 0;
 	}
 	
 	
