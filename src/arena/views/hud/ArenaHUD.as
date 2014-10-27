@@ -905,9 +905,9 @@ WeaponSlots
 			var aggroPlayer:AggroMem = _displayChar.get(AggroMem) as AggroMem;
 			var playerSide:int = aggroPlayer != null ? aggroPlayer.side : -1;
 			if ( (playerSide == aggroSide) || aggroSide == -1 ) {
-				//choices.length = 0;
-				//_actionChoicesBox.drawNow();
-				//return;  // kiv: shoudld redirect to healing/non-threathening options for friendly side!
+				choices.length = 0;
+				_actionChoicesBox.drawNow();
+				return;  // kiv: shoudld redirect to healing/non-threathening options for friendly side!
 				
 			}
 				

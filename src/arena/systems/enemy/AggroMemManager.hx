@@ -507,8 +507,9 @@ class AggroMemManager
 							a.state.setAttackRange(0);
 						}
 						else {
+						//	a.stance.standAndFight();
 							engine.addEntity( new Entity().add( new Tween(0, Math.random() * .25, {  }, { onComplete:a.stance.standAndFight}  ) ) );
-							//a.stance.setStance(1);
+							
 						}
 						_supportCount++;
 					}
