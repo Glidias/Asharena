@@ -47,6 +47,10 @@ class PlayerTargetingSystem extends System
 	
 	override public function addToEngine(engine:Engine):Void {
 		nodeList = engine.getNodeList(PlayerTargetNode);
+		reset();
+	}
+	
+	public inline function reset():Void {
 		lastHitObj = null;
 	}
 	

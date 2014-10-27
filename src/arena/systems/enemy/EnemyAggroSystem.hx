@@ -487,7 +487,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 			
 			targRotZ =  Math.atan2(dy, dx) + ROT_FACING_OFFSET;
 			diffAngle = getDiffAngle(a.rot.z, targRotZ);
-			a.rot.z = getDestAngle2D(a.rot.z, targRotZ, ROT_PER_SEC * pTimeElapsed, diffAngle);  // getDestAngleDirection(a.rot.z, targRotZ)  * (2 * PMath.DEG_RAD) * pTimeElapsed;
+			a.rot.z = !a.state.fixed || a.state.attackRangeSq !=0 ? getDestAngle2D(a.rot.z, targRotZ, ROT_PER_SEC * pTimeElapsed, diffAngle) : a.rot.z;  // getDestAngleDirection(a.rot.z, targRotZ)  * (2 * PMath.DEG_RAD) * pTimeElapsed;
 			diffAngle = PMath.abs( diffAngle);
 			
 			// determine if within "suitable" range to strike/engage player

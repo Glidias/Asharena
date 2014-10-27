@@ -83,6 +83,8 @@ class HitFormulas
 	public static inline function getPercChanceToHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {
 		var facinPerc:Float ;
 		var facingNotRequired:Bool = defense < 0;
+		//Log.trace(defense);
+		//if (defense == 0) throw "AWR";
 		defense = facingNotRequired ? -defense : defense;
 		
 		var basePerc:Float = facinPerc = calculateFacingPerc(posA, posB, rotB, defB); 

@@ -223,17 +223,20 @@ package systems.player.a3d
 		
 		public function setTargetMode(val:Boolean):void {
 			if (dead) return;
+			/*
 			if (val && _stance == 2) {
 				
 				preferedStance = 1;
 				setIdleStance(1);
 			}
+
+			*/
 			if (_ranged) {
 				if (val) {
 					skin.rotationZ = Math.PI;// - .7;
 					
 					//setAnimationNode(upper_idleCombat , upperBodyController, upperBody, 0);
-					handleAction(PlayerAction.IDLE);
+					//handleAction(PlayerAction.IDLE);
 					
 					////setAnimationNode(upper_idleCombat , upperBodyController, upperBody, 0);
 					//handleAction(PlayerAction.IDLE);
@@ -246,7 +249,7 @@ package systems.player.a3d
 					
 					skin.rotationZ = Math.PI;
 					
-					setAnimationNode(upper_idleCombat , upperBodyController, upperBody, 0);
+					setAnimationNode(_stance < 2 ? upper_idleCombat : upper_idleCrouch, upperBodyController, upperBody, 0);
 					
 					//upperBodyController.update(1);
 				//	_curController = fullBodyController;
@@ -254,7 +257,7 @@ package systems.player.a3d
 					
 					//setAnimationNode( _stance < 2 ? fullBodyAnims[ "combat_idle"] : fullBodyAnims["crouch_idle"], fullBodyController, fullBody, 0);
 					
-					//handleAction(PlayerAction.IDLE);
+					
 					
 					
 					
@@ -272,7 +275,7 @@ package systems.player.a3d
 			}
 			else {
 			
-				setAnimationNode(upper_idleCombat , upperBodyController, upperBody, .3);
+				setAnimationNode(_stance < 2 ? upper_idleCombat : upper_idleCrouch , upperBodyController, upperBody, .3);
 			
 
 				TweenLite.to(skin, .3, { rotationZ:Math.PI, ease:Cubic.easeOut } );
@@ -456,7 +459,7 @@ package systems.player.a3d
 				fullBodyController.update(0);
 			}
 			//*/
-			
+		//	skin.z = -17;
 			setAnimationNode( customCouple, upperBodyController, upperBody, readyAimTime);
 			//_curController = null;
 			if (upperBodyDominant) _curController = null;
@@ -468,9 +471,7 @@ package systems.player.a3d
 			
 			//setAnimationNode(attackAnimCouple, upperBodyController, upperBody, .3);
 			if (!upperBodyDominant) {
-				var anim:AnimationClip =  _stance < 2 ? fullBodyAnims[ "combat_idle"] : fullBodyAnims["crouch_idle"];
-				//anim.time = 0;
-				setAnimationNode(anim, fullBodyController, fullBody, 0);
+					setAnimationNode( _stance < 2 ? fullBodyAnims[ "combat_idle"] : fullBodyAnims["crouch_idle"], fullBodyController, fullBody, 0);
 				fullBodyController.update(0);
 			}
 			
@@ -688,7 +689,7 @@ package systems.player.a3d
 				return;
 			}	
 			else if (val === PlayerAction.IDLE) {
-				_movingSlow = false;
+				_movingSlow = true;
 				upperBody.activate(upperBodyAnims["ref_melee_aim"]);
 				
 				//skin._rotationZ = Math.PI;
@@ -696,7 +697,7 @@ package systems.player.a3d
 				
 				setAnimation(fullBodyAnims[(_stance == 0 ? (danger ? "combat" : "standing") : _stanceString) + "_idle"], fullBodyController, fullBody,   myLastAction == 0 ? CROUCH_TIME : 0);  //_lastStance < 3 && _stance < 3 && 
 				
-					crouchTime =  myLastAction != 0 ? 9999999 : 0;
+				if (!attacking) crouchTime =  myLastAction != 0  ? 9999999 :  0;
 				
 			
 
@@ -927,8 +928,12 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		
 		public function flinch():Number 
 		{
+			if (_stance == 2) {
+				return 0; // KIV for now..need to add flinch animations while crouched.
+			}
 			var clip:AnimationClip = fullBodyAnims[ FLINCHES[int(Math.random() * FLINCHES.length)] ];
 			clip.time = 0;
+			
 			setAnimation(clip, fullBodyController, fullBody, .1);
 			//throw new Error(clip.length);
 			// temrpoary delayedCall atm

@@ -855,7 +855,7 @@ WeaponSlots
 			
 			}
 			
-			if (_gotTargetInRange && _gotTargetLOS && !_stars) {
+			if (_gotTargetInRange && _gotTargetLOS && !_stars && _targetMode) {
 				updateTargetChoices();
 				
 			}
@@ -905,9 +905,9 @@ WeaponSlots
 			var aggroPlayer:AggroMem = _displayChar.get(AggroMem) as AggroMem;
 			var playerSide:int = aggroPlayer != null ? aggroPlayer.side : -1;
 			if ( (playerSide == aggroSide) || aggroSide == -1 ) {
-				choices.length = 0;
-				_actionChoicesBox.drawNow();
-				return;  // kiv: shoudld redirect to healing/non-threathening options for friendly side!
+				//choices.length = 0;
+				//_actionChoicesBox.drawNow();
+				//return;  // kiv: shoudld redirect to healing/non-threathening options for friendly side!
 				
 			}
 				
@@ -931,6 +931,7 @@ WeaponSlots
 			var aggroing:Boolean = false;
 			var checkingLOS:Boolean = false;
 			
+			try {
 			
 			var fullyAggro:Boolean = HitFormulas.fullyAggroing(_targetNode.entity);
 			aggroing = aggro == null || aggro.flag != 1 || (_targetNode.entity.get(WeaponState) as WeaponState).fireMode.fireMode <= 0  ? false : (checkingLOS  = aggro!=null) && checkLOS(_targetNode.entity, (_targetNode.entity.get(WeaponState) as WeaponState).fireMode, _displayChar);
@@ -997,6 +998,12 @@ WeaponSlots
 				bestDamage = sampleDmg;
 				_bestChoiceIndex = count;
 			}
+			
+			}
+			catch (e:Error) {
+				throw new Error("CAUGHT:" + _targetNode );
+			}
+			
 			
 			
 			choicesWeapons[count] = playerWeapon;
@@ -1204,8 +1211,7 @@ WeaponSlots
 		
 		public function updateTurnInfo(curCommandPoints:int, maxCommandPoints:int, side:String, sideIndex:int, incomeNextTurn:int):void 
 		{
-			var cpInfo:String ="CP: "+ curCommandPoints + " / " + maxCommandPoints +  "  [+" + incomeNextTurn + "]";
-			_cpInfo = cpInfo;
+			updateCPTextInfo(curCommandPoints, maxCommandPoints, incomeNextTurn);
 			
 			_textTurnInfo.counter = 0;
 			_textTurnInfo.writeData(side +" :: "+curCommandPoints+" CP left:", 0, 0, 800, false);
@@ -1223,6 +1229,12 @@ WeaponSlots
 			_textTurnInfo.writeData("+" + incomeNextTurn + " next phase.  Max: " + maxCommandPoints , curCommandPoints * 16 + aabbWidth + 12, 0, 2000, false, _textTurnInfo.boundsCache.length    );
 	
 			_textTurnInfo.finaliseWrittenData();
+		}
+		
+		private function updateCPTextInfo(curCommandPoints:int, maxCommandPoints:int, incomeNextTurn:int):void 
+		{
+			var cpInfo:String ="CP: "+ curCommandPoints + " / " + maxCommandPoints +  "  [+" + incomeNextTurn + "]";
+			_cpInfo = cpInfo;
 		}
 		
 		public function notifyPlayerActionMiss():void {
@@ -1529,7 +1541,7 @@ WeaponSlots
 			var obj:Object3D = e.get(Object3D) as Object3D;
 
 			var crit:Boolean  = strikeResult == 2;
-			_msgLogInfo.appendSpanTagMessage(!killingBlow  ? '<span u="1">'+obj.name + '</span> took <span u="1">'+amount+'</span> points of assisted damage.' : '<span u="2">'+obj.name + '</span> was killed by friendly assist!');
+			_msgLogInfo.appendSpanTagMessage(!killingBlow  ? '<span u="1">'+obj.name + '</span> took <span u="1">'+amount+'</span> points of assisted damage.' : '<span u="1">'+obj.name + '</span> was killed by friendly assist!');
 			_msgLogInfo.drawNow();
 
 			if ( e === _targetStrikeEntity) {
@@ -1611,6 +1623,13 @@ WeaponSlots
 		{
 			_charWeaponEnabled = false;
 			setDeadCharInfo();
+		}
+		
+		public function reloadTurn():void 
+		{
+			_charWeaponEnabled = true;
+			
+			
 		}
 		
 		/*

@@ -124,9 +124,10 @@ class AggroMemManager
 		for (i in 0...len) {
 			var activeNode:AggroMemNode = activeArray[i];
 			if (activeNode.entity == leaderEntity) continue;
+			//if (activeNode.entity.get(EnemyAggro) == null) continue;
 			activeNode.entity.remove(EnemyAggro);
 			var stance:IStance = activeNode.entity.get(IStance);
-			stance.setStance(2);
+			if (stance.getStance() != 2) stance.setStance(2);
 			
 		}
 	}
@@ -502,10 +503,11 @@ class AggroMemManager
 						a.weaponState.attackTime = 5;
 						if (_supportCount > _maxSupport) {
 							a.weaponState.cancelTrigger();
+							a.state.flag = 0;
 							a.state.setAttackRange(0);
 						}
 						else {
-						//	engine.addEntity( new Entity().add( new Tween(0, Math.random() * .35, {  }, { onComplete:a.stance.standAndFight}  ) ) );
+							engine.addEntity( new Entity().add( new Tween(0, Math.random() * .25, {  }, { onComplete:a.stance.standAndFight}  ) ) );
 							//a.stance.setStance(1);
 						}
 						_supportCount++;
@@ -514,6 +516,10 @@ class AggroMemManager
 				}
 				else if (checkedLOS) {
 					a.state.flag = -1;
+				}
+				
+				if (a.state.flag != 1) {
+					a.state.setAttackRange(0);
 				}
 				aWeapon = aWeapon.nextFireMode;
 			}

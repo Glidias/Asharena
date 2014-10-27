@@ -427,7 +427,7 @@ package tests.pvp
 		
 		private function getTestRangedWeapon():Weapon {
 			var w:Weapon =   new Weapon();
-			w.projectileSpeed = 977;
+			w.projectileSpeed =  16.4318 * ArenaHUD.METER_UNIT_SCALE;
 
 			
 			w.name = "Longbow";
@@ -458,7 +458,7 @@ package tests.pvp
 			w.strikeTimeAtMaxRange = 0; //0.0001;
 			w.strikeTimeAtMinRange = 0;// 0.0001;
 		
-			w.muzzleVelocity =  ArenaHUD.METER_UNIT_SCALE *  197.206;
+			w.muzzleVelocity =   16.4318 * ArenaHUD.METER_UNIT_SCALE;// *  197.206;
 			w.muzzleLength = 40;
 			w.parryEffect = .4;
 			
@@ -520,7 +520,7 @@ package tests.pvp
 			ProjectileDomain;
 			
 			var w:Weapon =   new Weapon();
-		w.minPitch = -Math.PI*.25;
+			w.minPitch = -Math.PI*.25;
 			w.maxPitch = Math.PI*.25;
 			
 			w.projectileSpeed = 0;
@@ -646,6 +646,9 @@ package tests.pvp
 					cycleWeapon();
 				}
 			}
+			else if (keyCode === Keyboard.R && !game.keyPoll.isDown(keyCode)) {
+				if (!_targetMode && game.gameStates.engineState.currentState === game.gameStates.thirdPerson  && !sceneLocked ) attemptReloadTurn();
+			}
 			else if (keyCode === Keyboard.L &&   !game.keyPoll.isDown(keyCode) ) {
 				changeCameraView("commander");
 			}
@@ -674,10 +677,11 @@ package tests.pvp
 					//toggleTargetingMode();
 				}
 			}
-			/*
-			else if (keyCode === Keyboard.B && !game.keyPoll.isDown(keyCode)) {
-				testAnim(1);
-			}
+			
+			//else if (keyCode === Keyboard.B && !game.keyPoll.isDown(keyCode)) {
+			//	testAnim(1);
+			//}
+			
 			else if (keyCode === Keyboard.N && !game.keyPoll.isDown(keyCode)) {
 				testAnim2(1);
 			}
@@ -697,7 +701,35 @@ package tests.pvp
 			else if (keyCode === Keyboard.P &&  !game.keyPoll.isDown(keyCode)) {
 				if ( game.gameStates.engineState.currentState === engineStateCommander ) showPreferedStances();
 			}
-			*/
+			//*/
+		}
+		
+		private function attemptReloadTurn():void 
+		{
+			if (commandPoints[sideIndex] <= 0) {
+				return;
+			}
+			
+			var counter:Counter = arenaSpawner.currentPlayerEntity.get(Counter) as Counter;
+			var measure:Number = MAX_MOVEMENT_POINTS / (1 << (counter.value-1));
+			if ( !arenaHUD.charWeaponEnabled || movementPoints.movementTimeLeft < measure*.5)  {
+				
+				movementPoints.movementTimeLeft = MAX_MOVEMENT_POINTS / (1 << counter.value);
+				counter.value++;
+			
+				arenaHUD.reloadTurn();
+				targetingSystem.reset();
+				
+				commandPoints[sideIndex]--;
+				updateCP();
+				arenaHUD.hideStars();
+				
+				if (!arenaSpawner.currentPlayerEntity.has(KeyPoll)) {
+					arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll);
+				}
+			};
+			
+		
 		}
 		
 		private function cycleWeapon():void 
@@ -783,10 +815,12 @@ package tests.pvp
 			if (arenaHUD.playerChosenWeaponStrike.fireMode > 0) {
 				
 				AnimAttackSystem.performMeleeAttackAction(arenaHUD.playerWeaponModeForAttack, arenaSpawner.currentPlayerEntity, arenaHUD.targetEntity, arenaHUD.strikeResult > 0 ? arenaHUD.playerDmgDealRoll : 0);
+				
 				//game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
 				
 				 delayTimeElapsed =  Math.random() * .3  + arenaHUD.playerChosenWeaponStrike.strikeTimeAtMaxRange;
 				 timeToDeplete = arenaHUD.playerChosenWeaponStrike.strikeTimeAtMaxRange + arenaHUD.playerChosenWeaponStrike.timeToSwing;
+				
 			}
 			else {
 			
@@ -874,10 +908,13 @@ package tests.pvp
 			
 			
 			 if (arenaHUD.strikeResult > 0) {
-				 TweenLite.delayedCall(.5, resolveStrikeAction3);
+				// TweenLite.delayedCall(.5, resolveStrikeAction3);
+				game.engine.addEntity( new Entity().add( new Tween(arenaHUD, .5, { }, { onComplete:resolveStrikeAction3 } )));
 			 }
 			else resolveStrikeAction3();
 		}
+		
+		
 		
 		private function resolveStrikeAction3():void 
 		{
@@ -918,29 +955,34 @@ package tests.pvp
 			// new stuff here
 			instant = false;
 			EnemyAggroSystem.AGGRO_HAS_CRITICAL = false;
-			//(arenaHUD.targetEntity.get(IStance) as GladiatorStance).attacking = true;
 			aggroMemManager.setupSupportFireOnTarget(arenaHUD.targetEntity, arenaSpawner.currentPlayerEntity);
+			//(arenaHUD.targetEntity.get(IStance) as GladiatorStance).attacking = true;
+			
 			playerStriking = false;
 			
 			
 			
 			if (aggroMemManager._supportCount != 0) {
-				TweenLite.delayedCall(.3, resolveStrikeActionFully2, [instant]);
+				game.engine.addEntity( new Entity().add( new Tween({}, .45, { }, { onComplete:resolveStrikeActionExec } )));
+				//TweenLite.delayedCall(.45, resolveStrikeActionFully2); //, [instant]
 			}
 			else resolveStrikeActionFully2(instant);
 			
 		}
-		
-		private function resolveStrikeActionFully2(instant:Boolean):void {
+		private function resolveStrikeActionExec():void {
+			TweenLite.delayedCall(0, resolveStrikeActionFully2);
+		}
+		private function resolveStrikeActionFully2(instant:Boolean=false):void {
 			if (delayTimeElapsed > 0) {
 				game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
 				movementPoints.timeElapsed = delayTimeElapsed;	
+				
 			}
-			
+		//	throw new Error("A"+instant);
 			//instant = true;
 			if (!instant ) {  //&& arenaHUD.enemyStrikeResult > 0
-				TweenLite.delayedCall(delayTimeElapsed+.3, resolveToggleTargetingMode);
-				
+				//TweenLite.delayedCall(delayTimeElapsed+.3, resolveToggleTargetingMode);
+				game.engine.addEntity( new Entity().add( new Tween(arenaHUD, .3, { }, { onComplete:resolveToggleTargetingMode } )));
 			}
 			else {
 				resolveToggleTargetingMode();
@@ -1023,7 +1065,7 @@ package tests.pvp
 			else {
 				exitTargetMode();
 			
-				gladiatorStance.setIdleStance( _lastTargetStance);
+				//gladiatorStance.setIdleStance( _lastTargetStance);
 			}
 			gladiatorStance.setTargetMode(_targetMode);
 		}
@@ -1704,7 +1746,7 @@ package tests.pvp
 			_waterBase.hideFromReflection.push(arcSystem.arcs);
 			
 			// setup targeting system
-			var targetingSystem:ThirdPersonTargetingSystem = new ThirdPersonTargetingSystem(thirdPersonController.thirdPerson);
+			targetingSystem = new ThirdPersonTargetingSystem(thirdPersonController.thirdPerson);
 			game.gameStates.thirdPerson.addInstance(targetingSystem).withPriority(SystemPriorities.postRender);
 			targetingSystem.targetChanged.add(onTargetChanged);
 			targetingSystem.targetChanged.add(arenaHUD.setTargetChar);
@@ -1982,6 +2024,7 @@ package tests.pvp
 
 		
 		private var updateTicker:ITickProvider;
+		private var targetingSystem:ThirdPersonTargetingSystem;
 		
 		private function setupInterface():void 
 		{
@@ -1998,14 +2041,15 @@ package tests.pvp
 
 		private function updateTick(time:Number):void {
 			//if (time != 1 / 60) throw new Error("DIFF");
-			thirdPersonController.thirdPerson.followAzimuth = _followAzimuth || game.keyPoll.isDown(Keyboard.V);
+			//time *= 4;
+			
 			game.engine.update(time);
 			arenaHUD.updateFuel( movementPoints.movementTimeLeft / MAX_MOVEMENT_POINTS );
 			arenaHUD.update();
 		}
 		
 		private function renderTick(time:Number):void {
-			
+			thirdPersonController.thirdPerson.followAzimuth = _followAzimuth || game.keyPoll.isDown(Keyboard.V);
 			var camera:Camera3D = _template3D.camera;
 			
 			_skyboxBase.update(_template3D.camera);
