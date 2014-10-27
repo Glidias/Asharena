@@ -963,15 +963,13 @@ package tests.pvp
 			
 			
 			if (aggroMemManager._supportCount != 0) {
-				game.engine.addEntity( new Entity().add( new Tween({}, .45, { }, { onComplete:resolveStrikeActionExec } )));
-				//TweenLite.delayedCall(.45, resolveStrikeActionFully2); //, [instant]
+				game.engine.addEntity( new Entity().add( new Tween({}, .45, { }, { onComplete:resolveStrikeActionFully2 } )));
+			//	TweenLite.delayedCall(.45, resolveStrikeActionFully2); //, [instant]
 			}
 			else resolveStrikeActionFully2(instant);
 			
 		}
-		private function resolveStrikeActionExec():void {
-			TweenLite.delayedCall(0, resolveStrikeActionFully2);
-		}
+
 		private function resolveStrikeActionFully2(instant:Boolean=false):void {
 			if (delayTimeElapsed > 0) {
 				game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
@@ -1585,7 +1583,8 @@ package tests.pvp
 		}
 		
 		private function onTransitComplete():void {
-
+			
+	
 			game.gameStates.engineState.changeState(_targetTransitState);
 			arenaHUD.setState(_targetTransitState);
 			

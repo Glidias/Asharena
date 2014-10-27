@@ -16,6 +16,7 @@ class TweenSystem extends System
 
 	private var nodeList:NodeList<TweenNode>;
 	private var groupList:NodeList<TweenGroupNode>;
+	private var _engine:Engine;
 	
 	public function new() 
 	{
@@ -23,6 +24,7 @@ class TweenSystem extends System
 	}
 	
 	override public function addToEngine(engine:Engine):Void {
+		_engine = engine;
 		nodeList = engine.getNodeList(TweenNode);
 		groupList = engine.getNodeList(TweenGroupNode);
 	}
@@ -99,8 +101,8 @@ class TweenSystem extends System
 			n.tween.t += time;
 			if ( updateTween(n.tween) ) {
 				if (n.tween.onComplete != null) {
-					n.tween.onComplete();
-					
+					//n.tween.onComplete();
+					_engine.updateComplete.addOnce(n.tween.onComplete);
 				}
 				n.tween.dead = true;
 				n.entity.remove(Tween);
@@ -115,8 +117,8 @@ class TweenSystem extends System
 			g.group.t += time;
 			if ( updateGroup( g.group ) ) {
 				if (g.group.onComplete != null) {
-					g.group.onComplete();
-					
+				//	g.group.onComplete();
+					_engine.updateComplete.addOnce(g.group.onComplete);
 				}
 				g.group.dead = true;
 				g.entity.remove(TweenGroup);
