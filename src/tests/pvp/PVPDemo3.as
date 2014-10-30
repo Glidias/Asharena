@@ -431,7 +431,8 @@ package tests.pvp
 
 			
 			w.name = "Longbow";
-			w.fireMode =  Weapon.FIREMODE_RAY;
+			w.fireMode =  Weapon.FIREMODE_TRAJECTORY;
+			w.fireModeLabel = "Shoot arrow";
 			w.sideOffset =11;
 			w.heightOffset = 13;
 		
@@ -749,6 +750,7 @@ package tests.pvp
 					//gladiatorStance.setIdleStance( _lastTargetStance);
 				}
 				gladiatorStance.switchWeapon( weapSlot.slots[index] );
+				
 				if (toReset) {
 					
 					toggleTargetingMode();

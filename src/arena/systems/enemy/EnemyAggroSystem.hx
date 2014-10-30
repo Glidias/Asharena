@@ -546,9 +546,10 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 									}
 								//}
 								
+								//if (aWeapon.fireMode == 0) throw "Dun have firemode zero for now!:" + aWeapon.name;
 								a.signalAttack.forceSet(aWeapon.fireMode);
 								
-								if (a.weapon.fireMode > 0) {
+								if (aWeapon.fireMode > 0) {
 									swinger =  new AnimAttackMelee();
 									swinger.init_i_static( aWeapon.anim_strikeTimeAtMaxRange, pTarget.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
 									a.entity.add(swinger);
@@ -561,9 +562,10 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								
 							}
 							else { // strike rolled miss
+								//if (aWeapon.fireMode == 0) throw "Dun have firemode zero for now!:" + aWeapon.name;
 								a.signalAttack.forceSet(aWeapon.fireMode);
 								
-								if (a.weapon.fireMode > 0) {
+								if (aWeapon.fireMode > 0) {
 									swinger =  new AnimAttackMelee();
 									//HitFormulas.calculateAnimStrikeTimeAtRange(a.weapon, actualDist)
 									swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, pTarget.health, 0 );

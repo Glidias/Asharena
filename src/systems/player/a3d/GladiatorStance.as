@@ -583,9 +583,11 @@ package systems.player.a3d
 		public function handleAttack(attack:uint):void {
 			
 			if (_ranged) {
+				if (_weapon.fireMode > 0) throw new Error("Should not be!");
 				shoot();
 			}
 			else {
+				if (_weapon.fireMode <= 0) throw new Error("Should not be 2!");
 				if (attack === Weapon.FIREMODE_SWING) {
 					swing();
 				}
@@ -593,7 +595,7 @@ package systems.player.a3d
 					thrust();
 				}
 				else {
-					throw new Error("Could not resolve attack animation code:" + attack );
+					throw new Error("Could not resolve attack animation code:" + attack + ", "+_weapon.fireMode );
 				}
 			}
 		}
@@ -949,6 +951,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		
 		private var _aimReady:Boolean = false;
 		private var weaponRangeMode:int = Weapon.RANGEMODE_BOW;
+		private var _weapon:Weapon;
 		private var upper_idleCombat:AnimationClip;
 		private var upper_idleCrouch:AnimationClip;
 		private var dead:Boolean=false;
@@ -1009,7 +1012,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		public function switchWeapon(weapon:Weapon):void {
 			weaponId = weapon.id;
 			weaponRangeMode = weapon.rangeMode;
-			
+			this._weapon = weapon;
 			if (weapon.fireMode <= 0) { // ranged
 				readyAimTime = weapon.timeToSwing;
 				tensionSpeed = weapon.strikeTimeAtMaxRange != 0 ?  1/weapon.strikeTimeAtMaxRange : 1;
