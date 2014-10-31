@@ -1019,8 +1019,8 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 		
 				_ranged = true;
 				
-				setAimReady(true);
-				setAimReady(false);
+				//setAimReady(true);
+				//setAimReady(false);
 				
 			}
 			else { // melee

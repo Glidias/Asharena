@@ -43,8 +43,10 @@ class Weapon
 	public var fireModeLabel:String;
 	
 	public static inline var RANGEMODE_MELEE:Int = 0;
-	public static inline var RANGEMODE_GUN:Int = 1;
-	public static inline var RANGEMODE_BOW:Int = 2;
+	public static inline var RANGEMODE_GUN:Int = 1;		// weapon is pre-aimed beforehand, tends to fire straight
+	public static inline var RANGEMODE_BOW:Int = 2;		// weapon is pre-aimed beforehand, will shoot in clear trajectory
+	public static inline var RANGEMODE_THROW:Int = 3;	// weapon isn't pre-aimed, swing will occur, and will throw in trajectory once swing reaches animation strike
+	public static inline var RANGEMODE_THROW_SHOOT:Int = 4;  // weapon isn't pre-aimed,  , and will throw in straight velocity once swing reaches animation strike
 	
 	public var rangeMode:Int;
 	

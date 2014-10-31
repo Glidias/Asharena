@@ -494,6 +494,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 			///*
 			if (aWeaponState.trigger) {  // if attack was triggered, 
 				aWeapon = aWeaponState.fireMode;
+				if (a.state.flag == 0) throw "Should not be zero!" + a.state.fixed;
 				
 				if (aWeaponState.cooldown > 0) {  // weapon is on the  cooldown after strike has occured
 					
@@ -547,9 +548,10 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								//}
 								
 								//if (aWeapon.fireMode == 0) throw "Dun have firemode zero for now!:" + aWeapon.name;
-								a.signalAttack.forceSet(aWeapon.fireMode);
+								
 								
 								if (aWeapon.fireMode > 0) {
+									a.signalAttack.forceSet(aWeapon.fireMode);
 									swinger =  new AnimAttackMelee();
 									swinger.init_i_static( aWeapon.anim_strikeTimeAtMaxRange, pTarget.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
 									a.entity.add(swinger);
@@ -563,9 +565,10 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 							}
 							else { // strike rolled miss
 								//if (aWeapon.fireMode == 0) throw "Dun have firemode zero for now!:" + aWeapon.name;
-								a.signalAttack.forceSet(aWeapon.fireMode);
+								
 								
 								if (aWeapon.fireMode > 0) {
+									a.signalAttack.forceSet(aWeapon.fireMode);
 									swinger =  new AnimAttackMelee();
 									//HitFormulas.calculateAnimStrikeTimeAtRange(a.weapon, actualDist)
 									swinger.init_i_static(aWeapon.anim_strikeTimeAtMaxRange, pTarget.health, 0 );

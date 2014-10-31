@@ -1001,7 +1001,7 @@ WeaponSlots
 			
 			}
 			catch (e:Error) {
-				throw new Error("CAUGHT:" + _targetNode );
+				throw new Error("CAUGHT:" + _targetNode + ", "+e );
 			}
 			
 			

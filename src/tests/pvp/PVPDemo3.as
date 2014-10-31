@@ -35,6 +35,7 @@ package tests.pvp
 	import arena.components.char.HealthFlags;
 	import arena.components.char.HitFormulas;
 	import arena.components.char.MovementPoints;
+	import arena.components.enemy.EnemyAggro;
 	import arena.components.enemy.EnemyIdle;
 	import arena.components.weapon.Weapon;
 	import arena.components.weapon.WeaponSlot;
@@ -710,7 +711,7 @@ package tests.pvp
 			if (commandPoints[sideIndex] <= 0) {
 				return;
 			}
-			
+			if (!arenaSpawner.currentPlayerEntity.has(Health)) return;
 			var counter:Counter = arenaSpawner.currentPlayerEntity.get(Counter) as Counter;
 			var measure:Number = MAX_MOVEMENT_POINTS / (1 << (counter.value-1));
 			if ( !arenaHUD.charWeaponEnabled || movementPoints.movementTimeLeft < measure*.5)  {
@@ -757,6 +758,8 @@ package tests.pvp
 					TweenLite.delayedCall(0, toggleTargetingMode);
 				}
 			}
+			
+			//game.keyPoll.resetAllStates();
 			
 		}
 		
@@ -900,11 +903,14 @@ package tests.pvp
 				arenaHUD.notifyPlayerActionMiss();
 			}
 			else {
+				/*
 				var weapState:WeaponState = arenaHUD.targetEntity.get(WeaponState) as WeaponState;
 				if (weapState!=null && weapState.trigger && weapState.fireMode != null && weapState.fireMode.fireMode<=0) {
 					weapState.cancelTrigger();
+					var e:EnemyAggro = arenaHUD.targetEntity.get(EnemyAggro) as EnemyAggro;
+					if (e != null) e.flag = 0;
 				}
-				
+				*/
 			}
 			
 			
@@ -1858,12 +1864,15 @@ package tests.pvp
 		
 		private function onDamaged(e:Entity, hp:int, amount:int):void 
 		{
+			var stance:GladiatorStance;
 			if (e != arenaSpawner.currentPlayerEntity) {  // assume damage inflicted by active currentPlayerEntity
 				if ( playerStriking ) {
 					arenaHUD.txtPlayerStrike(e, hp, amount);
 				}
 				else {
 					arenaHUD.txtEnemyGotHit(e, hp, amount);
+					stance = e.get(GladiatorStance) as GladiatorStance;
+					if (stance != null) stance.flinch();
 				}
 			}
 			else {  // assume damage taken from entity under aggro system
@@ -1875,7 +1884,11 @@ package tests.pvp
 					var gladiatorStance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IStance) as GladiatorStance;
 					if (gladiatorStance != null) {
 						gladiatorStance.enableFast = false;
+						if (sceneLocked) gladiatorStance.flinch();
+					
 					}
+					
+					
 				}
 				
 			}

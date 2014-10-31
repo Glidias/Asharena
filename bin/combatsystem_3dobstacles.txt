@@ -128,11 +128,16 @@ ____________________________________________________
 
 Gameplay features 
 ---------------------------------------------------------------
-Add in cover *
+Add in cover with maps*
 Linked follower movement (possible KIV..but this needs to be included for balancing and giving advantage to attacking side)
 
 Fix aesthetic bugs:
 Rotation appearance when shooting (possible KIV)
+
+Some critical bugs/exceptions that needs to be retified:
+State before strike isn't 1. State 0 reset. A.state.flag is zero but aWeaponstate.trigger == true
+ArenaHUD player targetoptions null reference occasional
+Null arr found in ProjectileDomain
 
 
 HTML Balance demo *

@@ -519,8 +519,11 @@ class AggroMemManager
 					a.state.flag = -1;
 				}
 				
-				if (a.state.flag != 1) {
+				if (a.state.fixed && a.state.flag != 1) {
 					a.state.setAttackRange(0);
+					a.state.flag = 0;
+					a.weaponState.cancelTrigger();
+					
 				}
 				aWeapon = aWeapon.nextFireMode;
 			}
