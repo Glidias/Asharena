@@ -10,6 +10,7 @@ import arena.components.weapon.AnimAttackRanged;
 import arena.systems.player.IVisibilityChecker;
 import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.weapon.ITimeChecker;
+import haxe.Log;
 
 import arena.systems.player.PlayerAggroNode;
 import ash.core.Engine;
@@ -173,6 +174,21 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 		
 	//	if (boolTest) throw "CLEANED";
 	//	boolTest = true;
+	}
+	public static inline var STATE_FLAG_READY:Int = 0;
+	public static inline var STATE_FLAG_TRIGGER:Int = 1;
+	public static inline var STATE_FLAG_STRUCK:Int = 2;
+	public static inline var STATE_FLAG_COOLDOWN:Int = 3;
+	
+	public function resetCooldownsOfAllAggro():Void {
+		var a:EnemyAggroNode = aggroList.head;
+		while (a != null) {
+			if ( a.state.flag == STATE_FLAG_STRUCK || a.state.flag==STATE_FLAG_COOLDOWN ) {
+				a.weaponState.cancelTrigger();
+				a.state.flag = 0;
+			}
+			a = a.next;
+		}
 	}
 	
 	
@@ -494,7 +510,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 			///*
 			if (aWeaponState.trigger) {  // if attack was triggered, 
 				aWeapon = aWeaponState.fireMode;
-				if (a.state.flag == 0) throw "Should not be zero!" + a.state.fixed;
+				if (a.state.flag == 0) Log.trace("Should not be zero!" + a.state.fixed + ", " + aWeaponState.cooldown + ", " + aWeaponState.attackTime);
 				
 				if (aWeaponState.cooldown > 0) {  // weapon is on the  cooldown after strike has occured
 					

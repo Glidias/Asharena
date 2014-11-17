@@ -714,7 +714,8 @@ package tests.pvp
 			if (!arenaSpawner.currentPlayerEntity.has(Health)) return;
 			var counter:Counter = arenaSpawner.currentPlayerEntity.get(Counter) as Counter;
 			var measure:Number = MAX_MOVEMENT_POINTS / (1 << (counter.value-1));
-			if ( !arenaHUD.charWeaponEnabled || movementPoints.movementTimeLeft < measure*.5)  {
+			
+			if ( !arenaHUD.charWeaponEnabled || movementPoints.movementTimeLeft < measure*.5)  {  // attempt reload turn
 				
 				movementPoints.movementTimeLeft = MAX_MOVEMENT_POINTS / (1 << counter.value);
 				counter.value++;
@@ -725,6 +726,10 @@ package tests.pvp
 				commandPoints[sideIndex]--;
 				updateCP();
 				arenaHUD.hideStars();
+				
+				// reset all cooldowns of enemies
+				_enemyAggroSystem.resetCooldownsOfAllAggro();
+				aggroMemManager.processAllEnemyAggroNodes();
 				
 				if (!arenaSpawner.currentPlayerEntity.has(KeyPoll)) {
 					arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll);
@@ -903,14 +908,14 @@ package tests.pvp
 				arenaHUD.notifyPlayerActionMiss();
 			}
 			else {
-				/*
+			//	/*
 				var weapState:WeaponState = arenaHUD.targetEntity.get(WeaponState) as WeaponState;
 				if (weapState!=null && weapState.trigger && weapState.fireMode != null && weapState.fireMode.fireMode<=0) {
 					weapState.cancelTrigger();
 					var e:EnemyAggro = arenaHUD.targetEntity.get(EnemyAggro) as EnemyAggro;
 					if (e != null) e.flag = 0;
 				}
-				*/
+				//*/
 			}
 			
 			

@@ -484,8 +484,22 @@ class AggroMemManager
 		idleList.nodeRemoved.add( onIdleNodeRemoved);
 	}
 	
-	inline function processAggroNode(a:EnemyAggroNode):Void 
+	public function processAllEnemyAggroNodes():Void {
+		var a:EnemyAggroNode = aggroList.head;
+		while (a != null) {
+			if ( !a.state.fixed) {
+				processAggroNode(a);
+			}
+			a = a.next;
+		}
+	}
+	
+	
+	//inline
+	
+	public function processAggroNode(a:EnemyAggroNode):Void 
 	{
+		
 		var aWeapon:Weapon = a.weapon;
 
 		var pTarget:PlayerAggroNode = a.state.target;
@@ -505,13 +519,15 @@ class AggroMemManager
 							a.weaponState.cancelTrigger();
 							a.state.flag = 0;
 							a.state.setAttackRange(0);
+							a.entity.remove(EnemyAggro);
+							
 						}
 						else {
 						//	a.stance.standAndFight();
 							engine.addEntity( new Entity().add( new Tween(0, Math.random() * .25, {  }, { onComplete:a.stance.standAndFight}  ) ) );
-							
+							_supportCount++;
 						}
-						_supportCount++;
+						
 					}
 					break;
 				}
@@ -523,7 +539,8 @@ class AggroMemManager
 					a.state.setAttackRange(0);
 					a.state.flag = 0;
 					a.weaponState.cancelTrigger();
-					
+					a.entity.remove(EnemyAggro);
+					break;
 				}
 				aWeapon = aWeapon.nextFireMode;
 			}
