@@ -68,6 +68,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 	private var _reactCooldown:Float;
 	public static inline var REACT_TIME:Float = .215;  // Average reaction time of human being: 0.215 : 4.65 frames per second
 	
+	
 	public function new() 
 	{
 		super();
@@ -388,6 +389,8 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 				newAggro.setAttackRange( rangeToAttack);
 				newAggro.watch = w.state.watch;
 				newAggro.target = w.state.target;
+				newAggro.flag = 0;
+				w.weaponState.cancelTrigger();
 				
 				w.entity.add(newAggro, EnemyAggro);
 				
@@ -538,7 +541,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 					aWeaponState.attackTime  += pTimeElapsed;
 					var actualDist:Float = Math.sqrt(sqDist) - pTarget.size.x;
 					var strikeTimeAtRange:Float = aWeapon.fireMode > 0 ? HitFormulas.calculateStrikeTimeAtRange(aWeapon, actualDist) : aWeapon.timeToSwing*(1-a.stance.getTension()) + aWeapon.strikeTimeAtMaxRange;
-					
+					aWeaponState.timeForStrike = strikeTimeAtRange;
 					var getPercChanceToHitDefender =  HitFormulas.getPercChanceToHitDefenderMethod(aWeapon);
 				
 					
@@ -625,6 +628,10 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 							aWeaponState.cooldown = aWeapon.cooldownTime;  
 							a.state.flag = 2;
 							onEnemyStrike.dispatch(a.entity);
+						}
+						
+						if (a.state.fixed) {
+							a.entity.remove(EnemyAggro);
 						}
 						
 						

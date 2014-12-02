@@ -75,6 +75,9 @@ class LimitedPlayerMovementSystem extends System
 			var vel:Vel = n.vel;
 			var displacement:Float = vel.lengthSqr();
 			n.movementPoints.timeElapsed = 0;
+			
+		//	n.movementPoints.timeElapsed = time; // real time
+			
 			if (displacement == 0) return;
 			
 			displacement = Math.sqrt(displacement);
@@ -103,6 +106,7 @@ class LimitedPlayerMovementSystem extends System
 				n.entity.remove(KeyPoll);
 				outOfFuel.dispatch();
 			}
+			//n.movementPoints.timeElapsed = time;  // real time
 			//n = n.next;
 		//}
 	}

@@ -13,6 +13,7 @@ class WeaponState
 	public var trigger:Bool;
 	public var randomDelay:Float;
 	public var delay:Float;
+	public var timeForStrike:Float;
 	
 	public function new() 
 	{

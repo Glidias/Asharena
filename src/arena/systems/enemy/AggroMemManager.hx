@@ -102,7 +102,7 @@ class AggroMemManager
 		for (i in 0...len) {
 			var activeNode:AggroMemNode = activeArray[i];
 			if (activeNode.entity == leaderEntity) continue;
-			if (Vec3Utils.sqDistBetween(leaderPos, activeNode.pos) <= 512*512 ) {
+			if (Vec3Utils.sqDistBetween(leaderPos, activeNode.pos) <= 256*256 ) {
 				var a:EnemyAggro = new EnemyAggro();
 				a.target = aggroTarget;
 				a.watch = null;
@@ -502,6 +502,10 @@ class AggroMemManager
 		
 		var aWeapon:Weapon = a.weapon;
 
+		a.state.flag = 0;// ();
+		a.weaponState.cancelTrigger();
+	
+	
 		var pTarget:PlayerAggroNode = a.state.target;
 			while(aWeapon != null) {
 				a.state.setAttackRange(a.state.fixed ? aWeapon.range :   (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, pTarget.size) : aWeapon.range + pTarget.size.x );
@@ -565,6 +569,8 @@ class AggroMemManager
 		_turnActive = false;
 		idleList.nodeRemoved.remove( onIdleNodeRemoved);
 		
+		
+		
 		// ROTATION dirty FOV/LOS update
 		// go through all EnemyWatch entities, update aggroMemory of them (if available) based off their ending FOV/LOS () for those that ended up rotating (due to being previously going to aggro state)
 		// do the same for all EnemyAggro entities.....
@@ -579,6 +585,7 @@ class AggroMemManager
 				}
 			}
 		//	w.stance.updateTension( -1, 1);
+		
 			w = w.next;
 		}
 
@@ -603,6 +610,8 @@ class AggroMemManager
 				engine.addEntity( new Entity().add( new Tween(w.stance, 1.3, { setPitchAim:Weapon.getPitchRatio(_result.pos.x - w.pos.x, _result.pos.y - w.pos.y, _result.pos.z - w.pos.z, w.weapon.minPitch, w.weapon.maxPitch) } ) ) );
 				
 			}
+			
+		//	w.entity.remove(EnemyWatch);
 			w = w.next;
 		}
 		
@@ -628,6 +637,10 @@ class AggroMemManager
 					engine.addEntity( new Entity().add( new Tween(a.stance, 1.3, { setPitchAim:Weapon.getPitchRatio(_result.pos.x- a.pos.x, _result.pos.y - a.pos.y, _result.pos.z-a.pos.z, a.weapon.minPitch, a.weapon.maxPitch) } ) ) );
 				}
 			}
+			
+			a.state.dispose();
+			a.weaponState.cancelTrigger();
+			//a.entity.remove(EnemyAggro);
 			a = a.next;
 		}
 		

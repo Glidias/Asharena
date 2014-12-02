@@ -6,6 +6,7 @@ package alternativa.a3d.systems.enemy
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.resources.Geometry;
 	import arena.components.char.AggroMem;
+	import arena.components.weapon.Weapon;
 	import arena.systems.enemy.EnemyAggroNode;
 	import arena.systems.enemy.EnemyIdleNode;
 	import arena.systems.enemy.EnemyWatchNode;
@@ -15,6 +16,7 @@ package alternativa.a3d.systems.enemy
 	import ash.core.System;
 	import flash.display3D.Context3D;
 	import flash.geom.Vector3D;
+	import haxe.Log;
 	import util.SpawnerBundle;
 	/**
 	 * ...
@@ -35,12 +37,21 @@ package alternativa.a3d.systems.enemy
 		
 		private var playerList:NodeList;
 		
+		public var delayTimeElapsed:Number = 0;
+		
 		public function A3DEnemyArcSystem(scene:Object3D) 
 		{
 			this.scene = scene;
 			this.arcs = new Object3D();
 			scene.addChild(arcs);
 			initUVMeshSets();
+			 
+		}
+		
+		public function setTimeElapsed(weap:Weapon):Number {
+			if (weap == null) return (delayTimeElapsed = 0);
+			delayTimeElapsed = .3 +  Math.random() * .15  + (weap.fireMode <= 0 ? weap.timeToSwing : weap.strikeTimeAtMaxRange);
+			return delayTimeElapsed;
 		}
 		
 		private function initUVMeshSets():void 
@@ -130,27 +141,7 @@ package alternativa.a3d.systems.enemy
 			
 			
 			
-			index = 0;
-			count = 0;
-			dataList = aggroArcs.toUpload;
-			for (var a:EnemyAggroNode = aggroList.head as EnemyAggroNode; a != null; a = a.next as EnemyAggroNode) {
-				//if (a.entity.get(AggroMem).engaged) continue;
-				
-				if (a.state.fixed) continue;
-				
-				dataList[index++] = a.state.target.pos.x;
-				dataList[index++] = a.state.target.pos.y;
-				dataList[index++] = a.state.target.pos.z + a.state.target.size.z + playerZOffset;
-				dataList[index++] = 0;
-				
-				dataList[index++] = a.pos.x;
-				dataList[index++] = a.pos.y;
-				dataList[index++] = a.pos.z;
-				dataList[index++] = arcZOffset;
-		
-				count++;
-			}
-			aggroArcs.total = count;
+
 			
 			index = 0;
 			count = 0;
@@ -194,6 +185,59 @@ package alternativa.a3d.systems.enemy
 			}
 			watchArcs.total = count;
 			
+			var wIndex:int = index;
+			var wCount:int =count;
+			
+			index = 0;
+			count = 0;
+			dataList = aggroArcs.toUpload;
+			var wDataList:Vector.<Number> = watchArcs.toUpload;
+			
+			
+			for (var a:EnemyAggroNode = aggroList.head as EnemyAggroNode; a != null; a = a.next as EnemyAggroNode) {
+				//if (a.entity.get(AggroMem).engaged) continue;
+				
+				if (a.state.fixed) continue;
+				//a.weaponState.attackTime
+				// 0 - Not yet triggered, 
+				// 1 -  delayTimeElapsed >=  timeForStrike - attackTime
+				// 2 - Just impacted, cooldown in next frame
+				//3 - delayTimeElapsed >= cooldownTime + (timeToStrike)
+			//if (a.state.flag == 1) {
+				//	Log.trace( a.weaponState.attackTime);
+			//}
+			//
+				if (a.state.flag == 1 && delayTimeElapsed >=  a.weaponState.timeForStrike - a.weaponState.attackTime  ) {
+				//	Log.trace(a.weaponState.timeForStrike - a.weaponState.attackTime);
+					dataList[index++] = a.state.target.pos.x;
+					dataList[index++] = a.state.target.pos.y;
+					dataList[index++] = a.state.target.pos.z + a.state.target.size.z + playerZOffset;
+					dataList[index++] = 0;
+					
+					dataList[index++] = a.pos.x;
+					dataList[index++] = a.pos.y;
+					dataList[index++] = a.pos.z;
+					dataList[index++] = arcZOffset;
+			
+					count++;
+				}
+				else {
+					wDataList[wIndex++] = a.state.target.pos.x;
+					wDataList[wIndex++] = a.state.target.pos.y;
+					wDataList[wIndex++] = a.state.target.pos.z + a.state.target.size.z + playerZOffset;
+					wDataList[wIndex++] = 0;
+					
+					wDataList[wIndex++] = a.pos.x;
+					wDataList[wIndex++] = a.pos.y;
+					wDataList[wIndex++] = a.pos.z;
+					wDataList[wIndex++] = arcZOffset;
+			
+					wCount++;
+					
+				}
+			}
+			aggroArcs.total = count;
+			watchArcs.total = wCount;
 			
 		}
 		

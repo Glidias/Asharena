@@ -349,7 +349,7 @@ package tests.pvp
 			 var arrowLob:ArrowLobMeshSet2 =  new ArrowLobMeshSet2(_modelBundle.getModel("arrow").geometry, _modelBundle.getMaterial("arrow"));
 			_template3D.scene.addChild(arrowLob);
 			 arrowProjectileDomain.init( arrowLob );
-			 arrowLob.setGravity(266 * 3);
+			 arrowLob.setGravity(216 * 3);
 			 SpawnerBundle.uploadResources(arrowLob.getResources());
 			
 			 arrowLob.setPermanentArrows();
@@ -428,7 +428,7 @@ package tests.pvp
 		
 		private function getTestRangedWeapon():Weapon {
 			var w:Weapon =   new Weapon();
-			w.projectileSpeed =  16.4318 * ArenaHUD.METER_UNIT_SCALE;
+			w.projectileSpeed =  20.4318 * ArenaHUD.METER_UNIT_SCALE;
 
 			
 			w.name = "Longbow";
@@ -439,12 +439,12 @@ package tests.pvp
 		
 			
 			w.minRange = 40;
-			w.damage =  11;
-			w.cooldownTime = 1.4;
+			w.damage =  22;
+			w.cooldownTime = .75;
 			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
 			w.hitAngle =  45 *  PMath.DEG_RAD;
 			
-			w.damageRange =  5;		// damage up-range variance
+			w.damageRange =  14;		// damage up-range variance
 			// Thrust: 10-20 : Swing 25-30
 	
 			w.critMinRange = 800;
@@ -728,15 +728,29 @@ package tests.pvp
 				arenaHUD.hideStars();
 				
 				// reset all cooldowns of enemies
-				_enemyAggroSystem.resetCooldownsOfAllAggro();
-				aggroMemManager.processAllEnemyAggroNodes();
+				//_enemyAggroSystem.resetCooldownsOfAllAggro();
+				//aggroMemManager.processAllEnemyAggroNodes();
 				
+				/*
+				arenaSpawner.currentPlayerEntity.remove( KeyPoll);
+				movementPoints.timeElapsed = .75;
+				
+				
+				game.engine.updateComplete.addOnce(onReloadFrameDone);
+				
+				else
+				*/
 				if (!arenaSpawner.currentPlayerEntity.has(KeyPoll)) {
 					arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll);
 				}
 			};
 			
 		
+		}
+		
+		private function onReloadFrameDone():void 
+		{
+			arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll);
 		}
 		
 		private function cycleWeapon():void 
@@ -795,7 +809,7 @@ package tests.pvp
 				
 			arenaHUD.appendSpanTagMessage("Player executed action!");
 			
-			delayTimeElapsed = 0;
+			//delayTimeElapsed = 0;
 			
 			
 			var showSimult:Boolean = showAttacksSimulatenously();
@@ -828,7 +842,7 @@ package tests.pvp
 				
 				//game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
 				
-				 delayTimeElapsed =  Math.random() * .3  + arenaHUD.playerChosenWeaponStrike.strikeTimeAtMaxRange;
+				// delayTimeElapsed = .3 +  Math.random() * .15  + arenaHUD.playerChosenWeaponStrike.strikeTimeAtMaxRange;
 				 timeToDeplete = arenaHUD.playerChosenWeaponStrike.strikeTimeAtMaxRange + arenaHUD.playerChosenWeaponStrike.timeToSwing;
 				
 			}
@@ -838,7 +852,7 @@ package tests.pvp
 				
 				 	//game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
 					
-				 delayTimeElapsed =  arenaHUD.playerChosenWeaponStrike.timeToSwing  + Math.random() * .6 + .1
+				// delayTimeElapsed =  .3 + Math.random() * .15 + arenaHUD.playerChosenWeaponStrike.timeToSwing; 
 				 timeToDeplete =  arenaHUD.playerChosenWeaponStrike.timeToSwing;
 			}
 			var tarTimeLeft:Number = movementPoints.movementTimeLeft - timeToDeplete;
@@ -993,7 +1007,8 @@ package tests.pvp
 			//instant = true;
 			if (!instant ) {  //&& arenaHUD.enemyStrikeResult > 0
 				//TweenLite.delayedCall(delayTimeElapsed+.3, resolveToggleTargetingMode);
-				game.engine.addEntity( new Entity().add( new Tween(arenaHUD, .3, { }, { onComplete:resolveToggleTargetingMode } )));
+				game.engine.addEntity( new Entity().add( new Tween(arenaHUD, .3, { }, { onComplete:resolveToggleTargetingMode } )))
+				//resolveToggleTargetingMode();
 			}
 			else {
 				resolveToggleTargetingMode();
@@ -1087,6 +1102,7 @@ package tests.pvp
 				game.keyPoll.resetAllStates(); 
 				
 			arenaSpawner.currentPlayerEntity.remove(KeyPoll); 
+			movementPoints.timeElapsed = 0;
 		}
 		
 		private function exitTargetMode():void 
@@ -1672,6 +1688,7 @@ package tests.pvp
 		{
 			arenaSpawner.currentPlayerEntity.add( new MovableCollidable().init() ); // temp, for testing only
 			aggroMemManager.notifyTurnStarted(arenaSpawner.currentPlayerEntity);
+			delayTimeElapsed= arcSystem.setTimeElapsed(arenaSpawner.currentPlayerEntity.get(Weapon) as Weapon);
 			
 			// temporary, considering putting this in aggroMemManager???
 			///*
