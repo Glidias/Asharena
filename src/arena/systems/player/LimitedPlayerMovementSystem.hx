@@ -30,10 +30,26 @@ class LimitedPlayerMovementSystem extends System
 	
 	public var outOfFuel:Signal0;
 	
+	private var _freeTime:Float;
+	public var realtimeAmount:Float;
+	private var _stopped:Bool;
+	
 	public function new() 
 	{
 		super();
 		outOfFuel = new Signal0();
+		realtimeAmount  = .4;
+		reset();
+	}
+	
+	public inline function reset():Void {
+		_freeTime  = 0;
+		_stopped = true;
+	}
+	
+	public inline function addRealFreeTime(val:Float):Float {
+		_freeTime += val;
+		return _freeTime;
 	}
 	
 	
@@ -41,6 +57,8 @@ class LimitedPlayerMovementSystem extends System
 		nodeList = engine.getNodeList(LimitedPlayerMovementNode);
 		nodeList.nodeRemoved.add( onNodeRemoved);
 		engine.updateComplete.add(onUpdateComplete);
+		
+		reset();
 	}
 	
 	function onNodeRemoved(node:LimitedPlayerMovementNode) 
@@ -51,6 +69,7 @@ class LimitedPlayerMovementSystem extends System
 	
 	override public function removeFromEngine(engine:Engine):Void {
 		engine.updateComplete.remove(onUpdateComplete);
+		
 	}
 	
 	function onUpdateComplete() 
@@ -72,13 +91,23 @@ class LimitedPlayerMovementSystem extends System
 		if (n == null) return;
 		//while (n != null) {
 		
+		
+		
 			var vel:Vel = n.vel;
 			var displacement:Float = vel.lengthSqr();
 			n.movementPoints.timeElapsed = 0;
 			
 		//	n.movementPoints.timeElapsed = time; // real time
 			
-			if (displacement == 0) return;
+			if (displacement == 0) {
+				time = time > _freeTime ? _freeTime : time;
+				//if (time > 0) trace(time + ", "+(_freeTime-time));
+				n.movementPoints.timeElapsed = time;
+				_freeTime -= time;
+				
+				_stopped = true;
+				return;
+			}
 			
 			displacement = Math.sqrt(displacement);
 			n.movementPoints.moveOnGround = false;
@@ -86,10 +115,26 @@ class LimitedPlayerMovementSystem extends System
 			// determine time passed by comparing velocity and surfaceMovement speeds
 			//moveStats.WALK_SPEED
 			var testMoveState:Int = ( 1 << n.action.current );
-			if (testMoveState == 0) return;
+			if (testMoveState == 0) {
+				time = time > _freeTime ? _freeTime : time;
+				//if (time > 0) trace(time + ", "+(_freeTime-time));
+				n.movementPoints.timeElapsed = time;
+				_freeTime -= time;
+				_stopped = true;
+				return;
+			}
 			var baseSpeed:Float = (testMoveState  & STATE_MOVE_MASK )!=0? n.moveStats.WALK_SPEED : (testMoveState & STATE_STRAFE_MASK )!=0 ? n.moveStats.STRAFE_SPEED : (testMoveState & STATE_MOVEBACK_MASK )!=0 ? n.moveStats.WALKBACK_SPEED : (testMoveState & STATE_FALLING_MASK)!=0 ? -1 : 0; 
 			//if ((testMoveState & STATE_FALLING_MASK) != 0) throw "A";
-			if (baseSpeed == 0) return;
+			if (baseSpeed == 0) {
+		
+				time = time > _freeTime ? _freeTime : time;
+				//if (time > 0) trace(time + ", "+(_freeTime-time));
+				n.movementPoints.timeElapsed = time;
+				_freeTime -= time;
+				_stopped = true;
+				return;
+				
+			}
 			
 			n.movementPoints.moveOnGround =  baseSpeed >= 0;  // not really true, since unit could be sliding on ground. May need another PlayerAction for sliding because now currently using FALLING_IN_AIR for it!
 			n.movementPoints.deplete( n.movementPoints.moveOnGround ? displacement / baseSpeed * time : time);
@@ -102,10 +147,29 @@ class LimitedPlayerMovementSystem extends System
 				n.moveStats.resetAllStates();
 				n.movementPoints.timeElapsed = 0;
 			//	n.moveStats.setAllSpeeds(0);
+			
 				
 				n.entity.remove(KeyPoll);
 				outOfFuel.dispatch();
+				
+				time = time > _freeTime ? _freeTime : time;
+				//if (time > 0) trace(time + ", "+(_freeTime-time));
+				n.movementPoints.timeElapsed = time;
+				_freeTime -= time;
+				_stopped = true;
+				
+				return;
 			}
+			
+			
+			
+			_freeTime -= n.movementPoints.timeElapsed;
+			if (_freeTime < 0) _freeTime = 0;
+			
+			if (_stopped) {  // a change of state from halted demands added time to enemy
+				if (_freeTime < realtimeAmount) _freeTime =  realtimeAmount;  // recharge back freetime for enemy
+			}
+			_stopped = false;
 			//n.movementPoints.timeElapsed = time;  // real time
 			//n = n.next;
 		//}

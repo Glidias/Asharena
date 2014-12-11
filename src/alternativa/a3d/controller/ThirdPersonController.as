@@ -63,6 +63,7 @@ package alternativa.a3d.controller
 		}
 		
 		override public function update(time:Number):void {
+			
 			thirdPerson.update(time);
 		}
 		

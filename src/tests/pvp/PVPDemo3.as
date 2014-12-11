@@ -1074,11 +1074,12 @@ package tests.pvp
 			
 			gladiatorStance.standEnabled = !_targetMode;
 			arenaHUD.setTargetMode(_targetMode);
+			//arcSystem.arcs.visible = !_targetMode;
 			
 			if (_targetMode) {
 				thirdPersonController.thirdPerson.preferedZoom = TARGET_MODE_ZOOM;
 				thirdPersonController.thirdPerson.controller.disableMouseWheel();
-				
+				_animAttackSystem.checkTime( movementPointSystem.addRealFreeTime(.3) );
 				disablePlayerMovement();
 				
 				
@@ -1782,7 +1783,7 @@ package tests.pvp
 			
 			
 			// special PVP movement limited time
-			var movementPointSystem:LimitedPlayerMovementSystem;
+			movementPointSystem;
 			game.gameStates.thirdPerson.addInstance( movementPointSystem= new LimitedPlayerMovementSystem() ).withPriority(SystemPriorities.preMove);
 			movementPointSystem.outOfFuel.add( onOutOfFuel);
 			
@@ -2061,6 +2062,7 @@ package tests.pvp
 		
 		private var updateTicker:ITickProvider;
 		private var targetingSystem:ThirdPersonTargetingSystem;
+		private var movementPointSystem:LimitedPlayerMovementSystem;
 		
 		private function setupInterface():void 
 		{
