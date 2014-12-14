@@ -45,6 +45,8 @@ class LimitedPlayerMovementSystem extends System
 	public inline function reset():Void {
 		_freeTime  = 0;
 		_stopped = true;
+		 noDeplete = false;
+		 enabled = true;
 	}
 	
 	public inline function addRealFreeTime(val:Float):Float {
@@ -58,7 +60,7 @@ class LimitedPlayerMovementSystem extends System
 		nodeList.nodeRemoved.add( onNodeRemoved);
 		engine.updateComplete.add(onUpdateComplete);
 		
-		enabled = true;
+		
 		reset();
 	}
 	
@@ -87,6 +89,7 @@ class LimitedPlayerMovementSystem extends System
 
 
 	public var enabled:Bool;
+	public var noDeplete:Bool;
 	
 	override public function update(time:Float):Void {
 		if (!enabled) return;
@@ -107,12 +110,14 @@ class LimitedPlayerMovementSystem extends System
 				time = time > _freeTime ? _freeTime : time;
 				//if (time > 0) trace(time + ", "+(_freeTime-time));
 				//n.movementPoints.timeElapsed = time;
-				n.movementPoints.deplete(time);
+				n.movementPoints.timeElapsed = time;
+				n.movementPoints.movementTimeLeft -= !noDeplete ? time : 0;
 				
 				_freeTime -= time;
 			
 				
 				_stopped = true;
+				
 				
 				//n.movementPoints.timeElapsed = rt;  // real time
 				return;
@@ -128,11 +133,16 @@ class LimitedPlayerMovementSystem extends System
 				time = time > _freeTime ? _freeTime : time;
 				//if (time > 0) trace(time + ", "+(_freeTime-time));
 				//n.movementPoints.timeElapsed = time;
-				n.movementPoints.deplete(time);
+			
+				
+				n.movementPoints.timeElapsed = time;
+				n.movementPoints.movementTimeLeft -= !noDeplete ? time : 0;
+		
 				_freeTime -= time;
 				_stopped = true;
 				
 			//	n.movementPoints.timeElapsed = rt; // real time
+
 				return;
 			}
 			var baseSpeed:Float = (testMoveState  & STATE_MOVE_MASK )!=0? n.moveStats.WALK_SPEED : (testMoveState & STATE_STRAFE_MASK )!=0 ? n.moveStats.STRAFE_SPEED : (testMoveState & STATE_MOVEBACK_MASK )!=0 ? n.moveStats.WALKBACK_SPEED : (testMoveState & STATE_FALLING_MASK)!=0 ? -1 : 0; 
@@ -142,11 +152,13 @@ class LimitedPlayerMovementSystem extends System
 				time = time > _freeTime ? _freeTime : time;
 				//if (time > 0) trace(time + ", "+(_freeTime-time));
 				//n.movementPoints.timeElapsed = time;
-				n.movementPoints.deplete(time);
+				n.movementPoints.timeElapsed = time;
+				n.movementPoints.movementTimeLeft -= !noDeplete ? time : 0;
 				_freeTime -= time;
 				_stopped = true;
 				
 				//n.movementPoints.timeElapsed = rt;  // real time
+
 				return;
 				
 			}
@@ -174,6 +186,7 @@ class LimitedPlayerMovementSystem extends System
 				_stopped = true;
 				
 				//n.movementPoints.timeElapsed = rt; // real time
+		
 				return;
 			}
 			

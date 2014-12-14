@@ -1082,7 +1082,11 @@ package tests.pvp
 			if (_targetMode) {
 				thirdPersonController.thirdPerson.preferedZoom = TARGET_MODE_ZOOM;
 				thirdPersonController.thirdPerson.controller.disableMouseWheel();
+				movementPointSystem.noDeplete = true;
 				_animAttackSystem.checkTime( movementPointSystem.addRealFreeTime(.3) );
+				//movementPoints.timeElapsed = movementPointSystem._freeTime;
+				//movementPointSystem.enabled = false;
+				
 				disablePlayerMovement();
 				
 				
@@ -1113,6 +1117,7 @@ package tests.pvp
 		private function exitTargetMode():void 
 		{
 			_targetMode = false;
+			
 			arenaHUD.setTargetMode(_targetMode);
 			
 			thirdPersonController.thirdPerson.preferedZoom = _lastTargetZoom;
@@ -1123,7 +1128,8 @@ package tests.pvp
 			
 			if (movementPoints.movementTimeLeft > 0)  arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll);
 			movementPointSystem.enabled = true;
-				gladiatorStance.setTargetMode(_targetMode);
+			movementPointSystem.noDeplete = false;
+			gladiatorStance.setTargetMode(_targetMode);
 				
 		}
 		
