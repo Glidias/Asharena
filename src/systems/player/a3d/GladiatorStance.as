@@ -207,6 +207,7 @@ package systems.player.a3d
 			anims = ANIM_MANAGER.cloneFor(skin);
 			
 			rootJoint = skin.childrenList as Joint;//getJoint("Bip01");
+			
 			surfaceMovement.setStrafeSpeed(speed_strafe);
 			
 			setupAnimations();
@@ -415,6 +416,8 @@ package systems.player.a3d
 			
 		}
 		
+		
+		
 		// FIre weapon from ready position
 		private function shoot():void {
 			//setAnimationNode( customCouple, upperBodyController, upperBody, readyAimTime);
@@ -448,8 +451,9 @@ package systems.player.a3d
 		private function initiateUpperBodyAim(customCouple:AnimationCouple):void {
 			
 			//skin._rotationZ = Math.PI - .7;
+//throw new Error(skin.getChildAt(0);
 
-			TweenLite.to(skin, readyAimTime, { rotationZ:Math.PI-.7, ease:Cubic.easeOut } );
+			TweenLite.to(skin, readyAimTime, { rotationZ:Math.PI, ease:Cubic.easeOut } );
 			skin.transformChanged = true;
 			
 			//setAnimationNode(attackAnimCouple, upperBodyController, upperBody, .3);
@@ -464,6 +468,7 @@ package systems.player.a3d
 			//_curController = null;
 			if (upperBodyDominant) _curController = null;
 			//upperBodyDominant = true;
+			
 		}
 		
 		
@@ -653,6 +658,7 @@ package systems.player.a3d
 		
 		private var lastAction:int = PlayerAction.IDLE;
 		
+		
 		// handles any changes in action!
 			public function handleAction(val:int):void {
 				if ( ((1 << val) &  MASK_DISABLED) || dead ) {
@@ -692,6 +698,7 @@ package systems.player.a3d
 			}	
 			else if (val === PlayerAction.IDLE) {
 				_movingSlow = true;
+				//surfaceMovement.resetAllStates();
 				upperBody.activate(upperBodyAnims["ref_melee_aim"]);
 				
 				//skin._rotationZ = Math.PI;
@@ -728,11 +735,11 @@ package systems.player.a3d
 else surfaceMovement.setStrafeSpeed( (mask & MASK_STRAFE_FAST) ? speed_strafe*playerSpeedCrouchRatio*SPEED_CROUCHSTRAFE_MULTIPLIER : speed_strafe*playerSpeedCrouchRatio*SPEED_CROUCHSTRAFE_MULTIPLIER );
 surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CROUCHSTRAFE_MULTIPLIER);
 	// TODO: do full body turn run for speed_strafe_fast instead!
-					setAnimation(lowerBodyAnims[ (_stance != 2 ?  "combat" : _stanceString) + ( val===PlayerAction.STRAFE_LEFT || val === PlayerAction.STRAFE_LEFT_FAST ? "_moveleft" : "_moveright")], lowerBodyController, lowerBody, 0).speed = surfaceMovement.STRAFE_SPEED * (upperBodyDominant ? I_SPEED_STRAFE_UPPER : I_SPEED_STRAFE_LOWER);
+					setAnimation(lowerBodyAnims[ (_stance != 2 ?  "combat" : _stanceString) + ( val===PlayerAction.STRAFE_LEFT || val === PlayerAction.STRAFE_LEFT_FAST ? "_moveleft" : "_moveright")], lowerBodyController, lowerBody, .1).speed = surfaceMovement.STRAFE_SPEED * (upperBodyDominant ? I_SPEED_STRAFE_UPPER : I_SPEED_STRAFE_LOWER);
 				if (hasShield && _movingSlow) {
 						(shieldCouple.left as AnimationClip).time = 0;
 						(shieldCouple.right as AnimationClip).time = 0;
-						setAnimationNode(shieldCouple, upperBodyController, upperBody, .1); 
+						setAnimationNode(shieldCouple, upperBodyController, upperBody, .2); 
 					}
 					else setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .1);
 					_curController = null;
@@ -765,7 +772,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 					if (hasShield) {
 						(shieldCouple.left as AnimationClip).time = 0;
 						(shieldCouple.right as AnimationClip).time = 0;
-						setAnimationNode(shieldCouple, upperBodyController, upperBody, .1); 
+						setAnimationNode(shieldCouple, upperBodyController, upperBody, .2); 
 					}
 					else setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .1);
 								_curController = null;
@@ -783,7 +790,7 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 								if (hasShield) {
 									(shieldCouple.left as AnimationClip).time = 0;
 									(shieldCouple.right as AnimationClip).time = 0;
-									setAnimationNode(shieldCouple, upperBodyController, upperBody, .1); //
+									setAnimationNode(shieldCouple, upperBodyController, upperBody, .2); //
 								}
 								else {
 									setAnimation(upperBodyAnims["ref_melee_aim"], upperBodyController, upperBody, .1);
@@ -849,11 +856,19 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 	
 		public function animate(time:Number):void 
 		{
+			//time = 0;
+			
 			if (_curController != null) {
 				_curController.update(time);  // TODO: inject time into modifed clas
+		
+				
 			}
 			else {
+				//if (lastAction == PlayerAction.STRAFE_LEFT) {
+				//time = 0;
+			//}
 				if (!upperBodyDominant) {
+					
 					upperBodyController.update(time);
 					lowerBodyController.update(time);
 				}
@@ -861,12 +876,15 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 					lowerBodyController.update(time);
 					upperBodyController.update(time);
 				}
+				//if (lastAction == PlayerAction.STRAFE_LEFT) throw new Error(rootJoint.x + ", "+rootJoint.y +","+ rootJoint.z + "  :: "+rootJoint.matrix.rawData);
+				
 			}
 			if (!_idle) {
 				rootJoint._x = 0;
 			//	rootJoint._y = 0;
 				rootJoint._z = 0;
 			}
+			// .7;
 			//
 			
 			/*
@@ -1018,6 +1036,8 @@ surfaceMovement.setWalkSpeeds(speed_strafe*.5 * playerSpeedCrouchRatio*SPEED_CRO
 				tensionSpeed = weapon.strikeTimeAtMaxRange != 0 ?  1/weapon.strikeTimeAtMaxRange : 1;
 		
 				_ranged = true;
+				
+				
 				
 				//setAimReady(true);
 				//setAimReady(false);

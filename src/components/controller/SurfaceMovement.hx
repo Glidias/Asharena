@@ -60,7 +60,10 @@ class SurfaceMovement
 		strafe_state = 0;
 	}
 	
+
+	
 	inline public function setWalkSpeeds(forwardSpeed:Float, backspeed:Float = -1):Void {
+
 		WALK_SPEED = forwardSpeed;
 		WALKBACK_SPEED = (backspeed != -1) ? backspeed : forwardSpeed; 
 	}

@@ -439,12 +439,12 @@ package tests.pvp
 		
 			
 			w.minRange = 40;
-			w.damage =  22;
-			w.cooldownTime = .75;
+			w.damage =  15;
+			w.cooldownTime = .8;
 			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
 			w.hitAngle =  45 *  PMath.DEG_RAD;
 			
-			w.damageRange =  14;		// damage up-range variance
+			w.damageRange =  6;		// damage up-range variance
 			// Thrust: 10-20 : Swing 25-30
 	
 			w.critMinRange = 800;
@@ -982,7 +982,7 @@ package tests.pvp
 			// new stuff here
 			instant = false;
 			EnemyAggroSystem.AGGRO_HAS_CRITICAL = false;
-			aggroMemManager.setupSupportFireOnTarget(arenaHUD.targetEntity, arenaSpawner.currentPlayerEntity);
+			aggroMemManager.setupSupportFireOnTarget(arenaHUD.targetEntity, arenaSpawner.currentPlayerEntity, delayTimeElapsed);
 			//(arenaHUD.targetEntity.get(IStance) as GladiatorStance).attacking = true;
 			
 			playerStriking = false;
@@ -992,6 +992,7 @@ package tests.pvp
 			if (aggroMemManager._supportCount != 0) {
 				game.engine.addEntity( new Entity().add( new Tween({}, .45, { }, { onComplete:resolveStrikeActionFully2 } )));
 			//	TweenLite.delayedCall(.45, resolveStrikeActionFully2); //, [instant]
+				//trace("Support fire: +" + aggroMemManager._supportCount);
 			}
 			else resolveStrikeActionFully2(instant);
 			
@@ -1000,6 +1001,7 @@ package tests.pvp
 		private function resolveStrikeActionFully2(instant:Boolean=false):void {
 			if (delayTimeElapsed > 0) {
 				game.engine.updateComplete.addOnce(onUpdateTimeActionDone);
+				movementPointSystem.enabled = false;
 				movementPoints.timeElapsed = delayTimeElapsed;	
 				
 			}
@@ -1103,7 +1105,8 @@ package tests.pvp
 				game.keyPoll.resetAllStates(); 
 				
 			arenaSpawner.currentPlayerEntity.remove(KeyPoll); 
-			movementPoints.timeElapsed = 0;
+			//movementPoints.timeElapsed = 0;
+			//movementPointSystem._freeTime = 0;
 		}
 		
 		private function exitTargetMode():void 
@@ -1117,8 +1120,10 @@ package tests.pvp
 			var gladiatorStance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
 		
 			
-			if (movementPoints.movementTimeLeft > 0) arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll);
+			if (movementPoints.movementTimeLeft > 0)  arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll);
+			movementPointSystem.enabled = true;
 				gladiatorStance.setTargetMode(_targetMode);
+				
 		}
 		
 		
@@ -1721,8 +1726,11 @@ package tests.pvp
 			//arenaSpawner.currentPlayerEntity.get(Vel).x = 0;
 		//	arenaSpawner.currentPlayerEntity.get(SurfaceMovement);
 		//	cyclePlayerChoice();
+			game.keyPoll.resetAllStates()
+			arenaSpawner.currentPlayerEntity.remove(KeyPoll); 
+			//movementPoints.timeElapsed = 0;
+			
 		
-		// TODO: Fix out of fuel dispatch bug from LimitedPlayerMOvementSystem
 			arenaHUD.outOfFuel();
 		}
 		

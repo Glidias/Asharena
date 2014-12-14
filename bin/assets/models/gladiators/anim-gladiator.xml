@@ -50,14 +50,14 @@
 			<a f="577-610" id="tumbleright" loop="false" />
 			<a f="611-637" id="swim" />
 			<a f="638-669" id="treadwater" />
-			<a f="670-700" id="crouch_aim_bow_blend1" loop="false" />
-			<a f="701-731" id="crouch_aim_bow_blend2" loop="false" />
-			<a f="732-742" id="crouch_aim_bow2_blend1" loop="false" />
-			<a f="743-753" id="crouch_aim_bow2_blend2" loop="false" />
-			<a f="754-784" id="crouch_aim_crossbow_blend1" loop="false" />
-			<a f="785-815" id="crouch_aim_crossbow_blend2" loop="false" />
-			<a f="816-846" id="crouch_aim_crossbow2_blend1" loop="false" />
-			<a f="847-877" id="crouch_aim_crossbow2_blend2" loop="false" />
+			<a f="670-700" id="crouch_aim_bow_blend1" loop="false" aimrot="true" />
+			<a f="701-731" id="crouch_aim_bow_blend2" loop="false" aimrot="true" />
+			<a f="732-742" id="crouch_aim_bow2_blend1" loop="false" aimrot="true" />
+			<a f="743-753" id="crouch_aim_bow2_blend2" loop="false" aimrot="true" />
+			<a f="754-784" id="crouch_aim_crossbow_blend1" loop="false" aimrot="true" />
+			<a f="785-815" id="crouch_aim_crossbow_blend2" loop="false" aimrot="true" />
+			<a f="816-846" id="crouch_aim_crossbow2_blend1" loop="false" aimrot="true" />
+			<a f="847-877" id="crouch_aim_crossbow2_blend2" loop="false" aimrot="true" />
 			
 			
 			
@@ -79,20 +79,20 @@
 			<a f="317-337" id="ref_shield_bash2" loop="false" />
 			<a f="338-368" id="ref_shield_block1" loop="false" />
 			<a f="369-399" id="ref_shield_block2" loop="false" />
-			<a f="400-430" id="ref_aim_bow_blend1" loop="false" />
-			<a f="431-461" id="ref_aim_bow_blend2" loop="false"  />
-			<a f="462-487" id="ref_aim_bow2_blend1" loop="false"  />
-			<a f="488-513" id="ref_aim_bow2_blend2" loop="false"  />
-			<a f="514-544" id="ref_aim_crossbow_blend1" loop="false"  />
-			<a f="545-575" id="ref_aim_crossbow_blend2" loop="false"  />
-			<a f="576-606" id="ref_aim_crossbow2_blend1" loop="false"  />
-			<a f="607-637" id="ref_aim_crossbow2_blend2" loop="false"  />
-			<a f="638-663" id="ref_shoot_bow_blend1" loop="false"  />
-			<a f="664-689" id="ref_shoot_bow_blend2" loop="false"  />
-			<a f="690-700" id="ref_shoot_crossbow_blend1" loop="false"  />
-			<a f="701-711" id="ref_shoot_crossbow_blend2" loop="false"  />
-			<a f="712-722" id="ref_shoot_crossbow2_blend1" loop="false"  />
-			<a f="723-733" id="ref_shoot_crossbow2_blend2" loop="false"  />
+			<a f="400-430" id="ref_aim_bow_blend1" loop="false" aimrot="true" />
+			<a f="431-461" id="ref_aim_bow_blend2" loop="false" aimrot="true"  />
+			<a f="462-487" id="ref_aim_bow2_blend1" loop="false" aimrot="true"  />
+			<a f="488-513" id="ref_aim_bow2_blend2" loop="false"  aimrot="true" />
+			<a f="514-544" id="ref_aim_crossbow_blend1" loop="false"  aimrot="true" />
+			<a f="545-575" id="ref_aim_crossbow_blend2" loop="false"  aimrot="true" />
+			<a f="576-606" id="ref_aim_crossbow2_blend1" loop="false" aimrot="true" />
+			<a f="607-637" id="ref_aim_crossbow2_blend2" loop="false" aimrot="true" />
+			<a f="638-663" id="ref_shoot_bow_blend1" loop="false"  aimrot="true"/>
+			<a f="664-689" id="ref_shoot_bow_blend2" loop="false"  aimrot="true"/>
+			<a f="690-700" id="ref_shoot_crossbow_blend1" loop="false" aimrot="true" />
+			<a f="701-711" id="ref_shoot_crossbow_blend2" loop="false" aimrot="true" />
+			<a f="712-722" id="ref_shoot_crossbow2_blend1" loop="false" aimrot="true" />
+			<a f="723-733" id="ref_shoot_crossbow2_blend2" loop="false" aimrot="true" />
 		</anims>
 			
 

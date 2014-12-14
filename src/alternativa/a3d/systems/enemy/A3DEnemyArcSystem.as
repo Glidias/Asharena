@@ -208,7 +208,7 @@ package alternativa.a3d.systems.enemy
 			//}
 			//
 			//
-				if ( a.state.flag == 1   && delayTimeElapsed >=  a.weaponState.timeForStrike - a.weaponState.attackTime) {
+				if ( true || a.state.flag == 1   && delayTimeElapsed >=  a.weaponState.timeForStrike - a.weaponState.attackTime) {
 				//	Log.trace(a.weaponState.timeForStrike - a.weaponState.attackTime);
 					dataList[index++] = a.state.target.pos.x;
 					dataList[index++] = a.state.target.pos.y;

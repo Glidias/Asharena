@@ -76,7 +76,36 @@ class AggroMemManager
 	
 	private var _supportCount:Int = 0;
 	private var _maxSupport:Int = 3;
-	public function setupSupportFireOnTarget(target:Entity, leaderEntity:Entity):Void {
+	
+	public function setupSupportFireOnTarget(target:Entity, leaderEntity:Entity, timeToElapse:Float):Void {
+	
+		var highestInitiative:EnemyAggroNode = null;
+		var longestTime:Float = -PMath.FLOAT_MAX;
+		var n:EnemyAggroNode = aggroList.head;
+		while (n != null) {
+			if (n.entity == target) {
+				
+				n = n.next;
+				continue;
+			}
+			//if (n.state.fixed) throw "AWR";
+			if ( n.state.flag== 1) {
+				if (n.weaponState.attackTime > longestTime) {
+					longestTime = n.weaponState.attackTime;
+					highestInitiative = n;
+				}
+				n.weaponState.attackTime -= timeToElapse;
+			}
+			n = n.next;
+			
+		}
+		
+		if (highestInitiative != null) {
+			highestInitiative.weaponState.attackTime += timeToElapse;
+		}
+		
+		
+		
 		_supportCount = 0;
 		// forget about distance check from leader for now..TODO: add in basic like distance check
 		var aggroTarget:PlayerAggroNode = new PlayerAggroNode(); 
@@ -507,47 +536,48 @@ class AggroMemManager
 	
 	
 		var pTarget:PlayerAggroNode = a.state.target;
-			while(aWeapon != null) {
-				a.state.setAttackRange(a.state.fixed ? aWeapon.range :   (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, pTarget.size) : aWeapon.range + pTarget.size.x );
-				var checkedLOS:Bool = false;
-				//
-				if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, pTarget.pos, a.state.attackRangeSq, aWeapon.hitAngle) &&  (checkedLOS=true) && weaponLOSChecker.validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)  )   { // TODO: validate other LOS factors
-					a.state.flag = 1;
-					var cooldown:Float = a.weaponState.cooldown;
-					a.weaponState.pullTrigger(aWeapon);
-					if (aWeapon.fireMode <= 0 && a.weaponState.attackTime >= 0) a.weaponState.attackTime = -Math.random() * a.weaponState.randomDelay;
-					a.weaponState.attackTime -=  a.weaponState.delay > 0 ? a.weaponState.delay : 0;
-					if (a.state.fixed) { 
-						a.weaponState.attackTime = 5;
-						if (_supportCount > _maxSupport) {
-							a.weaponState.cancelTrigger();
-							a.state.flag = 0;
-							a.state.setAttackRange(0);
-							a.entity.remove(EnemyAggro);
-							
-						}
-						else {
-						//	a.stance.standAndFight();
-							engine.addEntity( new Entity().add( new Tween(0, Math.random() * .25, {  }, { onComplete:a.stance.standAndFight}  ) ) );
-							_supportCount++;
-						}
+		while(aWeapon != null) {
+			a.state.setAttackRange(a.state.fixed ? aWeapon.range :   (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, pTarget.size) : aWeapon.range + pTarget.size.x );
+			var checkedLOS:Bool = false;
+			//
+			if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, pTarget.pos, a.state.attackRangeSq, aWeapon.hitAngle) &&  (checkedLOS=true) && weaponLOSChecker.validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)  )   { // TODO: validate other LOS factors
+				a.state.flag = 1;
+				var cooldown:Float = a.weaponState.cooldown;
+				a.weaponState.pullTrigger(aWeapon);
+				if (aWeapon.fireMode <= 0 && a.weaponState.attackTime >= 0) a.weaponState.attackTime = -Math.random() * a.weaponState.randomDelay;
+				a.weaponState.attackTime -=  a.weaponState.delay > 0 ? a.weaponState.delay : 0;
+				if (a.state.fixed) { 
+					a.weaponState.attackTime = 5;
+					if (_supportCount > _maxSupport) {
+						a.weaponState.cancelTrigger();
+						a.state.flag = 0;
+						a.state.setAttackRange(0);
+						a.entity.remove(EnemyAggro);
 						
 					}
-					break;
+					else {
+					//	a.stance.standAndFight();
+						engine.addEntity( new Entity().add( new Tween(0, Math.random() * .25, {  }, { onComplete:a.stance.standAndFight}  ) ) );
+						_supportCount++;
+					}
+					
 				}
-				else if (checkedLOS) {
-					a.state.flag = -1;
-				}
-				
-				if (a.state.fixed && a.state.flag != 1) {
-					a.state.setAttackRange(0);
-					a.state.flag = 0;
-					a.weaponState.cancelTrigger();
-					a.entity.remove(EnemyAggro);
-					break;
-				}
-				aWeapon = aWeapon.nextFireMode;
+				break;
 			}
+			else if (checkedLOS) {
+				a.state.flag = -1;
+			}
+			
+			
+			aWeapon = aWeapon.nextFireMode;
+		}
+		if (a.state.fixed && a.state.flag != 1) {
+			a.state.setAttackRange(0);
+			a.state.flag = 0;
+			a.weaponState.cancelTrigger();
+			a.entity.remove(EnemyAggro);
+			
+		}
 	}
 	
 	

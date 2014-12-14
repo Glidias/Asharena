@@ -58,6 +58,7 @@ class LimitedPlayerMovementSystem extends System
 		nodeList.nodeRemoved.add( onNodeRemoved);
 		engine.updateComplete.add(onUpdateComplete);
 		
+		enabled = true;
 		reset();
 	}
 	
@@ -85,13 +86,16 @@ class LimitedPlayerMovementSystem extends System
 
 
 
+	public var enabled:Bool;
 	
 	override public function update(time:Float):Void {
+		if (!enabled) return;
+		
 		var n:LimitedPlayerMovementNode = nodeList.head;
 		if (n == null) return;
 		//while (n != null) {
 		
-		
+			var rt:Float = time;
 		
 			var vel:Vel = n.vel;
 			var displacement:Float = vel.lengthSqr();
@@ -102,10 +106,15 @@ class LimitedPlayerMovementSystem extends System
 			if (displacement == 0) {
 				time = time > _freeTime ? _freeTime : time;
 				//if (time > 0) trace(time + ", "+(_freeTime-time));
-				n.movementPoints.timeElapsed = time;
+				//n.movementPoints.timeElapsed = time;
+				n.movementPoints.deplete(time);
+				
 				_freeTime -= time;
+			
 				
 				_stopped = true;
+				
+				//n.movementPoints.timeElapsed = rt;  // real time
 				return;
 			}
 			
@@ -118,9 +127,12 @@ class LimitedPlayerMovementSystem extends System
 			if (testMoveState == 0) {
 				time = time > _freeTime ? _freeTime : time;
 				//if (time > 0) trace(time + ", "+(_freeTime-time));
-				n.movementPoints.timeElapsed = time;
+				//n.movementPoints.timeElapsed = time;
+				n.movementPoints.deplete(time);
 				_freeTime -= time;
 				_stopped = true;
+				
+			//	n.movementPoints.timeElapsed = rt; // real time
 				return;
 			}
 			var baseSpeed:Float = (testMoveState  & STATE_MOVE_MASK )!=0? n.moveStats.WALK_SPEED : (testMoveState & STATE_STRAFE_MASK )!=0 ? n.moveStats.STRAFE_SPEED : (testMoveState & STATE_MOVEBACK_MASK )!=0 ? n.moveStats.WALKBACK_SPEED : (testMoveState & STATE_FALLING_MASK)!=0 ? -1 : 0; 
@@ -129,9 +141,12 @@ class LimitedPlayerMovementSystem extends System
 		
 				time = time > _freeTime ? _freeTime : time;
 				//if (time > 0) trace(time + ", "+(_freeTime-time));
-				n.movementPoints.timeElapsed = time;
+				//n.movementPoints.timeElapsed = time;
+				n.movementPoints.deplete(time);
 				_freeTime -= time;
 				_stopped = true;
+				
+				//n.movementPoints.timeElapsed = rt;  // real time
 				return;
 				
 			}
@@ -143,13 +158,13 @@ class LimitedPlayerMovementSystem extends System
 				_playerPointsOut = n.movementPoints;
 				
 				n.movementPoints.movementTimeLeft = 0;
-				n.keyPoll.resetAllStates();
+				//n.keyPoll.resetAllStates();
 				n.moveStats.resetAllStates();
 				n.movementPoints.timeElapsed = 0;
 			//	n.moveStats.setAllSpeeds(0);
 			
 				
-				n.entity.remove(KeyPoll);
+				//n.entity.remove(KeyPoll);
 				outOfFuel.dispatch();
 				
 				time = time > _freeTime ? _freeTime : time;
@@ -158,6 +173,7 @@ class LimitedPlayerMovementSystem extends System
 				_freeTime -= time;
 				_stopped = true;
 				
+				//n.movementPoints.timeElapsed = rt; // real time
 				return;
 			}
 			
@@ -170,7 +186,8 @@ class LimitedPlayerMovementSystem extends System
 				if (_freeTime < realtimeAmount) _freeTime =  realtimeAmount;  // recharge back freetime for enemy
 			}
 			_stopped = false;
-			//n.movementPoints.timeElapsed = time;  // real time
+			
+			//n.movementPoints.timeElapsed = rt;  // real time
 			//n = n.next;
 		//}
 	}
@@ -178,7 +195,7 @@ class LimitedPlayerMovementSystem extends System
 }
 
 class LimitedPlayerMovementNode extends Node<LimitedPlayerMovementNode> {
-	public var keyPoll:KeyPoll;
+	//public var keyPoll:KeyPoll;
 	public var vel:Vel;
 	public var movementPoints:MovementPoints;
 	public var moveStats:SurfaceMovement;
