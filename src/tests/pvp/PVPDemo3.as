@@ -777,7 +777,8 @@ package tests.pvp
 					TweenLite.delayedCall(0, toggleTargetingMode);
 				}
 			}
-			
+			delayTimeElapsed = arcSystem.setTimeElapsed(arenaSpawner.currentPlayerEntity.get(Weapon) as Weapon);
+			//throw new Error(delayTimeElapsed);
 			//game.keyPoll.resetAllStates();
 			
 		}
