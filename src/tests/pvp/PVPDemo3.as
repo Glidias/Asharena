@@ -395,7 +395,7 @@ package tests.pvp
 		private var movementPoints:MovementPoints = new MovementPoints();	
 		private  var MAX_MOVEMENT_POINTS:Number = 6;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
-		private  var ASSIGNED_HP:int = 100;
+		private  var ASSIGNED_HP:int = 500;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
 		private var commandPoints:Vector.<int> = new <int>[0,0];
 		private var collOtherClass:Class = ImmovableCollidable;
@@ -408,8 +408,10 @@ package tests.pvp
 		
 		private function getTestWeaponList():WeaponSlot {
 			var weapSlot:WeaponSlot = new WeaponSlot().init();
-			weapSlot.slots[0] = getTestRangedWeapon();
-			weapSlot.slots[1] = getTestWeaponFireModes();
+		//	weapSlot.slots[0] = getTestRangedWeapon();
+			//weapSlot.slots[1] = getTestWeaponFireModes();
+			
+			weapSlot.slots[0] = getTestWeapon(true);
 			return weapSlot;
 		}
 
@@ -533,6 +535,7 @@ package tests.pvp
 			w.sideOffset =thrust ?  15 : 36+16;// thrust ? 15 : 36;
 			w.heightOffset = 0;
 			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
+			w.range += 32;
 			w.minRange = 16;
 			w.damage = thrust  ? 13 : 25;
 			w.cooldownTime = thrust ? 0.7 : 0.96;
@@ -607,7 +610,7 @@ package tests.pvp
 				
 				testArr[i].add( new Counter());
 				health = testArr[i].get(Health) as Health;
-				health.hp = ASSIGNED_HP;
+				health.hp = health.maxHP = ASSIGNED_HP;
 				//health.onDamaged.add(onDamaged);
 				//health.onDamaged.add(onDamaged);
 			}
@@ -617,7 +620,7 @@ package tests.pvp
 				testArr2[i].add( new Counter());
 				
 				health = testArr2[i].get(Health) as Health;
-				health.hp = ASSIGNED_HP;
+				health.hp = health.maxHP =  ASSIGNED_HP;
 			//	health.onDamaged.add(onDamaged);
 			//	health.onDamaged.add(onDamaged);
 			}
@@ -983,6 +986,7 @@ package tests.pvp
 			// new stuff here
 			instant = false;
 			EnemyAggroSystem.AGGRO_HAS_CRITICAL = false;
+			
 			aggroMemManager.setupSupportFireOnTarget(arenaHUD.targetEntity, arenaSpawner.currentPlayerEntity, delayTimeElapsed);
 			//(arenaHUD.targetEntity.get(IStance) as GladiatorStance).attacking = true;
 			
@@ -1083,6 +1087,7 @@ package tests.pvp
 				thirdPersonController.thirdPerson.preferedZoom = TARGET_MODE_ZOOM;
 				thirdPersonController.thirdPerson.controller.disableMouseWheel();
 				movementPointSystem.noDeplete = true;
+
 				_animAttackSystem.checkTime( movementPointSystem.addRealFreeTime(.3) );
 				//movementPoints.timeElapsed = movementPointSystem._freeTime;
 				//movementPointSystem.enabled = false;

@@ -804,6 +804,8 @@ WeaponSlots
 		private var _targetMode:Boolean;
 		
 		private function getRangeToTarget():Number {
+			return HitFormulas.get3DDist(_curCharPos, _targetNode.pos, _targetNode.ellipsoid) ;
+			/*
 			var dx:Number = _curCharPos.x - _targetNode.pos.x;
 			var dy:Number = _curCharPos.y - _targetNode.pos.y;
 			var dz:Number = _curCharPos.z - _targetNode.pos.z;
@@ -813,7 +815,16 @@ WeaponSlots
 			dy *= distM*_targetNode.ellipsoid.y;
 			dz *= distM*_targetNode.ellipsoid.z;
 			return  dist - Math.sqrt(dx*dx+dy*dy+dz*dz);
+			*/
 		}
+		private function getSqDistToTarget():Number {
+			var dx:Number = _curCharPos.x - _targetNode.pos.x;
+			var dy:Number = _curCharPos.y - _targetNode.pos.y;
+			var dz:Number = _curCharPos.z - _targetNode.pos.z;
+			return dx * dx + dy * dy + dz * dz;
+		}
+		
+		
 		
 		private var _lastTargetNode:PlayerTargetNode;
 		public function setTargetChar(node:PlayerTargetNode):void {
@@ -844,7 +855,7 @@ WeaponSlots
 			_gotTargetLOS = false;
 			
 			if (_curCharPos) {
-				_gotTargetInRange =  getRangeToTarget() <= weapon.range;
+				_gotTargetInRange =  getSqDistToTarget() <= weapon.range*weapon.range;
 				if (_gotTargetInRange) {
 					_gotTargetLOS = weaponLOSCheck == null || checkLOS(_displayChar, _displayChar.get(Weapon) as Weapon, node.entity);
 				}
@@ -919,12 +930,13 @@ WeaponSlots
 			var bestPercChanceToHit:Number = 0;
 			
 			
-			var rangeToTarget:Number = getRangeToTarget();
+			//var rangeToTarget:Number = getRangeToTarget();
+			var sqDistToTarget:Number = getSqDistToTarget();
 			
 			var count:int = 0;
 			for (var playerWeapon:Weapon =  _displayChar.get(Weapon) as Weapon; playerWeapon != null; playerWeapon = playerWeapon.nextFireMode) {  // start loop
 			
-			if (playerWeapon.range < rangeToTarget || !checkLOS(_displayChar, playerWeapon, _targetNode.entity)) {
+			if (playerWeapon.range*playerWeapon.range < sqDistToTarget || !checkLOS(_displayChar, playerWeapon, _targetNode.entity)) {
 				continue;
 			}
 			var aggro:EnemyAggro = _targetNode.entity.get(EnemyAggro) as EnemyAggro;
@@ -1028,7 +1040,7 @@ WeaponSlots
 			for (var playerWeapon:Weapon = _displayChar.get(Weapon) as Weapon; playerWeapon != null; playerWeapon = playerWeapon.nextFireMode) {
 				if ( _targetNode && _curCharPos) {
 					
-					gotTargetInRange = getRangeToTarget() <= playerWeapon.range;
+					gotTargetInRange = getSqDistToTarget() <= playerWeapon.range*playerWeapon.range;
 					gotTargetLOS = false;
 					if (gotTargetInRange) {
 						gotTargetLOS = weaponLOSCheck == null || checkLOS(_displayChar, playerWeapon, _targetNode.entity);

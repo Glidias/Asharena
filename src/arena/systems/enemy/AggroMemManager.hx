@@ -28,6 +28,7 @@ import components.Vel;
 import de.polygonal.ds.BitVector;
 import flash.errors.Error;
 import flash.Vector.Vector;
+import haxe.Log;
 import util.geom.PMath;
 import util.geom.Vec3Utils;
 
@@ -136,7 +137,7 @@ class AggroMemManager
 				a.target = aggroTarget;
 				a.watch = null;
 				a.fixed = true;
-			
+				
 				activeNode.entity.add( a);		
 				
 			}
@@ -534,11 +535,12 @@ class AggroMemManager
 		a.state.flag = 0;// ();
 		a.weaponState.cancelTrigger();
 	
-	
+	 var checkedLOS:Bool;
 		var pTarget:PlayerAggroNode = a.state.target;
+		checkedLOS = false;
 		while(aWeapon != null) {
 			a.state.setAttackRange(a.state.fixed ? aWeapon.range :   (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, pTarget.size) : aWeapon.range + pTarget.size.x );
-			var checkedLOS:Bool = false;
+			checkedLOS = false;
 			//
 			if ( HitFormulas.targetIsWithinArcAndRangeSq(a.pos, a.rot, pTarget.pos, a.state.attackRangeSq, aWeapon.hitAngle) &&  (checkedLOS=true) && weaponLOSChecker.validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)  )   { // TODO: validate other LOS factors
 				a.state.flag = 1;
@@ -546,16 +548,19 @@ class AggroMemManager
 				a.weaponState.pullTrigger(aWeapon);
 				if (aWeapon.fireMode <= 0 && a.weaponState.attackTime >= 0) a.weaponState.attackTime = -Math.random() * a.weaponState.randomDelay;
 				a.weaponState.attackTime -=  a.weaponState.delay > 0 ? a.weaponState.delay : 0;
+					
 				if (a.state.fixed) { 
-					a.weaponState.attackTime = 5;
+					a.weaponState.attackTime = 9999;
 					if (_supportCount > _maxSupport) {
 						a.weaponState.cancelTrigger();
 						a.state.flag = 0;
-						a.state.setAttackRange(0);
+						trace("Exceeded");
+					//	a.state.setAttackRange(0);
 						a.entity.remove(EnemyAggro);
 						
 					}
 					else {
+						trace("add");
 					//	a.stance.standAndFight();
 						engine.addEntity( new Entity().add( new Tween(0, Math.random() * .25, {  }, { onComplete:a.stance.standAndFight}  ) ) );
 						_supportCount++;
@@ -571,13 +576,16 @@ class AggroMemManager
 			
 			aWeapon = aWeapon.nextFireMode;
 		}
+		///*
 		if (a.state.fixed && a.state.flag != 1) {
-			a.state.setAttackRange(0);
+			trace("failed:"+checkedLOS + ", "+a.weapon.range + ", "+a.state.attackRangeSq);
+		//	a.state.setAttackRange(0);
 			a.state.flag = 0;
 			a.weaponState.cancelTrigger();
 			a.entity.remove(EnemyAggro);
 			
 		}
+		//*/
 	}
 	
 	

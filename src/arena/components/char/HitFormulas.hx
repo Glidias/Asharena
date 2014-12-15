@@ -29,11 +29,13 @@ class HitFormulas
 
 	
 	
-	public static inline function targetIsWithinArcAndRangeSq2(diffAngle:Float, arcAng:Float, sqDist:Float, rangeSq:Float):Bool {  // TODO: Depeciate
+//	/*
+	public static inline function targetIsWithinArcAndRangeSq2(diffAngle:Float, arcAng:Float, sqDist:Float, rangeSq:Float):Bool {  
 
 		return sqDist <= rangeSq && diffAngle <= arcAng;
 		
 	}
+	//*/
 	
 	public static inline function targetIsWithinFOV(posA:Pos, rotA:Rot, posB:Pos, fov:Float):Bool { // this doesn't take into account size of target, but should be okay in most cases...
 		
@@ -45,12 +47,31 @@ class HitFormulas
 		return PMath.abs(getDiffAngle(rotA.z, Math.atan2(dy, dx)+ROT_FACING_OFFSET ) ) <= fov*.5;
 	}
 	
-	
-	public static inline function targetIsWithinArcAndRangeSq(posA:Pos, rotA:Rot, posB:Pos, rangeSq:Float, arcAng:Float):Bool { // TODO: Convert to 3D
+	///*
+	public static inline function targetIsWithinArcAndRangeSq(posA:Pos, rotA:Rot, posB:Pos, rangeSq:Float, arcAng:Float):Bool { 
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
 		var dz:Float = posB.z - posA.z;
-		var withinRange:Bool = dx * dx + dy * dy  + dz*dz <= rangeSq;
+	
+		var withinRange:Bool = dx*dx+dy*dy+dz*dz <=  rangeSq;
+		
+		var withinAng:Bool = PMath.abs(getDiffAngle(rotA.z, Math.atan2(dy, dx)+ROT_FACING_OFFSET ) ) <= arcAng;
+		
+		return withinRange && withinAng;
+		
+	}
+	//*/
+	
+	public static inline function targetIsWithinArcAndRange(posA:Pos, rotA:Rot, posB:Pos, range:Float, arcAng:Float, targetSize:Ellipsoid):Bool {
+		var dx:Float = posB.x - posA.x;
+		var dy:Float = posB.y - posA.y;
+		var dz:Float = posB.z - posA.z;
+		var d:Float = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		var dm:Float = 1 / d;
+		
+		d = d - PMath.abs(dx * dm * targetSize.x + dy * dm * targetSize.y + dz * dm * targetSize.z);
+		
+		var withinRange:Bool = d <= range;
 		
 		var withinAng:Bool = PMath.abs(getDiffAngle(rotA.z, Math.atan2(dy, dx)+ROT_FACING_OFFSET ) ) <= arcAng;
 		
@@ -68,6 +89,7 @@ class HitFormulas
 		return d - PMath.abs(dx*dm*ellipsoidB.x + dy*dm*ellipsoidB.y + dz*dm*ellipsoidB.z);
 	}
 	
+	/*
 	public static inline function get3DDistOffseted(posA:Pos,  posB:Pos, ellipsoidB:Ellipsoid, ox:Float, oy:Float, oz:Float ):Float {	
 		
 		var dx:Float = posB.x - posA.x;
@@ -78,6 +100,7 @@ class HitFormulas
 		
 		return d - PMath.abs(dx*dm*ellipsoidB.x + dy*dm*ellipsoidB.y + dz*dm*ellipsoidB.z);
 	}
+	*/
 
 	// Used for actual combat..
 	public static inline function getPercChanceToHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {

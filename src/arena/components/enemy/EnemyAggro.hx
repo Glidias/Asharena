@@ -11,6 +11,7 @@ import util.geom.PMath;
  */
 class EnemyAggro
 {
+	public var attackRange:Float;
 	public var target:PlayerAggroNode;   // the target to aim at
 	public var attackRangeSq:Float; // this is variable, randomly assign prefered attackRange within attack range margin before any attack.
 
@@ -46,7 +47,8 @@ class EnemyAggro
 		return this;
 	}
 	public inline function setAttackRange(range:Float):Void {
-		attackRangeSq = range*range;
+		attackRangeSq = range * range;
+		attackRange = range;
 	}
 	
 	public inline function dispose():Void {
