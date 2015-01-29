@@ -280,8 +280,8 @@ package
 			
 			
 			var def:CharDefense = ent.get(CharDefense) as CharDefense;
-			def.evasion = .4; .5; //1.125; //0.25;
-			def.block =  .65;// 1.125;// 0.25;
+			def.evasion =  .7;// .6;//.4; .5; //1.125; //0.25;
+			def.block = .7;// .65;// 1.125;// 0.25;
 			
 			if (side > 0) {
 				var customMat:Material = getMaterialSide(race, side);

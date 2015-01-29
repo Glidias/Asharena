@@ -949,7 +949,7 @@ WeaponSlots
 			aggroing = aggro == null || aggro.flag != 1 || (_targetNode.entity.get(WeaponState) as WeaponState).fireMode.fireMode <= 0  ? false : (checkingLOS  = aggro!=null) && checkLOS(_targetNode.entity, (_targetNode.entity.get(WeaponState) as WeaponState).fireMode, _displayChar);
 		//	if (aggro != null && aggro.flag == 2) throw new Error("STILL WAITING");
 			if (!aggroing) {
-				hitPercResult = HitFormulas.getPercChanceToHitDefenderMethod(playerWeapon)( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid, playerWeapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid, !fullyAggro  ? HitFormulas.getFullyDefensiveRating( _targetNode.entity.get(CharDefense) as CharDefense) : 0   ); //HitFormulas.getDefenseForEntity(_displayChar, _targetNode.entity) 
+				hitPercResult = HitFormulas.getPercChanceToHitDefenderMethod(playerWeapon)( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid, playerWeapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid, !fullyAggro  ? HitFormulas.getFullyDefensiveRating( _targetNode.entity.get(CharDefense) as CharDefense) : 0 , !fullyAggro ? -.3 : 0  ); //HitFormulas.getDefenseForEntity(_displayChar, _targetNode.entity) 
 				if (checkingLOS || (aggro && aggro.flag == -1) ) hitPercResult *= EVASION_UNDER_COVER_BONUS
 				else hitPercResult *= checkCoverBlockLOS( _targetNode.entity, _displayChar ) ? BEING_UNDER_COVER_BONUS : 1;
 				critPercResult= HitFormulas.getPercChanceToCritDefender(_curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid, playerWeapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense,_targetNode.entity.get(Ellipsoid) as Ellipsoid );
@@ -1305,7 +1305,7 @@ WeaponSlots
 			var playerHealth:Health = (_displayChar.get(Health) as Health);
 			
 			if (!aggroing) {  // Only player attacks
-				percToRoll = HitFormulas.getPercChanceToHitDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  chosenWeapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid, !fullyAggro  ? HitFormulas.getFullyDefensiveRating(_targetNode.entity.get(CharDefense) as CharDefense) : 0 ); //  HitFormulas.getDefenseForEntity(_displayChar, _targetNode.entity) 
+				percToRoll = HitFormulas.getPercChanceToHitDefender( _curCharPos, _displayChar.get(Ellipsoid) as Ellipsoid,  chosenWeapon, _targetNode.entity.get(Pos) as Pos, _targetNode.entity.get(Rot) as Rot, _targetNode.entity.get(CharDefense) as CharDefense, _targetNode.entity.get(Ellipsoid) as Ellipsoid, !fullyAggro  ? HitFormulas.getFullyDefensiveRating(_targetNode.entity.get(CharDefense) as CharDefense) : 0, !fullyAggro? -.3 : 0 ); //  HitFormulas.getDefenseForEntity(_displayChar, _targetNode.entity) 
 				
 				//percToRoll = Math.round(hitPercResult);
 				if (Math.random() * 100 <= percToRoll) {  // got hit

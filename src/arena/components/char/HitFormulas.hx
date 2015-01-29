@@ -106,12 +106,17 @@ class HitFormulas
 	public static inline function getPercChanceToHitDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, defense:Float=0, timeToHitOffset:Float=0):Float {
 		var facinPerc:Float ;
 		var facingNotRequired:Bool = defense < 0;
+		
+		
 		//Log.trace(defense);
 		//if (defense == 0) throw "AWR";
 		defense = facingNotRequired ? -defense : defense;
+		defense = (defense > 0 ? defense : defB.evasion > defB.block ? defB.evasion : defB.block);
+		defense = defense > 1 ? 1 : defense;
 		
-		var basePerc:Float = facinPerc = calculateFacingPerc(posA, posB, rotB, defB); 
-		basePerc  = 75 + ((facinPerc - 60)*0.01)*25;  // renoramlzie to diff range
+		
+		var basePerc:Float = facinPerc = facingNotRequired ? 100 : calculateFacingPerc(posA, posB, rotB, defB); 
+		//basePerc  = 75 + ((facinPerc - 60)*0.01)*25;  // renoramlzie to diff range
 		//basePerc = 100;
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
@@ -126,35 +131,43 @@ class HitFormulas
 			
 			// Detemine overall time taken  for weapon to strike target in seconds, according to range to target
 			var rangeFactor:Float =  calculateOptimalRangeFactor(weaponA.minRange, weaponA.range, d);
-			var totalTimeToHit:Float = weaponA.fireMode <= 0 ? (d > weaponA.muzzleLength ? d : weaponA.muzzleLength) / weaponA.muzzleVelocity + weaponA.timeToSwing : PMath.lerp(weaponA.strikeTimeAtMinRange, weaponA.strikeTimeAtMaxRange, rangeFactor) - timeToHitOffset;// weaponA.timeToSwing+ rangeFactor * (weaponA.strikeTimeAtMaxRange - weaponA.strikeTimeAtMinRange); 
+			var totalTimeToHit:Float = weaponA.fireMode <= 0 ? (d > weaponA.muzzleLength ? d : weaponA.muzzleLength) / weaponA.muzzleVelocity + weaponA.timeToSwing : PMath.lerp(weaponA.strikeTimeAtMinRange, weaponA.strikeTimeAtMaxRange, rangeFactor);// weaponA.timeToSwing+ rangeFactor * (weaponA.strikeTimeAtMaxRange - weaponA.strikeTimeAtMinRange); 
+			totalTimeToHit -= timeToHitOffset;
 			var totalTimeToHitInSec:Float = totalTimeToHit;
+			
 			
 			//
 			
+		//	totalTimeToHitInSec += defense;
 			if (totalTimeToHitInSec > 1 ) totalTimeToHitInSec = 1; //|| weaponA.fireMode<=0
-		
+			
+			var atk:Float = 1 - totalTimeToHitInSec;
+			atk = atk > .9 ? .9  : atk < .1 ? .1  : atk;
+			//atk = .1;
+			
+			
 			/*
 			if (weaponA.fireMode <= 0) {
 				if (totalTimeToHitInSec < .3) totalTimeToHitInSec = .2;
-				totalTimeToHitInSec += defB.block * .5 * .2;
+				totalTimeToHitInSec += d
+				efB.block * .5 * .2;
 			}
 			*/
 			//totalTimeToHitInSec
-		
 			
-			totalTimeToHit = 1 - calculateOptimalRangeFactor( 0, 1, totalTimeToHit);
+			
+			//totalTimeToHit = 1 - calculateOptimalRangeFactor( 0, 1, totalTimeToHit);
 	
 		
-			totalTimeToHit = PMath.lerp(.3, 1, totalTimeToHit);
+		//	totalTimeToHit = PMath.lerp(.3, 1, totalTimeToHit);
 		//	if (facinPerc < 67) basePerc *= totalTimeToHit;   // Based off ~ frontal aspect of character
 			
 			//Enemy's /Block/Evade factor , if facing in a direction where he can react, determine how fast/effective he can evade/block the blow in time to cushion any possible impact. Based off ~ peripherical vision of character
 			
-				if  (facinPerc <= 90 || facingNotRequired ) {
-		basePerc *=  PMath.lerp( 1, .1, (defense != 0 ? defense : defB.evasion > defB.block ? defB.evasion : defB.block) * totalTimeToHitInSec);
-				}
 		
-		
+		//basePerc *=  PMath.lerp( 1, .1, (defense != 0 ? defense : defB.evasion > defB.block ? defB.evasion : defB.block) * totalTimeToHitInSec);
+			basePerc =  100 - defense/(defense + atk) * basePerc;
+		Log.trace(totalTimeToHitInSec + ", " + timeToHitOffset + ", "+atk + ", "+defense + ", "+Math.floor(basePerc)+"%");
 		return basePerc;
 	}
 	
@@ -162,11 +175,16 @@ class HitFormulas
 		
 		var prob:Float = getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, defense, timeToHitOffset) / 100;
 		//return prob;
-		 prob *= prob > 0 ? getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB) : 1;
+		 
+		prob *= prob > 0 ? getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB) : 1;
+		// prob =  getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB);
+		 
 		 // provide block bonus if crouched and with at least 256 units of 2D space apart. Defense !=0
+		 /*
 		 if ( defense > 0 && Vec3Utils.sqDist2DBetween(posA, posB) >= CROUCH_EFFECT_RANGE_SQ ) {
 			 prob *= .7;
 		 }
+		 */
 		return Math.ceil(prob * 100);
 		
 	}
@@ -473,9 +491,10 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 		var toPosAAngle:Float = Math.atan2(dy, dx) + ROT_FACING_OFFSET;
 		toPosAAngle = PMath.abs( getDiffAngle(rotB.z, toPosAAngle) );
 		
-		toPosAAngle= PMath.lerp(60,100,  calculateOptimalRangeFactor(defB.frontalArc,   (PMath.PI - CharDefense.BACKSIDE_ARC), toPosAAngle ) );
 		
-		return toPosAAngle;
+		//toPosAAngle= PMath.lerp(100,100,  calculateOptimalRangeFactor(defB.frontalArc,   (PMath.PI - CharDefense.BACKSIDE_ARC), toPosAAngle ) );
+		
+		return toPosAAngle <= defB.frontalArc ? 100 : toPosAAngle >= (PMath.PI - CharDefense.BACKSIDE_ARC) ? 0 : PMath.lerp(100, 0, calculateOptimalRangeFactor(defB.frontalArc, (PMath.PI - CharDefense.BACKSIDE_ARC), toPosAAngle) );
 	}
 	
 	public static inline  function getDiffAngle(actualangle:Float, destangle:Float):Float {
@@ -561,18 +580,31 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 	
 	static public inline function getDefenseForMovingStance(posA:Pos, posB:Pos, defB:CharDefense, stanceB:IStance, velB:Vel, ranged:Bool):Float 
 	{
-		return stanceB.movingSlow() ? defB.block * 2 : ranged ? getRangedEvasionRating(posA, posB, defB, velB, stanceB) : defB.evasion;
+		return stanceB.movingSlow() ? defB.block+BLOCK_BONUS  : ranged ? getRangedEvasionRating(posA, posB, defB, velB, stanceB) : defB.evasion;
 	}
 	
+	private static inline var BLOCK_BONUS:Float = .3;
 	/*
 	static  public function getDefenseForEntity(entA:Entity, entB:Entity):Float {
 		return getDefenseForStance(entA.get(Pos), entB.get(Pos), entB.get(CharDefense), entB.get(IStance));
 	}
 	*/
 	
+	///*
 	static public inline function getFullyDefensiveRating(def:CharDefense):Float {
-		return def.block * 2 > def.evasion ? def.block * 2 : def.evasion;
+		return def.block +BLOCK_BONUS > def.evasion ? def.block+BLOCK_BONUS  : def.evasion;
 	}
+	
+	//static public inline function getFullyDefensiveRating(def:CharDefense):Float {
+		//return def.block*2  > def.evasion ? def.block*2  : def.evasion;
+	//}
+	//*/
+	
+	/*
+	static public inline function getAggroDefenseRating(weaponB:Weapon, weaponBState:WeaponState, defB:CharDefense):Void {
+			return weaponBState.attackTime < weaponB.timeToSwing ? 0 : calculateOptimalRangeFactor(weaponB.timeToSwing, weaponB.strikeTimeAtMaxRange, weaponBState.attackTime) < CAN_BLOCK_THRESHOLD ? defB.block : weaponB.parryEffect;
+	}
+	*/
 	
 	static public function getRangedEvasionRating(posA:Pos, posB:Pos, defB:CharDefense, velB:Vel, stanceB:IStance):Float {
 		var dx:Float = posB.x - posA.x;
@@ -589,7 +621,7 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 		var vx:Float = velB.x * d;
 		var vy:Float = velB.y * d;
 		var vz:Float = velB.z * d;
-		d = PMath.lerp( .5 * defB.evasion, 2 * defB.evasion, 1 - PMath.abs( vx * dx + vy * dy + vz * dz) );
+		d = PMath.lerp( defB.evasion*.5,  defB.evasion*2, 1 - PMath.abs( vx * dx + vy * dy + vz * dz) );
 		d *=  len / stanceB.getJoggingSpeed();
 
 		return -d;

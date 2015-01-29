@@ -554,13 +554,13 @@ class AggroMemManager
 					if (_supportCount > _maxSupport) {
 						a.weaponState.cancelTrigger();
 						a.state.flag = 0;
-						trace("Exceeded");
+					//	trace("Exceeded");
 					//	a.state.setAttackRange(0);
 						a.entity.remove(EnemyAggro);
 						
 					}
 					else {
-						trace("add");
+					//	trace("add");
 					//	a.stance.standAndFight();
 						engine.addEntity( new Entity().add( new Tween(0, Math.random() * .25, {  }, { onComplete:a.stance.standAndFight}  ) ) );
 						_supportCount++;
@@ -578,7 +578,7 @@ class AggroMemManager
 		}
 		///*
 		if (a.state.fixed && a.state.flag != 1) {
-			trace("failed:"+checkedLOS + ", "+a.weapon.range + ", "+a.state.attackRangeSq);
+		//	trace("failed:"+checkedLOS + ", "+a.weapon.range + ", "+a.state.attackRangeSq);
 		//	a.state.setAttackRange(0);
 			a.state.flag = 0;
 			a.weaponState.cancelTrigger();

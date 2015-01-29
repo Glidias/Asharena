@@ -395,7 +395,7 @@ package tests.pvp
 		private var movementPoints:MovementPoints = new MovementPoints();	
 		private  var MAX_MOVEMENT_POINTS:Number = 6;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
-		private  var ASSIGNED_HP:int = 500;
+		private  var ASSIGNED_HP:int = 120;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
 		private var commandPoints:Vector.<int> = new <int>[0,0];
 		private var collOtherClass:Class = ImmovableCollidable;
@@ -408,10 +408,10 @@ package tests.pvp
 		
 		private function getTestWeaponList():WeaponSlot {
 			var weapSlot:WeaponSlot = new WeaponSlot().init();
-		//	weapSlot.slots[0] = getTestRangedWeapon();
-			//weapSlot.slots[1] = getTestWeaponFireModes();
+			weapSlot.slots[0] = getTestRangedWeapon();
+			weapSlot.slots[1] = getTestWeaponFireModes();
 			
-			weapSlot.slots[0] = getTestWeapon(true);
+			///weapSlot.slots[0] = getTestWeaponFireModes();
 			return weapSlot;
 		}
 
@@ -454,7 +454,7 @@ package tests.pvp
 		
 			w.deviation = .25; 
 			w.range  = ArenaHUD.METER_UNIT_SCALE * 50;
-			w.deviation =  HitFormulas.getDeviationForRange(512, 16);
+			w.deviation =  HitFormulas.getDeviationForRange(350, 16);
 			
 			
 			w.timeToSwing  = .3;
