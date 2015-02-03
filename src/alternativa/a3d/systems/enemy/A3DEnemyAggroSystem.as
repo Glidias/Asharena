@@ -207,7 +207,7 @@ package alternativa.a3d.systems.enemy
 		
 
 
-		public function validateWeaponLOS2(attacker:Pos, weapon:Weapon, target:Pos, targetSize:Ellipsoid, targetPts:EllipsoidPointSamples, inputPos:Vec3, aimIndex:int) : int {
+		public function validateWeaponLOS2(attacker:Pos, weapon:Weapon, target:Pos, targetSize:Ellipsoid, targetPts:EllipsoidPointSamples, inputPos:Vec3, aimIndex:int, aimedOnTarget:Boolean) : int {
 			var data:RayIntersectionData;
 			var dm:Number;
 			// compare ray from weapon origin to ellipsoid distance vs distance of RayIntersectionData distance
