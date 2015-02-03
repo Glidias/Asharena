@@ -295,7 +295,8 @@ package alternativa.a3d.systems.enemy
 			}
 			
 			
-			
+			// Deviation phase (kiv for now)
+			/*
 			if (nearestResult >= 0) {  // successful targeting over hit spot...Now, attempt to shoot deviated ray for FinalRaycast!
 				
 				// TODO: deviate dest accordginly!!
@@ -321,9 +322,8 @@ package alternativa.a3d.systems.enemy
 					}
 				}
 			}
-			
-			//data = null;
-			//if (data != null && data.time <= d) throw new Error("BLOCKED!");
+			*/
+
 			
 			return nearestResult;
 		}
