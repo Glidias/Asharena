@@ -551,12 +551,14 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 						//actualDist <= aWeapon.range &&
 						if ( validateWeaponLOS(a.pos, aWeapon.sideOffset, aWeapon.heightOffset, pTarget.pos, pTarget.size)  ) {  // strike hit! 
 							
+							var isAttacking:Bool = pTarget.stance.isAttacking();
+							var defMoving:Float = 0;
 							//Pos->Ellipsoid->Weapon->Pos->Rot->CharDefense-> Ellipsoid->Float->Float->Float {
 							if (Math.random() * 100 <=  getPercChanceToHitDefender(a.pos, a.ellipsoid, aWeapon, pTarget.pos, pTarget.rot, pTarget.def, pTarget.size, 
 							
-							!a.state.fixed ? !pTarget.stance.isAttacking() ? HitFormulas.getDefenseForMovingStance(pTarget.pos, a.pos, pTarget.def, pTarget.stance, pTarget.vel, aWeapon.fireMode <= 0) :
+							!a.state.fixed ? !isAttacking ? (defMoving=HitFormulas.getDefenseForMovingStance(pTarget.pos, a.pos, pTarget.def, pTarget.stance, pTarget.vel, aWeapon.fireMode<= 0 )) :
 								
-								pTarget.stance.isAttacking() ? 0 : -.3   // time to hit offset
+								isAttacking || defMoving <= 0 ? 0 : -.3   // time to hit offset
 							:  
 							HitFormulas.fullyAggroing(pTarget.entity) ? 0 : HitFormulas.getFullyDefensiveRating(pTarget.def)   // defense rating    // defense rating
 							

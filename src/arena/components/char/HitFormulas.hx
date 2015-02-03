@@ -112,7 +112,7 @@ class HitFormulas
 		//if (defense == 0) throw "AWR";
 		defense = facingNotRequired ? -defense : defense;
 		defense = (defense > 0 ? defense : defB.evasion > defB.block ? defB.evasion : defB.block);
-		defense = defense > 1 ? 1 : defense;
+	//	defense = defense > 1 ? 1 : defense;
 		
 		
 		var basePerc:Float = facinPerc = facingNotRequired ? 100 : calculateFacingPerc(posA, posB, rotB, defB); 
@@ -176,7 +176,8 @@ class HitFormulas
 		var prob:Float = getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, defense, timeToHitOffset) / 100;
 		//return prob;
 		 
-		prob *= prob > 0 ? getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB) : 1;
+		//prob *= prob > 0 ? getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB) : 1;
+		
 		// prob =  getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB);
 		 
 		 // provide block bonus if crouched and with at least 256 units of 2D space apart. Defense !=0
@@ -592,7 +593,7 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 	
 	///*
 	static public inline function getFullyDefensiveRating(def:CharDefense):Float {
-		return def.block +BLOCK_BONUS > def.evasion ? def.block+BLOCK_BONUS  : def.evasion;
+		return def.block > 0 && def.block +BLOCK_BONUS > def.evasion ? def.block+BLOCK_BONUS  : def.evasion;
 	}
 	
 	//static public inline function getFullyDefensiveRating(def:CharDefense):Float {
@@ -621,7 +622,7 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 		var vx:Float = velB.x * d;
 		var vy:Float = velB.y * d;
 		var vz:Float = velB.z * d;
-		d = PMath.lerp( defB.evasion*.5,  defB.evasion*2, 1 - PMath.abs( vx * dx + vy * dy + vz * dz) );
+		d = PMath.lerp( defB.evasion*.5,  defB.evasion*1, 1 - PMath.abs( vx * dx + vy * dy + vz * dz) );
 		d *=  len / stanceB.getJoggingSpeed();
 
 		return -d;

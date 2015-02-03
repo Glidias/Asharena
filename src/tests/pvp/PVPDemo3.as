@@ -393,7 +393,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 6;// 9999;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 12;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 120;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
