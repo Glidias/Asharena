@@ -30,23 +30,26 @@ class CharDefense
 	public var frontalArc:Float;  // the arc for both directions, leftwards and rightwards from forward vector
 	// leftArcAdd, rightArcAdd  // this can be included in later to factor in presence of shields on left/right hand side of body
 	
-	public static inline var BACKSIDE_ARC:Float = 75*PMath.DEG_RAD;  // the backside arc which is considered a backstab
+	public static inline var BACKSIDE_ARC:Float = 75 * PMath.DEG_RAD;  // the backside arc which is considered a backstab
+	
+	public var critDamageMult:Float;
 
 	public function new() 
 	{
 		
 	}
 	
-	public  function init(block:Float, evasion:Float, frontalArc:Float):CharDefense {
-		init_i(block , evasion, frontalArc);
+	public  function init(block:Float, evasion:Float, frontalArc:Float, critDamageMult:Float = 1.5):CharDefense {
+		init_i(block , evasion, frontalArc, critDamageMult);
+		
 		return this;
 	}
 	
-	public  inline function init_i(block:Float, evasion:Float, frontalArc:Float):Void {
+	public  inline function init_i(block:Float, evasion:Float, frontalArc:Float, critDamageMult:Float = 1.5):Void {
 		this.block = block;
 		this.evasion = evasion;
 		this.frontalArc = frontalArc;
-		
+		this.critDamageMult = critDamageMult;
 	}
 	
 }

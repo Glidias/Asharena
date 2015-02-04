@@ -86,7 +86,7 @@ package
 			
 			gladiatorPointSamples = new EllipsoidPointSamples();
 			gladiatorPointSamples.init(new Vec3(32, 32, 72), 100);
-			
+			gladiatorPointSamples.sortPoints();
 		}
 		
 		public function switchPlayer(ent:Entity, stage:Stage):void {
@@ -280,8 +280,8 @@ package
 			
 			
 			var def:CharDefense = ent.get(CharDefense) as CharDefense;
-			def.evasion =  0;// .6;//.4; .5; //1.125; //0.25;
-			def.block = .95;// .65;// 1.125;// 0.25;
+			def.evasion =  .25;// .6;//.4; .5; //1.125; //0.25;
+			def.block = 1;// .65;// 1.125;// 0.25;
 			
 			if (side > 0) {
 				var customMat:Material = getMaterialSide(race, side);

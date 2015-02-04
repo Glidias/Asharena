@@ -1,5 +1,6 @@
 package arena.systems.enemy;
 import alternativa.engine3d.core.Object3D;
+import arena.components.char.EllipsoidPointSamples;
 import arena.components.char.HitFormulas;
 import arena.components.char.MovementPoints;
 import arena.components.enemy.EnemyAggro;
@@ -7,6 +8,7 @@ import arena.components.enemy.EnemyIdle;
 import arena.components.enemy.EnemyWatch;
 import arena.components.weapon.AnimAttackMelee;
 import arena.components.weapon.AnimAttackRanged;
+import arena.systems.player.IStance;
 import arena.systems.player.IVisibilityChecker;
 import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.weapon.ITimeChecker;
@@ -68,6 +70,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 	private var _reactCooldown:Float;
 	public static inline var REACT_TIME:Float = .215;  // Average reaction time of human being: 0.215 : 4.65 frames per second
 	
+	private var _aimingIndex:Int;
 	
 	public function new() 
 	{
@@ -553,6 +556,8 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 							
 							var isAttacking:Bool = pTarget.stance.isAttacking();
 							var defMoving:Float = 0;
+							var exposure:Float = getTotalExposure(a.pos, aWeapon, pTarget.pos, pTarget.size, pTarget.stance, pTarget.pointSamples);  // todo for phase0.5-1:, remove this var down for critical only
+							
 							//Pos->Ellipsoid->Weapon->Pos->Rot->CharDefense-> Ellipsoid->Float->Float->Float {
 							if (Math.random() * 100 <=  getPercChanceToHitDefender(a.pos, a.ellipsoid, aWeapon, pTarget.pos, pTarget.rot, pTarget.def, pTarget.size, 
 							
@@ -563,7 +568,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 							HitFormulas.fullyAggroing(pTarget.entity) ? 0 : HitFormulas.getFullyDefensiveRating(pTarget.def)   // defense rating    // defense rating
 							
 							, HitFormulas.fullyAggroing(pTarget.entity) ? 0 : -.3  // time to hit offset
-							) ) {
+							)*(aWeapon.fireMode <=0 ? exposure : 1) ) {
 							
 							
 								//aWeaponState.attackTime = aWeapon.strikeTimeAtMaxRange;
@@ -571,7 +576,7 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								//currentAttackingEnemy = a.entity;
 								
 									enemyCrit = false;
-									if (AGGRO_HAS_CRITICAL && Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, pTarget.pos, pTarget.rot, pTarget.def,pTarget.size) ) {
+									if (AGGRO_HAS_CRITICAL && Math.random() * 100 <= HitFormulas.getPercChanceToCritDefender(a.pos, a.ellipsoid, aWeapon, pTarget.pos, pTarget.rot, pTarget.def,pTarget.size, exposure ) ) {
 										
 										enemyCrit =  aWeapon.fireMode > 0;
 									}
@@ -583,11 +588,11 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 								if (aWeapon.fireMode > 0) {
 									a.signalAttack.forceSet(aWeapon.fireMode);
 									swinger =  new AnimAttackMelee();
-									swinger.init_i_static( aWeapon.anim_strikeTimeAtMaxRange, pTarget.health, HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
+									swinger.init_i_static( aWeapon.anim_strikeTimeAtMaxRange, pTarget.health, Std.int(HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? pTarget.def.critDamageMult : 1)) );
 									a.entity.add(swinger);
 								}
 								else {
-									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, pTarget.entity, HitFormulas.rollDamageForWeapon(aWeapon) * (enemyCrit ? 3 : 1), timeChecker, true );
+									Weapon.shootWeapon( -aWeapon.fireMode, a.entity, pTarget.entity, Std.int(HitFormulas.rollDamageForWeapon(aWeapon) * (enemyCrit ? pTarget.def.critDamageMult : 1)), timeChecker, true );
 								}
 								a.stance.updateTension(0, pTimeElapsed);
 								//p.health.damage(HitFormulas.rollDamageForWeapon(aWeapon)*(enemyCrit ? 3 : 1) );
@@ -705,6 +710,13 @@ class EnemyAggroSystem extends System implements IWeaponLOSChecker implements IV
 	public function checkTime(val:Float):Void 
 	{
 		
+	}
+	
+	/* INTERFACE arena.systems.player.IWeaponLOSChecker */
+	
+	public function getTotalExposure(attacker:Pos, weapon:Weapon, target:Pos, targetSize:Ellipsoid, targetStance:IStance, targetPts:EllipsoidPointSamples):Float 
+	{
+		return 1;
 	}
 	
 }

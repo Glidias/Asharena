@@ -6,6 +6,7 @@ package alternativa.a3d.systems.enemy
 	import arena.components.char.EllipsoidPointSamples;
 	import arena.components.weapon.Weapon;
 	import arena.systems.enemy.AggroMemNode;
+	import arena.systems.player.IStance;
 	import arena.systems.player.IWeaponLOSChecker;
 	import ash.core.Engine;
 	import ash.core.Node;
@@ -139,13 +140,27 @@ package alternativa.a3d.systems.enemy
 		}
 		//*/
 		
+		private var targetPos:Pos = new Pos();
 		
-		public function getTotalExposure( attacker:Pos, weapon:Weapon, target:Pos, targetSize:Ellipsoid, targetPts:EllipsoidPointSamples):Number {
-			// TODO: consider stance...
+		override public function getTotalExposure( attacker:Pos, weapon:Weapon, target:Pos, targetSize:Ellipsoid, targetStance:IStance, targetPts:EllipsoidPointSamples):Number {
+			
+			var stance:int = targetStance.getStance();
 			var sizeX:Number = targetSize.x;
 			var sizeY:Number = targetSize.y;
 			var sizeZ:Number = targetSize.z;
 			
+			targetPos.x = target.x;
+			targetPos.y = target.y;
+			targetPos.z = target.z;
+			target = targetPos;
+			
+			if (stance == 2) {  // crouching
+				targetPos.z += (sizeX - sizeZ);
+				sizeZ = sizeX;
+			}
+			
+			var ellipPoints:Vector.<Number> = targetPts.points;
+
 			var d:Number;
 			var dm:Number;
 			var data:RayIntersectionData;
@@ -171,9 +186,9 @@ package alternativa.a3d.systems.enemy
 			var count:int = 0;
 			for (var i:int = 0; i < len; i++) {
 				
-				dest.x = target.x + targetPts[aimIndex]*sizeX;
-				dest.y = target.y + targetPts[aimIndex+1]*sizeY;
-				dest.z = target.z + targetPts[aimIndex + 2]*sizeZ;
+				dest.x = target.x + ellipPoints[aimIndex]*sizeX;
+				dest.y = target.y + ellipPoints[aimIndex+1]*sizeY;
+				dest.z = target.z + ellipPoints[aimIndex + 2]*sizeZ;
 			
 				
 				
@@ -202,20 +217,31 @@ package alternativa.a3d.systems.enemy
 			
 			
 			return count / len;
-			
 		}
 		
 
 
-		public function validateWeaponLOS2(attacker:Pos, weapon:Weapon, target:Pos, targetSize:Ellipsoid, targetPts:EllipsoidPointSamples, inputPos:Vec3, aimIndex:int, aimedOnTarget:Boolean) : int {
+		public function validateWeaponLOS2(attacker:Pos, weapon:Weapon, target:Pos, targetSize:Ellipsoid, targetStance:IStance, targetPts:EllipsoidPointSamples, inputPos:Vec3, aimIndex:int, aimedOnTarget:Boolean) : int {
 			var data:RayIntersectionData;
 			var dm:Number;
 			// compare ray from weapon origin to ellipsoid distance vs distance of RayIntersectionData distance
 			
-			// TODO: consider stance...
+			var stance:int = targetStance.getStance();
 			var sizeX:Number = targetSize.x;
 			var sizeY:Number = targetSize.y;
 			var sizeZ:Number = targetSize.z;
+			
+			var ellipPoints:Vector.<Number> = targetPts.points;
+			
+			targetPos.x = target.x;
+			targetPos.y = target.y;
+			targetPos.z = target.z;
+			target = targetPos;
+			
+			if (stance == 2) {  // crouching
+				targetPos.z += (sizeX - sizeZ);
+				sizeZ = sizeX;
+			}
 			
 			// get normalized right vector
 			des3.x =  (target.y - attacker.y);
@@ -251,9 +277,9 @@ package alternativa.a3d.systems.enemy
 					nearestResult = aimIndex;
 					aimIndex--;
 					aimIndex *= 3;
-					dest.x = target.x + targetPts[aimIndex]*sizeX;
-					dest.y = target.y + targetPts[aimIndex+1]*sizeY;
-					dest.z = target.z + targetPts[aimIndex + 2]*sizeZ;
+					dest.x = target.x + ellipPoints[aimIndex]*sizeX;
+					dest.y = target.y + ellipPoints[aimIndex+1]*sizeY;
+					dest.z = target.z + ellipPoints[aimIndex + 2]*sizeZ;
 
 				}	
 				else {

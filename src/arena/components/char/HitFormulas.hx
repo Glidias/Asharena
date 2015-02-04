@@ -13,6 +13,9 @@ import haxe.Log;
 import util.geom.Vec3Utils;
 import util.TypeDefs;
 import util.geom.PMath;
+import util.TypeDefs;
+import util.TypeDefs.Vector;
+
 
 /**
  * Hit formulas to determine combat results
@@ -26,7 +29,32 @@ class HitFormulas
 	// this should factor out to Defense rating as well..which is dpeending on the type of shiled/weapon combo u r using. 
 	// It basically describes whether you can block WHILE swinging your weapon at the same time. Without a shield or blocking mechanism, this value should be zero.
 	static public inline var CAN_BLOCK_THRESHOLD:Float = .35; 
+	
+	public static inline var STATE_UNAWARE:Int = 1;
+	public static inline var STATE_BACKSTAB:Int = 2;
+	public static inline var STATE_SIDESTAB:Int = 4;
 
+	public static inline var CRIT_EXPOSURE_PERC:Float = 20;
+	
+	public static  var CRITBONUS_TRUTH = {
+		var vec:Vector<Int> = TypeDefs.createIntVector(8, true);
+		
+		vec[0] = 0;
+	
+		// unaware
+		vec[STATE_UNAWARE ] = 40;  // unaware striking from front
+		vec[STATE_UNAWARE | STATE_BACKSTAB] = 40;  // unaware striking from back
+		vec[STATE_UNAWARE | STATE_SIDESTAB] = 40;  // unaware striking from side
+		vec[STATE_UNAWARE | STATE_BACKSTAB | STATE_SIDESTAB] = 40;   // unaware striking from side and back
+		
+		// backstab
+		vec[STATE_BACKSTAB] = 30;   // aware striking from  back
+		vec[STATE_BACKSTAB | STATE_SIDESTAB] = 30;  // aware striking from back and side
+		
+		// side stab
+		vec[STATE_SIDESTAB] = 20; // aware striking from side
+		vec;
+	};
 	
 	
 //	/*
@@ -167,7 +195,7 @@ class HitFormulas
 		
 		//basePerc *=  PMath.lerp( 1, .1, (defense != 0 ? defense : defB.evasion > defB.block ? defB.evasion : defB.block) * totalTimeToHitInSec);
 			basePerc =  100 - defense/(defense + atk) * basePerc;
-		Log.trace(totalTimeToHitInSec + ", " + timeToHitOffset + ", "+atk + ", "+defense + ", "+Math.floor(basePerc)+"%");
+		//Log.trace(totalTimeToHitInSec + ", " + timeToHitOffset + ", "+atk + ", "+defense + ", "+Math.floor(basePerc)+"%");
 		return basePerc;
 	}
 	
@@ -176,7 +204,7 @@ class HitFormulas
 		var prob:Float = getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, defense, timeToHitOffset) / 100;
 		//return prob;
 		 
-		//prob *= prob > 0 ? getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB) : 1;
+		prob *= prob > 0 ? getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB) : 1;
 		
 		// prob =  getChanceToRangeHitWithinCone(posA, weaponA, posB, ellipsoidB);
 		 
@@ -201,20 +229,11 @@ class HitFormulas
 	
 	
 	// Used for actual combat...
-	public static inline function getPercChanceToCritDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid):Float {
-
-		var basePerc:Float =  calculateFacingPerc(posA, posB, rotB, defB); 
-		var dx:Float = posB.x - posA.x;
-		var dy:Float = posB.y - posA.y;
-		var dz:Float = posB.z - posA.z;
-		var d:Float = Math.sqrt(dx * dx + dy * dy + dz*dz); // we assume x and y is the same!
-		var dm:Float = 1 / d;
-		d -= PMath.abs(dx * dm * ellipsoidB.x + dy * dm * ellipsoidB.y + dz * dm * ellipsoidB.z);
-		// Detemine best range to crit for given weapon
-		var  critOptimalRangeFactor:Float = calculateOptimalRangeFactorMidpoint(ellipsoidA.x, weaponA.range, weaponA.critMinRange, weaponA.critMaxRange, d); 
-		basePerc *= PMath.lerp( .3, 1, critOptimalRangeFactor);
-
-		return basePerc;
+	public static inline function getPercChanceToCritDefender(posA:Pos, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, exposure:Float, addCritFlags:Int=0 ):Float {
+		//if (exposure > 1) throw "HSOULD NOT BE!:" + exposure;
+		var totalPerc:Float = weaponA.baseCritPerc + CRITBONUS_TRUTH[getCritFlagsFacing(posA, posB, rotB, defB) | addCritFlags] + exposure*CRIT_EXPOSURE_PERC;
+		totalPerc = totalPerc > 100 ? 100 : totalPerc;
+		return totalPerc;
 	}
 	
 
@@ -416,7 +435,7 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 	}
 	
 	// Used as a predictor.
-		public static inline function getPercChanceToCritAttacker(posA:Pos, rotA:Rot, defA:CharDefense, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState):Float {
+		public static inline function getPercChanceToCritAttacker(posA:Pos, rotA:Rot, defA:CharDefense, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState, exposure:Float):Float {
 			// determine who will strike faster
 		var dx:Float = posB.x - posA.x;
 		var dy:Float = posB.y - posA.y;
@@ -433,7 +452,7 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 		d = sqDist -ellipsoidA.x;
 		totalTimeToHit2 = calculateStrikeTimeAtRange(weaponB, d) - weaponBState.attackTime;
 			
-		var chanceToCritPerc:Float = getPercChanceToCritDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB);
+		var chanceToCritPerc:Float = getPercChanceToCritDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, ellipsoidB, exposure);
 	
 		if (totalTimeToHit2 > totalTimeToHit) { // because you wouldn't strike faster than him, yr chance to crit is lessened, since he might hit you first
 			d = totalTimeToHit2 < weaponA.timeToSwing ? 0 : calculateOptimalRangeFactor(weaponA.timeToSwing, weaponA.strikeTimeAtMaxRange, totalTimeToHit2) < CAN_BLOCK_THRESHOLD ? defA.block : weaponA.parryEffect;
@@ -496,6 +515,15 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 		//toPosAAngle= PMath.lerp(100,100,  calculateOptimalRangeFactor(defB.frontalArc,   (PMath.PI - CharDefense.BACKSIDE_ARC), toPosAAngle ) );
 		
 		return toPosAAngle <= defB.frontalArc ? 100 : toPosAAngle >= (PMath.PI - CharDefense.BACKSIDE_ARC) ? 0 : PMath.lerp(100, 0, calculateOptimalRangeFactor(defB.frontalArc, (PMath.PI - CharDefense.BACKSIDE_ARC), toPosAAngle) );
+	}
+	
+	public static inline function getCritFlagsFacing(posA:Pos, posB:Pos, rotB:Rot, defB:CharDefense):Int {
+			var dx:Float = posA.x - posB.x;
+		var dy:Float = posA.y - posB.y;
+		//var flags:Int = 0;
+		var toPosAAngle:Float = Math.atan2(dy, dx) + ROT_FACING_OFFSET;
+		toPosAAngle = PMath.abs( getDiffAngle(rotB.z, toPosAAngle) );
+		return toPosAAngle <= defB.frontalArc ? 0 : toPosAAngle >= (PMath.PI - CharDefense.BACKSIDE_ARC) ? STATE_BACKSTAB : STATE_SIDESTAB;
 	}
 	
 	public static inline  function getDiffAngle(actualangle:Float, destangle:Float):Float {

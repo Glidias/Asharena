@@ -49,6 +49,33 @@ class EllipsoidPointSamples
 		return this;
 	}
 	
+	public function sortVecFunc(a:Dynamic, b:Dynamic):Int {
+		return a.w > b.w ? 1 : a.w < b.w ? -1 : 0;
+	}
+	
+	
+	public function sortPoints():Void {
+		var arr:Array<Dynamic> = [];
+		var count:Int = 0;
+		
+		var p:Dynamic;
+		for (i in 0...numPoints) {
+			
+			arr.push( p = { x:points[count], y:points[count + 1], z:points[count +2] } );
+			p.w = p.x * p.x + p.y * p.y + p.z * p.z;
+			count+=3;
+		}
+		
+		count = 0;
+		arr.sort(sortVecFunc);
+		for (i in 0...numPoints) {
+			p = arr[i];
+			points[count++] = p.x;
+			points[count++] = p.y;
+			points[count++] = p.z;
+		}
+	}
+	
 	private inline function myInit(ellipsoid:Vec3, numPoints:Int = 100):Void {
 		a = ellipsoid.x;
 		b = ellipsoid.y;

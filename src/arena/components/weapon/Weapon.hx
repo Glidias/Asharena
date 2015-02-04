@@ -64,8 +64,12 @@ class Weapon
 	public var minPitch:Float;
 	public var maxPitch:Float;
 	
-	public var critMinRange:Float;
+	// used for rolling random range only
+	public var critMinRange:Float; 
 	public var critMaxRange:Float;
+	
+	public var baseCritPerc:Int;
+ 
 	
 	// timings cannot be a non-zero value! For weapons like guns and crossbows, use tiny floating point values to simulate time taken to pull the trigger/strike the firing pin, etc..
 	public var timeToSwing:Float;
@@ -137,6 +141,7 @@ class Weapon
 		this.muzzleVelocity = 512;
 		this.muzzleLength = 40;
 		this.rangeMode = 0;
+		this.baseCritPerc = 0;
 		return this;
 	}
 	

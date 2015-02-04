@@ -454,7 +454,7 @@ package tests.pvp
 		
 			w.deviation = .25; 
 			w.range  = ArenaHUD.METER_UNIT_SCALE * 50;
-			w.deviation =  HitFormulas.getDeviationForRange(350, 16);
+			w.deviation =  HitFormulas.getDeviationForRange(512, 16);
 			
 			
 			w.timeToSwing  = .3;
