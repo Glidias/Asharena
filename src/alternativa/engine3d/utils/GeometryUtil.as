@@ -1,8 +1,11 @@
 package alternativa.engine3d.utils 
 {
+	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.core.VertexStream;
 	import alternativa.engine3d.materials.Material;
+	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.resources.Geometry;
 	import flash.utils.ByteArray;
@@ -206,6 +209,55 @@ package alternativa.engine3d.utils
 			geometry.setAttributeValues(ATTRIBUTE, jointIndices);
 			
 			return geometry;
+		}
+		
+		public static function unskinModel(skin:Skin):Vector.<Mesh> {
+			var i:int;
+			var g:Geometry;
+			var geometry:Geometry = skin.geometry;
+			var indices:Vector.<uint> = geometry._indices;
+			
+			var skinRenderedJoints:Vector.<Joint> = skin._renderedJoints;
+			var meshList:Vector.<Mesh> = new Vector.<Mesh>();
+			var len:int = skinRenderedJoints.length;
+			var surfaceFirst:Surface = skin.getSurface(0);
+			for (i = 0; i < len; i++) {
+				var mesh:Mesh;
+				meshList[i] = mesh = new Mesh();
+				mesh.geometry = skin.geometry.clone();
+				mesh.geometry.indices.length = 0;
+				skinRenderedJoints[i].addChild( mesh );
+			}
+			
+			
+			var jointIndices:Vector.<Number> = geometry.getAttributeValues(VertexAttributes.JOINTS[0]);
+			var jointIndices2:Vector.<Number> = geometry.getAttributeValues(VertexAttributes.JOINTS[1]);
+			
+			
+			var index:int;
+			var numIndex:int = geometry.numTriangles * 3;
+			for (i = 0; i < numIndex; i += 3) {
+			
+				if (jointIndices[i] == jointIndices[i + 1] == jointIndices[i + 2] ) {
+					index = jointIndices[i] / 3;
+					g = meshList[index].geometry;
+					
+					g._indices.push(indices[i], indices[i+1], indices[i+2]);
+				}
+				if (jointIndices2[i] == jointIndices2[i + 1] == jointIndices2[i + 2] ) {
+					index = jointIndices2[i] / 3;
+					g = meshList[index].geometry;
+					g._indices.push(indices[i], indices[i+1], indices[i+2]);
+				}
+				
+			}
+			
+			for (i = 0; i < len; i++) {
+				mesh = meshList[i];
+				mesh.addSurface(surfaceFirst.material, 0, mesh.geometry.numTriangles);
+			}
+			
+			return meshList;
 		}
 		
 	}

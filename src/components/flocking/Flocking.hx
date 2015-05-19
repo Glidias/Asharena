@@ -49,7 +49,7 @@ class Flocking
 	
 
 	
-	public static function createFlockSettings( minDist:Float, senseDistance:Float, minx:Float = 0, miny:Float=0, maxx2:Float = 400, maxy2:Float = 400, minspeed:Float=8, maxspeed:Float=32, turnAccelRatio:Float=0):FlockSettings {
+	public static function createFlockSettings( minDist:Float, senseDistance:Float, minx:Float = 0, miny:Float=0, maxx2:Float = 400, maxy2:Float = 400, minspeed:Float=8, maxspeed:Float=32, turnAccelRatio:Float=0, seperationScale:Float=.5, alignmentScale:Float=2, cohesionScale:Float=8):FlockSettings {
 		var me:FlockSettings = new FlockSettings();
 		me.minspeed = minspeed;
 		me.maxspeed = maxspeed;
@@ -62,6 +62,11 @@ class Flocking
 		me.maxy = maxy2-senseDistance;
         me.minx = senseDistance;
         me.miny = senseDistance;
+		
+		me.seperationScale = seperationScale;
+		me.alignmentScale = alignmentScale;
+		me.cohesionScale = cohesionScale;
+		
 		return me;
 	}
 }
@@ -79,6 +84,10 @@ class FlockSettings {
 	 public var maxspeed:Float;
 	 public var minspeed:Float;
 	 public var turnAccelRatio:Float;
+	 
+	  public var seperationScale:Float;
+      public var cohesionScale:Float;
+      public var alignmentScale:Float;
 	 
 	 public function new() {
 		 

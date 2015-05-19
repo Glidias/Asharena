@@ -222,7 +222,7 @@ class FlockingSystem extends System
 		        if (isAlmostZero(_a)) {
           //  text.text = "F";
             //trace(separation.length);
-			curF.separation.scale(.5);
+			curF.separation.scale(curS.seperationScale);
 			_a.add(curF.separation);
 		
             // Alignment
@@ -231,7 +231,7 @@ class FlockingSystem extends System
                 curF.alignment.scale(1 / count);
 				curF.alignment.subtract(cur.vel);
 				curF.alignment.scale(1 / (curS.maxspeed * 2));
-				curF.alignment.scale(2);
+				curF.alignment.scale(curS.alignmentScale);
                 _a.add(curF.alignment);
             }
             // Cohesion
@@ -239,7 +239,7 @@ class FlockingSystem extends System
                 curF.cohesion.scale(1 / count2);
 				curF.cohesion.subtract(cur.pos);
 				curF.cohesion.scale(1 / (curS.mydist));
-				curF.cohesion.scale(8);
+				curF.cohesion.scale(curS.cohesionScale);
                 _a.add(curF.cohesion);
             }
 			//*/

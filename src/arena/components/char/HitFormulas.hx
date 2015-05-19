@@ -434,6 +434,8 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 	
 	}
 	
+	
+	
 	// Used as a predictor.
 		public static inline function getPercChanceToCritAttacker(posA:Pos, rotA:Rot, defA:CharDefense, ellipsoidA:Ellipsoid, weaponA:Weapon, posB:Pos, rotB:Rot, defB:CharDefense, ellipsoidB:Ellipsoid, weaponB:Weapon, weaponBState:WeaponState, exposure:Float):Float {
 			// determine who will strike faster
@@ -660,6 +662,62 @@ return getPercChanceToHitDefender(posA, ellipsoidA, weaponA, posB, rotB, defB, e
 	{
 		return ent.has(EnemyAggro) && ent.get(EnemyAggro).flag > 0;
 	}
+	
+	/**
+	 * Determines time of trajectory impact along slope
+	 * @param	startSlopeY
+	 * @param	endSlopeY
+	 * @param	vx
+	 * @param	vy
+	 * @param	g
+	 * @return
+	 */
+	inline
+	public static function getTrajectoryTimeOfImpactOnSlope(startSlopeY:Float, endSlopeY:Float, vx:Float, vy:Float, g:Float):Float {
+		return 0;
+	}
+	
+	/**
+	 * Basic dragless trajectory time of impact 1-liner calculation across flat ground. 
+	 * Simply calculates time of rise to apex added with time of fall to ground level.
+	 * @param	yo	Start y position
+	 * @param	vyo	Start velocity y
+	 * @param	g	Constant gravity
+	 * @return	Time of impact/flight till object hits the ground
+	 */
+	inline
+	public static function getTrajectoryTimeOfFlight(yo:Float, vyo:Float,  g:Float ):Float {
+		//Initial origin:
+		//	xo
+		//	yo
+		//	Initial origin velocity (knowns)
+		//	vxo = speed*cos();
+		//	vyo = speed*sin();
+
+		//	Equation:
+		//vy = vyo - g*t;  // Sub vy = zero,   where velocity y is zero
+		//0 = vy0 - g*t;
+		//-vy0 = -g*t;
+		//vy0 = g*t;
+		//Therefore tRise = vyo/g;  // as below
+
+	/*
+		tRise = vyo/g;  // time it takes to rise
+		h = yo  + vyo*t - 0.5*g*t*t;  // maximum apex y position
+		tFall = Math.sqrt(2*h/g);   // time it takes to fall
+
+		// RESULTS:
+		tFlight = tRise + tFall;  // total time
+			//range = vxo * tFlight
+		*/
+		return 0;// vyo / g + Math.sqrt(2 * (yo  + vyo * t - 0.5 * g * t * t) / g);
+		
+		//return vyo/g + Math.sqrt((2*yo  + vyo*2*t - 1*g*t*t)/g);
+		
+		//return vyo/g + Math.sqrt((2*yo  + vyo*2*t - 1*g*t*t)/g);
+	}
+	
+	
 	
 	
 	
