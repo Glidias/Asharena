@@ -15,10 +15,13 @@ package alternterrain.objects
 	import alternativa.engine3d.materials.StandardMaterial;
 	import alternativa.engine3d.materials.VertexLightTextureMaterial;
 	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.objects.MeshSetClone;
+	import alternativa.engine3d.objects.MeshSetClonesContainer;
 	import alternativa.engine3d.objects.Surface;
 	import alternativa.engine3d.objects.WireFrame;
 	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.resources.Geometry;
+	import alternativa.engine3d.utils.IntersectSlopeUtil;
 	import alternativa.types.Float;
 	import alternterrain.materials.CheckboardFillMaterial;
 	import alternterrain.materials.ILODTerrainMaterial;
@@ -145,6 +148,8 @@ package alternterrain.objects
 			var b:Number = Math.cos(Math.PI * .125) * val;
 			_squaredDistUpdate = a * a + b * b;
 		}
+		
+		private static const SLOPE_UTIL:IntersectSlopeUtil = new IntersectSlopeUtil();
 		
 		
 		public function loadNull(context3D:Context3D, samplePage:QuadTreePage, tileSize:int=256, uvTileSize:int=0):void {
@@ -1624,6 +1629,7 @@ package alternterrain.objects
 					var dy:Number = -direction.y;
 					
 					
+					
 					var xt:Number; // time until the next x-intersection
 					var dxt:Number; // time between x-intersections
 					var yt:Number; // time until the next y-intersection
@@ -1667,7 +1673,7 @@ package alternterrain.objects
 						else {
 						
 							
-						//Log.trace("Should always have a positive intersection t:" + t);
+							//Log.trace("Should always have a positive intersection t:" + t);
 							t = Number.MAX_VALUE;
 							//throw new Error("Should always have a positive intersection t:"+t)
 						}
@@ -1730,7 +1736,7 @@ package alternterrain.objects
 					
 					
 					if ( checkHitPatchTraj(result, hm, xi, yi, direction.z < 0 ? xt < yt ? zValStart+xt*direction.z*tileSize : zValStart+yt*direction.z*tileSize : zValStart+t*direction.z*tileSize, origin, direction) ) return true;
-		
+				
 				
 					while (true) {
 						if (xt < yt) {
@@ -1929,9 +1935,29 @@ package alternterrain.objects
 					return false;
 				}
 				
+				private var _debugBoxCount:int = 0;
+				private var _debugBoxes:Array = [];
+				private var debugCloneContainer:MeshSetClonesContainer = new MeshSetClonesContainer( new Box(32, 32, 32, 1, 1, 1), new FillMaterial(0xFF0000, 1) );
+				
+				private function addDebugBox(x:Number, y:Number, z:Number):void {
+					var debugBox:MeshSetClone = _debugBoxes[_debugBoxCount] || (_debugBoxes[_debugBoxCount]= debugCloneContainer.addClone(debugCloneContainer.createClone()) );
+					debugBox.root.x = x;
+					debugBox.root.y = y;
+					debugBox.root.z = z;
+						
+					_debugBoxCount++;
+					
+				}
+				
 			private function checkHitPatchTraj(result:RayIntersectionData, hm:HeightMapInfo, xi:int, yi:int, zVal:Number, origin:Vector3D, direction:Vector3D):Boolean 
 				{
 				
+					var intersectUtil:IntersectSlopeUtil = SLOPE_UTIL;
+					
+					if (!debugCloneContainer.parent) {
+						addChild(debugCloneContainer);
+					}
+					
 					// highestPoint bound early reject
 					var highestPoint:Number = hm.Data[xi + yi * hm.RowWidth]; // nw
 				
@@ -1966,13 +1992,14 @@ package alternterrain.objects
 					var cx:Number; 
 					var cy:Number; 
 					var cz:Number;
+					
+					var iResult:int;
 				
 					
 					ax = (_patchHeights[whichFan[0] * 3] + xi) *tileSize + cxorg;
 					ay = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + czorg; 
 					ay *= -1;
 					az = _patchHeights[whichFan[0] * 3 + 2];
-					
 					 
 					bx=  (_patchHeights[whichFan[1] * 3] + xi) * tileSize+ cxorg; 
 					by = (_patchHeights[whichFan[1] * 3 + 1] + yi) * tileSize+ czorg;  
@@ -1985,6 +2012,18 @@ package alternterrain.objects
 					cz = _patchHeights[whichFan[2] * 3 + 2];
 					
 					if (intersectRayTri(result, origin.x, origin.y, origin.z, direction.x, direction.y, direction.z, ax, ay, az, bx, by, bz, cx, cy, cz) ) return true;
+					intersectUtil.setupRay(origin, direction);
+					intersectUtil.setupTri(ax, ay, az, bx, by, bz,  cx, cy, cz);
+					iResult = intersectUtil.getTriIntersections();
+					if (iResult > 0) {
+						addDebugBox( origin.x + intersectUtil.intersectTimes[0] * direction.x,
+						origin.y + intersectUtil.intersectTimes[0] * direction.y,
+						intersectUtil.intersectZ[0]);
+						
+						addDebugBox( origin.x + intersectUtil.intersectTimes[1] * direction.x,
+						origin.y + intersectUtil.intersectTimes[1] * direction.y,
+						intersectUtil.intersectZ[1]);
+					}
 					
 					ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + cxorg;
 					ay = (_patchHeights[whichFan[3] * 3 + 1] + yi) * tileSize + czorg; 
@@ -2002,6 +2041,19 @@ package alternterrain.objects
 					cz = _patchHeights[whichFan[5] * 3 + 2];
 
 					if (intersectRayTri(result, origin.x, origin.y, origin.z, direction.x, direction.y, direction.z, ax, ay, az, bx, by, bz, cx, cy, cz) ) return true;
+					intersectUtil.setupRay(origin, direction);
+					intersectUtil.setupTri(ax, ay, az, bx, by, bz,  cx, cy, cz);
+					if (iResult > 0) {
+						addDebugBox( origin.x + intersectUtil.intersectTimes[0] * direction.x,
+						origin.y + intersectUtil.intersectTimes[0] * direction.y,
+						intersectUtil.intersectZ[0]);
+						
+						addDebugBox( origin.x + intersectUtil.intersectTimes[1] * direction.x,
+						origin.y + intersectUtil.intersectTimes[1] * direction.y,
+						intersectUtil.intersectZ[1]);
+					}
+					
+					
 					
 					return false;
 				}

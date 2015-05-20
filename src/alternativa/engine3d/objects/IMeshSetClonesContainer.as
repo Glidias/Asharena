@@ -8,7 +8,7 @@ package alternativa.engine3d.objects
 	public interface IMeshSetClonesContainer 
 	{
 		
-		function addClone(cloneItem:MeshSetClone):void;
+		function addClone(cloneItem:MeshSetClone):MeshSetClone;
 		
 		function removeClone(cloneItem:MeshSetClone):void;
 	}

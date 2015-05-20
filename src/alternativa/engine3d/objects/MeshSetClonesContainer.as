@@ -294,11 +294,12 @@ package alternativa.engine3d.objects {
 			curCloneMeshIndex++;
 		}
 		
-		public function addClone(cloneItem:MeshSetClone):void {
+		public function addClone(cloneItem:MeshSetClone):MeshSetClone {
 			//if (cloneItem.index >= 0) throw new Error("Clone item seems to already belong to a container or wasn't freshly created/removed!!");  
 			
 			cloneItem.index = numClones;
 			clones[numClones++] = cloneItem;
+			return cloneItem;
 		}
 		
 		public function addCloneWithCuller(cloneItem:MeshSetClone):void {
