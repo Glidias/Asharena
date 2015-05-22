@@ -13,6 +13,7 @@ package tests.pvp
 	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
 	import alternativa.a3d.systems.enemy.A3DEnemyArcSystem;
 	import alternativa.a3d.systems.hud.HealthBarRenderSystem;
+	import alternativa.a3d.systems.hud.TrajRaycastTester;
 	import alternativa.engine3d.controllers.OrbitCameraMan;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
@@ -1779,7 +1780,8 @@ package tests.pvp
 			// possible to  set raycastScene  parameter to something else besides "collisionScene"...
 			thirdPersonController = new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, true);
 			thirdPersonController.thirdPerson.instantZoom = 140;
-			collisionScene.addChild( new TerrainRaycastImpl(_terrainBase.terrain) );
+			var terrainRaycast:TerrainRaycastImpl;
+			collisionScene.addChild( terrainRaycast = new TerrainRaycastImpl(_terrainBase.terrain) );
 			
 		thirdPersonController.thirdPerson.preferedMinDistance = 100;
 		thirdPersonController.thirdPerson.controller.minDistance = 0;
@@ -1796,10 +1798,13 @@ package tests.pvp
 			_waterBase.hideFromReflection.push(arcSystem.arcs);
 			
 			// setup targeting system
-			targetingSystem = new ThirdPersonTargetingSystem(thirdPersonController.thirdPerson);
+			var myTargetingSystem:ThirdPersonTargetingSystem = new ThirdPersonTargetingSystem(thirdPersonController.thirdPerson);
+			targetingSystem = myTargetingSystem;
 			game.gameStates.thirdPerson.addInstance(targetingSystem).withPriority(SystemPriorities.postRender);
 			targetingSystem.targetChanged.add(onTargetChanged);
 			targetingSystem.targetChanged.add(arenaHUD.setTargetChar);
+			
+			game.gameStates.thirdPerson.addInstance( new TrajRaycastTester(terrainRaycast,thirdPersonController.thirdPerson.rayOrigin, thirdPersonController.thirdPerson.rayDirection) ).withPriority(SystemPriorities.postRender);
 			
 			
 			// special PVP movement limited time

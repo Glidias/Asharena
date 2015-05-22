@@ -140,6 +140,7 @@ package alternterrain.objects
 		public var waterLevel:Number = -Number.MAX_VALUE;
 		
 		public var rayData:RayIntersectionData;
+		private var trajRayData:RayIntersectionData;
 		
 		private var _squaredDistUpdate:Number = 0;
 		
@@ -702,6 +703,10 @@ package alternterrain.objects
 			rayData.object = this;
 			rayData.point = new Vector3D();
 			
+			trajRayData = new RayIntersectionData();
+			trajRayData.object = this;
+			trajRayData.point = new Vector3D();
+			
 			waterRayData = new RayIntersectionData();
 			waterRayData.object = this;
 			waterRayData.point = new Vector3D();
@@ -727,6 +732,8 @@ package alternterrain.objects
 			cornerMask[2] = ~(TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_WEST) & 0xF;
 			cornerMask[3] = ~(TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_EAST) & 0xF;
 			//mySurface.numTriangles = PATCHES_ACROSS * 2;
+			
+			addChild(debugCloneContainer);
 		}
 		
 		public function invalidateUpdatePosition():void {
@@ -1162,6 +1169,10 @@ package alternterrain.objects
 						gridPagesVector[i].material.fillResources(resources, resourceType);
 					}
 				}
+				
+				if (!hierarchy) {
+					debugCloneContainer.fillResources(resources, hierarchy, resourceType);
+				}
 				super.fillResources(resources, hierarchy, resourceType);
 			}
 			
@@ -1368,20 +1379,31 @@ package alternterrain.objects
 			public function intersectRayTrajectoryDDA(origin:Vector3D, direction:Vector3D, strength:Number, gravity:Number):RayIntersectionData {
 				if ( (tree == null && gridPagesVector == null) || (boundBox != null && !boundBox.intersectRay(origin, direction)) ) return null;
 				var data:RayIntersectionData = null;
+				
+				debugCloneContainer.numClones = 0;
 			
 					var minTime:Number = 1e22;
-					rayData.time = 1e22;
+					trajRayData.time = 1e22;
 					_boundRayTime = 0;
 					
 					if (tree != null && boundIntersectRay(origin, direction, tree.xorg, tree.zorg, -1e22, tree.xorg + ((1 << tree.Level) << 1), tree.zorg + ((1 << tree.Level) << 1), 1e22 )) {
 						_currentPage = tree;
 						
-						if (calculateDDAIntersectTraj(rayData, tree.heightMap, tree, origin, direction)) return rayData;
+						
+						if (calculateDDAIntersectTraj(trajRayData, tree.heightMap, tree, origin, direction)) {
+						
+							return trajRayData;
+						}
 					}
 					
+	
+					
+					/*
 					if ( gridPagesVector != null) {
 						// TODO: perform DDA for grid of pages!
 					}
+					*/
+					
 				
 				return null;
 			}
@@ -1935,18 +1957,18 @@ package alternterrain.objects
 					return false;
 				}
 				
-				private var _debugBoxCount:int = 0;
-				private var _debugBoxes:Array = [];
-				private var debugCloneContainer:MeshSetClonesContainer = new MeshSetClonesContainer( new Box(32, 32, 32, 1, 1, 1), new FillMaterial(0xFF0000, 1) );
+				
+
+				public var debugCloneContainer:MeshSetClonesContainer = new MeshSetClonesContainer( new Box(8, 8, 8, 1, 1, 1), new FillMaterial(0xFF0000, 1) );
+				private var _lastDebugCount:int;
 				
 				private function addDebugBox(x:Number, y:Number, z:Number):void {
-					var debugBox:MeshSetClone = _debugBoxes[_debugBoxCount] || (_debugBoxes[_debugBoxCount]= debugCloneContainer.addClone(debugCloneContainer.createClone()) );
+					var debugBox:MeshSetClone = debugCloneContainer.numClones < debugCloneContainer.clones.length ? debugCloneContainer.clones[debugCloneContainer.numClones++] : debugCloneContainer.addClone(debugCloneContainer.createClone());
 					debugBox.root.x = x;
 					debugBox.root.y = y;
 					debugBox.root.z = z;
-						
-					_debugBoxCount++;
-					
+					//debug = true;
+					//debugCloneContainer.objectRenderPriority =  
 				}
 				
 			private function checkHitPatchTraj(result:RayIntersectionData, hm:HeightMapInfo, xi:int, yi:int, zVal:Number, origin:Vector3D, direction:Vector3D):Boolean 
@@ -2041,7 +2063,7 @@ package alternterrain.objects
 					cz = _patchHeights[whichFan[5] * 3 + 2];
 
 					if (intersectRayTri(result, origin.x, origin.y, origin.z, direction.x, direction.y, direction.z, ax, ay, az, bx, by, bz, cx, cy, cz) ) return true;
-					intersectUtil.setupRay(origin, direction);
+					//intersectUtil.setupRay(origin, direction);
 					intersectUtil.setupTri(ax, ay, az, bx, by, bz,  cx, cy, cz);
 					if (iResult > 0) {
 						addDebugBox( origin.x + intersectUtil.intersectTimes[0] * direction.x,
@@ -2266,6 +2288,7 @@ package alternterrain.objects
 				private static const QD_STACK:Vector.<QuadChunkCornerData> = new Vector.<QuadChunkCornerData>();
 				private var tileSizeInv:Number;
 				private var _boundRayTime:Number;
+				
 				
 				private function intersectRayQuad(cd:QuadChunkCornerData, origin:Vector3D, direction:Vector3D):RayIntersectionData  // determine nearest ray hit from front-to-back
 				{

@@ -16,8 +16,8 @@ package alternativa.a3d.controller
 	public class ThirdPersonTargetingSystem extends PlayerTargetingSystem
 	{
 		public var thirdPerson:OrbitCameraMan;
-		private var myRayTravel:Vector3D = new Vector3D();
-		private var myRayOrigin:Vector3D = new Vector3D();
+		alternativa3d var myRayTravel:Vector3D = new Vector3D();
+		alternativa3d var myRayOrigin:Vector3D = new Vector3D();
 		
 		private var maxRangeSquared:Number = Number.MAX_VALUE;
 		public function setMaxRange(val:Number):void {
@@ -39,7 +39,7 @@ package alternativa.a3d.controller
 			myRayTravel.y = ray_travel.y;
 			myRayTravel.z = ray_travel.z;
 		
-			
+			//throw new Error(thirdPerson.scene.x + ", "+thirdPerson.scene.z);
 			var intersect:RayIntersectionData = thirdPerson.scene.intersectRay(myRayOrigin, myRayTravel);
 			
 			return intersect != null ? intersect.time : MAX_VALUE;
