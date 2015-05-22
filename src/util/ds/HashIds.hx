@@ -1,7 +1,9 @@
 package util.ds;
 
 /**
- * ...
+ * A somewhat rough conversion of hashIds javascript version  ( http://hashids.org/javascript/ ) to Haxe so it's runnable in platforms like AS3.
+ * Currently, only supports array-based parameter for encode(). 
+ * 
  * @author Glenn Ko
  */
 class HashIds
