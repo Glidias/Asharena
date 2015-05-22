@@ -4,6 +4,8 @@ import arena.systems.player.IStance;
 import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.player.AnimAttackSystem;
 import ash.tick.FixedTickProvider;
+import util.ds.AlphaID;
+import util.ds.HashIds;
 //import ash.tick.MultiUnitTickProvider;
 //import ash.tick.UnitTickProvider;
 import haxe.io.BytesInput;
@@ -85,6 +87,8 @@ class TheGame
 		
 		gameStates = new GameStates(engine, colliderSystem, keyPoll);
 		
+		HashIds;
+		AlphaID;
 		EllipsoidPointSamples;
 		ActionUIntSignal;
 		RenderSystem;
