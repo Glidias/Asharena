@@ -62,7 +62,7 @@ public class TerrainRaycastImpl extends Object3D implements ITrajRaycastImpl {
 	{
 		if (terrainLOD.transformChanged) terrainLOD.composeTransforms();
 				
-			direction.w = 256 * 32 * 3;
+			//direction.w = 256 * 32 * 3;
 
 			//direction.w = direction.w == 0 ?  1e22  : direction.w;
 			var child:Object3D = terrainLOD;
