@@ -1,8 +1,9 @@
 package alternativa.engine3d.utils 
 {
 	import flash.geom.Vector3D;
+	import util.geom.PMath;
 	/**
-	 * ...
+	 * Utility to help calculate trajecotry-based intersections along 3d tri-slopes.
 	 * @author Glenn Ko
 	 */
 	public class IntersectSlopeUtil 
@@ -50,9 +51,16 @@ package alternativa.engine3d.utils
 			startPt.y = origin.y;
 			startPt.z = origin.z;
 			
-			endPt.x = startPt.x + direction.x;
-			endPt.y = startPt.y + direction.y;
-			endPt.z = startPt.z + direction.z;
+			//var dx:Number = direction.x;
+			//var dy:Number = direction.y;
+			velocity.x = direction.x;
+			velocity.y = direction.y;
+			velocity.z = 0;
+			velocity.normalize();
+			
+			endPt.x = startPt.x + velocity.x;
+			endPt.y = startPt.y + velocity.y;
+			endPt.z = 0;// startPt.z + direction.z;
 			
 			
 		}
@@ -71,8 +79,38 @@ package alternativa.engine3d.utils
 			pt3.z = cz;
 		}
 		
+		public function getFlatTrajTime(direction:Vector3D, gravity:Number, strength:Number, grad:Number=0):Number {
+			
+			velocity.x =  Math.sqrt(direction.x * direction.x + direction.y * direction.y);
+			velocity.y = direction.z;
+			velocity.z = 0;
+			velocity.normalize();
+			velocity.x *= strength;
+			velocity.y *= strength;
+			
+			startPosition.x = 0;//   2D Distance before start of slope....  startPt.x * direction.x + startPt.y * direction.y;
+			startPosition.y = 0; //  height from start of slope ..  startPt.z;
+		
+			
+			gradient = grad;
+			
+			//return getTrajectoryTimeOfFlight(startPosition.y, velocity.y, g);
+			return getTrajectoryTimeOfFlight2(startPosition.y, velocity.y, gravity);
+		}
+		
+		public function getTrajHeightAtTime(velocity:Vector3D, gravity:Number,  t:Number):Number {
+			return startPt.z - .5 * gravity * t * t + velocity.y * t;
+		}
+		
+		public function getTrajHeightAtTime2(direction:Vector3D, gravity:Number, strength:Number, t:Number):Number {
+			return startPt.z - .5 * gravity * t * t + direction.y*strength * t
+		}
+		
+		public function getGradHeightAtTime(t:Number):Number {
+			return intersectZ[0] + (t - intersectTimes[0])*gradient;
+		}
+		
 		public function getTriSlopeTrajTime(direction:Vector3D, gravity:Number, strength:Number):Number {
-		//	gravity = -gravity;
 			
 			velocity.x = Math.sqrt(direction.x * direction.x + direction.y * direction.y);
 			velocity.y = direction.z;
@@ -84,36 +122,12 @@ package alternativa.engine3d.utils
 			startPosition.x = -intersectTimes[0];//   2D Distance before start of slope....  startPt.x * direction.x + startPt.y * direction.y;
 			
 			startPosition.y = startPt.z - intersectZ[0]; //  height from start of slope ..  startPt.z;
-		
-			
-			
-			// test flat first
-			gradient = 0;
-			startPosition.x = 0;
-			startPosition.y = 0;
 			
 			//return getTrajectoryTimeOfFlight(startPosition.y, velocity.y, g);
 			return getTrajectoryTimeOfFlight2(startPosition.y, velocity.y, gravity);
 		}
 		
-		   private  function getTrajectoryTimeOfFlight(yo:Number, vyo:Number,  g:Number ):Number {
-   
-
-            var tRise:Number = -vyo / g;
-            _tRise = tRise;
-            
-           // 0 = yo + .5 * g * t * t + vyo * t
-            var h:Number = yo + vyo*vyo/(2*g);
-
-            _h = h;
-            
-            var tSink:Number = Math.sqrt(2*h/g) * (yo >= 0 ? 1 : -1); //+- quadratic 
-        return tRise + tSink;
-        
-        //return vyo/g + Math.sqrt((2*yo  + vyo*2*t - 1*g*t*t)/g);
-        
-        //return vyo/g + Math.sqrt((2*yo  + vyo*2*t - 1*g*t*t)/g);
-    }
+		  
 		
 		
 		 private function getTrajectoryTimeOfFlight2(yo:Number, vyo:Number, g:Number):Number {
@@ -124,7 +138,7 @@ package alternativa.engine3d.utils
 		
 		
         
-        var t1:Number = -vyo/g;
+        var t1:Number = vyo/g;
         var t2:Number = Math.sqrt( vyo * vyo + g * 2 * yo) / g;
         _tRise = t1;
         _h =  yo + vyo*vyo/(2*g);
@@ -137,7 +151,7 @@ package alternativa.engine3d.utils
         
         //y = Ax2 + Bx + C
         var A:Number  = g / 2; // For parabolla, quadratic function coefficients.
-        var B:Number  = vyo;
+        var B:Number  = -vyo;
         var C:Number  = -yo;
 
         var a:Number = 0.0; // For solving quadratic formula.
@@ -238,16 +252,21 @@ package alternativa.engine3d.utils
                
                 
                 var rd:Number = (intersectTimes[1] - intersectTimes[0]);
-                dx *= rd;
-                dy *= rd;
-                rd  = Math.sqrt( dx * dx + dy * dy ); 
+				if (rd < 0) throw new Error("Should not be negative times..");
+				
+               // dx *= rd;
+               // dy *= rd;
+              //  rd  = Math.sqrt( dx * dx + dy * dy ); 
                 if (count > 1) {
                     if (rd> 0) {
                       gradient = (intersectZ[1] - intersectZ[0]) / rd;
                     //  debugField.text = "penetrate dist:" + rd + ", gradient:"+gradient + ", "+intersectTimes;
+					
 						return RESULT_SLOPE;
                     }
                     else {
+						gradient = 1;
+						//throw new Error("Should not happen");
                        //  debugField.text = "Hit a fully vertical wall!:"+intersectTimes[0];
 					   return RESULT_WALL;
                     }

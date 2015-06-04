@@ -231,6 +231,24 @@ package alternterrain.core
 			}
 		}
 		
+		public function slopeAlongY(val:int):void {
+			
+			var len:int = Data.length;
+			for (var y:int = 0; y < ZSize; y++) {
+				for (var x:int = 0; x < XSize; x++) {
+					Data[y * XSize+x] += val * y;
+				}
+			}
+		}
+		
+		public function randomise(val:int):void {
+			val *= .5;
+			var len:int = Data.length;
+			for (var i:int = 0; i < len; i++) {
+				Data[i] += -Math.random()*val + val*2;
+			}
+		}
+		
 		public function getHighestLowestBounds():Vector.<Number> {
 			var vec:Vector.<Number>  = new Vector.<Number>(2, true);
 			var min:Number = Number.MAX_VALUE;

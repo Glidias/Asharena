@@ -1378,7 +1378,9 @@ package alternterrain.objects
 			}
 			
 			
-			private function drawRayTraj(origin:Vector3D, direction:Vector3D, strength:Number, gravity:Number, data:RayIntersectionData=null):void {
+			private function drawRayTraj(origin:Vector3D, direction:Vector3D, strength:Number, gravity:Number, data:RayIntersectionData = null):void {
+				
+				
 				 var totalTimeToUse:Number = data!=null ?  data.time : 5;// data.time;// (totalTime > MAX_TIME) ? totalTime : totalTime / MAX_TIME * MAX_TIME;
                    var DRAW_SEGMENTS:int = 64;
 				  // gravity
@@ -1387,7 +1389,8 @@ package alternterrain.objects
 				for (var i:int = 0; i <= DRAW_SEGMENTS; i++) {  // draw in between segments
 				
 					var t:Number = (i / DRAW_SEGMENTS) * totalTimeToUse;
-				   
+					
+				   if (strength * t < 88) continue;
 					var px:Number;
 					var py:Number;
 					var pz:Number;
@@ -1395,8 +1398,8 @@ package alternterrain.objects
 					py = origin.y + direction.y*strength *t;
 					
 					//(stage.stageHeight - startPosition.y)
-					pz = origin.z + .5 - gravity * t * t + direction.z*strength * t
-					addDebugBox(px, py, pz);
+					pz = origin.z - .5 * gravity * t * t + direction.z*strength * t
+					addDebugBox(px, py, pz).root.scaleZ = i/DRAW_SEGMENTS;
 					
 				
 				}
@@ -1426,13 +1429,18 @@ package alternterrain.objects
 						
 						if (calculateDDAIntersectTraj(trajRayData, tree.heightMap, tree, origin, direction)) {
 							
+							//Log.trace("GRAD:"+SLOPE_UTIL.gradient);
+							SLOPE_UTIL.setupRay(origin, direction);
+					 
+							//trajRayData.time = SLOPE_UTIL.getFlatTrajTime(direction, gravity, strength);
 							drawRayTraj(origin, direction, strength, gravity, trajRayData);
 							
 							return trajRayData;
 						}
 					}
 					
-					drawRayTraj(origin, direction, strength, gravity, null);
+
+			
 					
 					/*
 					if ( gridPagesVector != null) {
@@ -1788,8 +1796,9 @@ package alternterrain.objects
 					*/
 		
 					if ( xi < minxi || xi >= maxxi || yi < minyi || yi >= maxyi) {
-						return false;
 						throw new Error("Should not be:" + minxi + "/"+ xi + "/" + maxxi + ", "+ minyi+"/"+ yi + "/" + maxyi);
+						return false;
+						
 					}
 					
 					
@@ -1995,17 +2004,20 @@ package alternterrain.objects
 				
 				
 
-				public var debugCloneContainer:MeshSetClonesContainer = new MeshSetClonesContainer( new Box(8, 8, 8, 1, 1, 1), new FillMaterial(0xFF0000, 1) );
+				public var debugCloneContainer:MeshSetClonesContainer = new MeshSetClonesContainer( new Box(4, 4, 20, 1, 1, 1), new FillMaterial(0xFF0000, 1) );
 				private var _lastDebugCount:int;
 				
-				private function addDebugBox(x:Number, y:Number, z:Number):void {
+				private function addDebugBox(x:Number, y:Number, z:Number):MeshSetClone {
 					var debugBox:MeshSetClone = debugCloneContainer.numClones < debugCloneContainer.clones.length ? debugCloneContainer.clones[debugCloneContainer.numClones++] : debugCloneContainer.addClone(debugCloneContainer.createClone());
 					debugBox.root.x = x;
-					debugCloneContainer.objectRenderPriority = Renderer.NEXT_LAYER;
+					//debugCloneContainer.objectRenderPriority = Renderer.NEXT_LAYER;
 					debugBox.root.y = y;
 					debugBox.root.z = z;
 					//debug = true;
+					
 					//debugCloneContainer.objectRenderPriority =  
+					
+					return debugBox;
 				}
 				
 			private function checkHitPatchTraj(result:RayIntersectionData, hm:HeightMapInfo, xi:int, yi:int, zVal:Number, origin:Vector3D, direction:Vector3D):Boolean 
@@ -2035,7 +2047,8 @@ package alternterrain.objects
 					if (hp > highestPoint) highestPoint = hp;
 					_patchHeights[11] = hp; // 3*3+2
 					
-					if (zVal > highestPoint) return false;
+					// TODO: highest point trajectory check
+					//if (zVal > highestPoint) return false;
 					
 					// test for hit on 2 triangles
 					var whichFan:Vector.<int>  = (xi & 1) != (yi & 1) ? TRI_ORDER_TRUE : TRI_ORDER_FALSE;
@@ -2052,9 +2065,10 @@ package alternterrain.objects
 					var cy:Number; 
 					var cz:Number;
 					
-					var iResult:int;
+					var iResult:int;  // TODO: all iResult cases
 					var t:Number;
 				
+
 					
 					ax = (_patchHeights[whichFan[0] * 3] + xi) *tileSize + cxorg;
 					ay = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + czorg; 
@@ -2078,6 +2092,7 @@ package alternterrain.objects
 					
 					if (iResult == 0) {	// doesn't pass triangle in 2d
 						
+						//t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);result.time = t ;return true;
 					}
 					else if (iResult > 0) {  // a sloped result
 						
@@ -2089,19 +2104,22 @@ package alternterrain.objects
 						addDebugBox( origin.x + intersectUtil.intersectTimes[1] * direction.x,
 						origin.y + intersectUtil.intersectTimes[1] * direction.y,
 						intersectUtil.intersectZ[1]);
-						*/
+					//	*/
 						
-						t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);
-						//if (t  >= + intersectUtil.intersectTimes[0] && t <= + intersectUtil.intersectTimes[1]) {
-							result.time = t;
+						t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);  // time based of seconds
+						// && intersectUtil.getTrajHeightAtTime2(direction,_gravity,_strength, intersectUtil.intersectTimes[1]) <= intersectUtil.intersectZ[1] 
+						
+						if (t*_strength  >=  intersectUtil.intersectTimes[0] && t*_strength <=  intersectUtil.intersectTimes[1]    ) {  // compare time based off distance
+							result.time = t ;
 							//throw new Error("Hit ground at:"+t);
 							return true;
-						//}
+						}
 					//	else throw new Error(t + ", "+_gravity);
 						
 					}
-					else {  // either wall or collinear
-						
+					else {  // either wall or collinear  
+						if (iResult === IntersectSlopeUtil.RESULT_WALL)  Log.trace("Should not  have wall  for terrain case!");
+						//t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);result.time = t ;return true;
 					}
 					
 					ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + cxorg;
@@ -2125,7 +2143,7 @@ package alternterrain.objects
 					iResult = intersectUtil.getTriIntersections();
 					
 					if (iResult == 0) { // doesn't pass triangle in 2d
-						
+						//t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);result.time = t ;return true;
 					}
 					else if (iResult > 0) {  // a sloped result
 						
@@ -2137,18 +2155,23 @@ package alternterrain.objects
 						addDebugBox( origin.x + intersectUtil.intersectTimes[1] * direction.x,
 						origin.y + intersectUtil.intersectTimes[1] * direction.y,
 						intersectUtil.intersectZ[1]);
-						*/
+					//	*/
 						
 						t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);
-						//if (t  >= + intersectUtil.intersectTimes[0] && t <= + intersectUtil.intersectTimes[1]) {
+						//t *= _strength;
+						if (t * _strength  >=  intersectUtil.intersectTimes[0] && t * _strength <= intersectUtil.intersectTimes[1]  ) {   // compare time based off distance
+							
+							
 							result.time = t;
+							
 							//throw new Error("Hit ground at:"+t);
 							return true;
-						//}
+						}
 						
 					}
 					else {  // either wall or collinear
-						
+						if (iResult === IntersectSlopeUtil.RESULT_WALL) Log.trace("Should not have wall for terrain case!");
+						//t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);result.time = t ;return true;
 					}
 					
 					
@@ -2425,7 +2448,7 @@ package alternterrain.objects
 						c = childList[index]; 
 						o =  quadOffsets[index];
 						if ( boundIntersectRay(origin, direction,  cd.xorg + ((o & 1) ? half : 0), cd.zorg + ((o & 2) ? half : 0), c.MinY, cd.xorg + ((o & 1) ? full : half), cd.zorg + ((o & 2) ? full : half), c.MaxY)) {	
-						
+							
 							sq.SetupCornerData( newCD = QuadChunkCornerData.create(), cd, index);
 							buffer[bi++] = newCD;
 						}

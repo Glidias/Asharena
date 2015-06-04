@@ -213,6 +213,10 @@ package tests.pvp
 			//standardMaterial.tileSize = 512;
 			standardMaterial.pageSize = _terrainBase.loadedPage.heightMap.RowWidth - 1;
 			
+			//_terrainBase.loadedPage.heightMap.flatten(standardMaterial.waterLevel + 10);  // flat test
+			//_terrainBase.loadedPage.heightMap.randomise(255);  // randomise test
+			// _terrainBase.loadedPage.heightMap.slopeAlongY(128);  // slope test
+			
 			return standardMaterial;
 		}
 		
@@ -249,7 +253,7 @@ package tests.pvp
 			var terrainMat:Material = setupTerrainMaterial();
 			_template3D.scene.addChild( _terrainBase.getNewTerrain(terrainMat , 0, 1) );
 		_terrainBase.terrain.waterLevel = _waterBase.plane.z;
-		//	_terrainBase.terrain.debug = true;
+			//_terrainBase.terrain.debug = true;
 			
 				var hWidth:Number = (_terrainBase.terrain.boundBox.maxX - _terrainBase.terrain.boundBox.minX) * .5 * _terrainBase.terrain.scaleX;
 					_terrainBase.terrain.x -= hWidth*.5;
@@ -706,6 +710,9 @@ package tests.pvp
 			
 			else if (keyCode === Keyboard.P &&  !game.keyPoll.isDown(keyCode)) {
 				if ( game.gameStates.engineState.currentState === engineStateCommander ) showPreferedStances();
+			}
+			else if (keyCode === Keyboard.RIGHTBRACKET) {
+				_terrainBase.terrain.debug = ! _terrainBase.terrain.debug;
 			}
 			//*/
 		}
