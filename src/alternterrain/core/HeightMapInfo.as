@@ -241,6 +241,16 @@ package alternterrain.core
 			}
 		}
 		
+		public function slopeAltAlongY(val:int):void {
+			
+			var len:int = Data.length;
+			for (var y:int = 0; y < ZSize; y++) {
+				for (var x:int = 0; x < XSize; x++) {
+					Data[y * XSize+x] += (y & 1 ? 1 : -1) * val;
+				}
+			}
+		}
+		
 		public function randomise(val:int):void {
 			val *= .5;
 			var len:int = Data.length;
