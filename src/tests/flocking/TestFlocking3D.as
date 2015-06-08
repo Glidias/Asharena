@@ -68,7 +68,7 @@ package tests.flocking
 		private static const NUMBOIDS:int = 100   * 3 * G_WORLD_SIZE_MULT;
 		static public const MIN_SPEED:Number = 24*WORLD_SCALE;
 		static public const MAX_SPEED:Number = 66*WORLD_SCALE;
-		static public const TURN_RATIO:Number = 0.5;
+		static public const TURN_RATIO:Number = 0.9;
 		static public const MIN_DIST:Number = 65*WORLD_SCALE;
 		static public const SENSE_DIST:Number = 200*WORLD_SCALE;
 		static public const DEFAULT_ROT_X:Number = Math.PI * .5; // for boid

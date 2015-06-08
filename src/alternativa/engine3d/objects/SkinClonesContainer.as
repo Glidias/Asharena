@@ -132,6 +132,8 @@ package alternativa.engine3d.objects
 			// get samples
 		//	var protoJointIndices:Vector.<Number> = geometry.getAttributeValues(ATTRIBUTE);
 			var protoNumVertices:int = geometry.numVertices;
+			
+			
 			//_numVertices = protoNumVertices;
 			var protoByteArrayStreams:Vector.<ByteArray> = new Vector.<ByteArray>();
 			var len:int = geometry._vertexStreams.length;
@@ -145,14 +147,13 @@ package alternativa.engine3d.objects
 				}
 			}
 			
-
-			
 			// TODO: Test shouldn't i start at 1 instead....because geometry is already filled?
 			// paste geometry data for all the vertex streams
 			for (i = 0; i < len; i++) {
 				bytes =protoByteArrayStreams[i];
-				for (u = 0; u < total; u++) {
+				for (u = 1; u < total; u++) {
 					var data:ByteArray = geometry._vertexStreams[i].data;
+					
 					data.position = data.length;
 					data.writeBytes(bytes, data.length);
 				}
@@ -161,7 +162,6 @@ package alternativa.engine3d.objects
 			
 			
 			// set number of vertices to match new vertex data size
-			//throw new Error(protoNumVertices + ", "+total);
 			geometry._numVertices = protoNumVertices * total;
 			
 			
@@ -182,38 +182,45 @@ package alternativa.engine3d.objects
 			// paste joint attribute values with offsets
 		//	/*
 			len = maxInfluences;
-			for (var k:int = 0; k < maxInfluences; k++) {
-				if (!geometry.hasAttribute(VertexAttributes.JOINTS[k])) {
+			for (var k:int = 0; k < maxInfluences; k += 2) {
+				
+				if (!geometry.hasAttribute(VertexAttributes.JOINTS[k>>1])) {
 				//	throw new Error(k);
 					break;
 				}
-				var jointIndices:Vector.<Number> = geometry.getAttributeValues(VertexAttributes.JOINTS[k]);
-				var stride:int = VertexAttributes.getAttributeStride(VertexAttributes.JOINTS[k]);
+				var jointIndices:Vector.<Number> = geometry.getAttributeValues(VertexAttributes.JOINTS[k>>1]);
+				var stride:int = VertexAttributes.getAttributeStride(VertexAttributes.JOINTS[k>>1]);
 			//throw new Error(jointIndices);
 		
-				
 				///*
 				len = protoNumVertices * stride;
 				var addDupMult:Number =  _numJoints * 3;
 				var duplicateMultiplier:Number =addDupMult;
 				var totalLen:int = jointIndices.length;
 				for (i = len; i < totalLen; i += len) {
+					if (i == len) {  // problem, it seems the first inserted entry (2nd clone per batch) has wrong joint assignments!
+							//duplicateMultiplier+=  addDupMult;
+					//	continue;
+					}
 					for (u = i; u < i+len; u+=stride) {
 						jointIndices[u] += duplicateMultiplier;
+						jointIndices[u+2] += duplicateMultiplier;
 					}
 					duplicateMultiplier+=  addDupMult;
 				}
 				//*/
-				 geometry.setAttributeValues(VertexAttributes.JOINTS[k], jointIndices);
+				 geometry.setAttributeValues(VertexAttributes.JOINTS[k>>1], jointIndices);
+				 
+				// throw new Error( getJointIndices( jointIndices.slice( jointIndices.length / 4, jointIndices.length/4+jointIndices.length/4) ,  -10) );
 			}
 		//	*/
 		}
 		
-		private function getJointIndices(values:Vector.<Number>):Vector.<int> {
+		private function getJointIndices(values:Vector.<Number>, offset:int=0):Vector.<int> {
 			var stuff:Vector.<int>  = new Vector.<int>();
 			var len:int = values.length;
 			for (var i:int = 0; i < len; i += 4) {
-				stuff.push( values[i] / 3);
+				stuff.push( values[i] / 3 + offset);
 			}
 			
 			return stuff;
@@ -229,6 +236,7 @@ package alternativa.engine3d.objects
 			cloneItem.index = -1;
 			
 			var skin:Skin = _sample.clone() as Skin;  // lazy method to grab new set of surfaceJoints, original cloned skin is wasted away	
+			
 	
 			var skinJoint:Joint = new Joint();
 			 skinJoint.x = skin._x;
@@ -379,6 +387,8 @@ package alternativa.engine3d.objects
 			
 			var minClonesPerBatch:int = _minClonesPerBatch;
 		
+			totalClones = 2;
+			
 			var i:int = totalClones;
 			
 			while (--i > -1) {  // later this can be transfered to calculateVisibility phase for pre-culling
@@ -407,14 +417,16 @@ package alternativa.engine3d.objects
 				for (var c:int = 0; c < totalClones; c += minClonesPerBatch) {
 					//count++;
 					
-				//	if (c >= minClonesPerBatch) break;  // TODO: remove testing batch
+				
 					
 					_curCloneIndex = c;
+					
+					
 					_curBatchCount = totalClones - c;
 	
 					_curBatchCount = _curBatchCount > minClonesPerBatch ? minClonesPerBatch : _curBatchCount;
 					//if (_curBatchCount == 0) throw new Error("AWTAW");
-					outputSurface.numTriangles = surface.numTriangles * _curBatchCount;  // surface.numTriangles * _curBatchCount - lastNumAddTriangles + addNumTriangles;
+					outputSurface.numTriangles = surface.numTriangles *_curBatchCount;  // surface.numTriangles * _curBatchCount - lastNumAddTriangles + addNumTriangles;
 			
 					outputSurface.material.collectDraws(camera, outputSurface, geometry, lights, lightsLength, useShadow, objectRenderPriority);
 					//	traceStr += "\n"+  (surfaceMeshesLen * _curBatchCount-_offsetNumMeshes) + "," + addNumMeshes +  " , " + _offsetNumMeshes + ": "+ _curCloneIndex + ", "+_curBatchCount + " | "+outputSurface.indexBegin + " + "+outputSurface.numTriangles + ", "+surface.numTriangles + " >> " +addNumTriangles;

@@ -20,7 +20,7 @@ import flash.utils.getDefinitionByName;
 		public var MECH_ANIMS:Class;
 		
 		//[Embed(source = "../../../bin/skins/mech/mech_kayrath.a3d", mimeType = "application/octet-stream")]
-		[Embed(source="../../../bin/skins/samnite_skinned.a3d", mimeType="application/octet-stream")]
+		[Embed(source="../../../bin/skins/samnite_lowpolyanim.a3d", mimeType="application/octet-stream")]
 		public var MECH_KAYRATH:Class;
 		
 		//[Embed(source = "../../../bin/skins/mech/skin.jpg")]
