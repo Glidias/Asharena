@@ -5,6 +5,7 @@ package tests.flocking
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.StandardMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
+	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.objects.SkinClone;
 	import alternativa.engine3d.objects.SkinClonesContainer;
@@ -56,7 +57,7 @@ package tests.flocking
 			public var engine:Engine;
 		public var ticker:FrameTickProvider;
 		
-		public static const WORLD_SCALE:Number = 8;
+		public static const WORLD_SCALE:Number = 2;
 		public static const G_WORLD_SIZE_MULT:Number = 1;
 				
 		private  var WORLD_WIDTH:Number = 1200*WORLD_SCALE*G_WORLD_SIZE_MULT;
@@ -64,9 +65,9 @@ package tests.flocking
 		
 		
 		
-		private static const NUMBOIDS:int = 100   * 5 * G_WORLD_SIZE_MULT;
-		static public const MIN_SPEED:Number = 4*WORLD_SCALE;
-		static public const MAX_SPEED:Number = 32*WORLD_SCALE;
+		private static const NUMBOIDS:int = 100   * 3 * G_WORLD_SIZE_MULT;
+		static public const MIN_SPEED:Number = 24*WORLD_SCALE;
+		static public const MAX_SPEED:Number = 66*WORLD_SCALE;
 		static public const TURN_RATIO:Number = 0.5;
 		static public const MIN_DIST:Number = 65*WORLD_SCALE;
 		static public const SENSE_DIST:Number = 200*WORLD_SCALE;
@@ -107,7 +108,7 @@ package tests.flocking
 			
 			engine = new Engine();
 			
-			//engine.addSystem( new FlockingSystem(), 0 );
+			engine.addSystem( new FlockingSystem(), 0 );
 			engine.addSystem( new AnimationSystem(), 1 );
 			//engine.addSystem( new DisplayObjectRenderingSystem(this), 1);
 			
@@ -135,9 +136,11 @@ package tests.flocking
 			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onReady3D);
 			engine.addSystem( new RenderingSystem(rootContainer), 2 );
 			
-			var child:Object3D = _template3d.scene.addChild( new Plane( WORLD_WIDTH, WORLD_HEIGHT, 1, 1, false, false, null, new FillMaterial(0x222222, 1) ) );
+			
+			var child:Object3D = _template3d.scene.addChild( new Plane( 1e4, 1e4, 1, 1, false, false, null, new FillMaterial(0x222222, 1) ) );
 			child.x += WORLD_WIDTH * .5;
 			child.y += WORLD_HEIGHT * .5;
+			child.z -= 72*.5;
 			//rootContainer.rotationZ = Math.PI;
 
 			var parser:ParserA3D = new ParserA3D();
@@ -275,6 +278,7 @@ package tests.flocking
 				var skin:Object3D =skinClone.root ;// _skin.clone() as Skin;
 				//obj.addChild(skin);
 				obj = skin;
+				
 				skinClonesCont.addClone(skinClone);
 				entity.add( new MechStance( _animManager.cloneFor(skin.childrenList), vel, skinClone.renderedJoints ), IAnimatable).add(obj, Object3D);
 				//*/
@@ -283,6 +287,10 @@ package tests.flocking
 				var obj:Object3D= new Object3D();
 				var skin:Object3D =_skin.clone() as Skin;
 				obj.addChild(skin);
+				
+				
+			
+				
 				//obj = skin;
 				rootContainer.addChild(obj);
 

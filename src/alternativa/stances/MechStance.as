@@ -3,6 +3,7 @@ package alternativa.stances
 	import alternativa.engine3d.animation.AnimationClip;
 	import alternativa.engine3d.animation.AnimationController;
 	import alternativa.engine3d.animation.AnimationCouple;
+	import alternativa.engine3d.animation.keys.Track;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Skin;
@@ -29,7 +30,7 @@ package alternativa.stances
 		{
 			this.animManager = animManager;
 			this.vel = vel;
-			var index:int = animManager.getAnimationIndexByName("walk");
+			var index:int = animManager.getAnimationIndexByName("jog");
 			if (index < 0) index = 0;
 			anim_walk = animManager.animClips[index];
 			controller = new AnimationController();
@@ -41,7 +42,23 @@ package alternativa.stances
 			couple.right = new AnimationClip();
 			_turretJoint = findJointByName(jointList, "Bip01 Spine3");
 			
-
+			removeAnimationTrack(animManager, "jog" ,"Bip01");
+		}
+		
+		private function removeAnimationTrack(animManager:AnimationManager, animName:String, boneName:String):void 
+		{
+			var anim:AnimationClip = animManager.getAnimationByName(animName);
+			
+			var len:int = anim.numTracks;
+			for (var i:int = 0; i < len ; i++) {
+				var t:Track = anim.getTrackAt(i);
+				if (t.object === boneName) {
+					anim.removeTrack(t);
+					
+					return;
+				}
+			}
+			
 		}
 		
 		private function findJointByName(joints:Vector.<Joint>, str:String):Joint {

@@ -190,7 +190,7 @@ package alternativa.engine3d.objects
 				var jointIndices:Vector.<Number> = geometry.getAttributeValues(VertexAttributes.JOINTS[k]);
 				var stride:int = VertexAttributes.getAttributeStride(VertexAttributes.JOINTS[k]);
 			//throw new Error(jointIndices);
-
+		
 				
 				///*
 				len = protoNumVertices * stride;
