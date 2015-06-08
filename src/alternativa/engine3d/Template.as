@@ -190,7 +190,7 @@ package alternativa.engine3d
 
         
         public function onRenderTick(e:Event):void {
-            cameraController.update()
+            cameraController.update(30)
             camera.render(stage3D);
 		
         }

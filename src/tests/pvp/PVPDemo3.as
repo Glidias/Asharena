@@ -25,6 +25,7 @@ package tests.pvp
 	import alternativa.engine3d.materials.StandardTerrainMaterial2;
 	import alternativa.engine3d.materials.VertexLightTextureMaterial;
 	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.objects.SkinClonesContainer;
 	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.primitives.PlanarRim;
 	import alternativa.engine3d.primitives.Plane;
@@ -194,6 +195,7 @@ package tests.pvp
 			PlanarRim;
 		}
 		
+		SkinClonesContainer;
 			private function setupTerrainMaterial():Material {
 			var standardMaterial:StandardTerrainMaterial2 = new StandardTerrainMaterial2(new BitmapTextureResource( new CarribeanTextures.SAND().bitmapData ) , new BitmapTextureResource( _terrainBase.normalMap), null, null  );
 		//	standardMaterial.uvMultiplier2 = _terrainBase.mapScale;

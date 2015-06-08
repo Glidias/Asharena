@@ -15,13 +15,13 @@ import flash.utils.getDefinitionByName;
 	 */
 	public class Assets extends Sprite
 	{
-		//[Embed(source = "../../../bin/skins/mech/animations.ani", mimeType = "application/octet-stream")]
+		[Embed(source = "../../../bin/skins/mech/animations.ani", mimeType = "application/octet-stream")]
 		public var MECH_ANIMS:Class;
 		
-		//[Embed(source = "../../../bin/skins/mech/mech_kayrath.a3d", mimeType = "application/octet-stream")]
+		[Embed(source = "../../../bin/skins/mech/mech_kayrath.a3d", mimeType = "application/octet-stream")]
 		public var MECH_KAYRATH:Class;
 		
-		//[Embed(source = "../../../bin/skins/mech/skin.jpg")]
+		[Embed(source = "../../../bin/skins/mech/skin.jpg")]
 		public var MECH_SKIN:Class;
 		
 		public function Assets() 

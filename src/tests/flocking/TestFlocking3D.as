@@ -6,6 +6,7 @@ package tests.flocking
 	import alternativa.engine3d.materials.StandardMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.objects.Skin;
+	import alternativa.engine3d.objects.SkinClone;
 	import alternativa.engine3d.objects.SkinClonesContainer;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
@@ -41,6 +42,9 @@ package tests.flocking
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.geom.Vector3D;
+	
+	import alternativa.engine3d.alternativa3d;
+	use namespace alternativa3d;
 
 	/**
 	 * ...
@@ -53,11 +57,14 @@ package tests.flocking
 		public var ticker:FrameTickProvider;
 		
 		public static const WORLD_SCALE:Number = 8;
+		public static const G_WORLD_SIZE_MULT:Number = 1;
 				
-		private  var WORLD_WIDTH:Number = 600*WORLD_SCALE;
-		private  var WORLD_HEIGHT:Number = 400*WORLD_SCALE;
+		private  var WORLD_WIDTH:Number = 1200*WORLD_SCALE*G_WORLD_SIZE_MULT;
+		private  var WORLD_HEIGHT:Number = 800 * WORLD_SCALE*G_WORLD_SIZE_MULT;
 		
-		private static const NUMBOIDS:int = 100;
+		
+		
+		private static const NUMBOIDS:int = 100   * 5 * G_WORLD_SIZE_MULT;
 		static public const MIN_SPEED:Number = 4*WORLD_SCALE;
 		static public const MAX_SPEED:Number = 32*WORLD_SCALE;
 		static public const TURN_RATIO:Number = 0.5;
@@ -100,7 +107,7 @@ package tests.flocking
 			
 			engine = new Engine();
 			
-			engine.addSystem( new FlockingSystem(), 0 );
+			//engine.addSystem( new FlockingSystem(), 0 );
 			engine.addSystem( new AnimationSystem(), 1 );
 			//engine.addSystem( new DisplayObjectRenderingSystem(this), 1);
 			
@@ -112,7 +119,7 @@ package tests.flocking
 			MechStance.RANGE = 1 / MAX_SPEED;
 			addChild( _template3d = new Template());
 			_template3d.settings.cameraSpeed *= 4;
-			SkinClonesContainer;
+
 			_template3d.settings.cameraSpeedMultiplier *= 2;
 			_template3d.addEventListener(Template.VIEW_CREATE, onReady3D);
 	
@@ -136,6 +143,12 @@ package tests.flocking
 			var parser:ParserA3D = new ParserA3D();
 			parser.parse(new myAssets.MECH_KAYRATH());
 			var skin:Skin = findSkin(parser.objects);
+			skin.divide(1000);
+			//throw new Error(skin.surfaceJoints.length + "::: " + skin.surfaceJoints[0].length);
+			skin.renderedJoints = skin.surfaceJoints[0];
+			
+			
+			
 			
 			var standardMaterial:StandardMaterial = new StandardMaterial( new BitmapTextureResource(new myAssets.MECH_SKIN().bitmapData), _template3d.normalResource);
 			skin.geometry.calculateNormals();
@@ -148,6 +161,11 @@ package tests.flocking
 			skin.setMaterialToAllSurfaces(standardMaterial);
 			//_template3d.scene.addChild(skin); 
 			_skin = skin;
+			
+			
+			
+			skinClonesCont = new SkinClonesContainer(skin);
+			rootContainer.addChild(skinClonesCont);
 			
 			_animManager = new AnimationManager();
 			var animBytes:ByteArray =  new myAssets.MECH_ANIMS();
@@ -211,6 +229,7 @@ package tests.flocking
             return false;
         }
 		private var _scrnie:Bitmap;
+		private var skinClonesCont:SkinClonesContainer;
 		  private function removeScreenie(e:Event=null):void {
             if (_scrnie == null) return;
             stage.removeEventListener(MouseEvent.CLICK, removeScreenie);
@@ -223,7 +242,7 @@ package tests.flocking
 		{
 			engine.update(time);
 			
-			_template3d.cameraController.update();
+			_template3d.cameraController.update(time);
 			_template3d.camera.render(_template3d.stage3D); // onRenderTick();
 		}
 		
@@ -250,12 +269,25 @@ package tests.flocking
 				var entity:Entity = new Entity().add(pos).add(rot).add(vel).add( new Flocking().setup(flockSettings )) ;
 				
 				//entity.add( new BoidGraphic(), DisplayObject);
-				var obj:Object3D = new Object3D();
-				var skin:Skin = _skin.clone() as Skin;
-				obj.addChild(skin);
-
-				entity.add( new MechStance( _animManager.cloneFor(skin), vel, skin ), IAnimatable).add(obj);
+				///*
+				var obj:Object3D;// = new Object3D();
+				var skinClone:SkinClone  =  skinClonesCont.createClone();
+				var skin:Object3D =skinClone.root ;// _skin.clone() as Skin;
+				//obj.addChild(skin);
+				obj = skin;
+				skinClonesCont.addClone(skinClone);
+				entity.add( new MechStance( _animManager.cloneFor(skin.childrenList), vel, skinClone.renderedJoints ), IAnimatable).add(obj, Object3D);
+				//*/
 				
+				/*
+				var obj:Object3D= new Object3D();
+				var skin:Object3D =_skin.clone() as Skin;
+				obj.addChild(skin);
+				//obj = skin;
+				rootContainer.addChild(obj);
+
+				entity.add( new MechStance( _animManager.cloneFor(skin), vel, (skin as Skin).renderedJoints ), IAnimatable).add(obj, Object3D);
+				*/
 				
 				engine.addEntity(entity);
 			}

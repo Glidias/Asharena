@@ -9,8 +9,8 @@ package alternativa.engine3d.objects
 	 */
 	public class SkinClone 
 	{
-		public var root:Object3D;
-		public var skin:Skin;
+		public var root:Joint;
+		public var renderedJoints:Vector.<Joint>;
 		alternativa3d var index:int;
 		
 		public function SkinClone() 

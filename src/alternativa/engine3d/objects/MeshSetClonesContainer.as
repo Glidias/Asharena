@@ -719,6 +719,7 @@ package alternativa.engine3d.objects {
 			return res;
 		}
 
+		// TODO: is this really neencessary???
 		private function calculateDeltaTransformProcedure(numMeshes:int):Procedure {
 			var res:Procedure = _deltaTransformProcedures[numMeshes];
 			if (res != null) return res;

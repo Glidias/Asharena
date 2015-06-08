@@ -24,6 +24,7 @@ package alternativa.engine3d
 	
 		override public function onAddedNode(node:RenderNode):void {
 			if (!node.object._parent) scene.addChild( node.object );
+			
 		}
 		
 		override public function onRemovedNode(node:RenderNode):void {

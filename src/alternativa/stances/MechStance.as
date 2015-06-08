@@ -3,6 +3,7 @@ package alternativa.stances
 	import alternativa.engine3d.animation.AnimationClip;
 	import alternativa.engine3d.animation.AnimationController;
 	import alternativa.engine3d.animation.AnimationCouple;
+	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.objects.Joint;
 	import alternativa.engine3d.objects.Skin;
 	import components.Vel;
@@ -24,7 +25,7 @@ package alternativa.stances
 		private var couple:AnimationCouple;
 		private var _turretJoint:Joint;
 		
-		public function MechStance(animManager:AnimationManager, vel:Vel, skin:Skin) 
+		public function MechStance(animManager:AnimationManager, vel:Vel, jointList:Vector.<Joint>) 
 		{
 			this.animManager = animManager;
 			this.vel = vel;
@@ -38,7 +39,7 @@ package alternativa.stances
 			controller.root = couple;
 			couple.left = anim_walk;
 			couple.right = new AnimationClip();
-			_turretJoint = findJointByName(skin._renderedJoints, "Bip01 Spine3");
+			_turretJoint = findJointByName(jointList, "Bip01 Spine3");
 			
 
 		}
@@ -58,7 +59,7 @@ package alternativa.stances
 		{
 			var d:Number = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
 			couple.balance = 1 -  d  * RANGE * 1;
-			controller.update();
+			controller.update(time);
 		
 		//	anim_walk.update(time, 1);
 			//_turretJoint._rotationY += .05;
