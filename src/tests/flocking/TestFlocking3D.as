@@ -1,5 +1,7 @@
 package tests.flocking 
 {
+	import alternativa.engine3d.animation.AnimationClip;
+	import alternativa.engine3d.animation.keys.Track;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.loaders.ParserA3D;
 	import alternativa.engine3d.materials.FillMaterial;
@@ -17,12 +19,16 @@ package tests.flocking
 	import ash.core.Engine;
 	import ash.core.Entity;
 	import ash.tick.FrameTickProvider;
+	import com.greensock.loading.BinaryDataLoader;
+	import com.greensock.loading.ImageLoader;
+	import com.greensock.loading.LoaderMax;
 	import components.flocking.Flocking;
 	import components.flocking.FlockSettings;
 	import components.Pos;
 	import components.Rot;
 	import components.Vel;
 	import flash.display.Bitmap;
+	import flash.display.BitmapData;
 	import flash.events.IEventDispatcher;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
@@ -30,6 +36,7 @@ package tests.flocking
 	import flash.system.LoaderContext;
 	import flash.system.Security;
 	import flash.system.SecurityDomain;
+	import flash.text.TextField;
 	import flash.ui.Keyboard;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
@@ -54,10 +61,11 @@ package tests.flocking
 	//[SWF(width="600", height="400", frameRate="40", backgroundColor="0xddddff")]
 	public class TestFlocking3D extends MovieClip
 	{
-			public var engine:Engine;
+		public var engine:Engine;
 		public var ticker:FrameTickProvider;
 		
 		public static const WORLD_SCALE:Number = 2;
+		public static const TEST_FLOCKING:Boolean = true;
 		public static const G_WORLD_SIZE_MULT:Number = 1;
 				
 		private  var WORLD_WIDTH:Number = 1200*WORLD_SCALE*G_WORLD_SIZE_MULT;
@@ -79,6 +87,7 @@ package tests.flocking
 		private var rootContainer:Object3D = new Object3D();
 		public var myAssets:Assets;
 		
+		private var loadingField:TextField;
 		
 		
 		public function TestFlocking3D() 
@@ -94,21 +103,49 @@ package tests.flocking
 				init();
 			}
 			else {
-				myAssets.addEventListener(Event.COMPLETE, init);
+				
+				
+			//	myAssets.addEventListener(Event.COMPLETE, init);
+			
 				var domain:SecurityDomain = loaderInfo.url.indexOf("file://") >= 0 ? null : SecurityDomain.currentDomain;
 				if (domain != null) {
-					Security.loadPolicyFile("http://glidias.uphero.com/crossdomain.xml");	
+					Security.loadPolicyFile("http://glidias.github.io/Asharena/crossdomain.xml");	
 				}
-				myAssets.load("http://glidias.uphero.com/flockmech.swf", "tests.flocking", new LoaderContext(true, null,domain));
+				/*
+				myAssets.load("http://glidias.uphero.com/flockmech.swf", "tests.flocking", new LoaderContext(true, null, domain));
+				*/
+				
+				loadingField = new TextField();
+				addChild(loadingField);
+				loadingField.text = "LOADING...";
+				
+				var loadQueue:LoaderMax = new LoaderMax( { onComplete: loadQueueComplete } );
+				LoaderMax.defaultContext = new LoaderContext(true, null, domain);
+				loadQueue.append( new BinaryDataLoader("http://glidias.github.io/Asharena/assets/skins/gladiator/animations.ani", {  name:"anim" } ));
+				loadQueue.append( new ImageLoader("http://glidias.github.io/Asharena/assets/skins/gladiator/samnite/samnite_skin.png",{ name:"skinbmp" } ));
+				loadQueue.append( new BinaryDataLoader("http://glidias.github.io/Asharena/assets/skins/gladiator/samnite/samnite_lowpolyanim.a3d", {  name:"skin" } ));
+				loadQueue.load();
 			}
 			
 		}
+		
+		private function loadQueueComplete(e:Event):void 
+		{
+			removeChild(loadingField);
+			init();
+	//		onReady3D( null, LoaderMax.getLoader("skin").content,  LoaderMax.getLoader("skinbmp").rawContent.bitmapData,  LoaderMax.getLoader("anim").content);
+			
+		}
+		
+		
+		
+		
 		
 		private function init(e:Event=null):void {
 			
 			engine = new Engine();
 			
-			engine.addSystem( new FlockingSystem(), 0 );
+			if (TEST_FLOCKING) engine.addSystem( new FlockingSystem(), 0 );
 			engine.addSystem( new AnimationSystem(), 1 );
 			//engine.addSystem( new DisplayObjectRenderingSystem(this), 1);
 			
@@ -122,18 +159,25 @@ package tests.flocking
 			_template3d.settings.cameraSpeed *= 4;
 
 			_template3d.settings.cameraSpeedMultiplier *= 2;
-			_template3d.addEventListener(Template.VIEW_CREATE, onReady3D);
+			 _template3d.addEventListener(Template.VIEW_CREATE, onReady3D);
 	
-			//startGame();
+		
 		}
 		
 	
 		private var _template3d:Template;
-		private function onReady3D(e:Event):void 
+		private function onReady3D(e:Event, skinData:ByteArray=null, skinBmpData:BitmapData=null, animData:ByteArray=null):void 
 		{
 			
+			if (e != null) (e.currentTarget as IEventDispatcher).removeEventListener(e.type, onReady3D);
 			
-			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, onReady3D);
+			if (loadingField) {
+				
+				skinData = LoaderMax.getLoader("skin").content;
+				skinBmpData = LoaderMax.getLoader("skinbmp").rawContent.bitmapData;
+				animData = LoaderMax.getLoader("anim").content
+			}
+			
 			engine.addSystem( new RenderingSystem(rootContainer), 2 );
 			
 			
@@ -144,16 +188,17 @@ package tests.flocking
 			//rootContainer.rotationZ = Math.PI;
 
 			var parser:ParserA3D = new ParserA3D();
-			parser.parse(new myAssets.MECH_KAYRATH());
+			parser.parse(skinData || new myAssets.MECH_KAYRATH());
 			var skin:Skin = findSkin(parser.objects);
 			skin.divide(1000);
+		//	skin.calculateBindingMatrices();
 			//throw new Error(skin.surfaceJoints.length + "::: " + skin.surfaceJoints[0].length);
 			skin.renderedJoints = skin.surfaceJoints[0];
 			
 			
 			
-			
-			var standardMaterial:StandardMaterial = new StandardMaterial( new BitmapTextureResource(new myAssets.MECH_SKIN().bitmapData), _template3d.normalResource);
+		
+			var standardMaterial:StandardMaterial = new StandardMaterial( new BitmapTextureResource(skinBmpData || (new myAssets.MECH_SKIN().bitmapData)), _template3d.normalResource);
 			skin.geometry.calculateNormals();
 			skin.geometry.calculateTangents(0);
 			skin.rotationX = Math.PI * .5;
@@ -171,9 +216,12 @@ package tests.flocking
 			rootContainer.addChild(skinClonesCont);
 			
 			_animManager = new AnimationManager();
-			var animBytes:ByteArray =  new myAssets.MECH_ANIMS();
+			
+			var animBytes:ByteArray =  animData || new myAssets.MECH_ANIMS();
 			animBytes.uncompress();
 			_animManager.readExternal(animBytes );
+			
+			postProcessAnimManager();
 			
 			_template3d.cameraController.setObjectPos(new Vector3D(WORLD_WIDTH * .5, WORLD_HEIGHT * .5, 100));
 			//_template3d.camera.transformChanged = true;
@@ -184,7 +232,35 @@ package tests.flocking
 			_template3d.uploadResources(_template3d.scene.getResources(true));
 			_template3d.uploadResources(skin.getResources());
 			
+			
 			startGame();
+			
+		}
+		
+		private function postProcessAnimManager():void {
+			/*
+			var len:int = _animManager.animClips.length;
+			for (var i:int = 0; i < len; i++) {
+				removeAnimationTrack(_animManager, _animManager.animClips[i].name ,"Bip01");
+			}
+			*/
+			removeAnimationTrack(_animManager, "jog" ,"Bip01");
+			//
+		}
+		private function removeAnimationTrack(animManager:AnimationManager, animName:String, boneName:String):void 
+		{
+			var anim:AnimationClip = animManager.getAnimationByName(animName);
+			
+			var len:int = anim.numTracks;
+			for (var i:int = 0; i < len ; i++) {
+				var t:Track = anim.getTrackAt(i);
+				if (t.object === boneName) {
+					anim.removeTrack(t);
+					
+					return;
+				}
+			}
+			
 		}
 		
 		private function startGame():void 
@@ -280,7 +356,7 @@ package tests.flocking
 				obj = skin;
 				
 				skinClonesCont.addClone(skinClone);
-				entity.add( new MechStance( _animManager.cloneFor(skin.childrenList), vel, skinClone.renderedJoints ), IAnimatable).add(obj, Object3D);
+				entity.add( new MechStance( _animManager.cloneFor(skin.childrenList), vel, skinClone.renderedJoints, !TEST_FLOCKING ), IAnimatable).add(obj, Object3D);
 				//*/
 				
 				/*
@@ -308,3 +384,5 @@ package tests.flocking
 		
 
 }
+
+

@@ -26,11 +26,11 @@ package alternativa.stances
 		private var couple:AnimationCouple;
 		private var _turretJoint:Joint;
 		
-		public function MechStance(animManager:AnimationManager, vel:Vel, jointList:Vector.<Joint>) 
+		public function MechStance(animManager:AnimationManager, vel:Vel, jointList:Vector.<Joint>, randAnim:Boolean=false) 
 		{
 			this.animManager = animManager;
 			this.vel = vel;
-			var index:int = animManager.getAnimationIndexByName("jog");
+			var index:int = randAnim ? Math.random() * animManager.animClips.length : animManager.getAnimationIndexByName("jog");
 			if (index < 0) index = 0;
 			anim_walk = animManager.animClips[index];
 			controller = new AnimationController();
@@ -42,24 +42,11 @@ package alternativa.stances
 			couple.right = new AnimationClip();
 			_turretJoint = findJointByName(jointList, "Bip01 Spine3");
 			
-			removeAnimationTrack(animManager, "jog" ,"Bip01");
+			
+			
 		}
 		
-		private function removeAnimationTrack(animManager:AnimationManager, animName:String, boneName:String):void 
-		{
-			var anim:AnimationClip = animManager.getAnimationByName(animName);
-			
-			var len:int = anim.numTracks;
-			for (var i:int = 0; i < len ; i++) {
-				var t:Track = anim.getTrackAt(i);
-				if (t.object === boneName) {
-					anim.removeTrack(t);
-					
-					return;
-				}
-			}
-			
-		}
+		
 		
 		private function findJointByName(joints:Vector.<Joint>, str:String):Joint {
 			

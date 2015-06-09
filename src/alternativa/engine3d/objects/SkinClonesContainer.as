@@ -56,6 +56,7 @@ package alternativa.engine3d.objects
 			
 			super(sample.maxInfluences);
 			this.clonePropertiesFrom(sample);
+			sample.geometry = null;
 			
 			_sample = sample;
 			
@@ -150,10 +151,10 @@ package alternativa.engine3d.objects
 			// TODO: Test shouldn't i start at 1 instead....because geometry is already filled?
 			// paste geometry data for all the vertex streams
 			for (i = 0; i < len; i++) {
-				bytes =protoByteArrayStreams[i];
+				bytes = protoByteArrayStreams[i];
+				var data:ByteArray = geometry._vertexStreams[i].data;
+		
 				for (u = 1; u < total; u++) {
-					var data:ByteArray = geometry._vertexStreams[i].data;
-					
 					data.position = data.length;
 					data.writeBytes(bytes, data.length);
 				}
@@ -178,16 +179,17 @@ package alternativa.engine3d.objects
 			}
 			geometry.indices = indices;
 	
-			
 			// paste joint attribute values with offsets
 		//	/*
-			len = maxInfluences;
+			//len = maxInfluences;
 			for (var k:int = 0; k < maxInfluences; k += 2) {
 				
+				/*
 				if (!geometry.hasAttribute(VertexAttributes.JOINTS[k>>1])) {
 				//	throw new Error(k);
 					break;
 				}
+				*/
 				var jointIndices:Vector.<Number> = geometry.getAttributeValues(VertexAttributes.JOINTS[k>>1]);
 				var stride:int = VertexAttributes.getAttributeStride(VertexAttributes.JOINTS[k>>1]);
 			//throw new Error(jointIndices);
@@ -198,10 +200,6 @@ package alternativa.engine3d.objects
 				var duplicateMultiplier:Number =addDupMult;
 				var totalLen:int = jointIndices.length;
 				for (i = len; i < totalLen; i += len) {
-					if (i == len) {  // problem, it seems the first inserted entry (2nd clone per batch) has wrong joint assignments!
-							//duplicateMultiplier+=  addDupMult;
-					//	continue;
-					}
 					for (u = i; u < i+len; u+=stride) {
 						jointIndices[u] += duplicateMultiplier;
 						jointIndices[u+2] += duplicateMultiplier;
@@ -214,6 +212,8 @@ package alternativa.engine3d.objects
 				// throw new Error( getJointIndices( jointIndices.slice( jointIndices.length / 4, jointIndices.length/4+jointIndices.length/4) ,  -10) );
 			}
 		//	*/
+		
+				//throw new Error(  geometry.getAttributeValues(VertexAttributes.POSITION).slice(protoNumVertices * 3, protoNumVertices * 3 + protoNumVertices*3) );
 		}
 		
 		private function getJointIndices(values:Vector.<Number>, offset:int=0):Vector.<int> {
@@ -387,7 +387,7 @@ package alternativa.engine3d.objects
 			
 			var minClonesPerBatch:int = _minClonesPerBatch;
 		
-			totalClones = 2;
+		
 			
 			var i:int = totalClones;
 			
@@ -401,8 +401,10 @@ package alternativa.engine3d.objects
 			
 			
 			//  Now only support 1 surface because usually this is the common case for batching skins anyway
-			transformProcedure = surfaceTransformProcedures[0];  // already pre-calculated earlier as highest
-			deltaTransformProcedure = surfaceDeltaTransformProcedures[0];
+			//transformProcedure = surfaceTransformProcedures[0];  // already pre-calculated earlier as highest
+			//deltaTransformProcedure = surfaceDeltaTransformProcedures[0];
+		//	throw new Error(deltaTransformProcedure);
+		
 			var surface:Surface = _surfaces[0];
 			
 			//for (i = 0; i < _surfacesLength; i++) {

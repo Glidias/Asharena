@@ -23,7 +23,7 @@ import flash.utils.getDefinitionByName;
 		[Embed(source="../../../bin/skins/samnite_lowpolyanim.a3d", mimeType="application/octet-stream")]
 		public var MECH_KAYRATH:Class;
 		
-		//[Embed(source = "../../../bin/skins/mech/skin.jpg")]
+	//[Embed(source = "../../../bin/skins/mech/skin.jpg")]
 		[Embed(source="../../../bin/skins/textures/samnite_skin.png")]
 		public var MECH_SKIN:Class;
 		
@@ -35,14 +35,20 @@ import flash.utils.getDefinitionByName;
 		private var _loader:ClassLoader; 
 		private var packagePrefix:String;
 		
-		public function load(url:String, packagePath:String, context:LoaderContext):void {
+		public function load(url:String, packagePath:String, context:LoaderContext, callback:Function=null):void {
 			_loader = new ClassLoader();
 			if (packagePath != "") {
 				packagePrefix = packagePath+ "::";
 			}
 			else packagePrefix = null;
-			_loader.addEventListener(ClassLoader.CLASS_LOADED, onLoadComplete);
+			
+			if (callback == null) {
+				_loader.addEventListener(ClassLoader.CLASS_LOADED, onLoadComplete);
+			}
+			
+			
 			_loader.load(url, context);
+			
 		}
 		
 		private function onLoadComplete(e:Event):void {
@@ -62,6 +68,11 @@ import flash.utils.getDefinitionByName;
 				}
 
 				dispatchEvent( new Event(Event.COMPLETE));
+			}
+			
+			public function get loader():ClassLoader 
+			{
+				return _loader;
 			}
 		}
 	
