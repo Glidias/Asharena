@@ -66,7 +66,7 @@ package tests.flocking
 		
 		public static const WORLD_SCALE:Number = 2;
 		public static const TEST_FLOCKING:Boolean = true;
-		public static const G_WORLD_SIZE_MULT:Number = 1;
+		public static const G_WORLD_SIZE_MULT:Number = 1.5;
 				
 		private  var WORLD_WIDTH:Number = 1200*WORLD_SCALE*G_WORLD_SIZE_MULT;
 		private  var WORLD_HEIGHT:Number = 800 * WORLD_SCALE*G_WORLD_SIZE_MULT;
@@ -99,7 +99,7 @@ package tests.flocking
 			
 			
 			myAssets = new Assets();
-			if (myAssets.MECH_SKIN != null) {
+			if (true &&  myAssets.MECH_SKIN != null) {
 				init();
 			}
 			else {
@@ -109,22 +109,18 @@ package tests.flocking
 			
 				var domain:SecurityDomain = loaderInfo.url.indexOf("file://") >= 0 ? null : SecurityDomain.currentDomain;
 				if (domain != null) {
-					Security.loadPolicyFile("http://glidias.github.io/Asharena/crossdomain.xml");	
+					Security.loadPolicyFile("http://glidias.github.io/crossdomain.xml");	
 				}
-				/*
-				myAssets.load("http://glidias.uphero.com/flockmech.swf", "tests.flocking", new LoaderContext(true, null, domain));
-				*/
+				///*
+				myAssets.addEventListener(Event.COMPLETE, init);
+				myAssets.load("http://glidias.github.io/Asharena/assets/skins/mech/bundle.swf", "tests.flocking", new LoaderContext(true, null, domain));
+			//	*/
 				
 				loadingField = new TextField();
 				addChild(loadingField);
 				loadingField.text = "LOADING...";
 				
-				var loadQueue:LoaderMax = new LoaderMax( { onComplete: loadQueueComplete } );
-				LoaderMax.defaultContext = new LoaderContext(true, null, domain);
-				loadQueue.append( new BinaryDataLoader("http://glidias.github.io/Asharena/assets/skins/gladiator/animations.ani", {  name:"anim" } ));
-				loadQueue.append( new ImageLoader("http://glidias.github.io/Asharena/assets/skins/gladiator/samnite/samnite_skin.png",{ name:"skinbmp" } ));
-				loadQueue.append( new BinaryDataLoader("http://glidias.github.io/Asharena/assets/skins/gladiator/samnite/samnite_lowpolyanim.a3d", {  name:"skin" } ));
-				loadQueue.load();
+			
 			}
 			
 		}
@@ -172,10 +168,11 @@ package tests.flocking
 			if (e != null) (e.currentTarget as IEventDispatcher).removeEventListener(e.type, onReady3D);
 			
 			if (loadingField) {
-				
-				skinData = LoaderMax.getLoader("skin").content;
-				skinBmpData = LoaderMax.getLoader("skinbmp").rawContent.bitmapData;
-				animData = LoaderMax.getLoader("anim").content
+				if (LoaderMax.getLoader("skin")) {
+					skinData = LoaderMax.getLoader("skin").content;
+					skinBmpData = LoaderMax.getLoader("skinbmp").rawContent.bitmapData;
+					animData = LoaderMax.getLoader("anim").content
+				}
 			}
 			
 			engine.addSystem( new RenderingSystem(rootContainer), 2 );

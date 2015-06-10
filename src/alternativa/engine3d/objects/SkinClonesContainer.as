@@ -56,7 +56,7 @@ package alternativa.engine3d.objects
 			
 			super(sample.maxInfluences);
 			this.clonePropertiesFrom(sample);
-			sample.geometry = null;
+		
 			
 			_sample = sample;
 			

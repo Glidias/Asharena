@@ -195,7 +195,7 @@ package tests.pvp
 			PlanarRim;
 		}
 		
-		SkinClonesContainer;
+	
 			private function setupTerrainMaterial():Material {
 			var standardMaterial:StandardTerrainMaterial2 = new StandardTerrainMaterial2(new BitmapTextureResource( new CarribeanTextures.SAND().bitmapData ) , new BitmapTextureResource( _terrainBase.normalMap), null, null  );
 		//	standardMaterial.uvMultiplier2 = _terrainBase.mapScale;
