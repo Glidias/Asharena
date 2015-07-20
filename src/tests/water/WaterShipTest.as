@@ -121,6 +121,8 @@ package tests.water
 			]);
 			bundleLoader.progressSignal.add( _preloader.setProgress );
 			bundleLoader.loadBeginSignal.add( _preloader.setLabel );
+			
+			
 
 		}
 		
@@ -159,22 +161,26 @@ package tests.water
 			//5252710400
 			_template3D.viewBackgroundColor = 0xFFFFFF;
 				var dist:Number = DISTANCE;
-			_template3D.camera.z = 128+72;	
+			_template3D.camera.z = 128+112;	
 			_template3D.camera.x = 0;// 971610521;// 97161052160;	
 			_template3D.camera.y = 0;	
+			_template3D.camera.rotationX = -Math.PI * .5;
+		
+			_template3D.camera.rotationZ = -Math.PI * .25;
 			
 		//	_template3D.scene.x = Math.sqrt(int.MAX_VALUE);
 
 		//	_template3D.camera.x = 64 * 256;
 	//	_template3D.camera.y = 64 * 256;
 				
+	var speedCam:Number = 27 * 512 * 256 / 60 / 60  * .5;
 			spectatorPerson =new SimpleFlyController( 
 						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
 						null ,
 						stage, 
 						_template3D.camera, 
-						27*512*256/60/60,
-						144);
+						speedCam,
+						2);
 			
 						game.gameStates.spectator.addInstance(spectatorPerson).withPriority(SystemPriorities.postRender);
 		

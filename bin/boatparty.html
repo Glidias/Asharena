@@ -6,7 +6,7 @@
 	<title>Voyage RPG</title>
 	<style>
 		body {
-			
+			margin:0; padding:0;
 		}
 		#PartySelection, .columner { width:300px }
 		#PartySelection ul { border-bottom:1px solid #000000; padding-bottom:20px; }
@@ -16,15 +16,31 @@
 		#PartySelection .boat { font-size:19px; }
 		#PartySelection h1 { font-size:19px; }
 		#PartySelection h3, #PartyResult h3  { font-size:12px;text-indent:24px; color:#777777; margin-bottom:0px; margin-top:4px;}
-		#PartyResult { width:300px; top:0; position:fixed; left:350px; height:100%; overflow:auto; }
+		#PartyResult { position:relative;width:300px; top:0; position:absolute; left:350px; height:100%;  }
 		#PartyResult ul.division { font-size:11px; }
 		#PartyResult ul.division li { cursor:pointer; }
-		#Info { font-family:Arial; font-size:13px; background-color:#ffffff; border:1px solid #000000; width:100%; height:auto; display:block; position:relative;}
+		#Info { font-family:Arial; font-size:13px; background-color:#ffffff; border:1px solid #000000; width:100%; height:auto; display:block; z-index:2;position:relative;}
 		.stat span { font-weight:bold }
 		.stat span.static { font-weight:bold; color:#AAAAAA; }
 		#Info .closeBtn { position:absolute; top:0; right:0; cursor:pointer; }
 		#PartyResult .dislike span.animosity { color:#ff0000 }
 		#splinters.found {color:#ff0000}
+		.flash-holder { width:512px;height:100%;position:fixed;right:0px;z-index:0; }
+	
+		.dummyanchor {visibility:hidden;height:0px;overflow:hidden;position:static;display:block;}
+		.panel {background-color:#ffffff;  width:562px; height:auto; display:block; z-index:1;position:relative; border:2px solid #cccccc;}
+		.whiteoverlay {  
+			background-color: rgba(255,255,255,0.75);
+			
+			 }
+		.noselect {
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			-khtml-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+		}
 	</style>
 	<script src="js/jquery.min.js"></script>
 	<script>
@@ -237,307 +253,239 @@
 		});
 	});
 	</script>
+	
+	<script>
+	$(document).ready( function() {
+		var flashHolder = $("#flashholder");
+		var _window = $(window);
+		var _fullScrn = false;
+		var pagePanels = $("#PartyPage1");
+		
+		function handleResize() {
+			if (_fullScrn) return;
+			flashHolder.width(_window.width() - 570);
+		
+		}
+		
+		function validateFullScrn()  {
+			if (_fullScrn) {
+				flashHolder.width("100%");
+				pagePanels.addClass("whiteoverlay");
+				
+				previewFullScrn.html(previewFullScrn.data("alttext"));
+			}
+			else {
+				pagePanels.removeClass("whiteoverlay");
+				handleResize();
+				previewFullScrn.html(previewFullScrn.data("text"));
+			}
+		}
+		var previewFullScrn = $("#PreviewFullScreen");
+		previewFullScrn.click( function(e) {
+			e.preventDefault();
+			_fullScrn = !_fullScrn;
+			validateFullScrn();
+			return false;
+		});
+		
+		$("#RestoreSplitScreen").click( function(e) {
+			_fullScrn = false;
+			validateFullScrn();
+			return true;
+		});
+		
+		
+		$(window).resize( handleResize);
+		
+		
+		handleResize();
+	});
+	</script>
+	
+	<script src="js/swfobject.js"></script>
+	<script>
+	
+		var flashvars = {
+			waterSettings: 'waterMaterial { perturbReflectiveBy:0.4; perturbRefractiveBy:0.4; waterTintAmount:0.1; fresnelMultiplier:0.3; reflectionMultiplier:0.67; waterColorR:0; waterColorG:0.15; waterColorB:0.115;  }'
+		};
+		var params = {
+			menu: "false",
+			scale: "noScale",
+			allowFullscreen: "true",
+			allowScriptAccess: "always",
+			bgcolor: "",
+			wmode: "direct" // can cause issues with FP settings & webcam
+		};
+		var attributes = {
+			id:"Ash3DAS3"
+		};
+		
+		swfobject.embedSWF(
+			"ArenaAS3.swf", 
+			"altContent", "100%", "100%", "10.0.0", 
+			"expressInstall.swf", 
+			flashvars, params, attributes);
+			
+		
+			
+	</script>
 </head>
 <body>
-	<a name="top"></a>
-	<div style="margin-bottom:10px;">Scroll down to <a href="#info">bottom</a> view info:</div>
-
-	<div id="PartySelection" data-p="20">
-		<div class="boatsection">
-			<div class="boat" data-capacity="18">Viking Longship</div>
+	<a name="top" class="dummyanchor">&nbsp;</a>
+	
+	<div id="flashholder" class="flash-holder no-select">
+		<div id="altContent"></div>
+	</div>
+	<div id="PartyPage1"  style="width:570px;overflow:hidden;" class="panel noselect">
+		<div style="margin-bottom:10px;">Scroll down to <a href="#info">bottom</a> view info:</div>
+		
+		<div id="PartySelection" data-p="20" >
+			<div class="boatsection">
+				<div class="boat" data-capacity="18">Longship 	<a href="#top" data-text="Translucent Screen" data-alttext="Split Screen" id="PreviewFullScreen" style="font-size:11px;">[Translucent Screen] <br/>(warning: only works on chrome)</a></div>
+			</div>
+			<ul class="faction" id="v">
+				<h1>Viking</h1>
+				<h3 class="omega">Omega (5)↓</h3>
+				<li data-p="5">Huscarl</li>	
+				<h3>Zeta (3)↓</h3>
+				<li data-p="3">Halfvikling</li>	
+				<h3>Beta (1)↓</h3>
+				<li data-p="0">Gestir</li>
+				<a rel="c">50</a>
+				<a rel="p">30</a>
+				<a rel="g">20</a>
+			</ul>
+			
+			<ul class="faction" id="p">
+				<h1>Pirate</h1>
+				<h3>Alpha (10)↓</h3>
+				<li data-p="10">Pirate Captain</li>	
+				<h3>Omega (5)↓</h3>
+				<li data-p="5">Sharpshooter</li>	
+				<h3>Beta (1)↓</h3>
+				<li data-p="0">Skirmisher</li>
+				<a rel="v">45</a>
+				<a rel="c">45</a>
+				<a rel="g">10</a>
+			</ul>
+			<ul class="faction" id="c">
+				<h1>Crusader</h1>
+				<h3>Omega (5)↓</h3>
+				<li data-p="5">Knight</li>
+				<h3>Beta (1)↓</h3>
+				<li data-p="0">Man-At-Arms</li>
+				<li data-p="0">Archer</li>	
+				<a rel="v">40</a>
+				<a rel="p">30</a>
+				<a rel="g">30</a>
+			</ul>
+			<ul class="faction" id="g">
+				<h1>Gladiator</h1>
+				<h3>Alpha (10)↓</h3>
+				<li data-p="10">Flammite</li>
+				<li data-p="10">Dimochai</li>
+				<h3>Omega (5)↓</h3>
+				<li data-p="5">Samnian</li>
+				<h3>Beta (1)↓</h3>
+				<li data-p="0">Slavus</li>
+				<a rel="c">50</a>
+				<a rel="p">30</a>
+				<a rel="v">20</a>
+			</ul>
+			
 		</div>
-		<ul class="faction" id="v">
-			<h1>Viking</h1>
-			<h3 class="omega">Omega (5)↓</h3>
-			<li data-p="5">Huscarl</li>	
-			<!--
+			<div id="PartyResult">
+			<h2>Crew Warband</h2>
+			<div class="results">
+				<div class="stat">Total power points pool: <span class="static" id="total_power">20</span></div>
+				<div class="stat">Power points remaining: <span id="remaining_power">20</span></div>
+				<br/>
+				<div class="stat">Total allowed boat capacity: <span class="static" id="total_capacity">14</span></div>
+				<div class="stat">Boat capacity remaining: <span id="remaining_capacity">14</span></div>
+				<br/>
+				<div class="stat">Splinter groupings/stragglers: <span id="splinters">-</span></div>
+			</div>
+			<br/>
+			<h3>Alpha (10)↓</h3>
+			<ul class="division" id="alpha-party">
+			
+			</ul>
+			<h3>Omega (5)↓</h3>
+			<ul class="division" id="omega-party">
+			
+			</ul>
 			<h3>Zeta (3)↓</h3>
-			<li data-p="3">Berserker</li>	
-			-->
+			<ul class="division" id="zeta-party">
+			
+			</ul>
 			<h3>Beta (1)↓</h3>
-			<li data-p="0">Gestir</li>
-			<a rel="c">50</a>
-			<a rel="p">30</a>
-			<a rel="g">20</a>
-			<a rel="vp">30</a>
-		</ul>
+			<ul class="division" id="beta-party">
+			
+			</ul>
+			______Faction Animosity_____
+			<h3 class="dislike">Alpha to Alpha/Omega = <span id="alpha2omega"></span></h3>
+			<br/>
+			<h3 class="dislike">Alpha/Omega to Beta/Zeta = <span id="alphaomega2beta"></span></h3>
+			<br/>
+			<h3 class="dislike">Beta to Beta = <span id="beta2beta"></span></h3>
+			
+			<br/>
+			
 		
-		<ul class="faction" id="p">
-			<h1>Pirate</h1>
-			<h3>Alpha (10)↓</h3>
-			<li data-p="10">Pirate Captain</li>	
-			<h3>Omega (5)↓</h3>
-			<li data-p="5">Sharpshooter</li>	
-			<h3>Beta (1)↓</h3>
-			<li data-p="0">Skirmisher</li>
-			<a rel="v">45</a>
-			<a rel="c">45</a>
-			<a rel="g">10</a>
-			<a rel="vp">45</a>
-		</ul>
-		<ul class="faction" id="c">
-			<h1>Crusader</h1>
-			<h3>Omega (5)↓</h3>
-			<li data-p="5">Knight</li>
-			<h3>Beta (1)↓</h3>
-			<li data-p="0">Man-At-Arms</li>
-			<li data-p="0">Archer</li>	
-			<a rel="v">45</a>
-			<a rel="p">30</a>
-			<a rel="g">30</a>
-			<a rel="vp" class="calcvp"></a>
-		</ul>
-		<ul class="faction" id="g">
-			<h1>Gladiator</h1>
-			<h3>Alpha (10)↓</h3>
-			<li data-p="10">Flammite</li>
-			<li data-p="10">Dimochai</li>
-			<h3>Omega (5)↓</h3>
-			<li data-p="5">Samnian</li>
-			<h3>Beta (1)↓</h3>
-			<li data-p="0">Slavus</li>
-			<a rel="c">50</a>
-			<a rel="p">30</a>
-			<a rel="v">20</a>
-			<a rel="vp" class="calcvp"></a>
-		</ul>
-		<ul class="faction" id="vp">
-			<h1>Half-Viking</h1>
-			<h3>Alpha (10)↓</h3>
-			<li class="c" data-p="10">Viking Pirate</li>
-			<a rel="v">0</a>
-			<a rel="p">0</a>
-			<a rel="c" class="vpcalc"></a>
-			<a rel="g" class="vpcalc"></a>
-		</ul>
-	</div>
-	<div id="PartyResult">
-		<h2>Crew Party</h2>
-		<div class="results">
-			<div class="stat">Total power points pool: <span class="static" id="total_power">21</span></div>
-			<div class="stat">Power points remaining: <span id="remaining_power">21</span></div>
-			<br/>
-			<div class="stat">Total allowed boat capacity: <span class="static" id="total_capacity">18</span></div>
-			<div class="stat">Boat capacity remaining: <span id="remaining_capacity">18</span></div>
-			<br/>
-			<div class="stat">Splinter groupings/stragglers: <span id="splinters">-</span></div>
+			
 		</div>
-		<br/>
-		<h3>Alpha (10)↓</h3>
-		<ul class="division" id="alpha-party">
 		
-		</ul>
-		<h3>Omega (5)↓</h3>
-		<ul class="division" id="omega-party">
-		
-		</ul>
-		<h3>Zeta (3)↓</h3>
-		<ul class="division" id="zeta-party">
-		
-		</ul>
-		<h3>Beta (1)↓</h3>
-		<ul class="division" id="beta-party">
-		
-		</ul>
-		______Faction Animosity_____
-		<h3 class="dislike">Alpha to Alpha/Omega = <span id="alpha2omega"></span></h3>
-		<br/>
-		<h3 class="dislike">Alpha/Omega to Beta/Zeta = <span id="alphaomega2beta"></span></h3>
-		<br/>
-		<h3 class="dislike">Beta to Beta = <span id="beta2beta"></span></h3>
-		
-		<br/>
 		
 	</div>
-	
 	<div id="Info" class="columners">
-		<a name="info"></a>
-		<a href="#top" class="closeBtn">[Close x]</a>
-		<h3>Instructions:</h3>
-		Click on the character class list names on the left to add them to Crew Party.
-		<br/>Click on the Crew Party character class names on the right to remove them from the Crew party.
-		<h3>Faction animosities</h3>
-		<ul>
-			<li><b>Pirates:</b> Dislikes both vikings and crusaders equally (45%/45%), than gladiators (10%).</li>
-			<li><b>Crusaders:</b> Dislikes vikings first (40%), than pirates and gladiators equally. (30%/30%).</li>
-			<li><b>Vikings:</b> Dislikes crusaders first (50%), then pirates (30%), than gladiators (20%).</li>
-			<li><b>Gladiators:</b> Dislikes crusaders first (50%), then pirates (30%), than vikings (20%).</li>
-			<li><b>"Animosity" is the percentage that exceeds 25% of "dislike" and has a bearing on the game beyond innocent "fun" dialogue. Animosity cannot exceed 25% within/between divisions. If so, the party is considered invalid (ie. a "dislike" has occured beyond 50% mark). Numbers come into play when aggregating dislikes.</b></li>
-			<li>Also, for the party to be united. No spinter groups should be found within the party. Else, the party will split as well.</li>
-		</ul>
-		<h3>Party Divisions</h3>
-		<ul>
-	
-		<li><b>Alpha -</b> 10 command points per person. Such a person can command up to 10 men of varying classes. Alphas dominate/coerce Betas into doing their will due to their standing/position. Alphas don't get along well with other Alphas due to their strong personalities, regardless of similar ideals. The only thing they might share in common is their shared interest in dominating Betas. They appear in the smallest of numbers.</li>
+		<div class="page page1">
+			<a name="info"></a>
+			<a href="#top" class="closeBtn">[Back to Top]</a>
+			<h3>Instructions:</h3>
+			Click on the character class list names on the left to add them to Crew Warband.
+			<br/>Click on the character class names on the right to remove them from the Crew Warband.
+			
+			<h3>Unit types</h3>
+			<ul>
+				<li><b>Alpha -  Costs 10 power points.</b>  Level 10 boss. Can manage up to 10 units.</li>
+				<li><b>Omega -  Costs 5 power points.</b> Level 5 boss. Can manage up to 4 units.</li>
+				<li><b>Zeta - Costs 3 power points.</b> Level 3 unit. Can be upgraded to a level 4 unit using 1 additional power point.</li>
+				<li><b>Beta - Free. </b>Level 1 unit. Can be upgraded up to a max level 4 unit, spending  (1+<i></i>n</i>) power points to upgrade unit <i>n</i> times. </li>
+			</ul>
+			<p>For the party to be valid, it needs at least 1 boss (either Alpha or Omega) to command the units.</p>
+			<h3>Faction animosities</h3>
+			<p>When mixing classes from different factions, there are limitations.</p>
+			<ul>
+				<li><b>Pirates:</b> Dislikes both vikings and crusaders equally (45%/45%), than gladiators (10%).</li>
+				<li><b>Crusaders:</b> Dislikes vikings first (40%), than pirates and gladiators equally. (30%/30%).</li>
+				<li><b>Vikings:</b> Dislikes crusaders first (50%), then pirates (30%), than gladiators (20%).</li>
+				<li><b>Gladiators:</b> Dislikes crusaders first (50%), then pirates (30%), than vikings (20%).</li>
+			</ul>
+			<p><b>"Animosity" is the percentage of RPG "conflict" that can occur within the boat crew. Animosity cannot exceed 25% within/between divisions. If so, the crew is considered invalid. </b></p>
+			
+			<a href="#top" id="RestoreSplitScreen" style="font-size:11px;">[ &lt;&lt; Restore Split Screen ]</a>
+		</div>
 
-<li><b>Beta -</b> 0 command point per person. Such a person Can only command up to 17 men of the same class and division so long as no alphas/omegas are around due to good rapport/similarity among themselves. They are basically the masses. They look similar to other regular crowd-based NPCs. When it comes to raw manpower, Beta is a necessity.</li>
-
-<li><b>Omega -</b> 5 command points per person. Such a person can command up to 4 men of varying classes. Omegas are amiable, charismatic, and lead and convince betas through rhetoric and ideas. Omegas tend to submit to Alphas, but can often not get along well with other Omegas of differing ideas. They appear in small to medium numbers.</li>
-
-<li><b>Zeta -</b> 3 command points person. Such a person doesn't command anyone and is more of an anti-social lonewolf. They can work under Alphas/Omegas under certain circumstances. Zeta tends to be a "special" type of character class social category and can appear in either large or small numbers.</li>
-	</ul>
-	<h3>Faction skillset bonuses and specialities*</h3>
-	<ul>
-		<li><b>Pirates:</b>Seamanship, Gunpowder*.</li>
-		<li><b>Crusaders:</b> Tower Defense*, Ranged Archery*</li>
-		<li><b>Vikings:</b>Seamanship, Fishing, Boatbuilding*, Herding, Smithing, Farming</li>
-		<li><b>Gladiators:</b> Wilderness Hunting, Magic*.</li>
-	</ul>
+		</div>
 	</div>
 </body>
 </html>
 
-<!--[CDATA[
-PATHFINDING/Crowd-control engine approaches
-1) Revive Formation & Recast/Detour Pathfinding/Physics
-2) Revive Formation/Pathfinding/Physics
-3) Revive Formation & Little Pathfinding/Physics+ReviveEnv
+<!-- 
+1) Setup warband crew of maximum 14 men.
+   - Once valid, you can click NEXT  to continue
 
-_______________
+2)  Customise each unique class abilities across milestone levels in the warband crew as a standization by assigning ability points to skills. This process can be skipped but you'll need to perform individual customisation later on. Based on the assigned ability points, you'll get to preview a list of ability actions that match the current skill level, and another list of ability actions that lie below the current skill level.
+   - Click NEXT to continue. 
 
-Valk Individual/Men MU
+3) Customise weapon(s) for each member in the warband crew. Customise names, re-assign any ability points for each individual if you wish, and adjusts each individuals' ability action slots . This process can be skipped and you'll use whatever available defaults already assigned. The roster order of each member can be adjusted as well.
+  - Click on SAVE to save crew into a JSON file.
+  - Click on NEXT to continue
 
-Turn based system:
-
-For any number of men. (With CP)
-0) Valk individual MU, 1,2,3
-1) Valk Men MU: 1,2,3   .... Valk Men No MU 
-
-For 4-6 men. 4 men reccomended. (No CP) Good for recon, light skirmish missions.
-2) Queue based shining ark mu individuals: 1,2,3
-3) Queue based divinity tu individuals: 1,2,3  ( TU onwards from here)
-4) Fluid Free-switch grid tu individuals: 1*,2,3 (Grid onwards from here)
-5) Queue based grid tu individuals: 1*,2,3
-
-* Not available with henchmen
-Henchmen* units usage of TUs are based off:
-- Union movable region from leader chain  - henchmen must regroup into zone before leader moves, stragglers will use individual TUs and highest among them be represpenseative of unit TUs being used. Also this doesn't work with reducing region based off enemy reaction fire.Just point and click prefered facing direction to move and attack if possible, once done.
-- Highest among them  - for best cohesiveness, but woudl result in a full stop with no recovery. 
-- Average among them -for best cohesiveness, but woudl result in a full stop with no recovery
-- Individuals TUs - may result in halter/blockers and screwed up formations with no recovery
-- Individual movable region 2,3 - may be difficult to keep track, may result in halters/blockers which screw up formations
-
-For any number of men.
-(With CP used for orders)
-6) CP RTS TU: 1,2,3
-7) CP RTS Grid: 2,3
-
-_________________________________-
-
-Start character generation:
-
-4-Men command slots 
-
-[], [], [], []
-1) Select your men into Alpha, Gamma, Beta sets, attempting to ensure boat party is harmonoius.
-For 4 men implementations:
-2) Choose any beta soldier you wish to promote to core party commander slots if there's any remaining. There can only be 1 party commander slot for each beta type.
-3) You then assign any remaining men under their command as followers by default . 
-4) You're done! Stats and personality will be generated for men in these 4 slots. 
-
-
-Asharena:
-
-PROGRESSION:
-1) Valk Men MU only up to 4 men in party follower and boatparty (>=4 men party campaign), Plain 4 men without henchmen (4 men party campaign)
-- Men MU can support the 4 men combat party following + Linked attack (even without followers)
-    - Men MU Support 4 men  for exploration mode and move seperately within screen distance from leader.
-    - Go up against, with disorganised henchmen without formations using Union fill.
-    - Multi 4 extensions with Startup they can move seperately or as group fireteams.
-      (So this means up to 13 men on the hunting party in Brothers in Arms style ala Filthy 13) COmmanding up to 4 groups (of 3 men each) is supported.
-_______________________
-
-- Test simple henchmen Union region fill with waypoints
-- else use highest among them or individual TUs MOB (without formations)
-2) Valk Men MU or 4 men with henchmen  (allow formations of >4 men)  (>4 men army campaign)
-
-
-Potentially disorganised barbarian-classed soldiers:
----------------------------------------------
-Skirmisher: Pirate faction
-Slavus: Gladiator faction
-Archer (modified): Knight faction  (Archer supports ranged)
-Huscarl/Gestir (modified): Vikign faction (Gestir supports ranged)
-
-Potential alchemy users: (mainly from Gladiator faction)
---------------------------
-Slavus
-Dimochai
-
-Potential Gunpowder users:  (mainly from Pirate faction)
-----------------------------
-Anyone from pirate faction
-
-Archery users (mainly from Pirate faction)
--------------------
-Crusaders:
-With the ability to use alchemy from Gladiator faction (despite faction animosities), they can infuse with archery, allowing for powerful barrages.
-_____________________________________________
-
-TODO:
-1) Add classes and weapon switching and ranged fire and archer indirect fire functionaility
- 1a) Add Healthbar indicators
-2) Add boat and small island for combat and HTML launchpad website   (currently no grouped movement for people on boat)
-  2a) Add jetty scenerio minigame
-3) Add 4men party followers and active chain partners for linked attacks 
-  3a) Include exploration branch
-4) Add barbarian detachment
-5) Add support for 13 men party exploration via 4 AI groups of 3 men each
-6) Add formation for >4 men <= 10 ,em. Try formations that are much larger than 3 men
-
-Launchpad demos with percentage completion:
-
-- Ship landing arena combat
- - Boat party only
-  - Boat party + Barbarian Allies detachment (currently not available)
-- Ship landing exploration island + combat
-  - <=4 men exploration team
-  - <=13 men exploration team (currently not available)
-- Jetty Fight Saboteur Minigame
-  - Turn-based fight and race to finsih line
-  - Turn-based fight with Armagedon weapons
-
- Can later add jetty to ship landing, once support for ship and other 2d zone movements are provided.
-
-Choose from any available turn-based system, movement cost system and pathfinding engine.
- 
-
-Turn based system:
-1) CP Valk with Movement Units
-2) Individual Time Units Team-switching
-3) Individual Time Units Queue
-4) CP RTS with Individual Time Units
-
-Movement Cost system:
-1) Analog 360-degree DOF 
-2) Stepwise 360-degree DOF
-3) Square/Rectangular Grid 
-4) Hex Grid 
-5) Arbituary Polymesh Graph
-
-Pathfinding engine:
-1) Revive and Recast/Detour
-2) Revive only
-3) Revive and Little
-
-
-
-Party cohesion levels:
----------------------
-Per CP, the following is available as your party cohesion ascends up levels. This means it's possible to not need to spend additional CP to micromanage individual units as you progress further up in rank.
-
-1) Individual Fire  (non CP also available)
-
-2) Support/Linked fire   (non CP also available)
-
-3) Guided ordered movement and fire   (non CP NOT available)
-
-4) Guided ordered actions  (non CP NOT available)
-
-
-________________
-
-
- 
+4) Setup scenerio:
+  -  Choose opponent warband crew via JSON,
+  -  Choose scenerio (another JSON file) or blank map environment to place unit slots.
+   - Click on BACK to return to previous screen
+   - Click on LAUNCH to start scenerio or map.
 
 -->
