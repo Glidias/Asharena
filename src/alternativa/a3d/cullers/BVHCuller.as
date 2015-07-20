@@ -269,7 +269,7 @@ package alternativa.a3d.cullers
 			if (rz < result.minZ) result.minZ = rz;
 		}
 		
-		public function addClone(cloneItem:MeshSetClone):void 
+		public function addClone(cloneItem:MeshSetClone):MeshSetClone 
 		{
 			var maxZ:Number;
 			var maxY:Number;
@@ -335,6 +335,7 @@ package alternativa.a3d.cullers
 			
 			tree.insertLeaf( node );
 			cloneNodeDict[cloneItem] = node;
+			return cloneItem;
 		}
 		
 		public function removeClone(cloneItem:MeshSetClone):void 

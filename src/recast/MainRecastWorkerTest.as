@@ -69,6 +69,7 @@ package recast
 			
 			super();
 			
+			
 			stage.align = StageAlign.TOP_LEFT;
 			stage.scaleMode = StageScaleMode.NO_SCALE;
 			

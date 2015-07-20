@@ -32,7 +32,7 @@ package recast
 		public static const CMD_ADD_AGENTS:int = 0; // not yet
 		public static const CMD_SET_AGENTS:int = 1;  //  (removes all existing agents. setup a new list of agents to use within the simulation using toWorkerBytes!). Responses via toMainChannelSync.
 		public static const CMD_REMOVE_AGENTS:int = 2; // not yet (need to add later.)
-		public static const CMD_MOVE_AGENTS:int = 3; // not yet (required.)
+		public static const CMD_MOVE_AGENTS:int = 3; // 
 		public static const CMD_CREATE_ZONE:int = 4;  //  (create a new set of wavefront obstacles under toWorkerVertex/Index buffers on app-specific default plane)
 		
 		public static const CMD_3D_NEW_ZONE:int = 5; // not yet (create a new 3d zone under toWorkerVertex/Index buffers using standard 3d notation)
