@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Character Gen</title>
+	
+	<script src="js/charutil.js"></script>
+	<script src="js/jquery.min.js"></script>
+	<script src="js/angular.min.js"></script>
+	<script src="js/angular-stepper.js"></script>
+	
+	<style>
+	.character {
+		font-size:13px;
+	}
+	</style>
+	
+	<script>
+
+	// ANGULAR JS!
+	(function() {
+			
+		var charApp = angular.module('charactergen', [
+			'revolunet.stepper'
+		]);
+		
+	
+		charApp.controller('CharGenController', function($scope) {
+			$scope.charList = CharClassGenList;
+			
+			var curChar = CharGenUtil.createNewCharBase($scope);
+			
+			function handleClassification(cid) {
+				if (cid == null) {
+					return curChar.classId;
+				}
+				CharGenUtil.reClassify(curChar, CharClassGenList[cid] );
+				return curChar.classId;
+			}
+			
+			function handleLevelChange(lev) {
+				if (lev!=null) curChar.level = lev;
+				
+				if (curChar.classId == null) {
+					return curChar.level;
+				}
+			
+				CharGenUtil.reClassify(curChar, CharClassGenList[curChar.classId] );
+				//	alert("A:"+curChar.classId);
+				return curChar.level;
+			}
+			
+
+			$scope.classification = handleClassification;
+			$scope.handleLevelChange = handleLevelChange;
+		});
+		
+	
+	})();
+
+	
+	</script>
+</head>
+<body>
+	<div ng-app="charactergen" class="character" ng-controller="CharGenController">
+		<label>Class:</label>
+
+		<select ng-model="classification" ng-model-options="{ getterSetter: true }">
+			<option value="{{ c.id }}"  ng-repeat="c in charList track by $index">{{  c.name }}</option>
+		</select>
+		<label>id: <i>{{ classId }}</i></label>
+		<br/>
+		
+		<div>
+			<label>Level: </label><span ng-model="handleLevelChange" ng-model-options="{ getterSetter: true }" rn-stepper  min="1" max="20"></span>
+		</div>
+
+		<h1>Attributes:</h1>
+		<div>Strength: {{ attr.str }}</div>
+		<div>Dexterity: {{ attr.dex }}</div>
+		<div>Speed: {{ attr.spd }}</div>
+		<div>Constitution: {{ attr.con }}</div>
+		<div>Perception: {{ attr.per }}</div>
+		<div>Intelligence: {{ attr.intl }}</div>
+
+		<h1>Training:</h1>
+		<div>Evasion: {{ abil.evasion }}</div>
+		<div>Shield: {{ abil.shield }}</div>
+		
+		<h1>Defences:</h1>
+		<div>Armour Rating: {{ (classId ? charList[classId].defaultArmour : 0) }}</div>
+		<div>Shield Block Rating: {{ (classId ? charList[classId].defaultShield : 0)  }}</div>
+		
+		<h1>Weapons:</h1>
+		<ul class="weaponlist">
+			<li class="held-weapon">
+				<input type="radio" name="weapon" id="weaponid" value="male">
+				<label for="weaponid">
+					<span>WeaponName</span>
+					<div>Offense Rating:</div>
+				</label>
+			</li>
+		</ul>
+		
+		<h2>Defence Rating Results:</h2>
+		<div>Evade: todo</div>
+		<div>Block: todo</div>
+		<div>Parry: todo</div>
+		<br/>
+		
+		
+		
+		<hr/>
+	</div>
+	
+	
+	
+	<div class="weapon">
+		<div>Name:</div>
+		<div>Offense Rating:</div>
+	</div>
+	
+</body>
+</html>
