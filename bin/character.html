@@ -13,6 +13,17 @@
 	.character {
 		font-size:13px;
 	}
+	.training {
+		list-style-type:none;
+
+	}
+	.training li {
+		margin:0;
+		padding:0;
+		display:inline-block;margin-right:20px;
+		text-indent:0;
+		
+	}
 	</style>
 	
 	<script>
@@ -28,30 +39,33 @@
 		charApp.controller('CharGenController', function($scope) {
 			$scope.charList = CharClassGenList;
 			
-			var curChar = CharGenUtil.createNewCharBase($scope);
+			var curChar = CharGenUtil.createNewCharBase({});
+			$scope.ch = curChar;
 			
 			function handleClassification(cid) {
 				if (cid == null) {
 					return curChar.classId;
 				}
-				CharGenUtil.reClassify(curChar, CharClassGenList[cid] );
+				CharGenUtil.reClassify(curChar, CharClassGenList[cid], true);
 				return curChar.classId;
 			}
 			
 			function handleLevelChange(lev) {
 				if (lev!=null) curChar.level = lev;
-				
+			
 				if (curChar.classId == null) {
 					return curChar.level;
 				}
 			
-				CharGenUtil.reClassify(curChar, CharClassGenList[curChar.classId] );
+				CharGenUtil.reClassify(curChar, CharClassGenList[curChar.classId], true );
 				//	alert("A:"+curChar.classId);
 				return curChar.level;
 			}
 			
 
 			$scope.classification = handleClassification;
+			$scope.Math = Math;
+			$scope.skillLabels = WARBAND_SKILLS;
 			$scope.handleLevelChange = handleLevelChange;
 		});
 		
@@ -66,45 +80,71 @@
 		<label>Class:</label>
 
 		<select ng-model="classification" ng-model-options="{ getterSetter: true }">
-			<option value="{{ c.id }}"  ng-repeat="c in charList track by $index">{{  c.name }}</option>
+			<option value="{{ c.id }}"  ng-repeat="c in charList track by $index">{{ c.name }}</option>
 		</select>
-		<label>id: <i>{{ classId }}</i></label>
+		<label>id: <i>{{ ch.classId }}</i></label>
 		<br/>
 		
 		<div>
 			<label>Level: </label><span ng-model="handleLevelChange" ng-model-options="{ getterSetter: true }" rn-stepper  min="1" max="20"></span>
 		</div>
+		
+		<label>Name: </label><input type="text" ng-model="ch.name"></input>
+		<br/><br/>
+		<button>Reset Character todo</button>
+		
+		<h1>Vita:</h1>
+		<div>Health: todo</div>
+		<div>Movement: todo</div>
+		<div>Stamina: todo</div>
 
 		<h1>Attributes:</h1>
-		<div>Strength: {{ attr.str }}</div>
-		<div>Dexterity: {{ attr.dex }}</div>
-		<div>Speed: {{ attr.spd }}</div>
-		<div>Constitution: {{ attr.con }}</div>
-		<div>Perception: {{ attr.per }}</div>
-		<div>Intelligence: {{ attr.intl }}</div>
+		<div>Strength: {{ ch.attr.str }}</div>
+		<div>Dexterity: {{ ch.attr.dex }}</div>
+		<div>Speed: {{ ch.attr.spd }}</div>
+		<div>Constitution: {{ ch.attr.con }}</div>
+		<div>Perception: {{ ch.attr.per }}</div>
+		<div>Intelligence: {{ ch.attr.intl }}</div>
 
 		<h1>Training:</h1>
-		<div>Evasion: {{ abil.evasion }}</div>
-		<div>Shield: {{ abil.shield }}</div>
+		<p>Training points available: todo</p>
+		<!--
+		<p>
+			Training points available for level:
+			<br/>Training points alloted for level:
+		</p>
+		-->
+		<ul class="training">
+			<li ng-repeat="c in ch.skills track by $index">{{skillLabels[c].label}}: {{ ch.training[c] }} <span class="allot"><span class="plus">[<a href="javascript:;">+</a>]</span><span class="minus">[<a href="javascript:;">-</a>]</span></span></li>
+		</ul>
 		
 		<h1>Defences:</h1>
-		<div>Armour Rating: {{ (classId ? charList[classId].defaultArmour : 0) }}</div>
-		<div>Shield Block Rating: {{ (classId ? charList[classId].defaultShield : 0)  }}</div>
+		<div>Armour Rating: {{ ch.armourRating }}</div>
+		<div>Shield Block Rating: {{ ch.blockRating  }}</div>
 		
 		<h1>Weapons:</h1>
 		<ul class="weaponlist">
 			<li class="held-weapon">
 				<input type="radio" name="weapon" id="weaponid" value="male">
 				<label for="weaponid">
-					<span>WeaponName</span>
-					<div>Offense Rating:</div>
+					<span>WeaponName todo</span>
+					<div>Offense Rating: {{ 60 + (ch.attr.str) * 6 }}</div>
 				</label>
 			</li>
 		</ul>
 		
+		<!--
+			Held Weapon Training: 0 - 25%
+			Parry Rating of Held Weapon: 0 - 80%
+			From Dexterity: 0 - 75%
+			--
+			From nature of attack base with stat attribute: (30 - 80)
+			From Strength/Dexterity: (30 - 200)
+		-->
+		
 		<h2>Defence Rating Results:</h2>
-		<div>Evade: todo</div>
-		<div>Block: todo</div>
+		<div>Evade: {{ 5*(ch.training.evasion || 0) + (ch.attr.spd-5)*5 + (ch.attr.dex-5)*5 }}</div>
+		<div>Block: {{ 5*(ch.training.shield || 0) +  Math.round( (ch.attr.dex-5)*5/75*ch.blockRating ) + Math.round(ch.blockRating/80*75) }}</div>
 		<div>Parry: todo</div>
 		<br/>
 		
@@ -114,11 +154,12 @@
 	</div>
 	
 	
-	
-	<div class="weapon">
-		<div>Name:</div>
-		<div>Offense Rating:</div>
-	</div>
-	
+	<h1>Weapon Armoury:</h1>
+	<ul class="weapon-armoury">
+		<li>
+			<div>Name:</div>
+			<div>Offense Rating:</div>
+		</li>
+	</ul>
 </body>
 </html>

@@ -84,7 +84,7 @@ function createArrIdHash(arr) {
 // Default Character classes
 
 var CharClassGenList = [
-	{ 
+	{
 		"id":"knight"
 		,"name":"Knight"
 		,"attrStartBonus":{
@@ -104,7 +104,10 @@ var CharClassGenList = [
 			intl: .5
 		}
 		,"defaultArmour": 70
-		,"defaultShield": 40
+		,"defaultShield": 65
+		,"skills": ["armour", "shield", "twoHandedMelee", "sword", "manAtArms", "willpower", "bodybuilding"]
+		,"startSkills": ["armour", "shield", "2hMelee", "sword"]
+		,"favskill": "armour"
 	}
 	,{
 		"id":"bowman"
@@ -127,6 +130,9 @@ var CharClassGenList = [
 		}
 		,"defaultArmour": 20
 		,"defaultShield": 0
+		,"skills": ["bow", "crossbow", "rangedTactics", "bodybuilding", "willpower", "ranger", "sword"]
+		,"startSkills": ["longbow", "crossbow", "rangedTactics"]
+		,"favskill": "rangedTactics"
 	}
 	/*
 	,{
@@ -145,6 +151,42 @@ CharClassGenList.attrArray = ["str", "dex", "spd", "con", "per", "intl"];
 
 createArrIdHash(CharClassGenList);  // create hash id lookup for array
 
+// Skill Hash
+var WARBAND_SKILLS = {
+	"oneHandedMelee": {label: "One-handed Melee" }
+	,"twoHandedMelee": {label: "Two-handed Melee" }
+	,"dualWeilding": {label: "Dual Weilding Melee" }
+	,"fireArms": {label: "Firearms" }
+	,"archery": {label: "Archery" }
+	,"rangedTactics": {label: "Ranged Tactics" }
+	,"shield": {label: "Shield" }
+	,"martial": {label: "Martial" }
+	,"evasion": {label: "Evasion" }
+	,"grenade": {label: "Grenade" }
+	,"armour": {label: "Armour Specialist" }
+	,"bodybuilding": {label: "Body Building" }
+	,"willpower": {label: "Willpower" }
+	,"manAtArms": {label: "Man-at-Arms" }
+	,"scoundrel": {label: "Scoundrel" }
+	,"ranger": {label: "Ranger" }
+	,"hydrosophist": {label: "Hydrosophist" }
+	,"aerotheurge": {label: "Aerotheurge" }
+	,"pyrokinetic": {label: "Pyrokinetic" }
+	,"geomancer": {label: "Geomancer" }
+	,"spiritmagi": {label: "Spiritmagi" }
+	,"bow": {label: "Bow" }
+	,"crossbow": {label: "Crossbow" }
+	,"dagger": {label: "Dagger" }
+	,"sword": {label: "Sword" }
+	,"axe": {label: "Axe" }
+	,"spear": {label: "Spear" }
+	,"blunt": {label: "Blunt Weapon" }
+	,"staff": {label: "Staff" }
+	,"shotgun": {label: "Shotgun" }
+	,"rifle": {label: "Rifle" }
+	
+}
+
 // Character generation util methods
 var PRNG = new PM_PRNG();
 
@@ -160,6 +202,8 @@ var CharGenUtil = {
 			per: 5,
 			intl: 5
 		};
+		
+		obj.blockRating = 0;
 		
 		if (namer == null) namer = Math.floor( Math.random()*PRNG.MAX );
 		if (typeof namer === "string") {
@@ -177,18 +221,37 @@ var CharGenUtil = {
 			per: obj.attr.per,
 			intl: obj.attr.intl
 		};
+		
+		obj.skills = [];
 	
-		obj.abil = {
-			evasion: 0,
-			shield: 0
-		}
+
 		
 		return obj;
 	}
-	,reClassify: function(obj, classProps) {
+	,reClassify: function(obj, classProps, isNew) {
 		obj.classId = classProps.id;
 		
+		var i;
+		var len;
+		
+		if (isNew) {
+			var skills;
+			len = classProps.favSkills;
+			for (i=0; i< len; i++) {
+				
+			}
+			obj.training = {};
+			obj.skills = skills =  classProps.skills;
+			len = skills.length;
+			for (i=0; i <len; i++) {
+				obj.training[skills[i]] = 0;
+			}
+			
+			obj.armourRating = classProps.defaultArmour;
+			obj.blockRating = classProps.defaultShield;
+		}
 
+		
 		function recalculateWeights() {
             
   
@@ -227,8 +290,8 @@ var CharGenUtil = {
 		PRNG.seed = obj.seed;
 		var levelsProgressed = obj.level - 1;
 		
-        var len = attrArray.length;
-		var i;
+        len = attrArray.length;
+		
 		var prop;
 		var weights = [];
         for (i = 0; i < len; i++) {
