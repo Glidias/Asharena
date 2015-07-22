@@ -13,6 +13,17 @@
 	.character {
 		font-size:13px;
 	}
+	.training {
+		list-style-type:none;
+
+	}
+	.training li {
+		margin:0;
+		padding:0;
+		display:inline-block;margin-right:20px;
+		text-indent:0;
+		
+	}
 	</style>
 	
 	<script>
@@ -34,7 +45,7 @@
 				if (cid == null) {
 					return curChar.classId;
 				}
-				CharGenUtil.reClassify(curChar, CharClassGenList[cid] );
+				CharGenUtil.reClassify(curChar, CharClassGenList[cid], true);
 				return curChar.classId;
 			}
 			
@@ -45,13 +56,15 @@
 					return curChar.level;
 				}
 			
-				CharGenUtil.reClassify(curChar, CharClassGenList[curChar.classId] );
+				CharGenUtil.reClassify(curChar, CharClassGenList[curChar.classId], true );
 				//	alert("A:"+curChar.classId);
 				return curChar.level;
 			}
 			
 
 			$scope.classification = handleClassification;
+			
+			$scope.skillLabels = WARBAND_SKILLS;
 			$scope.handleLevelChange = handleLevelChange;
 		});
 		
@@ -66,7 +79,7 @@
 		<label>Class:</label>
 
 		<select ng-model="classification" ng-model-options="{ getterSetter: true }">
-			<option value="{{ c.id }}"  ng-repeat="c in charList track by $index">{{  c.name }}</option>
+			<option value="{{ c.id }}"  ng-repeat="c in charList track by $index">{{ c.name }}</option>
 		</select>
 		<label>id: <i>{{ classId }}</i></label>
 		<br/>
@@ -74,6 +87,15 @@
 		<div>
 			<label>Level: </label><span ng-model="handleLevelChange" ng-model-options="{ getterSetter: true }" rn-stepper  min="1" max="20"></span>
 		</div>
+		
+		<label>Name: </label><input type="text" ng-model="name"></input>
+		<br/><br/>
+		<button>Reset Character todo</button>
+		
+		<h1>Vita:</h1>
+		<div>Health: todo</div>
+		<div>Movement: todo</div>
+		<div>Stamina: todo</div>
 
 		<h1>Attributes:</h1>
 		<div>Strength: {{ attr.str }}</div>
@@ -84,8 +106,16 @@
 		<div>Intelligence: {{ attr.intl }}</div>
 
 		<h1>Training:</h1>
-		<div>Evasion: {{ abil.evasion }}</div>
-		<div>Shield: {{ abil.shield }}</div>
+		<p>Training points available: todo</p>
+		<!--
+		<p>
+			Training points available for level:
+			<br/>Training points alloted for level:
+		</p>
+		-->
+		<ul class="training">
+			<li ng-repeat="c in skills track by $index">{{skillLabels[c].label}}: {{ training[c] }} <span class="allot"><span class="plus">[<a href="javascript:;">+</a>]</span><span class="minus">[<a href="javascript:;">-</a>]</span></span></li>
+		</ul>
 		
 		<h1>Defences:</h1>
 		<div>Armour Rating: {{ (classId ? charList[classId].defaultArmour : 0) }}</div>
@@ -96,8 +126,8 @@
 			<li class="held-weapon">
 				<input type="radio" name="weapon" id="weaponid" value="male">
 				<label for="weaponid">
-					<span>WeaponName</span>
-					<div>Offense Rating:</div>
+					<span>WeaponName todo</span>
+					<div>Offense Rating: todo</div>
 				</label>
 			</li>
 		</ul>
@@ -114,11 +144,12 @@
 	</div>
 	
 	
-	
-	<div class="weapon">
-		<div>Name:</div>
-		<div>Offense Rating:</div>
-	</div>
-	
+	<h1>Weapon Armoury:</h1>
+	<ul class="weapon-armoury">
+		<li>
+			<div>Name:</div>
+			<div>Offense Rating:</div>
+		</li>
+	</ul>
 </body>
 </html>
