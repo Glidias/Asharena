@@ -38,10 +38,13 @@
 	
 		charApp.controller('CharGenController', function($scope) {
 			$scope.charList = CharClassGenList;
+			$scope.warbandWeapons = WARBAND_WEAPONS;
+
 			
 			var curChar = CharGenUtil.createNewCharBase({});
 			$scope.ch = curChar;
 			
+
 			function handleClassification(cid) {
 				if (cid == null) {
 					return curChar.classId;
@@ -62,10 +65,24 @@
 				return curChar.level;
 			}
 			
-
+			$scope.onResetBtnClick = function(elem) {
+			
+				$scope.ch = curChar = CharGenUtil.createNewCharBase({}, $scope.newname);
+			};
+			
+			$scope.getWeaponModeDamage = function(ch, w, f) {
+				return f.damage + Math.min(f.damageUp, (ch.attr.str-w.minStrength) * f.strDamageScale);
+			}
+			$scope.getWeaponModeOffence = function(ch, w, f) {
+				return f.offenceRating + Math.min(f.offenceRatingUp, (w.minDexRequired ? ch.attr.dex-w.minDexRequired : ch.attr.str - w.minStrength) * f.offenceScale  );
+			}
+			
+			
 			$scope.classification = handleClassification;
 			$scope.Math = Math;
 			$scope.skillLabels = WARBAND_SKILLS;
+			
+			
 			$scope.handleLevelChange = handleLevelChange;
 		});
 		
@@ -75,8 +92,8 @@
 	
 	</script>
 </head>
-<body>
-	<div ng-app="charactergen" class="character" ng-controller="CharGenController">
+<body ng-app="charactergen" ng-controller="CharGenController">
+	<div  class="character">
 		<label>Class:</label>
 
 		<select ng-model="classification" ng-model-options="{ getterSetter: true }">
@@ -89,14 +106,14 @@
 			<label>Level: </label><span ng-model="handleLevelChange" ng-model-options="{ getterSetter: true }" rn-stepper  min="1" max="20"></span>
 		</div>
 		
-		<label>Name: </label><input type="text" ng-model="ch.name"></input>
+		<label>Name: </label><input type="text" ng-model="ch.name"></input> <label>{{ ch.seed }}</label>
 		<br/><br/>
-		<button>Reset Character todo</button>
+		<button ng-click="onResetBtnClick();">Reset Character</button><input type="text" ng-model="newname" placeholder="optional defined name" />
 		
 		<h1>Vita:</h1>
-		<div>Health: todo</div>
-		<div>Movement: todo</div>
-		<div>Stamina: todo</div>
+		<div>Health: {{  Math.round(6.2*ch.level + 6.2*ch.attr.con) }}</div>
+		<div>Movement: {{ 5 + (ch.attr.spd-5)*1 }}</div>
+		<div>Stamina: {{ 5 + (ch.attr.con-5)*1 }}</div>
 
 		<h1>Attributes:</h1>
 		<div>Strength: {{ ch.attr.str }}</div>
@@ -119,16 +136,18 @@
 		</ul>
 		
 		<h1>Defences:</h1>
-		<div>Armour Rating: {{ ch.armourRating }}</div>
-		<div>Shield Block Rating: {{ ch.blockRating  }}</div>
+		<div>Armour Rating: {{ ch.armourRating ? Math.round(ch.armourRating + (ch.training.armour || 0)*5/100*ch.armourRating) : 0 }}</div>
+		<div>Shield's Block Rating: {{ ch.blockRating  }}</div>
 		
-		<h1>Weapons:</h1>
+		<h1>Weapon Rating Results:</h1>
 		<ul class="weaponlist">
-			<li class="held-weapon">
-				<input type="radio" name="weapon" id="weaponid" value="male">
+			<li class="held-weapon" ng-repeat="w in ch.weapons track by $index">
+				<input type="radio" name="weapon" id="weaponid" ng-model="ch.heldWeapon" value="{{ w.id }}">
 				<label for="weaponid">
-					<span>WeaponName todo</span>
-					<div>Offense Rating: {{ 60 + (ch.attr.str) * 6 }}</div>
+					<span>{{ w.name }}</span>
+					<div ng-show="w.fireModes.swing !=null">Swing Offense Rating | Damage:: {{ getWeaponModeOffence(ch, w, w.fireModes.swing) }} | {{ getWeaponModeDamage(ch, w, w.fireModes.swing) }}</div>
+					<div ng-show="w.fireModes.thrust !=null">Thrust Offense Rating | Damage:: {{ getWeaponModeOffence(ch, w, w.fireModes.thrust) }} | {{  getWeaponModeDamage(ch, w, w.fireModes.thrust)  }}</div>
+					<div>Parry Rating: {{ w.parry }}</div>
 				</label>
 			</li>
 		</ul>
@@ -145,21 +164,22 @@
 		<h2>Defence Rating Results:</h2>
 		<div>Evade: {{ 5*(ch.training.evasion || 0) + (ch.attr.spd-5)*5 + (ch.attr.dex-5)*5 }}</div>
 		<div>Block: {{ 5*(ch.training.shield || 0) +  Math.round( (ch.attr.dex-5)*5/75*ch.blockRating ) + Math.round(ch.blockRating/80*75) }}</div>
-		<div>Parry: todo</div>
+		<div>Parry: {{ (ch.heldWeapon ? Math.round(warbandWeapons[ch.heldWeapon].parry*(ch.attr.dex-5)*5/75 + (ch.attr.dex-5)*5 + warbandWeapons[ch.heldWeapon].parry) : 0) }}</div>
 		<br/>
-		
+	
 		
 		
 		<hr/>
 	</div>
 	
-	
+	<!--
 	<h1>Weapon Armoury:</h1>
 	<ul class="weapon-armoury">
-		<li>
-			<div>Name:</div>
-			<div>Offense Rating:</div>
+		<li ng-repeat="w in warbandWeapons track by $index">
+			<div>Name: {{ w.name }}</div>
+			<div>Parry Rating: {{ w.parry }}</div>
 		</li>
 	</ul>
+	-->
 </body>
 </html>

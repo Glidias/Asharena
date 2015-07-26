@@ -79,6 +79,7 @@ function createArrIdHash(arr) {
 	for (i=0; i<len; i++) {
 		arr[arr[i].id] = arr[i];
 	}
+	return arr;
 }
 
 // Default Character classes
@@ -103,11 +104,13 @@ var CharClassGenList = [
 			per: .5,
 			intl: .5
 		}
-		,"defaultArmour": 70
+		,"defaultArmour": 25
+		,"defaultArmourMovePenalty": 12
 		,"defaultShield": 65
 		,"skills": ["armour", "shield", "twoHandedMelee", "sword", "manAtArms", "willpower", "bodybuilding"]
 		,"startSkills": ["armour", "shield", "2hMelee", "sword"]
 		,"favskill": "armour"
+		,"weaponLoadout": ["longSword", "twoHandedSword"]
 	}
 	,{
 		"id":"bowman"
@@ -129,10 +132,12 @@ var CharClassGenList = [
 			intl: .15
 		}
 		,"defaultArmour": 20
+		,"defaultArmourMovePenalty": 0
 		,"defaultShield": 0
 		,"skills": ["bow", "crossbow", "rangedTactics", "bodybuilding", "willpower", "ranger", "sword"]
 		,"startSkills": ["longbow", "crossbow", "rangedTactics"]
 		,"favskill": "rangedTactics"
+		,"weaponLoadout": ["longbow", "crossbow", "shortSword"]
 	}
 	/*
 	,{
@@ -187,11 +192,95 @@ var WARBAND_SKILLS = {
 	
 }
 
+var FIREMODE_THRUST = 1;	 // thrusting motion
+var FIREMODE_SWING = 2;	// swing (side) motion 
+var FIREMODE_STRIKE = 3; 	 // strike (swing from top) chop motion
+var FIREMODE_RAY = 0;		// ray hitscan shot (suitable for bullets and such..)
+var FIREMODE_TRAJECTORY = -1;  // for thrown/launched projectiles with trajectory
+var FIREMODE_VELOCITY = -2; 	// for velocity projectile weapons
+var RANGEMODE_MELEE = 0;
+var RANGEMODE_GUN = 1;		// weapon is pre-aimed beforehand, tends to fire straight
+var RANGEMODE_BOW = 2;		// weapon is pre-aimed beforehand, will shoot in clear trajectory
+var RANGEMODE_THROW = 3;	// weapon isn't pre-aimed, swing will occur, and will throw in trajectory once swing 
+	
+	
+var WARBAND_ARMOURY_UTIL = {
+	createGenericLongSword: function(ider, namer) {
+		return {
+			id:ider
+			,name: namer
+			,parry: 80
+			,minStrength:5
+			,minDexRequired:0
+			,fireModes: createArrIdHash([
+				{
+				id: "swing"
+				,minRange: 1
+				,maxRange: 1
+				,fireMode: FIREMODE_SWING
+				,rangeMode: RANGEMODE_MELEE
+				,damage: 20
+				,damageUp: 10
+				,strDamageScale:1	
+				,offenceRating: 50
+				,offenceRatingUp: 15
+				,offenceScale:1
+				}
+				,{
+				id: "thrust"
+				,minRange: 1
+				,maxRange: 1
+				,fireMode: FIREMODE_THRUST
+				,rangeMode: RANGEMODE_MELEE
+				,damage: 20
+				,damageUp: 10
+				,minStrength:5
+				,strDamageScale:1	
+				,offenceRating: 50
+				,offenceRatingUp: 15
+				,offenceScale:1
+				}
+			])
+		};
+	}
+	,createGeneric2HSword: function(ider, namer) {
+		
+	}
+	,createGenericShortSword: function(ider, namer) {
+		
+	}
+	,createGenericDagger: function(ider, namer) {
+		
+	}
+	,createGenericAxe: function(ider, namer) {
+		
+	}
+};
+
+var WARBAND_WEAPONS = [
+	WARBAND_ARMOURY_UTIL.createGenericLongSword("longSword", "Long Sword")
+];
+createArrIdHash(WARBAND_WEAPONS); 
+
 // Character generation util methods
 var PRNG = new PM_PRNG();
 
 var CharGenUtil = {
 	createNewCharBase: function(obj, namer) {
+		
+		function strToSeed(str) {
+			var seed = 0;
+			var i =0;
+		// Convert the string into a number. This is a cheesy way to
+		// do it but it doesn't matter. It just allows people to use
+		// words as seeds.
+			for (i = 0; i < str.length; i++) {
+				seed = (seed << 4) | str.charCodeAt(i);
+			}
+			seed %= PRNG.MAX;
+			return seed;
+		}
+			
 		if (!obj) obj = {};
 		obj.level = 1;
 		obj.attr = {
@@ -205,9 +294,16 @@ var CharGenUtil = {
 		
 		obj.blockRating = 0;
 		
-		if (namer == null) namer = Math.floor( Math.random()*PRNG.MAX );
+		if (namer == null) {
+			namer = Math.floor( Math.random()*PRNG.MAX );
+			obj.name = "No."+namer;
+		}
+		else {
+			obj.name = namer;
+		}
 		if (typeof namer === "string") {
 			// todo: convert name to string
+			namer =strToSeed(namer);
 			
 		}
 		
@@ -236,19 +332,31 @@ var CharGenUtil = {
 		
 		if (isNew) {
 			var skills;
-			len = classProps.favSkills;
+			len = classProps.startSkills.length;
+			var startingSkills = {};
 			for (i=0; i< len; i++) {
-				
+				startingSkills[classProps.startSkills[i]] = true;
 			}
 			obj.training = {};
 			obj.skills = skills =  classProps.skills;
 			len = skills.length;
 			for (i=0; i <len; i++) {
-				obj.training[skills[i]] = 0;
+				obj.training[skills[i]] = startingSkills[skills[i]] ? 1 : 0;
 			}
 			
 			obj.armourRating = classProps.defaultArmour;
 			obj.blockRating = classProps.defaultShield;
+			
+			obj.weapons = [];
+			len = classProps.weaponLoadout.length;
+			for (i=0; i <len; i++) {
+				
+				if (WARBAND_WEAPONS[classProps.weaponLoadout[i]]) obj.weapons.push( WARBAND_WEAPONS[classProps.weaponLoadout[i]] );
+			}
+			
+			if (obj.weapons.length) {
+				obj.heldWeapon = obj.weapons[0].id;
+			}
 		}
 
 		
