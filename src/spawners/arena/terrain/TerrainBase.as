@@ -26,6 +26,7 @@ package spawners.arena.terrain
 		private var assetClasse:Class;
 		private var terrainHeightScale:Number;
 		private var mapScale:Number;
+		private var tileScale:Number;
 		
 		
 		public var terrain:TerrainLOD;
@@ -38,9 +39,10 @@ package spawners.arena.terrain
 		public var FAR_CLIPPING:Number;
 		 
 		
-		public function TerrainBase(assetClasse:Class, heightScale:Number=1 ) 
+		public function TerrainBase(assetClasse:Class, heightScale:Number=1, tileScale:Number=1 ) 
 		{
-			TERRAIN_HEIGHT_SCALE = heightScale;
+			this.tileScale = tileScale;
+			TERRAIN_HEIGHT_SCALE = heightScale * tileScale;
 			new LoadAliases();
 			this.assetClasse = assetClasse;
 			ASSETS = [assetClasse, MistEdge];
@@ -84,6 +86,9 @@ package spawners.arena.terrain
 		public function getNewTerrain(material:Material, uvTileSize:int = 0, requirements:int = -1, terrainHeightScale:Number = 1, mapScale:Number = 1, tileSize:Number = 256):TerrainLOD {
 			terrain = new TerrainLOD();
 			terrain.scaleZ = TERRAIN_HEIGHT_SCALE;
+			
+			terrain.scaleX = tileScale;
+			terrain.scaleY = tileScale;
 
 			terrain.loadSinglePage(context3D, loadedPage, material, uvTileSize, requirements, tileSize);
 			loadedPage.heightMap.XOrigin = loadedPage.xorg;
