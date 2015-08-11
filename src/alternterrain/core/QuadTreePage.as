@@ -101,7 +101,7 @@ package alternterrain.core
 		public static function createFlat(x:int, y:int, numTiles:int, tileSize:int = 256):QuadTreePage {
 			
 			var heightMap:HeightMapInfo = HeightMapInfo.createFlat(numTiles, tileSize);
-			var root:QuadTreePage = TerrainLOD.installQuadTreePageFromHeightMap(heightMap, 0, 0, 256, 0);
+			var root:QuadTreePage = TerrainLOD.installQuadTreePageFromHeightMap(heightMap, x, y, tileSize, 0);
 
 
 			return root;

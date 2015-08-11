@@ -1528,7 +1528,7 @@ package alternterrain.objects
 					
 					if (tree != null && boundIntersectRay(origin, direction, tree.xorg, tree.zorg, tree.Square.MinY, tree.xorg + ((1 << tree.Level) << 1), tree.zorg + ((1 << tree.Level) << 1), tree.Square.MaxY )) {
 						_currentPage = tree;
-			
+
 						if (calculateDDAIntersect(rayData, tree.heightMap, tree, origin, direction)) return rayData;
 					}
 					
@@ -2225,7 +2225,11 @@ package alternterrain.objects
 					
 				radius = radius < (tileSize>>1) ? (tileSize>>1) : radius;
 				var startX:int = (sphere.x - hxorg - radius )  * tileSizeInv - 1;
-				var startY:int = (-sphere.y  - hzorg - radius) * tileSizeInv - 1;
+				var startY:int = ( -sphere.y  - hzorg - radius) * tileSizeInv - 1;
+				startX = startX < 0 ? 0 : startX >= hm.XSize ? startX -1 : startX;
+				startY = startY < 0 ? 0 : startY  >= hm.ZSize ? startY - 1 : startY;
+				
+			
 				var data:Vector.<int> = hm.Data;
 				var len:int = radius * 2 * tileSizeInv + 2;
 				var xtmax:int = startX + len;

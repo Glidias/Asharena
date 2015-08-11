@@ -1,5 +1,8 @@
 package;
 import arena.components.char.EllipsoidPointSamples;
+import arena.pathfinding.GKAstar;
+import arena.pathfinding.GKDijkstra;
+import arena.pathfinding.GKGrapher;
 import arena.systems.player.IStance;
 import arena.systems.player.IWeaponLOSChecker;
 import arena.systems.player.AnimAttackSystem;
@@ -96,6 +99,10 @@ class TheGame
 		Spawner;
 		GroundPlaneCollisionSystem;
 		TweenSystem;
+		
+		GKDijkstra;
+		GKAstar;
+		GKGrapher;
 		
 		LimitedPlayerMovementSystem;
 		PlayerTargetingSystem;

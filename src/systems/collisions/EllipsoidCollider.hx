@@ -710,16 +710,21 @@ package systems.collisions;
 		 * @param displacement Displacement vector.
 		 * @param resCollisionPoint Collision point will be written into this variable.
 		 * @param resCollisionPlane Collision plane (defines by normal) parameters will be written into this variable.
-		 * @param object The object to use in collision detection. If a container is specified, all its children will be tested for collison with ellipsoid.
+		 * @param collidable The object to use in collision detection. If a container is specified, all its children will be tested for collison with ellipsoid.
 		 * @param excludedObjects An associative array whose keys are instances of <code>Object3D</code> and its children.
 		 * @return <code>true</code> if collision detected and <code>false</code> otherwise.
 		 */
 	//	/*
-		public function getCollision(source:Vector3D, displacement:Vector3D, resCollisionPoint:Vector3D, resCollisionPlane:Vector3D):Bool {
+		public function getCollision(source:Vector3D, displacement:Vector3D, resCollisionPoint:Vector3D, resCollisionPlane:Vector3D,  collidable:IECollidable):Bool {
 			
 			if (displacement.length <= threshold) return false;
 			
 			prepare(source, displacement);
+			collidable.collectGeometry(this);
+			loopGeometries();
+			
+			
+		
 			
 			if (numFaces > 0) {
 				if (checkCollision() < 1) {
