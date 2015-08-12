@@ -74,7 +74,7 @@ class GKDijkstra {
 			for (edge in edges) {
 				/* 5.- For each edge calculate the cost of moving from the source node to the arrival Node */
 				
-				if ( edge.flags == GKEdge.VALUE_INVALID) {
+				if  ( (edge.flags & GKEdge.FLAG_INVALID)!=0 )  {
 					continue;
 				}
 				//The total cost is calculated by: Cost of the node + Cost of the edge
