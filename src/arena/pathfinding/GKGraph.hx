@@ -138,7 +138,7 @@ class GKGraph {
 		var visitedEdgeVector:BitVector  = new BitVector(totalNodes * 8); 
 	
 		// push into list of steep nodes as a tuple of (x,y)
-		var steepNodes:Vector<Int> = TypeDefs.createIntVector(totalNodes, true);
+		var steepNodes:Vector<Int> = TypeDefs.createIntVector(0,false);
 		
 		// approx steep edge gradient 
 		var gradient:Float = Math.tan( Math.acos(normalZThreshold) );
@@ -158,21 +158,21 @@ class GKGraph {
 				count = 0;
 				var h:Float = heightMap[y * verticesAcross + x];
 				var masker:Int = (y & 1)  != (x&1) ? EDGE_MASK_MISMATCH_EVEN_ODD : EDGE_MASK_MATCH_EVEN_ODD;
-				count += _markSteepEdges( edgeVector, masker, 0, heightMap, x, y, h, verticesAcross);
+				count += _markSteepEdges( edgeVector, masker, 0, heightMap, x, y, h, verticesAcross, gradient, tileSize);
 					
-				count += _markSteepEdges( edgeVector, masker, 1, heightMap, x, y, h, verticesAcross);
+				count += _markSteepEdges( edgeVector, masker, 1, heightMap, x, y, h, verticesAcross, gradient, tileSize);
 					if (count == 2) {  count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 2, heightMap, x, y, h, verticesAcross);
+				count += _markSteepEdges( edgeVector, masker, 2, heightMap, x, y, h, verticesAcross, gradient, tileSize);
 					if (count == 2) { count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 3, heightMap, x, y, h, verticesAcross);
+				count += _markSteepEdges( edgeVector, masker, 3, heightMap, x, y, h, verticesAcross, gradient, tileSize);
 					if (count == 2) { count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 4, heightMap, x, y, h, verticesAcross);
+				count += _markSteepEdges( edgeVector, masker, 4, heightMap, x, y, h, verticesAcross, gradient, tileSize);
 					if (count == 2) { count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 5, heightMap, x, y, h, verticesAcross);
+				count += _markSteepEdges( edgeVector, masker, 5, heightMap, x, y, h, verticesAcross, gradient, tileSize);
 					if (count == 2) { count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 6, heightMap, x, y, h, verticesAcross);
+				count += _markSteepEdges( edgeVector, masker, 6, heightMap, x, y, h, verticesAcross, gradient, tileSize);
 					if (count == 2) { count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 7, heightMap, x, y, h, verticesAcross);
+				count += _markSteepEdges( edgeVector, masker, 7, heightMap, x, y, h, verticesAcross, gradient, tileSize);
 					if (count == 2) { count = 0; }
 			}
 		}
@@ -189,7 +189,7 @@ class GKGraph {
 		var depth:Int;
 		var len:Int = steepNodes.length;
 		i = 0;
-		while(i < len) { 
+		while(i < len) {
 			xi = steepNodes[i];
 			yi = steepNodes[i + 1];
 			nIndex = yi * verticesAcross + xi;
@@ -205,16 +205,14 @@ class GKGraph {
 	}
 	
 	
-	public static inline function _markSteepEdges(edgeVector:BitVector, masker:Int, edgeIndex:Int, heightMap:Vector<Float>, x:Int, y:Int, h:Float, verticesAcross:Int):Int {
+	public static inline function _markSteepEdges(edgeVector:BitVector, masker:Int, edgeIndex:Int, heightMap:Vector<Float>, x:Int, y:Int, h:Float, verticesAcross:Int, gradient:Float, tileSize:Float):Int {
 		var counter:Int = (masker & (1 << edgeIndex)) != 0  ? 1 : 0;
-		if (counter != 0)  {
+		if ( (masker & (1 << edgeIndex)) != 0  )  {  // hopefully this repeat will inline
 			var xo:Int = EDGE_OFFSETS[(edgeIndex << 1)];
 			var yo:Int = EDGE_OFFSETS[(edgeIndex << 1) + 1];	
 			if (xo >= 0 && xo < verticesAcross  && yo >=0 && yo < verticesAcross) {  // must be within range to consider valid edge
-				//heightMap[(y+yo)
+				edgeVector.setValue( ((y*verticesAcross+x) << 3) + edgeIndex,  (heightMap[(y + yo) * verticesAcross + (x + xo)] - h) / tileSize > gradient );	
 			}
-			
-			
 		}
 		
 		return counter;

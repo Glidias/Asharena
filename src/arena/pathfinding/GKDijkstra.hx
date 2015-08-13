@@ -34,7 +34,13 @@ class GKDijkstra {
 		//This will be the indexed priority Queue that will sort the nodes
 		var pq:IndexedPriorityQ = _pq;
 		pq.clear();
+		
 		TypeDefs.setVectorLen(SF, 0);
+		
+		// todo: clear SF;
+		// todo: clear SPT
+		
+		
 		
 		
 		//To start the algorithm we first add the source to the pq
@@ -80,7 +86,6 @@ class GKDijkstra {
 				//The total cost is calculated by: Cost of the node + Cost of the edge
 				var nCost:Float = cost2Node[NCN] + edge.cost;
 				if (nCost > maxCost) {
-					
 					continue;
 				}
 				
@@ -102,6 +107,16 @@ class GKDijkstra {
 					SF[edge.to] = edge;
 				}
 			}
+		}
+	}
+	
+	public function doBacktrackCliffDisable(nd:Int):Void {
+		
+		//This loop will work until we find the source, or theres no edge in the SPT for a certain node
+		while (nd != source && SPT[nd] != null && (SPT[nd].flags & GKEdge.FLAG_GRADIENT_UNSTABLE)!=0 ) {
+			SPT[nd].flags |= GKEdge.FLAG_INVALID;
+			nd = SPT[nd].from;
+			// todo: unvisit SPT[nd].to node
 		}
 	}
 	
