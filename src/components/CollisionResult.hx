@@ -12,7 +12,7 @@ class CollisionResult
 
 	// Max gound normal is Math.cos(angleOfSlope)
 	 // default .8, the slope to be considered a jumpable ground surface (Component var could be static inlined as well)
-	 public static inline var MAX_GROUND_NORMAL_THRESHOLD:Float = 0.44721359549995793928183473374626;
+	 public static inline var MAX_GROUND_NORMAL_THRESHOLD:Float = 0.57357643635104609610803191282616; 
 	 //  = 0.44721359549995793928183473374626; ~63.434 degrees, gradient 2
 	 //  0.57357643635104609610803191282616;  // 55 degrees  
 	public var max_ground_normal_threshold:Float; 

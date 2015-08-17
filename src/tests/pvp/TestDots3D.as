@@ -43,7 +43,7 @@ package tests.pvp
 		
 		static public const GRID_SIZE:Number = 32;
 		public var MOVEMENT_POINTS:Number = 14;
-		public var HEIGHTMAPMULT:Number = 33;
+		public var HEIGHTMAPMULT:Number = 64;
 		
 		private var _across:int = 32;
 		private var _graphGrid:GraphGrid;
@@ -174,7 +174,7 @@ package tests.pvp
 			removeChild(startPt);
 			removeChild(heightBmp);
 			
-			startBox = new Box(120, 120,120, 1,1,1,false, new FillMaterial(0xFF0000));
+			startBox = new Box(120, 120,120, 1,1,1,false, new FillMaterial(0xFF0000, .5));
 			_template3D.scene.addChild(startBox);
 			
 			var i:int = _arrDots.length;
@@ -238,8 +238,8 @@ package tests.pvp
 		private function tick(time:Number):void 
 		{
 			var across:int = _across;
-			var x:int = Math.round( mouseX / GRID_SIZE );
-			var y:int = Math.round( mouseY / GRID_SIZE );
+			var x:int = Math.round( _template3D.camera.x / 256 );
+			var y:int = Math.round( -_template3D.camera.y / 256 );
 			x = x >= _across ? across - 1 : x < 0 ? 0 : x;
 			y = y >= _across ? across - 1 : y< 0 ? 0 : y;
 			

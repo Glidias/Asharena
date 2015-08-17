@@ -122,6 +122,8 @@ class GKGraph {
 	private static var EDGE_1:Vec3 = new Vec3();
 	private static var EDGE_2:Vec3 = new Vec3();
 	private static var NORM:Vec3 = new Vec3();
+	private static var NORM_ACCUM:Vec3 = new Vec3();
+
 	
 	/**
 	 * Calculates 'impassable' cliff regions given a terrain height map
@@ -167,6 +169,7 @@ class GKGraph {
 			var i:Int;
 			
 			var normZ:Float;
+			var normAccum:Vec3 = NORM_ACCUM;
 		var avgCount:Int;
 		for (y in 0...verticesAcross) {
 			for (x in 0...verticesAcross) {
@@ -175,30 +178,35 @@ class GKGraph {
 				var h:Float = heightMap[i];
 				normZ = 0;
 				avgCount = 0;
+				normAccum.set(0, 0, 0);
 				var masker:Int = (y & 1)  != (x&1) ? EDGE_MASK_MISMATCH_EVEN_ODD : EDGE_MASK_MATCH_EVEN_ODD;
 				count += _markSteepEdges( edgeVector, masker, 0, heightMap, x, y, h, verticesAcross, gradient, tileSize, edge1);
 					
 				count += _markSteepEdges( edgeVector, masker, 1, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count != 1 ? edge1 :edge2));
-					if (count == 2) {   Vec3Utils.writeCross(edge1, edge2, norm);  norm.normalize();  normZ += norm.z; avgCount++; count = 1;  edge1.copyFrom(edge2); }
+					if (count == 2) {   Vec3Utils.writeCross(edge1, edge2, norm);  norm.normalize();  normZ += norm.z; normAccum.add(norm); avgCount++; count = 1;  edge1.copyFrom(edge2); }
 				count += _markSteepEdges( edgeVector, masker, 2, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1 ? edge1 :edge2));
-					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z; normAccum.add(norm); avgCount++; count = 1; edge1.copyFrom(edge2); }
 				count += _markSteepEdges( edgeVector, masker, 3, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1? edge1 :edge2));
-					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z; normAccum.add(norm); avgCount++; count = 1; edge1.copyFrom(edge2); }
 				count += _markSteepEdges( edgeVector, masker, 4, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1 ?edge1 :edge2));
-					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z; normAccum.add(norm); avgCount++; count = 1; edge1.copyFrom(edge2); }
 				count += _markSteepEdges( edgeVector, masker, 5, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1 ? edge1 :edge2));
-					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize();normZ+= norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize();normZ+= norm.z;normAccum.add(norm);  avgCount++; count = 1; edge1.copyFrom(edge2); }
 				count += _markSteepEdges( edgeVector, masker, 6, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1 ? edge1 :edge2));
-					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z;normAccum.add(norm);  avgCount++; count = 1; edge1.copyFrom(edge2); }
 				count += _markSteepEdges( edgeVector, masker, 7, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1? edge1 :edge2));
-					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ += norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ += norm.z; normAccum.add(norm); avgCount++; count = 1; edge1.copyFrom(edge2); }
 					
 					count += _markSteepEdges( edgeVector, masker, 0, heightMap, x, y, h, verticesAcross, gradient, tileSize, edge1);	
-					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ += norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ += norm.z; normAccum.add(norm); avgCount++; count = 1; edge1.copyFrom(edge2); }
 					
 					if (avgCount > 0) {
 						
 						normZ /= avgCount;
+						
+						
+						normAccum.normalize();
+						normZ = normAccum.z;
 						
 						if (normZ < normalZThreshold) {
 							//if (avgCount == 8) throw normZ*avgCount;
