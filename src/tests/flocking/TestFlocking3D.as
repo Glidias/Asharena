@@ -223,7 +223,7 @@ package tests.flocking
 		{
 			engine.update(time);
 			
-			_template3d.cameraController.update();
+			_template3d.cameraController.update(time);
 			_template3d.camera.render(_template3d.stage3D); // onRenderTick();
 		}
 		
@@ -254,7 +254,7 @@ package tests.flocking
 				var skin:Skin = _skin.clone() as Skin;
 				obj.addChild(skin);
 
-				entity.add( new MechStance( _animManager.cloneFor(skin), vel, skin ), IAnimatable).add(obj);
+				entity.add( new MechStance( _animManager.cloneFor(skin), vel, SkinClonesContainer ), IAnimatable).add(obj);
 				
 				
 				engine.addEntity(entity);

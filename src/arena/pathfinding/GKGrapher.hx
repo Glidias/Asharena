@@ -4,7 +4,7 @@ import util.TypeDefs;
 class GKGrapher {
 	
 	var cells :Array<Vector<Float>>;
-	var valuesToIgnore :Array<Int>;
+
 	
 	
 	public function new (cells:Array<Vector<Float>>, n_graph:GKGraph) {
@@ -13,16 +13,17 @@ class GKGrapher {
 		var cellsX :Int = cells.length;
 		var cellsY :Int = cells.length;
 			
-		for (x in 0...cellsX) {
-			for (y in 0...cellsY) {
+		
+		for (y in 0...cellsY) {
+			for (x in 0...cellsX) {
 				var node = new GKNode (GKGraph.getNextIndex(), x, y);
 				n_graph.addNode ( node );
 			}
 		}
 		///*
-		for (node_x in 0...cellsX) {
-			for (node_y in 0...cellsY) {
-				
+		
+		for (node_y in 0...cellsY) {
+			for (node_x in 0...cellsX) {
 				var cell :Float = cells[node_y][node_x];
 				
 				addNeighbours (n_graph, node_y, node_x, cellsX, cellsY);
@@ -44,22 +45,26 @@ class GKGrapher {
 		}
 		*/
 		
-		addNeighbor(cc, -1, -1, n_graph, row, col, cellsX, cellsY);
-		addNeighbor(cc, 0, -1, n_graph, row, col, cellsX, cellsY);
-		addNeighbor(cc, 1, -1, n_graph, row, col, cellsX, cellsY);
 		
-		addNeighbor(cc, -1, 0, n_graph, row, col, cellsX, cellsY);
-		addNeighbor(cc, 1, 0, n_graph, row, col, cellsX, cellsY);
+
 		
-		addNeighbor(cc, -1, 1, n_graph, row, col, cellsX, cellsY);
-		addNeighbor(cc, 0, 1, n_graph, row, col, cellsX, cellsY);
-		addNeighbor(cc, 1, 1, n_graph, row, col, cellsX, cellsY);
+		var edgeOffsets:Vector<Int> = GKGraph.EDGE_OFFSETS;
+		var i:Int = 0;
+		var len:Int = edgeOffsets.length;
+		
+		while (i < len) {
+			addNeighbor(cc, edgeOffsets[i], edgeOffsets[i+1], n_graph, row, col, cellsX, cellsY);
+			i += 2;
+		}
+		
+		
 
 	}
 	
 	public inline function addNeighbor(cc:Float,i:Int, j:Int, n_graph:GKGraph, row:Int, col:Int, cellsX:Int, cellsY:Int ):Void {
-		var nodeY = row + j;
+		
 		var nodeX = col + i;
+		var nodeY = row + j;
 		
 		//if (i==0 && j==0) continue;
 		
@@ -78,13 +83,13 @@ class GKGrapher {
 			if (nc == -8 && i == -1 && j == 1) continue;
 			*/
 
-			var cost = (i == 0 || j == 0) ? 1 : 1.4142135623730950488016887242097;
+			var cost = (i == 0 || j == 0) ? 1 : GKEdge.DIAGONAL_LENGTH;
 			
 			
-			var nodeIdx:Int = Math.round (col * cellsY + row);
-			var nIdx:Int = Math.round (nodeX * cellsY + nodeY);
+			var nodeIdx:Int = Math.round (row * cellsY + col);
+			var nIdx:Int = Math.round (nodeY * cellsX + nodeX);
 			var edge = new GKEdge (nodeIdx, nIdx, cost);
-			
+		//	edge.flags = j == 0 && i == 1 ? 0 : GKEdge.FLAG_INVALID;
 			n_graph.addEdge ( edge );
 		}
 		

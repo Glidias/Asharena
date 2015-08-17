@@ -6,14 +6,20 @@ class GKDijkstra {
 	
 	private var graph :GKGraph;					//The graph where the search will be made
 	private var SPT :Array<GKEdge>;			//This vector will store the Shortest Path Three
-	private var cost2Node :Vector<Float>;	//This vector will store the costs of getting to each node
+	public var cost2Node :Vector<Float>;	//This vector will store the costs of getting to each node
 	private var SF :Array<GKEdge>;			//This will be our search frontier, it will contain
+	private var _pq:IndexedPriorityQ;
+	
 	public var source :Int;
 	public var target :Int;
 	public var maxCost:Float;
-	private var _pq:IndexedPriorityQ;
+
+	public var edgeDisableMask:Int;
+	
+	public var visit:GKNode->Void;
 	
 	public function new (n_graph:GKGraph, src:Int, tar:Int) {
+		edgeDisableMask = GKEdge.FLAG_INVALID;
 		graph=n_graph;
 		source=src;
 		target=tar;
@@ -35,11 +41,25 @@ class GKDijkstra {
 		var pq:IndexedPriorityQ = _pq;
 		pq.clear();
 		
-		TypeDefs.setVectorLen(SF, 0);
+	
 		
-		// todo: clear SF;
-		// todo: clear SPT
+		//  clear SF and SPT;
+		var len:Int;
+		len = SF.length;
+		for (i in 0...len) {
+			SF[i] = null;
+		}
+	
 		
+		len = SPT.length;
+		for (i in 0...len) {
+			SPT[i] = null;
+		}
+		
+		len = cost2Node.length;
+		for (i in 0...len) {
+			cost2Node[i] = 0;
+		}
 		
 		
 		
@@ -70,6 +90,8 @@ class GKDijkstra {
 			
 			/* 3.- If if is the target node, finish the search */
 			
+			if (visit != null  ) visit(graph.getNode(NCN));
+			
 			if (NCN == target) return;
 			
 			/* 4.- Retrieve all the edges of this node */
@@ -80,12 +102,15 @@ class GKDijkstra {
 			for (edge in edges) {
 				/* 5.- For each edge calculate the cost of moving from the source node to the arrival Node */
 				
-				if  ( (edge.flags & GKEdge.FLAG_INVALID)!=0 )  {
+				if  ( (edge.flags & edgeDisableMask) != 0 )  {
+					
 					continue;
 				}
+				
 				//The total cost is calculated by: Cost of the node + Cost of the edge
 				var nCost:Float = cost2Node[NCN] + edge.cost;
 				if (nCost > maxCost) {
+					
 					continue;
 				}
 				
@@ -110,6 +135,7 @@ class GKDijkstra {
 		}
 	}
 	
+	/*
 	public function doBacktrackCliffDisable(nd:Int):Void {
 		
 		//This loop will work until we find the source, or theres no edge in the SPT for a certain node
@@ -119,6 +145,7 @@ class GKDijkstra {
 			// todo: unvisit SPT[nd].to node
 		}
 	}
+	*/
 	
 	public function getPath () :Vector<Int> {
 		//Create the variable where we will store the path

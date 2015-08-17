@@ -16,7 +16,7 @@ class GKGraph {
 		edges = new Array<Array<GKEdge>>();
 	}
     //In order to get the node, we just ask for the index of it, and access the nodes vector with that key
-	public function getNode (idx:Int) :GKNode {
+	public inline function getNode (idx:Int) :GKNode {
 		return nodes[idx];
 	}
 
@@ -70,10 +70,10 @@ class GKGraph {
 	public static inline var DEG_55_GRAD:Float = 1.4281480067421145021606184849985;
 
 	//inline
-	public  function setupNodes(cells:Array<Vector<Float>>):Void {
+	public  function setupNodes(cells:Array<Vector<Float>>, tileSize:Float):Void {
 		var len:Int = nodes.length;
 		for (i in 0...len) {  // setup impassable
-			setupValidEdges(i, cells);
+			setupValidEdges(i, cells, tileSize);
 		}
 		
 	}
@@ -92,8 +92,8 @@ class GKGraph {
 		edgeOffsets[2] = 1;  // North-east
 		edgeOffsets[3] = -1;
 		
-		edgeOffsets[4] = 0;	// East
-		edgeOffsets[5] = 1;
+		edgeOffsets[4] = 1;	// East
+		edgeOffsets[5] = 0;
 		
 		edgeOffsets[6] = 1;  // South-East
 		edgeOffsets[7] = 1;
@@ -220,11 +220,11 @@ class GKGraph {
 	
 	
 	//inline
-	public  function setupValidEdges(node:Int, cells:Array<Vector<Float>>):Void {
+	public  function setupValidEdges(node:Int, cells:Array<Vector<Float>>, tileSize:Float):Void {
 		var edgeArr:Array<GKEdge> = edges[node];
 		var from:GKNode = nodes[node];
 		var fromZ:Float = cells[from.y][from.x];
-		if (fromZ != PMath.FLOAT_MAX)  {
+		//if (fromZ != PMath.FLOAT_MAX)  {
 		
 			var len:Int = edgeArr.length;
 		
@@ -237,28 +237,65 @@ class GKGraph {
 				
 				var to:GKNode = nodes[edge.to];
 				var toZ:Float = cells[to.y][to.x];
-				if (toZ == PMath.FLOAT_MAX) {
+				if (toZ == PMath.FLOAT_MAX || fromZ == PMath.FLOAT_MAX) {
 					edge.flags |= GKEdge.FLAG_INVALID;
-					continue;
+					//continue;
 				}
 				
 				///*
+				
 				var cost:Float =  (to.x == from.x || to.y == from.y ? 1 : GKEdge.DIAGONAL_LENGTH);
-				var grad:Float = cost / (toZ - fromZ);
-
+				var heightDiff:Float = (toZ - fromZ);
+				var grad:Float = heightDiff / cost;
+			
+			
+				
+			
 				edge.flags |= PMath.abs(grad) > DEG_55_GRAD ? GKEdge.FLAG_GRADIENT_UNSTABLE : 0;
 				edge.flags |= grad < 0 ? GKEdge.FLAG_GRADIENT_DOWNWARD : 0;
 				edge.flags |= grad > DEG_36_GRAD ? GKEdge.FLAG_GRADIENT_DIFFICULT : 0;
 				
 				
+			
+			
+				//if (grad>0) throw "A";
 				grad = grad <= DEG_36_GRAD ? 0 : grad;
+				
+				
+				if ((edge.flags & GKEdge.FLAG_GRADIENT_UNSTABLE) != 0  ) {  // will have to resort to climbing, so speed is reduced significantly	
+					cost *= 4;
+					
+					/*
+					 * stepHeight cost: 0 ~ 18 units (+0.125)
+					Step to Crotch height cost: 18 ~ 36  units (raise leg over cost) (+1.25) 
+					Crotch to Abs height cost: 36 - 54  units  (direct vault-over cost) (+2.375) 
+					Over abs height cost: 54-86 units ( raise hands to vault over cost) (+2) 
+					High above over head cost: Required to jump, grab and vault over cost: >86 units to highest possible jump+grab height (+2)
+					*/
+					
+					heightDiff *= tileSize; 
+					cost += 0.125;  // stepHeight penalty
+					
+					cost += heightDiff > 18 ? 1.25 : 0;
+					cost += heightDiff > 36 ? 2.375 : 0;
+					cost += heightDiff > 54 ? 2 : 0;
+					cost += heightDiff > 86 ? 2 : 0;
+					
+				}
+				
 				cost += grad;
+				
+				
+				
+				
+				
+				//if (cost != 1 && cost != GKEdge.DIAGONAL_LENGTH) throw "Nons tandard cost:"+nodes[edge.to] + " ::: "+cost;
 				edge.cost = cost;
 				
 				//*/
 			}
 		
-		}
+		//}
 	}
 	
     //This function checks if the node index is between the range of already added nodes

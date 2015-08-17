@@ -1088,6 +1088,7 @@ package alternativa.engine3d.materials {
 		 * @private
 		 */
 		override alternativa3d function collectDraws(camera:Camera3D, surface:Surface, geometry:Geometry, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean, objectRenderPriority:int = -1):void {
+			
 			if (diffuseMap == null || normalMap == null || diffuseMap._texture == null || normalMap._texture == null) return;
 			// Check if textures uploaded in to the context.
 			if (opacityMap != null && opacityMap._texture == null || glossinessMap != null && glossinessMap._texture == null || specularMap != null && specularMap._texture == null || lightMap != null && lightMap._texture == null) return;

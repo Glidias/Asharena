@@ -12,6 +12,7 @@ package tests.pvp
 	import alternativa.a3d.rayorcollide.TerrainRaycastImpl;
 	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
 	import alternativa.a3d.systems.enemy.A3DEnemyArcSystem;
+	import alternativa.a3d.systems.hud.DestCalcTester;
 	import alternativa.a3d.systems.hud.HealthBarRenderSystem;
 	import alternativa.a3d.systems.hud.TrajRaycastTester;
 	import alternativa.engine3d.controllers.OrbitCameraMan;
@@ -54,6 +55,9 @@ package tests.pvp
 	import ash.tick.FixedTickProvider;
 	import ash.tick.FrameTickProvider;
 	import ash.tick.ITickProvider;
+	import components.Ellipsoid;
+	import components.Gravity;
+	import util.geom.Vec3;
 	//import ash.tick.MultiUnitTickProvider;
 	//import ash.tick.UnitTickProvider;
 	import com.bit101.components.Label;
@@ -154,7 +158,7 @@ package tests.pvp
 		private var _followAzimuth:Boolean = false;
 		private var spectatorPerson:SimpleFlyController;
 		private var arenaSpawner:ArenaSpawner;
-		private var collisionScene:Object3D;
+		private var collisionScene:Object3D = new Object3D();
 		
 		
 		private var _gladiatorBundle:GladiatorBundle;
@@ -176,6 +180,8 @@ package tests.pvp
 		public function PVPDemo3() 
 		{
 			haxe.initSwc(this);
+			
+			
 			
 			if (root.loaderInfo.parameters.waterSettings) {
 				waterSettings = root.loaderInfo.parameters.waterSettings;
@@ -215,8 +221,8 @@ package tests.pvp
 			
 		//	_terrainBase.loadedPage.heightMap.flatten(standardMaterial.waterLevel + 130);  // flat test
 		//	_terrainBase.loadedPage.heightMap.randomise(255);  // randomise test
-			// _terrainBase.loadedPage.heightMap.slopeAltAlongY(88);  // slope zig zag test
-			// _terrainBase.loadedPage.heightMap.slopeAlongY(122);  // slope linear test
+		//	 _terrainBase.loadedPage.heightMap.slopeAltAlongY(88);  // slope zig zag test
+		//	 _terrainBase.loadedPage.heightMap.slopeAlongY(122);  // slope linear test
 			 
 			return standardMaterial;
 		}
@@ -280,7 +286,7 @@ package tests.pvp
 		{
 			return new <SpawnerBundle>[_gladiatorBundle = new GladiatorBundle(arenaSpawner), arenaHUD = new ArenaHUD(stage) ,
 				_modelBundle = new ModelBundle([Projectiles]),
-				_terrainBase = new TerrainBase(TerrainTest,1),
+				_terrainBase = new TerrainBase(TerrainTest,1, .25*.25),
 				_skyboxBase = new SkyboxBase(ClearBlueSkyAssets),
 				_waterBase = new WaterBase(NormalWaterAssets),
 				new GroundBase([CarribeanTextures])
@@ -314,8 +320,13 @@ package tests.pvp
 			// example visual scene
 			var box:Object3D = new Box(100, 13, 100 + 64, 1, 1, 1, false, new FillMaterial(0xCCCCCC) );
 			box.z = 0;
+			_template3D.scene.addChild(box);
 			
 			
+			_debugBox = new Box(32, 32, 72, 1, 1, 1, false, new FillMaterial(0xFF0000) );
+			_template3D.scene.addChild(_debugBox);
+			
+				SpawnerBundle.uploadResources(_debugBox.getResources());
 			SpawnerBundle.uploadResources(box.getResources());
 			
 			//var mat:VertexLightTextureMaterial = new VertexLightTextureMaterial(new BitmapTextureResource(new BitmapData(4, 4, false, 0xBBBBBB),
@@ -326,11 +337,14 @@ package tests.pvp
 			//arenaSpawner.addCrossStage(SpawnerBundle.context3D);
 			//SpawnerBundle.uploadResources(planeFloor.getResources(true, null));
 			
-			
+						
 			setupTerrainLighting();
 			setupTerrainAndWater();
 			
-
+			box.z =  _terrainBase.sample(box.x, box.y);
+			
+			collisionScene.addChild(box.clone());
+			
 		//	_gladiatorBundle.textureMat.waterLevel = _waterBase.plane.z;
 		//	_terrainBase.terrain.z = -_terrainBase.terrain.boundBox.minZ;
 		
@@ -339,10 +353,13 @@ package tests.pvp
 			var rootCollisionNode:CollisionBoundNode;
 			game.colliderSystem.collidable = rootCollisionNode =  new CollisionBoundNode();
 			rootCollisionNode.addChild(  _terrainBase.getTerrainCollisionNode() );
+			rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
 		//	rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(_waterBase.plane)  );
 			game.colliderSystem._collider.threshold = 0.00001;
 			// (Optional) Enforced ground plane collision
-			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(_waterBase.plane.z-20, true) ).withPriority(SystemPriorities.resolveCollisions);
+			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(_waterBase.plane.z - 20, true) ).withPriority(SystemPriorities.resolveCollisions);
+			
+
 
 		}
 		
@@ -399,7 +416,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 12;// 9999;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 33337;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 120;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
@@ -432,6 +449,8 @@ package tests.pvp
 			return head;
 		}
 		
+	
+		
 		
 		
 		private function getTestRangedWeapon():Weapon {
@@ -448,7 +467,7 @@ package tests.pvp
 			
 			w.minRange = 40;
 			w.damage =  15;
-			w.cooldownTime = .8;
+			w.cooldownTime = 5;// .8;
 			//w.cooldownTime = thrust ? 0.3 : 0.36666666666666666666666666666667;
 			w.hitAngle =  45 *  PMath.DEG_RAD;
 			
@@ -1510,6 +1529,7 @@ package tests.pvp
 				_transitCompleteCallback = onCharacterZoomedInTurnStartl
 				game.gameStates.engineState.changeState("transiting");
 				arenaHUD.setState("transiting");
+				
 				transitionCameras(commanderCameraController.thirdPerson, thirdPersonController.thirdPerson, targetState);
 			}
 			else if (targetState === "commander" && game.gameStates.engineState.currentState === game.gameStates.thirdPerson) {
@@ -1646,7 +1666,19 @@ package tests.pvp
 			
 			if (_targetTransitState != "commander") {
 				arenaHUD.hideStars();
-				if ( _targetTransitState === "thirdPerson" ) activateEnemyAggro();
+				if ( _targetTransitState === "thirdPerson" ) {
+		
+					if (destCalcTester) {
+					destCalcTester.pos = arenaSpawner.getPlayerEntity().get(Pos) as Pos;
+					destCalcTester.rot = arenaSpawner.getPlayerEntity().get(Rot) as Rot;
+					destCalcTester.ellipsoid = arenaSpawner.getPlayerEntity().get(Ellipsoid) as Ellipsoid;
+					destCalcTester.gravity = arenaSpawner.getPlayerEntity().get(Gravity) as Gravity;
+					destCalcTester.surfaceMovement = arenaSpawner.getPlayerEntity().get(SurfaceMovement) as SurfaceMovement;
+					destCalcTester.movementPoints = arenaSpawner.getPlayerEntity().get(MovementPoints) as MovementPoints;
+					}
+					activateEnemyAggro();
+					
+				}
 			}
 			else  {
 				arenaHUD.showStars();
@@ -1772,7 +1804,7 @@ package tests.pvp
 			game.engine.addSystem( new TweenSystem(), SystemPriorities.animate );
 			
 			
-			collisionScene = new Object3D();
+		
 			
 			
 			// Third person
@@ -1793,7 +1825,7 @@ package tests.pvp
 			
 		thirdPersonController.thirdPerson.preferedMinDistance = 100;
 		thirdPersonController.thirdPerson.controller.minDistance = 0;
-		thirdPersonController.thirdPerson.controller.maxDistance = 240;
+		thirdPersonController.thirdPerson.controller.maxDistance = 2240;
 		thirdPersonController.thirdPerson.offsetZ = CHASE_Z_OFFSET;
 		//thirdPersonController.thirdPerson.offsetX = 22;
 			game.gameStates.thirdPerson.addInstance( thirdPersonAiming = new ThirdPersonAiming() ).withPriority(SystemPriorities.preRender);
@@ -1812,8 +1844,8 @@ package tests.pvp
 			targetingSystem.targetChanged.add(onTargetChanged);
 			targetingSystem.targetChanged.add(arenaHUD.setTargetChar);
 			
-		//	game.gameStates.thirdPerson.addInstance( new TrajRaycastTester(terrainRaycast,thirdPersonController.thirdPerson.rayOrigin, thirdPersonController.thirdPerson.rayDirection) ).withPriority(SystemPriorities.postRender);
-			
+			game.gameStates.thirdPerson.addInstance( new TrajRaycastTester(terrainRaycast,thirdPersonController.thirdPerson.rayOrigin, thirdPersonController.thirdPerson.rayDirection) ).withPriority(SystemPriorities.postRender);
+		//	game.gameStates.thirdPerson.addInstance( destCalcTester = new DestCalcTester(new Ellipsoid(20, 20, 36), new Vec3(), new Vec3(), game.colliderSystem.collidable, _debugBox  ) );
 			
 			// special PVP movement limited time
 			movementPointSystem;
@@ -1935,7 +1967,7 @@ package tests.pvp
 				
 				if (amount > 0)  {
 					arenaHUD.txtTookDamageFrom(_enemyAggroSystem.currentAttackingEnemy, hp, amount);
-					movementPoints.movementTimeLeft -= .5;
+			//		movementPoints.movementTimeLeft -= .5;
 					if ( movementPoints.movementTimeLeft < 0) movementPoints.movementTimeLeft = 0;
 					var gladiatorStance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IStance) as GladiatorStance;
 					if (gladiatorStance != null) {
@@ -2096,6 +2128,8 @@ package tests.pvp
 		private var updateTicker:ITickProvider;
 		private var targetingSystem:ThirdPersonTargetingSystem;
 		private var movementPointSystem:LimitedPlayerMovementSystem;
+		private var _debugBox:Box;
+		private var destCalcTester:DestCalcTester;
 		
 		private function setupInterface():void 
 		{

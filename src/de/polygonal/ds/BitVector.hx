@@ -133,6 +133,16 @@ class BitVector implements Hashable
 		_bits[p] = _bits[p] | (1 << (i & (32 - 1)));
 	}
 	
+	inline public function setValue(i:Int, value:Bool)
+	{
+		#if debug
+		assert(i < capacity(), 'i index out of range ($i)');
+		#end
+		
+		var p = i >> 5;
+		_bits[p] = value ? _bits[p] | (1 << (i & (32 - 1))) : _bits[p] & (~(1 << (i & (32 - 1))));
+	}
+	
 	/**
 	 * Sets the bit at index <code>i</code> to 0.
 	 * <o>1</o>

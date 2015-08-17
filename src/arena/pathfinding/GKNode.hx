@@ -15,4 +15,8 @@ class GKNode {
 		this.y = y;
 		//pos = n_Pos;
 	}
+	
+	public function toString():String {
+		return "([GKNode]" + x + ", " + y + ")";
+	}
 }
