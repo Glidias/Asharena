@@ -43,7 +43,7 @@ package tests.pvp
 		
 		static public const GRID_SIZE:Number = 32;
 		public var MOVEMENT_POINTS:Number = 14;
-		public var HEIGHTMAPMULT:Number = 88;
+		public var HEIGHTMAPMULT:Number = 33;
 		
 		private var _across:int = 32;
 		private var _graphGrid:GraphGrid;
@@ -123,7 +123,7 @@ package tests.pvp
 			
 			_graphGrid.sampleHeightmap(heightMapData, 256 );
 			
-			_graphGrid.djTraversal.edgeDisableMask = GKEdge.FLAG_INVALID | GKEdge.FLAG_GRADIENT_UNSTABLE ;
+			_graphGrid.djTraversal.edgeDisableMask = GKEdge.FLAG_INVALID | GKEdge.FLAG_GRADIENT_UNSTABLE | GKEdge.FLAG_CLIFF;
 			
 		}
 		
@@ -244,8 +244,8 @@ package tests.pvp
 			y = y >= _across ? across - 1 : y< 0 ? 0 : y;
 			
 			
-			x = _across * .5;
-			y = _across * .5;
+		//	x = _across * .5;
+			//y = _across * .5;
 			
 			if (x != _x || y != _y) {
 				

@@ -1,7 +1,9 @@
 package arena.pathfinding;
 
+import util.geom.Vec3;
 import de.polygonal.ds.BitVector;
 import util.geom.PMath;
+import util.geom.Vec3Utils;
 import util.TypeDefs;
 
 class GKGraph {
@@ -70,10 +72,10 @@ class GKGraph {
 	public static inline var DEG_55_GRAD:Float = 1.4281480067421145021606184849985;
 
 	//inline
-	public  function setupNodes(cells:Array<Vector<Float>>, tileSize:Float):Void {
+	public  function setupNodes(cells:Array<Vector<Float>>, tileSize:Float, cliffMap:BitVector):Void {
 		var len:Int = nodes.length;
 		for (i in 0...len) {  // setup impassable
-			setupValidEdges(i, cells, tileSize);
+			setupValidEdges(i, cells, tileSize, cliffMap);
 		}
 		
 	}
@@ -117,6 +119,10 @@ class GKGraph {
 	public static var EDGE_MASK_MISMATCH_EVEN_ODD:Int = MASK_EDGE_CARDINAL;
 	
 	
+	private static var EDGE_1:Vec3 = new Vec3();
+	private static var EDGE_2:Vec3 = new Vec3();
+	private static var NORM:Vec3 = new Vec3();
+	
 	/**
 	 * Calculates 'impassable' cliff regions given a terrain height map
 	 * @param	heightMap	The square heightmap of vertices altitude values
@@ -126,11 +132,12 @@ class GKGraph {
 	 * @param	consecutiveSteepsForCliff  How many consecutive tile steep edges are required to be deemed an impassable cliff
 	 * @return	A bit vector of vertices based off the heightmap where cliffed vertices are marked as true.
 	 */
-	public static function getCliffMap(heightMap:Vector<Float>, verticesAcross:Int, tileSize:Float, normalZThreshold:Float, consecutiveSteepsForCliff:Int):BitVector {
+	public static function getCliffMap(heightMap:Vector<Int>, verticesAcross:Int, tileSize:Float, normalZThreshold:Float, consecutiveSteepsForCliff:Int, cliffVector:BitVector=null):BitVector {
 		
 		var totalNodes:Int = verticesAcross * verticesAcross;
-		var cliffVector:BitVector = new BitVector(totalNodes);
-
+		cliffVector = cliffVector != null ? cliffVector : new BitVector(totalNodes);
+		cliffVector.clrAll();
+			
 		// temporary edge vector to keep track of steep slopes per node
 		var edgeVector:BitVector  = new BitVector(totalNodes * 8); 
 		
@@ -153,27 +160,51 @@ class GKGraph {
 		// per node, calculate adjoining relavant edges, mark steep edges that meet gradient magnitude,
 		// also calculate normals for each successive edge to get vertex normal as average of all those normals
 		var count:Int;
+		var edge1:Vec3 = EDGE_1;
+		var edge2:Vec3 = EDGE_2;
+		var norm:Vec3 = NORM;
+		
+			var i:Int;
+			
+			var normZ:Float;
+		var avgCount:Int;
 		for (y in 0...verticesAcross) {
 			for (x in 0...verticesAcross) {
 				count = 0;
-				var h:Float = heightMap[y * verticesAcross + x];
+			     i= y * verticesAcross + x;
+				var h:Float = heightMap[i];
+				normZ = 0;
+				avgCount = 0;
 				var masker:Int = (y & 1)  != (x&1) ? EDGE_MASK_MISMATCH_EVEN_ODD : EDGE_MASK_MATCH_EVEN_ODD;
-				count += _markSteepEdges( edgeVector, masker, 0, heightMap, x, y, h, verticesAcross, gradient, tileSize);
+				count += _markSteepEdges( edgeVector, masker, 0, heightMap, x, y, h, verticesAcross, gradient, tileSize, edge1);
 					
-				count += _markSteepEdges( edgeVector, masker, 1, heightMap, x, y, h, verticesAcross, gradient, tileSize);
-					if (count == 2) {  count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 2, heightMap, x, y, h, verticesAcross, gradient, tileSize);
-					if (count == 2) { count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 3, heightMap, x, y, h, verticesAcross, gradient, tileSize);
-					if (count == 2) { count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 4, heightMap, x, y, h, verticesAcross, gradient, tileSize);
-					if (count == 2) { count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 5, heightMap, x, y, h, verticesAcross, gradient, tileSize);
-					if (count == 2) { count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 6, heightMap, x, y, h, verticesAcross, gradient, tileSize);
-					if (count == 2) { count = 0; }
-				count += _markSteepEdges( edgeVector, masker, 7, heightMap, x, y, h, verticesAcross, gradient, tileSize);
-					if (count == 2) { count = 0; }
+				count += _markSteepEdges( edgeVector, masker, 1, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count != 1 ? edge1 :edge2));
+					if (count == 2) {   Vec3Utils.writeCross(edge1, edge2, norm);  norm.normalize();  normZ += norm.z; avgCount++; count = 1;  edge1.copyFrom(edge2); }
+				count += _markSteepEdges( edgeVector, masker, 2, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1 ? edge1 :edge2));
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+				count += _markSteepEdges( edgeVector, masker, 3, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1? edge1 :edge2));
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+				count += _markSteepEdges( edgeVector, masker, 4, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1 ?edge1 :edge2));
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+				count += _markSteepEdges( edgeVector, masker, 5, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1 ? edge1 :edge2));
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize();normZ+= norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+				count += _markSteepEdges( edgeVector, masker, 6, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1 ? edge1 :edge2));
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ+= norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+				count += _markSteepEdges( edgeVector, masker, 7, heightMap, x, y, h, verticesAcross, gradient, tileSize, (count!= 1? edge1 :edge2));
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ += norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+					
+					count += _markSteepEdges( edgeVector, masker, 0, heightMap, x, y, h, verticesAcross, gradient, tileSize, edge1);	
+					if (count == 2) { Vec3Utils.writeCross(edge1, edge2, norm); norm.normalize(); normZ += norm.z; avgCount++; count = 1; edge1.copyFrom(edge2); }
+					
+					if (avgCount > 0) {
+						
+						normZ /= avgCount;
+						
+						if (normZ < normalZThreshold) {
+							//if (avgCount == 8) throw normZ*avgCount;
+							cliffVector.set(i);
+						}
+					}
 			}
 		}
 		
@@ -181,9 +212,7 @@ class GKGraph {
 		 // go through every steepNode to perform a DFS traversal through steep edges only
 		 // Once stack no longer pushes, detemine if depth >= consecutiveSteepsForCliff,
 		 // if so, flag those steep nodes in stack into cliffVector before popping the stack.
-		var i:Int;
-		
-		
+			/*
 		var nIndex:Int;
 		var steepNodeStack:Vector<Float> = TypeDefs.createFloatVector(totalNodes, false);
 		var depth:Int;
@@ -200,18 +229,24 @@ class GKGraph {
 				
 			i += 2;  // continue iteration
 		}
-
+			*/
 		return cliffVector;
 	}
 	
-	
-	public static inline function _markSteepEdges(edgeVector:BitVector, masker:Int, edgeIndex:Int, heightMap:Vector<Float>, x:Int, y:Int, h:Float, verticesAcross:Int, gradient:Float, tileSize:Float):Int {
+	inline
+	public static  function _markSteepEdges(edgeVector:BitVector, masker:Int, edgeIndex:Int, heightMap:Vector<Int>, x:Int, y:Int, h:Float, verticesAcross:Int, gradient:Float, tileSize:Float, edge:Vec3):Int {
 		var counter:Int = (masker & (1 << edgeIndex)) != 0  ? 1 : 0;
-		if ( (masker & (1 << edgeIndex)) != 0  )  {  // hopefully this repeat will inline
-			var xo:Int = EDGE_OFFSETS[(edgeIndex << 1)];
-			var yo:Int = EDGE_OFFSETS[(edgeIndex << 1) + 1];	
-			if (xo >= 0 && xo < verticesAcross  && yo >=0 && yo < verticesAcross) {  // must be within range to consider valid edge
-				edgeVector.setValue( ((y*verticesAcross+x) << 3) + edgeIndex,  (heightMap[(y + yo) * verticesAcross + (x + xo)] - h) / tileSize > gradient );	
+		if ( counter != 0  )  {  // hopefully this repeat will inline
+			var xo:Int = EDGE_OFFSETS[(edgeIndex << 1)] + x;
+			var yo:Int = EDGE_OFFSETS[(edgeIndex << 1) + 1] + y;
+			counter = xo >= 0 && xo < verticesAcross  && yo >= 0 && yo < verticesAcross ? 1 : 0;
+			
+			
+			if (counter != 0) {  // must be within range to consider valid edge
+				edge.x = -EDGE_OFFSETS[(edgeIndex << 1)] * tileSize;
+				edge.y = -EDGE_OFFSETS[(edgeIndex << 1) + 1] * tileSize;
+				edge.z =  heightMap[( yo) * verticesAcross + ( xo)] - h;
+				edgeVector.setValue( ((y*verticesAcross+x) << 3) + edgeIndex,  PMath.abs(edge.z)/ (xo == 0 || yo == 0 ? tileSize : GKEdge.DIAGONAL_LENGTH) > gradient );	
 			}
 		}
 		
@@ -220,10 +255,12 @@ class GKGraph {
 	
 	
 	//inline
-	public  function setupValidEdges(node:Int, cells:Array<Vector<Float>>, tileSize:Float):Void {
+	public  function setupValidEdges(node:Int, cells:Array<Vector<Float>>, tileSize:Float, cliffMap:BitVector):Void {
 		var edgeArr:Array<GKEdge> = edges[node];
 		var from:GKNode = nodes[node];
 		var fromZ:Float = cells[from.y][from.x];
+		var across:Int = cells.length;
+		var fromCliff:Bool =  cliffMap.has(from.y * across + from.x);
 		//if (fromZ != PMath.FLOAT_MAX)  {
 		
 			var len:Int = edgeArr.length;
@@ -232,11 +269,17 @@ class GKGraph {
 			
 			for (i in 0...len) {
 				var edge:GKEdge = edgeArr[i];
-				
+			
 				edge.flags = 0;
+				
 				
 				var to:GKNode = nodes[edge.to];
 				var toZ:Float = cells[to.y][to.x];
+				//fromCliff || 
+				if (cliffMap.has(to.y * across + to.x)) {
+					edge.flags |= GKEdge.FLAG_CLIFF;
+				}
+				
 				if (toZ == PMath.FLOAT_MAX || fromZ == PMath.FLOAT_MAX) {
 					edge.flags |= GKEdge.FLAG_INVALID;
 					//continue;
@@ -262,7 +305,7 @@ class GKGraph {
 				grad = grad <= DEG_36_GRAD ? 0 : grad;
 				
 				
-				if ((edge.flags & GKEdge.FLAG_GRADIENT_UNSTABLE) != 0  ) {  // will have to resort to climbing, so speed is reduced significantly	
+				if ((edge.flags & (GKEdge.FLAG_GRADIENT_UNSTABLE | GKEdge.FLAG_CLIFF)) != 0  ) {  // will have to resort to climbing, so speed is reduced significantly	
 					cost *= 4;
 					
 					/*
@@ -275,11 +318,12 @@ class GKGraph {
 					
 					heightDiff *= tileSize; 
 					cost += 0.125;  // stepHeight penalty
-					
+				//	/*
 					cost += heightDiff > 18 ? 1.25 : 0;
 					cost += heightDiff > 36 ? 2.375 : 0;
 					cost += heightDiff > 54 ? 2 : 0;
 					cost += heightDiff > 86 ? 2 : 0;
+					//*/
 					
 				}
 				

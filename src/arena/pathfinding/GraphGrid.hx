@@ -1,5 +1,6 @@
 package arena.pathfinding;
 import arena.pathfinding.GKGraph;
+import components.CollisionResult;
 import de.polygonal.ds.BitVector;
 import util.geom.PMath;
 import util.TypeDefs;
@@ -13,19 +14,22 @@ import util.TypeDefs;
 class GraphGrid
 {
 	private var _across:Int;
+	var cliffVector:BitVector;
 	public var cells:Array<Vector<Float>>; // heightmap
 	public var graph:GKGraph;
 	public var visitCells:BitVector;
 	public var djTraversal:GKDijkstra;
+	public var normalZThreshold:Float;
 	
 	
 	public function new(across:Int) 
 	{
 		this._across = across;
+		normalZThreshold = CollisionResult.MAX_GROUND_NORMAL_THRESHOLD;  // //  0.57357643635104609610803191282616;  // 55 degrees  (Math.cos(deg))
 		graph = new GKGraph();
 		cells = [];
 		visitCells = new BitVector(across*across);
-		
+		cliffVector = new BitVector(across*across);
 	
 
 		for ( y in 0...across) {
@@ -85,20 +89,21 @@ class GraphGrid
 	///*
 	public function sampleHeightmap(heightMap:Vector<Int>, tileSize:Float, xc:Int = 0, yc:Int=0, acrs:Int = 0):Void {
 		if (acrs == 0 ) acrs = _across;
-		tileSize = tileSize!=0 ? 1 / tileSize : 1;
+		var tileSizeMult:Float = tileSize!=0 ? 1 / tileSize : 1;
 		for (y in 0..._across) {
 			var yH:Int = yc + y;
 			for (x in 0..._across) {
 				var xH:Int = xc + x;
 				//var i:Int = y * _across + x;
 				var u:Int = yH * acrs + xH;
-				cells[y][x] = yH < 0 || xH < 0 || xH >= acrs || yH >= acrs ?   PMath.FLOAT_MAX : heightMap[u]*tileSize;
+				cells[y][x] = yH < 0 || xH < 0 || xH >= acrs || yH >= acrs ?   PMath.FLOAT_MAX : heightMap[u]*tileSizeMult;
 			}
 		}
 		
 		// TODO: getCliffMap();, and for all edges that lead to/from cliff nodes, disable them as CLIFF EDGE flag!
-		
-		graph.setupNodes(cells, tileSize);  // TODO: add cliff map reference
+	
+		GKGraph.getCliffMap(heightMap, acrs, tileSize, normalZThreshold, 0, cliffVector );
+		graph.setupNodes(cells, tileSize, cliffVector);  // TODO: add cliff map reference
 		
 		
 	}
