@@ -118,6 +118,12 @@ class BitVector implements Hashable
 		return ((_bits[i >> 5] & (1 << (i & (32 - 1)))) >> (i & (32 - 1))) != 0;
 	}
 	
+	inline public function hasOrNot(i:Int):Bool
+	{
+
+		return i < capacity() ? ((_bits[i >> 5] & (1 << (i & (32 - 1)))) >> (i & (32 - 1))) != 0  : false;
+	}
+	
 	/**
 	 * Sets the bit at index <code>i</code> to 1.
 	 * <o>1</o>

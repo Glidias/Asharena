@@ -302,6 +302,10 @@ package alternativa.engine3d.objects {
 			return cloneItem;
 		}
 		
+		public function addNewOrAvailableClone():MeshSetClone {
+			return numClones + 1 < clones.length ? clones[numClones++] : addClone(createClone());
+		}
+		
 		public function addCloneWithCuller(cloneItem:MeshSetClone):void {
 			(culler is IMeshSetClonesContainer) ? (culler as IMeshSetClonesContainer).addClone(cloneItem) : addClone(cloneItem);
 		}
@@ -336,6 +340,7 @@ package alternativa.engine3d.objects {
 		*/
 		
 		
+		// todo
 		public function purgeClones():void {
 			
 		}

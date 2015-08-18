@@ -1,5 +1,6 @@
 package arena.pathfinding;
 import arena.pathfinding.GKGraph;
+import arena.pathfinding.GKMarchingSquares;
 import components.CollisionResult;
 import de.polygonal.ds.BitVector;
 import util.geom.PMath;
@@ -15,6 +16,9 @@ class GraphGrid
 {
 	private var _across:Int;
 	var cliffVector:BitVector;
+	var marchingSquares:GKMarchingSquares;
+	var _x:Int;
+	var _y:Int;
 	public var cells:Array<Vector<Float>>; // heightmap
 	public var graph:GKGraph;
 	public var visitCells:BitVector;
@@ -39,12 +43,17 @@ class GraphGrid
 		
 		djTraversal = new GKDijkstra(graph, 0, -1);
 		
+		marchingSquares = new GKMarchingSquares(visitCells, across);
+		
+		
 		//djTraversal.search();
 	}
 	
 	public function search(x:Int = 0, y:Int = 0, maxCost:Float=PMath.FLOAT_MAX):Void {
 	
 		visitCells.clrAll();	
+		_x = x;
+		_y = y;
 		
 		djTraversal.source = y * _across + x;
 		djTraversal.visit = doVisit;
@@ -81,6 +90,29 @@ class GraphGrid
 				img.scaleZ = visitCells.has(i)  ? 1 : 4;
 			}
 		}
+	}
+	
+	public function performOutlineRender(tupleMap:Vector<Int>):Int {
+		var result:Bool = marchingSquares.startTracking(0, _y);
+		var count:Int = 0;
+		//var x:Int = _x;
+		//var y:Int = _y;
+		if (result ) {
+			tupleMap[count++] = marchingSquares.x;
+			tupleMap[count++] = marchingSquares.y;
+			
+			while ( marchingSquares.nextPoint() ) {
+				
+				tupleMap[count++] = marchingSquares.x;
+				tupleMap[count++] = marchingSquares.y;
+				
+				//x = marchingSquares.x;
+				//y = marchingSquares.y;
+				
+			}
+		}
+		
+		return count;
 	}
 	
 	

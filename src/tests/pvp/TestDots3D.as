@@ -9,6 +9,7 @@ package tests.pvp
 	import alternativa.engine3d.materials.StandardMaterial;
 	import alternativa.engine3d.materials.StandardTerrainMaterial;
 	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.objects.MeshSet;
 	import alternativa.engine3d.objects.MeshSetClone;
 	import alternativa.engine3d.objects.MeshSetClonesContainer;
 	import alternativa.engine3d.primitives.Box;
@@ -27,10 +28,14 @@ package tests.pvp
 	import flash.display.Sprite;
 	import flash.display.StageAlign;
 	import flash.display.StageScaleMode;
+	import flash.events.KeyboardEvent;
+	import flash.ui.Keyboard;
 	import systems.collisions.EllipsoidCollider;
 	import systems.SystemPriorities;
 	import util.SpawnerBundle;
 	import views.engine3d.MainView3D;
+	import alternativa.engine3d.alternativa3d;
+	use namespace alternativa3d;
 	/**
 	 * ...
 	 * @author Glidias
@@ -42,10 +47,10 @@ package tests.pvp
 		private var ticker:FrameTickProvider;
 		
 		static public const GRID_SIZE:Number = 32;
-		public var MOVEMENT_POINTS:Number = 14;
-		public var HEIGHTMAPMULT:Number = 64;
+		public var MOVEMENT_POINTS:Number = 39;// 15 * 2;
+		public var HEIGHTMAPMULT:Number = 144;
 		
-		private var _across:int = 32;
+		private var _across:int = 80;
 		private var _graphGrid:GraphGrid;
 		private var _arrDots:Array = [];
 		
@@ -59,6 +64,10 @@ package tests.pvp
 		private var heightMapData:Vector.<int> = new Vector.<int>();
 		
 		private var startBox:Mesh;
+		private var outliner:Vector.<int> = new Vector.<int>();
+		
+		private var borderMeshset:MeshSetClonesContainer;
+		private var _lock:Boolean=false;
 		
 		public function TestDots3D() 
 		{
@@ -72,8 +81,16 @@ package tests.pvp
 			addChild( _template3D = new MainView3D() );
 			_template3D.onViewCreate.add(onReady3D);
 			
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 				
 			setup();
+		}
+		
+		private function onKeyDown(e:KeyboardEvent):void 
+		{
+			if (e.keyCode === Keyboard.P) {
+				_lock = !_lock;
+			}
 		}
 		
 		private function setup():void {
@@ -123,7 +140,7 @@ package tests.pvp
 			
 			_graphGrid.sampleHeightmap(heightMapData, 256 );
 			
-			_graphGrid.djTraversal.edgeDisableMask = GKEdge.FLAG_INVALID | GKEdge.FLAG_GRADIENT_UNSTABLE | GKEdge.FLAG_CLIFF;
+			_graphGrid.djTraversal.edgeDisableMask = GKEdge.FLAG_INVALID;// | GKEdge.FLAG_GRADIENT_UNSTABLE | GKEdge.FLAG_CLIFF;
 			
 		}
 		
@@ -161,7 +178,9 @@ package tests.pvp
 			
 	
 		spectatorPerson.setObjectPosXYZ(256*_across*.5, -256*_across*.5, 1000+HEIGHTMAPMULT*255);
-		spectatorPerson.lookAtXYZ(256*_across*.5, -256*_across*.5, 0);
+		spectatorPerson.lookAtXYZ(256 * _across * .5, -256 * _across * .5, 0);
+		
+		spectatorPerson.speedMultiplier = 8;
 			
 			
 		}
@@ -174,15 +193,24 @@ package tests.pvp
 			removeChild(startPt);
 			removeChild(heightBmp);
 			
-			startBox = new Box(120, 120,120, 1,1,1,false, new FillMaterial(0xFF0000, .5));
+			startBox = new Box(256*2,256*2,  256*2,256*2*(72/32) ,1,1,false, new FillMaterial(0xFF0000, .5));
 			_template3D.scene.addChild(startBox);
 			
 			var i:int = _arrDots.length;
-			//StandardMaterial.alternativa3d::fogMode = FogMode.SIMPLE;
-		//	StandardMaterial.alternativa3d::fogColor = F
+			StandardMaterial.fogMode = FogMode.SIMPLE;
+			StandardMaterial.fogColorR = .12;
+			StandardMaterial.fogColorG = .12;
+			StandardMaterial.fogColorB = .12;
+			StandardMaterial.fogNear = 1;
+			StandardMaterial.fogFar = 13000;
 			var box:Box = new Box(16, 16, 64, 1, 1, 1, false, new StandardMaterial( new BitmapTextureResource( new BitmapData(4,4,false,0x00FF00)), new BitmapTextureResource( new BitmapData(4,4,false,0x0000FF))));
 			var boxClones:MeshSetClonesContainer = new MeshSetClonesContainer(box, box.getSurface(0).material );
 			_template3D.scene.addChild(boxClones);
+			
+			
+				borderMeshset = new MeshSetClonesContainer(new Box(32,32,72,1,1,1), new FillMaterial(0xFF0000, .7));
+			_template3D.scene.addChild(borderMeshset);
+			
 			
 			boxClones.scaleX = boxClones.scaleY = 256 / GRID_SIZE;
 			while (--i > -1) {
@@ -197,6 +225,7 @@ package tests.pvp
 			
 				var plane:Plane = new Plane((_across + 1) * GRID_SIZE, (_across + 1) * GRID_SIZE, _across + 1, _across + 1, false, false, null, box.getSurface(0).material);
 		
+				/*
 			var terrainLOD:TerrainLOD = new TerrainLOD();
 			var terrainMat:StandardTerrainMaterial =  new StandardTerrainMaterial(  new BitmapTextureResource(new BitmapData(4, 4, false, 0x0000FF)), new BitmapTextureResource( new BitmapData(4, 4, false, 0x0000FF)))
 			terrainMat.normalMapSpace = NormalMapSpace.OBJECT;
@@ -206,7 +235,7 @@ package tests.pvp
 		//	QuadTreePage.createFlat(0, 0, _across, 256),
 			terrainLOD.loadSinglePage( SpawnerBundle.context3D, TerrainLOD.installQuadTreePageFromHeightMap(HeightMapInfo.createFromBmpData(heightMap,0,0,HEIGHTMAPMULT,0,256), 0, 0, 256, 0),   terrainMat);
 				_template3D.scene.addChild(terrainLOD);
-				
+				*/
 				
 			for (var y:int = 0; y < _across; y++) {
 				for (var x:int = 0; x < _across; x++) {
@@ -247,7 +276,7 @@ package tests.pvp
 		//	x = _across * .5;
 			//y = _across * .5;
 			
-			if (x != _x || y != _y) {
+			if (!_lock && (x != _x || y != _y)) {
 				
 				 _x=x;
 				 _y = y
@@ -260,6 +289,20 @@ package tests.pvp
 				 
 				 	 _graphGrid.search(_x, _y, MOVEMENT_POINTS);
 				 _graphGrid.renderVisitedToScaledImages(_arrDots, .25);
+				 
+				 /*
+				 var total:int = _graphGrid.performOutlineRender(outliner);
+				 borderMeshset.numClones = 0;
+				 for (var i:int = 0; i < total; i+=2) {
+					// outliner[i];
+					// outliner[i + 1];
+					var clone:MeshSetClone = borderMeshset.addNewOrAvailableClone();
+					clone.root.x =  outliner[i] * 256;
+					clone.root.y =  -outliner[i + 1] * 256;
+					 clone.root.z =  heightMapData[ outliner[i+1]*_across+ outliner[i]];
+				 }
+				 */
+				 
 			}
 			
 			

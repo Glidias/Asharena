@@ -17,12 +17,12 @@ class GKMarchingSquares{
   public var startY(default, null):Int;
   public var startDir(default, null):Int;
 
-  var clr:Int;
+ 
   var intCon8:Int;
 
   public function new(src=null, across:Int=32){
     this.src = src;
-	this.clr  = 1;
+	
 	this.across = across;
 	
     con8 = true;
@@ -32,17 +32,19 @@ class GKMarchingSquares{
   var ne:Bool;
   var sw:Bool;
   var se:Bool;
+  
+  
 
-  public function startTracking(startx:Int, starty:Int, clr:Int=1):Bool {
-    this.clr = clr;
-    var cnd =  searchCandidate(src, startx, starty, across, clr);  //new Point(startx, starty);//
+  public function startTracking(startx:Int, starty:Int):Bool {
+   
+    var cnd =  searchCandidate(src, startx, starty, across);  //new Point(startx, starty);//
     x = cnd.x;
     y = cnd.y;
     dir = 0;
-    nw = (getPixel(x  ,y  ) == clr);
-    ne = (getPixel(x+1,y  ) == clr);
-    sw = (getPixel(x  ,y+1) == clr);
-    se = (getPixel(x+1,y+1) == clr);
+    nw = (getPixel(x  ,y  ) );
+    ne = (getPixel(x+1,y  ));
+    sw = (getPixel(x  ,y+1));
+    se = (getPixel(x+1,y+1));
     var result:Bool = nextPoint();
     startX = x;
     startY = y;
@@ -77,8 +79,10 @@ class GKMarchingSquares{
     return (x != startX) || (y != startY) || (dir != startDir);
     }
 	
-	inline function getPixel(x:Int, y:Int):Int {
-		return src.has(y * across + x);
+	
+	
+	inline function getPixel(x:Int, y:Int):Bool {
+		return y < across && x < across ? src.has(y * across + x) : false;
 	}
 
   inline function set_con8(val){
@@ -88,37 +92,39 @@ class GKMarchingSquares{
 
   inline function goRight(){ x++;
     nw = ne; sw = se;
-    ne = (getPixel(x+1,y  ) == clr);
-    se = (getPixel(x+1,y+1) == clr);
+    ne = (getPixel(x+1,y  ));
+    se = (getPixel(x+1,y+1));
     dir = 0;
     }
 
   inline function goUp(){ y--;
     sw = nw; se = ne;
-    nw = (getPixel(x  ,y  ) == clr);
-    ne = (getPixel(x+1,y  ) == clr);
+    nw = (getPixel(x  ,y  ));
+    ne = (getPixel(x+1,y  ));
     dir = 1;
     }
 
   inline function goLeft(){ x--;
     ne = nw; se = sw;
-    nw = (getPixel(x  ,y  ) == clr);
-    sw = (getPixel(x  ,y+1) == clr);
+    nw = (getPixel(x  ,y  ));
+    sw = (getPixel(x  ,y+1));
     dir = 2;
     }
 
   inline function goDown(){ y++;
     nw = sw; ne = se;
-    sw = (getPixel(x  ,y+1) == clr);
-    se = (getPixel(x+1,y+1) == clr);
+    sw = (getPixel(x  ,y+1));
+    se = (getPixel(x+1,y+1));
     dir = 3;
     }
 
 
-  public static function searchCandidate(src:BitVector, startx:Int, starty:Int, across:Int, clr:Int=1) {
+  public static inline function searchCandidate(src:BitVector, startx:Int, starty:Int, across:Int) {
 	// var iterations:Int = 0;
-    while(src.getBucketAt( starty*across + startx) != clr) startx++;
-    do { startx++; if (startx >= across) throw "Width search forward exceeded!"; } while ( src.getBucketAt( starty*across+startx) == clr );
+    while ( startx < across &&  !src.has( starty * across + startx) ) {
+		startx++;
+	}
+    do { startx++; if (startx >= across) throw "Width search forward exceeded!"; } while ( src.has( starty*across+startx) );
     return {x: startx-1, y:starty};
     }
   }

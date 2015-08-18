@@ -12,6 +12,7 @@ class GKEdge {
 	public static inline var FLAG_GRADIENT_DIFFICULT:Int = 4; // edge has significant slope, but may not unstably slide off it
 	public static inline var FLAG_INVALID:Int = 8;  // edge leads to an obstacle or untraversible node
 	public static inline var FLAG_CLIFF:Int = 16;  // edge leads to/from a cliff node
+	public static inline var FLAG_VISITED:Int = 32;  // a generic flag to handle edge visit, particularly for edge border tracing
 	
 	public static inline var DIAGONAL_LENGTH:Float = 1.4142135623730950488016887242097;
 	
