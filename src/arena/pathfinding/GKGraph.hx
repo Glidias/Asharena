@@ -283,8 +283,8 @@ class GKGraph {
 				
 				var to:GKNode = nodes[edge.to];
 				var toZ:Float = cells[to.y][to.x];
-				//fromCliff || 
-				if (cliffMap.has(to.y * across + to.x)) {
+				//
+				if (fromCliff || cliffMap.has(to.y * across + to.x)) {
 					edge.flags |= GKEdge.FLAG_CLIFF;
 				}
 				

@@ -92,6 +92,24 @@ class GraphGrid
 		}
 	}
 	
+	public function renderOutlineBorderToScaledImages(images:Array<Dynamic>, upScale:Float=2):Void {
+		for (y in 0..._across) {
+			for (x in 0..._across) {
+				var i:Int = y * _across + x;
+				var img:Dynamic = images[i];
+				if ( djTraversal.cost2Node[i] > djTraversal.maxCost) {
+					
+					img.rotationZ = Math.PI * .5 * .5;
+					//img.scaleZ = upScale;
+				}
+				else {
+					img.rotationZ = 0;
+				}
+				
+			}
+		}
+	}
+	
 	public function performOutlineRender(tupleMap:Vector<Int>):Int {
 		var result:Bool = marchingSquares.startTracking(0, _y);
 		var count:Int = 0;
@@ -113,6 +131,94 @@ class GraphGrid
 		}
 		
 		return count;
+	}
+	
+	public function performOutlineBorderRender(tupleMap:Vector<Int>):Int {
+		var i:Int;
+		var count:Int = 0;
+		
+		var startNode:GKNode = graph.getNode( djTraversal.source);
+		var endNode:GKNode;
+		var curNode:GKNode;
+		var endNodeIndex:Int = -1;
+		var x:Int = startNode.x;
+		var colI:Int = startNode.y * _across;
+		while ( --x > -1  ) {
+			i = colI + x;
+			var cost:Float = djTraversal.cost2Node[i];
+			if (cost > djTraversal.maxCost) {
+				if (endNodeIndex == -1) endNodeIndex = i;  // get first hit end border
+			}
+			else if (cost > 0) {
+				endNodeIndex = -1;
+			}
+			x--;
+		}
+		
+		
+		/*
+		if (endNodeIndex >= 0) {
+			endNode = curNode= graph.getNode(endNodeIndex);
+			while (curNode != null) {
+				curNode = _processNodeBorder(curNode, startNode);
+			}
+		}
+		*/
+		
+
+		
+		for (y in 0..._across) {
+			for (x in 0..._across) {
+				var i:Int = y * _across + x;
+				
+				if ( djTraversal.cost2Node[i] > djTraversal.maxCost) {
+					
+					//img.rotationZ = Math.PI * .5 * .5;
+					//img.scaleZ = upScale;
+					tupleMap[count++] = x;
+					tupleMap[count++] = y;
+				}
+				
+				
+			}
+		}
+		
+		
+		return count;
+	}
+	
+	//inline
+	private  function _processNodeBorder(node:GKNode, startNode:GKNode):GKNode {
+		var edges:Array<GKEdge> = graph.getEdges(node.index);
+		var len:Int = edges.length;
+		var curDist:Float = PMath.FLOAT_MAX;
+		var firstClosestNode:GKNode = null;
+		
+		for (i in 0...len) {
+			var e:GKEdge = edges[i];
+			if ( djTraversal.cost2Node[e.to] <= djTraversal.maxCost ) {
+				continue;
+			}
+			else {
+				continue;
+				
+				var destNode:GKNode =  graph.getNode(e.to);
+				
+				var dx:Float = destNode.x - startNode.x;
+				var dy:Float = destNode.y - startNode.y;
+				var d:Float = dx * dx + dy * dy;
+				
+				
+				if (d < curDist) {
+					curDist = d;
+					firstClosestNode = destNode;
+				}
+			}
+		}
+		
+		if (firstClosestNode != null) djTraversal.cost2Node[firstClosestNode.index] = -1;  // unmark it on purpose...
+		
+		return firstClosestNode;
 	}
 	
 	

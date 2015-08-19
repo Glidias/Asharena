@@ -102,15 +102,14 @@ class GKDijkstra {
 			for (edge in edges) {
 				/* 5.- For each edge calculate the cost of moving from the source node to the arrival Node */
 				
-				if  ( (edge.flags & edgeDisableMask) != 0 )  {
-					
-					continue;
-				}
-				
 				//The total cost is calculated by: Cost of the node + Cost of the edge
 				var nCost:Float = cost2Node[NCN] + edge.cost;
 				if (nCost > maxCost) {
-					
+					cost2Node[edge.to] = nCost;
+					continue;
+				}
+				
+				if  ( (edge.flags & edgeDisableMask) != 0 )  {	
 					continue;
 				}
 				

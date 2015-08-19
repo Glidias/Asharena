@@ -289,9 +289,10 @@ package tests.pvp
 				 
 				 	 _graphGrid.search(_x, _y, MOVEMENT_POINTS);
 				 _graphGrid.renderVisitedToScaledImages(_arrDots, .25);
+				 _graphGrid.renderOutlineBorderToScaledImages(_arrDots,0);
 				 
-				 /*
-				 var total:int = _graphGrid.performOutlineRender(outliner);
+				// /*
+				 var total:int = _graphGrid.performOutlineBorderRender(outliner);// _graphGrid.performOutlineRender(outliner);
 				 borderMeshset.numClones = 0;
 				 for (var i:int = 0; i < total; i+=2) {
 					// outliner[i];
@@ -301,7 +302,7 @@ package tests.pvp
 					clone.root.y =  -outliner[i + 1] * 256;
 					 clone.root.z =  heightMapData[ outliner[i+1]*_across+ outliner[i]];
 				 }
-				 */
+				// */
 				 
 			}
 			
