@@ -118,6 +118,25 @@ class BitVector implements Hashable
 		return ((_bits[i >> 5] & (1 << (i & (32 - 1)))) >> (i & (32 - 1))) != 0;
 	}
 	
+	inline public function getFlagAt(i:Int):Int
+	{
+		#if debug
+		assert(i < capacity(), 'i index out of range ($i)');
+		#end
+		
+		return ((_bits[i >> 5] & (1 << (i & (32 - 1)))) >> (i & (32 - 1)));
+	}
+	
+	inline public function setFlagAt(i:Int, value:Int)
+	{
+		#if debug
+		assert(i < capacity(), 'i index out of range ($i)');
+		#end
+		
+		var p = i >> 5;
+		_bits[p] = value != 0 ? _bits[p] | (1 << (i & (32 - 1))) : _bits[p] & (~(1 << (i & (32 - 1))));
+	}
+	
 	inline public function hasOrNot(i:Int):Bool
 	{
 

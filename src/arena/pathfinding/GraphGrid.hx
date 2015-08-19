@@ -92,6 +92,56 @@ class GraphGrid
 		}
 	}
 	
+	private var outlineBitVector:BitVector;
+	public inline function renderBordersAlgo():Void {
+		var oIndex:Int;
+		var index:Int;
+		var across2:Int = (_across + 2);
+		if (outlineBitVector == null) outlineBitVector = new BitVector(across2 * across2);
+		
+		// http://www.mathworks.com/matlabcentral/fileexchange/41239-finds-edges-in-a-binary-image
+		/*
+		function [OUT] = edge2(IN)
+
+		[r,c]  = size(IN);
+		A = false([r,c]+2);
+
+		for i = 0:2,
+			for j = 0:2,
+				A((1:r)+i,(1:c)+j) = A((1:r)+i,(1:c)+j) | IN;
+			end;
+		end;
+
+		OUT = xor(A(2:r+1,2:c+1), IN);
+		*/
+		
+		outlineBitVector.clrAll();
+		
+		for (i in 0...2) {
+			for (j in 0...2) {  // todo: inline this for loop
+			//	outlineBitVector.set
+				for (y in 1..._across) {
+					for (x in 1..._across) {
+						index = y * _across + x;
+						oIndex = (y + i) * _across + x + j;
+						outlineBitVector.setFlagAt(oIndex, outlineBitVector.getFlagAt(oIndex) | visitCells.getFlagAt(index) );
+					}
+				}
+			}
+		}
+		
+		for (y in 2..._across+1) {
+			for (x in 2..._across+1) {
+				oIndex = y * _across + x;
+				index = (y - 1) * _across + (x-1);
+				outlineBitVector.setFlagAt(index, outlineBitVector.getFlagAt(index) ^ visitCells.getFlagAt(index) );
+			}
+		}
+		
+	}
+	
+
+	
 	public function renderOutlineBorderToScaledImages(images:Array<Dynamic>, upScale:Float=2):Void {
 		for (y in 0..._across) {
 			for (x in 0..._across) {
