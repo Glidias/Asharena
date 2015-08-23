@@ -12,42 +12,44 @@
 
 package hxGeomAlgo;
 
+import de.polygonal.ds.BitVector;
 import haxe.ds.Vector;
 import haxe.ds.ObjectMap;
-import hxPixels.Pixels;
 
 
-/** function(pixels:Pixels, x:Int, y:Int):Float */
-typedef IsoFunction = Pixels->Int->Int->Float;
+
 
 
 class IsoContours
 {
 
-	public var isoFunction:IsoFunction;
-	
-	var pixels:Pixels;
+
+	var pixels:BitVector;
+	public var pixels2:BitVector;
 	var width:Int;
 	var height:Int;
 	
-	var values:Vector<Float>;
+	var values:BitVector;
 
 	var adjacencyMap:AdjacencyMap;
+
+	var  paddedWidth:Int;
+	var  paddedHeight:Int;
 	
 	/**
 	 * Constructor.
 	 * 
-	 * @param	pixels			Pixels to use as source.
-	 * @param	isoFunction		Function mapping individual pixels to a Float value. Defaults to `isoAlpha()`.
+	 * @param	pixels			Bit vector pixels to use as source.
 	 */
-	public function new(pixels:Pixels, isoFunction:IsoFunction = null)
+	public function new(pixels:BitVector, across:Int)
 	{
 		this.pixels = pixels;
-		this.width = pixels.width;
-		this.height = pixels.height;
+		this.width = across;
+		this.height = across;
 		this.values = null;
-		
-		this.isoFunction = (isoFunction != null) ? isoFunction : isoAlpha;
+			paddedWidth = width + 2;
+		paddedHeight = height + 2;
+		//this.isoFunction = (isoFunction != null) ? isoFunction : isoAlpha;
 	}
 	
 	/**
@@ -59,18 +61,40 @@ class IsoContours
 	 * @param	addBorders		If true this will work as if the source had a 1px wide border around it (handled in isoFunction()).
 	 * @param	recalcValues	Whether isoFunction() needs to be re-run through all pixels.
 	 */
-	public function find(isoValue:Float = 0, addBorders:Bool = true, recalcValues:Bool = true):Array<Array<HxPoint>> {
+	public function find(addBorders:Bool = true, recalcValues:Bool = true):Array<Array<HxPoint>> {
 		
-		march(isoValue, addBorders, recalcValues);
+		adjacencyMap = new AdjacencyMap();
 		
+		// run isoFunction through all pixels
+		if (recalcValues || values == null) {
+			if (values == null) values = new BitVector(paddedWidth * paddedHeight);
+			 runIsoFunction();
+		}
+	
+		march( addBorders, recalcValues);	
  		var contours = merge();
-		
 		return contours;
 	}
 	
-	function merge() {
+	public function find2(addBorders:Bool = true, recalcValues:Bool = true):Array<Array<HxPoint>> {
+		
+		adjacencyMap = new AdjacencyMap();
+		
+		// run isoFunction through all pixels
+		if (recalcValues || values == null) {
+			if (values == null) values = new BitVector(paddedWidth * paddedHeight);
+			 runIsoFunction2();
+		}
+	
+		march( addBorders, recalcValues);	
+ 		var contours = merge();
+		return contours;
+	}
+	
+	inline function merge() {
 		
 		var isoLines = [];
+		
 		
 		var segment = null;
 		while ((segment = adjacencyMap.getFirstSegment()) != null) {
@@ -102,26 +126,48 @@ class IsoContours
 		return isoLines;
 	}
 	
-	function march(isoValue:Float = 0, addBorders:Bool = true, recalcValues:Bool = true) {
-		
-		adjacencyMap = new AdjacencyMap();
-		var paddedWidth = width + 2;
-		var paddedHeight = height + 2;
-		
-		// run isoFunction through all pixels
-		if (recalcValues || values == null) {
-			values = new Vector(paddedWidth * paddedHeight);
-			
+	inline function runIsoFunction():Void {
+	
 			for (y in 0...paddedHeight) {
 				
 				for (x in 0...paddedWidth) {
 					
 					var pos = y * paddedWidth + x;
-					var value = isoFunction(pixels, x - 1, y - 1);
-					values[pos] = value;
+
+					var withinRange:Bool =  x > 0 && x <= width && y > 0 && y <= height;
+					var value =withinRange ? pixels.getFlagAt((y-1)*width+x-1): 0;// isoFunction(pixels, x - 1, y - 1);
+				
+					values.setFlagAt(y*paddedWidth + x, value );
 				}
 			}
-		}
+	}
+	
+	
+	inline function runIsoFunction2():Void {
+	
+			for (y in 0...paddedHeight) {
+				
+				for (x in 0...paddedWidth) {
+					
+					var pos = y * paddedWidth + x;
+
+					var withinRange:Bool =  x > 0 && x <= width && y > 0 && y <= height;
+					var value =withinRange ? pixels.getFlagAt((y-1)*width+x-1): 0;// isoFunction(pixels, x - 1, y - 1);
+					var value2 =  pixels2!= null && withinRange ? pixels2.getFlagAt((y-1)*width+x-1): 1;
+					values.setFlagAt(y*paddedWidth + x, (value & value2) );
+				}
+			}
+	}
+	
+	inline
+	function march( addBorders:Bool = true, recalcValues:Bool = true) {
+		
+		
+		
+		
+		
+		
+		
 		
 		// adjust loop variables
 		var offset = -.5;
@@ -137,36 +183,39 @@ class IsoContours
 		}
 		
 		// march
+		
 		for (x in startX...endX) {
 			
 			for (y in startY...endY) {
 				
 				// calc binaryIdx (CW from msb)
 				var pos = y * paddedWidth + x;
-				var topLeft = values[pos];
-				var topRight = values[pos + 1];
-				var bottomRight = values[pos + 1 + paddedWidth];
-				var bottomLeft = values[pos + paddedWidth];
+				var topLeft = values.has(pos); // values[pos];
+				var topRight = values.has(pos + 1);
+				var bottomRight = values.has(pos + 1 + paddedWidth);
+				var bottomLeft = values.has(pos + paddedWidth);
 				
 				var binaryIdx = 0;
-				if (topLeft > isoValue) binaryIdx += 8;
-				if (topRight > isoValue) binaryIdx += 4;
-				if (bottomRight > isoValue) binaryIdx += 2;
-				if (bottomLeft > isoValue) binaryIdx += 1;
+				if (topLeft ) binaryIdx += 8;
+				if (topRight ) binaryIdx += 4;
+				if (bottomRight) binaryIdx += 2;
+				if (bottomLeft) binaryIdx += 1;
 				
 				if (binaryIdx != 0 && binaryIdx != 15) {
 					
-					var topPoint = new HxPoint(offset + x + interp(isoValue, topLeft, topRight), offset + y);
-					var leftPoint = new HxPoint(offset + x, offset + y + interp(isoValue, topLeft, bottomLeft));
-					var rightPoint = new HxPoint(offset + x + 1, offset + y + interp(isoValue, topRight, bottomRight));
-					var bottomPoint = new HxPoint(offset + x + interp(isoValue, bottomLeft, bottomRight), offset + y + 1);
+					var topPoint = new HxPoint(offset + x + interpB(topLeft, topRight), offset + y);
+					var leftPoint = new HxPoint(offset + x, offset + y + interpB(topLeft, bottomLeft));
+					var rightPoint = new HxPoint(offset + x + 1, offset + y + interpB(topRight, bottomRight));
+					var bottomPoint = new HxPoint(offset + x + interpB(bottomLeft, bottomRight), offset + y + 1);
 					
 					// resolve saddle ambiguities by using central (/average) value
 					if (binaryIdx == 5 || binaryIdx == 10) {
-						var avgValue = (topLeft + topRight + bottomRight + bottomLeft) / 4;
+					
+						var avgValue = ((topLeft?1:0) + (topRight?1:0) + (bottomRight?1:0) +( bottomLeft?1:0)) / 4;
 						if (avgValue <= 0) binaryIdx = ~binaryIdx & 15; // flip binaryIdx
 					}
 					
+					//binaryIdx = 999999;
 					// add segments (pairs of points) based on binaryIdx. 
 					// consistent order is enforced, meaning that the first point of a 
 					// segment is guaranteed to be the second point of another segment 
@@ -214,13 +263,15 @@ class IsoContours
 		return (isoValue - fromValue) / (toValue - fromValue);
 	}
 	
-	static public function isoAlpha(pixels:Pixels, x:Int, y:Int):Float {
-		if (isOutOfBounds(pixels, x, y)) return 0;
-		else return pixels.getPixel32(x, y).A;
+	public function interpB( fromValue:Bool, toValue:Bool):Float {
+	
+		return fromValue == toValue ? 0 : fromValue ? 1 : 0;
 	}
 	
-	inline static public function isOutOfBounds(pixels:Pixels, x:Int, y:Int):Bool {
-		return (x < 0 || y < 0 || x >= pixels.width || y >= pixels.height);
+
+	//static
+	inline  public function isOutOfBounds(pixels:BitVector, x:Int, y:Int):Bool {
+		return (x < 0 || y < 0 || x >= width || y >= height);
 	}	
 }
 
@@ -247,13 +298,16 @@ class AdjacencyMap {
 	public function new():Void {
 		pointSet = new Map();
 		segments = [];
+		
 		mapStartToEnd = new ObjectMap();
 		mapEndToStart = new ObjectMap();
 	}
 	
 	public function addSegment(from:HxPoint, to:HxPoint):Void {
-		if (from.equals(to)) return;
-		
+		if (from.equals(to)) return; 
+		//if  (from != null && to != null && from.x == to.x && from.y == to.y) return ;
+		//(HxPoint.areEqual(from, to)) return;
+
 		var fromKey = from.toString();
 		var toKey = to.toString();
 		

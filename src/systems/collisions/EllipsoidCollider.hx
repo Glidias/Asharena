@@ -16,6 +16,7 @@ package systems.collisions;
 	import components.Transform3D;
 	import flash.geom.Vector3D;
 	import haxe.Log;
+	import util.geom.PMath;
 	
 	import util.geom.Geometry;
 	import util.TypeDefs;
@@ -431,7 +432,7 @@ package systems.collisions;
 					normals[normalsLength] = normalX; normalsLength++;
 					normals[normalsLength] = normalY; normalsLength++;
 					normals[normalsLength] = normalZ; normalsLength++;
-					normals[normalsLength] = offset; normalsLength++;
+					normals[normalsLength] = offset - (PMath.abs(normalZ) < 0.001 ? 32 : 0 ); normalsLength++;
 					numFaces++;
 				}
 				// Offset by nomber of vertices

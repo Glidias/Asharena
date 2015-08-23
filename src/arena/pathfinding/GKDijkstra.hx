@@ -105,7 +105,7 @@ class GKDijkstra {
 				//The total cost is calculated by: Cost of the node + Cost of the edge
 				var nCost:Float = cost2Node[NCN] + edge.cost;
 				if (nCost > maxCost) {
-					cost2Node[edge.to] = nCost;
+					if (cost2Node[edge.to] == 0) cost2Node[edge.to] = nCost;
 					continue;
 				}
 				

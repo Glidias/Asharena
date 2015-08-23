@@ -26,12 +26,15 @@ abstract HxPoint(HxPointData) from HxPointData to HxPointData
 		y = newY;
 	}
 	
-	@:op(A == B) inline public function equals(p:HxPoint):Bool
+	//@:op(A == B) 
+	inline public function equals(p:HxPoint):Bool
 	{
+		
 		return areEqual(this, p);
 	}
 	
-	@:op(A != B) inline public function notEequals(p:HxPoint):Bool
+	//@:op(A != B) 
+	inline public function notEequals(p:HxPoint):Bool
 	{
 		return areNotEqual(this, p);
 	}
@@ -70,6 +73,7 @@ abstract HxPoint(HxPointData) from HxPointData to HxPointData
 	
 	inline static public function areEqual(p:HxPoint, q:HxPoint):Bool
 	{
+		
 		return (p != null && q != null && q.x == p.x && q.y == p.y);
 	}	
 	

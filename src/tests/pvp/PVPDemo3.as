@@ -12,7 +12,7 @@ package tests.pvp
 	import alternativa.a3d.rayorcollide.TerrainRaycastImpl;
 	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
 	import alternativa.a3d.systems.enemy.A3DEnemyArcSystem;
-	import alternativa.a3d.systems.hud.DestCalcTester;
+	//import alternativa.a3d.systems.hud.DestCalcTester;
 	import alternativa.a3d.systems.hud.HealthBarRenderSystem;
 	import alternativa.a3d.systems.hud.TrajRaycastTester;
 	import alternativa.engine3d.controllers.OrbitCameraMan;
@@ -1668,6 +1668,7 @@ package tests.pvp
 				arenaHUD.hideStars();
 				if ( _targetTransitState === "thirdPerson" ) {
 		
+					/*
 					if (destCalcTester) {
 					destCalcTester.pos = arenaSpawner.getPlayerEntity().get(Pos) as Pos;
 					destCalcTester.rot = arenaSpawner.getPlayerEntity().get(Rot) as Rot;
@@ -1676,6 +1677,7 @@ package tests.pvp
 					destCalcTester.surfaceMovement = arenaSpawner.getPlayerEntity().get(SurfaceMovement) as SurfaceMovement;
 					destCalcTester.movementPoints = arenaSpawner.getPlayerEntity().get(MovementPoints) as MovementPoints;
 					}
+					*/
 					activateEnemyAggro();
 					
 				}
@@ -2129,7 +2131,7 @@ package tests.pvp
 		private var targetingSystem:ThirdPersonTargetingSystem;
 		private var movementPointSystem:LimitedPlayerMovementSystem;
 		private var _debugBox:Box;
-		private var destCalcTester:DestCalcTester;
+		//private var destCalcTester:DestCalcTester;
 		
 		private function setupInterface():void 
 		{

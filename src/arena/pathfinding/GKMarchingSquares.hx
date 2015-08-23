@@ -2,7 +2,9 @@ package arena.pathfinding;
 
 import de.polygonal.ds.BitVector;
 
-
+/**
+ * Depreciated: Rather FAULTY!
+ */
 class GKMarchingSquares{
   public var src:BitVector;
   public var across:Int;
@@ -34,6 +36,22 @@ class GKMarchingSquares{
   var se:Bool;
   
   
+  public function startTrackingFrom(startx:Int, starty:Int):Bool {
+   
+  
+    x = startx;
+    y = starty;
+    dir = 0;
+    nw = (getPixel(x  ,y  ) );
+    ne = (getPixel(x+1,y  ));
+    sw = (getPixel(x  ,y+1));
+    se = (getPixel(x+1,y+1));
+    var result:Bool = nextPoint();
+    startX = x;
+    startY = y;
+    startDir = dir;
+	return result;
+    }
 
   public function startTracking(startx:Int, starty:Int):Bool {
    
@@ -82,7 +100,7 @@ class GKMarchingSquares{
 	
 	
 	inline function getPixel(x:Int, y:Int):Bool {
-		return y < across && x < across ? src.has(y * across + x) : false;
+		return x >= 0  && y >= 0 && y < across && x < across ? src.has(y * across + x) : false;
 	}
 
   inline function set_con8(val){

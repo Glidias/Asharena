@@ -47,8 +47,8 @@ package tests.pvp
 		private var ticker:FrameTickProvider;
 		
 		static public const GRID_SIZE:Number = 32;
-		public var MOVEMENT_POINTS:Number = 39;// 15 * 2;
-		public var HEIGHTMAPMULT:Number = 144;
+		public var MOVEMENT_POINTS:Number = 15 * 2;
+		public var HEIGHTMAPMULT:Number =  144;
 		
 		private var _across:int = 80;
 		private var _graphGrid:GraphGrid;
@@ -140,7 +140,8 @@ package tests.pvp
 			
 			_graphGrid.sampleHeightmap(heightMapData, 256 );
 			
-			_graphGrid.djTraversal.edgeDisableMask = GKEdge.FLAG_INVALID;// | GKEdge.FLAG_GRADIENT_UNSTABLE | GKEdge.FLAG_CLIFF;
+			//| GKEdge.FLAG_GRADIENT_UNSTABLE | GKEdge.FLAG_CLIFF
+			_graphGrid.djTraversal.edgeDisableMask = GKEdge.FLAG_INVALID;
 			
 		}
 		
@@ -208,7 +209,7 @@ package tests.pvp
 			_template3D.scene.addChild(boxClones);
 			
 			
-				borderMeshset = new MeshSetClonesContainer(new Box(32,32,72,1,1,1), new FillMaterial(0xFF0000, .7));
+				borderMeshset = new MeshSetClonesContainer(new Box(64,64,472,1,1,1), new FillMaterial(0xFF0000, .7));
 			_template3D.scene.addChild(borderMeshset);
 			
 			
@@ -292,7 +293,12 @@ package tests.pvp
 				 _graphGrid.renderOutlineBorderToScaledImages(_arrDots,0);
 				 
 				// /*
-				 var total:int = _graphGrid.performOutlineBorderRender(outliner);// _graphGrid.performOutlineRender(outliner);
+			
+				 var total:int = 	 _graphGrid.performIsoOutlineRender(outliner);
+				// _graphGrid.renderBordersAlgo(outliner); 
+				 // _graphGrid.performOutlineBorderRender(outliner);
+				 // _graphGrid.performOutlineRender(outliner);
+//
 				 borderMeshset.numClones = 0;
 				 for (var i:int = 0; i < total; i+=2) {
 					// outliner[i];
@@ -300,7 +306,8 @@ package tests.pvp
 					var clone:MeshSetClone = borderMeshset.addNewOrAvailableClone();
 					clone.root.x =  outliner[i] * 256;
 					clone.root.y =  -outliner[i + 1] * 256;
-					 clone.root.z =  heightMapData[ outliner[i+1]*_across+ outliner[i]];
+					 clone.root.z =  heightMapData[ outliner[i + 1] * _across + outliner[i]];
+				//	 clone.root.scaleZ = .015 * i / 2;
 				 }
 				// */
 				 

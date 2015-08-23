@@ -1,8 +1,10 @@
 package arena.pathfinding;
 import arena.pathfinding.GKGraph;
-import arena.pathfinding.GKMarchingSquares;
+
 import components.CollisionResult;
 import de.polygonal.ds.BitVector;
+import flash.Vector;
+import hxGeomAlgo.IsoContours;
 import util.geom.PMath;
 import util.TypeDefs;
 
@@ -16,7 +18,7 @@ class GraphGrid
 {
 	private var _across:Int;
 	var cliffVector:BitVector;
-	var marchingSquares:GKMarchingSquares;
+	//var marchingSquares:GKMarchingSquares;
 	var _x:Int;
 	var _y:Int;
 	public var cells:Array<Vector<Float>>; // heightmap
@@ -24,6 +26,7 @@ class GraphGrid
 	public var visitCells:BitVector;
 	public var djTraversal:GKDijkstra;
 	public var normalZThreshold:Float;
+	private var isoContours:IsoContours;
 	
 	
 	public function new(across:Int) 
@@ -35,7 +38,9 @@ class GraphGrid
 		visitCells = new BitVector(across*across);
 		cliffVector = new BitVector(across*across);
 	
-
+		isoContours = new IsoContours(visitCells, _across);
+		isoContours.pixels2 = cliffVector;
+		
 		for ( y in 0...across) {
 			cells[y] =  TypeDefs.createFloatVector(across, true);
 		}
@@ -43,7 +48,7 @@ class GraphGrid
 		
 		djTraversal = new GKDijkstra(graph, 0, -1);
 		
-		marchingSquares = new GKMarchingSquares(visitCells, across);
+		//marchingSquares = new GKMarchingSquares(visitCells, across);
 		
 		
 		//djTraversal.search();
@@ -93,11 +98,15 @@ class GraphGrid
 	}
 	
 	private var outlineBitVector:BitVector;
-	public inline function renderBordersAlgo():Void {
+	private var outlineBitVectorResult:BitVector;
+	public inline function renderBordersAlgo(tupleMap:Vector<Int>):Int {
 		var oIndex:Int;
 		var index:Int;
 		var across2:Int = (_across + 2);
-		if (outlineBitVector == null) outlineBitVector = new BitVector(across2 * across2);
+		if (outlineBitVector == null) {
+			outlineBitVector = new BitVector(across2 * across2);
+			outlineBitVectorResult = new BitVector(_across * _across);
+		}
 		
 		// http://www.mathworks.com/matlabcentral/fileexchange/41239-finds-edges-in-a-binary-image
 		/*
@@ -117,27 +126,59 @@ class GraphGrid
 		
 		outlineBitVector.clrAll();
 		
-		for (i in 0...2) {
-			for (j in 0...2) {  // todo: inline this for loop
+		var yi:Int;
+		var xi:Int;
+		
+	
+		for (i in 0...3) {
+			xi = 0;
+			for (j in 0...3) {  // todo: inline this for loop
 			//	outlineBitVector.set
+				yi = 0; 
 				for (y in 1..._across) {
+					xi = 0;
 					for (x in 1..._across) {
-						index = y * _across + x;
-						oIndex = (y + i) * _across + x + j;
+						oIndex = (y+i) * across2 + x + j;
+						index = index = yi * _across + xi;
 						outlineBitVector.setFlagAt(oIndex, outlineBitVector.getFlagAt(oIndex) | visitCells.getFlagAt(index) );
+						xi++;
 					}
+					yi++; 
 				}
+				
 			}
 		}
 		
-		for (y in 2..._across+1) {
-			for (x in 2..._across+1) {
-				oIndex = y * _across + x;
-				index = (y - 1) * _across + (x-1);
-				outlineBitVector.setFlagAt(index, outlineBitVector.getFlagAt(index) ^ visitCells.getFlagAt(index) );
+		yi = 0;
+		for (y in 2..._across + 2) {
+			
+			xi = 0;
+			for (x in 2..._across+2) {
+				oIndex = y * across2 + x;
+				index = yi * _across + xi;
+				outlineBitVectorResult.setFlagAt(index, outlineBitVector.getFlagAt(oIndex) ^ visitCells.getFlagAt(index) );
+				xi++;
 			}
+			yi++;
 		}
 		
+		var count:Int = 0;
+		for (y in 0..._across) {
+			
+			
+			for (x in 0..._across) {
+				index = y * _across + x;
+				if ( outlineBitVectorResult.has(index) && !visitCells.has(index) ) {
+					tupleMap[count++] = x;
+					tupleMap[count++] = y;
+				}; 
+				
+			}
+			
+		}
+		
+		return count;
+
 	}
 	
 
@@ -160,28 +201,24 @@ class GraphGrid
 		}
 	}
 	
-	public function performOutlineRender(tupleMap:Vector<Int>):Int {
-		var result:Bool = marchingSquares.startTracking(0, _y);
+	public function performIsoOutlineRender(tupleMap:Vector<Int>):Int {
 		var count:Int = 0;
-		//var x:Int = _x;
-		//var y:Int = _y;
-		if (result ) {
-			tupleMap[count++] = marchingSquares.x;
-			tupleMap[count++] = marchingSquares.y;
+		var paths = isoContours.find(false);
+		for (path in paths) {
+			var len = path.length;
 			
-			while ( marchingSquares.nextPoint() ) {
-				
-				tupleMap[count++] = marchingSquares.x;
-				tupleMap[count++] = marchingSquares.y;
-				
-				//x = marchingSquares.x;
-				//y = marchingSquares.y;
-				
+			for (i in 0...len) {
+				var pt = path[i];
+				tupleMap[count++] = Std.int(pt.x);
+				tupleMap[count++] = Std.int(pt.y);
 			}
+		
 		}
 		
 		return count;
 	}
+	
+	
 	
 	public function performOutlineBorderRender(tupleMap:Vector<Int>):Int {
 		var i:Int;
@@ -206,14 +243,16 @@ class GraphGrid
 		}
 		
 		
-		/*
+		///*
 		if (endNodeIndex >= 0) {
-			endNode = curNode= graph.getNode(endNodeIndex);
+			
+			endNode = curNode = graph.getNode(endNodeIndex);
+			djTraversal.cost2Node[curNode.index] = -1;
 			while (curNode != null) {
 				curNode = _processNodeBorder(curNode, startNode);
 			}
 		}
-		*/
+		//*/
 		
 
 		
@@ -221,7 +260,8 @@ class GraphGrid
 			for (x in 0..._across) {
 				var i:Int = y * _across + x;
 				
-				if ( djTraversal.cost2Node[i] > djTraversal.maxCost) {
+				// ==-1
+				if ( djTraversal.cost2Node[i] ==-1 ) {     //> djTraversal.maxCost
 					
 					//img.rotationZ = Math.PI * .5 * .5;
 					//img.scaleZ = upScale;
@@ -237,29 +277,38 @@ class GraphGrid
 		return count;
 	}
 	
+	private inline function getNumFreeEdges(nodeIndex:Int):Int {
+		var edges:Array<GKEdge> = graph.getEdges(nodeIndex);
+		var len:Int = edges.length;
+		var count:Int = 0;
+		for (i in 0...len) {
+			var e:GKEdge = edges[i];
+			count += visitCells.has(e.to) ? 1 : 0;
+		}
+		return count;
+	}
+	
 	//inline
 	private  function _processNodeBorder(node:GKNode, startNode:GKNode):GKNode {
 		var edges:Array<GKEdge> = graph.getEdges(node.index);
 		var len:Int = edges.length;
-		var curDist:Float = PMath.FLOAT_MAX;
+		var curDist:Int = 0;// PMath.FLOAT_MAX;
 		var firstClosestNode:GKNode = null;
+		var d:Int;
 		
 		for (i in 0...len) {
 			var e:GKEdge = edges[i];
-			if ( djTraversal.cost2Node[e.to] <= djTraversal.maxCost ) {
+			if ( visitCells.has(e.to) || djTraversal.cost2Node[e.to] <= djTraversal.maxCost ) {
 				continue;
 			}
 			else {
-				continue;
+				//continue;
 				
 				var destNode:GKNode =  graph.getNode(e.to);
-				
-				var dx:Float = destNode.x - startNode.x;
-				var dy:Float = destNode.y - startNode.y;
-				var d:Float = dx * dx + dy * dy;
+				d = getNumFreeEdges(e.to);
 				
 				
-				if (d < curDist) {
+				if (d > curDist) {
 					curDist = d;
 					firstClosestNode = destNode;
 				}
