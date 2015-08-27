@@ -1,6 +1,7 @@
 package tests.pvp
 {
 	import alternativa.a3d.controller.SimpleFlyController;
+	import alternativa.a3d.objects.LineSegmentSet;
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.FogMode;
@@ -197,6 +198,8 @@ package tests.pvp
 			startBox = new Box(256*2,256*2,  256*2,256*2*(72/32) ,1,1,false, new FillMaterial(0xFF0000, .5));
 			_template3D.scene.addChild(startBox);
 			
+			LineSegmentSet;
+			
 			var i:int = _arrDots.length;
 			StandardMaterial.fogMode = FogMode.SIMPLE;
 			StandardMaterial.fogColorR = .12;
@@ -209,7 +212,7 @@ package tests.pvp
 			_template3D.scene.addChild(boxClones);
 			
 			
-				borderMeshset = new MeshSetClonesContainer(new Box(64,64,472,1,1,1), new FillMaterial(0xFF0000, .7));
+				borderMeshset = new MeshSetClonesContainer(new Box(64,64,472,1,1,1), new FillMaterial(0xFF0000, .7), 0, null, (1 | MeshSetClonesContainer.FLAG_PREVENT_Z_FIGHTING) );
 			_template3D.scene.addChild(borderMeshset);
 			
 			
