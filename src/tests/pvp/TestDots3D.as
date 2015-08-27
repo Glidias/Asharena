@@ -4,6 +4,7 @@ package tests.pvp
 	import alternativa.a3d.objects.LineSegmentSet;
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.loaders.ParserA3D;
 	import alternativa.engine3d.materials.FillMaterial;
@@ -16,6 +17,7 @@ package tests.pvp
 	import alternativa.engine3d.objects.MeshSet;
 	import alternativa.engine3d.objects.MeshSetClone;
 	import alternativa.engine3d.objects.MeshSetClonesContainer;
+	import alternativa.engine3d.objects.MeshSetClonesContainerMod;
 	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
@@ -35,6 +37,7 @@ package tests.pvp
 	import flash.display.StageScaleMode;
 	import flash.events.KeyboardEvent;
 	import flash.geom.Point;
+	import flash.geom.Transform;
 	import flash.ui.Keyboard;
 	import systems.collisions.EllipsoidCollider;
 	import systems.SystemPriorities;
@@ -54,7 +57,7 @@ package tests.pvp
 		
 		static public const GRID_SIZE:Number = 32;
 		public var MOVEMENT_POINTS:Number = 15 * 2;
-		public var HEIGHTMAPMULT:Number =  133;
+		public var HEIGHTMAPMULT:Number = 0;//  133;
 		
 		private var _across:int = 80;
 		private var _graphGrid:GraphGrid;
@@ -72,16 +75,18 @@ package tests.pvp
 		private var startBox:Mesh;
 		private var outliner:Vector.<int> = new Vector.<int>();
 		
-		private var borderMeshset:MeshSetClonesContainer;
+		private var borderMeshset:MeshSetClonesContainerMod;
 		private var _lock:Boolean = false;
 		
-		[Embed(source="../../../resources/hud/linesegment.a3d", mimeType="application/octet-stream")]
+		[Embed(source="../../../resources/hud/linesegment2.a3d", mimeType="application/octet-stream")]
 		private var LINE_SEGMENT:Class;
 		
 		public function TestDots3D() 
 		{
 			haxe.initSwc(this);
 		
+			MeshSetClonesContainerMod;
+			 Transform3D
 			stage.align = StageAlign.TOP_LEFT;
 			stage.scaleMode = StageScaleMode.NO_SCALE;
 			
@@ -235,7 +240,8 @@ package tests.pvp
 			clampGeometryX(borderItem.geometry);
 			
 			//new Box(100,100,42,1,1,1)
-				borderMeshset = new MeshSetClonesContainer(borderItem, new FillMaterial(0xFF0000, 1), 0, null, (1 | MeshSetClonesContainer.FLAG_PREVENT_Z_FIGHTING)  );
+			// | MeshSetClonesContainer.FLAG_PREVENT_Z_FIGHTING)
+				borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0xFF0000, 1), 0, null, 1);
 			_template3D.scene.addChild(borderMeshset);
 			
 			
@@ -296,15 +302,19 @@ package tests.pvp
 		}
 		
 		private function clampGeometryX(geometry:Geometry):void {
-			var vec:Vector.<Number>  =geometry.getAttributeValues(VertexAttributes.POSITION);
+			var vec:Vector.<Number>  = geometry.getAttributeValues(VertexAttributes.POSITION);
+			
 			for (var i:int = 0; i < vec.length; i += 3) {
-				if (vec[i] < 0) vec[i] = 0;
-				if (vec[i] > 1) vec[i] = 1;
+				vec[i] = Math.round(vec[i ]);
+				vec[i+ 1] = Math.round(vec[i + 1]);
+				vec[i+2] = Math.round(vec[i + 2]);
+				//if (vec[i] < 0) vec[i] = 0;
+				//if (vec[i] > 1) vec[i] = 1;
 				
 			//	 vec[i + 1] *= -1;// 0;
 			
 			}
-			
+			//throw new Error(vec);
 			geometry.setAttributeValues(VertexAttributes.POSITION, vec);
 		}
 		
