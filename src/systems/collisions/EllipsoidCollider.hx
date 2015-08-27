@@ -432,7 +432,7 @@ package systems.collisions;
 					normals[normalsLength] = normalX; normalsLength++;
 					normals[normalsLength] = normalY; normalsLength++;
 					normals[normalsLength] = normalZ; normalsLength++;
-					normals[normalsLength] = offset - (PMath.abs(normalZ) < 0.001 ? 32 : 0 ); normalsLength++;
+					normals[normalsLength] = offset; normalsLength++;
 					numFaces++;
 				}
 				// Offset by nomber of vertices

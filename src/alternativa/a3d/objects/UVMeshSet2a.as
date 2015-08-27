@@ -149,11 +149,14 @@ package alternativa.a3d.objects
 					
 					toUploadData = tempUploadData;
 					while (_remainingTotal > 0) {
+							/*
 						if (count >= _surfaces.length) {
 							_surfaces[count] = _surfaces[0].clone();
 							_surfacesLength = count;
 						}
 						mySurface = _surfaces[count];
+						*/
+						mySurface = _surfaces[0];
 						
 						fillTempUploadData( total - _remainingTotal, _remainingTotal);
 						//mySurface.numTriangles = _remainingTotal*sampleNumTris;

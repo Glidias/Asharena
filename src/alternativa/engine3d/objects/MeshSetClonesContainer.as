@@ -49,6 +49,7 @@ package alternativa.engine3d.objects {
 		//private var surfaceDeltaTransformProcedures:Vector.<Procedure> = new Vector.<Procedure>();
 
 		private static var _transformProcedures:Dictionary = new Dictionary();
+		private static var _transformProcedures2:Dictionary = new Dictionary();
 		private static var _deltaTransformProcedures:Dictionary = new Dictionary();
 		
 		protected var _material:Material;
@@ -91,6 +92,11 @@ package alternativa.engine3d.objects {
 		 * Whether to attempt to consider all surfaces (if number of meshes in hierachy exceed MESHES_PER_SURFACE) to detemrine maximum possible duplicate geometry to generate for batch-rendering surfaces. This could result in larger geometry buffer size for such a case, but will help a bit in optimizing drawcalls, otherwise, using this class is pointless.
 		 */
 		public static const FLAG_CLONESURFACES:int = 2;
+		
+		
+		public static const FLAG_PREVENT_Z_FIGHTING:int = 4;
+		public var zBufferPrecision:int = 16;
+		
 		
 		/**
 		 * Constructor.
@@ -376,7 +382,12 @@ package alternativa.engine3d.objects {
 		
 			var meshesLen:int = surfaceMeshes[_curSurfaceIndex].length;
 			var limit:int = _curCloneIndex + _curBatchCount;
-	
+			
+			if ((_options & FLAG_PREVENT_Z_FIGHTING)) {
+				drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cProj"), 0, 0, camera.m14, 1/(1 << zBufferPrecision));
+				drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cCam"), cameraToLocalTransform.d, cameraToLocalTransform.h, cameraToLocalTransform.l);
+				drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cTrm"), localToCameraTransform.i, localToCameraTransform.j, localToCameraTransform.k, localToCameraTransform.l);
+			}
 	
 			var offsetNumMeshes:int = _offsetNumMeshes;
 			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cVars"), offsetNumMeshes*constantsPerMesh, 0, 0, 1);
@@ -716,10 +727,53 @@ package alternativa.engine3d.objects {
 		
 
 		private function calculateTransformProcedure(numMeshes:int):Procedure {
-			var res:Procedure = _transformProcedures[numMeshes];
+			var channelNorm:Boolean = !(_options & FLAG_PREVENT_Z_FIGHTING);
+			var transformProcedures:Dictionary = channelNorm ? _transformProcedures : _transformProcedures2;
+			var res:Procedure = transformProcedures[numMeshes];
 			if (res != null) return res;
-			res = _transformProcedures[numMeshes] = new Procedure(null, "MeshSetTransformProcedure");
-			res.compileFromArray(["#a0=joint", "#c1=cVars", "sub t0, a0.x, c1.x", "m34 o0.xyz, i0, c[t0.x]", "mov o0.w, i0.w"]);
+		
+			res = transformProcedures[numMeshes] = new Procedure(null, "MeshSetTransformProcedure"+(!channelNorm ? "Decal" : ""));
+			var arr:Array = channelNorm ? ["#a0=joint", "#c1=cVars",  "sub t0, a0.x, c1.x",  "m34 o0.xyz, i0, c[t0.x]", "mov o0.w, i0.w"] :
+			["#a0=joint", "#c1=cVars", 
+			"#c2=cTrm", // Third line of the transforming to camera matrix
+			"#c3=cCam", // Camera position in object space, w = 1 - offset/(far - near)
+			"#c4=cProj",	// Camera projection matrix settings
+			
+			"sub t0, a0.x, c1.x",
+			"m34 t0.xyz, i0, c[t0.x]", 
+			"mov t0.w, i0.w",
+			
+			// dummy declarations
+			//"mov t1, c2",
+			//	"mov t1, c3",
+				//	"mov t1, c4",
+					
+			"mov o0.xyz, t0.xyz",
+			///*
+			
+			"mov t1, t0",
+			
+			// Z in a camera
+			"dp4 t0.z, t1, c2",
+			// z = m14/(m14/z + 1/N)
+			"div t0.x, c4.z, t0.z",		// t0.x = m14/t0.z
+			"sub t0.x, t0.x, c4.w",		// t0.x = t0.x + 1/N
+			"div t0.y, c4.z, t0.x",		// t0.y = m14/t0.x
+			// Correction coefficient
+			"div t0.w, t0.y, t0.z",		// t0.w = t0.y / t0.z
+			// Vector from a camera to vertex
+			"sub t0.xyz, t1.xyz, c3.xyz",	// t0.xyz = i0.xyz - c1.xyz
+			// Correction of the vector
+			"mul t0.xyz, t0.xyz, t0.w",		// t0.xyz = t0.xyz*t0.w
+			// Get new position
+			"add o0.xyz, c3.xyz, t0.xyz",	//o0.xyz = c1.xyz + t0.xyz
+			"mov o0.w, t1.w",				// o0.w = i0.w
+			
+			// 
+			"mov o0.w, t1.w"				// o0.w = i0.w
+			];
+	
+			res.compileFromArray(arr);
 			res.assignConstantsArray(numMeshes*constantsPerMesh);
 			return res;
 		}
