@@ -3,6 +3,9 @@ package tests.pvp
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.objects.LineSegmentSet;
 	import alternativa.engine3d.alternativa3d;
+	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.VertexAttributes;
+	import alternativa.engine3d.loaders.ParserA3D;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.FogMode;
 	import alternativa.engine3d.materials.Material;
@@ -17,6 +20,7 @@ package tests.pvp
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.BitmapTextureResource;
+	import alternativa.engine3d.resources.Geometry;
 	import alternterrain.core.HeightMapInfo;
 	import alternterrain.core.QuadTreePage;
 	import alternterrain.objects.TerrainLOD;
@@ -69,7 +73,10 @@ package tests.pvp
 		private var outliner:Vector.<int> = new Vector.<int>();
 		
 		private var borderMeshset:MeshSetClonesContainer;
-		private var _lock:Boolean=false;
+		private var _lock:Boolean = false;
+		
+		[Embed(source="../../../resources/hud/linesegment.a3d", mimeType="application/octet-stream")]
+		private var LINE_SEGMENT:Class;
 		
 		public function TestDots3D() 
 		{
@@ -204,6 +211,10 @@ package tests.pvp
 			
 			LineSegmentSet;
 			
+			var parserA3D:ParserA3D = new ParserA3D();
+			parserA3D.parse( new LINE_SEGMENT() );
+			//;
+			
 			var i:int = _arrDots.length;
 			StandardMaterial.fogMode = FogMode.SIMPLE;
 			StandardMaterial.fogColorR = .12;
@@ -216,7 +227,15 @@ package tests.pvp
 		//	_template3D.scene.addChild(boxClones);
 			
 			//
-				borderMeshset = new MeshSetClonesContainer(new Box(100,100,42,1,1,1), new FillMaterial(0xFF0000, 1), 0, null, (1 | MeshSetClonesContainer.FLAG_PREVENT_Z_FIGHTING)  );
+			var borderItem:Mesh = parserA3D.objects[0] as Mesh || parserA3D.objects[1] as Mesh;
+			
+			borderItem.scaleX = 88;
+			borderItem.scaleY = 88;
+			borderItem.scaleZ = 88;
+			clampGeometryX(borderItem.geometry);
+			
+			//new Box(100,100,42,1,1,1)
+				borderMeshset = new MeshSetClonesContainer(borderItem, new FillMaterial(0xFF0000, 1), 0, null, (1 | MeshSetClonesContainer.FLAG_PREVENT_Z_FIGHTING)  );
 			_template3D.scene.addChild(borderMeshset);
 			
 			
@@ -276,6 +295,19 @@ package tests.pvp
            
 		}
 		
+		private function clampGeometryX(geometry:Geometry):void {
+			var vec:Vector.<Number>  =geometry.getAttributeValues(VertexAttributes.POSITION);
+			for (var i:int = 0; i < vec.length; i += 3) {
+				if (vec[i] < 0) vec[i] = 0;
+				if (vec[i] > 1) vec[i] = 1;
+				
+			//	 vec[i + 1] *= -1;// 0;
+			
+			}
+			
+			geometry.setAttributeValues(VertexAttributes.POSITION, vec);
+		}
+		
 		private function tick(time:Number):void 
 		{
 			var across:int = _across;
@@ -333,13 +365,14 @@ package tests.pvp
 							x2 *= d;
 							y2 *= d;
 							
-							/*
+							///*
 							clone.root.rotationZ =  Math.atan2(y2, x2);
-							clone.root.scaleX = 2;
-							*/
+							clone.root.scaleX = 1 / d;
+						//	clone.root.scaleY = -32;
+							//*/
 							
-							clone.root.x += x2 * 50* clone.root.scaleX;
-							clone.root.y += y2 * 50 ;
+							//clone.root.x += x2 * 50* clone.root.scaleX;
+							//clone.root.y += y2 * 50 ;
 						
 							
 					 
