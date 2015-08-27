@@ -30,6 +30,7 @@ package tests.pvp
 	import flash.display.StageAlign;
 	import flash.display.StageScaleMode;
 	import flash.events.KeyboardEvent;
+	import flash.geom.Point;
 	import flash.ui.Keyboard;
 	import systems.collisions.EllipsoidCollider;
 	import systems.SystemPriorities;
@@ -49,7 +50,7 @@ package tests.pvp
 		
 		static public const GRID_SIZE:Number = 32;
 		public var MOVEMENT_POINTS:Number = 15 * 2;
-		public var HEIGHTMAPMULT:Number =  144;
+		public var HEIGHTMAPMULT:Number =  133;
 		
 		private var _across:int = 80;
 		private var _graphGrid:GraphGrid;
@@ -151,6 +152,9 @@ package tests.pvp
 		{
 			SpawnerBundle.context3D = _template3D.stage3D.context3D;
 			
+			_template3D.scene.scaleX = .25;
+			_template3D.scene.scaleY = .25;
+			_template3D.scene.scaleZ = .25;
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 
 			
@@ -207,12 +211,12 @@ package tests.pvp
 			StandardMaterial.fogColorB = .12;
 			StandardMaterial.fogNear = 1;
 			StandardMaterial.fogFar = 13000;
-			var box:Box = new Box(16, 16, 64, 1, 1, 1, false, new StandardMaterial( new BitmapTextureResource( new BitmapData(4,4,false,0x00FF00)), new BitmapTextureResource( new BitmapData(4,4,false,0x0000FF))));
+			var box:Box = new Box(16, 16, 1, 1, 1, 1, false, new StandardMaterial( new BitmapTextureResource( new BitmapData(4,4,false,0x00FF00)), new BitmapTextureResource( new BitmapData(4,4,false,0x0000FF))));
 			var boxClones:MeshSetClonesContainer = new MeshSetClonesContainer(box, box.getSurface(0).material );
-			_template3D.scene.addChild(boxClones);
+		//	_template3D.scene.addChild(boxClones);
 			
-			
-				borderMeshset = new MeshSetClonesContainer(new Box(64,64,472,1,1,1), new FillMaterial(0xFF0000, .7), 0, null, (1 | MeshSetClonesContainer.FLAG_PREVENT_Z_FIGHTING) );
+			//
+				borderMeshset = new MeshSetClonesContainer(new Box(100,100,42,1,1,1), new FillMaterial(0xFF0000, 1), 0, null, (1 | MeshSetClonesContainer.FLAG_PREVENT_Z_FIGHTING)  );
 			_template3D.scene.addChild(borderMeshset);
 			
 			
@@ -229,7 +233,7 @@ package tests.pvp
 			
 				var plane:Plane = new Plane((_across + 1) * GRID_SIZE, (_across + 1) * GRID_SIZE, _across + 1, _across + 1, false, false, null, box.getSurface(0).material);
 		
-				/*
+			//	/*
 			var terrainLOD:TerrainLOD = new TerrainLOD();
 			var terrainMat:StandardTerrainMaterial =  new StandardTerrainMaterial(  new BitmapTextureResource(new BitmapData(4, 4, false, 0x0000FF)), new BitmapTextureResource( new BitmapData(4, 4, false, 0x0000FF)))
 			terrainMat.normalMapSpace = NormalMapSpace.OBJECT;
@@ -237,9 +241,13 @@ package tests.pvp
 			terrainMat.alpha = .4;
 			//QuadTreePage.createFlat(0, 0, _across, 256),
 		//	QuadTreePage.createFlat(0, 0, _across, 256),
-			terrainLOD.loadSinglePage( SpawnerBundle.context3D, TerrainLOD.installQuadTreePageFromHeightMap(HeightMapInfo.createFromBmpData(heightMap,0,0,HEIGHTMAPMULT,0,256), 0, 0, 256, 0),   terrainMat);
+		
+			var heightMapForTerrain:BitmapData = new BitmapData(128, 128, false, 0);
+			heightMapForTerrain.copyPixels(heightMap, heightMap.rect, new Point());
+			terrainLOD.loadSinglePage( SpawnerBundle.context3D, TerrainLOD.installQuadTreePageFromHeightMap(HeightMapInfo.createFromBmpData(heightMapForTerrain, 0, 0, HEIGHTMAPMULT, 0, 256), 0, 0, 256, 0),   terrainMat);
+			terrainLOD.debug = true;
 				_template3D.scene.addChild(terrainLOD);
-				*/
+			//	*/
 				
 			for (var y:int = 0; y < _across; y++) {
 				for (var x:int = 0; x < _across; x++) {
@@ -310,6 +318,31 @@ package tests.pvp
 					clone.root.x =  outliner[i] * 256;
 					clone.root.y =  -outliner[i + 1] * 256;
 					 clone.root.z =  heightMapData[ outliner[i + 1] * _across + outliner[i]];
+					 
+					 var i2:int = i + 2;
+					 if (i2 >= total) {
+						 i2 = 0;
+					 }
+					  var x2:Number= outliner[i2] * 256;
+						 var y2:Number = -outliner[i2 + 1] * 256;
+							x2-= clone.root.x;
+							y2 -= clone.root.y;
+							var d:Number = x2 == 0 || y2 == 0 ? 1 : GKEdge.DIAGONAL_LENGTH;
+							d *= 256;
+							d = 1 / d;
+							x2 *= d;
+							y2 *= d;
+							
+							/*
+							clone.root.rotationZ =  Math.atan2(y2, x2);
+							clone.root.scaleX = 2;
+							*/
+							
+							clone.root.x += x2 * 50* clone.root.scaleX;
+							clone.root.y += y2 * 50 ;
+						
+							
+					 
 				//	 clone.root.scaleZ = .015 * i / 2;
 				 }
 				// */

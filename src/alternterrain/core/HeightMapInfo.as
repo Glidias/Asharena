@@ -373,6 +373,7 @@ package alternterrain.core
 		
 		public function setFromBmpData(bmpData:BitmapData, heightMult:Number, heightMin:int=0, tileSize:int=256):void 
 		{
+			
 			if (!isBase2(tileSize)) throw new Error("Tile size isn't base 2!");
 			Scale = Math.round( Math.log(Number(tileSize) ) * Math.LOG2E );
 			var bWidth:int; var bHeight:int;
