@@ -388,9 +388,8 @@ package alternativa.engine3d.objects {
 				drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cCam"), cameraToLocalTransform.d, cameraToLocalTransform.h, cameraToLocalTransform.l);
 				drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cTrm"), localToCameraTransform.i, localToCameraTransform.j, localToCameraTransform.k, localToCameraTransform.l);
 			}
-			else {
-					drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cThickness"), 0.5, 88, 88, 2);
-					drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cRight"), 0, 1, 0, 0);
+			else {	
+				drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cRight"), 0, 1, 0, 0);
 			}
 	
 			var offsetNumMeshes:int = _offsetNumMeshes;
@@ -427,6 +426,12 @@ package alternativa.engine3d.objects {
 			if (triCount != surface.numTriangles) {
 					surface.numTriangles = triCount;
 				}
+				
+			if (!(_options & FLAG_PREVENT_Z_FIGHTING)) {
+				// TODO: proper last index limit count checker
+			//	drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cLastPoint"), 0, 1, 0, 0);  // pre-calculated right vector of last point xyz, w for lastPoint.z
+				drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cThickness"), count, 88, 88, 2);
+			}
 					
 		}
 		
