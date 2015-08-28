@@ -38,6 +38,7 @@ package tests.pvp
 	import flash.events.KeyboardEvent;
 	import flash.geom.Point;
 	import flash.geom.Transform;
+	import flash.geom.Vector3D;
 	import flash.ui.Keyboard;
 	import systems.collisions.EllipsoidCollider;
 	import systems.SystemPriorities;
@@ -57,7 +58,7 @@ package tests.pvp
 		
 		static public const GRID_SIZE:Number = 32;
 		public var MOVEMENT_POINTS:Number = 15 * 2;
-		public var HEIGHTMAPMULT:Number = 0;//  133;
+		public var HEIGHTMAPMULT:Number =  100;
 		
 		private var _across:int = 80;
 		private var _graphGrid:GraphGrid;
@@ -308,10 +309,11 @@ package tests.pvp
 				vec[i] = Math.round(vec[i ]);
 				vec[i+ 1] = Math.round(vec[i + 1]);
 				vec[i+2] = Math.round(vec[i + 2]);
-				//if (vec[i] < 0) vec[i] = 0;
+			//	if (vec[i] < 0) vec[i] = 0;
 				//if (vec[i] > 1) vec[i] = 1;
 				
-			//	 vec[i + 1] *= -1;// 0;
+			//	if (vec[i] < 0) vec[i] = 0;
+			
 			
 			}
 			//throw new Error(vec);
@@ -352,6 +354,8 @@ package tests.pvp
 				 // _graphGrid.performOutlineBorderRender(outliner);
 				 // _graphGrid.performOutlineRender(outliner);
 //
+
+				//	total = 80;
 				 borderMeshset.numClones = 0;
 				 for (var i:int = 0; i < total; i+=2) {
 					// outliner[i];
@@ -378,6 +382,11 @@ package tests.pvp
 							///*
 							clone.root.rotationZ =  Math.atan2(y2, x2);
 							clone.root.scaleX = 1 / d;
+							clone.root.composeTransforms();
+							var transform:Transform3D = clone.root.transform;
+							var forwardNormal:Vector3D = new Vector3D(transform.a, transform.b, transform.c);
+							forwardNormal.normalize();
+							//throw new Error(clone.root.transform.toString().split(",").join("\n") + ", "+( Vector3D.Z_AXIS.crossProduct( forwardNormal) ) );
 						//	clone.root.scaleY = -32;
 							//*/
 							

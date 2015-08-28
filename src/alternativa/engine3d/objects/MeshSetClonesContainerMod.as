@@ -389,7 +389,8 @@ package alternativa.engine3d.objects {
 				drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cTrm"), localToCameraTransform.i, localToCameraTransform.j, localToCameraTransform.k, localToCameraTransform.l);
 			}
 			else {
-					drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cThickness"), -0.5, 88, 88, 2);
+					drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cThickness"), 0.5, 88, 88, 2);
+					drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cRight"), 0, 1, 0, 0);
 			}
 	
 			var offsetNumMeshes:int = _offsetNumMeshes;
@@ -740,38 +741,58 @@ package alternativa.engine3d.objects {
 			res = transformProcedures[numMeshes] = new Procedure(null, "MeshSetTransformProcedure"+(!channelNorm ? "Decal" : ""));
 			var arr:Array = channelNorm ? ["#a0=joint", "#c1=cVars",  
 			"#c2=cThickness",  // c2.w = 2, c2.y and c2.z is thickness according to scale setting
+			"#c3=cRight",
 			
-			
-			"sub t0, a0.x, c1.x", 
-			
-			
-			"add t0.w, t0.x, c1.w",  // // move to next +1 .y
-			"mov t2, c[t0.w]",
-			
+			"sub t0.x, a0.x, c1.x",  
+
 			"mov t1, i0",
-			"slt t2.w, t1.y, c2.x", // this is whether to move right down, assume t1.y < 0 ie. -1. saved to t2.w
+			"slt t2.w, t1.y, c1.z", // this is whether to move right down, assume t1.y < 0 ie. -1. saved to t2.w
 			//"mul t2.w, t2.w, c1.z",  // cancel above action
 			//"mul t2.w, t2.w, c2.y",
-			"add t1.y, t1.y, t2.w",   
+			"add t1.y, t1.y, t2.w",   // fix off id position   
+		
+			"mov t4, c3",
+			"m34 t4.xyz, t4, c[t0.x]",   // get first GUY right vector
+			"nrm t4.xyz, t4.xyz",
+
+			"add t1.w, t0.x, c1.w",  // // move to next +1 .y
+			"add t1.w, t1.w, c1.w",  //  move to next +1 .z
+			"mov t4.w, c[t1.w].w",
+			"add t1.w, t1.w, c1.w",   //  move to next +1 .x (NEXT GUY matrix)
+
+			"mov t3, c3", 		// get right vector of next guy
+			"m34 t3.xyz, t3, c[t1.w]", 
+			"nrm t3.xyz, t3.xyz", 
 			
-			"add t1.w, t0.w, c1.w",  //  move to next +1 .z
-			"add t1.w, t1.w, c1.w",   //  move to next +1 .x (NEXT GUY)
-			"add t1.w, t1.w, c1.w",  //  move to next +1 .y
+			//"mov t2.xyz, t3.xyz",  // this is move offset right down saved to t2
+			"mul t2.xyz, t3.xyz, t2.www",
+			"mul t2.xyz, t2.xyz, c2.yyy",  
+		
+			"add t3.xyz, t3.xyz, t4.xyz",   // now we get the miter normal
+			"nrm t3.xyz, t3.xyz",  
 			
-			"add t3.xyz, c[t1.w].xyz, t2.xyz",  
-			"nrm t3.xyz, t3.xyz",   // this is move offset diagonal miter saved to t3
-			"sge t3.w, t2.x, c2.w",  // whether to offset along miter
+			"sge t3.w, t1.x, c2.w",  // whether to offset along miter
+			"sub t1.xy, t1.xy, t3.ww",  // fix off id position	
+		
+			
 			"mul t3.xyz, t3.xyz, t3.www", 
 			"mul t3.xyz, t3.xyz, c2.yyy",
 			
-			"mul t2.xyz, t2.xyz, t2.www",
-			"mul t2.xyz, t2.xyz, c2.yyy",   // this is move offset right down saved to t2
-			
+			"add t1.w, t1.w, c1.w",   //  move to next +1 .y
+			"add t1.w, t1.w, c1.w",   //  move to next +1 .z 
+			"mov t4.z, c[t1.w].w",   // get z value of next segment 
+			"sub t4.z, t4.z, t4.w",  // height offset vector here
+			"sge t4.w, i0.x, c3.y",   // to consider height offset?
+			"mul t4.z, t4.z, t4.w",
+
+			// finally 
 			"mov t1.w, i0.w",
 			"m34 t0.xyz, t1, c[t0.x]", 
-			
-			//"add t0.xyz, t0.xyz, t2.xyz",
+	
+			// finalise offsets
+			"add t0.xyz, t0.xyz, t2.xyz",
 			"add t0.xyz, t0.xyz, t3.xyz",
+			"add t0.z, t0.z, t4.z",
 			
 			"mov o0.xyz, t0.xyz",
 			"mov o0.w, i0.w"
