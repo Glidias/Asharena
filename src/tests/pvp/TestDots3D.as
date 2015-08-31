@@ -242,7 +242,7 @@ package tests.pvp
 			
 			//new Box(100,100,42,1,1,1)
 			// | MeshSetClonesContainer.FLAG_PREVENT_Z_FIGHTING)
-				borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0xFF0000, 1), 0, null, 1);
+				borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0x00FF00, 1), 0, null, 1);
 			_template3D.scene.addChild(borderMeshset);
 			
 			

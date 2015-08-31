@@ -409,12 +409,14 @@ package alternativa.engine3d.objects {
 					count++;
 					offsetNumMeshes = 0;
 				}
-				
 			}
 		
 			// handle pack-fill spill over if any
+			
+		
 
-			if (i  >= numVisibleClones) return;
+			if (i < numVisibleClones) {
+			
 				meshes = visibleClones[i].surfaceMeshes[_curSurfaceIndex];
 				for (m = 0; m < _addNumMeshes; m++) {
 					mesh = meshes[m];			
@@ -422,17 +424,46 @@ package alternativa.engine3d.objects {
 					setupMesh(drawUnit, -1, count * constantsPerMesh, mesh); // hook method for extendability
 					count++;
 				}
+			}
 				
 			if (triCount != surface.numTriangles) {
 					surface.numTriangles = triCount;
 				}
 				
-			if (!(_options & FLAG_PREVENT_Z_FIGHTING)) {
+				
+			if (!(_options & FLAG_PREVENT_Z_FIGHTING)) {  // this is a mod
 				// TODO: proper last index limit count checker
+				
+				var lastIndexer:int = i * constantsPerMesh;
+				
+				
+				i = i >= numVisibleClones  ? 0 : i;
+				
+				meshes = visibleClones[i].surfaceMeshes[_curSurfaceIndex];
+			//	for (var m:int = offsetNumMeshes; m < meshesLen; m++) {
+				
+				 mesh = meshes[0];			
+				setupMesh(drawUnit, i, count * constantsPerMesh, mesh);
+			
+				//}
 			//	drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cLastPoint"), 0, 1, 0, 0);  // pre-calculated right vector of last point xyz, w for lastPoint.z
-				drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cThickness"), count, 88, 88, 2);
+				drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cThickness"), lastIndexer, _thicknessY, _thicknessZ, 2);
 			}
+				
+			
 					
+		}
+		
+		private var _thicknessY:Number = 88;
+		private var _thicknessZ:Number = 88;
+		
+		public function setThicknesses(horizontal:Number = -1, verticalHeight:Number = -1):void {
+			if (verticalHeight >= 0) {
+				_thicknessZ = verticalHeight;
+			}
+			if (horizontal >= 0) {
+				_thicknessY = horizontal;
+			}
 		}
 		
 		protected function setupMesh(drawUnit:DrawUnit, cloneIndex:int, firstRegister:int, mesh:Mesh):void { // hook method for extendability
@@ -470,7 +501,7 @@ package alternativa.engine3d.objects {
 			var cloneSurfaces:Boolean = (_options & FLAG_CLONESURFACES) != 0;
 			
 
-			var minClonesPerBatch:int = _minClonesPerBatch;
+			var minClonesPerBatch:int = _minClonesPerBatch - 1;  // a mod here
 			
 			//var i:int = 0;
 			for (var i:int = 0; i < _surfacesLength; i++) {
@@ -760,8 +791,10 @@ package alternativa.engine3d.objects {
 			"m34 t4.xyz, t4, c[t0.x]",   // get first GUY right vector
 			"nrm t4.xyz, t4.xyz",
 
-			"add t1.w, t0.x, c1.w",  // // move to next +1 .y
-			"add t1.w, t1.w, c1.w",  //  move to next +1 .z
+			//"add t1.w, t0.x, c1.w",  // // move to next +1 .y
+			//"add t1.w, t1.w, c1.w",  //  move to next +1 .z
+			"add t1.w, t0.x, c2.w",
+			
 			"mov t4.w, c[t1.w].w",
 			"add t1.w, t1.w, c1.w",   //  move to next +1 .x (NEXT GUY matrix)
 
@@ -783,8 +816,10 @@ package alternativa.engine3d.objects {
 			"mul t3.xyz, t3.xyz, t3.www", 
 			"mul t3.xyz, t3.xyz, c2.yyy",
 			
-			"add t1.w, t1.w, c1.w",   //  move to next +1 .y
-			"add t1.w, t1.w, c1.w",   //  move to next +1 .z 
+			//"add t1.w, t1.w, c1.w",   //  move to next +1 .y
+			//"add t1.w, t1.w, c1.w",   //  move to next +1 .z 
+			"add t1.w, t1.w, c2.w",
+			
 			"mov t4.z, c[t1.w].w",   // get z value of next segment 
 			"sub t4.z, t4.z, t4.w",  // height offset vector here
 			"sge t4.w, i0.x, c3.y",   // to consider height offset?
