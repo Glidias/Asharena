@@ -1,4 +1,5 @@
 package;
+import arena.components.char.AggroSpecs;
 import arena.components.char.EllipsoidPointSamples;
 import arena.pathfinding.GKAstar;
 import arena.pathfinding.GKDijkstra;
@@ -100,6 +101,8 @@ class TheGame
 		Spawner;
 		GroundPlaneCollisionSystem;
 		TweenSystem;
+		
+		AggroSpecs;
 		
 		GKDijkstra;
 		GKAstar;

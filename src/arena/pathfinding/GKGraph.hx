@@ -261,6 +261,44 @@ class GKGraph {
 		return counter;
 	}
 	
+	public  function setupValidEdgesBinaryCells(node:Int, cells:Array<Vector<Float>>, blockHeight:Float):Void {
+		var edgeArr:Array<GKEdge> = edges[node];
+		var from:GKNode = nodes[node];
+		var fromZ:Float = cells[from.y][from.x];
+		var across:Int = cells.length;
+	
+		//if (fromZ != PMath.FLOAT_MAX)  {
+		
+			var len:Int = edgeArr.length;
+		
+			var cost:Float;
+			
+			for (i in 0...len) {
+				var edge:GKEdge = edgeArr[i];
+			
+				edge.flags = 0;
+				
+				
+				var to:GKNode = nodes[edge.to];
+				var toZ:Float = cells[to.y][to.x];
+				//
+				
+				if (toZ >= blockHeight || fromZ >= blockHeight ) {
+					edge.flags |= GKEdge.FLAG_INVALID;
+					//continue;
+				}
+				
+				///*
+				
+				//var cost:Float =  (to.x == from.x || to.y == from.y ? 1 : GKEdge.DIAGONAL_LENGTH);
+				
+				//if (cost != 1 && cost != GKEdge.DIAGONAL_LENGTH) throw "Nons tandard cost:"+nodes[edge.to] + " ::: "+cost;
+				//edge.cost = cost;
+				
+			}
+		
+		
+	}
 	
 	//inline
 	public  function setupValidEdges(node:Int, cells:Array<Vector<Float>>, tileSize:Float, cliffMap:BitVector):Void {

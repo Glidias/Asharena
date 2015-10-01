@@ -27,15 +27,15 @@
 // @r587
 
 package jeash.geom;
-import util.geom.XYZW;
 
-class Vector3D implements XYZW {
-	inline public var length(getLength,null):Float;
-	inline public function getLength():Float {
+
+class Vector3D {
+	public var length(get_length,null):Float;
+	public function get_length():Float {
 		return Math.sqrt(x*x+y*y+z*z);
 	}
-	inline public var lengthSquared(getLengthSquared,null):Float;
-	inline public function getLengthSquared():Float {
+	public var lengthSquared(get_lengthSquared,null):Float;
+	inline public function get_lengthSquared():Float {
 		return length * length;
 	}
 	
@@ -139,16 +139,16 @@ class Vector3D implements XYZW {
 		return "Vector3D("+x+", "+y+", "+z+")";
 	}
 	
-	inline public static var X_AXIS(getX_AXIS,null):Vector3D;
-	inline public static function getX_AXIS():Vector3D {
+	public static var X_AXIS(get_X_AXIS,null):Vector3D;
+	inline public static function get_X_AXIS():Vector3D {
 		return new Vector3D(1,0,0);
 	}
-	inline public static var Y_AXIS(getY_AXIS,null):Vector3D;
-	inline public static function getY_AXIS():Vector3D {
+	public static var Y_AXIS(get_Y_AXIS,null):Vector3D;
+	inline public static function get_Y_AXIS():Vector3D {
 		return new Vector3D(0,1,0);
 	}
-	inline public static var Z_AXIS(getZ_AXIS,null):Vector3D;
-	inline public static function getZ_AXIS():Vector3D {
+	public static var Z_AXIS(get_Z_AXIS,null):Vector3D;
+	inline public static function get_Z_AXIS():Vector3D {
 		return new Vector3D(0,0,1);
 	}
 }

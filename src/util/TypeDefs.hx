@@ -17,10 +17,9 @@ class TypeDefs {
 		#if (flash9 || flash9doc)
 			return new Vector<Float>(size, fixed);
 		#else
-			var arr:Vector = new Vector<Float>();
+			var arr:Vector<Float> = new Vector<Float>();
 			setVectorLen(arr, size, fixed ? 1 : 0);
 			return arr;
-		
 		#end
 	}
 	
@@ -28,7 +27,7 @@ class TypeDefs {
 		#if (flash9 || flash9doc)
 			return new Vector<Int>(size, fixed);
 		#else
-			var arr:Vector = new Vector<Float>();
+			var arr:Vector<Int> = new Vector<Int>();
 			setVectorLen(arr, size, fixed ? 1 : 0);
 			return arr;
 		
@@ -38,7 +37,7 @@ class TypeDefs {
 		#if (flash9 || flash9doc)
 			return new Vector<UInt>(size, fixed);
 		#else
-			var arr:Vector = new Vector<Float>();
+			var arr:Vector<UInt> = new Vector<UInt>();
 			setVectorLen(arr, size, fixed ? 1 : 0);
 			return arr;
 		

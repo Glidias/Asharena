@@ -5,12 +5,13 @@ class GKGrapher {
 	
 	var cells :Array<Vector<Float>>;
 
+	var _edgeDisableMask:Int;
 	
-	
-	public function new (cells:Array<Vector<Float>>, n_graph:GKGraph) {
+	public function new (cells:Array<Vector<Float>>, n_graph:GKGraph, edgeDisableMask:Int=0) {
 			
 		this.cells = cells;
-		var cellsX :Int = cells.length;
+		this._edgeDisableMask = edgeDisableMask;
+		var cellsX :Int = cells.length > 0 ? cells[0].length : 0;
 		var cellsY :Int = cells.length;
 			
 		
@@ -53,7 +54,7 @@ class GKGrapher {
 		var len:Int = edgeOffsets.length;
 		
 		while (i < len) {
-			addNeighbor(cc, edgeOffsets[i], edgeOffsets[i+1], n_graph, row, col, cellsX, cellsY);
+			if ( (_edgeDisableMask & (1<< (i>>1) ))==0 ) addNeighbor(cc, edgeOffsets[i], edgeOffsets[i+1], n_graph, row, col, cellsX, cellsY);
 			i += 2;
 		}
 		
