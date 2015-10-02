@@ -29,6 +29,11 @@ class AggroSpecs
 
 	// Accruacy penalty incured for Overwatch shots. Use 0 to not have any effect on the accruacy. Use a negative number for a fixed ratio reduction. Use a positive number for a ratio reduction by pencentage of the current accruacy.
 	public var overwatchFireAccruacyPenalty:Float;
+	
+	// -- INTERCEPTION FIRE
+	
+	// Determines the amount of movement time reduced. A value of -1 will permanently remove whatever reversible movement points that are currently expended. A value of zero won't do anything.
+	public var reducedMovementTime:Float;
 
 	// -- RETAILIATORY FIRE
 	
@@ -84,27 +89,59 @@ class AggroSpecs
 		
 	}
 	
-	public function setupValkyriaChronicles():Void {
+	public function setupValkyriaChronicles(interceptionFire:Bool=true):AggroSpecs {
 		aggro = -1;
-		/*
-		coveringFire = ;
+		coveringFire = 2;
 		coveringFireMask = 0;
-		engagePassChecks
-		interruptEnemyTrigger 
-		opputunityMelee 
-		overwatchFireAccruacyPenalty
-		reqOverExposurePerc
-		reqOverwatchExposures
-		reqPercChanceOverwatchHit
-		reqSupExposures
-		reqSuppExposurePerc
-		reqTargetedOverwatchExposures
-		retailiatePersonal
-		retailiatePersonalMask 
-		sentinel
-		supFireAccruacyPenalty
-		supFireEnemyAccruacyPenalty
-		*/
+		engagePassChecks = 0;
+		interruptEnemyTrigger = false; 
+		opputunityMelee = false;
+		overwatchFireAccruacyPenalty = 0;
+		reqOverExposurePerc = 5/100;
+		reqOverwatchExposures = 0;
+		reqPercChanceOverwatchHit = 0;
+		reducedMovementTime = 0;
+		reqSupExposures = 0;
+		reqSuppExposurePerc = 5 / 100; 
+		reqTargetedOverwatchExposures = 0;
+		retailiatePersonal = interceptionFire; 
+		retailiatePersonalMask = 0;
+		sentinel = interceptionFire ? -1 : 0;  
+		supFireAccruacyPenalty = 0;
+		supFireEnemyAccruacyPenalty = 0;
+		return this;
 	}
+	
+	public function setupAsharenaStandard(ranged:Bool=false, canRetailiate:Bool=true):AggroSpecs {
+		aggro = 1;
+		coveringFire = 2;
+		
+		engagePassChecks = -1;
+		interruptEnemyTrigger = true; 
+		opputunityMelee = true;
+		overwatchFireAccruacyPenalty = 0;
+		reqOverExposurePerc = 50/100;
+		reqOverwatchExposures = 2;
+		reqPercChanceOverwatchHit = 0;
+		reducedMovementTime = -1;
+		reqSupExposures = 0;
+		reqSuppExposurePerc = 5 / 100; 
+		reqTargetedOverwatchExposures = 1;
+		
+		retailiatePersonalMask = 0;
+		sentinel = -1; 
+		supFireAccruacyPenalty = -0.3;
+		supFireEnemyAccruacyPenalty = 0.3;
+		
+		setAsharenaValues(ranged, canRetailiate);
+		return this;
+	}
+	
+	public inline function setAsharenaValues(ranged:Bool = false, canRetailiate:Bool = true):Void {
+		coveringFireMask = ranged ? BIT_RANGED_UNITS : 0;  
+		retailiatePersonal = canRetailiate; 
+	}
+	
+	
 	
 }

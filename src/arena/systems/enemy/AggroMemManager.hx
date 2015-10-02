@@ -445,7 +445,7 @@ class AggroMemManager
 	}
 	
 	
-	
+	private var _aggroCount:Int;
 	// This is called right after turn is started, where MovementPoints is given to playerEnt after transioinining into player.
 	public function notifyTurnStarted(playerEnt:Entity):Void {
 		// determine which entities in memList should start in Idle, Watch, or Aggro states, if they don't belong to activeSide (ai side) according to playerEnt
@@ -504,11 +504,14 @@ class AggroMemManager
 		
 	
 		// for entities in Aggro state, they are assigned a attack-trigger range based off their weapon's ranges (factor out method to Hitformulas), determine if playerEnt is within trigger range and if so, pull the trigger even before the player moves!
+		_aggroCount = 0;
 		var a:EnemyAggroNode = aggroList.head;
 		while ( a != null) {
 			processAggroNode(a);
+			_aggroCount++;
 			a = a.next;
 		}
+		_aggroCount = 0;
 		
 		// Add idleChange signal to listen...this signal is used to automatically add playerEnt to aggroMem if triggering occurs, among other things like hud indiciator changes! EnemyIdle indicates units oblivious to the active playerEnt's position.
 		idleList.nodeRemoved.add( onIdleNodeRemoved);
@@ -538,6 +541,7 @@ class AggroMemManager
 	 var checkedLOS:Bool;
 		var pTarget:PlayerAggroNode = a.state.target;
 		checkedLOS = false;
+		
 		while(aWeapon != null) {
 			a.state.setAttackRange(a.state.fixed ? aWeapon.range :   (EnemyAggroSystem.ALLOW_KITE_RANGE & EnemyAggroSystem.KITE_ALLOWANCE) != 0 ? HitFormulas.rollRandomAttackRangeForWeapon(aWeapon, pTarget.size) : aWeapon.range + pTarget.size.x );
 			checkedLOS = false;
@@ -546,7 +550,10 @@ class AggroMemManager
 				a.state.flag = 1;
 				var cooldown:Float = a.weaponState.cooldown;
 				a.weaponState.pullTrigger(aWeapon);
-				if (aWeapon.fireMode <= 0 && a.weaponState.attackTime >= 0) a.weaponState.attackTime = -Math.random() * a.weaponState.randomDelay;
+				if (aWeapon.fireMode <= 0 && a.weaponState.attackTime >= 0) {
+					a.weaponState.attackTime = -Math.random() * a.weaponState.randomDelay;
+					a.weaponState.attackTime -= _aggroCount * (96/150);
+				}
 				a.weaponState.attackTime -=  a.weaponState.delay > 0 ? a.weaponState.delay : 0;
 					
 				if (a.state.fixed) { 

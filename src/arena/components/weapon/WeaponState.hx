@@ -10,10 +10,18 @@ class WeaponState
 	public var fireMode:Weapon;
 	public var cooldown:Float; // recovery before attempting next attempt to strike  (A miss or strike.., cooldown intiated)
 	public var attackTime:Float; //  time elapsed during attack
+	public var timeForStrike:Float;
 	public var trigger:Bool;
+	
+	// new stuff
+	public var reloading:Bool;	// whether the weapon is currently being reloaded
+	public var roundCooldown:Float;  // for sustained fire of rounds
+	public var ammo:Int;   // the available amount of rounds ready to fire in the weapon, (eg. in magazine ) 
+	
+	// might be depeciated
 	public var randomDelay:Float;
 	public var delay:Float;
-	public var timeForStrike:Float;
+	
 	
 	public function new() 
 	{

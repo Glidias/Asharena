@@ -18,10 +18,13 @@ class PlayerAggroNode extends Node<PlayerAggroNode> {
 	public var pos:Pos;
 	public var size:Ellipsoid;
 	public var pointSamples:EllipsoidPointSamples;
+
 	
 	// by assigning dummy Frozen movementPoints with timeElapsed == 0, enemy aggro can be stuck on this Node...without performing any action! Enemy aggro will only change if another node gets closer than this node!
 	public var movementPoints:MovementPoints;   
 	
+	public var playerAggro:PlayerAggro;
+		
 		
 	// for hitting player only (this should/could be factored out elsewhere to a diff node/system)
 	public var health:Health;

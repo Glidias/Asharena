@@ -22,6 +22,7 @@ class EnemyIdle
 	public static inline var DEFAULT_AGGRO_RANGE:Float = 256;
 	public static inline var DEFAULT_AGGRO_RANGE_SQ:Float = DEFAULT_AGGRO_RANGE*DEFAULT_AGGRO_RANGE;
 	
+	
 	public function new() 
 	{
 		

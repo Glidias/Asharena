@@ -25,6 +25,9 @@ class AggroMem implements Indexable
 	
 	public var cooldown:Float;
 	
+	public var watchFlags:Int;
+
+	
 	
 	public var engaged:Bool;
 
@@ -39,6 +42,7 @@ class AggroMem implements Indexable
 		this.side = side;
 		index = -1;
 		cooldown = 0;
+		watchFlags = 0;
 		return this;
 	}
 	

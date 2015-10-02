@@ -26,11 +26,21 @@ class CharTurnSpecs
 		
 	}
 	
-	public function setupValkyriaChronicles():Void {
+	public function setupValkyriaChronicles(totalTimeUnitsInSec:Float=7):CharTurnSpecs {
 		turnStaggerReactionTime = 0;
 		gotTimeStaggeredCooldown = false;
-		//totalTimeUnitsAvailable = 7; // to be overwritten dependant on character
+		totalTimeUnitsAvailable = totalTimeUnitsInSec;
 		turnAimDuration = 0.45;
+		return this;
+	}
+	
+	public function setupAsharena(totalTimeUnitsInSec:Float=7):CharTurnSpecs {
+		turnStaggerReactionTime = 0.213;
+		gotTimeStaggeredCooldown = false;
+		totalTimeUnitsAvailable = totalTimeUnitsInSec;
+		turnAimDuration = 0.45;
+		
+		return this;
 	}
 	
 }

@@ -58,29 +58,19 @@ class Weapon
 	*/
 	
 	public var damageRange:Int;		// damage up-range variance
-
 	public var minRange:Float;
 	
 	public var minPitch:Float;
 	public var maxPitch:Float;
-	
-	// used for rolling random range only
-	public var critMinRange:Float; 
-	public var critMaxRange:Float;
-	
+
 	public var baseCritPerc:Int;
- 
 	
-	// timings cannot be a non-zero value! For weapons like guns and crossbows, use tiny floating point values to simulate time taken to pull the trigger/strike the firing pin, etc..
+	// timings cannot be a non-zero value! 
+	// This paragraph now only applies to Melee, no longer for ranged weapons.
 	public var timeToSwing:Float;
 	public var strikeTimeAtMaxRange:Float;  
 	public var strikeTimeAtMinRange:Float;
-	
 	public var parryEffect:Float;
-	
-	public var stunEffect:Float;
-	public var stunMinRange:Float;
-	public var stunMaxRange:Float;
 	
 	public var anim_startSwingTime:Float;
 	public var anim_strikeTimeAtMaxRange:Float;
@@ -96,6 +86,24 @@ class Weapon
 	
 	public var muzzleVelocity:Float;
 	public var muzzleLength:Float;
+	
+	
+	// new for ranged weapons
+	public var roundsToFire:Int;  // intended max rounds to fire out with given fire-mode
+	public var reloadTime:Float;   // this is used in place of cooldown when reloading is needed, else cooldown is used for time between shots.
+	public var maxAmmoCapacity:Int;  // max rounds that can be stored in weapon for firing
+	public var noFastLoader:Bool;  // used to indicate weapon that has to be reloaded 1 round at a time
+	
+	// --- UNUSED:
+	
+	// used for rolling random range only.. currently/to be depciated
+	public var critMinRange:Float; 
+	public var critMaxRange:Float;
+	
+	// Currently unused
+	public var stunEffect:Float;
+	public var stunMinRange:Float;
+	public var stunMaxRange:Float;
 	
 	
 

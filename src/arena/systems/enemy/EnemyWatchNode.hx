@@ -1,5 +1,6 @@
 package arena.systems.enemy;
 import arena.components.char.AggroMem;
+import arena.components.char.AggroSpecs;
 import arena.components.enemy.EnemyWatch;
 import arena.components.weapon.Weapon;
 import arena.components.weapon.WeaponState;
@@ -25,5 +26,8 @@ class EnemyWatchNode extends Node<EnemyWatchNode> {
 	public var state:EnemyWatch;	
 	public var stance:IStance;
 	public var aggroMem:AggroMem;
+	
+	public var aggroSpecs:AggroSpecs;
+	
 	//public var stateMachine:EntityStateMachine;
 }

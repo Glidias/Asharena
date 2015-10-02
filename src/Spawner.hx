@@ -1,6 +1,9 @@
 package ;
+import arena.components.char.AggroSpecs;
 import arena.components.char.CharDefense;
+import arena.components.char.CharTurnSpecs;
 import arena.components.weapon.WeaponState;
+import arena.systems.player.PlayerAggro;
 import ash.core.Engine;
 import ash.core.Entity;
 import components.ActionIntSignal;
@@ -26,17 +29,33 @@ import util.geom.PMath;
 class Spawner 
 {
 	private var engine:Engine;
+	
+	public var globalTurnSpecs:CharTurnSpecs;
+	public var globalAggroMeleeSpecs:AggroSpecs;
+	public var globalAggroRangedSpecs:AggroSpecs;
 		
 	public function new(engine:Engine) 
 	{
 		this.engine = engine;	
+		
+		this.globalTurnSpecs = new CharTurnSpecs().setupAsharena();
+		this.globalAggroMeleeSpecs = new AggroSpecs().setupAsharenaStandard(false);
+		this.globalAggroRangedSpecs = new AggroSpecs().setupAsharenaStandard(true);
 
 	}
 
 	public function getGladiatorBase(x:Float = 0, y:Float = 0, z:Float = 0, rx:Float = 0, ry:Float = 0, rz:Float=0, isPlayer:Bool=true):Entity {
 		var ent:Entity = new Entity();
 		
-		ent.add( new Pos(x,y,z) ).add( new Rot(rx,ry,rz) ).add( new Vel() );
+		
+		ent.add( new Pos(x, y, z) ).add( new Rot(rx, ry, rz) ).add( new Vel() );
+		
+		
+		ent.add( new AggroSpecs().setupAsharenaStandard(false, true) );  //
+		ent.add( globalTurnSpecs );
+		
+		
+		ent.add( new PlayerAggro().init() );
 		
 		ent.add( new SurfaceMovement() ).add( new DirectionVectors() );
 		
