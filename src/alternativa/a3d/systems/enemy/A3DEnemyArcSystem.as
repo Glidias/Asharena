@@ -48,6 +48,12 @@ package alternativa.a3d.systems.enemy
 			 
 		}
 		
+		public function setVisible(val:Boolean):void {
+			aggroArcs.visible = val;
+			idleArcs.visible = val;
+			watchArcs.visible = val;
+		}
+		
 		public function setTimeElapsed(weap:Weapon):Number {
 			if (weap == null) return (delayTimeElapsed = 0);
 			delayTimeElapsed = .3 +  Math.random() * .15  + (weap.fireMode <= 0 ? weap.timeToSwing : weap.strikeTimeAtMaxRange);

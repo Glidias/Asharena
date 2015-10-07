@@ -206,6 +206,8 @@ package systems.player.a3d
 			this.skin = skin;
 			anims = ANIM_MANAGER.cloneFor(skin);
 			
+			
+			
 			rootJoint = skin.childrenList as Joint;//getJoint("Bip01");
 			
 			surfaceMovement.setStrafeSpeed(speed_strafe);
@@ -291,6 +293,9 @@ package systems.player.a3d
 			melee_thrust_up = anims.getAnimationByName("ref_melee_thrust1").clone();
 			melee_thrust_down = anims.getAnimationByName("ref_melee_thrust2").clone();
 			
+	
+		
+		
 			flinches = [];
 			var len:int = FLINCHES.length;
 			for (var i:int = 0; i < len; i++) {
@@ -652,6 +657,7 @@ package systems.player.a3d
 
 		
 		public function setJoggingSpeed(speed:Number):void {
+		
 			speed_jog = speed;
 			speed_run = speed * SPEED_RUN_MULTIPLIER;
 		}

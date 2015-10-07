@@ -53,16 +53,22 @@ class AnimAttackSystem extends System implements IProjectileHitResolver implemen
 		_engine = engine;		
 		
 		projectileTimeLeft = 0;
+		
+		nodeList.nodeAdded.add(onNodeAdded);
 	}
 
 	override public function removeFromEngine(engine:Engine):Void {
-		//nodeList.onAdded.remove(onNodeAdded);
+		nodeList.nodeAdded.remove(onNodeAdded);
 	//	nodeList = null;
 	
 	}
 	
 	public function onNodeAdded(node:AnimAttackNode):Void {
-		
+		if (projectileTimeLeft < node.animMelee.fixedStrikeTime) {
+			
+			projectileTimeLeft = node.animMelee.fixedStrikeTime;
+			trace("A:"+projectileTimeLeft);
+		}
 	}
 	
 	
@@ -76,25 +82,14 @@ class AnimAttackSystem extends System implements IProjectileHitResolver implemen
 		
 		// Process melee unit attack anims and damage dealings
 		while ( n != null) {
-			if (n.animMelee.targetPos != null) {
-				n.animMelee.curTime += time;
-				if (n.animMelee.fixedStrikeTime >= 0) {
-					
-					var timing:Float = HitFormulas.calculateAnimStrikeTimeAtRange(n.weapon, HitFormulas.get3DDist(n.pos, n.animMelee.targetPos, n.animMelee.targetEllipsoid));
-					if (n.animMelee.curTime >= timing) {
-						n.animMelee.targetHP.damage(n.animMelee.damageDeal);
-						n.animMelee.fixedStrikeTime = -1;
-					}
-				}
-			}
-			else {
+	
 				n.animMelee.curTime += time;
 	
 				if (n.animMelee.fixedStrikeTime>=0 && n.animMelee.curTime >= n.animMelee.fixedStrikeTime) {
 					n.animMelee.targetHP.damage(n.animMelee.damageDeal);
 					n.animMelee.fixedStrikeTime = -1;
 				}	
-			}
+			
 			
 			if (n.animMelee.curTime >= n.weapon.anim_fullSwingTime) {
 				n.signal.forceSet(PlayerAction.IDLE);  

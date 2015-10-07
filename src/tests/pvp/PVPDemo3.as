@@ -219,7 +219,7 @@ package tests.pvp
 			//standardMaterial.tileSize = 512;
 			standardMaterial.pageSize = _terrainBase.loadedPage.heightMap.RowWidth - 1;
 			
-		//	_terrainBase.loadedPage.heightMap.flatten(standardMaterial.waterLevel + 130);  // flat test
+			_terrainBase.loadedPage.heightMap.flatten(standardMaterial.waterLevel + 130);  // flat test
 		//	_terrainBase.loadedPage.heightMap.randomise(255);  // randomise test
 		//	 _terrainBase.loadedPage.heightMap.slopeAltAlongY(88);  // slope zig zag test
 		//	 _terrainBase.loadedPage.heightMap.slopeAlongY(122);  // slope linear test
@@ -431,10 +431,10 @@ package tests.pvp
 		
 		private function getTestWeaponList():WeaponSlot {
 			var weapSlot:WeaponSlot = new WeaponSlot().init();
-			weapSlot.slots[0] = getTestRangedWeapon();
-			weapSlot.slots[1] = getTestWeaponFireModes();
+		//	weapSlot.slots[0] = getTestRangedWeapon();
+		//	weapSlot.slots[1] = getTestWeaponFireModes();
 			
-			///weapSlot.slots[0] = getTestWeaponFireModes();
+		weapSlot.slots[0] = getTestWeaponFireModes();
 			return weapSlot;
 		}
 
@@ -579,8 +579,8 @@ package tests.pvp
 			}
 			if (w.critMaxRange > w.range) w.critMaxRange = w.range;
 			
-			w.timeToSwing  = thrust ? 0.13333333333333333333333333333333 : 0.26666666666666666666666666666667;
-			w.strikeTimeAtMaxRange =  thrust ? 0.4 : 0.6; 
+			w.timeToSwing  =  thrust ? 0.3 : 0.4; // thrust ? 0.13333333333333333333333333333333 : 0.26666666666666666666666666666667;
+			w.strikeTimeAtMaxRange = w.timeToSwing;//  thrust ? 0.4 : 0.6; 
 			w.strikeTimeAtMinRange = w.timeToSwing;  // usually close to time to swing
 			
 			
@@ -735,6 +735,23 @@ package tests.pvp
 				_terrainBase.terrain.debug = ! _terrainBase.terrain.debug;
 			}
 			//*/
+		}
+		
+		private function onEnemyInterrupt():void {
+				disablePlayerMovement();
+					sceneLocked = true;
+				//	_followAzimuth = true;
+				arcSystem.setVisible(false);
+				_animAttackSystem.resolved.addOnce(onFinishEnemyInterrupt);
+		}
+		
+		private function onFinishEnemyInterrupt():void 
+		{
+				arenaHUD.appendMessage("Finished interrupt !");
+				sceneLocked = false;
+				arcSystem.setVisible(true);
+				//	_followAzimuth = false;
+					if (movementPoints.movementTimeLeft > 0)  arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll);
 		}
 		
 		private function attemptReloadTurn():void 
@@ -938,7 +955,7 @@ package tests.pvp
 		private function onPlayerDamaged(hp:int, amount:int):void {
 			if (amount > 0) {
 				var stance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IAnimatable) as GladiatorStance;
-				stance.flinch();
+				//stance.flinch();
 			}
 			else {
 				
@@ -1559,6 +1576,8 @@ package tests.pvp
 					_followAzimuth = false;
 					arenaHUD.appendSpanTagMessage("Resolving turn...");
 					_animAttackSystem.resolved.addOnce(doEndTurn);
+					
+				
 					return;
 				}
 			
@@ -1846,7 +1865,7 @@ package tests.pvp
 			targetingSystem.targetChanged.add(onTargetChanged);
 			targetingSystem.targetChanged.add(arenaHUD.setTargetChar);
 			
-			game.gameStates.thirdPerson.addInstance( new TrajRaycastTester(terrainRaycast,thirdPersonController.thirdPerson.rayOrigin, thirdPersonController.thirdPerson.rayDirection) ).withPriority(SystemPriorities.postRender);
+		//	game.gameStates.thirdPerson.addInstance( new TrajRaycastTester(terrainRaycast,thirdPersonController.thirdPerson.rayOrigin, thirdPersonController.thirdPerson.rayDirection) ).withPriority(SystemPriorities.postRender);
 		//	game.gameStates.thirdPerson.addInstance( destCalcTester = new DestCalcTester(new Ellipsoid(20, 20, 36), new Vec3(), new Vec3(), game.colliderSystem.collidable, _debugBox  ) );
 			
 			// special PVP movement limited time
@@ -1898,7 +1917,7 @@ package tests.pvp
 			_enemyAggroSystem.timeChecker = _animAttackSystem;
 			//_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
 		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
-		//	_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
+			_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
 			//_enemyAggroSystem.onEnemyCooldown.add(onEnemyCooldown);
 			
 			
@@ -1940,7 +1959,12 @@ package tests.pvp
 		private function onEnemyStrike(e:Entity):void 
 		{
 			var obj:Object3D = e.get(Object3D) as Object3D;
-			arenaHUD.appendMessage(obj.name+" finiished his strike!");
+			if ((e.get(WeaponState) as WeaponState).fireMode.fireMode > 0) {
+			arenaHUD.appendMessage("Enemy interrupt occured!");
+			//arenaHUD.appendMessage(obj.name+" finiished his strike!");
+			onEnemyInterrupt();
+			}
+			
 		}
 		
 		private function onEnemyReady(e:Entity):void 
