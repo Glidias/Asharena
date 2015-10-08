@@ -180,6 +180,8 @@ package tests.pvp
 		public function PVPDemo3() 
 		{
 			haxe.initSwc(this);
+			//throw new Error(bico(4,0));
+		//	throw new Error(findNumSucceedProb(90, 13, 10)*100);
 			
 			
 			
@@ -594,6 +596,63 @@ package tests.pvp
 			w.anim_fullSwingTime = 0.96;
 			
 			return w;
+		}
+		
+		
+		
+
+
+		  /// <summary>
+		/// Calculates the binomial coefficient (nCk) (N items, choose k)
+		/// </summary>
+		/// <param name="n">the number items</param>
+		/// <param name="k">the number to choose</param>
+		/// <returns>the binomial coefficient</returns>
+	//	/*
+		public function bico( n:Number, k:Number)
+		{
+			if (k > n) { return 0; }
+			if (n == k) { return 1; } // only one way to chose when n == k
+			if (k > n - k) { k = n - k; } // Everything is symmetric around n-k, so it is quicker to iterate over a smaller k than a larger one.
+			var c:Number = 1;
+			for (var i:int = 1; i <= k; i++)
+			{
+				c *= n--;
+				c /= i;
+			}
+			return c;
+		}
+	//	*/
+			
+		
+		private function findNumCombiProb(s:int, n:int, x:int):Number {
+				return findNumCombi(s, n, x) / Math.pow(x, n);
+		}
+		
+		
+		private function findNumSucceedProb(s:int, n:int, x:int):Number {
+				var total:Number =  Math.pow(x, n);
+				var max:Number = x * n;
+				
+				var accum:Number = 0;
+				for (var i:int = s; i <= max; i++) {
+					
+					accum += findNumCombi(i, n, x) ;
+				}
+				return accum / total;
+		}
+		
+		
+		private function findNumCombi(s:int, n:int, x:int):Number {
+			
+			var accum:Number = 0;
+			
+			var limit:int =  (s - n) / x;
+			
+			for (var k:int = 0; k <= limit; k++) {
+				accum += Math.pow( -1, k) * bico(n, k) * bico(s - x * k - 1, n - 1);
+			}
+			return accum;
 		}
 		
 		
