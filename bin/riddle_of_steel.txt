@@ -1,0 +1,114 @@
+Attempt exit - 
+Use all CP on Full Evade
+Use all CP thrust on above
+
+Pre-phase:
+Prepare any available stances for next phase begin
+
+Begin phase!
+
+
+Attempt exchange:
+Roll decided Attack/Defense for your exchange
+If you have initiative, ?Target can respond on the spot according to your chosen Attack if target has AI?, else if target has initiative and available AI to attack, you get to respond.  
+
+Interception attack exchange: 
+Roll Defense Response required if target has initiative, AI for available attack action.
+
+Opputunity Attack:
+Force Auto Roll Defense (Full Evade all CP) vs Force Auto Roll Attack (Thrust all CP). 
+
+
+AI Framework:
+--------------------------
+
+Against AI, the AI targets always have available attack/defend action during any type of exchange. This streamlines the situation of having a particular player on a certain turn, dealing/receiving an exchange from their given targets by having those actiosn resolve immediately, rather than having to wait for an opposing player response for every melee exchange of blows.
+
+Otherwise, receiving an Interception attack exchange will result in a pinned character and attempting an Exchange on a target will result in pinning the character in position as well. Then, having to wait for the responses on the enemy's turn. This slows the agme down to the crawl down to individual blows between enemies. Thus, an AI framework is used to help train your units to automate various special manuevers given specific situations.
+
+
+Determined by player:
+--------------------
+Default Stance
+_____________________
+
+
+AI programs for:
+- Defending against known attacks  respectively for exchange 1 and 2...
+- Attacking against unknown defense  respectively for exchange 1 and 2...
+- Attacking against known attacks  for exchange 1 only (ie. he has intiaitive)
+- Attacking against unknown attack  for exchange 1 only (ie. you have initiative)
+A total of 6 combination AI programs
+
+
+Input parameters:
+----------------------
+Knowing the Situation:
+Exchange (This/Last)
+ - his/mine CP being spent in last exchange (if known)
+ - his/mine current manuever in exchange (if  known)
+    - his/mine target area in exchange (if  known)
+(excluding mine for this.exchange)
+
+If input reference implications/restrictions:
+---------------------------------------------
+lastExchange => Exchange 2 
+thisExchange.his => Defending or attacking against known attack
+
+
+Output parameters:
+---------
+*My Manuever to use
+*My Amount of CP to use
+
+
+Knowing the Enemy:
+- His known total CP stat
+- his health-related CP lost for this exchange() // either due to shock (or pain if exchange 1)
+- his StanceBonusOrPenaltyForThisExchange
+
+- his available CP left to spent for this exchange():  His known total CP stat - Health Related lost for this exchange - (lastExchange ? lastExchange.his : 0) + StanceBonusOrPenaltyForThisExchange
+
+
+Knowing Myself:   
+- My total CP stat
+- My health-related CP lost for this exchange() // either due to shock (or pain if exchange 1)
+- mine StanceBonusOrPenaltyForThisExchange
+
+- mine available CP left to spent for this exchange():  Mine known total CP stat - Health Related lost for this exchange - (lastExchange ? lastExchange.his : 0) + StanceBonusOrPenaltyForThisExchange
+
+
+MAIN AI SKELETON BRANCH:
+---------------------
+
+if (lastExchange != null) {   // Exchange 2
+
+  if (thisExchange.his != null) {  // he is attacking, you need to defend or buy initiative for an attack
+       //  ...Defending against known attack for exchange 2
+  }      
+  else {   // you are attacking, he needs to defend at all costs
+     
+       //  ...Attacking against unknown defense  for exchange 2
+  } 
+
+}
+else {  // Exchange 1
+  if ( thisExchange.his != null) {   // you are defending or he is appearing to attack first with a known attack
+      if (meAttacking) {  // you are attacking after his attack, you may want to buy initiative to try and get the upperhand
+           //  ...Attacking against known attack  for exchange 1
+      }
+      else {  // you need to defend or buy intitive to attack
+          //  ...Defending against known attack  for exchange 1
+
+      }
+
+  }
+  else {     // he is defending or you are appearing to attack first against an unknown defense
+        if (heAttacking) {   
+             //  ...Attacking against unknown attack for exchange 1
+        }
+        else {
+           //  ...Attacking against unknown defense for exchange 1
+        }
+   }
+}
