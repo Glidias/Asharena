@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	
+	<title>Riddle of Steel Combat simulator</title>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="css/bootstrap-theme.min.css">
+
+	<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+	<script src="js/angular.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+
+	<script src="js/ui-bootstrap-tpls-0.14.2.min.js"></script>
+		
+	<style>
+	
+	.action-row .cp-available .value {
+		font-weight:bold;
+		
+	}
+	.action-row button {
+		visibility:hidden;
+	}
+	.action-row.selected {
+			background-color:#dddddd;
+			
+		}
+		
+	.btn-primary.active {
+		color:yellow;
+	}
+	.btn-primary:hover.active {
+		color:yellow;
+	}
+	.action-row.selected button {
+		visibility:visible;
+	}
+	.action-row .cp-available {
+		display:inline;
+	}
+	.action-row  .instruct {
+		font-size:13px;
+		display:none;
+	}
+	.color-green {
+		color:green;
+	}
+	.color-red {
+		color:red;
+	}
+	
+	#PrepareRound .person {
+		position:relative;
+		display:inline-block;
+		width:360px;
+	}
+	
+	#PrepareRound .person .name {
+		font-weight:bold;
+		
+		text-decoration:underline;
+	}
+	.friendly {
+		color:green;
+	}
+	.foe {
+		color:red;
+	}
+	
+	
+	</style>
+	
+	<script>
+	angular.module('riddleofsteel', ['ui.bootstrap']).controller('ButtonsCtrl', function ($scope) {
+
+		// global properties
+		$scope.totalExchanges = 2;
+		
+		// per round
+		$scope.prepareRoundStep = 0;
+		$scope.roundPhase = -1;
+		
+		// global view methods
+		$scope.confirmSelectedStances = function() {
+			$scope.startStance = $scope.selectedStartStance;
+			$scope.prepareRoundStep++;
+		}
+		$scope.confirmSelectedActions = function() {
+			$scope.startAction = $scope.selectedStartAction;
+			$scope.prepareRoundStep++;
+			$scope.roundPhase = 1;
+		}
+		$scope.getFightBtnVis = function() {
+			return $scope.prepareRoundStep == 1 && $scope.selectedStartAction;
+		}
+		$scope.getBonusStanceCP = function() {
+			return $scope.selectedStartStance != 0 ? $scope.selectedStartStance == $scope.selectedStartAction ? 2 : -2 : 0;
+		}
+		$scope.bracketify = function(value) {
+			return value ? "("+value+")" : "";
+		}
+		$scope.bonusStringify = function(value) {
+			return value != 0 ?  "("+(value > 0 ? "+" : "")+value+")" : ""; 
+		}
+		$scope.questionify = function(value) {
+			return value ? value : "?";
+		}
+		$scope.bonusPenaltyClassify = function(value) {
+			return {
+				"color-green": value > 0
+				,"color-red": value < 0
+			}
+		}
+		$scope.bonusClassify = function(value) {
+			return {
+				"color-green": value > 0
+			}
+		}
+		
+		$scope.cpLostDueToHealthCache = 0;
+		$scope.currentHealthStateStringCache = "";
+		
+		$scope.getCPLostDueToHealth = function() {
+			return $scope.cpLostDueToHealthCache;
+		}
+		
+		$scope.getHealthStateString =function() {
+			return $scope.currentHealthStateStringCache;
+		}
+		
+		$scope.getSelectedMaxCPAvailable = function() {
+			var avail =  $scope.maxCP - $scope.cpLostDueToHealthCache + $scope.getBonusStanceCP();
+			if (avail <0) avail = 0;
+			return avail;
+		}
+		$scope.getDefendingSuffix = function() {
+			return $scope.selectedStartStance == -1 ? " (+2)" : $scope.selectedStartStance == 1 ? " (-2)" : "";
+		}
+		$scope.getAttackingSuffix = function() {
+			return $scope.selectedStartStance == -1 ? " (-2)" : $scope.selectedStartStance == 1 ? " (+2)" : "";
+		}
+		$scope.restartRound = function() {
+			$scope.roundPhase = 0;
+			$scope.prepareRoundStep = 0;
+			$scope.selectedStartStance = 0;
+			$scope.selectedStartAction = 0;
+		}
+		
+		// per person
+		//$scope.selectedStartStance = 0;
+		//$scope.selectedStanceAction = 0;
+		$scope.maxCP = 12;
+		$scope.name = "Alfred";
+		
+		
+		// per enemy
+		$scope.enemyName = "John";
+		$scope.enemyStance = "Defensive";
+		$scope.enemyKnownCP = null;
+
+		
+		
+		
+		$scope.restartRound();
+		
+		
+	});
+	</script>
+	
+	
+</head>
+<body ng-app="riddleofsteel"  ng-controller="ButtonsCtrl">
+	<header>Riddle of Steel: Combat Simulator</header>
+
+	<section id="PrepareRound" class="container" ng-show="roundPhase == 0">
+		
+			<div class="row">
+				<h2>Prepare Round</h2>
+				
+				<div class="person">
+					<div class="name friendly">{{name}}</div>
+					<div class="action-row" ng-class="{selected: prepareRoundStep==0}">
+						<h5>Adopt Start Stance:</h5>
+					
+					
+						<div class="btn-group">
+							<label class="btn btn-primary" ng-model="selectedStartStance" ng-disabled="prepareRoundStep!=0" uib-btn-radio="-1">Defensive</label>
+							<label class="btn btn-primary" ng-model="selectedStartStance"  ng-disabled="prepareRoundStep!=0" uib-btn-radio="0">Neutral</label>
+							<label class="btn btn-primary" ng-model="selectedStartStance"  ng-disabled="prepareRoundStep!=0" uib-btn-radio="1">Offensive</label>
+						</div>
+
+						
+					</div>
+					<div class="action-row" ng-class="{selected: prepareRoundStep==1}">
+						<h5>
+							Start action by:
+							<span class="instruct">: CP available for action type:</span>
+						</h5>
+						
+					
+						<div class="btn-group">
+							<label class="btn btn-primary" ng-model="selectedStartAction" uib-btn-radio="-1">Defending{{getDefendingSuffix()}}</label>
+							<label class="btn btn-primary" ng-model="selectedStartAction" uib-btn-radio="1">Attacking{{getAttackingSuffix()}}</label>
+						</div>	
+						<div class="cp-available">
+							<span class="bonus" ng-class='bonusClassify(getBonusStanceCP())'>{{bonusStringify(getBonusStanceCP())}}</span>: <span class="value">{{getSelectedMaxCPAvailable()}}</span> / <span class="max">{{maxCP}}</span> | <span ng-show="cpLostDueToHealthCache !=0" ng-class="bonusPenaltyClassify(-cpLostDueToHealthCache)">{{currentHealthStateStringCache}} {{bonusStringify(-cpLostDueToHealthCache)}}</span>
+						</div>
+					</div>
+				</div>
+				
+			</div>
+			
+			<div class="versus row">
+				<h4>vs:</h4>
+				<ul>
+					<li><span class="foe">{{enemyName}}</span> (~{{questionify(enemyKnownCP)}}CP) <span class="stance" ng-hide="prepareRoundStep==0">{{bracketify(enemyStance)}}</span></li>
+				</ul>
+			</div>
+			
+			<button type="button" class="btn btn-default btn-sm" ng-show="!getFightBtnVis() && prepareRoundStep==0" ng-click="confirmSelectedStances()">Confirm Stance</button>
+			<button type="button" class="btn btn-default btn-sm" ng-show="getFightBtnVis()" ng-click="confirmSelectedActions()">Fight!</button>
+
+		
+	</section>
+	
+	<hr/>
+	
+	<section id="DeclareManuever" ng-show="roundPhase == 1 || roundPhase == 2">
+		<h2>Exchange {{roundPhase}} of {{totalExchanges}}</h2>
+		<h4>Attacking:</h4>
+		<div class="person">
+			<div class="sliderExample">
+				<div ui-slider="{range: 'max'}" ng-model="demoVals.sliderExample6"></div>
+				<input type="text" ng-model="demoVals.sliderExample6" />
+			</div>
+		</div>
+		<h4>Defending:</h4>
+		<div class="person">
+			<div class="sliderExample">
+				<div ui-slider="{range: 'max'}" ng-model="demoVals.sliderExample6"></div>
+				<input type="text" ng-model="demoVals.sliderExample6" />
+			</div>
+		</div>
+	</section>
+	
+</body>
+</html>
