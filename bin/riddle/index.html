@@ -9,10 +9,14 @@
 
 	<!-- Optional theme -->
 	<link rel="stylesheet" href="css/bootstrap-theme.min.css">
+	<link rel="stylesheet" href="css/rzslider.css">
 
 	<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+	
 	<script src="js/angular.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
+	
+	<script src="js/rzslider.js"></script>
 
 	<script src="js/ui-bootstrap-tpls-0.14.2.min.js"></script>
 		
@@ -75,12 +79,12 @@
 	</style>
 	
 	<script>
-	angular.module('riddleofsteel', ['ui.bootstrap']).controller('ButtonsCtrl', function ($scope) {
+	angular.module('riddleofsteel', ['ui.bootstrap',  'rzModule']).controller('ButtonsCtrl', function ($scope, $timeout) {
 
 		// global properties
 		$scope.totalExchanges = 2;
-		
-		// per round
+
+		// per round / exchange
 		$scope.prepareRoundStep = 0;
 		$scope.roundPhase = -1;
 		
@@ -88,11 +92,77 @@
 		$scope.confirmSelectedStances = function() {
 			$scope.startStance = $scope.selectedStartStance;
 			$scope.prepareRoundStep++;
+			
+			
+			
+		
+			
+			//$("#testSliderHolder").css("width", 100);
+			//$("#testSliderHolder").trigger("resize");
+			
+			//$(window).trigger("resize");
 		}
+	
+		function getSliderParams(exchange, cpExpendedSoFar, maxCP, maxHighCP) {
+			if (!maxHighCP) maxHighCP = maxCP;
+			return {value:cpExpendedSoFar, high:(exchange != 1 ? maxHighCP : Math.ceil((maxHighCP + cpExpendedSoFar)/2) ), maxHigh:maxHighCP, ceil:maxCP, min:cpExpendedSoFar, max:cpExpendedSoFar}
+		}
+		
+		function refreshListOfSliderParams(listOfSliderParams) {
+			var list = $("#DeclareManuever .sliderholder");
+			var i;
+			var len = list.length;
+			var maxCeil = 0;
+			var testCeil;
+			for(i=0; i< len; i++ ) {
+				testCeil = listOfSliderParams[i].ceil;
+				if (testCeil > maxCeil) {
+					maxCeil = testCeil;
+					
+				}
+			}
+			
+			//
+			if (maxCeil == 0)  {
+				for(i=0; i< len; i++ ) {
+			
+					testCeil = listOfSliderParams[i].ceil;
+				
+					$(list[i]).css("width", 100+"%");
+				}
+				return;
+			}
+			for(i=0; i< len; i++ ) {
+			
+				testCeil = listOfSliderParams[i].ceil;
+				
+				$(list[i]).css("width", (testCeil/maxCeil*100)+"%");
+			}
+		}
+		
+		function refreshDeclareManueverScrn(listOfSliderParams) {
+			$("#DeclareManuever").css("visibility", "hidden");
+			$timeout(function() {
+				$("#DeclareManuever").css("visibility", "visible");
+				if (listOfSliderParams != null) {
+					refreshListOfSliderParams(listOfSliderParams);
+				}
+				$(window).trigger("resize");
+			}, 0);
+		}
+		
 		$scope.confirmSelectedActions = function() {
 			$scope.startAction = $scope.selectedStartAction;
 			$scope.prepareRoundStep++;
 			$scope.roundPhase = 1;
+			
+			// dummy content
+			var listOfSliderParams = [ getSliderParams(1, 0,12,12),  getSliderParams(1, 0,5,5)];
+			$scope.personSelectedCPs1 = listOfSliderParams[0];
+			$scope.personSelectedCPs2 =listOfSliderParams[1];
+			
+			refreshDeclareManueverScrn(listOfSliderParams);
+			
 		}
 		$scope.getFightBtnVis = function() {
 			return $scope.prepareRoundStep == 1 && $scope.selectedStartAction;
@@ -157,16 +227,19 @@
 		$scope.name = "Alfred";
 		
 		
+		
 		// per enemy
 		$scope.enemyName = "John";
 		$scope.enemyStance = "Defensive";
 		$scope.enemyKnownCP = null;
 
-		
+	
 		
 		
 		$scope.restartRound();
 		
+		
+		//$scope.roundPhase = 1;
 		
 	});
 	</script>
@@ -229,20 +302,38 @@
 	
 	<hr/>
 	
-	<section id="DeclareManuever" ng-show="roundPhase == 1 || roundPhase == 2">
+	<section id="DeclareManuever" class="container" ng-show="roundPhase == 1 || roundPhase == 2">
 		<h2>Exchange {{roundPhase}} of {{totalExchanges}}</h2>
 		<h4>Attacking:</h4>
-		<div class="person">
-			<div class="sliderExample">
-				<div ui-slider="{range: 'max'}" ng-model="demoVals.sliderExample6"></div>
-				<input type="text" ng-model="demoVals.sliderExample6" />
+		<div class="person action-row">
+			<div class="sliderholder">
+			 <rzslider
+                rz-slider-floor="0"
+                rz-slider-ceil="personSelectedCPs1.ceil"
+				rz-slider-high="personSelectedCPs1.high"
+                rz-slider-step="1"
+                rz-slider-precision="1"
+                rz-slider-model="(personSelectedCPs1.value || 0)"
+				rz-slider-show-ticks="true"
+				rz-slider-min="personSelectedCPs1.min"
+				rz-slider-max="personSelectedCPs1.max"
+                ></rzslider>
 			</div>
 		</div>
 		<h4>Defending:</h4>
-		<div class="person">
-			<div class="sliderExample">
-				<div ui-slider="{range: 'max'}" ng-model="demoVals.sliderExample6"></div>
-				<input type="text" ng-model="demoVals.sliderExample6" />
+		<div class="person action-row">
+			<div class="sliderholder">
+			 <rzslider
+                rz-slider-floor="0"
+                rz-slider-ceil="personSelectedCPs2.ceil"
+				rz-slider-high="personSelectedCPs2.high"
+                rz-slider-step="1"
+                rz-slider-precision="1"
+                rz-slider-model="(personSelectedCPs2.value || 0)"
+				rz-slider-show-ticks="true"
+				rz-slider-min="personSelectedCPs2.min"
+				rz-slider-max="personSelectedCPs2.max"
+                ></rzslider>
 			</div>
 		</div>
 	</section>
