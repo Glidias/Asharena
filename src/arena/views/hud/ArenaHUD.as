@@ -46,6 +46,7 @@ package arena.views.hud
 	import flash.display.Stage;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.geom.Point;
 	import flash.geom.Vector3D;
 	import flash.ui.Keyboard;
 	import flash.utils.Dictionary;
@@ -60,42 +61,26 @@ package arena.views.hud
 	 * ...
 	 * @author ...
 	 */
-	public class ArenaHUD  extends SpawnerBundle
+	public class ArenaHUD   extends HudBase 
 	{
 		// standard boilerplate
-		public var hud:Hud2D;
+		
 		
 		public var hudMeshSetBase:SpriteMeshSetClonesContainer;
 		private var hudMeshMaterial:TextureAtlasMaterial
 		private var hudTextureWidth:int;
 		private var hudTextureHeight:int;
 		
-		private var stage:Stage;
 	
-		private var layoutTop:Object3D = new Object3D();
-		private var layoutTopLeft:Object3D = new Object3D();
-		private var layoutTopRight:Object3D = new Object3D();
-		private var layoutBottom:Object3D = new Object3D();
-		private var layoutBottomLeft:Object3D = new Object3D();
-		private var layoutBottomRight:Object3D = new Object3D();
-		private var layoutLeft:Object3D = new Object3D();
-		private var layoutRight:Object3D = new Object3D();
 		
 		private var visHash:Object = { };
 		
-		private var fontConsole:Fontsheet;
-		private var _textGeometry:Geometry;
+	
 		static public const MAX_CHARS:int = 60;  // per draw call
 		
 		
-		private var focalLength:Number;
-		private var viewSizeX:Number;
-		private var viewSizeY:Number;
-		private var camera:Camera3D;
-		public function setCamera(camera:Camera3D):void {
-			this.camera = camera;
-			 onStageResize();
-		}
+		
+		
 	
 		// additional stuff
 		
@@ -173,7 +158,7 @@ WeaponSlots
 			
 			ASSETS = [SaboteurHudAssets];
 			this.stage = stage;
-			super();
+			super(stage);
 		}
 		
 		
@@ -232,73 +217,18 @@ WeaponSlots
 		}
 		
 		
-		
-		private function onStageResize(e:Event=null):void 
-		{
-			if (camera != null) {
-				viewSizeX = camera.view._width * 0.5;
-				viewSizeY = camera.view._height * 0.5;
-				focalLength = Math.sqrt(viewSizeX * viewSizeX + viewSizeY * viewSizeY) / Math.tan(camera.fov * 0.5);
-			}
-			
-			var sh:Number = camera != null ? camera.view.height : stage.stageHeight;
-			var sw:Number = camera != null ? camera.view.width :  stage.stageWidth;
-			var halfWidth:Number = sw * .5;
-			var halfHeight:Number = sh * .5;
-			
-			layoutTop._y = -halfHeight;
-			layoutTop.transformChanged = true;
-			
-			layoutBottom._y =halfHeight;
-			layoutBottom.transformChanged = true;
-			
-			layoutLeft._x =-halfWidth;
-			layoutLeft.transformChanged = true;
-			
-			layoutRight._x =halfWidth;
-			layoutRight.transformChanged = true;
-			
-			
-			layoutTopLeft._x = -halfWidth;
-			layoutTopLeft._y = -halfHeight;
-			layoutTopLeft.transformChanged = true;
-			
-			layoutTopRight._x = halfWidth;
-			layoutTopRight._y = -halfHeight;
-			layoutTopRight.transformChanged = true;
-			
-			layoutBottomLeft._x = -halfWidth;
-			layoutBottomLeft._y = halfHeight;
-			layoutBottomLeft.transformChanged = true;
-			
-			layoutBottomRight._x = halfWidth;
-			layoutBottomRight._y = halfHeight;
-			layoutBottomRight.transformChanged = true;
-
-		}
+	
 		
 		override protected function init():void {
 		
-			
-			// layout
-			hud.addChild(layoutTop);
-			hud.addChild(layoutBottom);
-			hud.addChild(layoutLeft);
-			hud.addChild(layoutRight);
-			hud.addChild(layoutBottomRight);
-			hud.addChild(layoutBottomLeft);
-			hud.addChild(layoutTopRight);
-			hud.addChild(layoutTopLeft);
-			
-			
-			// setup basic fonts
-			fontConsole = new ConsoleFont();
+				 super.init();
+		
 			
 		//	stage.addChild( new Bitmap( fontConsole.bmpResource.data) );
-			fontConsole.bmpResource.upload(context3D);
+	//		fontConsole.bmpResource.upload(context3D);
 			//chatTextInput.glyphRange = fontConsole.fontV._glyphRange;
 			_textGeometry  = SpriteGeometryUtil.createNormalizedSpriteGeometry(MAX_CHARS, 0, 1, 1, 0, 0, 2);
-			_textGeometry.upload(context3D);
+			//_textGeometry.upload(context3D);
 			
 			
 			// setup basic sprite sheet
@@ -306,7 +236,7 @@ WeaponSlots
 			hudTextureWidth = hudBmpData.width;
 			hudTextureHeight = hudBmpData.height;
 			var hudResource:BitmapTextureResource = new BitmapTextureResource( hudBmpData );
-			hudResource.upload(context3D);
+			//hudResource.upload(context3D);
 			
 			hudMeshMaterial = new TextureAtlasMaterial(hudResource);// null, 1);
 			hudMeshMaterial.alphaThreshold = .8;
@@ -315,16 +245,69 @@ WeaponSlots
 			hudMeshSetBase =  new SpriteMeshSetClonesContainer(hudMeshMaterial, 0 );
 			hudMeshSetBase.objectRenderPriority = Renderer.NEXT_LAYER;
 			hudMeshSetBase.name = "hud";
-			hudMeshSetBase.geometry.upload(context3D);
+			//hudMeshSetBase.geometry.upload(context3D);
 			
 			hud.addChild(hudMeshSetBase);
 				
 			setupHUD();
 			
-			 super.init();
-			 
-			 stage.addEventListener(Event.RESIZE, onStageResize);
-			 onStageResize();
+			
+			setupDials();
+		
+			
+		}
+		[Embed(source="../../../../resources/fonts/dialsymbols.png")]
+		private static var DIAL_SYMBOLS:Class;
+		private function setupDials():void 
+		{
+			var bmpData:BitmapData = new DIAL_SYMBOLS().bitmapData;
+			//addChild( new Bitmap(bmpData));
+		
+			var material:TextureAtlasMaterial = new TextureAtlasMaterial( new BitmapTextureResource( bmpData ) );
+			//material.alphaThreshold =0.2;
+			//material.color = 0xFFFFFF;
+		//	material.transparentPass = false;
+			material.alphaThreshold = .8;
+	//		material.flags = (MaskColorAtlasMaterial.FLAG_MIPNONE | MaskColorAtlasMaterial.FLAG_PIXEL_NEAREST);
+			
+
+			
+			var cont:SpriteMeshSetClonesContainer = _myDialSymbols =  new SpriteMeshSetClonesContainer( material);
+			//cont.objectRenderPriority = Renderer.NEXT_LAYER;
+			//cont.x = -54;
+			//cont.y = -54;
+			(!CENTER_MODE ? layoutBottomRight : hud).addChild(cont);
+			
+			
+			// Create dials
+			if (CENTER_MODE) {
+				DIAL_1_POSITION.x = 0;
+				DIAL_1_POSITION.y = 0;
+			}
+			var dial:Array =  createDial(DIAL_1_POSITION.x, DIAL_1_POSITION.y);    	
+			setDialValues(dial, 6, 20, 0, 3, 4, 0, 0);  // testing only
+			if (!CENTER_MODE) createDial(DIAL_2_POSITION.x , DIAL_2_POSITION.y);
+			createDial(DIAL_3_POSITION.x , DIAL_3_POSITION.y);
+			allDials[allDials.length - 1].obj.x = 99999;
+			enemyDial = createDial(9999 , DIAL_3_POSITION.y);
+			
+		
+			
+			var spr:SpriteSet;
+			dialLetters = new FontSettings(fontConsole, fontConsoleMatDefault, spr = getNewTextSpriteSet(44, fontConsoleMatDefault, _textGeometry) );
+			
+			//dialLetters.hardSetUVOffsetIndices(3);
+			dialLetters.initMeshSet( cont = new SpriteMeshSetClonesContainer(fontConsoleMatDefault, 0) );
+			//cont.objectRenderPriority = Renderer.NEXT_LAYER;
+			dialLetters.writeFinalData("Block Open/Stk", DIAL_1_POSITION.x, DIAL_1_POSITION.y, 0, true);  // testing only
+			
+			//spr.x = -54;
+			//spr.y = -54;
+			
+			//cont.x = -54;
+			//cont.y = -54;
+			(!CENTER_MODE ? layoutBottomRight : hud).addChild(spr);
+			(!CENTER_MODE ? layoutBottomRight : hud).addChild(cont);
 		}
 		
 		
@@ -352,32 +335,10 @@ WeaponSlots
 		
 
 		
-		private function getSprite(px:Number, py:Number, width:Number, height:Number, x:Number = 0, y:Number = 0, parenter:Object3D=null):SpriteMeshSetClone {
-			
-			var spr:SpriteMeshSetClone = hudMeshSetBase.getNewSprite();
-
-			
-			spr.u = px / hudTextureWidth;
-			spr.v = py / hudTextureHeight;
-			spr.uw = width / hudTextureWidth;
-			spr.vw =  height / hudTextureHeight;
-			
-			
-			spr.root._x = x;
-			spr.root._y = y;
-			spr.root._scaleX = width;
-			spr.root._scaleY = height;
-			
-
-			spr.root._rotationX = Math.PI;
-			
-			spr.root._parent = parenter;
-			
-			return spr;
-		}
+		
 
 		private function addSprite(px:Number, py:Number, width:Number, height:Number, x:Number = 0, y:Number = 0, parenter:Object3D=null):SpriteMeshSetClone {
-			var spr:SpriteMeshSetClone = getSprite(px, py, width, height, x, y, parenter);
+			var spr:SpriteMeshSetClone = getSprite(hudMeshSetBase,px, py, width, height, x, y, parenter);
 			
 			hudMeshSetBase.addClone(spr);
 			
@@ -397,7 +358,7 @@ WeaponSlots
 			for (var i:int = 0; i < amt; i++) {
 				if (i < arr.length) continue;
 				var spr:MeshSetClone;
-				arr[i] = spr  = getSprite(px, py, width, height, 0, 0, parenter);
+				arr[i] = spr  = getSprite(hudMeshSetBase,px, py, width, height, 0, 0, parenter);
 				spr.root._x = width * i;
 			}
 			return arr;
@@ -427,31 +388,7 @@ WeaponSlots
 		}
 		
 				
-		private function getNewFontMaterial(color:uint):MaskColorAtlasMaterial {
-			var mat:MaskColorAtlasMaterial =  new MaskColorAtlasMaterial(fontConsole.bmpResource);
-			mat.transparentPass = false;
-			mat.color = color;
-			mat.alphaThreshold = .8;
-			mat.flags = (MaskColorAtlasMaterial.FLAG_MIPNONE | MaskColorAtlasMaterial.FLAG_PIXEL_NEAREST);
-			return mat;
-		}
-		private function getNewDefaultFontMaterial(color:uint):TextureAtlasMaterial {
-			var mat:TextureAtlasMaterial =  new TextureAtlasMaterial(fontConsole.bmpResource);
-			//mat.transparentPass = false;
-			mat.alphaThreshold =.8;
-			mat.flags = (TextureAtlasMaterial.FLAG_MIPNONE | TextureAtlasMaterial.FLAG_PIXEL_NEAREST);
-			return mat;
-		}
 		
-		private function getNewTextSpriteSet(estimatedMaxChars:int, material:Material, geom:Geometry):SpriteSet {
-			var spr:SpriteSet = new SpriteSet(0, true, material, fontConsole.bmpResource.data.width, fontConsole.bmpResource.data.height, estimatedMaxChars, 2 );
-			
-			return spr;
-		}
-		
-		private function getNewFontSettings(fontSheet:Fontsheet, fontMat:Material, estimatedAmt:int):FontSettings {
-			return new FontSettings( fontConsole, fontMat, getNewTextSpriteSet(estimatedAmt, fontMat, _textGeometry ));
-		}
 		
 		
 		// END BOILERPLATE
@@ -581,6 +518,7 @@ WeaponSlots
 			_curCharInfo.centered = true;
 			_curCharInfo.width = 160;
 			_curCharInfo.addToContainer(layoutBottomRight);
+			registerVisStatesOfTextBox("commander", _curCharInfo);
 			
 			_curCharInfo.moveTo( -92, 0);
 		
@@ -1678,7 +1616,135 @@ WeaponSlots
 		
 
 		
+		// Dials
+		private var _myDialSymbols:SpriteMeshSetClonesContainer;
+		private var dialSymbols:BitmapData;
+		private var c:SpriteMeshSetClone;
+		private var dialLetters:FontSettings;
 		
+		private static const CENTER_MODE:Boolean = false;
+		
+		
+		public static const DIAL_1_POSITION:Point = new Point( -140, -65); // defenive
+		public static const DIAL_2_POSITION:Point = new Point( -60, -135); // offensive
+		public static const DIAL_3_POSITION:Point = new Point( -60, -246); // offensive buy/secondary
+		private var enemyDial:Array;
+		private var dialTexts:String;
+		private var dialEnemyText:String = "";
+		
+		
+		public function writeMove():void {
+			
+		}
+		
+		
+		
+		
+		private var allDials:Array = [];
+		
+
+		
+		
+		public static const DIAL_EMPTY:Number = 0/128;
+		public static const DIAL_FILLED:Number = 1*16/128;
+		public static const DIAL_PAIN:Number = 2*16/128;
+		public static const DIAL_SHOCK:Number = 3*16/128;
+		public static const DIAL_SPENT:Number = 4*16/128;
+		public static const DIAL_PENALISE:Number = 5*16/128;
+		public static const DIAL_DOT:Number = 6*16/128;
+		public static const DIAL_BUY:Number = 7*16/128;
+		
+		public static const DIAL_BAR:Number = 6*16/128;
+		
+		public function setDialValues(dial:Array, usingCP:int, totalCP:int, spentCP:int=0, pain:int = 0, shock:int=0, manueverCost:int=0, intiativeBought:int=0):void {
+			var i:int;
+			
+			
+			var len:int = usingCP;
+		
+			c = dial[0];
+			//c.u = DIAL_BAR;
+			
+			for (i = 0; i < len; i++) {
+				c = dial[i];
+				c.u = DIAL_FILLED;
+				//c.u = ;
+				
+			}
+			len = totalCP;
+			for (i = i;  i < len; i++) {
+				c = dial[i];
+				c.u = DIAL_EMPTY;
+				
+			}
+			
+			c = dial[i];
+			c.u = DIAL_EMPTY ;
+			i++;
+			
+			len = dial.length;
+			for (i = i; i < len ; i++ ) {
+				c = dial[i];
+				c.u = DIAL_DOT;
+			}
+			
+			
+			c = dial[totalCP];
+			c.u = DIAL_BAR ;
+			
+			if (pain >= shock) shock = 0
+			else shock = shock - pain;
+			
+			i = totalCP;
+			while (--i > -1) {
+				
+				c = dial[i];
+				c.u = DIAL_PAIN;
+				pain--;
+				if (pain == 0) break;
+			}
+			
+			while (--i > -1) {
+				if (shock == 0) break;
+				c = dial[i];
+				c.u = DIAL_BUY;
+				shock--;
+			}
+
+		}
+		
+		
+		
+		
+		protected function createDial(ox:Number=0, oy:Number=0):Array {
+			
+			var c:SpriteMeshSetClone;
+			
+			var obj:Object3D = new Object3D();
+			var arr:Array = [];
+			var radius:Number = 42;
+			var len:int = 26;
+			var division:Number = 2 * Math.PI / len;
+			 for (var i:int = 0 ; i < len; i++) {
+				 //  var pos:Point = Point.polar(radius, (i / len) * Math.PI * 2);
+				  _myDialSymbols.addClone( c =  getSprite(_myDialSymbols, 16 * 0, 0, 16, 16, -8, -8, obj) );
+				  arr.push(c);
+				 c.root._x =ox + Math.cos( -Math.PI * .5 + division * i ) * radius;
+				  c.root._y =oy+ Math.sin( -Math.PI * .5 + division * i) * radius;
+				  c.root.rotationZ = division * i;
+				//if (c.root.rotationZ == 0) c.root.rotationZ = 0.2;
+				c.root.scaleX = 16;
+				c.root.scaleY = 16;
+			 }
+			 
+			 arr["obj"] = obj;
+			 allDials.push(arr);
+			
+			// obj.transform.copy(layoutBottomRight.transform);
+			// obj.transform.append(
+			
+			return arr;
+		}
 		
 		
 	}

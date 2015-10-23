@@ -1,6 +1,10 @@
 package alternativa.a3d.systems.text 
 {
+	import alternativa.engine3d.animation.keys.NumberTrack;
 	import alternativa.engine3d.materials.Material;
+	import alternativa.engine3d.objects.MeshSet;
+	import alternativa.engine3d.objects.SpriteMeshSetClone;
+	import alternativa.engine3d.objects.SpriteMeshSetClonesContainer;
 	import alternativa.engine3d.spriteset.materials.MaskColorAtlasMaterial;
 	import alternativa.engine3d.spriteset.SpriteSet;
 	import assets.fonts.Fontsheet;
@@ -28,8 +32,8 @@ package alternativa.a3d.systems.text
 		
 		alternativa3d var counter:int = 0; 	// for internal use only
 		
-		private var uvx:Number = 0;
-		private var uvy:Number = 0;
+		protected var uvx:Number = 0;
+		protected var uvy:Number = 0;
 		public function hardSetUVOffsetIndices(x:int=0, y:int=0):void {
 			uvx = fontSheet.uSpanOffset*x;
 			uvy = fontSheet.uSpanOffset*y;
@@ -362,10 +366,90 @@ package alternativa.a3d.systems.text
 			_outsideBound = outsideBound;
 		}
 		
+		
+		alternativa3d var meshSet:SpriteMeshSetClonesContainer;
+	//	alternativa3d var numMeshSetLetters:int = 0;
+	//	alternativa3d var meshSetLetters:Vector.<SpriteMeshSetClone>;
+		
+		public function initMeshSet(meshSet:SpriteMeshSetClonesContainer):void {
+			this.meshSet = meshSet;
+		//	meshSetLetters = new Vector.<SpriteMeshSetClone>();
+		}
+		
+		public function writeCircleData(str:String, x:Number = 0, y:Number = 0,centered:Boolean = false, radius:Number = 100, startLetterIndex:uint = 0):void {
+			
+			if (meshSet == null) throw new Error("No MeshSet found. Call initMeshSet() first!");
+			if (str === "") {
+				return;
+			}
+			/*
+			var maskWidth:Number = 0;
+			
+			var minX:Number = centered ? -maskWidth * .5 : 0;
+			minX -= minXOffset;
+			
+			maskWidth -= centered ? maskWidth*.5 : 0;
 
-		
+			numLinesCache = 1
+			*/
+			
+			var centerOffsetX:Number = 0;
+			if (centered) {
+				fontSheet.fontV.getBound(str, 0, 0, centered, fontSheet.tight, boundParagraph);
+				centerOffsetX = (boundParagraph.maxX - boundParagraph.minX) * -.5;
+				
+			}
+			
+			
+			var bounds:Array = fontSheet.fontV.getIndividualBounds(str, 0, 0, false, fontSheet.tight);
+			var referText:String = str.replace( /\s/g, "");
+			if (referText === "") {
+				return;
+			}
+			
+			var PI:Number = Math.PI;
+			var limit:int = startLetterIndex + bounds.length;	
+			var rect:Rectangle = RECT;
+			var angleAccum:Number = -Math.PI;
+			var count:int = 0;
+				
+			var sc:Number = 1;
+			for (var i:int = startLetterIndex; i < limit; i++) {
+				var letter:SpriteMeshSetClone = meshSet.addNewOrAvailableClone() as SpriteMeshSetClone;
+				var charRectIndex:int = fontSheet.charRectIndices[referText.charCodeAt(count)];
+				fontSheet.getRectangleAt(charRectIndex , rect );
+			
+				///*
+				letter.u = rect.x + uvx;
+				letter.v = rect.y + uvy;
+				letter.uw = rect.width;
+				letter.vw = rect.height;
+				
+				var aabb:AABB2 = bounds[count];
+
+			
+				
+				fontSheet.getRectangleIntAt( charRectIndex, rect );
+				var R:Number = radius + rect.height * .5;
+					var w:Number = rect.width*sc;
+				var h:Number = rect.height*sc;
+				letter.root._x =    x + aabb.minX + (aabb.maxX - aabb.minX) * .5 + centerOffsetX;
+				letter.root._y = y +  (aabb.minY + (aabb.maxY - aabb.minY) * .5);
+				
+				
+				letter.root._scaleX = w
+				letter.root._scaleY = h;
+				letter.root._rotationX = PI;
+				letter.root._rotationZ = 0; Math.PI * .5 + angleAccum;
+				
+
+				//*/
+				
+				angleAccum +=   Math.atan2(w, (radius));
+				count++;
+			}
 	
-		
+		}		
 		
 	}
 

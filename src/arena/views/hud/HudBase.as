@@ -40,15 +40,16 @@ package arena.views.hud
 		protected var layoutLeft:Object3D = new Object3D();
 		protected var layoutRight:Object3D = new Object3D();
 		
-		protected var fontConsole:Fontsheet;
+		protected var fontConsole:ConsoleFont;
+		protected var fontConsoleMatDefault:Material;
 		protected var _textGeometry:Geometry;
 		
 		
 		
-		private var focalLength:Number;
-		private var viewSizeX:Number;
-		private var viewSizeY:Number;
-		private var camera:Camera3D;
+		protected var focalLength:Number;
+		protected var viewSizeX:Number;
+		protected var viewSizeY:Number;
+		protected var camera:Camera3D;
 		public function setCamera(camera:Camera3D):void {
 			this.camera = camera;
 			 onStageResize();
@@ -84,12 +85,19 @@ package arena.views.hud
 			
 			// setup basic fonts
 			fontConsole = new ConsoleFont();
-			
+			fontConsoleMatDefault = getNewDefaultFontMaterial(0xDDEEAA);
 
 			 super.init();
 			 
 			 stage.addEventListener(Event.RESIZE, onStageResize);
-			 onStageResize();
+			 stage.addEventListener(Event.ENTER_FRAME, onEnterFrameOnce);
+		}
+		
+		private function onEnterFrameOnce(e:Event):void 
+		{
+			stage.removeEventListener(Event.ENTER_FRAME, onEnterFrameOnce);
+			SpawnerBundle.uploadResources( hud.getResources(true) );
+			onStageResize();
 		}
 		
 		private function onStageResize(e:Event=null):void 

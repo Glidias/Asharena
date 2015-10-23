@@ -19,7 +19,7 @@ package assets.fonts
 	{
 		private static var _transformProcedures:Dictionary = new Dictionary();
 		
-		public var rectsInt:Vector.<uint> = new Vector.<uint>();
+		public var rectsInt:Vector.<Number> = new Vector.<Number>();
 		public var rects:Vector.<Number> = new Vector.<Number>();
 		public var charRectIndices:Vector.<int>;
 		public var sheet:BitmapData;
@@ -110,6 +110,15 @@ package assets.fonts
 			rect.y = rects[(index << 2)+1]
 			rect.width = rects[(index << 2) + 2];
 			rect.height = rects[(index << 2) + 3];
+			return rect;
+		}
+		
+		public function getRectangleIntAt(index:uint, rect:Rectangle = null):Rectangle {
+			rect = rect || (new Rectangle());
+			rect.x = rectsInt[(index << 2)]
+			rect.y = rectsInt[(index << 2)+1]
+			rect.width = rectsInt[(index << 2) + 2];
+			rect.height = rectsInt[(index << 2) + 3];
 			return rect;
 		}
 		

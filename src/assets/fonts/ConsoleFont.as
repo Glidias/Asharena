@@ -23,7 +23,7 @@ package assets.fonts
 			
 			var bytes:ByteArray = new BOUNDS();
 			bytes.uncompress();
-			init( new FONT().bitmapData, bytes, [0xFFFFEEAA, 0xFFFF4455, 0xFF00FF00, 0xFF4499FF]);
+			init( new FONT().bitmapData, bytes, [0xFFFFEEAA, 0xFFFF4455, 0xFF00FF00, 0xFFFFFFFF]);  //
 			
 		}
 		

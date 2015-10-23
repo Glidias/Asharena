@@ -269,7 +269,8 @@ package
 		}
 		
 		 public function addGladiator(race:String, playerStage:IEventDispatcher = null, x:Number = 0, y:Number=0, z:Number=0, azimuth:Number=0, side:int=0, name:String=null, weapon:Weapon=null, watchSettings:EnemyIdle=null, weaponList:WeaponSlot=null):Entity {
-			var ent:Entity = getGladiatorBase(x,y,z, 0,0,0, playerStage!=null);
+			var ent:Entity = getGladiatorBase(x, y, z, 0, 0, 0, playerStage != null);
+			
 			var skProto:Skin = skinDict[race];
 			var sk:Skin = skProto.clone() as Skin;
 			if (weaponList != null) {
