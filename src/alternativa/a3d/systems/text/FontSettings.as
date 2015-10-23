@@ -1,6 +1,7 @@
 package alternativa.a3d.systems.text 
 {
 	import alternativa.engine3d.animation.keys.NumberTrack;
+	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.objects.MeshSet;
 	import alternativa.engine3d.objects.SpriteMeshSetClone;
@@ -368,6 +369,7 @@ package alternativa.a3d.systems.text
 		
 		
 		alternativa3d var meshSet:SpriteMeshSetClonesContainer;
+		alternativa3d var circleTailIndex:int = 0;
 	//	alternativa3d var numMeshSetLetters:int = 0;
 	//	alternativa3d var meshSetLetters:Vector.<SpriteMeshSetClone>;
 		
@@ -376,7 +378,9 @@ package alternativa.a3d.systems.text
 		//	meshSetLetters = new Vector.<SpriteMeshSetClone>();
 		}
 		
-		public function writeCircleData(str:String, x:Number = 0, y:Number = 0,centered:Boolean = false, radius:Number = 100, startLetterIndex:uint = 0):void {
+	
+		
+		public function writeCircleData(str:String, x:Number = 0, y:Number = 0,centered:Boolean = false, radius:Number = 100, startLetterIndex:uint = 0, parenter:Object3D=null):void {
 			
 			if (meshSet == null) throw new Error("No MeshSet found. Call initMeshSet() first!");
 			if (str === "") {
@@ -412,10 +416,12 @@ package alternativa.a3d.systems.text
 			var rect:Rectangle = RECT;
 			var angleAccum:Number = -Math.PI;
 			var count:int = 0;
+			
+			circleTailIndex = limit;
 				
 			var sc:Number = 1;
 			for (var i:int = startLetterIndex; i < limit; i++) {
-				var letter:SpriteMeshSetClone = meshSet.addNewOrAvailableClone() as SpriteMeshSetClone;
+				var letter:SpriteMeshSetClone = meshSet.addNewOrAvailableClone() as SpriteMeshSetClone;  // TODO: proper index implmenetation
 				var charRectIndex:int = fontSheet.charRectIndices[referText.charCodeAt(count)];
 				fontSheet.getRectangleAt(charRectIndex , rect );
 			
@@ -442,7 +448,7 @@ package alternativa.a3d.systems.text
 				letter.root._rotationX = PI;
 				letter.root._rotationZ = 0; Math.PI * .5 + angleAccum;
 				
-
+				letter.root._parent = parenter;
 				//*/
 				
 				angleAccum +=   Math.atan2(w, (radius));

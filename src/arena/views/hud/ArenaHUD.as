@@ -286,7 +286,8 @@ WeaponSlots
 			}
 			var dial:Array =  createDial(DIAL_1_POSITION.x, DIAL_1_POSITION.y);    	
 			setDialValues(dial, 6, 20, 0, 3, 4, 0, 0);  // testing only
-			if (!CENTER_MODE) createDial(DIAL_2_POSITION.x , DIAL_2_POSITION.y);
+			createDial(DIAL_2_POSITION.x , DIAL_2_POSITION.y);
+			allDials[allDials.length - 1].obj.x = 99999;
 			createDial(DIAL_3_POSITION.x , DIAL_3_POSITION.y);
 			allDials[allDials.length - 1].obj.x = 99999;
 			enemyDial = createDial(9999 , DIAL_3_POSITION.y);
@@ -294,13 +295,16 @@ WeaponSlots
 		
 			
 			var spr:SpriteSet;
-			dialLetters = new FontSettings(fontConsole, fontConsoleMatDefault, spr = getNewTextSpriteSet(44, fontConsoleMatDefault, _textGeometry) );
+			dialLetters = new FontSettings(fontConsole, fontConsoleMatDefault, spr = getNewTextSpriteSet(60, fontConsoleMatDefault, _textGeometry) );
 			
 			//dialLetters.hardSetUVOffsetIndices(3);
 			dialLetters.initMeshSet( cont = new SpriteMeshSetClonesContainer(fontConsoleMatDefault, 0) );
 			//cont.objectRenderPriority = Renderer.NEXT_LAYER;
-			dialLetters.writeFinalData("Block Open/Stk", DIAL_1_POSITION.x, DIAL_1_POSITION.y, 0, true);  // testing only
+			dialLetters.writeCircleData("Block Open/Stk", 0, 0, true, 100, 0, allDials[0].obj);  // testing only
+			dialLetters.writeCircleData("Cut", 0, 0, true, 100, dialLetters.circleTailIndex, allDials[1].obj); 
 			
+			//dialLetters.writeData("Cut", DIAL_2_POSITION.x, DIAL_2_POSITION.y, 0,  true, dialLetters.boundsCache.length); 
+			//dialLetters.finaliseWrittenData();
 			//spr.x = -54;
 			//spr.y = -54;
 			
@@ -1713,6 +1717,11 @@ WeaponSlots
 
 		}
 		
+		public function notifyEnemyInterrupt(gotInterrupt:Boolean=true):void 
+		{
+			allDials[1].obj.x = gotInterrupt ?  DIAL_2_POSITION.x : 99999;
+		}
+		
 		
 		
 		
@@ -1724,13 +1733,15 @@ WeaponSlots
 			var arr:Array = [];
 			var radius:Number = 42;
 			var len:int = 26;
+			obj.x = ox;
+			obj.y = oy;
 			var division:Number = 2 * Math.PI / len;
 			 for (var i:int = 0 ; i < len; i++) {
 				 //  var pos:Point = Point.polar(radius, (i / len) * Math.PI * 2);
 				  _myDialSymbols.addClone( c =  getSprite(_myDialSymbols, 16 * 0, 0, 16, 16, -8, -8, obj) );
 				  arr.push(c);
-				 c.root._x =ox + Math.cos( -Math.PI * .5 + division * i ) * radius;
-				  c.root._y =oy+ Math.sin( -Math.PI * .5 + division * i) * radius;
+				 c.root._x = Math.cos( -Math.PI * .5 + division * i ) * radius;
+				  c.root._y = Math.sin( -Math.PI * .5 + division * i) * radius;
 				  c.root.rotationZ = division * i;
 				//if (c.root.rotationZ == 0) c.root.rotationZ = 0.2;
 				c.root.scaleX = 16;

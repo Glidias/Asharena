@@ -801,6 +801,7 @@ package tests.pvp
 					sceneLocked = true;
 				//	_followAzimuth = true;
 				arcSystem.setVisible(false);
+				arenaHUD.notifyEnemyInterrupt();
 				_animAttackSystem.resolved.addOnce(onFinishEnemyInterrupt);
 		}
 		
@@ -809,6 +810,7 @@ package tests.pvp
 				arenaHUD.appendMessage("Finished interrupt !");
 				sceneLocked = false;
 				arcSystem.setVisible(true);
+				arenaHUD.notifyEnemyInterrupt(false);
 				//	_followAzimuth = false;
 					if (movementPoints.movementTimeLeft > 0)  arenaSpawner.currentPlayerEntity.add(game.keyPoll, KeyPoll);
 		}
