@@ -609,7 +609,7 @@ package tests.pvp
 		/// <param name="k">the number to choose</param>
 		/// <returns>the binomial coefficient</returns>
 	//	/*
-		public function bico( n:Number, k:Number)
+		public function bico( n:Number, k:Number):Number
 		{
 			if (k > n) { return 0; }
 			if (n == k) { return 1; } // only one way to chose when n == k

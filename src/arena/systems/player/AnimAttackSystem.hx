@@ -67,7 +67,7 @@ class AnimAttackSystem extends System implements IProjectileHitResolver implemen
 		if (projectileTimeLeft < node.animMelee.fixedStrikeTime) {
 			
 			projectileTimeLeft = node.animMelee.fixedStrikeTime;
-			trace("A:"+projectileTimeLeft);
+			//trace("A:"+projectileTimeLeft);
 		}
 	}
 	

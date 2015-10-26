@@ -154,7 +154,7 @@ WeaponSlots
 		public function ArenaHUD(stage:Stage) 
 		{
 			hud = new Hud2D();
-			
+		
 			
 			ASSETS = [SaboteurHudAssets];
 			this.stage = stage;
@@ -284,10 +284,11 @@ WeaponSlots
 				DIAL_1_POSITION.x = 0;
 				DIAL_1_POSITION.y = 0;
 			}
-			var dial:Array =  createDial(DIAL_1_POSITION.x, DIAL_1_POSITION.y);    	
-			setDialValues(dial, 6, 20, 0, 3, 4, 0, 0);  // testing only
+			var dial:Array =  createDial(DIAL_1_POSITION.x, DIAL_1_POSITION.y);    
+			//setDialValues(dial, 3, 20, 3, 10, 4, 2, 0);  // testing only
+			setDialValues(dial, 6, 20, 3, 3, 4, 2, 3);  // testing only
 			createDial(DIAL_2_POSITION.x , DIAL_2_POSITION.y);
-			allDials[allDials.length - 1].obj.x = 99999;
+			//allDials[allDials.length - 1].obj.x = 99999;
 			createDial(DIAL_3_POSITION.x , DIAL_3_POSITION.y);
 			allDials[allDials.length - 1].obj.x = 99999;
 			enemyDial = createDial(9999 , DIAL_3_POSITION.y);
@@ -301,7 +302,7 @@ WeaponSlots
 			dialLetters.initMeshSet( cont = new SpriteMeshSetClonesContainer(fontConsoleMatDefault, 0) );
 			//cont.objectRenderPriority = Renderer.NEXT_LAYER;
 			dialLetters.writeCircleData("Block Open/Stk", 0, 0, true, 100, 0, allDials[0].obj);  // testing only
-			dialLetters.writeCircleData("Cut", 0, 0, true, 100, dialLetters.circleTailIndex, allDials[1].obj); 
+			dialLetters.writeCircleData("Thrust ", 0, 0, true, 100, dialLetters.circleTailIndex, allDials[1].obj); 
 			
 			//dialLetters.writeData("Cut", DIAL_2_POSITION.x, DIAL_2_POSITION.y, 0,  true, dialLetters.boundsCache.length); 
 			//dialLetters.finaliseWrittenData();
@@ -521,7 +522,7 @@ WeaponSlots
 			_curCharInfo = new TextBoxChannel( new <FontSettings>[ getNewFontSettings(fontConsole, fontMat, 30) ], 6, -1, 3); 
 			_curCharInfo.centered = true;
 			_curCharInfo.width = 160;
-			_curCharInfo.addToContainer(layoutBottomRight);
+			//_curCharInfo.addToContainer(layoutBottomRight);
 			registerVisStatesOfTextBox("commander", _curCharInfo);
 			
 			_curCharInfo.moveTo( -92, 0);
@@ -1651,8 +1652,8 @@ WeaponSlots
 		
 		public static const DIAL_EMPTY:Number = 0/128;
 		public static const DIAL_FILLED:Number = 1*16/128;
-		public static const DIAL_PAIN:Number = 2*16/128;
-		public static const DIAL_SHOCK:Number = 3*16/128;
+		public static const DIAL_PAIN:Number = 3*16/128;
+		public static const DIAL_SHOCK:Number = 2*16/128;
 		public static const DIAL_SPENT:Number = 4*16/128;
 		public static const DIAL_PENALISE:Number = 5*16/128;
 		public static const DIAL_DOT:Number = 6*16/128;
@@ -1664,62 +1665,111 @@ WeaponSlots
 			var i:int;
 			
 			
-			var len:int = usingCP;
+		
 		
 			c = dial[0];
-			//c.u = DIAL_BAR;
+
+			for (i = 0; i < spentCP; i++) {
+				c = dial[i];
+				c.u = DIAL_SPENT;
+				c.v = 0;// .5;
+				//c.u = ;
+			}
 			
-			for (i = 0; i < len; i++) {
+			var len:int = usingCP + spentCP;
+			for (i = spentCP; i < len; i++) {
 				c = dial[i];
 				c.u = DIAL_FILLED;
+				c.v =  .5;
 				//c.u = ;
 				
 			}
+			
 			len = totalCP;
 			for (i = i;  i < len; i++) {
 				c = dial[i];
 				c.u = DIAL_EMPTY;
+				c.v = 0;
 				
 			}
 			
 			c = dial[i];
 			c.u = DIAL_EMPTY ;
+			c.v = 0;
 			i++;
 			
 			len = dial.length;
 			for (i = i; i < len ; i++ ) {
 				c = dial[i];
 				c.u = DIAL_DOT;
+				c.v = 0;
 			}
 			
 			
 			c = dial[totalCP];
 			c.u = DIAL_BAR ;
+			c.v = 0;
 			
 			if (pain >= shock) shock = 0
 			else shock = shock - pain;
 			
 			i = totalCP;
-			while (--i > -1) {
-				
-				c = dial[i];
-				c.u = DIAL_PAIN;
-				pain--;
-				if (pain == 0) break;
+			
+			if (pain > 0) {
+				while (--i > -1) {
+					
+					c = dial[i];
+					c.u = DIAL_PAIN;
+					c.v = 0;
+					pain--;
+					if (pain == 0) break;
+				}
 			}
 			
-			while (--i > -1) {
-				if (shock == 0) break;
-				c = dial[i];
-				c.u = DIAL_BUY;
-				shock--;
+			if (shock > 0) {
+				while (--i > -1) {
+					
+					c = dial[i];
+					c.u = DIAL_SHOCK;
+					c.v = 0;
+					shock--;
+					if (shock == 0) break;
+				}
+			}
+			
+			i = usingCP + spentCP;
+			
+			if ( intiativeBought > 0) {
+				while ( i < len) {
+					
+					c = dial[i];
+					c.u = DIAL_BUY;
+					c.v = 0;// .5;
+					
+					i++;
+					intiativeBought--;
+					if (intiativeBought == 0) break;
+				}
+			}
+			
+			if ( manueverCost > 0) {
+				while ( i < len) {
+					c = dial[i];
+					c.u = DIAL_SPENT;
+					c.v = 0;// .5;
+					i++;
+					manueverCost--;
+					if (manueverCost == 0) break;
+					
+				
+				}
 			}
 
 		}
 		
 		public function notifyEnemyInterrupt(gotInterrupt:Boolean=true):void 
 		{
-			allDials[1].obj.x = gotInterrupt ?  DIAL_2_POSITION.x : 99999;
+			//allDials[1].obj.x = gotInterrupt ?  DIAL_2_POSITION.x : 99999;
 		}
 		
 		
@@ -1747,7 +1797,7 @@ WeaponSlots
 				c.root.scaleX = 16;
 				c.root.scaleY = 16;
 			 }
-			 
+		//	 obj.scaleX = obj.scaleY = .9;
 			 arr["obj"] = obj;
 			 allDials.push(arr);
 			
