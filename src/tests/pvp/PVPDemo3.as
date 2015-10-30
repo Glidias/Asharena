@@ -221,7 +221,7 @@ package tests.pvp
 			//standardMaterial.tileSize = 512;
 			standardMaterial.pageSize = _terrainBase.loadedPage.heightMap.RowWidth - 1;
 			
-			_terrainBase.loadedPage.heightMap.flatten(standardMaterial.waterLevel + 130);  // flat test
+			//_terrainBase.loadedPage.heightMap.flatten(standardMaterial.waterLevel + 130);  // flat test
 		//	_terrainBase.loadedPage.heightMap.randomise(255);  // randomise test
 		//	 _terrainBase.loadedPage.heightMap.slopeAltAlongY(88);  // slope zig zag test
 		//	 _terrainBase.loadedPage.heightMap.slopeAlongY(122);  // slope linear test
@@ -288,7 +288,7 @@ package tests.pvp
 		{
 			return new <SpawnerBundle>[_gladiatorBundle = new GladiatorBundle(arenaSpawner), arenaHUD = new ArenaHUD(stage) ,
 				_modelBundle = new ModelBundle([Projectiles]),
-				_terrainBase = new TerrainBase(TerrainTest,1, .25*.25),
+				_terrainBase = new TerrainBase(TerrainTest,1, 1), //.25*.25 
 				_skyboxBase = new SkyboxBase(ClearBlueSkyAssets),
 				_waterBase = new WaterBase(NormalWaterAssets),
 				new GroundBase([CarribeanTextures])
@@ -418,7 +418,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 7;// 9999;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 5;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 120;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
@@ -1926,7 +1926,7 @@ package tests.pvp
 			targetingSystem.targetChanged.add(onTargetChanged);
 			targetingSystem.targetChanged.add(arenaHUD.setTargetChar);
 			
-		//	game.gameStates.thirdPerson.addInstance( new TrajRaycastTester(terrainRaycast,thirdPersonController.thirdPerson.rayOrigin, thirdPersonController.thirdPerson.rayDirection) ).withPriority(SystemPriorities.postRender);
+			game.gameStates.thirdPerson.addInstance( new TrajRaycastTester(terrainRaycast,thirdPersonController.thirdPerson.rayOrigin, thirdPersonController.thirdPerson.rayDirection) ).withPriority(SystemPriorities.postRender);
 		//	game.gameStates.thirdPerson.addInstance( destCalcTester = new DestCalcTester(new Ellipsoid(20, 20, 36), new Vec3(), new Vec3(), game.colliderSystem.collidable, _debugBox  ) );
 			
 			// special PVP movement limited time

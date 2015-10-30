@@ -35,11 +35,11 @@ package alternativa.a3d.systems.hud
 		
 			var data:RayIntersectionData = impl.intersectRayTraj(origin, direction, 20.4318 * ArenaHUD.METER_UNIT_SCALE * .5, 255);
 			if (data != null) {
-				Log.trace(data.time);
+				//Log.trace(data.time);
 				
 			}
 			else {
-				Log.trace("No hit");
+			//	Log.trace("No hit");
 			}
 			
 		}

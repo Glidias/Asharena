@@ -1359,6 +1359,64 @@ package alternterrain.objects
 				return c;
 			}
 			
+			
+			/*   // not required atm
+			public function getTreeHeightAt(px:Number, py:Number):Number {
+			
+				
+				//var maxX:Number = tree.xorg + ((1 << tree.Level) << 1);
+				//var maxY:Number = tree.zorg + ((1 << tree.Level) << 1);
+				
+				// TODO: check if within tree bounds
+				
+				
+				var xi:int = int(px) >> tileShift;
+				var yi:int = int(py) >> tileShift;
+				var cd:int = (tileShift >> 1);
+				
+				// offset of position from center
+				var vx:Number  =  ((xi << tileShift) + cd);
+				var vy:Number =  ((yi << tileShift) + cd);
+				
+				vx = px - vx;
+				vy = py - vy;
+				
+				// Determine nature of triangle at given position
+				// forward slash (left up)   vs back slash (right up)
+				var forwardOrBack:Boolean = (xi & 1) != (yi & 1); 
+				var diagNorm:Vector3D =forwardOrBack  ? DIAG_NORM_ORDER_TRUE : DIAG_NORM_ORDER_FALSE;
+				var above:Boolean = vx * diagNorm.x + vy * diagNorm.y >= 0   // determine which triangle in patch...is offset position from center above or below the diagonal slash?
+				
+				// Detemrine orthogonal (right-angled vertex position) of triangle
+				// ox for forward slash  , +1 x origin   if bottom
+				// ox for back slash, +1 x origin if above
+				var ox:Number = forwardOrBack ? (!above ? 1 : 0) : (above ? 1 : 0);
+				var oy:Number = above ? 1 : 0;
+				
+				var nx:Number = ox != 0 ? -tileSize : tileSize;
+				var ny:Number = oy != 0 ? -tileSize : tileSize;
+				
+				ox += xi;
+				oy += yi;
+				var oz:Number = tree.heightMap.Data[ int(ox) + int(oy) * tree.heightMap.RowWidth];
+				ox  *= tileSize;
+				oy  *= tileSize;
+				
+				// offset of position from orthgonal vertex
+				vx = px - ox;
+				vy = py - oy;
+				
+				
+
+				//ox + nx * vx;
+				//oy + ny * vy;
+				//oz + 
+								
+				
+				return 0;
+			}
+			*/
+			
 			private var waterRayData:RayIntersectionData;
 			
 			public function intersectRayWater(origin:Vector3D, direction:Vector3D):RayIntersectionData {
@@ -1857,11 +1915,16 @@ package alternterrain.objects
 
 				
 				private var _patchHeights:Vector.<int> = new Vector.<int>(4*3, true);
-				private static const TRI_ORDER_TRUE:Vector.<int> =  createTriOrderIndiceTable(true); // forward slash tri-patch
-				private static const TRI_ORDER_FALSE:Vector.<int> =  createTriOrderIndiceTable(false); // back slash tri-patch
+				private static const TRI_ORDER_TRUE:Vector.<int> =  createTriOrderIndiceTable(true); // forward slash diagonal tri-patch
+				private static const TRI_ORDER_FALSE:Vector.<int> =  createTriOrderIndiceTable(false); // back slash diagonal tri-patch
+				
+				private static const DIAG_NORM_ORDER_TRUE:Vector3D =  new Vector3D(-0.70710678118654752440084436210485,0.70710678118654752440084436210485,0); // forward slash tri-patch diagonal normal (left up)
+				private static const DIAG_NORM_ORDER_FALSE:Vector3D =  new Vector3D(0.70710678118654752440084436210485,0.70710678118654752440084436210485,0); // back slash tri-patch diagonal normal (right up)
 				
 				private static function createTriOrderIndiceTable(positive:Boolean):Vector.<int> {  
 					var indices:Vector.<int> = new Vector.<int>(6, true);
+
+				
 					if (positive) {
 						//nw | se =  00 or 11   !=
 						indices[0] = 0; indices[1] = 2; indices[2] = 1;
@@ -2152,9 +2215,10 @@ package alternterrain.objects
 						
 					}
 					else {  // either wall or collinear  
-						if (iResult === IntersectSlopeUtil.RESULT_WALL)  Log.trace("Should not  have wall  for terrain case!");
-						else Log.trace("Exception case miss:"+iResult);
-						//t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);result.time = t ;return true;
+					//	if (iResult === IntersectSlopeUtil.RESULT_WALL)  Log.trace("Should not  have wall  for terrain case!");
+					//	else Log.trace("Exception case miss:"+iResult);
+						
+					//t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);result.time = t ;return true;
 					}
 					
 					ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + cxorg;
@@ -2206,8 +2270,9 @@ package alternterrain.objects
 						//*/
 					}
 					else {  // either wall or collinear
-						if (iResult === IntersectSlopeUtil.RESULT_WALL) Log.trace("Should not have wall for terrain case!");
-						else Log.trace("Exception case miss:"+iResult);
+					//	if (iResult === IntersectSlopeUtil.RESULT_WALL) Log.trace("Should not have wall for terrain case!");
+					//	else Log.trace("Exception case miss:"+iResult);
+					
 						//t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);result.time = t ;return true;
 					}
 					
