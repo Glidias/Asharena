@@ -2469,10 +2469,9 @@ package alternterrain.objects
 					// determine if need to clamp and exit
 					var r:Number;
 					if (gotA || gotB) {
-						if (_accumEdgeLength == 0) {
-							bt = 0;
-							at = 0;
-						}
+						
+		
+						
 							//return false;
 						if (gotA && gotB) {  // find lower first
 							if (bt < at) {
@@ -2517,7 +2516,7 @@ package alternterrain.objects
 							}
 							else {
 								r = Math.sqrt(1 + gradientA * gradientA);
-							_accumEdgeLength += (at2 - at) * r; _accumEdgeLength = at2;
+							_accumEdgeLength += (at2 - at) * r; //_accumEdgeLength = at2;
 							if (_accumEdgeLength >= direction.w ) {
 								tBack = _accumEdgeLength - direction.w;
 								tBack /= r;
@@ -2537,7 +2536,7 @@ package alternterrain.objects
 							
 							
 							r = Math.sqrt(1 + gradientB * gradientB);
-							_accumEdgeLength += (bt2 - bt) * r; _accumEdgeLength = bt2;
+							_accumEdgeLength += (bt2 - bt) * r; //_accumEdgeLength = bt2;
 							if (_accumEdgeLength >= direction.w ) {
 								tBack = _accumEdgeLength - direction.w;
 								tBack /= r;

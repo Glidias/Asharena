@@ -262,7 +262,12 @@ package alternativa.engine3d.utils
 				intersectZ[1] = temp2;
 			}
 			
-	
+			 if (intersectTimes[0] < 0) {  // start dot from inside instead mod
+                    
+				 intersectZ[0] -= intersectTimes[0]/(intersectTimes[1]-intersectTimes[0])*(intersectZ[1] - intersectZ[0]);
+				 intersectTimes[0]  = 0;
+				
+              }
 			
 			if (_coincident)
 			{
@@ -281,8 +286,8 @@ package alternativa.engine3d.utils
 			{
 				
 				rd = (intersectTimes[1] - intersectTimes[0]);
-				if (rd < 0)
-					throw new Error("Should not be negative times..");
+				
+				//if (rd < 0)	throw new Error("Should not be negative times..");
 				
 				// dx *= rd;
 				// dy *= rd;
@@ -341,8 +346,8 @@ package alternativa.engine3d.utils
 			
 			r = numerator1 / denominator;
 			s = numerator2 / denominator;
-			// && r <= 1
-			return (r >= 0) && (s >= 0 && s <= 1);
+			// && r <= 1  // (r >= 0) &&
+			return (s >= 0 && s <= 1);
 		}
 	
 	}
