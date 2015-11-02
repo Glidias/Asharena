@@ -1489,10 +1489,53 @@ package alternterrain.objects
 
 			}
 			
+			private var _accumEdgeLength:Number = 0;
+			
+			public function intersectRayEdgesDDA(origin:Vector3D, direction:Vector3D):RayIntersectionData {
+				
+			
+				
+				
+				if ( (tree == null && gridPagesVector == null) || (boundBox != null && !boundBox.intersectRay(origin, direction)) ) return null;
+			
+				
+				var data:RayIntersectionData = null;
+				
+				debugCloneContainer.numClones = 0;
+				
+					var minTime:Number = 1e22;
+					rayData.time = 1e22;
+					_boundRayTime = 0;
+					_accumEdgeLength = 0;
+					
+					if (tree != null && boundIntersectRay(origin, direction, tree.xorg, tree.zorg, -1e22, tree.xorg + ((1 << tree.Level) << 1), tree.zorg + ((1 << tree.Level) << 1), 1e22 )) {
+						_currentPage = tree;
+						
+						
+						if (calculateDDAIntersectEdges(rayData, tree.heightMap, tree, origin, direction)) {
+							
+							
+							return rayData;
+						}
+					}
+					
+
+			
+					
+					/*
+					if ( gridPagesVector != null) {
+						// TODO: perform DDA for grid of pages!
+					}
+					*/
+					
+				
+				return null;
+			}
+			
 			public function intersectRayTrajectoryDDA(origin:Vector3D, direction:Vector3D, strength:Number, gravity:Number):RayIntersectionData {
 				if ( (tree == null && gridPagesVector == null) || (boundBox != null && !boundBox.intersectRay(origin, direction)) ) return null;
 				
-				if (debug) return null;
+				if (debug) return null;  // TODO: remove this once done testing
 				
 				_gravity  = gravity;
 				_strength = strength;
@@ -1771,6 +1814,146 @@ package alternterrain.objects
 					
 					return false;
 				}
+				
+				
+				private function calculateDDAIntersectEdges(result:RayIntersectionData, hm:HeightMapInfo, cd:QuadChunkCornerData, origin:Vector3D, direction:Vector3D):Boolean {
+					var dx:Number = direction.x;
+					var dy:Number = -direction.y;
+					
+					
+					
+					var xt:Number; // time until the next x-intersection
+					var dxt:Number; // time between x-intersections
+					var yt:Number; // time until the next y-intersection
+					var dyt:Number; // time between y-intersections
+					var dxi:int; // direction of the x-intersection
+					var dyi:int; // direction of the y-intersection
+					var t:Number;
+					
+					var xorg:Number = _currentPage.xorg;
+					var zorg:Number = _currentPage.zorg;
+	
+					var fullC:int = (1 << cd.Level) << 1;
+					var P_ACROSS:int = fullC >> tileShift;
+				
+					
+					// If point isn't inside chunk, find starting intersection point of ray against bound of QuadChunkCornerData square
+					var px:Number = origin.x;
+					var py:Number = -origin.y;
+					var zValStart:Number = origin.z;
+					var xi:int;
+					var yi:int;
+					if (px < cd.xorg || px >= cd.xorg + fullC || py < cd.zorg || py >= cd.zorg + fullC) {
+						if ( (t = calcBoundIntersection( result.point, origin, direction, cd.xorg, cd.zorg, -1e22, cd.xorg + fullC, cd.zorg + fullC, 1e22 )) > 0 ) {
+							if (t > (direction.w > 0 ? direction.w : 1e22) ) return false;
+							px = result.point.x;
+							py = -result.point.y;
+							
+							py -= dy<0 ? 1 : -1;
+							px -= dx < 0 ? 1 : -1;
+							zValStart = result.point.z;
+							_boundRayTime = t;
+							
+							
+							//result.time = 0;
+				
+							xi = int(px - xorg) >> tileShift;	
+							yi = int(py - zorg) >> tileShift;
+							//if (dx < 0) xi -= 1;
+							//if (dy < 0 ) yi -= 1; 
+						}
+						else {
+						
+							
+							//Log.trace("Should always have a positive intersection t:" + t);
+							t = Number.MAX_VALUE;
+							//throw new Error("Should always have a positive intersection t:"+t)
+						}
+					}
+					else {
+						xi = int(px - xorg) >> tileShift;	
+						yi = int(py - zorg) >> tileShift;	
+					}
+					
+					// with starting point, check if there's a hit, otherwise continue with DDA process!
+					
+					var minxi:int = (cd.xorg-xorg) >> tileShift;
+					var minyi:int = (cd.zorg-zorg) >> tileShift;
+					var maxxi:int = minxi +  P_ACROSS ;
+					var maxyi:int = minyi + P_ACROSS ;
+
+	
+					var xoff:Number = px / tileSize;  // integer modulus + floating point
+					xoff -= int(xoff);
+					var yoff:Number = py / tileSize;  // integer modulus + floating point
+					yoff -= int(yoff);
+					
+			
+					
+					//var maxt:Number = 1e22;// direction.w > 0 ? (direction.w - _boundRayTime ) * tileSizeInv : 1e22;  
+					
+					 t = 0;
+					//if (t > maxt) throw new Error("SHould not be! maxt should be positive:!"+maxt + ", "+_boundRayTime);
+					 
+					if (dx < 0) {
+						xt = -xoff / dx;
+						dxt = -1 / dx;
+						dxi = -1;
+					} else {
+						xt = (1 - xoff) / dx;
+						dxt = 1 / dx;
+						dxi = 1;
+					}
+					if (dy < 0) {
+						yt = -yoff / dy;
+						dyt = -1 / dy;
+						dyi = -1;
+					} else {
+						yt = (1 - yoff) / dy;
+						dyt = 1 / dy;
+						dyi = 1;
+					}
+				
+					
+						/*
+					offsetOriginX = px;
+					offsetOriginY = -py;
+					offsetOriginZ = zValStart;
+					*/
+		
+					if ( xi < minxi || xi >= maxxi || yi < minyi || yi >= maxyi) {
+						throw new Error("Should not be:" + minxi + "/"+ xi + "/" + maxxi + ", "+ minyi+"/"+ yi + "/" + maxyi);
+						return false;
+						
+					}
+					
+					
+					if ( checkHitPatchEdges(result, hm, xi, yi, origin, direction) ) return true;
+				
+				
+					while (true) {
+						if (xt < yt) {
+							xi += dxi;
+							t = xt;  
+							xt += dxt;
+							
+							
+						} else {
+							yi += dyi;
+							t = yt; 
+							yt += dyt;
+						}
+						
+						//if (t < 0) throw new Error("Negative t! Should not be!");
+						// t >= maxt ||
+								if ( xi < minxi || xi >= maxxi || yi < minyi || yi >= maxyi) return false;
+							if (  checkHitPatchEdges(result, hm, xi, yi, origin, direction) ) return true;   
+
+					}
+					
+					return false;
+				}
+				
 				
 				
 				// Step-wise DDA trajectory raycasting for a chunk  
@@ -2112,6 +2295,317 @@ package alternterrain.objects
 					return debugBox;
 				}
 				
+				
+				
+				private function checkHitPatchEdges(result:RayIntersectionData, hm:HeightMapInfo, xi:int, yi:int, origin:Vector3D, direction:Vector3D):Boolean 
+				{
+				
+					var intersectUtil:IntersectSlopeUtil = SLOPE_UTIL;
+					
+					// debug
+					if (!debugCloneContainer.parent) {
+						addChild(debugCloneContainer);
+					}
+					
+					// highestPoint bound early reject
+
+				
+					var cxorg:Number = _currentPage.heightMap.XOrigin;
+					var czorg:Number = _currentPage.heightMap.ZOrigin;
+					
+					var hp:Number = hm.Data[xi + yi * hm.RowWidth]; // nw
+					_patchHeights[2] = hp;   // 0*3+2
+					hp =   hm.Data[(xi + 1) + (yi) * hm.RowWidth];  // ne
+				
+					_patchHeights[5] = hp;  // 1*3+2
+					hp = hm.Data[xi + (yi+1) * hm.RowWidth]; //sw
+
+					_patchHeights[8] = hp;  // 2*3+2
+					hp = hm.Data[(xi+1) + (yi + 1) * hm.RowWidth];  // se
+					
+					_patchHeights[11] = hp; // 3*3+2
+					
+					
+					// test for hit on 2 triangles
+					var whichFan:Vector.<int>  = (xi & 1) != (yi & 1) ? TRI_ORDER_TRUE : TRI_ORDER_FALSE;
+					
+					var ax:Number; 
+					var ay:Number; 
+					var az:Number; 
+					
+					var bx:Number; 
+					var by:Number; 
+					var bz:Number;
+					
+					var cx:Number; 
+					var cy:Number; 
+					var cz:Number;
+					
+					var iResult:int;  // TODO: figure out why is there an exception to iResult
+					var at:Number;
+					var at2:Number;
+					var at2z:Number;
+					var bt:Number;
+					var bt2:Number;
+					var bt2z:Number;
+					var gradientA:Number;
+					var gradientB:Number;
+					var tBack:Number;
+					var atz:Number;
+					var btz:Number;
+					var gotA:Boolean = false;
+					var gotB:Boolean = false;
+					
+					ax = (_patchHeights[whichFan[0] * 3] + xi) *tileSize + cxorg;
+					ay = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + czorg; 
+					ay *= -1;
+					az = _patchHeights[whichFan[0] * 3 + 2];
+					 
+					bx=  (_patchHeights[whichFan[1] * 3] + xi) * tileSize+ cxorg; 
+					by = (_patchHeights[whichFan[1] * 3 + 1] + yi) * tileSize+ czorg;  
+					by *= -1;
+					bz=_patchHeights[whichFan[1] * 3 + 2];
+					   
+					cx= (_patchHeights[whichFan[2] * 3] + xi) *tileSize + cxorg;
+					cy =	(_patchHeights[whichFan[2] * 3 + 1] + yi) * tileSize+ czorg;  
+					cy *= -1;
+					cz = _patchHeights[whichFan[2] * 3 + 2];
+					
+					
+					
+					//if (intersectRayTri(result, origin.x, origin.y, origin.z, direction.x, direction.y, direction.z, ax, ay, az, bx, by, bz, cx, cy, cz) ) return true;
+					intersectUtil.setupRay(origin, direction);
+					intersectUtil.setupTri(ax, ay, az, bx, by, bz,  cx, cy, cz);
+					iResult = intersectUtil.getTriIntersections();
+					
+					if (iResult == 0) {	// doesn't pass triangle in 2d
+						
+						//t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);result.time = t ;return true;
+					}
+					else if (iResult > 0) {  // a sloped result
+						
+						gotA = true;
+						at = intersectUtil.intersectTimes[0]; 
+						at2 = intersectUtil.intersectTimes[1];
+						atz = intersectUtil.intersectZ[0];
+						at2z = intersectUtil.intersectZ[1];
+						gradientA = intersectUtil.gradient;
+						if (at == at2) {
+							at = 0;
+						}
+
+					
+					/*
+				
+						
+						addDebugBox( origin.x + intersectUtil.intersectTimes[1] * direction.x,
+						origin.y + intersectUtil.intersectTimes[1] * direction.y,
+						intersectUtil.intersectZ[1]);
+						*/
+					//	else throw new Error(t + ", "+_gravity);
+						
+					}
+					else {  // either wall or collinear  
+						//	if (iResult === IntersectSlopeUtil.RESULT_WALL)  Log.trace("Should not  have wall  for terrain case!");
+						//	else Log.trace("Exception case miss:"+iResult);
+						
+						//t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);result.time = t ;return true;
+					}
+					
+					ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + cxorg;
+					ay = (_patchHeights[whichFan[3] * 3 + 1] + yi) * tileSize + czorg; 
+					ay *= -1;
+					az= _patchHeights[whichFan[3] * 3 + 2];
+					 
+					bx=  (_patchHeights[whichFan[4] * 3] + xi) * tileSize + cxorg;
+					by = (_patchHeights[whichFan[4] * 3 + 1] + yi) * tileSize+ czorg; 
+					by *= -1;
+					bz=_patchHeights[whichFan[4] * 3 + 2];
+					   
+					cx= (_patchHeights[whichFan[5] * 3] + xi) *tileSize + cxorg;
+					cy =	(_patchHeights[whichFan[5] * 3 + 1] + yi) * tileSize+ czorg;  
+					cy *= -1;
+					cz = _patchHeights[whichFan[5] * 3 + 2];
+
+					//if (intersectRayTri(result, origin.x, origin.y, origin.z, direction.x, direction.y, direction.z, ax, ay, az, bx, by, bz, cx, cy, cz) ) return true;
+			//		intersectUtil.setupRay(origin, direction);
+					intersectUtil.setupTri(ax, ay, az, bx, by, bz,  cx, cy, cz);
+					iResult = intersectUtil.getTriIntersections();
+					
+					if (iResult == 0) { // doesn't pass triangle in 2d
+						//t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);result.time = t ;return true;
+					}
+					else if (iResult > 0) {  // a sloped result
+						
+						gotB = true;
+						
+						bt = intersectUtil.intersectTimes[0]; 
+						bt2 = intersectUtil.intersectTimes[1];
+						if (bt == bt2) {
+							bt = 0;
+						}
+						bt2z = intersectUtil.intersectZ[1];
+						btz = intersectUtil.intersectZ[0];
+						gradientB = intersectUtil.gradient;
+						
+
+						
+						/*
+						
+						addDebugBox( origin.x + intersectUtil.intersectTimes[1] * direction.x,
+						origin.y + intersectUtil.intersectTimes[1] * direction.y,
+						intersectUtil.intersectZ[1]);
+						*/
+					}
+					else {  // either wall or collinear
+					//	if (iResult === IntersectSlopeUtil.RESULT_WALL) Log.trace("Should not have wall for terrain case!");
+					//	else Log.trace("Exception case miss:"+iResult);
+					
+						//t = intersectUtil.getTriSlopeTrajTime(direction, _gravity, _strength);result.time = t ;return true;
+					}
+					
+					// r = sqrt(1+g^2);   // ratio to multiply over gradient g to get ratio of hypotenuse
+					
+					// determine if need to clamp and exit
+					var r:Number;
+					if (gotA || gotB) {
+						if (_accumEdgeLength == 0) {
+							bt = 0;
+							at = 0;
+						}
+							//return false;
+						if (gotA && gotB) {  // find lower first
+							if (bt < at) {
+								r = Math.sqrt(1 + gradientB * gradientB);
+							_accumEdgeLength += (bt2 - bt) * r;  // _accumEdgeLength = bt2;
+				
+							if (_accumEdgeLength >= direction.w ) {
+								tBack = _accumEdgeLength - direction.w;
+								tBack /= r;
+								bt2z -= tBack * gradientB;
+								rayData.time = bt2;
+								bt2 -= tBack;
+								
+							}
+							addDebugBox( origin.x + bt * direction.x,
+							origin.y + bt * direction.y,
+							btz);
+							
+							addDebugBox( origin.x + bt2 * direction.x,
+							origin.y + bt2 * direction.y,
+							bt2z);
+							if (_accumEdgeLength >= direction.w) return true;
+								
+									r = Math.sqrt(1 + gradientA * gradientA);
+							_accumEdgeLength += (at2 - at) * r; // _accumEdgeLength = at2;
+							if (_accumEdgeLength >= direction.w ) {
+								tBack = _accumEdgeLength - direction.w;
+								tBack /= r;
+								at2z -= tBack * gradientA;
+								rayData.time = at2;
+								at2 -= tBack;
+							}
+							
+							addDebugBox( origin.x + at * direction.x,
+							origin.y + at * direction.y,
+							atz);
+							
+							addDebugBox( origin.x + at2 * direction.x,
+							origin.y + at2 * direction.y,
+							at2z);
+							if (_accumEdgeLength >= direction.w) return true;
+							}
+							else {
+								r = Math.sqrt(1 + gradientA * gradientA);
+							_accumEdgeLength += (at2 - at) * r; _accumEdgeLength = at2;
+							if (_accumEdgeLength >= direction.w ) {
+								tBack = _accumEdgeLength - direction.w;
+								tBack /= r;
+								at2z -= tBack * gradientA;
+								rayData.time = at2;
+								at2 -= tBack;
+							}
+							
+								addDebugBox( origin.x + at * direction.x,
+							origin.y + at * direction.y,
+							atz);
+							
+							addDebugBox( origin.x + at2 * direction.x,
+							origin.y + at2 * direction.y,
+							at2z);
+							if (_accumEdgeLength >= direction.w) return true;
+							
+							
+							r = Math.sqrt(1 + gradientB * gradientB);
+							_accumEdgeLength += (bt2 - bt) * r; _accumEdgeLength = bt2;
+							if (_accumEdgeLength >= direction.w ) {
+								tBack = _accumEdgeLength - direction.w;
+								tBack /= r;
+								bt2z -= tBack * gradientB;
+								rayData.time = bt2;
+								bt2 -= tBack;
+							}
+							
+							addDebugBox( origin.x + bt * direction.x,
+							origin.y + bt * direction.y,
+							btz);
+							
+							addDebugBox( origin.x + bt2 * direction.x,
+							origin.y + bt2 * direction.y,
+							bt2z);
+							if (_accumEdgeLength >= direction.w) return true;
+								
+								
+							}
+						}
+						else if (gotA) {  // canonical codes
+							r = Math.sqrt(1 + gradientA * gradientA);
+							_accumEdgeLength += (at2 - at) * r; // _accumEdgeLength = at2;
+							if (_accumEdgeLength >= direction.w ) {
+								tBack = _accumEdgeLength - direction.w;
+								tBack /= r;
+								at2z -= tBack * gradientA;
+								rayData.time = at2;
+								at2 -= tBack;
+							}
+							addDebugBox( origin.x + at * direction.x,
+							origin.y + at * direction.y,
+							atz);
+							addDebugBox( origin.x + at2 * direction.x,
+							origin.y + at2 * direction.y,
+							at2z);
+							if (_accumEdgeLength >= direction.w) return true;
+						}
+						else {
+							r = Math.sqrt(1 + gradientB * gradientB);
+							_accumEdgeLength += (bt2 - bt) * r; // _accumEdgeLength = bt2;
+							if (_accumEdgeLength >= direction.w ) {
+								tBack = _accumEdgeLength - direction.w;
+								tBack /= r;
+								bt2z -= tBack * gradientB;
+								rayData.time = bt2;
+								bt2 -= tBack;
+							}
+							
+							addDebugBox( origin.x + bt2 * direction.x,
+							origin.y + bt2 * direction.y,
+							btz);
+							
+							addDebugBox( origin.x + bt2 * direction.x,
+							origin.y + bt2 * direction.y,
+							bt2z);
+							if (_accumEdgeLength >= direction.w) return true;
+								
+						}
+						
+						//if (_accumEdgeLength <= 0 || at < 0 || bt< 0) throw new Error("SHOUld not be");
+					}
+					
+					
+					//	if (isNaN(_accumEdgeLength)) throw new Error("A:"+_accumEdgeLength);
+					return false;
+				}
+				
 			private function checkHitPatchTraj(result:RayIntersectionData, hm:HeightMapInfo, xi:int, yi:int, zVal:Number, origin:Vector3D, direction:Vector3D):Boolean 
 				{
 				
@@ -2203,9 +2697,10 @@ package alternterrain.objects
 						}
 						
 					///*
-						addDebugBox( origin.x + intersectUtil.intersectTimes[0] * direction.x,
-						origin.y + intersectUtil.intersectTimes[0] * direction.y,
-						intersectUtil.intersectZ[0]);
+						
+					//addDebugBox( origin.x + intersectUtil.intersectTimes[0] * direction.x,
+					//	origin.y + intersectUtil.intersectTimes[0] * direction.y,
+					//	intersectUtil.intersectZ[0]);
 						
 						addDebugBox( origin.x + intersectUtil.intersectTimes[1] * direction.x,
 						origin.y + intersectUtil.intersectTimes[1] * direction.y,
@@ -2260,9 +2755,9 @@ package alternterrain.objects
 						}
 						
 					//	/*
-						addDebugBox( origin.x + intersectUtil.intersectTimes[0] * direction.x,
-						origin.y + intersectUtil.intersectTimes[0] * direction.y,
-						intersectUtil.intersectZ[0]);
+						//addDebugBox( origin.x + intersectUtil.intersectTimes[0] * direction.x,
+						//origin.y + intersectUtil.intersectTimes[0] * direction.y,
+						//intersectUtil.intersectZ[0]);
 						
 						addDebugBox( origin.x + intersectUtil.intersectTimes[1] * direction.x,
 						origin.y + intersectUtil.intersectTimes[1] * direction.y,

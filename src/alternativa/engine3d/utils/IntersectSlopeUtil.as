@@ -262,6 +262,8 @@ package alternativa.engine3d.utils
 				intersectZ[1] = temp2;
 			}
 			
+	
+			
 			if (_coincident)
 			{
 				if (count > 1) {

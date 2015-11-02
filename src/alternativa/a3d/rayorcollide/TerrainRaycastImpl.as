@@ -10,9 +10,9 @@ use namespace alternativa3d;
 public class TerrainRaycastImpl extends Object3D implements ITrajRaycastImpl {
 	
 
-	private var childOrigin:Vector3D = new Vector3D();
-	private var childDirection:Vector3D = new Vector3D();
-	private var terrainLOD:TerrainLOD;
+	public var childOrigin:Vector3D = new Vector3D();
+	public var childDirection:Vector3D = new Vector3D();
+	public var terrainLOD:TerrainLOD;
 	
 	public var ddaMaxRange:Number = 8192;
 	
@@ -78,6 +78,50 @@ public class TerrainRaycastImpl extends Object3D implements ITrajRaycastImpl {
 		
 		
 		return terrainLOD.intersectRayTrajectoryDDA(childOrigin, childDirection, strength, gravity);
+	}
+	
+	
+	public function transformChildVectors(origin:Vector3D, direction:Vector3D):void 
+	{
+		if (terrainLOD.transformChanged) terrainLOD.composeTransforms();
+				
+			//direction.w = 256 * 32 * 3;
+
+			//direction.w = direction.w == 0 ?  1e22  : direction.w;
+			var child:Object3D = terrainLOD;
+			childOrigin.x = child.inverseTransform.a*origin.x + child.inverseTransform.b*origin.y + child.inverseTransform.c*origin.z + child.inverseTransform.d;
+			childOrigin.y = child.inverseTransform.e*origin.x + child.inverseTransform.f*origin.y + child.inverseTransform.g*origin.z + child.inverseTransform.h;
+			childOrigin.z = child.inverseTransform.i*origin.x + child.inverseTransform.j*origin.y + child.inverseTransform.k*origin.z + child.inverseTransform.l;
+			childDirection.x = child.inverseTransform.a*direction.x + child.inverseTransform.b*direction.y + child.inverseTransform.c*direction.z;
+			childDirection.y = child.inverseTransform.e*direction.x + child.inverseTransform.f*direction.y + child.inverseTransform.g*direction.z;
+			childDirection.z = child.inverseTransform.i * direction.x + child.inverseTransform.j * direction.y + child.inverseTransform.k * direction.z;
+			childDirection.w = direction.w;
+			
+			
+		
+	}
+	
+	
+	
+	public function intersectRayEdges(origin:Vector3D, direction:Vector3D):RayIntersectionData 
+	{
+		if (terrainLOD.transformChanged) terrainLOD.composeTransforms();
+				
+			//direction.w = 256 * 32 * 3;
+
+			//direction.w = direction.w == 0 ?  1e22  : direction.w;
+			var child:Object3D = terrainLOD;
+			childOrigin.x = child.inverseTransform.a*origin.x + child.inverseTransform.b*origin.y + child.inverseTransform.c*origin.z + child.inverseTransform.d;
+			childOrigin.y = child.inverseTransform.e*origin.x + child.inverseTransform.f*origin.y + child.inverseTransform.g*origin.z + child.inverseTransform.h;
+			childOrigin.z = child.inverseTransform.i*origin.x + child.inverseTransform.j*origin.y + child.inverseTransform.k*origin.z + child.inverseTransform.l;
+			childDirection.x = child.inverseTransform.a*direction.x + child.inverseTransform.b*direction.y + child.inverseTransform.c*direction.z;
+			childDirection.y = child.inverseTransform.e*direction.x + child.inverseTransform.f*direction.y + child.inverseTransform.g*direction.z;
+			childDirection.z = child.inverseTransform.i * direction.x + child.inverseTransform.j * direction.y + child.inverseTransform.k * direction.z;
+			childDirection.w = direction.w;
+			
+			
+		
+		return terrainLOD.intersectRayEdgesDDA(childOrigin, childDirection);
 	}
 	
 	
