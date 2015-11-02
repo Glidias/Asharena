@@ -57,13 +57,15 @@ package alternativa.a3d.systems.hud
 			direction.z = 0;
 			
 			
+			//direction.w *= 1/impl.terrainLOD._scaleX;
+			
 			var data:RayIntersectionData = impl.intersectRayEdges(origin, direction);
 			if (data != null) {
-				Log.trace(data.time);
+			//	Log.trace(data.time);
 				
 			}
 			else {
-				Log.trace("No hit");
+			//	Log.trace("No hit");
 			}
 			
 		}

@@ -2285,9 +2285,11 @@ package alternterrain.objects
 					//debugCloneContainer.objectRenderPriority = Renderer.NEXT_LAYER;
 					debugBox.root.y = y;
 					debugBox.root.z = z;
-					debugBox.root.scaleX = 1;
-						debugBox.root.scaleY = 1;
-							debugBox.root.scaleZ = 1;
+					var scaler:Number = 1 / _scaleX;  // assume scaleX == scaleY
+					
+					debugBox.root.scaleX = 1 * scaler;
+						debugBox.root.scaleY = 1* scaler;
+							debugBox.root.scaleZ = 1* scaler;
 					//debug = true;
 					
 					//debugCloneContainer.objectRenderPriority =  
@@ -2389,10 +2391,8 @@ package alternterrain.objects
 						at2 = intersectUtil.intersectTimes[1];
 						atz = intersectUtil.intersectZ[0];
 						at2z = intersectUtil.intersectZ[1];
-						gradientA = intersectUtil.gradient;
-						if (at == at2) {
-							at = 0;
-						}
+						gradientA = intersectUtil.gradient * _scaleX;   // assume scaleX == scaleY, TODO: doesn't work when scaleX>1
+						
 
 					
 					/*
@@ -2441,12 +2441,10 @@ package alternterrain.objects
 						
 						bt = intersectUtil.intersectTimes[0]; 
 						bt2 = intersectUtil.intersectTimes[1];
-						if (bt == bt2) {
-							bt = 0;
-						}
+						
 						bt2z = intersectUtil.intersectZ[1];
 						btz = intersectUtil.intersectZ[0];
-						gradientB = intersectUtil.gradient;
+						gradientB = intersectUtil.gradient * _scaleX;   // assume scaleX == scaleY, TODO: doesn't work when scaleX>1
 						
 
 						

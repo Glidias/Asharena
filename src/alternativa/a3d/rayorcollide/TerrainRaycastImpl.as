@@ -119,7 +119,7 @@ public class TerrainRaycastImpl extends Object3D implements ITrajRaycastImpl {
 			childDirection.z = child.inverseTransform.i * direction.x + child.inverseTransform.j * direction.y + child.inverseTransform.k * direction.z;
 			childDirection.w = direction.w;
 			
-			
+			//childDirection.scaleBy(1 / child.scaleX);
 		
 		return terrainLOD.intersectRayEdgesDDA(childOrigin, childDirection);
 	}

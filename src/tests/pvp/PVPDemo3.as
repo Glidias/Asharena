@@ -289,7 +289,7 @@ package tests.pvp
 		{
 			return new <SpawnerBundle>[_gladiatorBundle = new GladiatorBundle(arenaSpawner), arenaHUD = new ArenaHUD(stage) ,
 				_modelBundle = new ModelBundle([Projectiles]),
-				_terrainBase = new TerrainBase(TerrainTest,1, 1), //.25*.25 
+				_terrainBase = new TerrainBase(TerrainTest,1, .25*.25 ), //.25*.25 
 				_skyboxBase = new SkyboxBase(ClearBlueSkyAssets),
 				_waterBase = new WaterBase(NormalWaterAssets),
 				new GroundBase([CarribeanTextures])
