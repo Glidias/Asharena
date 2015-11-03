@@ -1490,10 +1490,23 @@ package alternterrain.objects
 			}
 			
 			private var _accumEdgeLength:Number = 0;
+			private var _hackScaler:Number;  // not sure how this works, hacking the gradient inconsistencies due to scaleX/scaleY
+			private var slPerimeter:Boolean;
+			alternativa3d var edgeCount:int = 0;
+			alternativa3d var edgeIntersects:Vector.<Number> = new Vector.<Number>();  // a 3-tuple array of intersect positions
 			
-			public function intersectRayEdgesDDA(origin:Vector3D, direction:Vector3D):RayIntersectionData {
+			/**
+			 * Retrieves terrain geometry 3D edge intersections along 2D ray, given direction and maximum capped ray length limit
+			 * @param	origin		Local origin in 2D
+			 * @param	direction	Local direction to cast ray in 2D. Direction.w is used to determine maximum capped length
+			 * @param	slopePerimeter	Whether maximum capped length runs along terrain slopes in 3D, or is planar projected from 2D top-view above.
+			 * @return	
+			 */
+			public function intersectRayEdgesDDA(origin:Vector3D, direction:Vector3D, slopePerimeter:Boolean = true):RayIntersectionData {
 				
-			
+				slPerimeter = slopePerimeter;
+	
+				edgeCount = 0;
 				
 				
 				if ( (tree == null && gridPagesVector == null) || (boundBox != null && !boundBox.intersectRay(origin, direction)) ) return null;
@@ -1507,6 +1520,8 @@ package alternterrain.objects
 					rayData.time = 1e22;
 					_boundRayTime = 0;
 					_accumEdgeLength = 0;
+					_hackScaler = _scaleX < 1 ? _scaleX : 1;
+					
 					
 					if (tree != null && boundIntersectRay(origin, direction, tree.xorg, tree.zorg, -1e22, tree.xorg + ((1 << tree.Level) << 1), tree.zorg + ((1 << tree.Level) << 1), 1e22 )) {
 						_currentPage = tree;
@@ -2358,6 +2373,8 @@ package alternterrain.objects
 					var gotA:Boolean = false;
 					var gotB:Boolean = false;
 					
+					
+					
 					ax = (_patchHeights[whichFan[0] * 3] + xi) *tileSize + cxorg;
 					ay = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + czorg; 
 					ay *= -1;
@@ -2391,7 +2408,7 @@ package alternterrain.objects
 						at2 = intersectUtil.intersectTimes[1];
 						atz = intersectUtil.intersectZ[0];
 						at2z = intersectUtil.intersectZ[1];
-						gradientA = intersectUtil.gradient * _scaleX;   // assume scaleX == scaleY, TODO: doesn't work when scaleX>1
+						gradientA = intersectUtil.gradient * _hackScaler;   // assume scaleX == scaleY, TODO: doesn't work when scaleX>1
 						
 
 					
@@ -2444,7 +2461,7 @@ package alternterrain.objects
 						
 						bt2z = intersectUtil.intersectZ[1];
 						btz = intersectUtil.intersectZ[0];
-						gradientB = intersectUtil.gradient * _scaleX;   // assume scaleX == scaleY, TODO: doesn't work when scaleX>1
+						gradientB = intersectUtil.gradient * _hackScaler;   // assume scaleX == scaleY, TODO: doesn't work when scaleX>1
 						
 
 						
@@ -2473,7 +2490,7 @@ package alternterrain.objects
 							//return false;
 						if (gotA && gotB) {  // find lower first
 							if (bt < at) {
-								r = Math.sqrt(1 + gradientB * gradientB);
+								r = slPerimeter ?  Math.sqrt(1 + gradientB * gradientB)  : 1;
 							_accumEdgeLength += (bt2 - bt) * r;  // _accumEdgeLength = bt2;
 				
 							if (_accumEdgeLength >= direction.w ) {
@@ -2484,16 +2501,22 @@ package alternterrain.objects
 								bt2 -= tBack;
 								
 							}
-							addDebugBox( origin.x + bt * direction.x,
-							origin.y + bt * direction.y,
-							btz);
+							///addDebugBox( origin.x + bt * direction.x,
+							//origin.y + bt * direction.y,
+							//btz);
 							
 							addDebugBox( origin.x + bt2 * direction.x,
 							origin.y + bt2 * direction.y,
 							bt2z);
+							
+							edgeIntersects[edgeCount++] = origin.x + bt2 * direction.x;
+							edgeIntersects[edgeCount++] = origin.y + bt2 * direction.y;
+							edgeIntersects[edgeCount++] = bt2z;
+							
+							
 							if (_accumEdgeLength >= direction.w) return true;
 								
-									r = Math.sqrt(1 + gradientA * gradientA);
+									r = slPerimeter ? Math.sqrt(1 + gradientA * gradientA) : 1;
 							_accumEdgeLength += (at2 - at) * r; // _accumEdgeLength = at2;
 							if (_accumEdgeLength >= direction.w ) {
 								tBack = _accumEdgeLength - direction.w;
@@ -2503,17 +2526,22 @@ package alternterrain.objects
 								at2 -= tBack;
 							}
 							
-							addDebugBox( origin.x + at * direction.x,
-							origin.y + at * direction.y,
-							atz);
+							//addDebugBox( origin.x + at * direction.x,
+							//origin.y + at * direction.y,
+							//atz);
 							
 							addDebugBox( origin.x + at2 * direction.x,
 							origin.y + at2 * direction.y,
 							at2z);
+							
+							edgeIntersects[edgeCount++] =  origin.x + at2 * direction.x;
+							edgeIntersects[edgeCount++] = origin.y + at2 * direction.y;
+							edgeIntersects[edgeCount++] = at2z;
+							
 							if (_accumEdgeLength >= direction.w) return true;
 							}
 							else {
-								r = Math.sqrt(1 + gradientA * gradientA);
+								r = slPerimeter ?  Math.sqrt(1 + gradientA * gradientA) : 1;
 							_accumEdgeLength += (at2 - at) * r; //_accumEdgeLength = at2;
 							if (_accumEdgeLength >= direction.w ) {
 								tBack = _accumEdgeLength - direction.w;
@@ -2523,17 +2551,22 @@ package alternterrain.objects
 								at2 -= tBack;
 							}
 							
-								addDebugBox( origin.x + at * direction.x,
-							origin.y + at * direction.y,
-							atz);
+							//	addDebugBox( origin.x + at * direction.x,
+							//origin.y + at * direction.y,
+						//	atz);
 							
 							addDebugBox( origin.x + at2 * direction.x,
 							origin.y + at2 * direction.y,
 							at2z);
+							
+							edgeIntersects[edgeCount++] =  origin.x + at2 * direction.x;
+							edgeIntersects[edgeCount++] = origin.y + at2 * direction.y;
+							edgeIntersects[edgeCount++] = at2z;
+							
 							if (_accumEdgeLength >= direction.w) return true;
 							
 							
-							r = Math.sqrt(1 + gradientB * gradientB);
+							r =slPerimeter ?  Math.sqrt(1 + gradientB * gradientB) : 1;
 							_accumEdgeLength += (bt2 - bt) * r; //_accumEdgeLength = bt2;
 							if (_accumEdgeLength >= direction.w ) {
 								tBack = _accumEdgeLength - direction.w;
@@ -2543,20 +2576,27 @@ package alternterrain.objects
 								bt2 -= tBack;
 							}
 							
-							addDebugBox( origin.x + bt * direction.x,
-							origin.y + bt * direction.y,
-							btz);
+							//addDebugBox( origin.x + bt * direction.x,
+							//origin.y + bt * direction.y,
+							//btz);
 							
 							addDebugBox( origin.x + bt2 * direction.x,
 							origin.y + bt2 * direction.y,
 							bt2z);
+							
+							edgeIntersects[edgeCount++] = origin.x + bt2 * direction.x;
+							edgeIntersects[edgeCount++] = origin.y + bt2 * direction.y;
+							edgeIntersects[edgeCount++] = bt2z;
+							
+							
+							
 							if (_accumEdgeLength >= direction.w) return true;
 								
 								
 							}
 						}
 						else if (gotA) {  // canonical codes
-							r = Math.sqrt(1 + gradientA * gradientA);
+							r = slPerimeter ?  Math.sqrt(1 + gradientA * gradientA) : 1;
 							_accumEdgeLength += (at2 - at) * r; // _accumEdgeLength = at2;
 							if (_accumEdgeLength >= direction.w ) {
 								tBack = _accumEdgeLength - direction.w;
@@ -2565,16 +2605,23 @@ package alternterrain.objects
 								rayData.time = at2;
 								at2 -= tBack;
 							}
-							addDebugBox( origin.x + at * direction.x,
-							origin.y + at * direction.y,
-							atz);
+							
+							//addDebugBox( origin.x + at * direction.x,
+							//origin.y + at * direction.y,
+							//atz);
+							
 							addDebugBox( origin.x + at2 * direction.x,
 							origin.y + at2 * direction.y,
 							at2z);
+							
+							edgeIntersects[edgeCount++] =  origin.x + at2 * direction.x;
+							edgeIntersects[edgeCount++] = origin.y + at2 * direction.y;
+							edgeIntersects[edgeCount++] = at2z;
+							
 							if (_accumEdgeLength >= direction.w) return true;
 						}
 						else {
-							r = Math.sqrt(1 + gradientB * gradientB);
+							r = slPerimeter ?  Math.sqrt(1 + gradientB * gradientB) : 1;
 							_accumEdgeLength += (bt2 - bt) * r; // _accumEdgeLength = bt2;
 							if (_accumEdgeLength >= direction.w ) {
 								tBack = _accumEdgeLength - direction.w;
@@ -2584,13 +2631,18 @@ package alternterrain.objects
 								bt2 -= tBack;
 							}
 							
-							addDebugBox( origin.x + bt2 * direction.x,
-							origin.y + bt2 * direction.y,
-							btz);
+							//addDebugBox( origin.x + bt2 * direction.x,
+							//origin.y + bt2 * direction.y,
+							//btz);
 							
 							addDebugBox( origin.x + bt2 * direction.x,
 							origin.y + bt2 * direction.y,
 							bt2z);
+							
+							edgeIntersects[edgeCount++] = origin.x + bt2 * direction.x;
+							edgeIntersects[edgeCount++] = origin.y + bt2 * direction.y;
+							edgeIntersects[edgeCount++] = bt2z;
+							
 							if (_accumEdgeLength >= direction.w) return true;
 								
 						}

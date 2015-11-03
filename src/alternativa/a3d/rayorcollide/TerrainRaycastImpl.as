@@ -5,6 +5,7 @@ package alternativa.a3d.rayorcollide
 	import alternativa.engine3d.core.RayIntersectionData;
 	import alternterrain.objects.TerrainLOD;
 	import flash.geom.Vector3D;
+	import util.geom.Vec3;
 use namespace alternativa3d;
 	
 public class TerrainRaycastImpl extends Object3D implements ITrajRaycastImpl {
@@ -81,9 +82,14 @@ public class TerrainRaycastImpl extends Object3D implements ITrajRaycastImpl {
 	}
 	
 	
+	
+	
 	public function transformChildVectors(origin:Vector3D, direction:Vector3D):void 
 	{
-		if (terrainLOD.transformChanged) terrainLOD.composeTransforms();
+		if (terrainLOD.transformChanged) {
+			terrainLOD.composeTransforms();
+			
+		}
 				
 			//direction.w = 256 * 32 * 3;
 
@@ -95,12 +101,24 @@ public class TerrainRaycastImpl extends Object3D implements ITrajRaycastImpl {
 			childDirection.x = child.inverseTransform.a*direction.x + child.inverseTransform.b*direction.y + child.inverseTransform.c*direction.z;
 			childDirection.y = child.inverseTransform.e*direction.x + child.inverseTransform.f*direction.y + child.inverseTransform.g*direction.z;
 			childDirection.z = child.inverseTransform.i * direction.x + child.inverseTransform.j * direction.y + child.inverseTransform.k * direction.z;
+
 			childDirection.w = direction.w;
-			
-			
-		
+
 	}
 	
+	
+	/**
+	 * Calculate rim point intersections on terrain
+	 * @param	pos	  The center position origin of the rim
+	 * @param	radius	The radius of the rim
+	 * @param	numSides	The number of sides the rim consist of
+	 * @param	pointList	The input point list 3-tuple array of numbers to consist of all the geometry edge intersection xyz points along the rim outline only. An  unfixed length vector.
+	 * @param	rotOffset   Rotation offset for rim
+	 * @return  The total length accumulated on pointList . To get number of points, divide it by 3.
+	 */
+	public function calculateRim(pos:Vec3, radius:Number, numSides:int, pointList:Vector.<Number>, rotOffset:Number=0):int {
+		return 0;
+	}
 	
 	
 	public function intersectRayEdges(origin:Vector3D, direction:Vector3D):RayIntersectionData 

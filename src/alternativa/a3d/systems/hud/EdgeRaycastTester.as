@@ -49,7 +49,7 @@ package alternativa.a3d.systems.hud
 			origin.y = followTarget._y;
 			origin.z = followTarget._z;
 			
-			direction.w = 128 + 16;
+			direction.w = 64;// 128 + 16;
 			var rot:Number = followTarget._rotationZ + Math.PI*.5;
 			
 			direction.x = Math.cos(rot);
