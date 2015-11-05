@@ -222,7 +222,7 @@ package tests.pvp
 			//standardMaterial.tileSize = 512;
 			standardMaterial.pageSize = _terrainBase.loadedPage.heightMap.RowWidth - 1;
 			
-	//		_terrainBase.loadedPage.heightMap.flatten(standardMaterial.waterLevel + 130);  // flat test
+			_terrainBase.loadedPage.heightMap.flatten(standardMaterial.waterLevel + 130);  // flat test
 		//	_terrainBase.loadedPage.heightMap.randomise(255);  // randomise test
 		//	 _terrainBase.loadedPage.heightMap.slopeAltAlongY(88);  // slope zig zag test
 		//	 _terrainBase.loadedPage.heightMap.slopeAlongY(122);  // slope linear test
@@ -419,7 +419,7 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 5;// 9999;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 4;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
 		private  var ASSIGNED_HP:int = 120;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
@@ -562,8 +562,12 @@ package tests.pvp
 			w.fireMode = thrust ? Weapon.FIREMODE_THRUST : Weapon.FIREMODE_SWING;
 			w.sideOffset =thrust ?  15 : 36+16;// thrust ? 15 : 36;
 			w.heightOffset = 0;
-			w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
-			w.range += 32;
+		//	w.range = 0.74 * ArenaHUD.METER_UNIT_SCALE + ArenaHUD.METER_UNIT_SCALE * .25;
+			//w.range += 32;
+			
+			w.range = 68;
+			//w.range += 16;
+			
 			w.minRange = 16;
 			w.damage = thrust  ? 13 : 25;
 			w.cooldownTime = thrust ? 0.7 : 0.96;
