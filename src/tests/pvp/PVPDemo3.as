@@ -222,7 +222,7 @@ package tests.pvp
 			//standardMaterial.tileSize = 512;
 			standardMaterial.pageSize = _terrainBase.loadedPage.heightMap.RowWidth - 1;
 			
-			_terrainBase.loadedPage.heightMap.flatten(standardMaterial.waterLevel + 130);  // flat test
+		//	_terrainBase.loadedPage.heightMap.flatten(standardMaterial.waterLevel + 130);  // flat test
 		//	_terrainBase.loadedPage.heightMap.randomise(255);  // randomise test
 		//	 _terrainBase.loadedPage.heightMap.slopeAltAlongY(88);  // slope zig zag test
 		//	 _terrainBase.loadedPage.heightMap.slopeAlongY(122);  // slope linear test
