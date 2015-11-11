@@ -1359,6 +1359,17 @@ package alternterrain.objects
 				return c;
 			}
 			
+			/*
+			private function calcY(vec3 p1, vec3 p2, vec3 p3, float x, float z) {
+					var det:Number = (p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z);
+					det = 1 / det;
+					var l1:Number = ((p2.z - p3.z) * (x - p3.x) + (p3.x - p2.x) * (z - p3.z)) * det;
+					var l2:Number = ((p3.z - p1.z) * (x - p3.x) + (p1.x - p3.x) * (z - p3.z)) * det;
+					var l3:Number = 1.0f - l1 - l2;
+
+					return l1 * p1.y + l2 * p2.y + l3 * p3.y;
+			}
+			*/
 			
 			/*   // not required atm
 			public function getTreeHeightAt(px:Number, py:Number):Number {
