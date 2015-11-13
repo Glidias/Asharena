@@ -130,24 +130,64 @@ class UITros extends Sprite {
 	
 	private var arrowControls:Sprite;
 	
-	private var infoPanel:Sprite;
+	public var infoPanel:Sprite;
 	public var infoExchange:Label;
 	public var infoMoveStep:Label;
 	public var radioAttack:RadioButton;
 	public var radioDefend:RadioButton;
 	
-	public static const STR_WAIT:String = "wait";
-	public static const STR_MOVE:String = "move";
+	
+	public static const STR_WAIT:String = "wait";  // will always roll as defense regardless
+	public static const STR_MOVE:String = "move";  // basic movement without exchange resolution
 	public static const STR_ATTACK:String = "Atk";  // this will resolve the attack manuever
-	public static const STR_DEFEND_TEMP:String = "def";  // you cannot attack at the moment until you regain intiiative on next exchange
-	public static const STR_FULL_EVADE:String = "flee";  // attempt to move into a safe square to escape
+	public static const STR_DEFEND_TEMP:String = "def";  //  you cannot Atk/aim or Def yet until the next exchange due to neither parties rolling attack initiative on either each other in the previous exchange
+	public static const STR_FULL_EVADE:String = "flee";  // attempt to move into a safe square to escape 
 	public static const STR_AIM:String = "aim";   // you are currently aiming at the enemy prior to resolving the attack manuever
 	public static const STR_TURN:String = "turn";  // turn to face given direction
-	public static const STR_DEFEND:String = "Def";  // you lost the initiative or deliberate chose to roll defend
+	public static const STR_DEFEND:String = "Def";  // you lost the initiative and must roll to defend only and see how the exchange resolves accordingly
+	public static const DELIBERATE_DEFEND_SUFFIX:String = "!";  // you  deliberate chose to roll defend. appended at the end of "def" or "Def" accordingly.
+	
+	// once exchange is resolved from Move 1/1, next exchange begins immediately.
+	
 	
 	public function UITros():void {
 		
 		addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+	}
+	
+	
+	
+	public function mapUpdate(dungeon:Dungeon):void 
+	{
+		var directions:Array = [[1, 0], [ -1, 0], [0, 1], [0, -1]];  //["rlbf".indexOf(man.dir)];
+		var dirMask:int = 0;
+		var len:int = directions.length;
+		var gotEnemy:Boolean = false;
+		for (var i:int = 0; i < len; i++) {
+			var dir:Array = directions[i];
+			var xi:int = dir[0];
+			var yi:int = dir[1];
+			xi += dungeon.man.mapX;
+			yi += dungeon.man.mapY;
+			if (xi >= 0 && xi < dungeon.mapWidth && yi >= 0 && yi < dungeon.mapHeight) {
+				if ( dungeon.check(xi, yi, "attack").length > 0) {  //!gotEnemy &&
+					gotEnemy = true;
+				}
+				if (dungeon.checkState(xi, yi, "wall").length > 0) {
+					//dirMask |= (1 << i);  // TODO: Fix this
+				}
+			}
+			else {
+				dirMask |= (1 << i);
+			}
+		}
+		
+		infoPanel.visible = gotEnemy;
+		arrowRight.visible = !(dirMask & 1);
+		arrowLeft.visible = !(dirMask & 2);
+		arrowDown.visible = !(dirMask & 4);
+		arrowUp.visible = !(dirMask & 8);
+		
 	}
 	
 	private function sizeBtn(btn:PushButton, width:Number = 30, height:Number = 20 ):PushButton {
@@ -160,6 +200,7 @@ class UITros extends Sprite {
 	{
 		arrowControls = new Sprite();
 		infoPanel = new VBox();
+		infoPanel.visible = false;
 		infoPanel.x = 2;
 		infoPanel.y = 2;
 		addChild(arrowControls);
@@ -168,7 +209,6 @@ class UITros extends Sprite {
 		arrowControls.x = stage.stageWidth - 70;
 		arrowControls.y = stage.stageHeight - 60;
 		arrowUp = sizeBtn( new PushButton(arrowControls, 0, -25, STR_MOVE) );
-		
 		arrowDown = sizeBtn( new PushButton(arrowControls, 0, 25, STR_MOVE) );
 		arrowLeft =  sizeBtn( new PushButton(arrowControls, -30, 0, STR_MOVE) );
 		arrowRight =  sizeBtn( new PushButton(arrowControls, 30, 0, STR_MOVE) );
@@ -176,7 +216,7 @@ class UITros extends Sprite {
 		
 		
 		infoExchange = new Label(infoPanel, 0, 0, "Exchange #1");
-		infoMoveStep = new Label(infoPanel, 0, 0, "Move 0/3");
+		infoMoveStep = new Label(infoPanel, 0, 0, "Move 0/1");
 		radioAttack = new RadioButton(infoPanel, 0, 0, "Roll Attack", true);
 	//	radioAttack.enabled = false;
 		radioDefend = new RadioButton(infoPanel, 0, 0, "Roll Defense", false);
@@ -253,6 +293,22 @@ class Dungeon extends Sprite{
         addChild(mask);
     }
     
+	/*
+	private function onKeyDownCheck(e:KeyboardEvent):void {
+		var kc:uint = e.keyCode;
+		switch (kc) {
+			case Keyboard.UP:
+			case Keyboard.DOWN:
+			case Keyboard.LEFT:
+			case Keyboard.RIGHT:
+			
+			break;
+			default:return;
+		}
+		onKeyDown(e);
+	}
+	*/
+	
     //新しい階層を設定する
     private function initFloor(flr:int):void {
         Data.makeMap( this, flr );
@@ -282,6 +338,20 @@ class Dungeon extends Sprite{
         return vec;
     }
 	
+	 public function checkState(x:int,y:int,state:String = ""):Vector.<GameObject>{
+        var vec:Vector.<GameObject> = new Vector.<GameObject>()
+        for each( var obj:GameObject in map[x][y] ){ if( obj.state == state || state == "" ){ vec.push(obj) } } 
+        return vec;
+    }
+	
+	/*
+	 public function checkType(x:int,y:int,type:String = ""):Vector.<GameObject>{
+        var vec:Vector.<GameObject> = new Vector.<GameObject>()
+        for each( var obj:GameObject in map[x][y] ){ if( (obj.type ===  type ) ) { vec.push(obj) } } 
+        return vec;
+    }
+	*/
+	
 	    public function initUI(uiTros:UITros):void 
     {
         this.uiTros = uiTros;
@@ -306,7 +376,7 @@ class Dungeon extends Sprite{
 		stage.addEventListener(Event.MOUSE_LEAVE, onArrowUp);
     }
     
-    private function onArrowUp(e:MouseEvent):void 
+    private function onArrowUp(e:Event):void 
     {
       //  var targ:Object = e.currentTarget;
      //   handleArrowUp(targ);
@@ -413,9 +483,11 @@ class Dungeon extends Sprite{
                 } }
                 view.camera.x = man.x;
                 view.camera.y = -256 + man.y;
-                if( count % 6 == 0 ){     
+                if(  canInteract && keyEvent !=null ) {   // assumed player has interacted with the map somewhat    // count % 6 == 0
                     MapUtil.mapUpdate( this ); 
-                    if( count % 12 == 0 ){ MapUtil.mapDraw( this );  }
+                    //if ( count % 12 == 0 )  
+					MapUtil.mapDraw( this );  
+					uiTros.mapUpdate(this);
                 }
           //  }
         }
@@ -656,7 +728,7 @@ class Data {
     
     static public const OBJECT:Object = {
         "man": { type:"man", state:"w0", visual:"stand", func:{ key:Man.key }, ability:{ map:false,block:true },anim:Man.anim, animState:"walk1", dir:"f" },
-        "enemy": { type:"enemy", state:"w0", num:"1", func:{ key:Enemy.key },  visual:"stand", ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
+        "enemy": { type:"enemy", state:"w0", num:"1", func:{ key:Enemy.key },  visual:"stand", ability:{ map:false,block:true, attack:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
         "fwall": { type:"room", state:"wall", visual:"front" },
         "bwall": { type:"room", state:"wall", visual:"back" },
