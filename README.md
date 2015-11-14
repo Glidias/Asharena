@@ -15,5 +15,5 @@ Some files to take note:
 
 Any models and animations are from Gladiator HL mod http://www.moddb.com/mods/gladiator1 . Used with permission.
 
-![terrain image](http://glidias.uphero.com/terrain3rdperson.jpg)
+![terrain image](https://raw.githubusercontent.com/Glidias/Asharena/web-pages/images/screenshot.jpg)
 	

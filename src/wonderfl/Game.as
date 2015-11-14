@@ -117,7 +117,7 @@ import flash.events.Event;
 import flash.events.MouseEvent;
 import flash.ui.Keyboard;
 import flash.utils.Dictionary;
-import jp.progression.commands.Wait;
+
 
 class UITros extends Sprite {
 	
@@ -140,11 +140,11 @@ class UITros extends Sprite {
 	public static const STR_WAIT:String = "wait";  // will always roll as defense regardless
 	public static const STR_MOVE:String = "move";  // basic movement without exchange resolution
 	public static const STR_ATTACK:String = "Atk";  // this will resolve the attack manuever
-	public static const STR_DEFEND_TEMP:String = "def";  //  you cannot Atk/aim or Def yet until the next exchange due to neither parties rolling attack initiative on either each other in the previous exchange
+	public static const STR_DEFEND_TEMP:String = "def";  //  this will roll defense later on
 	public static const STR_FULL_EVADE:String = "flee";  // attempt to move into a safe square to escape 
-	public static const STR_AIM:String = "aim";   // you are currently aiming at the enemy prior to resolving the attack manuever
+	public static const STR_AIM:String = "atk";   // you are currently aiming at the enemy prior to resolving the attack manuever
 	public static const STR_TURN:String = "turn";  // turn to face given direction
-	public static const STR_DEFEND:String = "Def";  // you lost the initiative and must roll to defend only and see how the exchange resolves accordingly
+	public static const STR_DEFEND:String = "Def";  // this will resolve the defense manuever
 	public static const DELIBERATE_DEFEND_SUFFIX:String = "!";  // you  deliberate chose to roll defend. appended at the end of "def" or "Def" accordingly.
 	
 	// once exchange is resolved from Move 1/1, next exchange begins immediately.
@@ -160,7 +160,12 @@ class UITros extends Sprite {
 	public function mapUpdate(dungeon:Dungeon):void 
 	{
 		var directions:Array = [[1, 0], [ -1, 0], [0, 1], [0, -1]];  //["rlbf".indexOf(man.dir)];
-		var dirMask:int = 0;
+		var initiativeMask:int = 0;
+		var enemyMask:int = 0;
+
+		var wallMask:int = 0;
+		var manFight:FightState = dungeon.man.ability.fight;  
+		var fightStates:Vector.<FightState> = new Vector.<FightState>(4,true);
 		var len:int = directions.length;
 		var gotEnemy:Boolean = false;
 		for (var i:int = 0; i < len; i++) {
@@ -170,24 +175,75 @@ class UITros extends Sprite {
 			xi += dungeon.man.mapX;
 			yi += dungeon.man.mapY;
 			if (xi >= 0 && xi < dungeon.mapWidth && yi >= 0 && yi < dungeon.mapHeight) {
-				if ( dungeon.check(xi, yi, "attack").length > 0) {  //!gotEnemy &&
-					gotEnemy = true;
+				var fights:Vector.<GameObject> = dungeon.check(xi, yi, "fight");
+				if (fights.length > 0) {  //!gotEnemy &&
+					// assumed only stack 1 fighter at the moment. In grappling situations, can stack 2 fighters.
+					var enemyFight:FightState =  fights[0].ability.fight;
+					if (manFight.hostileTowards( enemyFight ) ) {
+						gotEnemy = true;  
+						fightStates[i] = enemyFight;
+						enemyMask |= (1 << i);  
+					
+						initiativeMask |= manFight.canRollAtkAgainst(enemyFight) ? ( 1 << i) : 0;
+					}
 				}
-				if (dungeon.checkState(xi, yi, "wall").length > 0) {
-					//dirMask |= (1 << i);  // TODO: Fix this
+				if (dungeon.checkState(xi, yi, "stone").length > 0) {
+					wallMask |= (1 << i);  
 				}
 			}
 			else {
-				dirMask |= (1 << i);
+				wallMask |= (1 << i);
 			}
 		}
 		
-		infoPanel.visible = gotEnemy;
-		arrowRight.visible = !(dirMask & 1);
-		arrowLeft.visible = !(dirMask & 2);
-		arrowDown.visible = !(dirMask & 4);
-		arrowUp.visible = !(dirMask & 8);
 		
+		arrowRight.visible = !(wallMask & 1);
+		arrowLeft.visible = !(wallMask & 2);
+		arrowUp.visible = !(wallMask & 4);
+		arrowDown.visible = !(wallMask & 8);
+		
+		var emptySquareMoveString:String = gotEnemy ?  manFight.s < 1 ? STR_MOVE : STR_FULL_EVADE : STR_MOVE;  
+		var atkStateString:String;
+		var defendStateString:String;
+		
+		arrowRight.label = STR_MOVE;
+		arrowLeft.label = STR_MOVE;
+		arrowUp.label = STR_MOVE;
+		arrowDown.label = STR_MOVE;
+		
+		infoPanel.visible = gotEnemy;
+		//infoExchange.visible = gotEnemy;
+		//infoMoveStep.visible = gotEnemy;
+		
+	
+		if (enemyMask & 1) {
+			defendStateString = ( manFight.mustRollNow(fightStates[0])  ? STR_DEFEND : STR_DEFEND_TEMP );
+			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX : ( manFight.mustRollNow(fightStates[0])  ? STR_ATTACK : STR_AIM );
+			arrowRight.label = initiativeMask & 1  ? atkStateString : defendStateString;
+		}
+		
+		if (enemyMask & 2) {
+			defendStateString = ( manFight.mustRollNow(fightStates[1])  ? STR_DEFEND : STR_DEFEND_TEMP );
+			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fightStates[1])  ? STR_ATTACK : STR_AIM );
+			arrowLeft.label = initiativeMask & 2  ? atkStateString : defendStateString;
+		}
+		
+		
+		if (enemyMask & 4) {
+			defendStateString = ( manFight.mustRollNow(fightStates[2])  ? STR_DEFEND : STR_DEFEND_TEMP );
+			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fightStates[2])  ? STR_ATTACK : STR_AIM );
+			arrowUp.label = initiativeMask & 4  ? atkStateString : defendStateString;
+		}
+		
+		if (enemyMask & 8) {
+			defendStateString = ( manFight.mustRollNow(fightStates[3])  ? STR_DEFEND : STR_DEFEND_TEMP );
+			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fightStates[3])  ? STR_ATTACK : STR_AIM );
+			arrowDown.label = initiativeMask & 8  ? atkStateString : defendStateString;
+		}
+		
+		if (gotEnemy) {  // TODO: proper context-facing info of enemy fight info instead...later on...
+			setFightInfo(manFight);
+		}
 	}
 	
 	private function sizeBtn(btn:PushButton, width:Number = 30, height:Number = 20 ):PushButton {
@@ -200,7 +256,7 @@ class UITros extends Sprite {
 	{
 		arrowControls = new Sprite();
 		infoPanel = new VBox();
-		infoPanel.visible = false;
+		
 		infoPanel.x = 2;
 		infoPanel.y = 2;
 		addChild(arrowControls);
@@ -217,12 +273,25 @@ class UITros extends Sprite {
 		
 		infoExchange = new Label(infoPanel, 0, 0, "Exchange #1");
 		infoMoveStep = new Label(infoPanel, 0, 0, "Move 0/1");
-		radioAttack = new RadioButton(infoPanel, 0, 0, "Roll Attack", true);
+		radioAttack = new RadioButton(infoPanel, 0, 0, "Roll Attack", true, onRadioClick);
 	//	radioAttack.enabled = false;
-		radioDefend = new RadioButton(infoPanel, 0, 0, "Roll Defense", false);
+		radioDefend = new RadioButton(infoPanel, 0, 0, "Roll Defense", false, onRadioClick);
+	
+		
 		
 		removeEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
 		
+	}
+	
+	private function onRadioClick(e:Event):void 
+	{
+		radioDefend.label = radioDefend.selected ? "Roll Defense!" : "Roll Defense";
+	}
+	
+	public function setFightInfo(fight:FightState):void {
+		infoExchange.text = "Exchange #" + (fight.e ? "2" : "1");
+		infoMoveStep.text = "Move " + fight.s + "/1";
+		radioAttack.enabled = fight.initiative;
 	}
 	
 }
@@ -315,6 +384,7 @@ class Dungeon extends Sprite{
         Data.stand( this );　//マップを立体化
         mapBitmap.bitmapData = MapUtil.mapBitmap( this );
         onFrame();
+		uiTros.mapUpdate(this);
     }
     //ダンジョンを下る
     public function down():void{ 
@@ -356,17 +426,51 @@ class Dungeon extends Sprite{
     {
         this.uiTros = uiTros;
         uiTros.btnWait.addEventListener(MouseEvent.CLICK, doWait);
+		uiTros.arrowLeft.mouseChildren = false;
+		uiTros.arrowUp.mouseChildren = false;
+		uiTros.arrowRight.mouseChildren = false;
+		uiTros.arrowDown.mouseChildren = false;
+		
         uiTros.arrowLeft.addEventListener(MouseEvent.MOUSE_DOWN, onArrowDown);
         uiTros.arrowUp.addEventListener(MouseEvent.MOUSE_DOWN, onArrowDown);
         uiTros.arrowDown.addEventListener(MouseEvent.MOUSE_DOWN, onArrowDown);
         uiTros.arrowRight.addEventListener(MouseEvent.MOUSE_DOWN, onArrowDown);
+		
+		
+		 uiTros.arrowLeft.addEventListener(MouseEvent.ROLL_OUT, onArrowRollOut);
+        uiTros.arrowUp.addEventListener(MouseEvent.ROLL_OUT, onArrowRollOut);
+        uiTros.arrowDown.addEventListener(MouseEvent.ROLL_OUT, onArrowRollOut);
+        uiTros.arrowRight.addEventListener(MouseEvent.ROLL_OUT, onArrowRollOut);
+		/*
+		 uiTros.arrowLeft.addEventListener(MouseEvent.ROLL_OVER, onArrowRollOver);
+        uiTros.arrowUp.addEventListener(MouseEvent.ROLL_OVER, onArrowRollOver);
+        uiTros.arrowDown.addEventListener(MouseEvent.ROLL_OVER, onArrowRollOver);
+        uiTros.arrowRight.addEventListener(MouseEvent.ROLL_OVER, onArrowRollOver);
+		*/
         
-        
+		uiTros.radioAttack.addEventListener(MouseEvent.CLICK, onRadioInitiativeChange, false,-1);
+        uiTros.radioDefend.addEventListener(MouseEvent.CLICK, onRadioInitiativeChange, false ,-1);
         //uiTros.arrowLeft.addEventListener(MouseEvent.MOUSE_UP, onArrowUp);
        // uiTros.arrowUp.addEventListener(MouseEvent.MOUSE_UP, onArrowUp);
        // uiTros.arrowDown.addEventListener(MouseEvent.MOUSE_UP, onArrowUp);
        // uiTros.arrowRight.addEventListener(MouseEvent.MOUSE_UP, onArrowUp);
     }
+	
+	private function onArrowRollOut(e:MouseEvent):void 
+	{
+		 onArrowUp(null);
+	}
+	
+	private function onArrowRollOver(e:MouseEvent):void 
+	{
+		// onArrowUp(null)
+	}
+	
+	
+	private function onRadioInitiativeChange(e:Event):void 
+	{
+		uiTros.mapUpdate(this);
+	}
     
     private function onArrowDown(e:MouseEvent):void 
     {
@@ -440,6 +544,7 @@ class Dungeon extends Sprite{
 	
 	private function onNextFrameKeyDone(e:Event):void 
 	{
+		removeEventListener(Event.ENTER_FRAME, onNextFrameKeyDone);
 		keyEvent = null;  // shortcut
 		//	onKeyUp(curKeyStroke);
 	}
@@ -706,6 +811,76 @@ class Enemy{
     }
 }
 
+class FightState {
+	public var s:int = 0;  // the current step within the exchange
+	public var e:Boolean = false;  // false for exchange 1/2, true for exchange 2/2
+	public var side:int = 1;
+	
+	public var initiative:Boolean = true;
+	
+	public static const SIDE_FRIEND:int = 0;
+	public static const SIDE_ENEMY:int = 1;
+
+	
+	public function FightState() {
+		
+	}
+	
+	public function setSideAggro(val:int):FightState {
+		side = val;
+		return this;
+	}
+	
+	public function hostileTowards(fight:FightState):Boolean {
+		return this.side != fight.side;
+	}
+	
+	public function reset():FightState {
+		s = 0;
+		e = false;
+		initiative = true;
+		return this;
+	}
+	
+	public function syncStepWith(fight:FightState):void {
+		if (fight.s >  s) {  
+			s = fight.s;
+			//e = fight.e;
+		}
+		else {
+			fight.s = s;
+			
+		}
+		
+	}
+	
+	public function canMove():Boolean {
+		return s == 0;
+	}
+	
+	public function mustRollNow(fight:FightState=null):Boolean {
+		return fight!= null? getSyncStep(fight) == 1 : s==1;
+	}
+	
+	private function getSyncStep(fight:FightState):int {
+		return s >= fight.s ? s : fight.s;
+	}
+	
+	public function isSyncedWith(fight:FightState):Boolean {
+		return s == fight.s && e == fight.e;
+	}
+	
+	public function firstExchangeWindow():Boolean {
+		return  e == 0 && s < 2;
+	}
+	
+	public function canRollAtkAgainst(fight:FightState):Boolean {
+		return initiative  && ( isSyncedWith(fight) || firstExchangeWindow() );
+	}
+	
+}
+
+
 //ゲームデータ用クラス
 class Data {
     static public const cellSize:int=50,cellWidth:int=cellSize,cellHeight:int=cellSize;
@@ -727,8 +902,8 @@ class Data {
     }
     
     static public const OBJECT:Object = {
-        "man": { type:"man", state:"w0", visual:"stand", func:{ key:Man.key }, ability:{ map:false,block:true },anim:Man.anim, animState:"walk1", dir:"f" },
-        "enemy": { type:"enemy", state:"w0", num:"1", func:{ key:Enemy.key },  visual:"stand", ability:{ map:false,block:true, attack:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
+        "man": { type:"man", state:"w0", visual:"stand",  func:{ key:Man.key }, ability:{ map:false,block:true, fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, anim:Man.anim, animState:"walk1", dir:"f" },
+        "enemy": { type:"enemy", state:"w0", num:"1", func:{ key:Enemy.key },  visual:"stand", ability:{fight:new FightState().setSideAggro(FightState.SIDE_ENEMY), map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
         "fwall": { type:"room", state:"wall", visual:"front" },
         "bwall": { type:"room", state:"wall", visual:"back" },
@@ -1211,8 +1386,10 @@ class MyDriver extends SiONDriver {
         super(); 
         volume = 2.0
         dm.volume = 0.1;
-        setVoice(0, new SiONVoice(5,2,63,63,-10,0,2,20));
+        setVoice(0, new SiONVoice(5, 2, 63, 63, -10, 0, 2, 20));
+		
         fill = compile("#A=c&ccrccrc&cccrc&c&c&c;#B=<c&c>bragrf&fedrc&c&c&c;#C=<c&c>bragra&ab<crc&c&c&c>;%1@8,l16B;#D=rrrrrrrrrrrrcerg;#E=<c>bagfedcfedrc&c&c&c;#F=cdefgab<c>fgar<c&c&c&c>;");
+		
         setSamplerData(0, render("%2@4 v8 l24 c<<c"));
         setSamplerData(1, render("%2@4 l60 ccc"));
         setSamplerData(2, render("%3@8 l12 <<<<<a0b0c0b0e0d0g"));
@@ -1220,7 +1397,8 @@ class MyDriver extends SiONDriver {
         setSamplerData(4, render("%2@60 v2 l48 c<c"));
         setSamplerData(5, render("%3@0q0,c"));
         setSamplerData(6, render("%2@4, l24q0 <<c<<c>>c<<c>>"));
-        play() ;
+      //  play() ;
+		
     }
 }
 class Sound{
