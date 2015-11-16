@@ -144,8 +144,11 @@ class UITros extends Sprite {
 	public static const STR_FULL_EVADE:String = "flee";  // attempt to move into a safe square to escape 
 	public static const STR_AIM:String = "atk";   // you are currently aiming at the enemy prior to resolving the attack manuever
 	public static const STR_TURN:String = "turn";  // turn to face given direction
+	public static const STR_TARG:String = "targ";  // turn to consider target
 	public static const STR_DEFEND:String = "Def";  // this will resolve the defense manuever
 	public static const DELIBERATE_DEFEND_SUFFIX:String = "!";  // you  deliberate chose to roll defend. appended at the end of "def" or "Def" accordingly.
+	
+	public static const STR_DONE:String = "Done";
 	
 	// once exchange is resolved from Move 1/1, next exchange begins immediately.
 	
@@ -159,15 +162,16 @@ class UITros extends Sprite {
 	
 	public function mapUpdate(dungeon:Dungeon):void 
 	{
-		var directions:Array = [[1, 0], [ -1, 0], [0, 1], [0, -1]];  //["rlbf".indexOf(man.dir)];
-		var initiativeMask:int = 0;
-		var enemyMask:int = 0;
+		var directions:Array = FightState.DIRECTIONS;// [[1, 0], [ -1, 0], [0, 1], [0, -1]];  //["rlbf".indexOf(man.dir)];
+		//var initiativeMask:int = 0;
+		//var enemyMask:int = 0;
 
 		var wallMask:int = 0;
 		var manFight:FightState = dungeon.man.ability.fight;  
-		var fightStates:Vector.<FightState> = new Vector.<FightState>(4,true);
+		//FightState.updateNeighborStates(dungeon.man, manFight, dungeon);
+		
 		var len:int = directions.length;
-		var gotEnemy:Boolean = false;
+		var gotEnemy:Boolean = manFight.numEnemies > 0;
 		for (var i:int = 0; i < len; i++) {
 			var dir:Array = directions[i];
 			var xi:int = dir[0];
@@ -175,18 +179,7 @@ class UITros extends Sprite {
 			xi += dungeon.man.mapX;
 			yi += dungeon.man.mapY;
 			if (xi >= 0 && xi < dungeon.mapWidth && yi >= 0 && yi < dungeon.mapHeight) {
-				var fights:Vector.<GameObject> = dungeon.check(xi, yi, "fight");
-				if (fights.length > 0) {  //!gotEnemy &&
-					// assumed only stack 1 fighter at the moment. In grappling situations, can stack 2 fighters.
-					var enemyFight:FightState =  fights[0].ability.fight;
-					if (manFight.hostileTowards( enemyFight ) ) {
-						gotEnemy = true;  
-						fightStates[i] = enemyFight;
-						enemyMask |= (1 << i);  
-					
-						initiativeMask |= manFight.canRollAtkAgainst(enemyFight) ? ( 1 << i) : 0;
-					}
-				}
+				
 				if (dungeon.checkState(xi, yi, "stone").length > 0) {
 					wallMask |= (1 << i);  
 				}
@@ -210,40 +203,55 @@ class UITros extends Sprite {
 		arrowLeft.label = STR_MOVE;
 		arrowUp.label = STR_MOVE;
 		arrowDown.label = STR_MOVE;
+		btnWait.label = STR_WAIT;
 		
 		infoPanel.visible = gotEnemy;
 		//infoExchange.visible = gotEnemy;
 		//infoMoveStep.visible = gotEnemy;
 		
-	
-		if (enemyMask & 1) {
-			defendStateString = ( manFight.mustRollNow(fightStates[0])  ? STR_DEFEND : STR_DEFEND_TEMP );
-			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX : ( manFight.mustRollNow(fightStates[0])  ? STR_ATTACK : STR_AIM );
-			arrowRight.label = initiativeMask & 1  ? atkStateString : defendStateString;
+		var fState:FightState;
+		if (manFight.flags & FightState.FLAG_ENEMY_EAST) {
+			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 0))  ? STR_DEFEND : STR_DEFEND_TEMP );
+			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX : ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			arrowRight.label = manFight.flags & FightState.FLAG_INITIATIVE_EAST  ? atkStateString : defendStateString;
 		}
 		
-		if (enemyMask & 2) {
-			defendStateString = ( manFight.mustRollNow(fightStates[1])  ? STR_DEFEND : STR_DEFEND_TEMP );
-			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fightStates[1])  ? STR_ATTACK : STR_AIM );
-			arrowLeft.label = initiativeMask & 2  ? atkStateString : defendStateString;
+		if (manFight.flags & FightState.FLAG_ENEMY_WEST) {
+			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 1))  ? STR_DEFEND : STR_DEFEND_TEMP );
+			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			arrowLeft.label = manFight.flags & FightState.FLAG_INITIATIVE_WEST  ? atkStateString : defendStateString;
 		}
 		
 		
-		if (enemyMask & 4) {
-			defendStateString = ( manFight.mustRollNow(fightStates[2])  ? STR_DEFEND : STR_DEFEND_TEMP );
-			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fightStates[2])  ? STR_ATTACK : STR_AIM );
-			arrowUp.label = initiativeMask & 4  ? atkStateString : defendStateString;
+		if (manFight.flags & FightState.FLAG_ENEMY_NORTH) {
+			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 2))  ? STR_DEFEND : STR_DEFEND_TEMP );
+			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			arrowUp.label = manFight.flags & FightState.FLAG_INITIATIVE_NORTH   ? atkStateString : defendStateString;
 		}
 		
-		if (enemyMask & 8) {
-			defendStateString = ( manFight.mustRollNow(fightStates[3])  ? STR_DEFEND : STR_DEFEND_TEMP );
-			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fightStates[3])  ? STR_ATTACK : STR_AIM );
-			arrowDown.label = initiativeMask & 8  ? atkStateString : defendStateString;
+		if (manFight.flags & FightState.FLAG_ENEMY_SOUTH) {
+			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY,3))  ? STR_DEFEND : STR_DEFEND_TEMP );
+			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			arrowDown.label = manFight.flags & FightState.FLAG_INITIATIVE_SOUTH   ? atkStateString : defendStateString;
 		}
 		
 		if (gotEnemy) {  // TODO: proper context-facing info of enemy fight info instead...later on...
 			setFightInfo(manFight);
 		}
+		
+		if (manFight.s == 2) {
+			btnWait.label = STR_DONE;
+			arrowRight.visible = (manFight.flags & 1) !=0;
+			arrowLeft.visible = (manFight.flags & 2) !=0;
+			arrowUp.visible = (manFight.flags & 4)!=0;
+			arrowDown.visible = (manFight.flags & 8) != 0;
+			arrowRight.label = STR_TARG;
+			arrowLeft.label = STR_TARG;
+			arrowUp.label = STR_TARG;
+			arrowDown.label = STR_TARG;
+		}
+		
+		
 	}
 	
 	private function sizeBtn(btn:PushButton, width:Number = 30, height:Number = 20 ):PushButton {
@@ -288,9 +296,11 @@ class UITros extends Sprite {
 		radioDefend.label = radioDefend.selected ? "Roll Defense!" : "Roll Defense";
 	}
 	
+	public static const ROLLING_TEXT:String = "Rolling..";
+	
 	public function setFightInfo(fight:FightState):void {
 		infoExchange.text = "Exchange #" + (fight.e ? "2" : "1");
-		infoMoveStep.text = "Move " + fight.s + "/1";
+		infoMoveStep.text = !ROLLING_TEXT || fight.s < 2 ? "Move " + fight.s + "/1" : ROLLING_TEXT;
 		radioAttack.enabled = fight.initiative;
 	}
 	
@@ -331,6 +341,7 @@ class Dungeon extends Sprite{
 	private var uiTros:UITros;
 
     public var count:int = 0;
+	public var timestamp:uint = 0;
     public var wait:int = 0; //設定されている時間だけ一時停止
     public var stop:Boolean; //trueのときだけ一時停止
     public var man:GameObject;
@@ -384,8 +395,15 @@ class Dungeon extends Sprite{
         Data.stand( this );　//マップを立体化
         mapBitmap.bitmapData = MapUtil.mapBitmap( this );
         onFrame();
-		uiTros.mapUpdate(this);
+		
+		handleTimestampUpdate();
     }
+	
+	private function handleTimestampUpdate():void {
+		FightState.updateSurroundingStates(this, man.mapX, man.mapY, mapWidth >= mapHeight ? mapWidth : mapHeight);
+		uiTros.mapUpdate(this);
+	}
+	
     //ダンジョンを下る
     public function down():void{ 
         state.floor--; stop = true; Game.effect.moving = true;
@@ -396,21 +414,32 @@ class Dungeon extends Sprite{
         })
     }
     //位置を指定して、その位置の状態を確かめる
+	
+	
+	// temporary for now until code refactor
+	private  var EMPTY_VEC:Vector.<GameObject> = new Vector.<GameObject>();
+	private  var SAMPLE_VEC:Vector.<GameObject> = new Vector.<GameObject>();
+	
     public function check(x:int,y:int,type:String = ""):Vector.<GameObject>{
-        var vec:Vector.<GameObject> = new Vector.<GameObject>()
-        for each( var obj:GameObject in map[x][y] ){ if( (obj.ability[type] != null ) || type == "" ){ vec.push(obj) } } 
+        var vec:Vector.<GameObject> = EMPTY_VEC;
+		SAMPLE_VEC.length = 0; 
+        for each( var obj:GameObject in map[x][y] ) { if ( (obj.ability[type] != null ) || type == "" ) { vec = SAMPLE_VEC; vec.push(obj) } } 
         return vec;
     }
     //位置を指定して、その位置の状態を確かめる
-    public function checkName(x:int,y:int,name:String = ""):Vector.<GameObject>{
-        var vec:Vector.<GameObject> = new Vector.<GameObject>()
-        for each( var obj:GameObject in map[x][y] ){ if( obj.name == name || name == "" ){ vec.push(obj) } } 
+    public function checkName(x:int, y:int, name:String = ""):Vector.<GameObject> {
+		 var vec:Vector.<GameObject> = EMPTY_VEC;
+		SAMPLE_VEC.length = 0; 
+  
+        for each( var obj:GameObject in map[x][y] ){ if( obj.name == name || name == "" ){ vec = SAMPLE_VEC;vec.push(obj) } } 
         return vec;
     }
 	
-	 public function checkState(x:int,y:int,state:String = ""):Vector.<GameObject>{
-        var vec:Vector.<GameObject> = new Vector.<GameObject>()
-        for each( var obj:GameObject in map[x][y] ){ if( obj.state == state || state == "" ){ vec.push(obj) } } 
+	 public function checkState(x:int, y:int, state:String = ""):Vector.<GameObject> {
+		 var vec:Vector.<GameObject> = EMPTY_VEC;
+		SAMPLE_VEC.length = 0; 
+        
+        for each( var obj:GameObject in map[x][y] ){ if( obj.state == state || state == "" ){ vec = SAMPLE_VEC;vec.push(obj) } } 
         return vec;
     }
 	
@@ -549,7 +578,7 @@ class Dungeon extends Sprite{
 		//	onKeyUp(curKeyStroke);
 	}
     
-	
+	public static const SEE:Array = [5, 5, 5, 6];
 	// main game loop
     private function onFrame(e:Event = null):void {
         if(stop){
@@ -559,7 +588,7 @@ class Dungeon extends Sprite{
           //  if (wait > 0  ) { wait--;
           //  }else{
                 count++;
-                var see:Array = [5,5,5,6];
+                var see:Array = SEE;
                 var startX:int = 0,startY:int = 0,endX:int = mapWidth-1,endY:int = mapHeight-1;
                 for(var i:uint = startX; i<=endX; i++ ){
                     for(var j:uint = startY; j<=endY; j++ ){
@@ -588,11 +617,16 @@ class Dungeon extends Sprite{
                 } }
                 view.camera.x = man.x;
                 view.camera.y = -256 + man.y;
-                if(  canInteract && keyEvent !=null ) {   // assumed player has interacted with the map somewhat    // count % 6 == 0
+                if (  canInteract && keyEvent != null ) {   // assumed player has interacted with the map somewhat    // count % 6 == 0
+					
+					timestamp++;
                     MapUtil.mapUpdate( this ); 
+					
                     //if ( count % 12 == 0 )  
 					MapUtil.mapDraw( this );  
-					uiTros.mapUpdate(this);
+					
+					handleTimestampUpdate();
+					
                 }
           //  }
         }
@@ -820,10 +854,118 @@ class FightState {
 	
 	public static const SIDE_FRIEND:int = 0;
 	public static const SIDE_ENEMY:int = 1;
+	
+	public static const FLAG_ENEMY_EAST:int = 1;
+	public static const FLAG_ENEMY_WEST:int = 2;
+	public static const FLAG_ENEMY_NORTH:int = 4;
+	public static const FLAG_ENEMY_SOUTH:int = 8;
+	
+	public static const OFFSET_INITIATIVE:int = 4;
+	
+	public static const FLAG_INITIATIVE_EAST:int = 16;
+	public static const FLAG_INITIATIVE_WEST:int = 32;
+	public static const FLAG_INITIATIVE_NORTH:int = 64;
+	public static const FLAG_INITIATIVE_SOUTH:int = 128;
+	
+	public var flags:int = 0;
+	public var numEnemies:int = 0;
+	public var timestamp:uint = uint.MAX_VALUE;  // lol, unlikely to happen
+	
+	//arrowRight.visible = !(wallMask & 1);
+	//arrowLeft.visible = !(wallMask & 2);
+	//arrowUp.visible = !(wallMask & 4);
+	//arrowDown.visible = !(wallMask & 8);
 
+	public static const DIRECTIONS:Array =  [[1, 0], [ -1, 0], [0, 1], [0, -1]];
 	
 	public function FightState() {
 		
+	}
+	
+	private function step():void {
+		
+			s++;
+			if (s >= 3) {
+				s = 0;
+				e = !e;
+				s = 0;
+			}
+		
+		
+	}
+	
+	// static controller methods (later to re-factor out if necessary..)
+	public static function getNeighbour(dungeon:Dungeon, x:int, y:int, directionIndex:int):FightState {
+		
+		var dir:Array = DIRECTIONS[directionIndex];
+		var vec:Vector.<GameObject> = dungeon.check( x + dir[0], y + dir[1], "fight");
+		return vec.length  ? vec[0].ability.fight : null;
+	}
+	
+	public static function updateSurroundingStates(dungeon:Dungeon, x:int, y:int, radius:int):void {
+		var minx:int= x - radius;
+		var miny:int= y - radius;
+		var maxx:int= x + radius;
+		var maxy:int = y * radius;
+		minx = minx  >= 0 ? minx : 0;
+		miny = miny  >= 0 ? miny : 0;
+		var mapWidth:uint = dungeon.mapWidth;
+		var mapHeight:uint = dungeon.mapHeight;
+		maxy = maxy >= mapHeight  ? maxy - 1 : maxy;
+		maxx = maxx >= mapWidth  ? maxx - 1 : maxx;
+		
+		  for(var i:uint = 0; i< mapWidth; i++ ){
+            for (var j:uint = 0; j < mapHeight; j++ ) {
+				var vec:Vector.<GameObject> = dungeon.check(i, j, "fight");
+				var b:int = vec.length;
+				while (--b > -1) {
+					var fState:FightState = vec[b].ability.fight;
+					if (fState.timestamp != dungeon.timestamp) {
+						var lastNumEnemies:int = fState.numEnemies;
+						updateNeighborStates(vec[b], fState, dungeon);
+						fState.timestamp = dungeon.timestamp;
+						if (lastNumEnemies > 0) {
+							if (  fState.numEnemies == 0 )
+								fState.reset(true);
+							else fState.step();
+						}
+						
+					}
+					
+				}
+			}
+		  }
+	}
+	
+	
+	public static function updateNeighborStates(man:GameObject, manFight:FightState, dungeon:Dungeon):void  {
+		var directions:Array = DIRECTIONS;  //["rlbf".indexOf(man.dir)];
+
+		manFight.numEnemies = 0;
+		manFight.flags = 0;
+		var len:int = directions.length;
+
+		for (var i:int = 0; i < len; i++) {
+			var dir:Array = directions[i];
+			var xi:int = dir[0];
+			var yi:int = dir[1];
+			xi += man.mapX;
+			yi += man.mapY;
+			if (xi >= 0 && xi < dungeon.mapWidth && yi >= 0 && yi < dungeon.mapHeight) {
+				var fights:Vector.<GameObject> = dungeon.check(xi, yi, "fight");
+				if (fights.length > 0) {  //!gotEnemy &&
+					// assumed only stack 1 fighter at the moment. In grappling situations, can stack 2 fighters.
+					var enemyFight:FightState =  fights[0].ability.fight;
+					if (manFight.hostileTowards( enemyFight ) ) {
+						
+						manFight.numEnemies++;
+						manFight.flags |= (1 << i);  
+						manFight.flags |= manFight.canRollAtkAgainst(enemyFight) ? ( 1 << (OFFSET_INITIATIVE+i)) : 0;
+					}
+				}
+			}
+			
+		}
 	}
 	
 	public function setSideAggro(val:int):FightState {
@@ -835,10 +977,14 @@ class FightState {
 		return this.side != fight.side;
 	}
 	
-	public function reset():FightState {
+	public function reset(disengaged:Boolean=false):FightState {
 		s = 0;
 		e = false;
 		initiative = true;
+		if (disengaged) {
+			numEnemies = 0;
+			flags = 0;
+		}
 		return this;
 	}
 	
