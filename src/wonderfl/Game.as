@@ -897,6 +897,8 @@ class FightState {
 	public static const FLAG_INITIATIVE_NORTH:int = 64;
 	public static const FLAG_INITIATIVE_SOUTH:int = 128;
 	
+	public static const FLAG_INITIATIVE_SYNCED:int = 256;
+	
 	public var flags:int = 0;
 	public var numEnemies:int = 0;
 	
@@ -1053,11 +1055,19 @@ class FightState {
 					//throw new Error("Out of sync situation traced:"+ fights[0].type + ":" + enemyFight.getSchedule() + " | "+manFight.getSchedule());
 				//}
 				manFight.flags |= manFight.canRollAtkAgainst(enemyFight) ? ( 1 << (OFFSET_INITIATIVE+i)) : 0;
+				manFight.flags |= manFight.isSyncedWith(enemyFight) ? FLAG_INITIATIVE_SYNCED : 0;
 					
 				
 			//}
 			
+		}
 		
+		 // cancel step() action done earlier if required, becos when not synced with anyone, will always wait at schedule zero as if unengaged.
+		 // so that can rejoin the fight sync at exchange 1, step 0 always..
+		if ( !(manFight.flags & FLAG_INITIATIVE_SYNCED) ) { 
+			manFight.s = 0;
+			manFight.e = false;
+		//	throw new Error("INvaliditing");
 		}
 	
 	}
@@ -1120,8 +1130,12 @@ class FightState {
 		return  e == 0 && s < 2;
 	}
 	
+	public function withinInitiativeScope(fight:FightState):Boolean {
+		return ( isSyncedWith(fight) || (fight.firstExchangeWindow() && firstExchangeWindow()) );
+	}
+	
 	public function canRollAtkAgainst(fight:FightState):Boolean {
-		return initiative && ( isSyncedWith(fight) || (fight.firstExchangeWindow() && firstExchangeWindow()) );  //initiative  && 
+		return initiative && withinInitiativeScope(fight);  //initiative  && 
 	}
 	
 }
