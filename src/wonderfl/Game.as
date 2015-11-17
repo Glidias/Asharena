@@ -148,7 +148,7 @@ class UITros extends Sprite {
 	public static const STR_DEFEND:String = "Def";  // this will resolve the defense manuever
 	public static const DELIBERATE_DEFEND_SUFFIX:String = "!";  // you  deliberate chose to roll defend. appended at the end of "def" or "Def" accordingly.
 	
-	public static const STR_DONE:String = "Done";
+	public static const STR_DONE:String = "Okay";
 	
 	// once exchange is resolved from Move 1/1, next exchange begins immediately.
 	
@@ -167,8 +167,8 @@ class UITros extends Sprite {
 		//var enemyMask:int = 0;
 
 		var wallMask:int = 0;
-		var manFight:FightState = dungeon.man.ability.fight;  
-		//FightState.updateNeighborStates(dungeon.man, manFight, dungeon);
+		var manFight:FightState = dungeon.man.components.fight;  
+		//FightState.updateNeighborEnemyStates(dungeon.man, manFight, dungeon);
 		
 		var len:int = directions.length;
 		var gotEnemy:Boolean = manFight.numEnemies > 0;
@@ -241,14 +241,16 @@ class UITros extends Sprite {
 		
 		if (manFight.s == 2) {
 			btnWait.label = STR_DONE;
-			arrowRight.visible = (manFight.flags & 1) !=0;
-			arrowLeft.visible = (manFight.flags & 2) !=0;
-			arrowUp.visible = (manFight.flags & 4)!=0;
-			arrowDown.visible = (manFight.flags & 8) != 0;
+			var engagedMultiple:Boolean = manFight.numEnemies > 1;
+			arrowRight.visible =engagedMultiple &&  (manFight.flags & 1) !=0;
+			arrowLeft.visible = engagedMultiple &&  (manFight.flags & 2) !=0;
+			arrowUp.visible = engagedMultiple &&  (manFight.flags & 4)!=0;
+			arrowDown.visible = engagedMultiple &&  (manFight.flags & 8) != 0;
 			arrowRight.label = STR_TARG;
 			arrowLeft.label = STR_TARG;
 			arrowUp.label = STR_TARG;
 			arrowDown.label = STR_TARG;
+			
 		}
 		
 		
@@ -347,6 +349,24 @@ class Dungeon extends Sprite{
     public var man:GameObject;
     
     public var view:BasicView;
+	
+	public var fightStack:Array = [];
+	public function clearFightStack():void {  
+		var fight:FightState;
+	// code smell hack here
+		var i:int = fightStack.length;
+		
+		
+		i = fightStack.length;
+		while ( --i > -1 ) {
+			
+			fight = fightStack[i];
+			FightState.updateNeighborInitiative(fight, this);
+		}
+		
+		fightStack.length = 0;
+		
+	}
     
     function Dungeon(d:Data){
         view = new BasicView(Data.gameWidth,Data.gameHeight,false,true,CameraType.FREE);
@@ -426,6 +446,15 @@ class Dungeon extends Sprite{
         for each( var obj:GameObject in map[x][y] ) { if ( (obj.ability[type] != null ) || type == "" ) { vec = SAMPLE_VEC; vec.push(obj) } } 
         return vec;
     }
+	
+	 public function checkComponent(x:int,y:int,type:String = ""):Vector.<GameObject>{
+        var vec:Vector.<GameObject> = EMPTY_VEC;
+		SAMPLE_VEC.length = 0; 
+        for each( var obj:GameObject in map[x][y] ) { if ( (obj.components[type] != null ) || type == "" ) { vec = SAMPLE_VEC; vec.push(obj) } } 
+        return vec;
+    }
+	
+	
     //位置を指定して、その位置の状態を確かめる
     public function checkName(x:int, y:int, name:String = ""):Vector.<GameObject> {
 		 var vec:Vector.<GameObject> = EMPTY_VEC;
@@ -648,6 +677,7 @@ class GameObject extends Object {
     public var moveArray:Array = [0,0,5];
     public var moving:Boolean = false;
     
+	public var components:Object = {}; // obj
     public var ability:Object = {};    //bool値を格納するための オブジェクト
     public var func:Object = {};    //functionを格納するための　オブジェクト
     public var param:Object = {};    //paramを格納するための　オブジェクト
@@ -869,6 +899,11 @@ class FightState {
 	
 	public var flags:int = 0;
 	public var numEnemies:int = 0;
+	
+	// by right, these position values shouldn't be here, duplicate stored values at given timestamp
+	public var x:int;
+	public var y:int;
+	
 	public var timestamp:uint = uint.MAX_VALUE;  // lol, unlikely to happen
 	
 	//arrowRight.visible = !(wallMask & 1);
@@ -882,7 +917,13 @@ class FightState {
 		
 	}
 	
-	private function step():void {
+	public function clone():FightState {
+		var fState:FightState = new FightState();
+		fState.side = side;
+		return fState;
+	}
+	
+	public function step():void {
 		
 			s++;
 			if (s >= 3) {
@@ -898,8 +939,8 @@ class FightState {
 	public static function getNeighbour(dungeon:Dungeon, x:int, y:int, directionIndex:int):FightState {
 		
 		var dir:Array = DIRECTIONS[directionIndex];
-		var vec:Vector.<GameObject> = dungeon.check( x + dir[0], y + dir[1], "fight");
-		return vec.length  ? vec[0].ability.fight : null;
+		var vec:Vector.<GameObject> = dungeon.checkComponent( x + dir[0], y + dir[1], "fight");
+		return vec.length  ? vec[0].components.fight : null;
 	}
 	
 	public static function updateSurroundingStates(dungeon:Dungeon, x:int, y:int, radius:int):void {
@@ -916,56 +957,114 @@ class FightState {
 		
 		  for(var i:uint = 0; i< mapWidth; i++ ){
             for (var j:uint = 0; j < mapHeight; j++ ) {
-				var vec:Vector.<GameObject> = dungeon.check(i, j, "fight");
+				var vec:Vector.<GameObject> = dungeon.checkComponent(i, j, "fight");
 				var b:int = vec.length;
 				while (--b > -1) {
-					var fState:FightState = vec[b].ability.fight;
+					var fState:FightState = vec[b].components.fight;
 					if (fState.timestamp != dungeon.timestamp) {
-						var lastNumEnemies:int = fState.numEnemies;
-						updateNeighborStates(vec[b], fState, dungeon);
 						fState.timestamp = dungeon.timestamp;
+						var lastNumEnemies:int = fState.numEnemies;
+						//if (fState.s < 2 ) {
+						updateNeighborEnemyStates(vec[b], fState, dungeon);
+						dungeon.fightStack.push(fState);
+						//}
+						
 						if (lastNumEnemies > 0) {
-							if (  fState.numEnemies == 0 )
+							if (  fState.numEnemies == 0 ) {
 								fState.reset(true);
-							else fState.step();
+								
+							}
+							else {
+								fState.step();
+								
+							}
 						}
+						
+							
 						
 					}
 					
 				}
 			}
 		  }
+		  
+		  // for the sake of defering...bah!!
+		  dungeon.clearFightStack();  // warning,,,backtrack code smell hack here
 	}
 	
 	
-	public static function updateNeighborStates(man:GameObject, manFight:FightState, dungeon:Dungeon):void  {
+	private static function updateNeighborEnemyStates(man:GameObject, manFight:FightState, dungeon:Dungeon):void  {
 		var directions:Array = DIRECTIONS;  //["rlbf".indexOf(man.dir)];
 
 		manFight.numEnemies = 0;
 		manFight.flags = 0;
 		var len:int = directions.length;
+		manFight.x = man.mapX;
+		manFight.y = man.mapY;
 
 		for (var i:int = 0; i < len; i++) {
+			//	manFight.flags |= ( 1 << (OFFSET_INITIATIVE + i) );
 			var dir:Array = directions[i];
 			var xi:int = dir[0];
 			var yi:int = dir[1];
 			xi += man.mapX;
 			yi += man.mapY;
 			if (xi >= 0 && xi < dungeon.mapWidth && yi >= 0 && yi < dungeon.mapHeight) {
-				var fights:Vector.<GameObject> = dungeon.check(xi, yi, "fight");
+				var fights:Vector.<GameObject> = dungeon.checkComponent(xi, yi, "fight");
 				if (fights.length > 0) {  //!gotEnemy &&
 					// assumed only stack 1 fighter at the moment. In grappling situations, can stack 2 fighters.
-					var enemyFight:FightState =  fights[0].ability.fight;
+					var enemyFight:FightState =  fights[0].components.fight;
+					//if (enemyFight.s == 2) continue;
+					//if (man.type === "enemy" && fights[0].type==="man") throw new Error("A");
 					if (manFight.hostileTowards( enemyFight ) ) {
 						
 						manFight.numEnemies++;
 						manFight.flags |= (1 << i);  
-						manFight.flags |= manFight.canRollAtkAgainst(enemyFight) ? ( 1 << (OFFSET_INITIATIVE+i)) : 0;
+						
 					}
 				}
 			}
 			
 		}
+	}
+	
+	public static function updateNeighborInitiative(manFight:FightState, dungeon:Dungeon):void { 
+		var directions:Array = DIRECTIONS;  
+		var len:int = directions.length;
+
+		for (var i:int = 0; i < len; i++) {
+		
+			
+			if (!(manFight.flags & (1 << i) )) continue;
+			var dir:Array = directions[i];
+			var xi:int = dir[0];
+			var yi:int = dir[1];
+			xi += manFight.x;
+			yi += manFight.y;
+
+			var fights:Vector.<GameObject> = dungeon.checkComponent(xi, yi, "fight");
+			//if (fights.length > 0) {  //!gotEnemy &&
+				// assumed only stack 1 fighter at the moment. In grappling situations, can stack 2 fighters.
+				var enemyFight:FightState =  fights[0].components.fight;
+
+				// Yep, this is allowed to happen below...
+				// when an enemy moves in to engage somebody that is already locked in combat exchange and resolving rolls. 
+				//if (!manFight.isSyncedWith(enemyFight)) {
+					//throw new Error("Out of sync situation traced:"+ fights[0].type + ":" + enemyFight.getSchedule() + " | "+manFight.getSchedule());
+				//}
+				manFight.flags |= manFight.canRollAtkAgainst(enemyFight) ? ( 1 << (OFFSET_INITIATIVE+i)) : 0;
+					
+				
+			//}
+			
+		
+		}
+	
+	}
+	
+	private function getSchedule():Array 
+	{
+		return [s, e, timestamp, numEnemies];
 	}
 	
 	public function setSideAggro(val:int):FightState {
@@ -1004,7 +1103,8 @@ class FightState {
 		return s == 0;
 	}
 	
-	public function mustRollNow(fight:FightState=null):Boolean {
+	public function mustRollNow(fight:FightState = null):Boolean {
+		//fight = null
 		return fight!= null? getSyncStep(fight) == 1 : s==1;
 	}
 	
@@ -1021,7 +1121,7 @@ class FightState {
 	}
 	
 	public function canRollAtkAgainst(fight:FightState):Boolean {
-		return initiative  && ( isSyncedWith(fight) || firstExchangeWindow() );
+		return initiative && ( isSyncedWith(fight) || (fight.firstExchangeWindow() && firstExchangeWindow()) );  //initiative  && 
 	}
 	
 }
@@ -1048,8 +1148,8 @@ class Data {
     }
     
     static public const OBJECT:Object = {
-        "man": { type:"man", state:"w0", visual:"stand",  func:{ key:Man.key }, ability:{ map:false,block:true, fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, anim:Man.anim, animState:"walk1", dir:"f" },
-        "enemy": { type:"enemy", state:"w0", num:"1", func:{ key:Enemy.key },  visual:"stand", ability:{fight:new FightState().setSideAggro(FightState.SIDE_ENEMY), map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
+        "man": { type:"man", state:"w0", visual:"stand",  func:{ key:Man.key }, components:{fight:new FightState().setSideAggro(FightState.SIDE_FRIEND)}, ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
+        "enemy": { type:"enemy", state:"w0", num:"1", func:{ key:Enemy.key },  visual:"stand", components:{fight:new FightState().setSideAggro(FightState.SIDE_ENEMY)}, ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
         "fwall": { type:"room", state:"wall", visual:"front" },
         "bwall": { type:"room", state:"wall", visual:"back" },
@@ -1115,7 +1215,12 @@ class Data {
         if(name != null && OBJECT[name] != null){
             var obj:Object = clone( OBJECT[name] );         
             var g:GameObject = new GameObject();
-            for(var str:String in obj){ g[ str ] = obj[ str ]; }
+            for (var str:String in obj) { 
+					g[ str ] = obj[ str ]; 
+				}
+			for (str in g.components) {
+				g.components[str] = g.components[str].clone();  // currently using clone as factory method
+			}
             g.mapX = x; g.mapY = y; g.x = (x - 0.5)* cellWidth;  g.y = (y - 0.5) * cellHeight;
             g.name = name; g.dungeon = dun;
         }
