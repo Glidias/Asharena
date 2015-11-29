@@ -420,7 +420,7 @@ class Dungeon extends Sprite{
     }
 	
 	private function handleTimestampUpdate():void {
-		FightState.updateSurroundingStates(this, man.mapX, man.mapY, mapWidth >= mapHeight ? mapWidth : mapHeight);
+		if (!man.bumping) FightState.updateSurroundingStates(this, man.mapX, man.mapY, mapWidth >= mapHeight ? mapWidth : mapHeight);
 		uiTros.mapUpdate(this);
 	}
 	
@@ -444,6 +444,19 @@ class Dungeon extends Sprite{
         var vec:Vector.<GameObject> = EMPTY_VEC;
 		SAMPLE_VEC.length = 0; 
         for each( var obj:GameObject in map[x][y] ) { if ( (obj.ability[type] != null ) || type == "" ) { vec = SAMPLE_VEC; vec.push(obj) } } 
+        return vec;
+    }
+	
+	public function checkBumpable(x:int, y:int):Boolean {
+		
+        for each( var obj:GameObject in map[x][y] ) { if ( (obj.func["key"] != null )) return true;  } 
+        return false;
+	}
+	 
+	public function checkFunc(x:int,y:int,type:String = ""):Vector.<GameObject>{
+        var vec:Vector.<GameObject> = EMPTY_VEC;
+		SAMPLE_VEC.length = 0; 
+        for each( var obj:GameObject in map[x][y] ) { if ( (obj.func[type] != null ) || type == "" ) { vec = SAMPLE_VEC; vec.push(obj) } } 
         return vec;
     }
 	
@@ -627,12 +640,14 @@ class Dungeon extends Sprite{
                                 if( o.plane.visible == false ){ o.plane.visible = true; }
                                 if( o.tween != null && o.tween.length > 0){ o.move() }
                                 if( (o.tween == null || o.tween.length == 0) && o.func.frame != null ){ o.func.frame(o) }
-                                if(  canInteract  && (o.tween == null || o.tween.length == 0) && keyEvent != null && o.func.key != null ){ o.func.key(keyEvent,o); } 
+                               
                                 if( o.anim != null ){ 
                                     o.animation();
                                     Data.setPlane(o);
                                     data.draw(o.bitmapData, o.type, o.num + o.dir + o.state, 0, 0 );
                                 }
+								
+								 if(  canInteract  && (o.tween == null || o.tween.length == 0) && keyEvent != null && o.func.key != null ){ o.func.key(keyEvent,o); } 
                             }
                         }else{
                             for each( o in map[i][j]){
@@ -641,9 +656,35 @@ class Dungeon extends Sprite{
                         }
                     }
                 }
+				
+				
+			
+					
+				// Those that have empty squares to move into (non-bumpers), will move first.
+				// todo: proper initiative ladder for move-sliding based off RPG stats
                 for(i = startX; i<=endX; i++ ){for(j = startY; j<=endY; j++ ){
-                        for each( o in map[i][j] ){ o.slide(); }
+                        for each( o in map[i][j] ){ if (o.moving) o.slide(); }
                 } }
+				
+				if (man.bumping) {
+					// check if  bumped-into square is vacated, if so , need to defer map update till next keypress
+					if (!checkBumpable(man.mapX + man.moveArray[0], man.mapY + man.moveArray[1]) ) {
+						// todo: uiTros must handle map.bumping case to only show possible moves only, without updating exchange info
+						// consider limited movement allowance for movers , those that have to roll, can neither bump nor move
+						
+						// for next keypress frame, only consider bumpers, and do this ONLY once!
+					}
+				}
+				
+				// proper initiative ladder for bump-sliding based off RPG stats
+				 for(i = startX; i<=endX; i++ ){for(j = startY; j<=endY; j++ ){
+                        for each( o in map[i][j] ) { if (o.bumping) {
+							// note: more advanced ai should consider pre-bump-sliding decisions, if bumped-into square is vacated
+							o.slide();
+						}
+					}
+                } }
+				
                 view.camera.x = man.x;
                 view.camera.y = -256 + man.y;
                 if (  canInteract && keyEvent != null ) {   // assumed player has interacted with the map somewhat    // count % 6 == 0
@@ -656,6 +697,7 @@ class Dungeon extends Sprite{
 					
 					handleTimestampUpdate();
 					
+					// handle 2/1 fightstates, considering existing moveArrays if available...
                 }
           //  }
         }
@@ -676,6 +718,7 @@ class GameObject extends Object {
     public var num:String = "";        //番号
     public var moveArray:Array = [0,0,5];
     public var moving:Boolean = false;
+	public var bumping:Boolean = false;
     
 	public var components:Object = {}; // obj
     public var ability:Object = {};    //bool値を格納するための オブジェクト
@@ -737,7 +780,7 @@ class GameObject extends Object {
         if( tweenFrame[0] == 0){ tween.shift(); tweenFrame.shift(); }
     }
     public function slide():void{
-        if( moving ){
+       // if( moving ){
             if( dungeon.check( mapX+moveArray[0], mapY+moveArray[1], "block" ).length == 0 ){
                 dungeon.map[mapX][mapY].splice( dungeon.map[mapX][mapY].indexOf(this), 1 );
                 mapX += moveArray[0]; mapY += moveArray[1]; 
@@ -745,7 +788,8 @@ class GameObject extends Object {
                 dungeon.map[mapX][mapY].push(this)
             }else{ addTween( {}, moveArray[2]); }
             moving = false
-        }
+			bumping = false;
+       // }
     }
 }
 
@@ -778,8 +822,8 @@ class Man{
             case "←": walk(man,"l"); break;
             case "↑": walk(man,"b"); break;
             case "↓": walk(man,"f"); break;
-            case "z": man.action("kick");man.addTween( {}, 6 ); break;
-            case "x": man.action("sup");man.addTween( {}, 6 ); break;
+            //case "z": man.action("kick");man.addTween( {}, 6 ); break;
+            //case "x": man.action("sup");man.addTween( {}, 6 ); break;
             case " ": if(man.dungeon.check(man.mapX,man.mapY,"stair").length > 0){man.dungeon.down()} break;
         }
     }
@@ -795,7 +839,9 @@ class Man{
 		
 		man.dungeon.wait = GameObject.WAITKEY_STEP_NUM_FRAMES;
         man.moveArray[2] = GameObject.DEFAULT_STEP_NUM_FRAMES;//移動スピード
-        man.moving = true;
+        if ( !man.dungeon.checkBumpable(man.mapX + arr[0], man.mapY + arr[1]) ) man.moving = true;
+	   else man.bumping = true;
+		
         if( man.animState == "walk2" ){ man.action("walk1") }
         else{ man.action("walk2") }
     }
@@ -837,7 +883,8 @@ class Enemy{
         var arr:Array = [[1,0],[-1,0],[0,1],[0,-1]]["rlbf".indexOf(enm.dir)];
         enm.moveArray = arr;
         enm.moveArray[2] = GameObject.WAITKEY_STEP_NUM_FRAMES; //移動スピード  // movement tween duration 
-        enm.moving = true;
+       if ( !enm.dungeon.checkBumpable(enm.mapX + arr[0], enm.mapY + arr[1]) ) enm.moving = true;
+	   else enm.bumping = true;
     }
 	
 	/*
@@ -880,7 +927,7 @@ class FightState {
 	public var e:Boolean = false;  // false for exchange 1/2, true for exchange 2/2
 	public var side:int = 1;
 	
-	public var initiative:Boolean = true;
+	public static const DIRECTIONS:Array =  [[1, 0], [ -1, 0], [0, 1], [0, -1]];
 	
 	public static const SIDE_FRIEND:int = 0;
 	public static const SIDE_ENEMY:int = 1;
@@ -901,19 +948,21 @@ class FightState {
 	
 	public var flags:int = 0;
 	public var numEnemies:int = 0;
+	public var initiative:Boolean = true;
 	
 	// by right, these position values shouldn't be here, duplicate stored values at given timestamp
 	public var x:int;
 	public var y:int;
 	
 	public var timestamp:uint = uint.MAX_VALUE;  // lol, unlikely to happen
+
 	
 	//arrowRight.visible = !(wallMask & 1);
 	//arrowLeft.visible = !(wallMask & 2);
 	//arrowUp.visible = !(wallMask & 4);
 	//arrowDown.visible = !(wallMask & 8);
 
-	public static const DIRECTIONS:Array =  [[1, 0], [ -1, 0], [0, 1], [0, -1]];
+	
 	
 	public function FightState() {
 		
