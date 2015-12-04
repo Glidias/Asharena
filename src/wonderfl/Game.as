@@ -301,7 +301,7 @@ class UITros extends Sprite {
 	public static const ROLLING_TEXT:String = "Rolling..";
 	
 	public function setFightInfo(fight:FightState):void {
-		infoExchange.text = "Exchange #" + (fight.e ? "2" : "1");
+		infoExchange.text = "Exchange #" + (fight.e ? "2" : "1") + " (Round "+(fight.rounds+1)+")";
 		infoMoveStep.text = !ROLLING_TEXT || fight.s < 2 ? "Move " + fight.s + "/1" : ROLLING_TEXT;
 		radioAttack.enabled = fight.initiative;
 	}
@@ -630,6 +630,7 @@ class Dungeon extends Sprite{
           //  if (wait > 0  ) { wait--;
           //  }else{
                 count++;
+				
                 var see:Array = SEE;
                 var startX:int = 0,startY:int = 0,endX:int = mapWidth-1,endY:int = mapHeight-1;
                 for(var i:uint = startX; i<=endX; i++ ){
@@ -646,6 +647,8 @@ class Dungeon extends Sprite{
                                     Data.setPlane(o);
                                     data.draw(o.bitmapData, o.type, o.num + o.dir + o.state, 0, 0 );
                                 }
+								
+								if (canInteract && (o.components && o.components.fight != null)) o.components.fight.resolve(o);
 								
 								 if(  canInteract  && (o.tween == null || o.tween.length == 0) && keyEvent != null && o.func.key != null ){ o.func.key(keyEvent,o); } 
                             }
@@ -714,6 +717,7 @@ class GameObject extends Object {
 	public static var DEFAULT_STEP_NUM_FRAMES:int = 5;
 	public static var WAITKEY_STEP_NUM_FRAMES:int = 10;
 	
+	
     public var dir:String = "";        //向き
     public var num:String = "";        //番号
     public var moveArray:Array = [0,0,5];
@@ -744,6 +748,23 @@ class GameObject extends Object {
     //tween?
     public var tweenFrame:Vector.<int>;
     public var tween:Vector.<Object>;
+	
+	// (starting from right) first bit: x is non-zero,   second bit: non-zero value is positive
+	public static var DIR_STRING_LOOKUP:Array = [
+		//[[1, 0], [ -1, 0], [0, 1], [0, -1]]["rlbf"
+		"f",  	  //0 : 00   //  y is negative 
+		"l",      //1 : 01   //  x is negative 
+		"b",      //2 : 10   //  y is positive 
+		"r"	 	  //3 : 11   // x is positive 
+	];
+	public static function getDirection(x:int, y:int):String {
+			var bits:int = 0;
+					bits |= x != 0 ?  1 : 0;
+					bits |= x != 0 ?  (x > 0 ? 2 : 0)  :  (y > 0 ? 2 : 0); 
+					return DIR_STRING_LOOKUP[bits];
+					
+		
+	}
     
     
     //アニメーション時に呼び出される
@@ -822,12 +843,18 @@ class Man{
             case "←": walk(man,"l"); break;
             case "↑": walk(man,"b"); break;
             case "↓": walk(man,"f"); break;
+			
             //case "z": man.action("kick");man.addTween( {}, 6 ); break;
             //case "x": man.action("sup");man.addTween( {}, 6 ); break;
             case " ": if(man.dungeon.check(man.mapX,man.mapY,"stair").length > 0){man.dungeon.down()} break;
         }
     }
-    static public function walk(man:GameObject, dir:String):void{
+    static public function walk(man:GameObject, dir:String):void {
+		
+		var fight:FightState =  (man.components.fight as FightState);
+		
+		var lastDir:String = man.dir;
+		
         if ( true || dir == man.dir ) {  // TODO: For now, i disable turning ability. Later can re-incorpriate if got time.
 			man.dir = dir;
             var arr:Array = [[1,0],[-1,0],[0,1],[0,-1]]["rlbf".indexOf(man.dir)];
@@ -839,8 +866,29 @@ class Man{
 		
 		man.dungeon.wait = GameObject.WAITKEY_STEP_NUM_FRAMES;
         man.moveArray[2] = GameObject.DEFAULT_STEP_NUM_FRAMES;//移動スピード
-        if ( !man.dungeon.checkBumpable(man.mapX + arr[0], man.mapY + arr[1]) ) man.moving = true;
-	   else man.bumping = true;
+        if ( !man.dungeon.checkBumpable(man.mapX + arr[0], man.mapY + arr[1]) ) {
+			man.moving = true;
+			
+		}
+	    else {
+			man.bumping = true;
+		}
+		
+		
+		if (fight && !fight.canMove() ) {
+		//	man.moveArray = [0, 0];
+			man.bumping = false;
+			man.moving = false;
+			if (man.moveArray[0] != 0 || man.moveArray[1] != 0) {
+				// determine if fleeing, if, fleeing, hide direction first, to avoid exposing intention to flee
+				if (!man.dungeon.checkBumpable(man.mapX + man.moveArray[0], man.mapY + man.moveArray[1])) {
+					man.dir = lastDir;
+				}
+			}
+		}
+		
+		 // don't show any animation if facing direction is the same
+		if (man.dir === lastDir && !man.moving && !man.bumping) return; 
 		
         if( man.animState == "walk2" ){ man.action("walk1") }
         else{ man.action("walk2") }
@@ -955,6 +1003,9 @@ class FightState {
 	public var y:int;
 	
 	public var timestamp:uint = uint.MAX_VALUE;  // lol, unlikely to happen
+	
+	public var manuever:int = -1;
+	public var rounds:int = 0;
 
 	
 	//arrowRight.visible = !(wallMask & 1);
@@ -966,6 +1017,44 @@ class FightState {
 	
 	public function FightState() {
 		
+	}
+	
+	public function resolvable():Boolean { 
+		return e || (rounds != 0 && s == 0);
+	}
+	
+	public function resolve(man:GameObject):void {
+		if ( resolvable() ) {  // a round has passed from earlier
+			
+			if (man.moveArray != null && man.moveArray.length != 0 && (man.moveArray[0] !=0 || man.moveArray[1]!=0)) {
+					
+				// If fleeing  (manuever ==0), for now assumed so for testing
+				if ( !man.dungeon.checkBumpable(man.mapX + man.moveArray[0], man.mapY + man.moveArray[1]) ) {
+					
+					// issue #1 to fix: fleeing must resolve first no matter what, but in the event there is no more path of retreat
+					// at the time of rolling for defense, then regular menu appears but can still flee in given free other direction
+					
+					// issue #2 to fix , // find a way to execute a instanced walk procedure in given direction of 
+					man.moving = true;   // temp for testing
+					man.bumping = false;
+					// synchronise direction wi
+					//[[1, 0], [ -1, 0], [0, 1], [0, -1]]["rlbf"
+					//man.dir = GameObject.getDirection(man.moveArray[0], man.moveArray[1]);
+				
+					if( man.animState == "walk2" ){ man.action("walk1") }
+        else{ man.action("walk2") }
+					//man.dir = 
+					man.dungeon.wait = GameObject.WAITKEY_STEP_NUM_FRAMES;
+					
+				}
+				
+			}
+		
+			if (!e) {
+				// refresh combat pool
+			}
+			
+		}
 	}
 	
 	public function clone():FightState {
@@ -981,8 +1070,8 @@ class FightState {
 				s = 0;
 				e = !e;
 				s = 0;
+				if (!e) rounds++;
 			}
-		
 		
 	}
 	
@@ -1131,6 +1220,7 @@ class FightState {
 		return this;
 	}
 	
+	
 	public function hostileTowards(fight:FightState):Boolean {
 		return this.side != fight.side;
 	}
@@ -1139,9 +1229,11 @@ class FightState {
 		s = 0;
 		e = false;
 		initiative = true;
+		//manuever = -1;
 		if (disengaged) {
 			numEnemies = 0;
 			flags = 0;
+			rounds = 0;
 		}
 		return this;
 	}
