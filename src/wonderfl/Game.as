@@ -141,7 +141,8 @@ class UITros extends Sprite {
 	public static const STR_MOVE:String = "move";  // basic movement without exchange resolution
 	public static const STR_ATTACK:String = "Atk";  // this will resolve the attack manuever
 	public static const STR_DEFEND_TEMP:String = "def";  //  this will roll defense later on
-	public static const STR_FULL_EVADE:String = "flee";  // attempt to move into a safe square to escape 
+	public static const STR_FULL_EVADE:String = "Flee";  // attempt to move into a safe square to escape 
+	public static const STR_PARTIAL_EVADE:String = "Dodge";  // attempt to move into a safe square to escape 
 	public static const STR_AIM:String = "atk";   // you are currently aiming at the enemy prior to resolving the attack manuever
 	public static const STR_TURN:String = "turn";  // turn to face given direction
 	public static const STR_TARG:String = "targ";  // turn to consider target
@@ -250,6 +251,22 @@ class UITros extends Sprite {
 			arrowLeft.label = STR_TARG;
 			arrowUp.label = STR_TARG;
 			arrowDown.label = STR_TARG;
+			
+		}
+		else if (manFight.s == 1) {
+			var evadeStr:String = manFight.attacking ? STR_PARTIAL_EVADE : STR_FULL_EVADE;
+			if (arrowRight.visible && arrowRight.label === STR_MOVE) {
+				arrowRight.label = evadeStr;
+			}
+			if (arrowLeft.visible && arrowLeft.label === STR_MOVE) {
+				arrowLeft.label = evadeStr;
+			}
+			if (arrowUp.visible && arrowUp.label === STR_MOVE) {
+				arrowUp.label = evadeStr;
+			}
+			if (arrowDown.visible && arrowDown.label === STR_MOVE) {
+				arrowDown.label = evadeStr;
+			}
 			
 		}
 		
@@ -384,7 +401,7 @@ class Dungeon extends Sprite{
         removeEventListener("addedToStage",init);
         
         addEventListener("enterFrame", onFrame );
-        stage.addEventListener("keyDown", onKeyDown );
+        stage.addEventListener("keyDown", onKeyDownCheck );
         stage.addEventListener("keyUp", onKeyUp );
         
         mask = new Bitmap( new BitmapData(1,1) );
@@ -393,21 +410,29 @@ class Dungeon extends Sprite{
         addChild(mask);
     }
     
-	/*
+	///*
 	private function onKeyDownCheck(e:KeyboardEvent):void {
 		var kc:uint = e.keyCode;
+
 		switch (kc) {
+			case Keyboard.P: break;
 			case Keyboard.UP:
+				if (!uiTros.arrowUp.visible) e.keyCode = Keyboard.P;
+			break;
 			case Keyboard.DOWN:
+				if (!uiTros.arrowDown.visible)  e.keyCode = Keyboard.P;
+			break;
 			case Keyboard.LEFT:
+				if (!uiTros.arrowLeft.visible)  e.keyCode = Keyboard.P;
+			break;
 			case Keyboard.RIGHT:
-			
+				if (!uiTros.arrowRight.visible)  e.keyCode = Keyboard.P;	
 			break;
 			default:return;
 		}
 		onKeyDown(e);
 	}
-	*/
+	//*/
 	
     //新しい階層を設定する
     private function initFloor(flr:int):void {
@@ -648,7 +673,7 @@ class Dungeon extends Sprite{
                                     data.draw(o.bitmapData, o.type, o.num + o.dir + o.state, 0, 0 );
                                 }
 								
-								if (canInteract && (o.components && o.components.fight != null)) o.components.fight.resolve(o);
+								if ( canInteract && keyEvent!=null && (o.components && o.components.fight != null)) o.components.fight.resolve(o);
 								
 								 if(  canInteract  && (o.tween == null || o.tween.length == 0) && keyEvent != null && o.func.key != null ){ o.func.key(keyEvent,o); } 
                             }
@@ -666,7 +691,7 @@ class Dungeon extends Sprite{
 				// Those that have empty squares to move into (non-bumpers), will move first.
 				// todo: proper initiative ladder for move-sliding based off RPG stats
                 for(i = startX; i<=endX; i++ ){for(j = startY; j<=endY; j++ ){
-                        for each( o in map[i][j] ){ if (o.moving) o.slide(); }
+                        for each( o in map[i][j] ) { if (o.moving) { o.slide(); o.moving = false; } }
                 } }
 				
 				if (man.bumping) {
@@ -927,12 +952,29 @@ class Enemy{
     }
 	
 	
-    static public function walk(enm:GameObject):void{
+    static public function walk(enm:GameObject):void {
+		
+			var fight:FightState =  (enm.components.fight as FightState);
+			var lastDir:String = enm.dir;
         var arr:Array = [[1,0],[-1,0],[0,1],[0,-1]]["rlbf".indexOf(enm.dir)];
         enm.moveArray = arr;
         enm.moveArray[2] = GameObject.WAITKEY_STEP_NUM_FRAMES; //移動スピード  // movement tween duration 
        if ( !enm.dungeon.checkBumpable(enm.mapX + arr[0], enm.mapY + arr[1]) ) enm.moving = true;
 	   else enm.bumping = true;
+	   
+	   if (fight && !fight.canMove() ) {
+		//	man.moveArray = [0, 0];
+			enm.bumping = false;
+			enm.moving = false;
+			if (enm.moveArray[0] != 0 || enm.moveArray[1] != 0) {
+				// determine if fleeing, if, fleeing, hide direction first, to avoid exposing intention to flee
+				if (!enm.dungeon.checkBumpable(enm.mapX + enm.moveArray[0], enm.mapY + enm.moveArray[1])) {
+					enm.dir = lastDir;
+				}
+			}
+		}
+
+	   
     }
 	
 	/*
@@ -1004,9 +1046,9 @@ class FightState {
 	
 	public var timestamp:uint = uint.MAX_VALUE;  // lol, unlikely to happen
 	
-	public var manuever:int = -1;
+	public var manuever:int = -1;  // manuever index
 	public var rounds:int = 0;
-
+	public var attacking:Boolean = false;  // flag to indicate is currently/was attacking or not
 	
 	//arrowRight.visible = !(wallMask & 1);
 	//arrowLeft.visible = !(wallMask & 2);
@@ -1020,12 +1062,13 @@ class FightState {
 	}
 	
 	public function resolvable():Boolean { 
-		return e || (rounds != 0 && s == 0);
+		return  (s == 2);// && (e || rounds != 0) );
+		
 	}
 	
 	public function resolve(man:GameObject):void {
 		if ( resolvable() ) {  // a round has passed from earlier
-			
+		
 			if (man.moveArray != null && man.moveArray.length != 0 && (man.moveArray[0] !=0 || man.moveArray[1]!=0)) {
 					
 				// If fleeing  (manuever ==0), for now assumed so for testing
@@ -1035,16 +1078,21 @@ class FightState {
 					// at the time of rolling for defense, then regular menu appears but can still flee in given free other direction
 					
 					// issue #2 to fix , // find a way to execute a instanced walk procedure in given direction of 
-					man.moving = true;   // temp for testing
-					man.bumping = false;
-					// synchronise direction wi
-					//[[1, 0], [ -1, 0], [0, 1], [0, -1]]["rlbf"
-					//man.dir = GameObject.getDirection(man.moveArray[0], man.moveArray[1]);
+					if (man.type === "man") {   // temp for testing, man always suceeds, todo: create proper function for fleeing
+						man.moving = true;  
+						man.bumping = false;
+						// synchronise direction wi
+						//[[1, 0], [ -1, 0], [0, 1], [0, -1]]["rlbf"
+						man.dir = GameObject.getDirection(man.moveArray[0], man.moveArray[1]);
 				
-					if( man.animState == "walk2" ){ man.action("walk1") }
-        else{ man.action("walk2") }
-					//man.dir = 
-					man.dungeon.wait = GameObject.WAITKEY_STEP_NUM_FRAMES;
+						if( man.animState == "walk2" ){ man.action("walk1") }
+						else{ man.action("walk2") }
+							//man.dir = 
+				
+							man.dungeon.wait = GameObject.WAITKEY_STEP_NUM_FRAMES;
+					
+					}
+
 					
 				}
 				
@@ -1225,10 +1273,12 @@ class FightState {
 		return this.side != fight.side;
 	}
 	
+	// this happens after a successful full disengagement, or during a battle exchange pause
 	public function reset(disengaged:Boolean=false):FightState {
 		s = 0;
 		e = false;
 		initiative = true;
+		attacking = false;
 		//manuever = -1;
 		if (disengaged) {
 			numEnemies = 0;
