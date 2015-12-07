@@ -415,6 +415,9 @@ class Dungeon extends Sprite{
 		var kc:uint = e.keyCode;
 
 		switch (kc) {
+			case Keyboard.ENTER:
+			case Keyboard.NUMPAD_ENTER:
+			case Keyboard.NUMPAD_5:
 			case Keyboard.P: break;
 			case Keyboard.UP:
 				if (!uiTros.arrowUp.visible) e.keyCode = Keyboard.P;
