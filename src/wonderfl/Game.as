@@ -1015,6 +1015,100 @@ class Enemy{
     }
 }
 
+class Manuever {
+	public var id:String;
+	public var name:String;
+	public var cost:int;
+	public var requirements:uint;
+	
+	public static const REQUIRE_SHIELD:uint = 1;
+	
+	public var index:int;  // for internal use
+	
+	public function Manuever(id:String, name:String, requirements:uint=0, cost:int = 0) {
+		this.id = id;
+		this.name = name;
+		this.cost = cost;
+		this.requirements = requirements;
+	}
+}
+
+class Profeciency {
+	public var id:String;
+	public var name:String;
+	public var offensiveManuevers:uint;
+	public var defensiveManuevers:uint;
+	
+	
+	
+	public var index:int;  // for internal use
+
+	public function Profeciency(id:String, name:String, offensiveManuevers:uint, defensiveManuevers:uint) {
+		this.id = id;
+		this.name = name;
+		this.offensiveManuevers = offensiveManuevers;
+		this.defensiveManuevers = defensiveManuevers;
+	}
+}
+
+
+
+class ManueverSheet {
+		
+		public static var offensiveMelee:Array = [
+			new Manuever("bash", "Bash")
+		];
+		
+		public static var defensiveMelee:Array = [
+			new Manuever("fullevade", "Full Evasion")
+			,new Manuever("partialevade", "Partial Evasion")
+			,new Manuever("duckweave", "Duck & Weave")
+		
+		];
+		public static var offensiveMeleeHash:Object;
+		
+		public static function createOffensiveMeleeMaskFor(arr:Array):uint {
+			return 0;
+		}
+		
+		public static function createDefensiveMeleeMaskFor(arr:Array):uint {
+			return 0;
+		}
+}
+
+class Profeciencies {
+	public static var LIST:Array = [
+		new Profeciency("swordshield", "Sword & Shield", ManueverSheet.createOffensiveMeleeMaskFor(["bindstrike", "cut", "feintcut", "feintthrust", "blockstrike", "thrust"]), ManueverSheet.createDefensiveMeleeMaskFor(["block", "blockopenstrike", "counter", "parry"]) )
+		
+	]
+}
+
+class Weapon {
+	public var profeciency:String;
+}
+
+class CharacterSheet {
+	// attributes
+	public var strength:int;
+	public var agility:int;
+	public var toughness:int;
+	public var endurance:int;
+	public var health:int;
+	
+	public var willpower:int;
+	public var wit:int;
+	public var mentalapt:int;
+	public var social:int;
+	public var perception:int;
+	
+	// health state
+	
+	// weapon and profeciicencies
+	public var profeciencies:Object = { };  // object hash consisting of profeciencyId key and skill level value
+	public var currentWeapon:Weapon;
+	
+}
+
 class FightState {
 	public var s:int = 0;  // the current step within the exchange
 	public var e:Boolean = false;  // false for exchange 1/2, true for exchange 2/2
@@ -1052,6 +1146,7 @@ class FightState {
 	public var manuever:int = -1;  // manuever index
 	public var rounds:int = 0;
 	public var attacking:Boolean = false;  // flag to indicate is currently/was attacking or not
+	public var shortRangeAdvantage:Boolean = false;
 	
 	//arrowRight.visible = !(wallMask & 1);
 	//arrowLeft.visible = !(wallMask & 2);
@@ -1282,8 +1377,10 @@ class FightState {
 		e = false;
 		initiative = true;
 		attacking = false;
+		shortRangeAdvantage = false;
 		//manuever = -1;
 		if (disengaged) {
+			
 			numEnemies = 0;
 			flags = 0;
 			rounds = 0;
