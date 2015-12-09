@@ -1015,6 +1015,9 @@ class Enemy{
     }
 }
 
+
+// -- Start Riddle of Steel
+
 class Manuever {
 	public var id:String;
 	public var name:String;
@@ -1058,6 +1061,7 @@ class ManueverSheet {
 		public static var offensiveMelee:Array = [
 			new Manuever("bash", "Bash")
 		];
+		public static var offensiveMeleeHash:Object;
 		
 		public static var defensiveMelee:Array = [
 			new Manuever("fullevade", "Full Evasion")
@@ -1065,7 +1069,8 @@ class ManueverSheet {
 			,new Manuever("duckweave", "Duck & Weave")
 		
 		];
-		public static var offensiveMeleeHash:Object;
+		public static var defensiveMeleeHash:Object;
+		
 		
 		public static function createOffensiveMeleeMaskFor(arr:Array):uint {
 			return 0;
@@ -1076,7 +1081,7 @@ class ManueverSheet {
 		}
 }
 
-class Profeciencies {
+class ProfeciencySheet {
 	public static var LIST:Array = [
 		new Profeciency("swordshield", "Sword & Shield", ManueverSheet.createOffensiveMeleeMaskFor(["bindstrike", "cut", "feintcut", "feintthrust", "blockstrike", "thrust"]), ManueverSheet.createDefensiveMeleeMaskFor(["block", "blockopenstrike", "counter", "parry"]) )
 		
@@ -1430,6 +1435,8 @@ class FightState {
 	}
 	
 }
+
+// -- End Riddle of Steel
 
 
 //ゲームデータ用クラス
