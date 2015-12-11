@@ -112,9 +112,12 @@ package wonderfl {
 import com.bit101.components.Label;
 import com.bit101.components.PushButton;
 import com.bit101.components.RadioButton;
+import com.bit101.components.TextArea;
 import com.bit101.components.VBox;
 import flash.events.Event;
 import flash.events.MouseEvent;
+import flash.text.TextField;
+import flash.text.TextFormat;
 import flash.ui.Keyboard;
 import flash.utils.Dictionary;
 
@@ -150,6 +153,8 @@ class UITros extends Sprite {
 	public static const DELIBERATE_DEFEND_SUFFIX:String = "!";  // you  deliberate chose to roll defend. appended at the end of "def" or "Def" accordingly.
 	
 	public static const STR_DONE:String = "Okay";
+	
+	public var messageBox:TextField;
 	
 	// once exchange is resolved from Move 1/1, next exchange begins immediately.
 	
@@ -190,6 +195,8 @@ class UITros extends Sprite {
 			}
 		}
 		
+
+		
 		
 		arrowRight.visible = rightRollHolder.visible  = !(wallMask & 1);
 		arrowLeft.visible =  leftRollHolder.visible  = !(wallMask & 2);
@@ -222,7 +229,7 @@ class UITros extends Sprite {
 			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 0))  ? STR_DEFEND : STR_DEFEND_TEMP );
 			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX : ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowRight.label = manFight.flags & FightState.FLAG_INITIATIVE_EAST  ? atkStateString : defendStateString;
-			arrowRight.alpha = manFight.withinInitiativeScope(fState) ? 1 : .5;
+			arrowRight.alpha = manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 			
 		}
 		
@@ -231,7 +238,7 @@ class UITros extends Sprite {
 			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 1))  ? STR_DEFEND : STR_DEFEND_TEMP );
 			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowLeft.label = manFight.flags & FightState.FLAG_INITIATIVE_WEST  ? atkStateString : defendStateString;
-			arrowLeft.alpha = manFight.withinInitiativeScope(fState) ? 1 : .5;
+			arrowLeft.alpha =manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 		}
 		
 		
@@ -240,7 +247,7 @@ class UITros extends Sprite {
 			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 2))  ? STR_DEFEND : STR_DEFEND_TEMP );
 			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowUp.label = manFight.flags & FightState.FLAG_INITIATIVE_NORTH   ? atkStateString : defendStateString;
-			arrowUp.alpha = manFight.withinInitiativeScope(fState) ? 1 : .5;
+			arrowUp.alpha =manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 		}
 		
 		if (manFight.flags & FightState.FLAG_ENEMY_SOUTH) {
@@ -248,7 +255,7 @@ class UITros extends Sprite {
 			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY,3))  ? STR_DEFEND : STR_DEFEND_TEMP );
 			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowDown.label = manFight.flags & FightState.FLAG_INITIATIVE_SOUTH   ? atkStateString : defendStateString;
-			arrowDown.alpha = manFight.withinInitiativeScope(fState) ? 1 : .5;
+			arrowDown.alpha = manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 		}
 		
 		if (gotEnemy) {  // TODO: proper context-facing info of enemy fight info instead...later on...
@@ -258,10 +265,10 @@ class UITros extends Sprite {
 		if (manFight.s == 2) {
 			btnWait.label = STR_DONE;
 			var engagedMultiple:Boolean = manFight.numEnemies > 1;
-			arrowRight.visible = rightRollHolder.visible =   (engagedMultiple &&  (manFight.flags & 1) != 0);  // arrowRight.alpha != 1 ? false :
-			arrowLeft.visible = leftRollHolder.visible =    (engagedMultiple &&  (manFight.flags & 2) !=0);  // arrowLeft.alpha != 1 ? false :
-			arrowUp.visible =  upRollHolder.visible =  (engagedMultiple &&  (manFight.flags & 4)!=0);  //arrowUp.alpha != 1 ? false : 
-			arrowDown.visible =  downRollHolder.visible  =  (engagedMultiple &&  (manFight.flags & 8) != 0);  //arrowDown.alpha != 1 ?  false : 
+			arrowRight.visible = rightRollHolder.visible =  arrowRight.alpha == 0 ? false : (engagedMultiple &&  (manFight.flags & 1) != 0);  // 
+			arrowLeft.visible = leftRollHolder.visible =  arrowLeft.alpha == 0 ? false :  (engagedMultiple &&  (manFight.flags & 2) !=0);  // 
+			arrowUp.visible =  upRollHolder.visible = arrowUp.alpha == 0 ? false :   (engagedMultiple &&  (manFight.flags & 4)!=0);  //
+			arrowDown.visible =  downRollHolder.visible  =  arrowDown.alpha == 0 ?  false :  (engagedMultiple &&  (manFight.flags & 8) != 0);  //
 			arrowRight.label = STR_TARG;
 			arrowLeft.label = STR_TARG;
 			arrowUp.label = STR_TARG;
@@ -286,6 +293,44 @@ class UITros extends Sprite {
 		}
 		
 		updateRolls(dungeon, manFight);
+		
+		//showDebugFights(dungeon, manFight);
+		
+	}
+	
+	private function showDebugFights(dungeon:Dungeon, manFight:FightState):void {
+		var fState:FightState;
+		
+		if (manFight.flags & FightState.FLAG_ENEMY_EAST) {
+			
+				fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 0);
+				arrowRight.label = "e" + (fState.e ? 2 : 1) + "s" + fState.s;
+	
+			
+		}
+		
+		if (manFight.flags & FightState.FLAG_ENEMY_WEST) {
+		
+			fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 1);
+			arrowLeft.label= "e" + (fState.e ? 2 : 1) + "s" + fState.s;
+			
+		}
+		
+		
+		if (manFight.flags & FightState.FLAG_ENEMY_NORTH) {
+			
+			fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 2);
+			arrowUp.label= "e" + (fState.e ? 2 : 1) + "s" + fState.s;
+		
+		
+		}
+		
+		if (manFight.flags & FightState.FLAG_ENEMY_SOUTH) {
+	
+			fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 3);
+			arrowDown.label = "e" + (fState.e ? 2 : 1) + "s" + fState.s;
+
+		}
 		
 	}
 	
@@ -429,10 +474,33 @@ class UITros extends Sprite {
 	//	radioAttack.enabled = false;
 		radioDefend = new RadioButton(infoPanel, 0, 0, "Roll Defense", false, onRadioClick);
 	
+		messageBox = new TextField();
+		messageBox.multiline = true;
+		messageBox.wordWrap = true;
+		messageBox.width = stage.stageWidth * .65;
+		messageBox.height = 166;
+		messageBox.x = 5;
+		messageBox.y = stage.stageHeight - 166 - 5;
+		messageBox.textColor = 0xFFFFFF;
+		//messageBox.blendMode = "invert";
+		addChild(messageBox);
+
+		//	messageBox.setTextFormat( messageBox.defaultTextFormat = new TextFormat("PF Ronda") );
+			//messageBox.embedFonts = true;
+		
+	
+		
 		
 		
 		removeEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
-		
+		TRACE = addMessageLine;
+	}
+	
+	public static var TRACE:Function;
+	
+	public function addMessageLine(text:String):void {
+		messageBox.appendText(text + "\n");
+		messageBox.scrollV = 99999999;
 	}
 	
 	private function onRadioClick(e:Event):void 
@@ -1049,9 +1117,10 @@ class Man{
 	    else {
 			man.bumping = true;
 		}
+		var eFight:FightState = man.bumping ?  man.dungeon.getComponent(man.mapX + arr[0], man.mapY + arr[1], "fight") : null;
 		
-		
-		if (fight && !fight.canMove() ) {
+		// if fighting and cannot move, or bumping into a guy that is fighting and cannot move
+		if ( ( fight && fight.s==1) || (eFight && eFight.s==1) ) {
 		//	man.moveArray = [0, 0];
 			if (man.bumping) {  // potentiality to wish to attack, 
 				fight.bumping = true;
@@ -1126,7 +1195,9 @@ class Enemy{
        if ( !enm.dungeon.checkBumpable(enm.mapX + arr[0], enm.mapY + arr[1]) ) enm.moving = true;
 	   else enm.bumping = true;
 	   
-	   if (fight && !fight.canMove() ) {
+	   var eFight:FightState = enm.bumping ?  enm.dungeon.getComponent(enm.mapX + arr[0], enm.mapY + arr[1], "fight") : null;
+	   
+	  if ( ( fight && fight.s==1) || (eFight && eFight.s==1) ) {
 		//	man.moveArray = [0, 0];
 			
 			if (enm.bumping) {  // potentiality to wish to attack 
@@ -1481,6 +1552,11 @@ class FightState {
 								
 							}
 						}
+						else if ( (fState.flags & FLAG_INITIATIVE_SYNCED) ) {
+							myStack.push(fState);
+							//throw new Error("TO STEP FORWARD SYNCED");
+							
+						}
 						
 							
 						
@@ -1526,11 +1602,22 @@ class FightState {
 					if (manFight.hostileTowards( enemyFight ) ) {
 					// whoever i bumped-rolled against 
 				
-					//
-						if ( manFight.firstExchangeWindow() && enemyFight.firstExchangeWindow() &&  enemyFight.s != manFight.s && manFight.bumping  && dungeon.containsObjAt( man.mapX + man.moveArray[0], man.mapY + man.moveArray[1], fights[0])  ) {
+					// apparently the below condition is causing problems... dunno why
+					// enemyFight.s != manFight.s &&  /
+						if ( manFight.withinExchangeWindow() && enemyFight.withinExchangeWindow() &&  (manFight.bumping||enemyFight.bumping)  && dungeon.containsObjAt( man.mapX + man.moveArray[0], man.mapY + man.moveArray[1], fights[0])  ) {
 							//
 							
 							manFight.syncStepWith(enemyFight);
+							manFight.flags |= FLAG_INITIATIVE_SYNCED;
+							enemyFight.flags |= FLAG_INITIATIVE_SYNCED;
+							//UITros.TRACE("Syncing step..");
+							
+							/*  // this doesn't occur
+							if ( !(getNeighbour(dungeon, manFight.x, manFight.y, getDirectionIndex(man.moveArray[0], man.moveArray[1]) ).flags & FLAG_INITIATIVE_SYNCED) ) {
+								UITros.TRACE("Exception2222..no sync match against target");
+							}
+							*/
+							//if (man === man.dungeon.man) throw new Error("A");
 							//throw new Error("A:"+manFight.firstExchangeWindow() + ", "+enemyFight.firstExchangeWindow() );
 						}
 						manFight.numEnemies++;
@@ -1541,12 +1628,27 @@ class FightState {
 			}
 			
 		}
+		
+		//if (manFight.flags & FLAG_INITIATIVE_SYNCED) {
+			
+		//}
 	}
 	
 	public static function updateNeighborInitiative(manFight:FightState, dungeon:Dungeon):void { 
 		var directions:Array = DIRECTIONS;  
 		var len:int = directions.length;
 		//var man:GameObject =  dungeon.checkComponent(manFight.x, manFight.y, "fight")[0];
+		
+		if ((manFight.flags & FLAG_INITIATIVE_SYNCED) != 0) {
+		//	UITros.TRACE("Already synced beforehand:" + (dungeon.man.components.fight === manFight));
+			if ((dungeon.man.components.fight === manFight)) {
+				var nFight:FightState = getNeighbour(dungeon, manFight.x, manFight.y, getDirectionIndex(dungeon.man.moveArray[0], dungeon.man.moveArray[1]) );
+				if ( nFight &&  !(nFight.flags & FLAG_INITIATIVE_SYNCED) ) {
+					UITros.TRACE("Exception..no sync match against target");
+				}
+			}
+		}
+		
 		for (var i:int = 0; i < len; i++) {
 		
 			
@@ -1583,9 +1685,10 @@ class FightState {
 		
 		 // cancel step() action done earlier if required, becos when not synced with anyone, will always wait at schedule zero as if unengaged.
 		 // so that can rejoin the fight sync at exchange 1, step 0 always..
-		if ( !(manFight.flags & FLAG_INITIATIVE_SYNCED) ) { 
+		if ( !( (manFight.flags & FLAG_INITIATIVE_SYNCED) !=0) ) { 
 			manFight.s = 0;
 			manFight.e = false;
+			if ( (manFight.flags & (1|2|4|8) )) UITros.TRACE("REsetting manFight scehdule:"+(dungeon.man.components.fight === manFight) );
 		//	throw new Error("INvaliditing");
 		}
 	
@@ -1642,6 +1745,10 @@ class FightState {
 		return s == 0;
 	}
 	
+	public function aboutToRoll():Boolean {
+		return s == 1;
+	}
+	
 	public function mustRollNow(fight:FightState = null):Boolean {
 		//fight = null
 		return fight!= null? getSyncStep(fight) == 1 : s==1;
@@ -1659,12 +1766,19 @@ class FightState {
 		return  !e  && s < 2;
 	}
 	
+	public function withinExchangeWindow():Boolean {
+		return s < 2;
+	}
+	
 	public function canRollDefAgainst(fight:FightState):Boolean {
 		return s < 2 && fight.s < 2;
 	}
 	
-	public function withinInitiativeScope(fight:FightState):Boolean {
+	public function withinInitiativeScope(fight:FightState):Boolean {  // within initiative scope to roll attack if possible
 		return ( isSyncedWith(fight) || (fight.firstExchangeWindow() && firstExchangeWindow()) );
+	}
+	public function withinRollableScope(fight:FightState):Boolean {  // whether within a rollable scope of either active defense or attack
+		return ( fight.s==s || (fight.s < 2 && s < 2  ) );
 	}
 	
 	public function canRollAtkAgainst(fight:FightState):Boolean {
