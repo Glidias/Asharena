@@ -482,6 +482,7 @@ class UITros extends Sprite {
 		messageBox.x = 5;
 		messageBox.y = stage.stageHeight - 166 - 5;
 		messageBox.textColor = 0xFFFFFF;
+		
 		//messageBox.blendMode = "invert";
 		addChild(messageBox);
 
@@ -1688,7 +1689,7 @@ class FightState {
 		if ( !( (manFight.flags & FLAG_INITIATIVE_SYNCED) !=0) ) { 
 			manFight.s = 0;
 			manFight.e = false;
-			if ( (manFight.flags & (1|2|4|8) )) UITros.TRACE("REsetting manFight scehdule:"+(dungeon.man.components.fight === manFight) );
+		//	if ( (manFight.flags & (1|2|4|8) )) UITros.TRACE("REsetting manFight scehdule:"+(dungeon.man.components.fight === manFight) );
 		//	throw new Error("INvaliditing");
 		}
 	
