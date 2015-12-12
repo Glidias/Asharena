@@ -294,7 +294,7 @@ class UITros extends Sprite {
 		
 		updateRolls(dungeon, manFight);
 		
-		//showDebugFights(dungeon, manFight);
+	//	showDebugFights(dungeon, manFight);
 		
 	}
 	
@@ -793,7 +793,7 @@ class Dungeon extends Sprite{
      //   handleArrowUp(targ);
 		stage.removeEventListener(MouseEvent.MOUSE_UP, onArrowUp);
 		stage.removeEventListener(Event.MOUSE_LEAVE, onArrowUp);
-		 onKeyUp(null  );
+		 onKeyUp(null);
     }
 	
 	private function handleArrowDown(targ:Object):void 
@@ -922,7 +922,15 @@ class Dungeon extends Sprite{
 				 for(i = startX; i<=endX; i++ ){for(j = startY; j<=endY; j++ ){
                         for each( o in map[i][j] ) { if (o.bumping) {
 							// note: more advanced ai should consider pre-bump-sliding decisions, if bumped-into square is vacated
-							o.slide();
+							
+							//o.slide();
+							///*
+							if (!o.slide()) {
+								if (o.components.fight != null) {
+									o.components.fight.bumping = true;
+								}
+							}
+							//*/
 						}
 					}
                 } }
@@ -1042,17 +1050,20 @@ class GameObject extends Object {
         tweenFrame[0]--;
         if( tweenFrame[0] == 0){ tween.shift(); tweenFrame.shift(); }
     }
-    public function slide():void{
+    public function slide():Boolean{
        // if( moving ){
-            if( dungeon.check( mapX+moveArray[0], mapY+moveArray[1], "block" ).length == 0 ){
+	   var res:Boolean;
+            if ( dungeon.check( mapX + moveArray[0], mapY + moveArray[1], "block" ).length == 0 ) {
+				res = true;
                 dungeon.map[mapX][mapY].splice( dungeon.map[mapX][mapY].indexOf(this), 1 );
                 mapX += moveArray[0]; mapY += moveArray[1]; 
                 addTween( { x:x+Data.cellSize*moveArray[0], y:y+Data.cellSize*moveArray[1] }, moveArray[2]);
                 dungeon.map[mapX][mapY].push(this)
-            }else{ addTween( {}, moveArray[2]); }
+            }else { addTween( { }, moveArray[2]); res = false; }
             moving = false
 			bumping = false;
        // }
+	   return res;
     }
 }
 
@@ -1121,7 +1132,7 @@ class Man{
 		var eFight:FightState = man.bumping ?  man.dungeon.getComponent(man.mapX + arr[0], man.mapY + arr[1], "fight") : null;
 		
 		// if fighting and cannot move, or bumping into a guy that is fighting and cannot move
-		if ( ( fight && fight.s==1) || (eFight && eFight.s==1) ) {
+		if ( ( fight && !fight.canMove()) || (eFight &&  !eFight.canMove()) ) {
 		//	man.moveArray = [0, 0];
 			if (man.bumping) {  // potentiality to wish to attack, 
 				fight.bumping = true;
@@ -1198,7 +1209,7 @@ class Enemy{
 	   
 	   var eFight:FightState = enm.bumping ?  enm.dungeon.getComponent(enm.mapX + arr[0], enm.mapY + arr[1], "fight") : null;
 	   
-	  if ( ( fight && fight.s==1) || (eFight && eFight.s==1) ) {
+	  if ( ( fight && !fight.canMove() ) || (eFight && !eFight.canMove() ) ) {
 		//	man.moveArray = [0, 0];
 			
 			if (enm.bumping) {  // potentiality to wish to attack 
