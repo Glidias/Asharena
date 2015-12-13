@@ -1358,7 +1358,7 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 	
 	// when defending, determining if defensive is exclusively offhanded
 	public function isDefensiveOffHanded():Boolean {
-		return (offHanded || attackTypes == DEFEND_TYPE_OFFHAND); 
+		return (attackTypes == DEFEND_TYPE_OFFHAND || offHanded); 
 	}
 	
 	public function _dmgType(val:int):Manuever {
