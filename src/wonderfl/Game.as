@@ -148,7 +148,7 @@ class UITros extends Sprite {
 	public static const STR_PARTIAL_EVADE:String = "DefF";  // want to retreat, but can't yet, due to attacking in last exchange
 	public static const STR_AIM:String = "atk";   // you are currently aiming at the enemy prior to resolving the attack manuever
 	public static const STR_TURN:String = "turn";  // turn to face given direction
-	public static const STR_TARG:String = "targ";  // turn to consider target
+	public static const STR_TARG:String = "sel";  // turn to consider target
 	public static const STR_DEFEND:String = "Def";  // this will resolve the defense manuever
 	public static const DELIBERATE_DEFEND_SUFFIX:String = "!";  // you  deliberate chose to roll defend. appended at the end of "def" or "Def" accordingly.
 	
@@ -263,16 +263,28 @@ class UITros extends Sprite {
 		}
 		
 		if (manFight.s == 2) {
-			btnWait.label = STR_DONE;
+			btnWait.label = (manFight.attacking ? "ATK" : manFight.manuever == 0 ? "FLEE" :  "DEF");
 			var engagedMultiple:Boolean = manFight.numEnemies > 1;
-			arrowRight.visible = rightRollHolder.visible =  arrowRight.alpha == 0 ? false : (engagedMultiple &&  (manFight.flags & 1) != 0);  // 
-			arrowLeft.visible = leftRollHolder.visible =  arrowLeft.alpha == 0 ? false :  (engagedMultiple &&  (manFight.flags & 2) !=0);  // 
-			arrowUp.visible =  upRollHolder.visible = arrowUp.alpha == 0 ? false :   (engagedMultiple &&  (manFight.flags & 4)!=0);  //
-			arrowDown.visible =  downRollHolder.visible  =  arrowDown.alpha == 0 ?  false :  (engagedMultiple &&  (manFight.flags & 8) != 0);  //
+			arrowRight.visible =   arrowRight.alpha == 0 ? (rightRollHolder.visible=false) : (engagedMultiple &&  (manFight.flags & 1) != 0);  // 
+			arrowLeft.visible =   arrowLeft.alpha == 0 ? ( leftRollHolder.visible=false) :  (engagedMultiple &&  (manFight.flags & 2) !=0);  // 
+			arrowUp.visible =    arrowUp.alpha == 0 ? (upRollHolder.visible=false) :   (engagedMultiple &&  (manFight.flags & 4)!=0);  //
+			arrowDown.visible =    arrowDown.alpha == 0 ?  ( downRollHolder.visible=false) :  (engagedMultiple &&  (manFight.flags & 8) != 0);  //
 			arrowRight.label = STR_TARG;
 			arrowLeft.label = STR_TARG;
 			arrowUp.label = STR_TARG;
 			arrowDown.label = STR_TARG;
+			
+			var count:int = 0;
+			count += arrowRight.visible ? 1 : 0;
+			count += arrowLeft.visible ? 1 : 0;
+			count += arrowUp.visible ? 1 : 0;
+			count += arrowDown.visible ? 1 : 0;
+			if (count == 1 ) {  // only 1 selectable target, so hide all arrows..
+				arrowRight.visible = false;
+				arrowLeft.visible = false;
+				arrowUp.visible = false;
+				arrowDown.visible = false;
+			}
 			
 		}
 		else if (manFight.s == 1) {
@@ -1275,18 +1287,175 @@ class Manuever {
 	public var id:String;
 	public var name:String;
 	public var cost:int;
-	public var requirements:uint;
 	
-	public static const REQUIRE_SHIELD:uint = 1;
+	
+	public var attackTypes:uint;
+	public var damageType:int;
+	public var defaultTN:int;
+	public var customRange:int;
+	public var customMinRange:int;
+	public var requiredLevel:int;
+	public var spamPenalty:int;
+	public var spamIndividualOnly:Boolean;
+	public var regionMask:uint;
+	public var offHanded:Boolean;
+	
+	public var manueverType:int;
+	public static const MANUEVER_TYPE_MELEE:int = 0;
+	public static const MANUEVER_TYPE_RANGED:int = 1;
+	
+	/*
+	 * damageType-zero implications: (dpeending on equiped weapon, it can affect the avaiable regions for attack, but definitely the damage type)
+	 *
+	 * Non-puncturing attack type:  (strike|thrust) + damageType:0
+Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt weapon...damageType:Bludgeoning,region:Thrust)  - Can aim all regions 
+  or Cut(for blades...damageType:Cutting,region:Strike only)
+  
+  (strike) + damageType:0
+  Strike region only for all weapon types. Damage resolved either as blunt bludgeoning or as bladed cutting.
+  
+  Thrusting attack type (thrust) + damageType:0
+  Thrusting region only for all weapon types.  Damage reolved either as blunt bludgeoning  OR as bladed puncturing. 
+*/
+
+	public static const DAMAGE_TYPE_CUTTING:int =1;
+	public static const DAMAGE_TYPE_PUNCTURING:int = 2;  // used to denote "true" thrusting weapons
+	public static const DAMAGE_TYPE_BLUDGEONING:int = 3;
+	
+	public static const ATTACK_TYPE_STRIKE:uint = 1;
+	public static const ATTACK_TYPE_THRUST:uint = 2;
+	
+	public static const DEFEND_TYPE_OFFHAND:uint = 1;
+	public static const DEFEND_TYPE_MASTERHAND:uint = 2;
+	
+	//public var requirements:uint;
+	//public static const REQUIRE_SHIELD:uint = (0 << 1);
+	//public static const REQUIRE_FRESH_ROUND:uint = (1 << 1);
+	
+	
 	
 	public var index:int;  // for internal use
 	
-	public function Manuever(id:String, name:String, requirements:uint=0, cost:int = 0) {
+	public function Manuever(id:String, name:String,  cost:int = 0) {
 		this.id = id;
 		this.name = name;
 		this.cost = cost;
-		this.requirements = requirements;
+		
+		//requirements = 0;
+		defaultTN = 0;
+		customRange = 0;
+		customMinRange = 0;
+		attackTypes = ATTACK_TYPE_STRIKE | ATTACK_TYPE_THRUST;
+		damageType = 0;
+		requiredLevel = 0;
+		spamPenalty = 0;
+		spamIndividualOnly = false;
+		regionMask = 0;
+		offHanded = false;
+		
+		manueverType = MANUEVER_TYPE_MELEE;
 	}
+	
+	// when defending, determining if defensive is exclusively offhanded
+	public function isDefensiveOffHanded():Boolean {
+		return (offHanded || attackTypes == DEFEND_TYPE_OFFHAND); 
+	}
+	
+	public function _dmgType(val:int):Manuever {
+		damageType = val
+		return this;
+	}
+	
+	/*
+	public function _req(val:int):Manuever {
+		requirements = val;
+		return this;
+	}
+	*/
+	
+	public function _offHanded(val:Boolean):Manuever {
+		offHanded = val;
+		return this;
+	}
+	
+	public function _tn(val:int):Manuever {
+		defaultTN = val;
+		return this;
+	}
+	public function _atkTypes(val:uint):Manuever {
+		attackTypes = val;
+		return this;
+	}
+	public function _range(val:int):Manuever {
+		customRange = val;
+		return this;
+	}
+	public function _rangeMin(val:int):Manuever {
+		customMinRange = val;
+		return this;
+	}
+	
+	public function _lev(val:int):Manuever {
+		requiredLevel = val;
+		return this;
+	}
+	public function _spamPenalize(val:int, spamIndividualOnly:Boolean=false):Manuever {
+		spamPenalty = val;
+		this.spamIndividualOnly = spamIndividualOnly;
+		return this;
+		
+	}
+	
+	public function _regions(val:uint):Manuever {
+		regionMask  = val;
+		return this;
+	}
+	
+	// custom method(s) to filter the manuever
+	public function _customRequire():Manuever {
+		
+		return this;
+	}
+	
+	// custom method(s) for pre-resolving a given roll...
+	public function _customPreResolve():Manuever {  
+		
+		return this;
+	}
+	
+	// custom method(s) for resolving a given roll...to determine whether a hit occurs or not, the results of cp, and the intiaitive gain/lost as a result
+	public function _customResolve():Manuever {  
+		
+		return this;
+	}
+	
+	// custom modifer method to determine amount of raw damage level dealt
+	public function _customDamage():Manuever {
+		
+		return this;
+	}
+	
+	// custom modifer method to determine reflex amount
+	public function _customReflex():Manuever {
+		
+		return this;
+	}
+	
+	// custom modifer method to determine range amount of weapon
+	public function _customRange():Manuever {
+		
+		return this;
+	}
+	
+	
+	// custom method to control splitting of maneuvers (for composite manuevers)
+	public function _customSplit():Manuever {
+		
+		return this;
+	}
+	
+	
+	
 }
 
 class Profeciency {
@@ -1294,16 +1463,20 @@ class Profeciency {
 	public var name:String;
 	public var offensiveManuevers:uint;
 	public var defensiveManuevers:uint;
-	
-	
+	public var atkCosts:Object;
+	public var defCosts:Object;
+	public var defaults:Object;
 	
 	public var index:int;  // for internal use
 
-	public function Profeciency(id:String, name:String, offensiveManuevers:uint, defensiveManuevers:uint) {
+	public function Profeciency(id:String, name:String, offensiveManuevers:uint, defensiveManuevers:uint, atkCosts:Object=null, defCosts:Object=null, defaults:Object=null) {
 		this.id = id;
 		this.name = name;
 		this.offensiveManuevers = offensiveManuevers;
 		this.defensiveManuevers = defensiveManuevers;
+		this.atkCosts = atkCosts ? atkCosts : { };
+		this.defCosts = defCosts ? defCosts : { };
+		this.defaults = defaults ? defaults : { };
 	}
 }
 
@@ -1312,39 +1485,206 @@ class Profeciency {
 class ManueverSheet {
 		
 		public static var offensiveMelee:Array = [
-			new Manuever("bash", "Bash")
+		new Manuever("bash", "Bash")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
+			,new Manuever("bash2", "Greater Bash", 1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customDamage()
+			,new Manuever("beat", "Beat")._lev(4)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customRequire()._customResolve()
+			,new Manuever("bindstrike", "Bind and Strike")._customRequire()._customResolve()
+			,new Manuever("cut", "Cut")._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
+			,new Manuever("cut2", "Greater Cut", 1)._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customDamage()
+		,new Manuever("disarm", "Disarm", 1)._lev(4)._customRequire()._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customResolve()
+			,new Manuever("doubleattack", "Double Attack")._customRequire()._customSplit()
+			,new Manuever("drawcut", "Draw Cut")._lev(2)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._customDamage()._customRange()._customRequire()
+			,new Manuever("evasiveattack", "Evasive Attack")._lev(6)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customRequire()._customPreResolve()
+		,new Manuever("feintandthrust", "Feint and Thrust")._lev(3)._atkTypes(Manuever.ATTACK_TYPE_THRUST)._customPreResolve()._spamPenalize(1, true)  //_dmgType(Manuever.DAMAGE_TYPE_PUNCTURING).
+		,new Manuever("feintandcut", "Feint and Cut")._lev(5)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customPreResolve()._spamPenalize(1, true)  //_dmgType(Manuever.DAMAGE_TYPE_CUTTING)
+		,new Manuever("grapple", "Grapple")._tn(5)._customResolve()
+		//,new Manuever("halfsword", "Half Sword")._customResolve()
+		,new Manuever("headbutt", "Head Butt")._tn(6)._range(1)._regions(0)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._customDamage()  // todo regions
+		,new Manuever("hook", "Hook")._customResolve()._regions(0)
+		,new Manuever("kick", "Kick")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._tn(7)._customDamage()._range(2)._regions(0)._rangeMin(1)
+		,new Manuever("masterstrike", "Master Strike")._lev(15)._customRequire()._customSplit()
+		,new Manuever("murderstroke", "Murder Stroke")._lev(5)._tn(6)._range(1)._customRequire()._regions(0)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customPreResolve()._customDamage()
+		,new Manuever("pommelbash", "Pommel Bash")._lev(5)._tn(7)._range(1)._customRequire()._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._customDamage()
+		,new Manuever("punch", "Punch")._tn(5)._range(1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._customDamage()
+		,new Manuever("quickdraw", "Quick Draw")._lev(6)._customResolve()
+		,new Manuever("blockstrike", "Simultaenous Block and Strike")._customRequire()._customSplit()
+		,new Manuever("spike", "Spike")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)
+		,new Manuever("spike2", "Greater Spike", 1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)._customDamage()
+		,new Manuever("stopshort", "Stop Short")._lev(3)._customResolve()._spamPenalize(1)	
+		,new Manuever("thrust", "Thrust")._customReflex()._dmgType(Manuever.DAMAGE_TYPE_PUNCTURING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)
+		,new Manuever("toss", "Toss")._customRequire()._tn(7)._customResolve()
+		,new Manuever("twitching", "Twitching")._lev(8)._customSplit()._customResolve()
 		];
 		
-		public static var defensiveMelee:Array = [
-			new Manuever("fullevade", "Full Evasion")
-			,new Manuever("partialevade", "Partial Evasion")
-			,new Manuever("duckweave", "Duck & Weave")
-		
+		public static var defensiveMelee:Array = [ // NOTE: full evade must always be the first. In fact, first 3 should be evasive manuevers by convention
+			new Manuever("fullevade", "Full Evasion")._tn(4)  // staionery full evade is possible (ie. didn't displace)...but need terrain roll TN7 saving throw
+			,new Manuever("partialevade", "Partial Evasion")._tn(7)._customResolve()  // partial buying initiative will cost 2cp only, non-standard
+			,new Manuever("duckweave", "Duck and Weave")._tn(9)._customResolve()
+			,new Manuever("block", "Block")._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customRequire()
+			,new Manuever("blockopenstrike", "Block Open and Strike")._lev(6)._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customResolve()
+			,new Manuever("counter", "Counter")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
+			,new Manuever("disarm", "Disarm", 1)._lev(4)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
+			,new Manuever("expulsion", "Expulsion")._lev(5)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)
+			,new Manuever("grapple",  "Grapple")._tn(5)._customResolve()
+		//	,new Manuever("halfsword", "Half Sword").
+			,new Manuever("masterstrike", "Master Strike")._lev(15)._customRequire()._customSplit()
+			,new Manuever("overrun", "Overrun")._lev(12)._tn(7)._customSplit()
+			,new Manuever("parry", "Parry")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)
+			,new Manuever("quickdraw", "Quick Draw")._lev(6)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
+			,new Manuever("rota", "Rota")._customRequire()._lev(3)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
 		];
-		public static var offensiveMeleeHash:Object;
+		public static var offensiveMeleeHash:Object = createHashIndex(offensiveMelee);
+		public static var defensiveMeleeHash:Object = createHashIndex(defensiveMelee);
+		
+		public static function createHashIndex(arr:Array):Object {
+			var obj:Object = { };
+			var len:int = arr.length;
+			for (var i:int = 0; i < len; i++) {
+				obj[arr[i].id] = i;
+			}
+			return obj;
+		}
+		
+		
+		
+		//public static function createOffensive
+		
+		public static function getMaskWithHashIndexer(arrOfIds:Array, hash:Object):uint {
+			var val:uint = 0;
+			var i:int = arrOfIds.length;
+			while (--i > -1) {
+				var prop:String =  arrOfIds[i];
+				if (hash[prop] != null) val |= (hash [prop ] << 1);
+			}
+			return val;
+		}
 		
 		public static function createOffensiveMeleeMaskFor(arr:Array):uint {
-			return 0;
+			return getMaskWithHashIndexer(arr, offensiveMeleeHash);
 		}
 		
 		public static function createDefensiveMeleeMaskFor(arr:Array):uint {
-			return 0;
+			return getMaskWithHashIndexer(arr, defensiveMeleeHash);
 		}
 }
 
 class ProfeciencySheet {
 	public static var LIST:Array = [
-		new Profeciency("swordshield", "Sword & Shield", ManueverSheet.createOffensiveMeleeMaskFor(["bindstrike", "cut", "feintcut", "feintthrust", "blockstrike", "thrust"]), ManueverSheet.createDefensiveMeleeMaskFor(["block", "blockopenstrike", "counter", "parry"]) )
-		
+		new Profeciency("swordshield", "Sword and Shield", ManueverSheet.createOffensiveMeleeMaskFor(["bindstrike", "cut", "cut2", "feintcut", "feintthrust", "blockstrike", "thrust", "thrust2", "twitching", "masterstrike", "disarm"]), ManueverSheet.createDefensiveMeleeMaskFor(["block", "blockopenstrike", "counter", "parry", "disarm", "masterstrike", "overrun", "parry", "rota"]), { "blockopenstrike":2, "masterstrike":6 }, { "blockopenstrike":2, "counter":[3, 2], "disarm":3, "masterstrike":6, "overrun":4, "parry":[1, 0], "rota":2 }, { "caserapiers":4, "cutthrust":2, "dagger":2, "doppelhander":4, "greatlongsword":2, "massweaponshield":1, "polearms":4, "poleaxe":4, "pugilism":4, "rapier":4, "wrestling":4 } ),
+		new Profeciency("cutthrust", "Cut and Thrust", ManueverSheet.createOffensiveMeleeMaskFor(["beat", "bindstrike", "cut", "disarm", "doubleattack", "drawcut", "feint", "masterstrike", "quickdraw", "blockstrike", "stopshort", "thrust", "toss", "twitch"]), ManueverSheet.createDefensiveMeleeMaskFor(["block", "counter", "disarm", "expulsion", "grapple", "masterstrike", "overrun", "parry", "rota"]), { "disarm":1, "masterstrike":6, "quickdraw":2, "twitch":2 }, { "counter":2, "disarm":3, "expulsion":2, "grapple":2, "masterstrike":6, "overrun":3 }, { "caserapiers":3, "dagger":2, "doppelhander":4, "greatlongsword":3, "massweaponshield":2, "polearms":3, "poleaxe":4, "pugilism":2, "rapier":2, "swordshield":2, "wrestling":3 } ),
+		new Profeciency("rapier", "Rapier", ManueverSheet.createOffensiveMeleeMaskFor(["beat", "bindstrike", "disarm", "doubleattack", "feintthrust", "masterstrike", "blockstrike", "stopshort", "thrust", "toss"]), ManueverSheet.createDefensiveMeleeMaskFor(["block", "counter", "disarm", "expulsion", "grapple", "masterstrike", "overrun", "parry"]), {"disarm":1, "feintthrust":1, "masterstrike":6 }, { "counter":3, "disarm":3, "expulsion":2, "grapple":2, "masterstrike":6, "overrun":3, "parry":0 }, {  "caserapiers":1, "cutthrust":2, "dagger":2, "doppelhander":4, "greatlongsword":4, "massweaponshield":4, "polearms":3, "poleaxe":4, "pugilism":2, "swordshield":3, "wrestling":3 }  )
 	]
+	
+	public static var listHashIndexer:Object = ManueverSheet.createHashIndex(LIST);
+	
 }
 
 class Weapon {
-	public var profeciency:String;
+
+	public var profeciencies:Array;
+	
+	// ATN/Damage :  1 is for striking/swinging  or cutting(if damage3 is not undefined...used for bludgeoning) attacks,  2 is for spiking/thrusting attacks
+	public var ATN:int;
+	public var ATN2:int;
+	public var damage:int;
+	public var damage2:int;
+	public var damage3:int;
+	public var DTN:int;	// melee DTN
+	public var DTN2:int; // ranged DTN
+	public var name:String;
+	public var drawCutModifier:int;
+	public var attrBaseIndex:int;
+	public var dualHanded:Boolean;
+	public var rangedWeapon:Boolean;
+	public var cpPenalty:Number;
+	public var movePenalty:Number;
+	public var shield:Boolean;  // does this function as a shield for Block manuever?
+	public var shieldLimit:int;  // when up against a certain amount of CPs, then it can function as a Blockgin shield, otherwise, no Block manuever is available.
+	public var blunt:Boolean;  // flag to treat always as bludgeoning damage regardless, even for spiking/thrusting maoves
+	
+	public var range:int;
+	
+	public static const ATTR_BASE_STRENGTH:int = 0;
+
+	public function Weapon(name:String, profGroups:Array) {
+		this.name = name;
+		this.profeciencies = profGroups;
+		// ManueverSheet.getMaskWithHashIndexer(profGroups, ProfeciencySheet.listHashIndexer);
+		attrBaseIndex = ATTR_BASE_STRENGTH;
+		drawCutModifier = 0;
+		damage = 0;
+		damage2 = 0;
+		damage3 = 0;
+		ATN = 0;
+		ATN2 = 0;
+		DTN = 0;
+		DTN2 = 0;
+		dualHanded = false;
+		rangedWeapon = false;
+		shield = false;
+		shieldLimit = 0;
+		cpPenalty = 0;
+		movePenalty = 0;
+		blunt = false;
+		
+		
+	}
+	
+	public static function createDyn(name:String, profGroups:Array, properties:Object):Weapon {
+		var weap:Weapon = new Weapon(name, profGroups);
+		for (var p:String in properties) {
+			weap[p] = properties[p];
+		}
+		return weap;
+	}
+	
+	
+
+}
+
+class WeaponSheet {
+	
+	public static function createHashLookupViaName(arr:Array):Object {
+		var obj:Object = { };
+		var len:int = arr.length;
+		for (var i:int = 0; i < len; i++) {
+			var lookinFor:Object = arr[i];
+			obj[lookinFor.name] = lookinFor;
+		}
+		return obj;
+	}
+		
+		
+	public static var LIST:Array = [
+		//Weapon.createDyn("Akinakes", "
+		Weapon.createDyn("Kick", ["pugilism"], { "range":0, "ATN":7, "DTN":8,   "damage":-1, "blunt":true  } )
+		,Weapon.createDyn("Punch", ["pugilism"], { "range":0, "ATN":5, "DTN":6,   "damage":-2, "blunt":true  } )
+		
+		,Weapon.createDyn("Short Sword", ["cutthrust", "swordshield"], { "range":1, "ATN":7, "ATN2":5, "DTN":7,   "damage": -1, "damage2":1  } )
+		,Weapon.createDyn("Gladius", ["swordshield"], { "range":1, "ATN":6, "ATN2":6, "DTN":7,   "damage":0, "damage2":1, "drawCutModifier":0  } )
+		,Weapon.createDyn("Arming Sword", ["swordshield", "cutthrust"], { "range":2, "ATN":6, "ATN2":7, "DTN":6,   "damage":1, "damage2":0, "drawCutModifier":0  } )
+		,Weapon.createDyn("Rapier", ["rapier", "caserapiers"], { "range":3, "ATN":7, "ATN2":5, "DTN":8,   "damage": -3, "damage2":2, "drawCutModifier":1  } )
+		
+		,Weapon.createDyn("Arming Glove", ["swordshield", "massweaponshield"], { "range":0, "shield":true, "shieldLimit":4, "ATN":5, "DTN":7,  "damage":0, "blunt":true } )
+		,Weapon.createDyn("Hand Shield", ["swordshield", "massweaponshield"], { "shield":true, "DTN":7, "DTN2":9 } )
+		,Weapon.createDyn("Small Shield", ["swordshield", "massweaponshield"], { "shield":true, "DTN":6, "DTN2":8 } )
+		,Weapon.createDyn("Medium Shield", ["swordshield", "massweaponshield"], { "shield":true, "DTN":5, "DTN2":7, "cpPenalty":0.5, "movePenalty":0.5 } )
+		,Weapon.createDyn("Large Shield", ["swordshield", "massweaponshield"], {"shield":true, "DTN":5, "DTN2":6, "cpPenalty":0.5, "movePenalty":1} )
+	
+	]
+	public static var HASH:Object = createHashLookupViaName(LIST);
+	
+	public static function find(name:String):Weapon  {
+		return HASH[name];
+	}
 }
 
 class CharacterSheet {
 	// attributes
+	// 4 for average human
+	
+	public var name:String;
+	
 	public var strength:int;
 	public var agility:int;
 	public var toughness:int;
@@ -1361,7 +1701,163 @@ class CharacterSheet {
 	
 	// weapon and profeciicencies
 	public var profeciencies:Object = { };  // object hash consisting of profeciencyId key and skill level value
-	public var currentWeapon:Weapon;
+	public var profeciencyIdCache:String;
+	
+	public var weapon:Weapon;
+	public var weaponOffhand:Weapon;
+	
+	
+	public function clone():CharacterSheet {
+		var c:CharacterSheet = new CharacterSheet();
+		c.name = name;
+		c.strength = strength;
+		c.agility = agility;
+		c.toughness = toughness;
+		c.endurance = endurance;
+		c.health = health;
+		
+		c.willpower = willpower;
+		c.wit = wit;
+		c.mentalapt = mentalapt;
+		c.social = social;
+		c.perception = perception;
+		
+		c.profeciencies = cloneObj(profeciencies);
+		c.weapon = weapon;
+		c.weaponOffhand = weaponOffhand;
+		c.profeciencyIdCache = profeciencyIdCache;
+	
+		
+		return c;
+	}
+	
+	private function cloneObj(obj:Object):Object {
+		var o:Object = { };
+		for (var p:String in obj) {
+			o[p] = obj[o];
+		}
+		return o;
+	}
+	
+	
+	public function resetAllAttributes(val:int):void {
+		strength = val;
+		agility = val;
+		toughness = val;
+		endurance = val;
+		health = val;
+		
+		willpower = val;
+		wit = val;
+		mentalapt = val;
+		social = val;
+		perception = val;
+	}
+	
+	public function invalidateHandEquipment():void {
+		profeciencyIdCache = null;
+	}
+	
+	
+	public function getReflex():int {
+		return (agility + wit) / 2;
+	}
+	public function getAim():int {
+		return (agility + perception) / 2;
+	}
+	public function getKnockdown():int {
+		return (strength + agility) / 2;
+	}
+	public function getKnockout():int {
+		return (toughness + (willpower / 2) );
+	}
+	public function getSpeed():Number {
+		return (strength + agility + endurance) / 2;
+	}
+	
+	
+	public function getTotalPain():int {
+		return 0;
+	}
+	
+	
+	public function getMeleeProfeciencyId():String {
+		// determine best profeciency to use for given set of weaponary
+		profeciencyIdCache = "";
+		return profeciencyIdCache;
+	}
+	
+	
+	public function getMeleeProfeciencyLevel():int {
+		if (profeciencyIdCache == null) profeciencyIdCache = getMeleeProfeciencyId();
+		return profeciencyIdCache !=  "" ? profeciencies[profeciencyIdCache]  : 0;
+	}
+	
+	
+	public function getMeleeCombatPoolAmount(carryOverShock:int=0):int {
+		return getMeleeProfeciencyLevel() + getReflex() - Math.max(getTotalPain(), carryOverShock); 
+	}
+	
+	/**
+	 * Determines TN for given manuever based off character stats/equipment, and also implicitly checks if manuever is valid/usable as well given those stats/equipment.
+	 * @param	manuever	The manuever to check
+	 * @param	attacking	Is this an offesnive manuever? Or a defensive one?
+	 * @return	A valid TN (Target number). If target number is zero, it's assumed the manuever is unusable/invalid!
+	 */
+	public function getManueverTN(manuever:Manuever, attacking:Boolean):int {
+		if (manuever.defaultTN != 0) {
+			return manuever.defaultTN;
+		}
+
+		var useWeapon:Weapon;
+		
+		if (attacking) {  
+			useWeapon = manuever.offHanded ? weaponOffhand : weapon;
+			if ( manuever.attackTypes == Manuever.ATTACK_TYPE_STRIKE ) {
+				return useWeapon.ATN;
+			}
+			else if (manuever.attackTypes == Manuever.ATTACK_TYPE_THRUST) {
+				return useWeapon.ATN2;
+			}
+			else {   // can both perform a strikey and thrustey move
+				// if damageType is zero neutral, than assumed no sharp thrusts are available, but can still spike bluntly
+				if (manuever.damageType == 0) {
+					if (useWeapon.blunt) {
+						return useWeapon.ATN2 != 0 ? useWeapon.ATN2 :  useWeapon.ATN;  // consider spiking ATN, if any, otherwise use default ATN
+					}
+					else {  // cutting only for non-blunt weapons
+						return useWeapon.ATN;
+					}
+				}
+				else if (manuever.damageType == Manuever.DAMAGE_TYPE_PUNCTURING) {  // if puncturing, assumed thrusting ATN
+					return useWeapon.ATN2;
+				}
+				else  {  // assumed Manuever.DAMAGE_TYPE_CUTTING as only option left
+					return useWeapon.ATN;
+				}
+			}
+			
+		}
+		else {
+			useWeapon = manuever.isDefensiveOffHanded() ? weaponOffhand : weapon;
+			if (manuever.manueverType == Manuever.MANUEVER_TYPE_MELEE) {
+				return useWeapon.DTN;
+			}
+			else return useWeapon.DTN2;
+			
+		}
+	}
+	
+	public static function createBase(name:String, profeciencies:Object, weapon:Weapon=null, weaponOffHand:Weapon=null, baseAttr:int = 5):CharacterSheet {
+		var c:CharacterSheet = new CharacterSheet();
+		c.name = name;
+		c.profeciencies = profeciencies;
+		c.weapon = weapon;
+		c.weaponOffhand = weaponOffHand;
+		c.resetAllAttributes(baseAttr);
+		return c;
+	}
+	
 	
 }
 
@@ -1389,7 +1885,9 @@ class FightState {
 	
 	public var flags:int = 0;
 	public var numEnemies:int = 0;
-	public var initiative:Boolean = true;
+	public var initiative:Boolean = true;  // self initaitive main flag. 
+	public var initiativeMask:uint = 0;  // currently not used, but useful to handle multi-initaitive situations later on
+	public var paused:Boolean = true;
 	
 	// by right, these position values shouldn't be here, duplicate stored values at given timestamp
 	public var x:int;
@@ -1398,11 +1896,13 @@ class FightState {
 	public var timestamp:uint = uint.MAX_VALUE;  // lol, unlikely to happen
 	
 	public var manuever:int = -1;  // manuever index (declared move) for the current turn
+	public var manuevers:Array;  // for composite/multiple manuevers
 	public var rounds:int = 0;
 	public var attacking:Boolean = false;  // flag to indicate whether is attacking on current turn roll
 	public var bumping:Boolean = false;  // flag to keep track of fast track bump rolls
 	public var shortRangeAdvantage:Boolean = false;
 	public var lastAttacking:Boolean = false; // flag to indicate if was attacking on last declared move
+	
 	
 	public static const DIRECTIONS:Array =  [[1, 0], [ -1, 0], [0, 1], [0, -1]];
 	public static var DIR_INDEX_LOOKUP:Vector.<int> = new <int>[
@@ -1730,6 +2230,7 @@ class FightState {
 		attacking = false;
 		lastAttacking = false;
 		shortRangeAdvantage = false;
+		paused = true;
 		
 		//manuever = -1;
 		if (disengaged) {  // full disengagement
@@ -1828,8 +2329,14 @@ class Data {
     }
     
     static public const OBJECT:Object = {
-        "man": { type:"man", state:"w0", visual:"stand",  func:{ key:Man.key }, components:{fight:new FightState().setSideAggro(FightState.SIDE_FRIEND)}, ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
-        "enemy": { type:"enemy", state:"w0", num:"1", func:{ key:Enemy.key },  visual:"stand", components:{fight:new FightState().setSideAggro(FightState.SIDE_ENEMY)}, ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
+        "man": { type:"man", state:"w0", visual:"stand",  func: { key:Man.key }, components: { 
+			char:CharacterSheet.createBase("Player", { "rapier":5  }, WeaponSheet.find("Short Sword"), null, 5),
+		fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, 
+		ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
+        "enemy": { type:"enemy", state:"w0", num:"1", func: { key:Enemy.key },  visual:"stand", components: {
+			char:CharacterSheet.createBase("Enemy", { "rapier":5  }, null, null, 4),
+			fight:new FightState().setSideAggro(FightState.SIDE_ENEMY) }, 
+			ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
         "fwall": { type:"room", state:"wall", visual:"front" },
         "bwall": { type:"room", state:"wall", visual:"back" },
