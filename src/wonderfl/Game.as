@@ -1356,6 +1356,10 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 		manueverType = MANUEVER_TYPE_MELEE;
 	}
 	
+	public static function isThrustingMotion(targetzone:int):Boolean {
+		return false;
+	}
+	
 	// when defending, determining if defensive is exclusively offhanded
 	public function isDefensiveOffHanded():Boolean {
 		return (attackTypes == DEFEND_TYPE_OFFHAND || offHanded); 
@@ -1536,6 +1540,8 @@ class ManueverSheet {
 		public static var offensiveMeleeHash:Object = createHashIndex(offensiveMelee);
 		public static var defensiveMeleeHash:Object = createHashIndex(defensiveMelee);
 		
+		
+		
 		public static function createHashIndex(arr:Array):Object {
 			var obj:Object = { };
 			var len:int = arr.length;
@@ -1590,6 +1596,7 @@ class Weapon {
 	public var damage2:int;
 	public var damage3:int;
 	public var DTN:int;	// melee DTN
+	public var DTNt:int;  // melee DTN against thrusts of 4 cp or less
 	public var DTN2:int; // ranged DTN
 	public var name:String;
 	public var drawCutModifier:int;
@@ -1654,7 +1661,7 @@ class WeaponSheet {
 		return obj;
 	}
 		
-		
+	//http://knight.burrowowl.net/doku.php?id=equipment:weapons
 	public static var LIST:Array = [
 		//Weapon.createDyn("Akinakes", "
 		Weapon.createDyn("Kick", ["pugilism"], { "range":0, "ATN":7, "DTN":8,   "damage":-1, "blunt":true  } )
@@ -1663,7 +1670,7 @@ class WeaponSheet {
 		,Weapon.createDyn("Short Sword", ["cutthrust", "swordshield"], { "range":1, "ATN":7, "ATN2":5, "DTN":7,   "damage": -1, "damage2":1  } )
 		,Weapon.createDyn("Gladius", ["swordshield"], { "range":1, "ATN":6, "ATN2":6, "DTN":7,   "damage":0, "damage2":1, "drawCutModifier":0  } )
 		,Weapon.createDyn("Arming Sword", ["swordshield", "cutthrust"], { "range":2, "ATN":6, "ATN2":7, "DTN":6,   "damage":1, "damage2":0, "drawCutModifier":0  } )
-		,Weapon.createDyn("Rapier", ["rapier", "caserapiers"], { "range":3, "ATN":7, "ATN2":5, "DTN":8,   "damage": -3, "damage2":2, "drawCutModifier":1  } )
+		,Weapon.createDyn("Rapier", ["rapier", "caserapiers"], { "range":3, "ATN":7, "ATN2":5, "DTN":8, "DTNt":6,  "damage": -3, "damage2":2, "drawCutModifier":1  } )
 		
 		,Weapon.createDyn("Arming Glove", ["swordshield", "massweaponshield"], { "range":0, "shield":true, "shieldLimit":4, "ATN":5, "DTN":7,  "damage":0, "blunt":true } )
 		,Weapon.createDyn("Hand Shield", ["swordshield", "massweaponshield"], { "shield":true, "DTN":7, "DTN2":9 } )
@@ -1677,6 +1684,55 @@ class WeaponSheet {
 	public static function find(name:String):Weapon  {
 		return HASH[name];
 	}
+}
+
+
+// body zone definition
+class ZoneBody {
+	
+	// wound effects.... Shock, BL (blood-lost), Pain
+	public var name:String;  // the name of the zone
+	public var parts:Array;  // the parts and their wound effects from lev 1-5,  [ [{},{},{},{},{}], [{},{},{},{},{}] ] 
+	public var partWeights:Vector.<Number>;  // distribution of parts for probability
+}
+
+// Body char definition
+class BodyChar {  // base class to handle different body types later (ie. for non-humanoids)
+	public var zones:Vector.<ZoneBody>;
+	public var thrustStartIndex:int;
+	public var centerOfMass:Array;
+}
+
+class HumanoidBody extends BodyChar {  
+	public static const ZONE_I:int = 0;
+	public static const ZONE_II:int = 1;
+	public static const ZONE_III:int = 2;
+	public static const ZONE_IV:int = 3;
+	public static const ZONE_V:int = 4;
+	public static const ZONE_VI:int = 5;
+	public static const ZONE_VII:int = 6;
+	public static const ZONE_VIII:int = 7;
+	public static const ZONE_IX:int = 8;
+	public static const ZONE_X:int = 9;
+	public static const ZONE_XI:int = 10;
+	public static const ZONE_XII:int = 11;
+	public static const ZONE_XIII:int = 12;
+	public static const ZONE_XIV:int = 13;
+
+	public static const CENTER_OF_MASS:Array = [ZONE_III, ZONE_II];
+	
+	private static var INSTANCE:HumanoidBody;
+	public static function getInstance():HumanoidBody {
+	    return INSTANCE != null ? INSTANCE : (INSTANCE = new HumanoidBody());
+	}
+	
+	public function HumanoidBody() {
+		super();
+		zones = new Vector.<ZoneBody>(14, true);
+		thrustStartIndex = 0;
+		centerOfMass = CENTER_OF_MASS;
+	}
+	
 }
 
 class CharacterSheet {
@@ -1697,17 +1753,18 @@ class CharacterSheet {
 	public var social:int;
 	public var perception:int;
 	
-	// health state
-	
 	// weapon and profeciicencies
 	public var profeciencies:Object = { };  // object hash consisting of profeciencyId key and skill level value
 	public var profeciencyIdCache:String;
+	public var bodyType:BodyChar;
 	
 	public var weapon:Weapon;
 	public var weaponOffhand:Weapon;
 	
+	public var wounds:Vector.<int>;  // keeps track of wounds as tuple-2s. [zone,part  ,zone,part]
+
 	
-	public function clone():CharacterSheet {
+	public function clone():CharacterSheet {  
 		var c:CharacterSheet = new CharacterSheet();
 		c.name = name;
 		c.strength = strength;
@@ -1726,7 +1783,9 @@ class CharacterSheet {
 		c.weapon = weapon;
 		c.weaponOffhand = weaponOffhand;
 		c.profeciencyIdCache = profeciencyIdCache;
-	
+		
+		c.bodyType = bodyType;
+		c.wounds = wounds;
 		
 		return c;
 	}
@@ -1776,10 +1835,16 @@ class CharacterSheet {
 	}
 	
 	
+	public function getTotalBloodLost():int {
+		return 0;
+	}
+	public function getCurrentHealth():int {
+		return health - getTotalBloodLost();
+	}
+	
 	public function getTotalPain():int {
 		return 0;
 	}
-	
 	
 	public function getMeleeProfeciencyId():String {
 		// determine best profeciency to use for given set of weaponary
@@ -1799,17 +1864,22 @@ class CharacterSheet {
 	}
 	
 	/**
-	 * Determines TN for given manuever based off character stats/equipment, and also implicitly checks if manuever is valid/usable as well given those stats/equipment.
+	 * Determines TN for given manuever of yours based off your character stats/equipment and enemy's manuever(if available), 
+	 * and also checks if your manuever is valid/usable as well given those stats/equipment and enemy manuever situation.
 	 * @param	manuever	The manuever to check
 	 * @param	attacking	Is this an offesnive manuever? Or a defensive one?
+	 * @param   enemyManuever  The manuever up are up against, if any, and implies that enemy is attacking. Thus, if you are defending against an enemy attack, this is required.
+	 * @param   enemyDiceRolled How much dice the enemy is rolling against you in the given enemy manuever
+	 * @param   enemyTargetZone  The target zone the enemy is aiming at in the given enemy manueveer
 	 * @return	A valid TN (Target number). If target number is zero, it's assumed the manuever is unusable/invalid!
 	 */
-	public function getManueverTN(manuever:Manuever, attacking:Boolean):int {
+	public function getManueverTN(manuever:Manuever, attacking:Boolean, fight:FightState, enemyManuever:Manuever=null, enemyDiceRolled:int=0, enemyTargetZone:int=0):int {
 		if (manuever.defaultTN != 0) {
 			return manuever.defaultTN;
 		}
 
 		var useWeapon:Weapon;
+		
 		
 		if (attacking) {  
 			useWeapon = manuever.offHanded ? weaponOffhand : weapon;
@@ -1839,18 +1909,21 @@ class CharacterSheet {
 			
 		}
 		else {
+			
 			useWeapon = manuever.isDefensiveOffHanded() ? weaponOffhand : weapon;
 			if (manuever.manueverType == Manuever.MANUEVER_TYPE_MELEE) {
-				return useWeapon.DTN;
+				return enemyDiceRolled <= 4 && Manuever.isThrustingMotion(enemyTargetZone)  ? 
+						(useWeapon.DTNt != 0 ? useWeapon.DTNt : useWeapon.DTN)  : useWeapon.DTN;
 			}
 			else return useWeapon.DTN2;
 			
 		}
 	}
 	
-	public static function createBase(name:String, profeciencies:Object, weapon:Weapon=null, weaponOffHand:Weapon=null, baseAttr:int = 5):CharacterSheet {
+	public static function createBase(name:String, profeciencies:Object, bodyType:BodyChar, weapon:Weapon=null, weaponOffHand:Weapon=null, baseAttr:int = 5):CharacterSheet {
 		var c:CharacterSheet = new CharacterSheet();
 		c.name = name;
+		c.wounds = new Vector.<int>();
 		c.profeciencies = profeciencies;
 		c.weapon = weapon;
 		c.weaponOffhand = weaponOffHand;
@@ -1862,10 +1935,13 @@ class CharacterSheet {
 }
 
 class FightState {
+	
+	// instance schedule 
 	public var s:int = 0;  // the current step within the exchange
 	public var e:Boolean = false;  // false for exchange 1/2, true for exchange 2/2
 	public var side:int = 1;
 
+	// rouguelike stuffz
 	public static const SIDE_FRIEND:int = 0;
 	public static const SIDE_ENEMY:int = 1;
 	
@@ -1882,27 +1958,7 @@ class FightState {
 	public static const FLAG_INITIATIVE_SOUTH:int = 128;
 	
 	public static const FLAG_INITIATIVE_SYNCED:int = 256;
-	
 	public var flags:int = 0;
-	public var numEnemies:int = 0;
-	public var initiative:Boolean = true;  // self initaitive main flag. 
-	public var initiativeMask:uint = 0;  // currently not used, but useful to handle multi-initaitive situations later on
-	public var paused:Boolean = true;
-	
-	// by right, these position values shouldn't be here, duplicate stored values at given timestamp
-	public var x:int;
-	public var y:int;
-	
-	public var timestamp:uint = uint.MAX_VALUE;  // lol, unlikely to happen
-	
-	public var manuever:int = -1;  // manuever index (declared move) for the current turn
-	public var manuevers:Array;  // for composite/multiple manuevers
-	public var rounds:int = 0;
-	public var attacking:Boolean = false;  // flag to indicate whether is attacking on current turn roll
-	public var bumping:Boolean = false;  // flag to keep track of fast track bump rolls
-	public var shortRangeAdvantage:Boolean = false;
-	public var lastAttacking:Boolean = false; // flag to indicate if was attacking on last declared move
-	
 	
 	public static const DIRECTIONS:Array =  [[1, 0], [ -1, 0], [0, 1], [0, -1]];
 	public static var DIR_INDEX_LOOKUP:Vector.<int> = new <int>[
@@ -1922,10 +1978,35 @@ class FightState {
 			return DIR_INDEX_LOOKUP[bits];
 	}
 	
-	//arrowRight.visible = !(wallMask & 1);
-	//arrowLeft.visible = !(wallMask & 2);
-	//arrowUp.visible = !(wallMask & 4);
-	//arrowDown.visible = !(wallMask & 8);
+	// by right, these position values shouldn't be here, duplicate stored values at given timestamp
+	public var x:int;
+	public var y:int;
+	public var timestamp:uint = uint.MAX_VALUE;  // lol, unlikely to happen
+	
+	// riddle stuff here
+	
+	public var numEnemies:int = 0;
+	public var initiative:Boolean = true;  // self initaitive main flag. 
+	public var initiativeMask:uint = 0;  // currently not used, but useful to handle multi-initaitive situations later on
+	public var paused:Boolean = true;
+	
+	
+	// Declared manuevers info
+	public var manuever:int = -1;  // manuever index (declared move) for the current turn
+	public var manuevers:Array;  // for composite/multiple manuevers
+	public var manueverDice:int;   // dice being used for manuever
+	public var manueversDices:Array;  // matching array of dice being used for multiple manuevers
+	public var manueverTargetZone:uint; // target zone aimed at for manuever
+	public var manueversTargetZones:Array;   // matching array of target zones for multiple manuevers
+	
+	
+	// The state of the fight
+	public var rounds:int = 0;
+	public var attacking:Boolean = false;  // flag to indicate whether is attacking on current turn roll
+	public var bumping:Boolean = false;  // flag to keep track of fast track bump rolls for roguelike gamemode
+	public var shortRangeAdvantage:Boolean = false;
+	public var lastAttacking:Boolean = false; // flag to indicate if was attacking on last declared move
+	
 
 	
 	
@@ -2330,11 +2411,11 @@ class Data {
     
     static public const OBJECT:Object = {
         "man": { type:"man", state:"w0", visual:"stand",  func: { key:Man.key }, components: { 
-			char:CharacterSheet.createBase("Player", { "rapier":5  }, WeaponSheet.find("Short Sword"), null, 5),
+			char:CharacterSheet.createBase("Player", { "rapier":5  }, HumanoidBody.getInstance(), WeaponSheet.find("Short Sword"), null, 5),
 		fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, 
 		ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
         "enemy": { type:"enemy", state:"w0", num:"1", func: { key:Enemy.key },  visual:"stand", components: {
-			char:CharacterSheet.createBase("Enemy", { "rapier":5  }, null, null, 4),
+			char:CharacterSheet.createBase("Enemy", { "rapier":5  }, HumanoidBody.getInstance(), null, null, 4),
 			fight:new FightState().setSideAggro(FightState.SIDE_ENEMY) }, 
 			ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
