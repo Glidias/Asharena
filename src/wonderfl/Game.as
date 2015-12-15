@@ -1919,9 +1919,13 @@ class CharacterSheet {
 	public var weapon:Weapon;
 	public var weaponOffhand:Weapon;
 	
-	public var wounds:Object;  // object hash to keep track of wounds, their pain,bloodlost and shock... and damage types involved (uses a bitmask),  
+	public static const WOUND_TYPE_CUT:int = 1;
+	public static const WOUND_TYPE_PIERCE:int = 2;
+	public static const WOUND_TYPE_BLUNT_TRAUMA:int = 4;
+	
+	public var wounds:Object;  // object hash to keep track of wounds, their pain,bloodlost and shock... and wound types involved (uses a bitmask),  
 	//   using part_id:{}     keyvalue pair  
-	// A wound value object goes by  {  pain:?, BL:?, shock:?, damageTypes:? }   
+	// A wound value object goes by  {  pain:?, BL:?, shock:?, woundTypes:? }   
 	
 	public function clone():CharacterSheet {  
 		var c:CharacterSheet = new CharacterSheet();
