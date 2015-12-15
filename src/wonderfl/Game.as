@@ -1744,24 +1744,26 @@ class HumanoidBody extends BodyChar {
 		super();
 		
 		// http://knight.burrowowl.net/doku.php?id=rules:master_damage_table
+		// k is for kill level.   1, destroy part.  2,  character dies
+		// TODO: Manual entry sucks!! find a way to import the html table into json!
 		partsCut = {
 			"foot": [ { "BL":0, "shock":3, "shockWP":1, "pain":2, "painWP":1 }, 
 					{  "BL":1, "shock":3, "shockWP":0,  "pain":3, "painWP":1 }, 
-					{  "BL":1, "shock":3, "shockWP":0,  "pain":3, "painWP":1 }, 
-					{  "BL":1, "shock":3, "shockWP":0,  "pain":3, "painWP":1 }, 
-					{  "BL":1, "shock":3, "shockWP":0,  "pain":3, "painWP":1 }
+					{ "BL":2, "shock":4, "shockWP":0, "pain":5, "painWP":1, "KD":3 }, 
+					{ "BL":5, "shock":6, "shockWP":0, "pain":6, "painWP":1, "KD":1 }, 
+					{ "BL":10, "shock":9, "shockWP":0, "pain":8, "painWP":1, "KD":-1, "k":1 }
 			]
-			,"shin_and_lower_leg": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			,"shin_and_lower_leg": [ { "BL":0, "shock":3, "shockWP":0, "pain":2, "painWP":1 }, 
+					{ "BL":2, "shock":5, "shockWP":0, "pain":6, "painWP":1, "KD":2 }, 
+					{ "BL":4, "shock":5, "shockWP":0, "pain":6, "painWP":1, "KD":2 },
+					{ "BL":8, "shock":7, "shockWP":0, "pain":8, "painWP":1, "KD":-2 },
+					{ "BL":13, "shock":9, "shockWP":0, "pain":10, "painWP":1, "KD":-1, "k":1 }
 			] 
-			,"knee_and_nearby_areas": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			,"knee_and_nearby_areas": [ { "BL":0, "shock":5, "shockWP":1, "pain":3, "painWP":1 }, 
+					{ "BL":2, "shock":5, "shockWP":0, "pain":5, "painWP":1 }, 
+					{ "BL":4, "shock":8, "shockWP":8, "pain":8, "painWP":1, "KD":0 },
+					{ "BL":8, "shock":10, "shockWP":0, "pain":13, "painWP":1, "KD":-5 },
+					{ "BL":13, "shock":12, "shockWP":0, "pain":12, "painWP":1, "KD":-1, "k":1 }
 			] 
 			,"thigh": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
 					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
@@ -1787,13 +1789,7 @@ class HumanoidBody extends BodyChar {
 					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
 					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
 			] 
-			,"upper_abdomen": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
-					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
-			] 
-			,"lower_abdomen": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },   // duplciate of above in some cases
+			,"abdomen": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },   
 					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
 					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
 					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
@@ -1861,8 +1857,104 @@ class HumanoidBody extends BodyChar {
 			] 
 		};
 		
-				partsPuncture = {
+		partsPuncture = {
 			"foot": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"shin_and_lower_leg": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"knee_and_nearby_area": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"thigh": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"groin": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"hip": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"flesh_to_the_side": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"lower_abdomen": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"upper_abdomen": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"chest": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"collar_and_throat": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"face": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]   // duplicate of above
+			,"head": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },  
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"hand": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"forearm": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"elbow": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
+					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }
+			]
+			,"upper_arm": [ { "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
 					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 }, 
 					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
 					{ "BL":0, "shock":0, "shockWP":0, "pain":0, "painWP":0 },
@@ -1871,20 +1963,71 @@ class HumanoidBody extends BodyChar {
 
 		};
 		
+		var partsBludgeonTemp:Array = [  // for reference only
+			"foot",
+			"shin_and_lower_leg",
+			"knee_and_nearby_areas",
+			"thigh",
+			"inner_thigh",
+			"hip",
+			"groin",
+			"abdomen",
+			"ribcage",
+			"upper_abdomen",
+			"chest",
+			"upper_body",
+			"neck",
+			"head",
+			"face",  // duplicate of above
+			"upper_head",
+			"upper_arm_and_shoulder",
+			"hand",
+			"forearm",
+			"elbow",
+		];
+		
 		
 		// http://knight.burrowowl.net/doku.php?id=rules:attack_locations
 		zones = new Vector.<ZoneBody>(14, true);  // cutting and thrusting(puncturing) damage to body
 		zonesB = new Vector.<ZoneBody>(14, true);  // bludgeonoing and spiking damage to body
-		thrustStartIndex = 7;
+		thrustStartIndex = ZONE_VIII;
 		
-		zones[ZONE_I] = ZoneBody.create("to Lower Legs", new <Number>[1,3,2], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas"] );
-		zones[ZONE_II] = ZoneBody.create("to Upper Legs", new < Number > [2, 3, 1], ["knee_and_nearby_areas", "thigh", "hip"] );
+		// Bladed
+		// swings
+		zones[ZONE_I] = ZoneBody.create("to the Lower Legs", new <Number>[1,3,2], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas"] );
+		zones[ZONE_II] = ZoneBody.create("to the Upper Legs", new < Number > [2, 3, 1], ["knee_and_nearby_areas", "thigh", "hip"] );
 		zones[ZONE_III] = ZoneBody.create("for Horizontal Swing", new < Number > [1, 1, 1, 2, 1], ["hip", "upper_abdomen", "lower_abdomen", "ribcage", "arms"] );
 		zones[ZONE_IV] = ZoneBody.create("for Overhand Swing", new < Number > [2, 1, 1, 1, 1], ["upper_arm_and_shoulder", "chest", "neck", "lower_head", "upper_head"] );
-		zones[ZONE_V] = ZoneBody.create("for Downward Swing from above", new < Number > [3, 1, 2], ["upper_head", "lower_head", "shoulder" ] );
-		zones[ZONE_VI] = ZoneBody.create("for Upward Swing from below", new < Number > [3, 1, 1, 1], ["inner_thigh", "groin", "abdomen", "chest" ] );
+		zones[ZONE_V] = ZoneBody.create("for Downward Swing from Above", new < Number > [3, 1, 2], ["upper_head", "lower_head", "shoulder" ] );
+		zones[ZONE_VI] = ZoneBody.create("for Upward Swing from Below", new < Number > [3, 1, 1, 1], ["inner_thigh", "groin", "abdomen", "chest" ] );
+		zones[ZONE_VII] = ZoneBody.create("to the Arms", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm_and_shoulder" ] );
+		// thrusts
+		zones[ZONE_VIII] = ZoneBody.create("to the Lower Legs", new < Number > [1, 3, 1, 1], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas",  "" ] );
+		zones[ZONE_IX] = ZoneBody.create("to the Upper Legs", new < Number > [2, 3, 1], ["knee_and_nearby_areas", "thigh", "hip" ] );
+		zones[ZONE_X] = ZoneBody.create("to the Pelvis", new < Number > [2, 2, 2], ["hip", "groin", "lower_abdomen" ] );  // NOTE: missing rules for female/male cases refer to core booklet
+		zones[ZONE_XI] = ZoneBody.create("to the Belly", new < Number > [5, 1], ["lower_abdomen", "flesh_to_the_side" ] );
+		zones[ZONE_XII] = ZoneBody.create("to the Chest", new < Number > [2,4], ["upper_abdomen", "chest" ] );
+		zones[ZONE_XIII] = ZoneBody.create("to the Head", new < Number > [2, 2, 2], ["collar_and_throat", "face", "head" ] );
+		zones[ZONE_XIV] = ZoneBody.create("to the Arm", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm" ] );
 		
+		// Blunt
+		zones[ZONE_I] = ZoneBody.create("to the Lower Legs", new <Number>[1,3,2], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas"] );
+		zones[ZONE_II] = ZoneBody.create("to the Upper Legs", new < Number > [2, 3, 1], ["knee_and_nearby_areas", "thigh", "hip"] );
+		zones[ZONE_III] = ZoneBody.create("for Horizontal Swing", new < Number > [1, 1, 1, 2, 1], ["hip", "upper_abdomen", "lower_abdomen", "ribcage", "arms"] );
+		zones[ZONE_IV] = ZoneBody.create("for Overhand Swing", new < Number > [2, 1, 1, 1, 1], ["upper_arm_and_shoulder", "upper_body", "neck", "lower_head", "upper_head"] );
+		zones[ZONE_V] = ZoneBody.create("for Downward Swing from Above", new < Number > [2, 1, 3], ["shoulder", "lower_head", "upper_head" ] );
+		zones[ZONE_VI] = ZoneBody.create("for Upward Swing from Below", new < Number > [3, 1, 1, 1], ["inner_thigh", "groin", "abdomen", "lower_head" ] );
+		zones[ZONE_VII] = ZoneBody.create("to the Arms", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm_and_shoulder" ] );
+		// thrusts
+		zones[ZONE_VIII] = ZoneBody.create("to the Lower Legs", new < Number > [1, 3, 1, 1], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas",  "" ] );
+		zones[ZONE_IX] = ZoneBody.create("to the Upper Legs", new < Number > [2, 3, 1], ["knee_and_nearby_areas", "thigh", "hip" ] );
+		zones[ZONE_X] = ZoneBody.create("to the Pelvis", new < Number > [2, 2, 2], ["hip", "groin", "lower_abdomen" ] );  // NOTE: missing rules for female/male cases
+		zones[ZONE_XI] = ZoneBody.create("to the Belly", new < Number > [6], ["lower_abdomen"] );
+		zones[ZONE_XII] = ZoneBody.create("to the Chest", new < Number > [2,4], ["upper_abdomen", "chest" ] );
+		zones[ZONE_XIII] = ZoneBody.create("to the Head", new < Number > [1, 1.5, 1.5, 2], ["neck", "face", "lower_head",  "upper_head" ] );
+		zones[ZONE_XIV] = ZoneBody.create("to the Arm", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm_and_shoulder" ] );
 		
+	
 		
 		centerOfMass = CENTER_OF_MASS;
 	
