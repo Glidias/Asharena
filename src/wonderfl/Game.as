@@ -1919,8 +1919,8 @@ class CharacterSheet {
 	public var weapon:Weapon;
 	public var weaponOffhand:Weapon;
 	
-
-	
+	public var wounds:Object;  // object hash to keep track of wounds, their pain,bloodlost and shock,   by key/value-object,  part_id:{}
+	// A wound value object goes by  {  pain:?, BL:?, shock:?  }   
 	
 	public function clone():CharacterSheet {  
 		var c:CharacterSheet = new CharacterSheet();
@@ -1943,7 +1943,7 @@ class CharacterSheet {
 		c.profeciencyIdCache = profeciencyIdCache;
 		
 		c.bodyType = bodyType;
-		
+		c.wounds = wounds;
 		
 		return c;
 	}
@@ -2081,7 +2081,7 @@ class CharacterSheet {
 	public static function createBase(name:String, profeciencies:Object, bodyType:BodyChar, weapon:Weapon=null, weaponOffHand:Weapon=null, baseAttr:int = 5):CharacterSheet {
 		var c:CharacterSheet = new CharacterSheet();
 		c.name = name;
-		
+		c.wounds = { };
 		c.profeciencies = profeciencies;
 		c.weapon = weapon;
 		c.weaponOffhand = weaponOffHand;
