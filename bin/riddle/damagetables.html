@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Damage tables</title>
+		<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+		<script>
+		
+		$(document).ready( function() {
+		
+
+		
+		
+		// to replace "consciousness with <a href="kolink">KO</a> 
+		// knockdown with   <a href="kdlink">KD</a>   
+			function processTable(table, idArr, output ) {
+				var rows = table.children().children("tr");
+				
+				if (rows.length-1 != idArr.length) {
+					alert("WARNING MISMATCH LENGTH:"+output.attr("id"));
+				}
+				
+				var damageTable = {};
+				var count=0;
+				
+				function processRow(r, ider) {
+				
+					damageTable[ider] = arr = [];
+					
+					
+					for ( c =1; c<= 5; c++) {
+						var col = r.find(".col"+c);
+						
+						var colHTML = col.html();
+						if (!colHTML) {
+							arr.push(arr[arr.length-1]);
+							continue;
+						}
+						
+						
+						var obj = {};
+						arr.push(obj);
+						
+						
+						var linesArr = colHTML.split("<br>");
+						var i;
+						var knockdownForLevel =  col.find('a[href=kdlink]');
+						
+						if (knockdownForLevel.length) {
+							var before = knockdownForLevel.prev()[0].nextSibling ? knockdownForLevel.prev()[0].nextSibling.nodeValue : "";
+							var after =   knockdownForLevel[0].nextSibling ? knockdownForLevel[0].nextSibling.nodeValue  : "";
+							if (before.indexOf("instant") >= 0) {
+								obj.KD  =-1;
+							}
+							else if (after.indexOf("-") >= 0) {
+								obj.KD = -parseInt( after.split("-")[1] );
+							}
+							else if (after.indexOf("+") >=0) { 
+								obj.KD = parseInt( after.split("+")[1]);
+							}
+							else {
+								obj.KD = 0;
+							}
+						}
+						
+						var knockOutForLevel =  col.find('a[href=kolink]');
+						
+						if (knockOutForLevel.length) {
+							var before = knockOutForLevel.prev()[0].nextSibling ? knockOutForLevel.prev()[0].nextSibling.nodeValue : "";
+							var after = knockOutForLevel[0].nextSibling ?   knockOutForLevel[0].nextSibling.nodeValue : "";
+							if (before.indexOf("instant") >= 0) {
+								obj.ko  =-1;
+							}
+							else if (after.indexOf("-") >= 0) {
+								obj.ko = -parseInt( after.split("-")[1] );
+							}
+							else if (after.indexOf("+") >=0) { 
+								obj.ko = parseInt( after.split("+")[1]);
+							}
+							else {
+								obj.ko = 0;
+							}
+						}
+						
+						
+						
+						
+						for (i=0; i< linesArr.length; i++) {
+							
+							var line = linesArr[i];
+							if ( $("<div>"+line+"</div>").find("a").length > 0) {
+								continue;
+							}
+							line = line.toLowerCase();
+							
+							var dSplit;
+							if ( line.indexOf(":") >= 0) {
+								var propSplit = line.split(":");
+								if ( propSplit[0].indexOf("bl") >= 0 ) {
+									obj.BL = propSplit[1].indexOf("all") >= 0 ? -1 : parseInt(propSplit[1]);
+									if (isNaN(obj.BL)) {
+										alert("BL exception:"+propSplit);
+									}
+								}
+								else if ( propSplit[0].indexOf("s") >= 0 ) {
+								
+									obj.shock = propSplit[1].indexOf("all") >= 0 ? -1 :  parseInt(propSplit[1]);
+									
+									if (isNaN(obj.shock)) {
+										alert("shock exception:"+propSplit);
+									}
+									
+									if (propSplit[1].indexOf("-") >= 0) {
+										obj.shockWP = 1;//  parseInt( propSplit[1].split("-")[1] );
+									}
+									else {
+										obj.shockWP = 0;
+									}
+								}
+								else if ( propSplit[0].indexOf("p") >= 0 ) {
+									obj.pain =propSplit[1].indexOf("all") >= 0 ? -1 :  parseInt(propSplit[1]);
+									
+									if (isNaN(obj.pain)) {
+										alert("pain exception:"+propSplit);
+									}
+									
+									if (propSplit[1].indexOf("-") >= 0) {
+										obj.painWP =1;//  parseInt( propSplit[1].split("-")[1] );
+									}
+									else {
+										obj.painWP = 0;
+									}
+								}
+							}
+							else if (line.indexOf("death")>=0) {
+								obj.d = 2;
+							}
+							else if (line.indexOf("destroy")>=0) {
+								obj.d = 1;
+							}
+							
+							
+						}
+					}
+				}
+			
+				rows.each( function(index, r) {
+					if (index == 0) return;
+					
+					r = $(r);
+					var c;
+					var arr;
+					var ider = idArr[count];
+					if (ider.indexOf("|") >= 0) {
+						var idSplit = ider.split("|");
+						processRow(r, idSplit[0] );
+						processRow(r, idSplit[1] );
+					}
+					else processRow(r, ider);
+					count++;
+				
+				});
+				
+				output.html( JSON.stringify(damageTable) );
+			}
+			
+			processTable($("#BludgeonTable"), partsBludgeonTemp, $("#BludgeonOutput") );
+			processTable($("#CuttingTable"), partsCutTemp, $("#CutOutput") );
+			processTable($("#PunctureTable"), partsPunctureTemp, $("#PunctureOutput") );
+			
+		});
+		
+		</script>
+</head>
+<body>
+	
+	<h1>Damage tables for Riddle of Steel</h1>
+	<p>Scroll down to bottom of page to view outputted JSON of body parts</p>
+<h2>Bludgeoning</h2>
+<table class="inline" id="BludgeonTable">
+	<tbody><tr class="row0">
+		<th class="col0">Location </th><th class="col1">Level One </th><th class="col2">Level Two </th><th class="col3">Level Three </th><th class="col4">Level Four </th><th class="col5">Level Five </th>
+	</tr>
+	<tr class="row1">
+		<td class="col0">Foot </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 4-WP<br>
+“Surface wound” </td><td class="col2">BL: 0<br>
+S: 3<br>
+P: 5-WP<br>
+“Some bruised flesh and bone.” </td><td class="col3">BL: 0<br>
+S: 4<br>
+P: 6-WP<br>
+“Hit bone, may be broken (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> +3).” </td><td class="col4">BL: 0<br>
+S: 6<br>
+P: 8-WP<br>
+“Broken foot (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> +1).” </td><td class="col5">BL: 1<br>
+S: 9<br>
+P: 10-WP<br>
+“Foot totally mashed. instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>.” </td>
+	</tr>
+	<tr class="row2">
+		<td class="col0">Shin &amp; Lower Leg</td><td class="col1"> BL: 0<br>
+S: 4<br>
+P: 5-WP<br>
+“Ow… OW OW OW dammit OW OW OW OW ow!”</td><td class="col2">BL: 0<br>
+S: 5<br>
+P: 6-WP<br>
+“Bone chipped (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> +2)“</td><td class="col3">BL: 0<br>
+S: 6<br>
+P: 7-WP<br>
+“As a Level two, plus you are swept off your feet automatically.”</td><td class="col4">BL: 2<br>
+S: 8<br>
+P: 9-WP<br>
+“Broken (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -3).”</td><td class="col5">BL: 5<br>
+S: 10<br>
+P: 12-WP<br>
+“Compound Fracture. instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>.”</td>
+	</tr>
+	<tr class="row3">
+		<td class="col0">Knee &amp; nearby areas </td><td class="col1">BL: 0<br>
+S: 5-WP<br>
+P: 4-WP<br>
+“Glancing blow” </td><td class="col2">BL: 0<br>
+S: 4<br>
+P: 5-WP<br>
+“Solid blow; funny-bone effect” </td><td class="col3">BL: 2<br>
+S: 8<br>
+P: 8-WP<br>
+“Torn ligament or similar wound; <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>” </td><td class="col4">BL: 6<br>
+S: 10\ P: 10-WP<br>
+“Shattered knee. <a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -5.” </td><td class="col5">BL: 8<br>
+S: 15<br>
+P: 12-WP<br>
+“Compound fracture at knee. instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>.” </td>
+	</tr>
+	<tr class="row4">
+		<td class="col0">Thigh </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 4-WP<br>
+“Glancing blow-will leave a bruise.” </td><td class="col2">BL: 0 <br>
+S: 5<br>
+P: 4-WP<br>
+“Serious 'Charlie horse' (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> +2).” </td><td class="col3">BL: 0<br>
+S: 7<br>
+P: 7-WP<br>
+“Bone is bruised, maybe broken; <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>.” </td><td class="col4">BL: 3<br>
+S: 8<br>
+P: 9-WP<br>
+“Femur is broken, and muscle is pulverized (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -4).” </td><td class="col5">BL: 7<br>
+S: 10<br>
+P: 12-WP<br>
+“Compound fracture. instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>.” </td>
+	</tr>
+	<tr class="row5">
+		<td class="col0">Inner Thigh </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 4-WP<br>
+“Glancing blow; will leave a bruise.” </td><td class="col2">BL: 0<br>
+S: 5<br>
+P: 4-WP<br>
+“Serious 'Charlie horse' (<a href="kdlink">KD</a> + 2).” </td><td class="col3"> BL: 0<br>
+S: 7<br>
+P: 7-WP<br>
+“Bone is bruised, maybe broken; roll <a href="kdlink">KD</a>.” </td><td class="col4">BL: 3<br>
+S: 8<br>
+P: 9-WP<br>
+“Femur is broken, and muscle is pulverized (<a href="kdlink">KD</a> -4).” </td><td class="col5">BL: 7<br>
+S: 10<br>
+P: 12-WP<br>
+“Compound fracture. instant <a href="kdlink">KD</a>.” </td>
+	</tr>
+	<tr class="row6">
+		<td class="col0">Hip </td><td class="col1">BL: 0<br>
+S: 3<br>
+P: 4-WP<br>
+“Thump.” </td><td class="col2">BL: 0<br>
+S: 5<br>
+P:6-WP<br>
+“Nearly dislocates leg, bone is bruised.” </td><td class="col3">BL: 2<br>
+S: 8<br>
+P: 10-WP<br>
+“Leg dislocated, hip cracked; instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>.” </td><td class="col4">BL: 10<br>
+S: 10<br>
+P: 12-WP<br>
+“Hip mangled badly, broken bone fragments cause bleeding.” </td><td class="col5">BL: 20<br>
+S: All<br>
+P: 13-WP<br>
+“Pelvis destroyed, with massive bleeding.” </td>
+	</tr>
+	<tr class="row7">
+		<td class="col0">Groin </td><td class="col1">BL: 0<br>
+S: 7<br>
+P: 9-WP<br>
+Yup… Sorry. Pain drops by 10 after 1d6-1 minutes </td><td class="col2">BL: 0<br>
+S: 9<br>
+P: 10-WP<br>
+As Level one, but worse. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> </td><td class="col3">BL: 3<br>
+S: 11<br>
+P: 15-WP<br>
+“Surface organs destroyed. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> ( -2)” </td><td class="col4">BL: 18<br>
+S: All<br>
+P: All<br>
+“instant loss of <a href="kolink" class="wikilink1" title="rules:ko">KO</a>. The damage is real, real bad.” </td><td class="col5">BL: 20<br>
+S: All<br>
+P: All<br>
+“Weapon destroys pelvis. Death is imminent.” </td>
+	</tr>
+	<tr class="row8">
+		<td class="col0">Abdomen </td><td class="col1">BL: 0<br>
+S: 3<br>
+P: 5-WP<br>
+“Glancing blow-will leave a nasty bruise.” </td><td class="col2">BL: 0<br>
+S: 7<br>
+P: 6-WP<br>
+“Slightly winded. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (Roll at +3).” </td><td class="col3">BL: 3<br>
+S: 10<br>
+P: 8-WP<br>
+“Badly winded, may vomit and/or lose <a href="kolink" class="wikilink1" title="rules:ko">KO</a>.” </td><td class="col4">BL: 8<br>
+S: 10<br>
+P: 12-WP<br>
+“More serious internal damage and bleeding.” </td><td class="col5">BL: 15<br>
+S: All<br>
+P: 15-WP<br>
+“Internal damage is real nasty. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (-3 to roll).” </td>
+	</tr>
+	<tr class="row9">
+		<td class="col0">Ribcage </td><td class="col1">BL: 0<br>
+S: 5-WP<br>
+P: 4-WP<br>
+“Glancing blow-will leave a nasty bruise.” </td><td class="col2">BL: 0<br>
+S: 4<br>
+P: 5-WP<br>
+“Solid blow, ribs and muscle will be bruised.” </td><td class="col3">BL: 1<br>
+S: 8<br>
+P: 6-WP<br>
+“Winded, maybe with a broken rib. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> ( + 2)” </td><td class="col4">BL: 3<br>
+S: 10<br>
+P: 9-WP<br>
+“Cracked ribs and serious winding. <a href="kolink" class="wikilink1" title="rules:ko">KO</a>.” </td><td class="col5">BL: 9<br>
+S: All<br>
+P: 15-WP<br>
+Broken ribs (perhaps several) and some internal damage and bleeding. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (roll at- 3)“</td>
+	</tr>
+	<tr class="row10">
+		<td class="col0">Under the ribs (upper abdomen) </td><td class="col1">BL: 0<br>
+S: 3<br>
+P: 5-WP<br>
+“Glancing blow-will leave a nasty bruise.” </td><td class="col2">BL: 0<br>
+S: 7<br>
+P: 6-WP<br>
+Slightly winded, <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (roll at +3) </td><td class="col3">BL: 3<br>
+S: 10<br>
+P: 8-WP<br>
+Badly winded, may vomit and/or lose <a href="kolink" class="wikilink1" title="rules:ko">KO</a> </td><td class="col4">BL: 8<br>
+S: 10<br>
+P: 12-WP<br>
+More serious internal damage and bleeding </td><td class="col5">BL: 15<br>
+S: All<br>
+P: 15-WP<br>
+Internal damage is real nasty. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (-3 to roll) </td>
+	</tr>
+	<tr class="row11">
+		<td class="col0">Chest </td><td class="col1">BL: 0<br>
+S: 5-WP<br>
+P: 4-WP<br>
+Glancing blow - will leave a nasty bruise </td><td class="col2">BL: 0<br>
+S: 4<br>
+P: 5-WP<br>
+Solid blow, ribs and muscle will be bruised </td><td class="col3">BL: 1<br>
+S: 8<br>
+P: 6-WP<br>
+Winded, maybe with a broken rib. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (+2) </td><td class="col4">BL: 3<br>
+S: 10<br>
+P: 9-WP<br>
+Cracked ribs and serious winding. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> </td><td class="col5">BL: 9<br>
+S: All<br>
+P: 15-WP<br>
+Broken ribs (perhaps several) and some internal damage and bleeding. <a href="kolink" class="wikilink1" title="rules:ko">KO</a>. </td>
+	</tr>
+	<tr class="row12">
+		<td class="col0">Upper Body </td><td class="col1">BL: 0<br>
+S: 5-WP<br>
+P: 4-WP<br>
+“Glancing blow, will leave a nasty bruise.” </td><td class="col2">BL: 0<br>
+S: 4<br>
+P: 5-WP<br>
+“Solid blow, ribs and muscle will be bruised.” </td><td class="col3">BL: 1<br>
+S: 8<br>
+P: 6-WP<br>
+“Winded, maybe with a broken rib. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (+2).” </td><td class="col4">BL: 3<br>
+S: 10<br>
+P: 9-WP<br>
+“Cracked ribs and serious winding. <a href="kolink" class="wikilink1" title="rules:ko">KO</a>.” </td><td class="col5">BL: 9<br>
+S: All<br>
+P:15-WP<br>
+Broken ribs (perhaps several) and some internal damage and bleeding. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (roll at -3) </td>
+	</tr>
+	<tr class="row13">
+		<td class="col0">Neck</td><td class="col1">BL: 0<br>
+S: 4<br>
+P: 5-WP<br>
+“Glancing blow, crick in neck remains.” </td><td class="col2">BL: 1<br>
+S: 7<br>
+P: 9-WP<br>
+“Damage to throat and air tracts. ” </td><td class="col3">BL: 3<br>
+S: 10<br>
+P: 12-WP<br>
+“Crushed larynx. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> or suffocate.” </td><td class="col4">BL: 3<br>
+S: All<br>
+P: 15-WP<br>
+“Cracked vertebrae and other throat problems.” </td><td class="col5"> Neck instantly broken.</td>
+	</tr>
+	<tr class="row14">
+		<td class="col0">Head (lower), including the face </td><td class="col1">BL: 0<br>
+S: 5-WP<br>
+P: 0<br>
+“Gonna leave a shiner … <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (roll at + 3)” </td><td class="col2">BL: 1<br>
+S: 8<br>
+P: 6-WP<br>
+“Broken nose or lost teeth (or both).” <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (roll at+ 1) </td><td class="col3">BL: 4<br>
+S: 10<br>
+P: 0.5<br>
+“Bones near eye are smashed; eye is considered losr. Lose 1/2 of current pool (Unc at -1).” </td><td class="col4">BL: 6<br>
+S: 12<br>
+P: 9-WP<br>
+“Jaw has been shattered, with a concussion. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (-3).” </td><td class="col5">Death. Destruction of cerebellum. Really messy. </td>
+	</tr>
+	<tr class="row15">
+		<td class="col0">Head (upper) </td><td class="col1">BL: 0<br>
+S: 8-WP<br>
+P: 5-WP<br>
+“Glancing blow, some dizziness, <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (+2 to roll).” </td><td class="col2">BL: 3 (internal)<br>
+S: 8<br>
+P: 8-WP<br>
+“Concussion. <a href="kolink" class="wikilink1" title="rules:ko">KO</a>. ” </td><td class="col3">BL: 4<br>
+S: 10<br>
+P: 12-WP<br>
+“Cracked skull. <a href="kolink" class="wikilink1" title="rules:ko">KO</a> (-3 to roll).” </td><td class="col4">BL: 6<br>
+S: All<br>
+P: All<br>
+“Skull is shattered. Character is unconscious and may not recover (or will have brain damage if he does).” </td><td class="col5">Real, real messy. instant Death.”</td>
+	</tr>
+	<tr class="row16">
+		<td class="col0">Upper arm &amp; shoulder </td><td class="col1">BL: 0<br>
+S: 5-WP<br>
+P: 4-WP<br>
+“Thump.” </td><td class="col2">BL: 0<br>
+S: 5<br>
+P: 5-WP<br>
+“Charlie Horse.” </td><td class="col3">BL: 1<br>
+S: 7<br>
+P: 8-WP<br>
+“Broken humerus (hairline). May drop item in hand.” </td><td class="col4">BL: 5<br>
+S: 10<br>
+P: 9-WP<br>
+“Broken bones, including collar bone or worse.” </td><td class="col5">BL: 10<br>
+S: 13<br>
+P: 12-WP<br>
+“Entire shoulder caves in. Lots of blood and bone fragments.” </td>
+	</tr>
+	<tr class="row17">
+		<td class="col0">Hand </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 0<br>
+“Glancing blow. May drop anything held in hand.” </td><td class="col2">BL: 0<br>
+S: 3<br>
+P: 4-WP<br>
+Some flesh (like the palm) and bruised bone. May drop at -3 </td><td class="col3"> BL: 0<br>
+S:7-WP<br>
+P: 5-WP<br>
+As level two, but with a good funny-bone effect. May drop held items </td><td class="col4">BL: 1<br>
+S: 7<br>
+P: 8-WP<br>
+Fingers are broken. Drop any items instantly </td><td class="col5"> BL: 3<br>
+S: 9<br>
+P: 9-WP<br>
+“Hand broken.” </td>
+	</tr>
+	<tr class="row18">
+		<td class="col0">Forearm </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 0<br>
+“A bruise” </td><td class="col2">BL: 0<br>
+S: 3<br>
+P: 4-WP<br>
+Bone bruised. May drop hand-held items at -3 </td><td class="col3">BL: 1<br>
+S: 5<br>
+P: 6-WP<br>
+As level two, but with a good funny-bone effect. May drop held items. </td><td class="col4">BL: 2<br>
+S: 8<br>
+P: 8-WP<br>
+“Bone broken, arm is useless (drop automatically). </td><td class="col5">BL: 3<br>
+S: 10<br>
+P: 10-WP<br>
+“Serious break.” </td>
+	</tr>
+	<tr class="row19">
+		<td class="col0">Elbow </td><td class="col1">BL: 0<br>
+S: 5-WP<br>
+P: 4-WP<br>
+“Glancing blow” </td><td class="col2">BL: 0<br>
+S: 5<br>
+P: 4-WP<br>
+“Solid blow; funnybone effect. May drop items in that hand.” </td><td class="col3">BL: 0<br>
+S: 5<br>
+P: 6-WP<br>
+“Mashed elbow; instantly drop items in that hand. </td><td class="col4">BL: 1<br>
+S: 8<br>
+P: 7-WP<br>
+“Broken.” </td><td class="col5">BL: 3<br>
+S: 9<br>
+P: 10WP<br>
+“Elbow shattered.” </td>
+	</tr>
+</tbody></table>
+
+<h2>Cutting</h2>
+<table class="inline" id="CuttingTable">
+	<tbody><tr class="row0">
+		<th class="col0">Location </th><th class="col1">Level One </th><th class="col2">Level Two </th><th class="col3">Level Three </th><th class="col4">Level Four </th><th class="col5">Level Five </th>
+	</tr>
+	<tr class="row1">
+		<td class="col0">Foot </td><td class="col1">BL: 0<br>
+Shock: 3-WP<br>
+Pain: 2-WP<br>
+Surface Wound </td><td class="col2">BL :1<br>
+Shock: 3<br>
+Pain: 3-WP<br>
+Some flesh and bruised bone </td><td class="col3">BL: 2<br>
+Shock: 4<br>
+Pain: 5-WP<br>
+Deep cut, hit bone (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> +3) </td><td class="col4">BL: 5<br>
+Shock: 6<br>
+Pain: 6-WP<br>
+Broken foot (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> +1) </td><td class="col5">BL: 10<br>
+Shock: 9<br>
+Pain: 8-WP<br>
+Foot totally destroyed. Instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a> </td>
+	</tr>
+	<tr class="row2">
+		<td class="col0">Shin &amp; Lower Leg </td><td class="col1">BL: 0<br>
+S: 3<br>
+P: 2-WP<br>
+Ow… ow ow ow damnit ow ow ow ow ow! </td><td class="col2">BL: 2<br>
+S: 5<br>
+P: 6-WP<br>
+Bone chipped (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> +2). </td><td class="col3">BL: 4<br>
+S: 5<br>
+P:6-WP<br>
+As level two, plus you are swept off your feet automatically </td><td class="col4">BL: 8<br>
+S: 7<br>
+P: 8-WP<br>
+Broken (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -2). </td><td class="col5">BL: 13<br>
+S: 9<br>
+P: 10-WP<br>
+Limb is destroyed. Instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a></td>
+	</tr>
+	<tr class="row3">
+		<td class="col0">Knee &amp; nearby areas </td><td class="col1"> BL: 0<br>
+S: 5-WP<br>
+P: 3-WP<br>
+Glancing Blow </td><td class="col2">BL: 2<br>
+S: 5<br>
+P: 5-WP<br>
+Solid blow; funny-bone effect</td><td class="col3"> BL: 4<br>
+S: 8<br>
+P: 8-WP<br>
+Torn ligament or similar wound; <a href="kdlink" class="wikilink1" title="rules:kd">KD</a></td><td class="col4"> BL: 8<br>
+S: 10<br>
+P: 13-WP<br>
+Shattered knee. <a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -5 </td><td class="col5">BL: 13<br>
+S: 12<br>
+P: 12-WP<br>
+Destroyed or torn off at knee. Instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a></td>
+	</tr>
+	<tr class="row4">
+		<td class="col0">Thigh </td><td class="col1">BL: 1<br>
+S: 4-WP<br>
+P: 3-WP<br>
+Light laceration</td><td class="col2">BL: 2<br>
+S: 2<br>
+P: 4-WP<br>
+Deeper laceration including torn muscle (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> +2)</td><td class="col3">BL: 4<br>
+S: 5<br>
+P: 4-WP<br>
+Deeper laceration, including torn muscle (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> +2)</td><td class="col4"></td><td class="col5"></td>
+	</tr>
+	<tr class="row5">
+		<td class="col0">Inner thigh </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 4-WP<br>
+Light laceration </td><td class="col2">BL: 6<br>
+S: 3<br>
+P: 5-WP<br>
+Deeper laceration. Blood loss is now more serious. </td><td class="col3">BL: 9<br>
+S: 5<br>
+P: 16-WP<br>
+Deep cut, hit bone; meat!<br>
+Roll <a href="kdlink">KD</a> </td><td class="col4">BL: 12<br>
+S: 7<br>
+P: 8-WP<br>
+Some large blood vessels have been hit; serious bleeding </td><td class="col5">BL: 17<br>
+S: 7<br>
+P: 10-WP<br>
+A major artery has been severed. Death is likely. </td>
+	</tr>
+	<tr class="row6">
+		<td class="col0">Groin </td><td class="col1">BL: 6<br>
+S: 9<br>
+P: 9-WP<br>
+“Yup … Sorry. Pain drops by 5 after 1d6-1 minutes. ” </td><td class="col2">BL: 9<br>
+S: 9<br>
+P: 10-WP<br>
+“Worse; much more blood.” </td><td class="col3">BL: 12<br>
+S: 10<br>
+P: 12-WP<br>
+“Surface organs destroyed. May lose consciousness (-2)” </td><td class="col4">BL: 18<br>
+S: all<br>
+P: all<br>
+Instant loss of consciousness. The damage is real, real bad. </td><td class="col5">BL: 20<br>
+S: All<br>
+P: All<br>
+“Weapon destroys pelvis and lodges just below the navel. Death is imminent.” </td>
+	</tr>
+	<tr class="row7">
+		<td class="col0">Hip </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 3-WP<br>
+Small cut, some blood </td><td class="col2">BL: 2<br>
+S: 3<br>
+P:5-WP<br>
+Deeper cut. </td><td class="col3">BL: 4<br>
+S: 5<br>
+P: 7-WP<br>
+“Near dislocation and chipping.”<br>
+<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> </td><td class="col4">BL: 8<br>
+S: 8<br>
+P: 10-WP<br>
+“Cracked hipbone and dislocation. (<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -2)” </td><td class="col5">BL: 12<br>
+S: 10<br>
+P: 12-WP<br>
+“Weapon stuck, hip broken, lots of blood (instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>).”</td>
+	</tr>
+	<tr class="row8">
+		<td class="col0">Abdomen </td><td class="col1">BL: 1<br>
+S: 2<br>
+P: 5-WP<br>
+“Light 0 laceration.” </td><td class="col2">BL: 3<br>
+SL: 4<br>
+P: 6-WP<br>
+“Deeper laceration,including torn muscle.” </td><td class="col3">BL: 7<br>
+S: 8<br>
+P: 10-WP<br>
+“Internal damage equivalent to a hernia.” </td><td class="col4">BL: 10<br>
+S: 10<br>
+P: 12-WP<br>
+“More serious internal damage and bleeding.” </td><td class="col5">BL: 20<br>
+S: All<br>
+P: All<br>
+“Total disembowelment. May lose consciousness (-3 to roll).” </td>
+	</tr>
+	<tr class="row9">
+		<td class="col0">Ribcage </td><td class="col1">BL: 0<br>
+S: 2<br>
+P: 4-WP<br>
+“Light slash” </td><td class="col2">BL: 2<br>
+S: 4<br>
+P: 5-WP<br>
+“Long slash” </td><td class="col3">BL: 3<br>
+S: 8<br>
+P: 7-WP<br>
+“Winded, maybe with a broken rib.”<br>
+<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> </td><td class="col4">BL: 9<br>
+S: 10<br>
+P: 12-WP<br>
+“Cracked ribs and internal bleeding. May lose consciousness.” </td><td class="col5">BL: 20<br>
+CP loss from shock and pain is total, as weapon is lodged in chest. Death is imminent.</td>
+	</tr>
+	<tr class="row10">
+		<td class="col0">Chest </td><td class="col1">BL: 0<br>
+S: 2<br>
+P: 4-WP<br>
+Light slash </td><td class="col2">BL: 2<br>
+S: 4<br>
+P: 5-WP<br>
+“Long slash” </td><td class="col3">BL: 3<br>
+S: 8<br>
+P: 7-WP<br>
+Winded, maybe with a broken rib.<br>
+Roll <a href="kdlink">KD</a> </td><td class="col4">BL: 9<br>
+S: 10<br>
+P: 12-WP<br>
+Cracked ribs and internal bleeding. May lose consciousness </td><td class="col5">BL: 20<br>
+PC loss from shock and pain is total, as weapon is lodged in chest. Death in imminent. </td>
+	</tr>
+	<tr class="row11">
+		<td class="col0">Upper Arm and Shoulder </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 4-WP<br>
+Small cut, some blood </td><td class="col2">BL: 2<br>
+S: 4<br>
+P: 5-WP<br>
+Deeper cut</td><td class="col3">BL: 4<br>
+S: 5<br>
+P: 8-WP<br>
+Serious flesh wound </td><td class="col4">BL: 8<br>
+S: 8<br>
+P: 10-WP<br>
+Broken bones, serious blood </td><td class="col5">BL: 12<br>
+S: 13<br>
+P: 14-WP<br>
+Total loss of limb, etc.</td>
+	</tr>
+	<tr class="row12">
+		<td class="col0">Shoulder </td><td class="col1">BL: 1<br>
+S: 4-WP<br>
+P: 4-WP<br>
+Small cut, some blood </td><td class="col2"> BL: 2<br>
+S: 4<br>
+P: 5-WP<br>
+Deeper Cut </td><td class="col3">BL: 5<br>
+S: 6<br>
+P: 7-WP<br>
+Serious flesh wound </td><td class="col4">BL: 10<br>
+S: 8<br>
+P: 10-WP<br>
+Broken Collarbone, serious blood </td><td class="col5">BL: 25<br>
+S: 10<br>
+P: 11-WP<br>
+Broken collarbone and ribs, heavy bleeding </td>
+	</tr>
+	<tr class="row13">
+		<td class="col0">Neck </td><td class="col1">Bl: 1<br>
+S: 4<br>
+P: 5-WP<br>
+“Flesh wound.”</td><td class="col2"> BL: 4<br>
+S: 7<br>
+P: 10-WP<br>
+“Chipped or cracked vertebrae.” </td><td class="col3">BL: 9<br>
+S: 10<br>
+P: 11-WP<br>
+“Crushed or slashed larynx.” </td><td class="col4">BL: 20<br>
+S: 13<br>
+P: 14-WP<br>
+“Cut jugular, maybe throat, too.” </td><td class="col5">Total or near-total decapitation. Instant Death. </td>
+	</tr>
+	<tr class="row14">
+		<td class="col0">Head (lower), including the face </td><td class="col1">BL: 0<br>
+S: 5-WP<br>
+P: 0<br>
+“Classic scarring cut.” </td><td class="col2">BL: 2<br>
+S: 8<br>
+P: 5-WP<br>
+“Nasty teeth, cheek, or nose slash that will leave long-term effects.” </td><td class="col3">BL: 5<br>
+S: 8<br>
+P: 7-WP<br>
+“Roll 1 d6 for feature loss: 1-2 eye; 3 nose; 5 whole ear; 6 partial ear.” </td><td class="col4">BL: 7<br>
+S: 10<br>
+P: 10-WP<br>
+“Jaw has been shattered, with a concussion. May lose consciousness.” </td><td class="col5">Death. Destruction of cerebellum. Really messy. </td>
+	</tr>
+	<tr class="row15">
+		<td class="col0">Head (upper) </td><td class="col1"> BL: 3<br>
+S: 3<br>
+P: 4-WP<br>
+“Scalp cut. After 1d6 exchange blood seeps into eyes. CP reduced by 1/3 until wiped away (giving another 1d6 exchanges. and so on . .. )” </td><td class="col2">BL: 3<br>
+S: 7<br>
+P: 8-WP<br>
+“Dizziness and bleeding. May lose consciousness (+ 1 ro roll).” </td><td class="col3">BL: 4<br>
+S: 10<br>
+P: 12-WP<br>
+“Cracked skull. May lose consciousness (-3 to roll).” </td><td class="col4">BL: 10<br>
+S: All<br>
+P: All<br>
+“Skull is shattered. Character is <a href="kolink">KO</a> and may not recover (or will have brain damage if he does).” </td><td class="col5">Real, real messy. Instant Death. </td>
+	</tr>
+	<tr class="row16">
+		<td class="col0">Hand </td><td class="col1">BL: 0<br>
+S: 7-WP<br>
+P: 4-WP<br>
+“Surface graze. May drop anything held in hand.” </td><td class="col2">BL: 2 Shock: 3<br>
+Pain: 4-WP<br>
+“Some flesh (like the palm) and bruised bone. May drop at -3.” </td><td class="col3">BL: 6<br>
+S: 9-WP<br>
+P: 6-WP<br>
+“Broken. Instantly drop hand-held items.” </td><td class="col4">BL: 8<br>
+S: 8<br>
+P: 9-WP<br>
+“Lost 1 d6-2 (min 1) fingers. Drop any item. instantly.” </td><td class="col5">BL: 10<br>
+S: 10<br>
+P: 11-WP<br>
+“Hand destroyed or cut off.” </td>
+	</tr>
+	<tr class="row17">
+		<td class="col0">Forearm </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 4-WP<br>
+Grazed </td><td class="col2">BL: 3<br>
+S: 5<br>
+P: 7-WP<br>
+“Bone chipped (May drop hand-held items).” </td><td class="col3"> BL: 4<br>
+S: 5<br>
+P: 7-WP<br>
+“As a Level two, plus you automatically drop anything held.” </td><td class="col4">BL: 6<br>
+S: 8<br>
+P: 8-WP<br>
+“Arm broken, and lots of blood.” </td><td class="col5">BL: 12<br>
+S: 10<br>
+P: 12-WP<br>
+“Arm destroyed, perhaps cut off.” </td>
+	</tr>
+	<tr class="row18">
+		<td class="col0">Elbow </td><td class="col1">BL: 0<br>
+Shock: 5-WP<br>
+Pain: 4-WP<br>
+“Glancing blow” </td><td class="col2">BL: 0<br>
+Shock: 4<br>
+Pain: 5-WP<br>
+“Solid blow; funnybone effect. May drop items in that hand.” </td><td class="col3">BL: 3<br>
+S: 6<br>
+P: 6-WP<br>
+“Torn ligament or similar wound; instantly drop items in that hand. </td><td class="col4">BL: 6<br>
+S: 8<br>
+P: 9-WP<br>
+“Elbow shattered.” </td><td class="col5">BL: 12<br>
+S: 10<br>
+P: 10-WP<br>
+“Arm torn off at elbow.” </td>
+	</tr>
+</tbody></table>
+
+
+<h3>Puncturing</h3>
+<table class="inline" id="PunctureTable">
+	<tbody><tr class="row0">
+		<th class="col0">Location </th><th class="col1">Level One </th><th class="col2">Level Two </th><th class="col3">Level Three </th><th class="col4">Level Four </th><th class="col5">Level Five </th>
+	</tr>
+	<tr class="row1">
+		<td class="col0">Foot </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 4-WP<br>
+“Surface wound” </td><td class="col2">BL: 0<br>
+S: 3<br>
+P: 5-WP<br>
+“Some flesh and bruised bone.” </td><td class="col3">BL: 2<br>
+S: 4<br>
+P: 6-WP<br>
+Sunk deep<br>
+<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> +3 </td><td class="col4">BL: 3<br>
+S: 7<br>
+P: 7-WP<br>
+Hit ankle bone<br>
+<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -1 </td><td class="col5">BL: 3<br>
+S: 7<br>
+P: 7-WP<br>
+“As previous, with instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>.”</td>
+	</tr>
+	<tr class="row2">
+		<td class="col0">Shin &amp; Lower Leg </td><td class="col1">BL: 0<br>
+S: 4<br>
+P: 4-WP<br>
+“Ow… ow ow ow dammit ow ow ow ow ow'. </td><td class="col2">BL: 1<br>
+S: 5<br>
+P: 6-WP<br>
+“Bone chipped<br>
+(<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> +2)” </td><td class="col3">BL: 2<br>
+S: 5<br>
+P: 6-WP<br>
+“As a Level two, plus you are swept off your feet automatically.” </td><td class="col4">BL: 2<br>
+S: 5<br>
+P: 6-WP<br>
+Totally passes through, hindering movement<br>
+<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -2 </td><td class="col5">BL: 4 <br>
+S: 7<br>
+P: 8-WP<br>
+“Bone damaged in addition to Lvl. 4.<br>
+Instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>.” </td>
+	</tr>
+	<tr class="row3">
+		<td class="col0">Knee &amp; nearby area </td><td class="col1">BL: 0<br>
+S: 5-WP<br>
+P: 5-WP<br>
+“Glancing blow” </td><td class="col2">BL: 0<br>
+S: 4<br>
+P: 5-WP<br>
+“Solid blow; funny-bone effect” </td><td class="col3">BL: 3<br>
+S: 6<br>
+P: 6-WP<br>
+ “Torn ligament or similar wound; <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>.” </td><td class="col4">BL: 4<br>
+S: 7<br>
+P: 8-WP<br>
+“Dislocated or otherwise jacked up knee.<br>
+<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -2.” </td><td class="col5">BL: 6<br>
+S: 9<br>
+P: 11-WP<br>
+“Shattered knee.<br>
+<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -5.” </td>
+	</tr>
+	<tr class="row4">
+		<td class="col0">Thigh </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 4-WP<br>
+Light laceration </td><td class="col2">BL: 1<br>
+S: 3<br>
+P: 4-WP<br>
+“Deeper puncture, including torn muscle<br>
+<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> + 2 </td><td class="col3">BL: 2<br>
+S: 5<br>
+P: 5-WP<br>
+Serious flesh wound, including torn tendons; <a href="kdlink" class="wikilink1" title="rules:kd">KD</a>.” </td><td class="col4">BL: 4<br>
+S: 5<br>
+P: 6-WP<br>
+“More serious damage and bleeding, including some bone damage<br>
+<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -2 </td><td class="col5">BL: 8<br>
+S: 5<br>
+P: 7-WP<br>
+“As four, but with more serious bleeding (a blood vessel was hit).”</td>
+	</tr>
+	<tr class="row5">
+		<td class="col0">Groin </td><td class="col1">BL: 6<br>
+S: 7<br>
+P: 9-WP<br>
+“Yup … Sorry. Pain drops by 10. after 1d6-1 min. </td><td class="col2">BL: 8<br>
+S: 8<br>
+P: 10-WP<br>
+“Worse; much more blood.” </td><td class="col3">BL: 10<br>
+S: 10<br>
+P: 15-WP<br>
+“Shish-kabob. May lose consciousness (-2)” </td><td class="col4">BL 12<br>
+S: All<br>
+P: All<br>
+ “Instant loss of consciousness. The damage is real, real bad.” </td><td class="col5">BL: 15<br>
+S: All<br>
+P: All<br>
+Serious damage to internal organs and heavy bleeding. May lose consciousness (-3 to roll) </td>
+	</tr>
+	<tr class="row6">
+		<td class="col0">Hip </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 4-WP<br>
+“Small cut, some blood.” </td><td class="col2">BL: 1<br>
+S: 3<br>
+P:5-WP<br>
+Deeper puncture </td><td class="col3">BL: 3<br>
+S: 5<br>
+P: 9-WP<br>
+Near dislocation and chipping. </td><td class="col4">BL: 6<br>
+S: 8<br>
+P: 10-WP<br>
+Cracked hipbone and dislocation.<br>
+<a href="kdlink" class="wikilink1" title="rules:kd">KD</a> -2 </td><td class="col5">BL: 10<br>
+S: 10<br>
+P: 12-WP<br>
+Weapon stuck in hip. lots of blood<br>
+Instant <a href="kdlink" class="wikilink1" title="rules:kd">KD</a> </td>
+	</tr>
+	<tr class="row7">
+		<td class="col0">Flesh to the side </td><td class="col1" colspan="5">BL: 3<br>
+S: 5<br>
+P: 6-WP<br>
+Pierced body without hitting any major organs, mostly just flesh and muscle. It hurts and bleeds, but probably isn't fatal.</td>
+	</tr>
+	<tr class="row8">
+		<td class="col0">Lower Abdomen </td><td class="col1">BL: 0<br>
+S: 3<br>
+P: 4-WP<br>
+“Light laceration, no puncture.” </td><td class="col2">BL: 6<br>
+S: 4<br>
+P: 6-WP<br>
+“Internal damage equivalent to a hernia.” </td><td class="col3">BL: 8<br>
+S: 7<br>
+P: 9-WP<br>
+“Belly wound internal bleeding is going ro be a problem. </td><td class="col4">BL 12<br>
+S: 10<br>
+P: 12-WP<br>
+“More serious internal damage and bleeding. Some internal organs are in trouble.” </td><td class="col5">BL: 18<br>
+S: All<br>
+P: All<br>
+“Serious damage to internal organs and heavy bleeding. May lose consciousness (-3 to roll).” </td>
+	</tr>
+	<tr class="row9">
+		<td class="col0">Under the ribs (upper abdomen) </td><td class="col1">BL: 0<br>
+S:3<br>
+P: 4-WP<br>
+“Light laceration, no puncture.” </td><td class="col2">BL: 8<br>
+S: 5<br>
+P: 6-WP<br>
+“Internal damage equivalent to a hernia.” </td><td class="col3">BL: 10<br>
+S: 8<br>
+P: 10-WP<br>
+“Belly wound- internal bleeding is going to be a problem. </td><td class="col4">BL: 13<br>
+S: 13<br>
+P: 15-WP<br>
+“More serious internal damage and bleeding. Some internal organs (diaphram or liver) are in trouble.” </td><td class="col5">BL: 19<br>
+S: All<br>
+P: All<br>
+“Serious damage to internal organs (heart or lungs) and heavy bleeding. May lose consciousness (-3 to roll) </td>
+	</tr>
+	<tr class="row10">
+		<td class="col0">Chest </td><td class="col1">BL: 0<br>
+S: 9-WP<br>
+P: 5-WP<br>
+Just muscle – no organs yet, as attack is stopped short by bone </td><td class="col2">BL: 4<br>
+S: 4<br>
+P:6-WP<br>
+Deeper puncture, including torn muscle </td><td class="col3">BL: 8<br>
+S: 7<br>
+P: 8-WP<br>
+Deep, but survivable wound hits deep but misses any major organs. </td><td class="col4">BL: 19<br>
+S: 13<br>
+P: 13-WP<br>
+Punctured lung, with serious internal bleeding; death from drowning is very likely </td><td class="col5">Pierced heart. Death is nearly instantaneous. </td>
+	</tr>
+	<tr class="row11">
+		<td class="col0">Collar and throat </td><td class="col1">BL: 2<br>
+S: 4<br>
+P: 5-WP<br>
+“Right below the collarbone; hurts, but not fatal.” </td><td class="col2">BL: 6<br>
+S: 7<br>
+P: 6-WP<br>
+Right above the collarbone </td><td class="col3">BL 7<br>
+S: 13<br>
+P: 15-WP<br>
+“Pierced the throat, missing the jugular; still very nasty </td><td class="col4">BL: 15<br>
+S: All<br>
+P: 20-WP<br>
+Pierced the throat missing the jugular; still very nasty.” </td><td class="col5">Weapon pierces throat and punctures the cerebellum or lower brain. Death is instantaneous. </td>
+	</tr>
+	<tr class="row12">
+		<td class="col0">Face and head </td><td class="col1">BL: 1<br>
+S: 7-WP<br>
+P: 4-WP<br>
+“Grazed cheek or temple. May lose consciousness (roll at +2) </td><td class="col2">BL: 2<br>
+S: 6<br>
+P: 6-WP<br>
+“As a graze, only deeper. The skull is still unbroken; may lose consciousness.” </td><td class="col3">BL: 8<br>
+S: 10<br>
+P: 9-WP<br>
+Pierces part of face, missing the brain, but still causing significant damage (<a href="kolink">KO</a> -3).” </td><td class="col4">BL: 19<br>
+S: 13<br>
+P: 13<br>
+Part of brain destroyed, permanent mental damage results (-1d6-1 to all mental attributes). <a href="kolink">KO</a>. </td><td class="col5">Pierced brain. Death is nearly instantaneous, coming from massive brain damage and hemorrhaging. </td>
+	</tr>
+	<tr class="row13">
+		<td class="col0">Hand </td><td class="col1">BL: 0<br>
+S: 6-WP<br>
+P: 5-WP<br>
+“Surface graze. May drop anything held in hand.” </td><td class="col2">BL: 0<br>
+S: 3<br>
+P: 4-WP<br>
+“Some flesh (like the palm) and bruised bone. May drop at-3.” </td><td class="col3">BL: 2<br>
+S: 9-WP<br>
+P: 6-WP<br>
+“Pierced hand totally. May drop hand-held items (at -4).” </td><td class="col4">BL: 5<br>
+S: 7<br>
+P: 9-WP<br>
+“Hie wrist bones (instantly drop whatever may be held in that hand).” </td><td class="col5">BL: 9<br>
+S: 8<br>
+P: 9-WP<br>
+“As previous, a slashed artery or vein.” </td>
+	</tr>
+	<tr class="row14">
+		<td class="col0">Forearm </td><td class="col1">BL 0<br>
+S: 5-WP<br>
+P: 4-WP<br>
+“Grazed.” </td><td class="col2">BL: 1<br>
+S: 5<br>
+P: 6-WP<br>
+“Bone chipped (May drop hand-held items).” </td><td class="col3">BL: 2<br>
+S: 5<br>
+P: 6-WP<br>
+“As a level two, plus you automatically drop anything held.” </td><td class="col4">BL: 6<br>
+S: 7<br>
+P: 8-WP<br>
+“Totally passes through, causing greater blood loss and forcing any item to be dropped.” </td><td class="col5">BL: 7<br>
+S: 8<br>
+P: 9-WP<br>
+“As lvl 4, wich more blood and some bone damage.” </td>
+	</tr>
+	<tr class="row15">
+		<td class="col0">Elbow </td><td class="col1">BL: 0<br>
+S: 6-WP<br>
+P: 5-WP<br>
+“Glancing blow” </td><td class="col2">BL: 0<br>
+S: 4<br>
+P: 6-WP<br>
+“Solid blow; funnybone effect. May drop items in that hand.” </td><td class="col3">BL: 3<br>
+S: 6<br>
+P: 7-WP<br>
+“Torn ligament or similar wound; instantly drop items in that hand. </td><td class="col4">BL: 5<br>
+S: 8<br>
+P: 9-WP<br>
+“Dislocated or otherwise jacked up elbow. Use of arm temporarily lost.” </td><td class="col5">BL: 7<br>
+S: 9<br>
+P: 11-WP<br>
+“Shattered elbow. Arm now useless.” </td>
+	</tr>
+	<tr class="row16">
+		<td class="col0">Upper Arm </td><td class="col1">BL: 0<br>
+S: 4-WP<br>
+P: 4-WP<br>
+“Light laceration.” </td><td class="col2">BL: 1<br>
+S: 3<br>
+P: 5-WP<br>
+“Deeper puncture, including torn muscle.” </td><td class="col3">BL: 3<br>
+S: 5<br>
+P: 6-WP<br>
+“Serious flesh wound, including torn tendons.” </td><td class="col4">BL: 5<br>
+S: 6<br>
+P: 7-WP<br>
+“More serious damage and bleeding, including some bone damage.” </td><td class="col5">BL: 7<br>
+S: 7<br>
+P: 8-WP<br>
+“As four, but with more senrious bleeding (a blood vessel was hit.)” </td>
+	</tr>
+</tbody></table>
+
+
+<label>Bludgeon</label>
+<textarea id="BludgeonOutput">
+	
+</textarea>
+
+<label>Cutting</label>
+<textarea id="CutOutput">
+	
+</textarea>
+
+<label>Puncturing</label>
+<textarea id="PunctureOutput">
+	
+</textarea>
+
+<script>
+
+		var partsBludgeonTemp = [  
+			"foot",
+			"shin_and_lower_leg",
+			"knee_and_nearby_areas",
+			"thigh",
+			"inner_thigh",
+			"hip",
+			"groin",
+			"abdomen",
+			"ribcage",
+			"upper_abdomen",
+			"chest",
+			"upper_body",
+			"neck",
+			"face|lower_head",
+			"upper_head",
+			"upper_arm_and_shoulder",
+			"hand",
+			"forearm",
+			"elbow",
+		];
+
+	var partsCutTemp = [
+			"foot"
+			,"shin_and_lower_leg"
+			,"knee_and_nearby_areas"
+			,"thigh"
+			,"inner_thigh"
+			,"groin"
+			,"hip"
+			,"abdomen"
+			,"ribcage"
+			,"chest"
+			,"upper_arm_and_shoulder"
+			,"shoulder"
+			,"neck"
+			,"face|lower_head"
+			,"upper_head"
+			,"hand"
+			,"forearm"
+			,"elbow"
+		];
+		
+		var partsPunctureTemp = [
+			"foot"
+			,"shin_and_lower_leg"
+			,"knee_and_nearby_area"
+			,"thigh"
+			,"groin"
+			,"hip"
+			,"flesh_to_the_side"
+			,"lower_abdomen"
+			,"upper_abdomen"
+			,"chest"
+			,"collar_and_throat"
+			,"face|head"
+			,"hand"
+			,"forearm"
+			,"elbow"
+			,"upper_arm"
+		];
+</script>
+</body>
+</html>
