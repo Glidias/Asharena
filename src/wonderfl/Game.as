@@ -701,6 +701,8 @@ class Dungeon extends Sprite{
 		var ent:GameObject;
 		var charSheet:CharacterSheet;
 		
+		var defenderList:Array = [];
+		
 		i = fightStack.length;
 		while (--i > -1) {
 			fight = fightStack[i];
@@ -728,12 +730,15 @@ class Dungeon extends Sprite{
 				manueverStack.pushManuever( primaryManuever );
 				
 			}
+			else {
+				defenderList.push({entity:ent, reflexScore: charSheet.getReflex()* 1000 + Math.random() * 10 });
+			}
 			
 			// tODO later
 			// go through other manuevers if necessary 
 			for (var k:int = 1; k < fight.manuevers.length; k++) {
 				var kManuever:Object = fight.manuevers[k];  // assumed manuever is explicitly defined
-				if (fight.attacking) {
+				//if (kManuever.attacking) {
 					
 					/*
 					kManuever.from = ent;
@@ -743,7 +748,7 @@ class Dungeon extends Sprite{
 					primaryManuever.reflexScore = charSheet.getReflex()* 1000 + Math.random() * 10;
 					manueverStack.pushManuever( primaryManuever );
 					*/
-				}
+				//}
 			}
 		}
 		
@@ -758,7 +763,7 @@ class Dungeon extends Sprite{
 		var targetFight:FightState;
 		
 		i = manueverStack.stack.length;
-		
+
 		
 		while (--i > -1) {
 			cManuever = manueverStack.stack[i];
@@ -783,7 +788,9 @@ class Dungeon extends Sprite{
 					
 				}
 				// commit enemyManuever to fight, 
+				
 				targetFight.notifyAttack( cManuever);
+				
 				
 			}
 			else {  // from player, break and defer the rest of the declaration for the remaining AI ??? For now, just let AI attack blindly
@@ -796,11 +803,39 @@ class Dungeon extends Sprite{
 		}
 		
 		if (!playerAtkInterfaceShown && playerBeingAttacked) { 
-			 // show player decision defending manuever interface...list of available manuevers
-			 var totalEnemyAttacks:int = (man.components.fight as FightState).enemyManuevers.length;
-			UITros.TRACE("Player is defending...");
+			
+			// var totalEnemyAttacks:int = (man.components.fight as FightState).enemyManuevers.length;
+			//UITros.TRACE("Player is defending...");
 			
 		}
+		
+		
+		defenderList = defenderList.sortOn("reflexScore", Array.DESCENDING);
+		// go through defender list
+		i = defenderList.length;
+		while (--i > -1) {
+			var defender:GameObject = defenderList[i].entity;
+			fight = defender.components.fight;
+			if ( defender != man) {
+				/*
+				if (fight.enemyManuevers > 0) {
+					
+				}
+				else {
+					// defender might still want to buy initiative, or attempt to defense
+				}
+				*/
+				// TODO: AI Defender to decide on how to defend, if required, or buy intiative to attack.
+			}
+			else {
+				 // show player decision defending manuever interface...list of available manuevers
+				var totalEnemyAttacks:int = (man.components.fight as FightState).enemyManuevers.length;
+				UITros.TRACE("Player is defending...");
+			}
+			
+		}
+		
+		
 		
 		
 		
