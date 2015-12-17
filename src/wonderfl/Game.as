@@ -173,7 +173,8 @@ class UITros extends Sprite {
 		//var enemyMask:int = 0;
 
 		var wallMask:int = 0;
-		var manFight:FightState = dungeon.man.components.fight;  
+		var manFight:FightState = dungeon.man.components.fight; 
+		var manCharSheet:CharacterSheet = dungeon.man.components.char;
 		//FightState.updateNeighborEnemyStates(dungeon.man, manFight, dungeon);
 		
 		var len:int = directions.length;
@@ -259,11 +260,11 @@ class UITros extends Sprite {
 		}
 		
 		if (gotEnemy) {  // TODO: proper context-facing info of enemy fight info instead...later on...
-			setFightInfo(manFight);
+			setFightInfo(manFight, manCharSheet);
 		}
 		
 		if (manFight.s == 2) {
-			btnWait.label = (manFight.attacking ? "ATK" : manFight.manuever == 0 ? "FLEE" :  "DEF");
+			btnWait.label = (manFight.attacking ? "ATK" : manFight.manuevers[0].manuever == 0 ? "FLEE" :  "DEF");
 			var engagedMultiple:Boolean = manFight.numEnemies > 1;
 			arrowRight.visible =   arrowRight.alpha == 0 ? (rightRollHolder.visible=false) : (engagedMultiple &&  (manFight.flags & 1) != 0);  // 
 			arrowLeft.visible =   arrowLeft.alpha == 0 ? ( leftRollHolder.visible=false) :  (engagedMultiple &&  (manFight.flags & 2) !=0);  // 
@@ -507,9 +508,16 @@ class UITros extends Sprite {
 		
 		removeEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
 		TRACE = addMessageLine;
+		CLEAR_TRACE = clearMessages;
+	}
+	
+	private function clearMessages():void {
+		messageBox.text = "";
+		//messageBox.scrollV = 99999999;
 	}
 	
 	public static var TRACE:Function;
+	public static var CLEAR_TRACE:Function;
 	
 	public function addMessageLine(text:String):void {
 		messageBox.appendText(text + "\n");
@@ -523,8 +531,8 @@ class UITros extends Sprite {
 	
 	public static const ROLLING_TEXT:String = "Rolling..";
 	
-	public function setFightInfo(fight:FightState):void {
-		infoExchange.text = "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + ")";
+	public function setFightInfo(fight:FightState, charSheet:CharacterSheet):void {
+		infoExchange.text = "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + "),  CP: " +fight.combatPool + "/" + charSheet.getMeleeCombatPoolAmount() + "(-"+charSheet.cpDepletion+")";
 		//+"Last attacking?:"+fight.lastAttacking
 		infoMoveStep.text =  fight.s < 2 ? "Move " + fight.s + "/1" : "Rolling "+(fight.attacking ? "Attack" : "Defense")+"...";
 		radioAttack.enabled = fight.initiative;
@@ -590,7 +598,7 @@ class Dungeon extends Sprite{
 			FightState.updateNeighborInitiative(fight, this);
 		}
 		
-		fightStack.length = 0;
+		
 		
 	}
     
@@ -640,9 +648,21 @@ class Dungeon extends Sprite{
 			case Keyboard.RIGHT:
 				if (!uiTros.arrowRight.visible)  e.keyCode = Keyboard.P;	
 			break;
+			case Keyboard.I:
+				tracePlayerCharInfo();
+			return;
 			default:return;
 		}
 		onKeyDown(e);
+	}
+	private function getPlayerCharInfoStr():String {
+		var charSheet:CharacterSheet = man.components.char;
+		 return "Health:" + charSheet.getCurrentHealth() + "/" + charSheet.health + ", RoundCP:" + charSheet.getMeleeCombatPoolAmount() + ", BL:" + charSheet.getTotalBloodLost() + ", Pain:" + charSheet.getTotalPain();
+	}
+	private function tracePlayerCharInfo():void 
+	{
+		
+		UITros.TRACE(getPlayerCharInfoStr() );
 	}
 	//*/
 	
@@ -654,11 +674,176 @@ class Dungeon extends Sprite{
         onFrame();
 		
 		handleTimestampUpdate();
+		
+		
     }
 	
 	private function handleTimestampUpdate():void {
 		 FightState.updateSurroundingStates(this, man.mapX, man.mapY, mapWidth >= mapHeight ? mapWidth : mapHeight);
 		uiTros.mapUpdate(this);
+		
+		
+		resolveFightStack();
+		
+		//tracePlayerCharInfo();
+	}
+	
+	private var manueverStack:ManueverStack = new ManueverStack();
+	
+	private function resolveFightStack():void 
+	{
+		var entList:Vector.<GameObject>;
+		var primaryManuever:Object;
+		var fight:FightState;
+		// for declaring manuevers , details thereof, if required
+		
+		var i:int = fightStack.length
+		var ent:GameObject;
+		var charSheet:CharacterSheet;
+		
+		i = fightStack.length;
+		while (--i > -1) {
+			fight = fightStack[i];
+			if ( !fight.isRolling() ) {
+				continue;
+			}
+			
+			primaryManuever = fight.manuevers[0];
+			entList = checkComponent(fight.x, fight.y, "fight");
+			if (entList.length > 0) {
+				ent = entList[0];
+			}
+			else {
+				throw new Error("Exception fight missing at location!");
+			}
+			charSheet = ent.components.char;
+			
+			// manuever.to might be different in some cases...
+			if (fight.attacking) {
+				primaryManuever.from = ent;
+				primaryManuever.to  = checkComponent(fight.x+ent.moveArray[0],fight.y+ent.moveArray[1], "fight")[0];
+				if (primaryManuever.to == null) throw new Error("Could not find attack initiative's target");
+				
+				primaryManuever.reflexScore = charSheet.getReflex()* 1000 + Math.random() * 10;
+				manueverStack.pushManuever( primaryManuever );
+				
+			}
+			
+			// tODO later
+			// go through other manuevers if necessary 
+			for (var k:int = 1; k < fight.manuevers.length; k++) {
+				var kManuever:Object = fight.manuevers[k];  // assumed manuever is explicitly defined
+				if (fight.attacking) {
+					
+					/*
+					kManuever.from = ent;
+					kManuever.to  = checkComponent(fight.x+ent.moveArray[0],fight.y+ent.moveArray[1], "fight")[0];
+					if (primaryManuever.to == null) throw new Error("Could not find attack initiative's target");
+					
+					primaryManuever.reflexScore = charSheet.getReflex()* 1000 + Math.random() * 10;
+					manueverStack.pushManuever( primaryManuever );
+					*/
+				}
+			}
+		}
+		
+		// Declare menuvers
+		manueverStack.sortOnHighestToLowest("reflexScore");
+		
+		var cManuever:Object;
+		var playerAtkInterfaceShown:Boolean = false;
+		var playerBeingAttacked:Boolean = false;
+		var targetEnt:GameObject;
+		var targetCharSheet:CharacterSheet;
+		var targetFight:FightState;
+		
+		i = manueverStack.stack.length;
+		
+		
+		while (--i > -1) {
+			cManuever = manueverStack.stack[i];
+			ent = cManuever.from;
+			targetEnt = cManuever.to;
+			charSheet = ent.components.char;
+			targetCharSheet = targetEnt.components.char;
+			targetFight = targetEnt.components.fight;
+			
+			if ( ent != man) {  // is AI
+				
+				// TODO: get AI to decide on a specific manuever from a list of available manuevers 
+				
+				if (targetEnt == man) {  // player character being attacked
+					playerBeingAttacked = true;
+					
+					// with detected manuever
+					UITros.TRACE(!playerAtkInterfaceShown ? "Player detects " + getNameWithDirToMan(ent) + " attacking..." : "("+getNameWithDirToMan(ent) + " is attacking.)")
+					
+				}
+				else {  //  
+					
+				}
+				// commit enemyManuever to fight, 
+				targetFight.notifyAttack( cManuever);
+				
+			}
+			else {  // from player, break and defer the rest of the declaration for the remaining AI ??? For now, just let AI attack blindly
+				//Show player decision manuever interface...list of available manuevers
+				
+				UITros.TRACE("Player is attacking...");
+				playerAtkInterfaceShown = true;
+			}
+	
+		}
+		
+		if (!playerAtkInterfaceShown && playerBeingAttacked) { 
+			 // show player decision defending manuever interface...list of available manuevers
+			 var totalEnemyAttacks:int = (man.components.fight as FightState).enemyManuevers.length;
+			UITros.TRACE("Player is defending...");
+			
+		}
+		
+		
+		
+		
+		fightStack.length = 0;
+	}
+	
+	private function reorderManueverStackForResolution():void {
+		var i:int = manueverStack.stack.length;
+		var cManuever:Object;
+		var charSheet:CharacterSheet;
+		// assign a
+		while (--i > -1) {
+			cManuever = manueverStack.stack[i];
+			charSheet = cManuever.from.components.char;
+			cManuever.reflexScore = Manuever.getRollNumSuccesses(charSheet.getReflex(), cManuever.tn ); 
+		}
+		manueverStack.sortOnLowestToHighest("reflexScore");
+	}
+	
+	private function resolveManueverStack():void {
+		var ent:GameObject;
+		var targetEnt:GameObject;
+		var tarCharSheet:CharacterSheet;
+		var charSheet:CharacterSheet;
+		
+		var cManuever:Object;
+		
+	
+		var i:int = manueverStack.stack.length;
+		while (--i > -1) {
+			cManuever = manueverStack.stack[i];
+			ent = cManuever.from;
+			targetEnt = cManuever.to;
+			charSheet = ent.components.char;
+			tarCharSheet = targetEnt.components.char;
+			UITros.TRACE(getNameWithDirToMan(ent) + " resolved attack against " + getNameWithDirToMan(targetEnt));
+		}
+
+	}
+	
+	public function getNameWithDirToMan(ent:GameObject):String {
+		return (man.x!=ent.x || man.y != ent.y) ? ent.components.char.name + "("+(man.x != ent.x ? ent.x < man.x ?  "W" : "E"  :  ent.y < man.y ? "S" : "N"  )+")" : ent.components.char.name;
 	}
 	
     //ダンジョンを下る
@@ -879,6 +1064,13 @@ class Dungeon extends Sprite{
           //  }else{
                 count++;
 				
+				if (canInteract && keyEvent != null) {
+					UITros.CLEAR_TRACE();
+					reorderManueverStackForResolution();
+					resolveManueverStack();
+					manueverStack.reset(); // end of fight resolution
+				}
+				
                 var see:Array = SEE;
                 var startX:int = 0,startY:int = 0,endX:int = mapWidth-1,endY:int = mapHeight-1;
                 for(var i:uint = startX; i<=endX; i++ ){
@@ -897,7 +1089,9 @@ class Dungeon extends Sprite{
                                 }
 								
 								// if bump  phase, skip this.
-								if ( canInteract && keyEvent!=null && (o.components && o.components.fight != null)) o.components.fight.resolve(o);
+								
+			
+								if ( canInteract && keyEvent != null && (o.components && o.components.fight != null)) o.components.fight.resolve(o);
 								
 								// if bump phase, only go through key for post bumpers, for humans only
 								 if(  canInteract  && (o.tween == null || o.tween.length == 0) && keyEvent != null && o.func.key != null ){ o.func.key(keyEvent,o); } 
@@ -953,10 +1147,13 @@ class Dungeon extends Sprite{
                 view.camera.x = man.x;
                 view.camera.y = -256 + man.y;
                 if (  canInteract && keyEvent != null ) {   // assumed player has interacted with the map somewhat    // count % 6 == 0
+					// execute combat decisisions
+					// for those moving to:
 					
+					
+					// resolve rest of turn
 					timestamp++;
                     MapUtil.mapUpdate( this ); 
-					
                     //if ( count % 12 == 0 )  
 					MapUtil.mapDraw( this );  
 					
@@ -1149,12 +1346,12 @@ class Man{
 			if (man.bumping) {  // potentiality to wish to attack, 
 				fight.bumping = true;
 				fight.attacking =  man.dungeon.uiTros.radioAttack.selected && (fight.canRollAttackAgainstDirection(FightState.getDirectionIndex(man.moveArray[0], man.moveArray[1]) ));
-				fight.manuever = -1;
+				fight.resetManuevers();
 			}
 			else {
 				fight.attacking = false;  // imply defense always
-				if (man.moving && !fight.lastAttacking ) fight.manuever = 0;  // if man is moving into empty square and he wasn't attacking in last exchange, imply that he is retreating, else, will reset it to no implied manuever
-				else fight.manuever = -1;
+				if (man.moving && !fight.lastAttacking ) fight.setManuever( 0);  // if man is moving into empty square and he wasn't attacking in last exchange, imply that he is retreating, else, will reset it to no implied manuever
+				else fight.resetManuevers();
  			}
 			man.bumping = false;
 			man.moving = false;
@@ -1356,6 +1553,48 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 		manueverType = MANUEVER_TYPE_MELEE;
 	}
 	
+	private static var NUM_ONES:int = 0;
+	public static function getRollNumSuccesses(amountDice:int, tn:int):int {
+		var result:int;
+		NUM_ONES = 0;
+		var i:int = amountDice;
+		var numSuccesses:int = 0;
+		var numStacks:int = 0;
+		while (--i > -1) {
+			result = (int(Math.random() * 10) + 1);
+			if (result == 1) NUM_ONES++;
+			numSuccesses += result >= tn ? 1 : 0;
+			numStacks += tn > 10 && result == 10 ? 1 : 0;
+		}
+		
+		// not too sure if stacking is handled this way..hmmm..
+		while(numStacks > 0) {
+			i = numStacks;
+			while (--i > -1) {
+				result = (int(Math.random() * 10) + 1);
+				numSuccesses += result >= tn-10 ? 1 : 0;
+			}
+		}
+		
+		return numSuccesses;
+	}
+	
+	public static const ROLL_RESULT_BOTCH:int = -2;
+	public static const ROLL_RESULT_DRAW:int = 0;
+	public static const ROLL_RESULT_FAILED:int = -1;
+
+	public static function makeChallengeRoll(amountDice:int, tn:int, requiredSuccesses:int):int {
+		var numSuccesses:int =  getRollNumSuccesses(amountDice, tn);
+		return numSuccesses >= requiredSuccesses ? numSuccesses - requiredSuccesses : NUM_ONES >= (amountDice > 1 ? 2 : 1) ? ROLL_RESULT_BOTCH : ROLL_RESULT_FAILED;
+	}
+	
+	public static function makeIndividualRoll(amountDice:int, tn:int):Object {
+		var num:int = getRollNumSuccesses(amountDice, tn);
+		return { successes:num , mayBotch: NUM_ONES >= (amountDice > 1 ? 2 : 1)  };
+	}
+	
+
+	
 	public static function isThrustingMotion(targetzone:int):Boolean {
 		return false;
 	}
@@ -1484,7 +1723,42 @@ class Profeciency {
 	}
 }
 
-
+class ManueverStack {
+	// an array containing generic objects for attack manuevers
+	// { from:entity, to:entity, targetZone:??, numDice:?,  tn:?, reflexScore:,, manuever:, defManuever:{} }  // for offensive manuevers to be stacked
+	// For defManuever: {  numDice, manuever }
+	
+	public var stack:Array = [];
+	//public var stackIndex:int = 0;
+	
+	public function reset():void {
+		//stackIndex = 0;
+		stack.length = 0;
+	}
+	
+	public function pushManuever(manueverObj:Object):void {
+		//stack[stackIndex++] = manueverObj;
+		stack.push( manueverObj );
+		
+	}
+	
+	public function sortOnLowestToHighest(property:String):void {
+		var referArr:Array = stack.sortOn(property);
+		sortInto(referArr);
+	}
+	
+	public function sortOnHighestToLowest(property:String):void {
+		var referArr:Array = stack.sortOn(property, Array.DESCENDING);
+		sortInto(referArr);
+	}
+	
+	private function sortInto(referArr:Array):void {
+		var len:int = referArr.length;
+		for (var i:int = 0; i < len; i++) {
+			stack[i] = referArr[i];
+		}
+	}
+}
 
 class ManueverSheet {
 		
@@ -1636,6 +1910,8 @@ class Weapon {
 		
 		
 	}
+	
+
 	
 	public static function createDyn(name:String, profGroups:Array, properties:Object):Weapon {
 		var weap:Weapon = new Weapon(name, profGroups);
@@ -1853,6 +2129,7 @@ class CharacterSheet {
 		c.perception = perception;
 		
 		c.profeciencies = cloneObj(profeciencies);
+
 		c.weapon = weapon;
 		c.weaponOffhand = weaponOffhand;
 		c.profeciencyIdCache = profeciencyIdCache;
@@ -1866,8 +2143,9 @@ class CharacterSheet {
 	private function cloneObj(obj:Object):Object {
 		var o:Object = { };
 		for (var p:String in obj) {
-			o[p] = obj[o];
+			o[p] = obj[p];
 		}
+
 		return o;
 	}
 	
@@ -1919,21 +2197,54 @@ class CharacterSheet {
 		return 0;
 	}
 	
+	private function pickBestProfeciency(weapProfs:Array):String {
+		var highestScore:int = 0;
+		var highestProf:String = "";
+		
+		for (var p:String in profeciencies) {
+			for (var k:int = 0; k < weapProfs.length; k++) {
+				var profId:String = weapProfs[k];
+				if (profId == p) {
+					
+					if (profeciencies[profId] > highestScore) {
+					
+						highestScore = profeciencies[profId];
+						highestProf = profId;
+					}
+				}
+			}
+		}
+		//if (highestProf != "") throw new Error("A");
+		return highestProf;
+	}
+	
 	public function getMeleeProfeciencyId():String {
 		// determine best profeciency to use for given set of weaponary
 		profeciencyIdCache = "";
+		//var hasShield:Boolean = false;
+		
+		if (weapon!=null) {
+			//weapon.profeciencies.indexOf("");
+			
+			profeciencyIdCache = pickBestProfeciency(weapon.profeciencies);
+		}
+		if (weaponOffhand!=null) {
+			//hasShield = weaponOffhand.shield;
+		}
 		return profeciencyIdCache;
 	}
 	
 	
 	public function getMeleeProfeciencyLevel():int {
 		if (profeciencyIdCache == null) profeciencyIdCache = getMeleeProfeciencyId();
+		
 		return profeciencyIdCache !=  "" ? profeciencies[profeciencyIdCache]  : 0;
 	}
 	
+	public var cpDepletion:int = 0;
 	
 	public function getMeleeCombatPoolAmount(carryOverShock:int=0):int {
-		return getMeleeProfeciencyLevel() + getReflex() - Math.max(getTotalPain(), carryOverShock); 
+		return getMeleeProfeciencyLevel() + getReflex() - (cpDepletion=Math.max(getTotalPain(), carryOverShock)); 
 	}
 	
 	/**
@@ -2063,15 +2374,10 @@ class FightState {
 	public var initiativeMask:uint = 0;  // currently not used, but useful to handle multi-initaitive situations later on
 	public var paused:Boolean = true;
 	
-	
 	// Declared manuevers info
-	public var manuever:int = -1;  // manuever index (declared move) for the current turn
-	public var manuevers:Array;  // for composite/multiple manuevers
-	public var manueverDice:int;   // dice being used for manuever
-	public var manueversDices:Array;  // matching array of dice being used for multiple manuevers
-	public var manueverTargetZone:uint; // target zone aimed at for manuever
-	public var manueversTargetZones:Array;   // matching array of target zones for multiple manuevers
-	
+	//public var manuever:int = -1;  // primary manuever index (declared move) for the current turn
+	public var manuevers:Array = [ { manuever: -1, dice:0 } ]; // for composite/multiple manuevers within the stack
+	public var enemyManuevers:Array = [];  // any detected enemy manuevers made against you...
 	
 	// The state of the fight
 	public var rounds:int = 0;
@@ -2079,7 +2385,7 @@ class FightState {
 	public var bumping:Boolean = false;  // flag to keep track of fast track bump rolls for roguelike gamemode
 	public var shortRangeAdvantage:Boolean = false;
 	public var lastAttacking:Boolean = false; // flag to indicate if was attacking on last declared move
-	
+	public var combatPool:int;
 
 	
 	
@@ -2087,10 +2393,24 @@ class FightState {
 		
 	}
 	
+	public function resetManuevers():void {
+		manuevers[0].manuever = -1;
+		manuevers[0].dice = 0;
+		manuevers.length = 1;
+		enemyManuevers.length = 0;
+	}
+	public function setManuever(val:int, numDice:int=0, at:uint = 0):void {
+		if (at >= manuevers.length) throw new Error("out of range!:"+at + "/"+manuevers.length);
+		manuevers[at].manuever = val;
+	}
+	public function appendManuever(val:int):void {
+		manuevers.push( { manuever:val } );
+	}
+	
 	public function resetRolls():void {
 		attacking = false;
 		bumping = false;
-		manuever = -1;
+		resetManuevers();
 	}
 	
 	public function resolvable():Boolean { 
@@ -2098,23 +2418,17 @@ class FightState {
 		
 	}
 	
-	// this is handled before resolve()
-	public function resolveAgainst(attacker:GameObject, targeted:GameObject):void {
-		if ( resolvable() ) { 
-			
-			
-		}
-	}
 	
 	// this is handled after resolveAgainst(), and can involve refreshing of the combat pool if possible.
 	public function resolve(man:GameObject):void {
+		var charSheet:CharacterSheet = man.components.char;
+		
 		if ( resolvable() ) { 
 			lastAttacking = attacking;
-		
+			
 			
 			// if valid fleeing situation, resolve it! Note ta resolveAgainst() can cancel out fleeing manuever==0
-			if (!attacking && manuever == 0 && man.moveArray != null && man.moveArray.length != 0 && (man.moveArray[0] !=0 || man.moveArray[1]!=0)) {
-				// todo: roll to determine manuever
+			if (!attacking && manuevers[0].manuever == 0 && man.moveArray != null && man.moveArray.length != 0 && (man.moveArray[0] !=0 || man.moveArray[1]!=0)) {
 				
 				if ( !man.dungeon.checkBumpable(man.mapX + man.moveArray[0], man.mapY + man.moveArray[1]) ) {
 				//	throw new Error(
@@ -2122,7 +2436,7 @@ class FightState {
 					// at the time of rolling for defense, then regular menu appears but can still flee in given free other direction
 					
 					// issue #2 to fix , // find a way to execute a instanced walk procedure in given direction of 
-					if (man.type === "man") {   // temp for testing, man always suceeds, todo: create proper function for fleeing
+					if (man.type === "man") {   // temp for testing, todo: allow AI as well to retreat
 						reset(true);
 						
 						man.moving = true;  
@@ -2146,11 +2460,17 @@ class FightState {
 			}
 			
 		
-			if (!e) {
-				// refresh combat pool
+			if (e) {
+				UITros.TRACE("Refreshing combat pool for: " + man.dungeon.getNameWithDirToMan(man));
+				refreshCombatPool(charSheet); 
+				// refresh combat pool, because later in loop will step from e to !e
 			}
 			
 		}
+	}
+	
+	public function refreshCombatPool(charSheet:CharacterSheet):void {
+		 combatPool =  charSheet.getMeleeCombatPoolAmount(combatPool < 0 ? -combatPool : 0);
 	}
 	
 	public function clone():FightState {
@@ -2197,14 +2517,20 @@ class FightState {
 				var vec:Vector.<GameObject> = dungeon.checkComponent(i, j, "fight");
 				var b:int = vec.length;
 				while (--b > -1) {
-					var fState:FightState = vec[b].components.fight;
+					var gameObj:GameObject = vec[b];
+					var fState:FightState = gameObj.components.fight;
 					if (fState.timestamp != dungeon.timestamp) {
 						fState.timestamp = dungeon.timestamp;
 						var lastNumEnemies:int = fState.numEnemies;
 						//if (fState.s < 2 ) {
-						updateNeighborEnemyStates(vec[b], fState, dungeon);
+						updateNeighborEnemyStates(gameObj, fState, dungeon);
 						dungeon.fightStack.push(fState);
 						//}
+						
+						if (lastNumEnemies == 0 && fState.numEnemies > 0) {
+							//UITros.TRACE( "("+gameObj.dungeon.getNameWithDirToMan( gameObj) + " enters into a fight..)" );
+							fState.refreshCombatPool(gameObj.components.char);
+						}
 						
 						if (lastNumEnemies > 0) {
 							if (  fState.numEnemies == 0 ) {
@@ -2392,6 +2718,7 @@ class FightState {
 			flags = 0;
 			rounds = 0;
 			bumping = false;
+			resetManuevers();
 		}
 		return this;
 	}
@@ -2414,6 +2741,9 @@ class FightState {
 	
 	public function aboutToRoll():Boolean {
 		return s == 1;
+	}
+	public function isRolling():Boolean {
+		return s == 2;
 	}
 	
 	public function mustRollNow(fight:FightState = null):Boolean {
@@ -2457,6 +2787,11 @@ class FightState {
 		return (flags & (1 << (OFFSET_INITIATIVE + dirIndex)) )  !=0;
 	}
 	
+	public function notifyAttack(atkManuever:Object):void 
+	{
+		enemyManuevers.push(atkManuever);
+	}
+	
 }
 
 // End Riddle of Steel classes
@@ -2484,11 +2819,11 @@ class Data {
     
     static public const OBJECT:Object = {
         "man": { type:"man", state:"w0", visual:"stand",  func: { key:Man.key }, components: { 
-			char:CharacterSheet.createBase("Player", { "rapier":5  }, HumanoidBody.getInstance(), WeaponSheet.find("Short Sword"), null, 5),
+			char:CharacterSheet.createBase("Player", { "rapier":9, "swordshield":6 }, HumanoidBody.getInstance(), WeaponSheet.find("Rapier"), null, 5),
 		fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, 
 		ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
         "enemy": { type:"enemy", state:"w0", num:"1", func: { key:Enemy.key },  visual:"stand", components: {
-			char:CharacterSheet.createBase("Enemy", { "rapier":5  }, HumanoidBody.getInstance(), null, null, 4),
+			char:CharacterSheet.createBase("Enemy", { "rapier":5  }, HumanoidBody.getInstance(), null, null, 5),
 			fight:new FightState().setSideAggro(FightState.SIDE_ENEMY) }, 
 			ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
