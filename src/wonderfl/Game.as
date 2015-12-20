@@ -761,7 +761,9 @@ class Dungeon extends Sprite{
 		var targetEnt:GameObject;
 		var targetCharSheet:CharacterSheet;
 		var targetFight:FightState;
-		
+		var dManuever:Object;
+		var arrOfAvailManuevers:Array;
+
 		i = manueverStack.stack.length;
 
 		
@@ -770,25 +772,39 @@ class Dungeon extends Sprite{
 			ent = cManuever.from;
 			targetEnt = cManuever.to;
 			charSheet = ent.components.char;
+			fight  = ent.components.fight;
 			targetCharSheet = targetEnt.components.char;
 			targetFight = targetEnt.components.fight;
 			
 			if ( ent != man) {  // is AI
-				
-				// TODO: get AI to decide on a specific manuever from a list of available manuevers 
+				 // get AI to decide on a specific manuever from a list of available manuevers 
+				 //fight.enemyManuevers.length > 0 ? fight.enemyManuevers,
+				 dManuever = fight.enemyManuevers.length > 0 ? fight.enemyManuevers[0] : null; // todo: proper pick function based on facing direction of attack
+				arrOfAvailManuevers = fight.getListOfAvailableManuevers(charSheet, fight, ent, dManuever != null ?  dManuever.manuever : null, dManuever != null ? dManuever.numDice : 0, dManuever != null ? dManuever.targetZone : 0 );
+			//	throw new Error(JSON.stringify(arrOfAvailManuevers));
+				if (ent.func.aiChooseManuever != null) {
+					ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+				}
+				else {
+					FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+				}
+				// NOTE: if manuever is double attack or some composite, then need to find a way to split attack.into 2.
+				// Also need to handle case for simulatenous block/strike ,?
 				
 				if (targetEnt == man) {  // player character being attacked
 					playerBeingAttacked = true;
 					
 					// with detected manuever
-					UITros.TRACE(!playerAtkInterfaceShown ? "Player detects " + getNameWithDirToMan(ent) + " attacking..." : "("+getNameWithDirToMan(ent) + " is attacking.)")
+					var withStr:String = "with:"+ (cManuever.manuever as Manuever).name + ", "+cManuever.numDice + " CP. tn:"+cManuever.tn;
+					UITros.TRACE(!playerAtkInterfaceShown ? "Player detects " + getNameWithDirToMan(ent) + " attacking..."+withStr : "("+getNameWithDirToMan(ent) + " is attacking )")
+			
+				}
+				else { 
 					
 				}
-				else {  //  
-					
-				}
-				// commit enemyManuever to fight, 
 				
+				
+				// commit enemyManuever to fight, 
 				targetFight.notifyAttack( cManuever);
 				
 				
@@ -803,7 +819,7 @@ class Dungeon extends Sprite{
 		}
 		
 		if (!playerAtkInterfaceShown && playerBeingAttacked) { 
-			
+			// for informational purposes only
 			// var totalEnemyAttacks:int = (man.components.fight as FightState).enemyManuevers.length;
 			//UITros.TRACE("Player is defending...");
 			
@@ -817,15 +833,34 @@ class Dungeon extends Sprite{
 			var defender:GameObject = defenderList[i].entity;
 			fight = defender.components.fight;
 			if ( defender != man) {
-				/*
-				if (fight.enemyManuevers > 0) {
+				///*
+				if (fight.enemyManuevers.length > 0) {  // defender must respond to immiment enemy attack in his facing direction, 
+					// if he lacks facing direction, then he must turn to closest facing direction rnadomly, or turn behind.
+					dManuever = fight.enemyManuevers[0];  // todo: proper pick function
+					if (fight.manuevers[0].manuever == 0) {}    // TODO: full evasion case, should pick FUll Evasion by default...just need to spend approipiate CP
 					
+					
+					fight.getListOfAvailableManuevers(charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
+					
+					cManuever = { };
+					if (ent.func.aiChooseManuever != null) {
+						ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+					}
+					else {
+						FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+					}
+					// later: ability to defend against multiple attacks via 1 left hand/1 right hand/ and as many partial evasions
+					dManuever.defManuever = cManuever;
+					UITros.TRACE( "Defending with:"+ (cManuever.manuever as Manuever).name + ", "+cManuever.numDice + " CP. tn:"+cManuever.tn);
+					
+					// later : if defensive manuever is Full Evade, need to check it in wth direction .
+				
 				}
 				else {
-					// defender might still want to buy initiative, or attempt to defense
+					// LATER:
+					// defender might still want to force-enter initiative, or attempt to defend just in case, if he is adjacient to a potential enemy that hasn't declared his move yet.
 				}
-				*/
-				// TODO: AI Defender to decide on how to defend, if required, or buy intiative to attack.
+				
 			}
 			else {
 				 // show player decision defending manuever interface...list of available manuevers
@@ -834,16 +869,16 @@ class Dungeon extends Sprite{
 			}
 			
 		}
-		
-		
-		
-		
+
 		
 		
 		fightStack.length = 0;
 	}
 	
-	private function reorderManueverStackForResolution():void {
+	
+	
+	private function reorderManueverStackForResolution():void {  
+		// LATER: double attack manuevers from the same person need to share the same reflex score value?
 		var i:int = manueverStack.stack.length;
 		var cManuever:Object;
 		var charSheet:CharacterSheet;
@@ -1798,12 +1833,18 @@ class ManueverStack {
 class ManueverSheet {
 		
 		public static var offensiveMelee:Array = [
-		new Manuever("bash", "Bash")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
+			new Manuever("cut", "Cut")._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
+			,new Manuever("cut2", "Greater Cut", 1)._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customDamage()
+		,new Manuever("bash", "Bash")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
 			,new Manuever("bash2", "Greater Bash", 1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customDamage()
 			,new Manuever("beat", "Beat")._lev(4)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customRequire()._customResolve()
 			,new Manuever("bindstrike", "Bind and Strike")._customRequire()._customResolve()
-			,new Manuever("cut", "Cut")._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
-			,new Manuever("cut2", "Greater Cut", 1)._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customDamage()
+						,new Manuever("thrust", "Thrust")._customReflex()._dmgType(Manuever.DAMAGE_TYPE_PUNCTURING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)
+		,new Manuever("spike", "Spike")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)
+		,new Manuever("spike2", "Greater Spike", 1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)._customDamage()
+					,new Manuever("punch", "Punch")._tn(5)._range(1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._customDamage()
+		,new Manuever("kick", "Kick")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._tn(7)._customDamage()._range(2)._regions(0)._rangeMin(1)
+		
 		,new Manuever("disarm", "Disarm", 1)._lev(4)._customRequire()._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customResolve()
 			,new Manuever("doubleattack", "Double Attack")._customRequire()._customSplit()
 			,new Manuever("drawcut", "Draw Cut")._lev(2)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._customDamage()._customRange()._customRequire()
@@ -1814,17 +1855,12 @@ class ManueverSheet {
 		//,new Manuever("halfsword", "Half Sword")._customResolve()
 		,new Manuever("headbutt", "Head Butt")._tn(6)._range(1)._regions(0)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._customDamage()  // todo regions
 		,new Manuever("hook", "Hook")._customResolve()._regions(0)
-		,new Manuever("kick", "Kick")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._tn(7)._customDamage()._range(2)._regions(0)._rangeMin(1)
 		,new Manuever("masterstrike", "Master Strike")._lev(15)._customRequire()._customSplit()
 		,new Manuever("murderstroke", "Murder Stroke")._lev(5)._tn(6)._range(1)._customRequire()._regions(0)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customPreResolve()._customDamage()
 		,new Manuever("pommelbash", "Pommel Bash")._lev(5)._tn(7)._range(1)._customRequire()._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._customDamage()
-		,new Manuever("punch", "Punch")._tn(5)._range(1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._customDamage()
 		,new Manuever("quickdraw", "Quick Draw")._lev(6)._customResolve()
 		,new Manuever("blockstrike", "Simultaenous Block and Strike")._customRequire()._customSplit()
-		,new Manuever("spike", "Spike")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)
-		,new Manuever("spike2", "Greater Spike", 1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)._customDamage()
 		,new Manuever("stopshort", "Stop Short")._lev(3)._customResolve()._spamPenalize(1)	
-		,new Manuever("thrust", "Thrust")._customReflex()._dmgType(Manuever.DAMAGE_TYPE_PUNCTURING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)
 		,new Manuever("toss", "Toss")._customRequire()._tn(7)._customResolve()
 		,new Manuever("twitching", "Twitching")._lev(8)._customSplit()._customResolve()
 		];
@@ -1869,7 +1905,7 @@ class ManueverSheet {
 			var i:int = arrOfIds.length;
 			while (--i > -1) {
 				var prop:String =  arrOfIds[i];
-				if (hash[prop] != null) val |= (hash [prop ] << 1);
+				if (hash[prop] != null) val |= (1 << hash [prop ] );
 			}
 			return val;
 		}
@@ -1884,14 +1920,33 @@ class ManueverSheet {
 }
 
 class ProfeciencySheet {
+	
+	//http://knight.burrowowl.net/doku.php?id=rules:proficiencies
 	public static var LIST:Array = [
 		new Profeciency("swordshield", "Sword and Shield", ManueverSheet.createOffensiveMeleeMaskFor(["bindstrike", "cut", "cut2", "feintcut", "feintthrust", "blockstrike", "thrust", "thrust2", "twitching", "masterstrike", "disarm"]), ManueverSheet.createDefensiveMeleeMaskFor(["block", "blockopenstrike", "counter", "parry", "disarm", "masterstrike", "overrun", "parry", "rota"]), { "blockopenstrike":2, "masterstrike":6 }, { "blockopenstrike":2, "counter":[3, 2], "disarm":3, "masterstrike":6, "overrun":4, "parry":[1, 0], "rota":2 }, { "caserapiers":4, "cutthrust":2, "dagger":2, "doppelhander":4, "greatlongsword":2, "massweaponshield":1, "polearms":4, "poleaxe":4, "pugilism":4, "rapier":4, "wrestling":4 } ),
 		new Profeciency("cutthrust", "Cut and Thrust", ManueverSheet.createOffensiveMeleeMaskFor(["beat", "bindstrike", "cut", "disarm", "doubleattack", "drawcut", "feint", "masterstrike", "quickdraw", "blockstrike", "stopshort", "thrust", "toss", "twitch"]), ManueverSheet.createDefensiveMeleeMaskFor(["block", "counter", "disarm", "expulsion", "grapple", "masterstrike", "overrun", "parry", "rota"]), { "disarm":1, "masterstrike":6, "quickdraw":2, "twitch":2 }, { "counter":2, "disarm":3, "expulsion":2, "grapple":2, "masterstrike":6, "overrun":3 }, { "caserapiers":3, "dagger":2, "doppelhander":4, "greatlongsword":3, "massweaponshield":2, "polearms":3, "poleaxe":4, "pugilism":2, "rapier":2, "swordshield":2, "wrestling":3 } ),
-		new Profeciency("rapier", "Rapier", ManueverSheet.createOffensiveMeleeMaskFor(["beat", "bindstrike", "disarm", "doubleattack", "feintthrust", "masterstrike", "blockstrike", "stopshort", "thrust", "toss"]), ManueverSheet.createDefensiveMeleeMaskFor(["block", "counter", "disarm", "expulsion", "grapple", "masterstrike", "overrun", "parry"]), {"disarm":1, "feintthrust":1, "masterstrike":6 }, { "counter":3, "disarm":3, "expulsion":2, "grapple":2, "masterstrike":6, "overrun":3, "parry":0 }, {  "caserapiers":1, "cutthrust":2, "dagger":2, "doppelhander":4, "greatlongsword":4, "massweaponshield":4, "polearms":3, "poleaxe":4, "pugilism":2, "swordshield":3, "wrestling":3 }  )
+		new Profeciency("rapier", "Rapier", ManueverSheet.createOffensiveMeleeMaskFor(["beat", "bindstrike", "disarm", "doubleattack", "feintthrust", "masterstrike", "blockstrike", "stopshort", "thrust", "toss"]), ManueverSheet.createDefensiveMeleeMaskFor(["block", "counter", "disarm", "expulsion", "grapple", "masterstrike", "overrun", "parry"]), { "disarm":1, "feintthrust":1, "masterstrike":6 }, { "counter":3, "disarm":3, "expulsion":2, "grapple":2, "masterstrike":6, "overrun":3, "parry":0 }, {  "caserapiers":1, "cutthrust":2, "dagger":2, "doppelhander":4, "greatlongsword":4, "massweaponshield":4, "polearms":3, "poleaxe":4, "pugilism":2, "swordshield":3, "wrestling":3 }  ),
+		new Profeciency("pugilism", "Pugilism", ManueverSheet.createOffensiveMeleeMaskFor(["disarm", "grapple", "kick", "punch"]), ManueverSheet.createDefensiveMeleeMaskFor(["disarm", "grapple", "parry"]), { "disarm":2, "grapple":[2,4], "kick":1  }, { "disarm":4, "grapple":2 }, { "caserapiers":4, "cutthrust":4,  "dagger":1, "doppelhander":4, "greatlongsword":4, "massweaponshield":3, "polearms":4, "poleaxe":4, "rapier":3, "swordshield":4, "wrestling":1 })
 	]
 	
 	public static var listHashIndexer:Object = ManueverSheet.createHashIndex(LIST);
+	public static function getProfeciency(id:String):Profeciency {
+		return LIST[listHashIndexer[id]];
+	}
 	
+	/*
+	public static function getProfManueverCost(id:String):int {
+		
+	}
+	*/
+	
+	public static function resolveProfManueverCostChoice(id:String, arr:Array, components:Object):int {
+		if (id === "counter") {
+			var charSheet:CharacterSheet = components.char;
+			return charSheet.weaponOffhand != null && charSheet.weaponOffhand.shield ? arr[0] : arr[1];
+		}
+		return arr[0];
+	}
 }
 
 class Weapon {
@@ -1943,9 +1998,10 @@ class Weapon {
 		movePenalty = 0;
 		blunt = false;
 		
-		
+	
 	}
 	
+
 
 	
 	public static function createDyn(name:String, profGroups:Array, properties:Object):Weapon {
@@ -2148,6 +2204,35 @@ class CharacterSheet {
 	//   using part_id:{}     keyvalue pair  
 	// A wound value object goes by  {  pain:?, BL:?, shock:?, woundTypes:? }   
 	
+	public function refreshDefaultProfs():void {
+		var profReference:Object = cloneObj(profeciencies);
+		for (var p:String in profReference) {
+			var baseScore:int = profReference[p];
+			var prof:Profeciency = ProfeciencySheet.getProfeciency(p);
+			//if (prof == null) throw new Error("SHould not be!:"+p);
+			if (prof == null) {
+				 throw new Error("SHould not be!:"+p);
+				//continue;  // excpetion due to incomplete list.
+			}
+			
+			var defaults:Object = prof.defaults;
+			for (var d:String in defaults) {
+				if ( ProfeciencySheet.getProfeciency(d) == null) {
+					continue;  // exception due to incomplete data entry
+				}
+				var defaultedScore:int = baseScore-defaults[d];
+				var curCompareScore:int = profeciencies[d] != null ? profeciencies[d] : 0;
+			
+				if (defaultedScore > 6) defaultedScore = 6;
+				if (defaultedScore > curCompareScore ) {
+					profeciencies[d] = defaultedScore;
+				}
+			}
+		}
+		//throw new Error( JSON.stringify(profeciencies) );
+	}
+	
+	
 	public function clone():CharacterSheet {  
 		var c:CharacterSheet = new CharacterSheet();
 		c.name = name;
@@ -2263,17 +2348,26 @@ class CharacterSheet {
 			
 			profeciencyIdCache = pickBestProfeciency(weapon.profeciencies);
 		}
+		else {
+			if (weaponOffhand == null  || !weaponOffhand.shield) {
+				profeciencyIdCache = "pugilism";
+			}
+		}
 		if (weaponOffhand!=null) {
 			//hasShield = weaponOffhand.shield;
 		}
 		return profeciencyIdCache;
 	}
 	
+	public function getMeleeProfeciencyIdCached():String {
+		return profeciencyIdCache != null ? profeciencyIdCache : getMeleeProfeciencyId();
+	}
+	
 	
 	public function getMeleeProfeciencyLevel():int {
 		if (profeciencyIdCache == null) profeciencyIdCache = getMeleeProfeciencyId();
 		
-		return profeciencyIdCache !=  "" ? profeciencies[profeciencyIdCache]  : 0;
+		return profeciencyIdCache !=  "" ? (profeciencies[profeciencyIdCache] != null ? profeciencies[profeciencyIdCache] : 0)  : 0;
 	}
 	
 	public var cpDepletion:int = 0;
@@ -2302,6 +2396,7 @@ class CharacterSheet {
 		
 		if (attacking) {  
 			useWeapon = manuever.offHanded ? weaponOffhand : weapon;
+			if (useWeapon == null) useWeapon = WeaponSheet.find("Punch");
 			if ( manuever.attackTypes == Manuever.ATTACK_TYPE_STRIKE ) {
 				return useWeapon.ATN;
 			}
@@ -2330,8 +2425,10 @@ class CharacterSheet {
 		else {
 			
 			useWeapon = manuever.isDefensiveOffHanded() ? weaponOffhand : weapon;
+			if (useWeapon == null) useWeapon = WeaponSheet.find("Punch");
+			
 			if (manuever.manueverType == Manuever.MANUEVER_TYPE_MELEE) {
-				return enemyDiceRolled <= 4 && Manuever.isThrustingMotion(enemyTargetZone)  ? 
+				return enemyDiceRolled <= 4 && Manuever.isThrustingMotion(enemyTargetZone)  ?  // LATER, post-emptive DTN cases
 						(useWeapon.DTNt != 0 ? useWeapon.DTNt : useWeapon.DTN)  : useWeapon.DTN;
 			}
 			else return useWeapon.DTN2;
@@ -2347,6 +2444,7 @@ class CharacterSheet {
 		c.weapon = weapon;
 		c.weaponOffhand = weaponOffHand;
 		c.resetAllAttributes(baseAttr);
+		c.refreshDefaultProfs();
 		return c;
 	}
 	
@@ -2426,6 +2524,107 @@ class FightState {
 	
 	public function FightState() {
 		
+	}
+	
+	public static function pickDefaultManuever(charSheet:CharacterSheet, fightState:FightState, manueverEntry:Object,  defaultList:Array, gameObject:GameObject):void {
+		
+		var manueverCost:int = int.MAX_VALUE;
+		var manueverTN:int = int.MAX_VALUE;
+		var pickedManuever:Manuever;
+		// simply pick manuever with lowest TN and lowest cost, and deals basic damage.
+		var len:int = defaultList.length;
+		for (var i:int = 0; i < len; i += 3) {
+			var manuever:Manuever = defaultList[i];
+			var cost:int =  defaultList[i + 1];
+			var tn:int =    defaultList[i + 2];
+			if (tn < manueverTN) {
+				manueverCost = cost;
+				pickedManuever = manuever;
+				manueverTN = tn;
+			}
+			if (cost < manueverCost) {
+				manueverCost = cost;
+				pickedManuever = manuever;
+				manueverTN = tn;
+			}
+		}
+		if (pickedManuever == null) throw new Error("Could not find default manuever!");
+		
+		// targetZone:??, numDice:?,  tn:?,
+		manueverEntry.manuever = pickedManuever;
+		manueverEntry.tn = manueverTN;
+		manueverEntry.numDice = int( (fightState.combatPool - manueverCost) / 2 );
+		if (manueverEntry.numDice == 0) manueverEntry.numDice = 1;
+		
+		if (fightState.attacking) {
+			var pickRandomTargetZone:int =   HumanoidBody.CENTER_OF_MASS[0]; // HumanoidBody.CENTER_OF_MASS[int(Math.random() * 2)]; // + Math.random() * 5 * Math.random();
+			manueverEntry.targetZone =  pickRandomTargetZone; // TODO: pick targetzone based off character sheet's body refernece
+		}
+		// later: if !fight.attacking, ie. defending...avoid using the Full Evade manuever and Partial Evade, unless partial evade TN is lower
+		
+	}
+	
+	public static var AVAILABLE_MANUEVERS:Array = [];
+	public function getListOfAvailableManuevers(charSheet:CharacterSheet, fight:FightState, ent:GameObject, enemyManuever:Manuever=null, enemyDiceRolled:int=0, enemyTargetZone:int=0 ):Array {
+		var meleeProf:String = charSheet.getMeleeProfeciencyIdCached();
+		var prof:Profeciency = ProfeciencySheet.getProfeciency(meleeProf);
+		var costWithProf:Object = attacking ? prof.atkCosts : prof.defCosts;
+		var mask:uint = attacking ? prof.offensiveManuevers : prof.defensiveManuevers;
+		var list:Array = attacking ?  ManueverSheet.offensiveMelee : ManueverSheet.defensiveMelee;
+	
+		var len:uint = list.length;
+		
+	//	var traceList:Array = [];
+		var filteredList:Array = AVAILABLE_MANUEVERS;  // a filtered list of Manuever and cost 3-tuple
+		var count:int = 0;
+		var traceMask:int = 0;
+		
+		for (var i:uint = 0; i < len; i++) {
+			if (  (mask & (1 << i)) != 0 ) {
+				var manuever:Manuever = list[i];
+				
+
+		
+				var tn:int =  charSheet.getManueverTN(manuever, attacking, this, enemyManuever, enemyDiceRolled, enemyTargetZone);
+
+				if (tn == 0) continue;  // unavailable move based off character sheet
+				
+				
+				var cost:int;
+				if (manuever.cost > 0) {
+					cost = manuever.cost;
+				}
+				else {
+					cost = costWithProf[manuever.id] != null ? costWithProf[manuever.id] is Array ? ProfeciencySheet.resolveProfManueverCostChoice(manuever.id, costWithProf[manuever.id], ent.components ) : costWithProf[manuever.id]   :   0;
+				}
+				// later: apply stance modifiers to manuever costs
+				// todo: apply range penalties to manuever costs
+				
+				
+				
+				
+				if (cost >= combatPool) {  // you can't afford it
+					continue;
+				}
+				//traceList.push(manuever.name);
+				filteredList[count++] = manuever;
+				filteredList[count++] = cost;
+				filteredList[count++] = tn;
+			}
+			
+		}
+
+		//throw new Error(traceList);
+		
+		if (!attacking) {  // add the 2 evasive manuevers, full evade is a situational choice (return 0 instead of >0)
+		
+			// also add buy initiative manuever at bottom
+		}
+		
+		
+		
+		filteredList.length = count;
+		return filteredList;
 	}
 	
 	public function resetManuevers():void {
@@ -2858,7 +3057,7 @@ class Data {
 		fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, 
 		ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
         "enemy": { type:"enemy", state:"w0", num:"1", func: { key:Enemy.key },  visual:"stand", components: {
-			char:CharacterSheet.createBase("Enemy", { "rapier":5  }, HumanoidBody.getInstance(), null, null, 5),
+			char:CharacterSheet.createBase("Enemy", { "swordshield":5  }, HumanoidBody.getInstance(),  WeaponSheet.find("Gladius"), null, 5),
 			fight:new FightState().setSideAggro(FightState.SIDE_ENEMY) }, 
 			ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
