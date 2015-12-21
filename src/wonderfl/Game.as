@@ -109,6 +109,8 @@ package wonderfl {
 		}
     }
 }
+import com.bit101.components.ComboBox;
+import com.bit101.components.HSlider;
 import com.bit101.components.Label;
 import com.bit101.components.PushButton;
 import com.bit101.components.RadioButton;
@@ -156,6 +158,11 @@ class UITros extends Sprite {
 	
 	public var messageBox:TextField;
 	
+	private var manueverMenu:VBox;
+	private var manueverDropdown:ComboBox;
+	private var targetZoneDropdown:ComboBox;
+	private var manueverSlider:HSlider;
+	private var labelCPToRoll:Label;
 	// once exchange is resolved from Move 1/1, next exchange begins immediately.
 	
 	
@@ -389,6 +396,9 @@ class UITros extends Sprite {
 			}
 			
 		}
+		else {
+			hideManueverMenu();
+		}
 	}
 	
 	private function sizeBtn(btn:PushButton, width:Number = 30, height:Number = 20 ):PushButton {
@@ -464,6 +474,8 @@ class UITros extends Sprite {
 		addChild(arrowControls);
 		addChild(infoPanel);
 		
+		
+		
 		arrowControls.x = stage.stageWidth - 75;
 		arrowControls.y = stage.stageHeight - 60;
 		arrowUp = sizeBtn( new PushButton(arrowControls, 0, -25, STR_MOVE) );
@@ -502,6 +514,26 @@ class UITros extends Sprite {
 		
 		//messageBox.blendMode = "invert";
 		addChild(messageBox);
+		
+		manueverMenu = new VBox(infoPanel, stage.stageWidth - 150, stage.stageHeight - 160);
+		new Label(manueverMenu, 0, 0, "Manuever:");
+		manueverDropdown = new ComboBox(manueverMenu, 0, 0, "", null);
+		manueverDropdown.addEventListener(Event.SELECT, onManueverDropdownSelect);
+		labelCPToRoll = new Label(manueverMenu, 0, 0, "CP to roll:");
+		labelCPToRoll.blendMode = "invert";
+		manueverSlider = new HSlider(manueverMenu, 0, 0, onManueverSlideCP);
+		manueverSlider.setSliderParams(1, 5, 1);
+		
+		//manueverSlider.minimum = 1;
+		
+		
+		new Label(manueverMenu, 0, 0, "Aim at:");
+		targetZoneDropdown = new ComboBox(manueverMenu, 0, 0, "", null);
+		targetZoneDropdown.addEventListener(Event.SELECT, onTargetZonedownSelect);
+		
+		manueverDropdown.width = 140;
+		manueverSlider.width = 130;
+		targetZoneDropdown.width = 140;
 
 		//	messageBox.setTextFormat( messageBox.defaultTextFormat = new TextFormat("PF Ronda") );
 			//messageBox.embedFonts = true;
@@ -513,6 +545,91 @@ class UITros extends Sprite {
 		removeEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
 		TRACE = addMessageLine;
 		CLEAR_TRACE = clearMessages;
+	}
+	
+	private function onManueverSlideCP(e:Event = null):void {
+	
+		var fight:FightState = manueverEnt.components.fight;
+		var charSheet:CharacterSheet = manueverEnt.components.char;
+		var valToAssign:int =  Math.round( manueverSlider.value);
+		labelCPToRoll.text = "CP to roll: " + valToAssign;
+		_manueverItem.numDice = valToAssign;
+		
+		infoExchange.text = getCombatString(fight, charSheet, fight.combatPool - valToAssign - _manueverItem.cost);
+		
+		
+	}
+	private function onManueverDropdownSelect(e:Event = null):void {
+		
+		var fight:FightState = manueverEnt.components.fight;
+		var charSheet:CharacterSheet = manueverEnt.components.char;
+		//manueverSlider.setSliderParams(1, fight.combatPool - priCManuever.cost, priCManuever.numDice);
+		var selectedManuever:UIManueverItem = manueverDropdown.selectedItem as UIManueverItem;
+		manueverSlider.maximum = fight.combatPool - selectedManuever.cost;
+		
+		_manueverItem.manuever = selectedManuever.manuever;
+		_manueverItem.cost = selectedManuever.cost;
+		_manueverItem.tn = selectedManuever.tn;
+		
+		if (_manueverItem.to != null) {  // assumed attacking
+			var attackTypes:uint = selectedManuever.manuever.getAvailableAtkTypes(charSheet.getPrimaryWeaponUsed());
+			var enemyCharSheet:CharacterSheet = _manueverItem.to.components.char;
+			if (attackTypes != _manueverAttackTypes) {
+				setupTargetZoneSelection();
+			}
+			// later: some attack manuevers got their own custom zone restrictions, rmb to include them...
+			if (attackTypes == (Manuever.ATTACK_TYPE_STRIKE | Manuever.ATTACK_TYPE_THRUST) ) {
+				// should be okay, can maintain selection, do nothing
+			}
+			else {  // check if it falls out of selection, if it does, reselect randomly
+				var checkzone:uint = Manuever.isThrustingMotion(_manueverItem.targetZone, enemyCharSheet.bodyType) ? Manuever.ATTACK_TYPE_THRUST : Manuever.ATTACK_TYPE_STRIKE;
+				if ( (checkzone & attackTypes)==0 ) { // need to invalidate
+					
+					_manueverItem.targetZone  = charSheet.bodyType.getCenterOfMassIndexRandom(selectedManuever.manuever, charSheet.getPrimaryWeaponUsed());
+					
+					updateTargetZoneSelection();
+				}
+			}
+		}
+		
+		//charSheet.bodyType.getCenterOfMassIndexRandom
+		updateManueverCTA(fight);
+		onManueverSlideCP();
+		
+		
+	}
+	
+	private function setupTargetZoneSelection():void 
+	{
+		var charSheet:CharacterSheet = manueverEnt.components.char;
+		var body:BodyChar = charSheet.bodyType;
+		var arr:Array = [];
+		var zones:Vector.<ZoneBody> = charSheet.getPrimaryWeaponUsed().blunt ? body.zonesB : body.zones;
+		for (var i:int = ( _manueverAttackTypes == Manuever.ATTACK_TYPE_THRUST ? body.thrustStartIndex : 0); i < (_manueverAttackTypes == Manuever.ATTACK_TYPE_STRIKE ?  body.thrustStartIndex :  zones.length); i++) {
+			arr.push( new UIZoneItem(zones[i].name, i) );
+		};
+		// later: include target zone aim CP penalties!
+		targetZoneDropdown.items = arr;
+	}
+	
+	private function updateTargetZoneSelection():void 
+	{
+		var index:int = _manueverItem.targetZone;
+		var items:Array = targetZoneDropdown.items;
+		for (var i:int = 0; i < items.length; i++) {
+			if (items[i].index == index) {
+				targetZoneDropdown.selectedItem = items[i];
+				return;
+			}
+		}
+		
+		//onTargetZonedownSelect();
+	}
+	private function updateManueverCTA(manFight:FightState ):void {
+		btnWait.label = (manFight.attacking ? "ATK" : manFight.isFleeing() ? "FLEE" :  "DEF");
+	}
+	private function onTargetZonedownSelect(e:Event = null):void {
+		_manueverItem.targetZone  = ( targetZoneDropdown.selectedItem as UIZoneItem).index;
 	}
 	
 	private function clearMessages():void {
@@ -536,7 +653,7 @@ class UITros extends Sprite {
 	public static const ROLLING_TEXT:String = "Rolling..";
 	
 	public function setFightInfo(fight:FightState, charSheet:CharacterSheet):void {
-		infoExchange.text = "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + "),  CP: " +fight.combatPool + "/" + charSheet.getMeleeCombatPoolAmount() + "(-"+charSheet.cpDepletion+")";
+		infoExchange.text = getCombatString(fight, charSheet, fight.combatPool);
 		//+"Last attacking?:"+fight.lastAttacking
 		infoMoveStep.text =  fight.s < 2 ? "Move " + fight.s + "/1" : "Rolling "+(fight.attacking ? "Attack" : "Defense")+"...";
 		radioAttack.enabled = fight.initiative;
@@ -544,6 +661,102 @@ class UITros extends Sprite {
 		radioDefend.visible = fight.s < 2;
 	}
 	
+	public function getCombatString(fight:FightState, charSheet:CharacterSheet, combatPoolAmount:int):String 
+	{
+return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + "),  CP: " +combatPoolAmount + "/" + charSheet.getMeleeCombatPoolAmount() + "(-"+charSheet.cpDepletion+")";
+	}
+
+	private var arrOfAvailManuevers:Array;
+	private var manueverEnt:GameObject;
+	private var _manueverItem:Object;
+	private var _manueverAttackTypes:int = -1;
+	
+	public function showManueverMenu(arrOfAvailManuevers:Array, ent:GameObject, chosenIndex:int=0):void 
+	{
+		manueverEnt = ent;
+		
+		this.arrOfAvailManuevers = arrOfAvailManuevers;
+		manueverMenu.visible = true;
+		var fight:FightState = ent.components.fight;
+		
+
+		var priCManuever:Object = chosenIndex > 0 ? fight.getManueverAt(chosenIndex) : fight.getPrimaryManuever();
+		_manueverItem = priCManuever;
+		
+		var priManuever:Manuever = priCManuever.manuever;
+		var list:Array = [];
+		var selectIndex:int = -1;
+		var len:int = arrOfAvailManuevers.length;
+		var count:int = 0;
+		for (var i:int = 0; i < len; i += 3) {
+			var manuever:Manuever = arrOfAvailManuevers[i];
+			if (manuever == priManuever) {
+				selectIndex = count;
+			}
+			var cost:int =  arrOfAvailManuevers[i + 1];
+			var tn:int =    arrOfAvailManuevers[i + 2];
+			list.push( new UIManueverItem(manuever, cost,tn ) );
+			count++;
+		}
+		
+		if (priCManuever.to != null) { // assumed attacking
+			_manueverAttackTypes = (priCManuever.manuever as Manuever).attackTypes;
+			setupTargetZoneSelection();
+			updateTargetZoneSelection();
+			targetZoneDropdown.visible = true;
+		}
+		else {
+			targetZoneDropdown.visible = false;
+		}
+		
+		
+		
+		if (selectIndex < 0) throw new Error("Exception couldn't find selected index");
+		
+		manueverSlider.setSliderParams(1, fight.combatPool - priCManuever.cost, priCManuever.numDice);
+		onManueverSlideCP();
+		
+		manueverDropdown.items = list;
+		manueverDropdown.selectedIndex = selectIndex;
+		onManueverDropdownSelect();
+
+	}
+	
+	
+	public function hideManueverMenu():void  {
+		manueverMenu.visible = false;
+	}
+	
+}
+
+class UIZoneItem {
+	public var name:String;
+	public var index:int;
+	public function UIZoneItem(name:String, index:int):void {
+		this.index = index;
+		this.name = name;
+		
+	}
+	
+	public function toString():String {
+		return name;
+	}
+}
+
+class UIManueverItem {
+	public var manuever:Manuever;
+	public var cost:int;
+	public var tn:int;
+	public function UIManueverItem(manuever:Manuever, cost:int, tn:int) {
+		this.tn = tn;
+		this.cost = cost;
+		this.manuever = manuever;
+		
+	}
+	
+	public function toString():String {
+		return manuever.name + (cost > 0 ? "(" + cost + ") :" : " :")  + "tn:" + tn;
+	}
 }
 
 
@@ -714,9 +927,10 @@ class Dungeon extends Sprite{
 		i = fightStack.length;
 		while (--i > -1) {
 			fight = fightStack[i];
-			if ( !fight.isRolling() ) {
+			if ( !fight.isRolling() || fight.unableToAct() ) {
 				continue;
 			}
+			
 			
 			primaryManuever = fight.getPrimaryManuever();
 			entList = checkComponent(fight.x, fight.y, "fight");
@@ -771,7 +985,7 @@ class Dungeon extends Sprite{
 			
 			 // get AI to decide on a specific default manuever from a list of available manuevers 
 			 dManuever = fight.getPrimaryEnemyManuever(); 
-			arrOfAvailManuevers = fight.getListOfAvailableManuevers(charSheet, fight, ent, dManuever != null ?  dManuever.manuever : null, dManuever != null ? dManuever.numDice : 0, dManuever != null ? dManuever.targetZone : 0 );
+			arrOfAvailManuevers = FightState.getListOfAvailableManuevers(charSheet, fight, ent, dManuever != null ?  dManuever.manuever : null, dManuever != null ? dManuever.numDice : 0, dManuever != null ? dManuever.targetZone : 0 );
 		//	throw new Error(JSON.stringify(arrOfAvailManuevers));
 			
 			if (cManuever.manuever == null) {
@@ -829,7 +1043,8 @@ class Dungeon extends Sprite{
 				UITros.TRACE("Player is attacking..."+withStr);
 				playerMenuInterfaceShown = true;
 				
-				// TODO: Show menu for player
+
+				uiTros.showManueverMenu(arrOfAvailManuevers, ent);
 				// later: should defer decisions of AI later in the queue and only perform them after player confirms his decision
 			}
 	
@@ -846,6 +1061,7 @@ class Dungeon extends Sprite{
 			 ent= defenderList[i].entity;
 			fight = ent.components.fight;
 			cManuever = fight.getPrimaryManuever();
+			charSheet = ent.components.char;
 			
 			if (fight.isUnderAttack() ) { 
 				
@@ -854,7 +1070,8 @@ class Dungeon extends Sprite{
 					dManuever = fight.getEnemyManueverAt(k);  // the enemy manuever in question..
 				
 					
-					arrOfAvailManuevers =  fight.getListOfAvailableManuevers(charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
+					arrOfAvailManuevers =  FightState.getListOfAvailableManuevers(charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
+					//UITros.TRACE(charSheet.getPrimaryWeaponUsed().name + ", "+charSheet.getManueverTN(ManueverSheet.getDefensiveManueverById("parry"), false, fight,  dManuever.manuever, dManuever.numDice, dManuever.targetZone   ));
 					if (cManuever.manuever == null) {
 						
 						if (ent.func.aiChooseManuever != null) {
@@ -911,7 +1128,7 @@ class Dungeon extends Sprite{
 				}
 			
 				
-				
+				ent.setDirection( dManuever.from.mapX - ent.mapX, dManuever.from.mapY - ent.mapY );
 			}
 			else {
 				// LATER:
@@ -923,24 +1140,33 @@ class Dungeon extends Sprite{
 				///*
 				
 				
-				if (cManuever != null && cManuever.manuever != null) {
-						// check in manuever??
-						UITros.TRACE(playerMenuInterfaceShown ? "("+getNameWithDirToMan(ent)+" is on the defensive...)" :  getNameWithDirToMan(ent)+" defending <- "+ (cManuever.manuever as Manuever).name + ", "+cManuever.numDice + " CP." ); // tn("+cManuever.tn +")
-
+				if (cManuever != null && cManuever.manuever != null && fight.isUnderAttack()) {
+						
+						UITros.TRACE(playerMenuInterfaceShown ? "("+getNameWithDirToMan(ent)+" is defending...)" :  getNameWithDirToMan(ent)+" is defending "+ (cManuever.manuever as Manuever).name + ", "+cManuever.numDice + " CP." ); // tn("+cManuever.tn +")
+						
 				}
 				
 				
 			}
 			else {	 
-				var totalEnemyAttacks:int = (man.components.fight as FightState).getTotalEnemyManuevers();
+				//var totalEnemyAttacks:int = (man.components.fight as FightState).getTotalEnemyManuevers();
 				withStr = ""; // cManuever != null ? "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. tn:" + cManuever.tn : "";
 				
 				playerMenuInterfaceShown = true;
-				UITros.TRACE("Player is defending..."+withStr);
-				// TODO: Show menu for player
+				//UITros.TRACE("Player is defending..."+withStr);
+
+				
+				if (fight.isUnderAttack()) {
+					UITros.TRACE("Player is defending..."+withStr);
+					uiTros.showManueverMenu(arrOfAvailManuevers, ent);
+				}
+				else {
+					// LATER: show menu regardless for situations of wanting to force-enter initiative, or if possible to passively put up a defense
+				}
 				
 				// later: should defer decisions of AI later in the queue and only perform them after player confirms his decision
 			}
+			
 		}
 
 		
@@ -1403,6 +1629,9 @@ class GameObject extends Object {
 					
 		
 	}
+	public function setDirection(x:int, y:int):void {
+		dir =  getDirection(x,y);
+	}
     
     
     //アニメーション時に呼び出される
@@ -1684,6 +1913,12 @@ class Manuever {
 	public var offHanded:Boolean;
 	public var stanceModifier:int;
 	
+	public var devTempDisabled:Boolean;  // temporary dev flag to disable currently WIP manuvers.
+	
+	public var customDamageModiferMethod:Function;
+	public var customRequirements:Array;
+	
+	
 	public var manueverType:int;
 	public static const MANUEVER_TYPE_MELEE:int = 0;
 	public static const MANUEVER_TYPE_RANGED:int = 1;
@@ -1791,8 +2026,8 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 	
 
 	
-	public static function isThrustingMotion(targetzone:int):Boolean {
-		return false;
+	public static function isThrustingMotion(targetzone:int, toBody:BodyChar):Boolean {
+		return targetzone >= toBody.thrustStartIndex;
 	}
 	
 	// when defending, determining if defensive is exclusively offhanded
@@ -1855,26 +2090,36 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 	}
 	
 	// custom method(s) to filter the manuever
-	public function _customRequire():Manuever {
+	public function _customRequire(requirements:Array=null):Manuever {
+		customRequirements = requirements;
+		
+		if (requirements == null) devTempDisabled = true;  // not yet done...so
 		
 		return this;
 	}
 	
-	// custom method(s) for pre-resolving a given roll...
-	public function _customPreResolve():Manuever {  
-		
+
+	public function _customPreResolve():Manuever {  // allows for pausing before resolution of maneuever for player to make decision
+		devTempDisabled = true;
 		return this;
 	}
+	
+	
+	public function _customPostResolve():Manuever {    // allows for pausing after resolution of maneuever for player to make decision
+		devTempDisabled = true;
+		return this;
+	}
+
 	
 	// custom method(s) for resolving a given roll...to determine whether a hit occurs or not, the results of cp, and the intiaitive gain/lost as a result
 	public function _customResolve():Manuever {  
-		
+		devTempDisabled = true;
 		return this;
 	}
 	
 	// custom modifer method to determine amount of raw damage level dealt
-	public function _customDamage():Manuever {
-		
+	public function _customDamage(method:Function=null):Manuever {
+		customDamageModiferMethod = method;
 		return this;
 	}
 	
@@ -1893,7 +2138,7 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 	
 	// custom method to control splitting of maneuvers (for composite manuevers)
 	public function _customSplit():Manuever {
-		
+		devTempDisabled = true;
 		return this;
 	}
 	
@@ -1964,14 +2209,14 @@ class ManueverSheet {
 		
 		public static var offensiveMelee:Array = [
 			new Manuever("cut", "Cut")._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
-			,new Manuever("cut2", "Greater Cut", 1)._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customDamage()
+			,new Manuever("cut2", "Greater Cut", 1)._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customDamage(damageMod_add1)
 		,new Manuever("bash", "Bash")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
-			,new Manuever("bash2", "Greater Bash", 1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customDamage()
+			,new Manuever("bash2", "Greater Bash", 1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customDamage(damageMod_add1)
 			,new Manuever("beat", "Beat")._lev(4)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customRequire()._customResolve()
 			,new Manuever("bindstrike", "Bind and Strike")._customRequire()._customResolve()
 						,new Manuever("thrust", "Thrust")._customReflex()._dmgType(Manuever.DAMAGE_TYPE_PUNCTURING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)
 		,new Manuever("spike", "Spike")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)
-		,new Manuever("spike2", "Greater Spike", 1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)._customDamage()
+		,new Manuever("spike2", "Greater Spike", 1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_THRUST)._customDamage(damageMod_add1)
 					,new Manuever("punch", "Punch")._tn(5)._range(1)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._customDamage()
 		,new Manuever("kick", "Kick")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._tn(7)._customDamage()._range(2)._regions(0)._rangeMin(1)
 		
@@ -1989,7 +2234,7 @@ class ManueverSheet {
 		,new Manuever("murderstroke", "Murder Stroke")._lev(5)._tn(6)._range(1)._customRequire()._regions(0)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customPreResolve()._customDamage()
 		,new Manuever("pommelbash", "Pommel Bash")._lev(5)._tn(7)._range(1)._customRequire()._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._customDamage()
 		,new Manuever("quickdraw", "Quick Draw")._lev(6)._customResolve()
-		,new Manuever("blockstrike", "Simultaenous Block and Strike")._customRequire()._customSplit()._stanceModifier(0)
+		,new Manuever("blockstrike", "Block & Strike")._customRequire()._customSplit()._stanceModifier(0)
 		,new Manuever("stopshort", "Stop Short")._lev(3)._customResolve()._spamPenalize(1)	
 		,new Manuever("toss", "Toss")._customRequire()._tn(7)._customResolve()
 		,new Manuever("twitching", "Twitching")._lev(8)._customSplit()._customResolve()
@@ -1997,8 +2242,8 @@ class ManueverSheet {
 		
 		public static var defensiveMelee:Array = [ // NOTE: full evade must always be the first. In fact, first 3 should be evasive manuevers by convention
 			new Manuever("fullevade", "Full Evasion")._tn(4)._stanceModifier(0)  // staionery full evade is possible (ie. didn't displace)...but need terrain roll TN7 saving throw
-			,new Manuever("partialevade", "Partial Evasion")._tn(7)._customResolve()  // partial buying initiative will cost 2cp only, non-standard
-			,new Manuever("duckweave", "Duck and Weave")._tn(9)._customResolve()
+			,new Manuever("partialevade", "Partial Evasion")._tn(7) //._customResolve()  // partial buying initiative will cost 2cp only, post _customPostResolve, non-standard
+			,new Manuever("duckweave", "Duck & Weave")._tn(9)._customResolve()
 			,new Manuever("block", "Block")._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customRequire()
 			,new Manuever("blockopenstrike", "Block Open and Strike")._lev(6)._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customResolve()._stanceModifier(0)
 			,new Manuever("counter", "Counter")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
@@ -2015,6 +2260,13 @@ class ManueverSheet {
 		public static var offensiveMeleeHash:Object = createHashIndex(offensiveMelee);
 		public static var defensiveMeleeHash:Object = createHashIndex(defensiveMelee);
 		
+		public static function damageMod_add1(damage:int, cManuever:Object):int {
+			return damage + 1;
+		}
+		
+		public static function emptyResolveMethod():void {
+			
+		}
 		
 		public static function getDefensiveManueverById(id:String):Manuever {
 			return defensiveMelee[defensiveMeleeHash[id]];
@@ -2544,7 +2796,7 @@ class CharacterSheet {
 		
 		if (attacking) {  
 			useWeapon = manuever.offHanded ? weaponOffhand : weapon;
-			if (useWeapon == null) useWeapon = WeaponSheet.find("Punch");
+			if (useWeapon == null) useWeapon = getUnarmedWeapon();
 			if ( manuever.attackTypes == Manuever.ATTACK_TYPE_STRIKE ) {
 				return useWeapon.ATN;
 			}
@@ -2583,7 +2835,7 @@ class CharacterSheet {
 			}
 			
 			if (manuever.manueverType == Manuever.MANUEVER_TYPE_MELEE) {
-				return enemyDiceRolled <= 4 && Manuever.isThrustingMotion(enemyTargetZone)  ? 
+				return enemyDiceRolled <= 4 && Manuever.isThrustingMotion(enemyTargetZone, bodyType)  ? 
 						(useWeapon.DTNt != 0 ? useWeapon.DTNt : useWeapon.DTN)  : useWeapon.DTN;
 			}
 			else return useWeapon.DTN2;
@@ -2613,6 +2865,11 @@ class CharacterSheet {
 		if (weapon == null) weapon = getUnarmedWeapon();
 		var zoneArr:Vector.<ZoneBody> = weapon.blunt ? bodyType.zonesB : bodyType.zones;
 		return zoneArr[index].name;
+	}
+	
+	public function getPrimaryWeaponUsed():Weapon 
+	{
+		return weapon != null ? weapon : getUnarmedWeapon();
 	}
 	
 	
@@ -2740,8 +2997,8 @@ class FightState {
 		manueverEntry.cost = manueverCost;
 		if (manueverEntry.numDice == 0) manueverEntry.numDice = 1;
 		
-		if (fightState.attacking) {
-			if ( manueverEntry.to == null) throw new Error("Null manueverEntry.to exception");
+		if (fightState.attacking  ) {
+			//if ( manueverEntry.to == null) throw new Error("Null manueverEntry.to exception");
 			
 			manueverEntry.targetZone =  manueverEntry.to.components.char.bodyType.getCenterOfMassIndexRandom(manueverEntry.manuever, charSheet.weapon);
 		}
@@ -2797,7 +3054,8 @@ class FightState {
 	
 	
 	public static var AVAILABLE_MANUEVERS:Array = [];
-	public function getListOfAvailableManuevers(charSheet:CharacterSheet, fight:FightState, ent:GameObject, enemyManuever:Manuever=null, enemyDiceRolled:int=0, enemyTargetZone:int=0 ):Array {
+	public static function getListOfAvailableManuevers(charSheet:CharacterSheet, fight:FightState, ent:GameObject, enemyManuever:Manuever = null, enemyDiceRolled:int = 0, enemyTargetZone:int = 0 ):Array {
+		var attacking:Boolean = fight.attacking;  // later, this case might not be so simple
 		var meleeProf:String = charSheet.getMeleeProfeciencyIdCached();
 		var prof:Profeciency = ProfeciencySheet.getProfeciency(meleeProf);
 		var costWithProf:Object = attacking ? prof.atkCosts : prof.defCosts;
@@ -2811,13 +3069,17 @@ class FightState {
 		var count:int = 0;
 		var traceMask:int = 0;
 		
+		
+		
 		for (var i:uint = 0; i < len; i++) {
 			if (  (mask & (1 << i)) != 0 ) {
 				var manuever:Manuever = list[i];
-				
+				if (manuever.devTempDisabled ) {
+					continue;
+				}
 
 		
-				var tn:int =  charSheet.getManueverTN(manuever, attacking, this, enemyManuever, enemyDiceRolled, enemyTargetZone);
+				var tn:int =  charSheet.getManueverTN(manuever, attacking, fight, enemyManuever, enemyDiceRolled, enemyTargetZone);
 
 				if (tn == 0) continue;  // unavailable move based off character sheet
 				
@@ -2833,7 +3095,7 @@ class FightState {
 				// todo: apply range penalties to manuever costs
 				
 				
-				if (cost >= combatPool) {  // you can't afford it
+				if (cost >= fight.combatPool) {  // you can't afford it
 					continue;
 				}
 				//traceList.push(manuever.name);
@@ -2854,15 +3116,18 @@ class FightState {
 			filteredList[count++] = manuever.defaultTN;
 			
 			manuever = ManueverSheet.defensiveMelee[1];  // partial evade assumed
+			if (!manuever.devTempDisabled) {
 			filteredList[count++] = manuever;
 			filteredList[count++] = manuever.cost;
 			filteredList[count++] = manuever.defaultTN;
+			}
 			
 			manuever = ManueverSheet.defensiveMelee[2];  // duck and weave assumed
+			if (!manuever.devTempDisabled) {
 			filteredList[count++] = manuever;
 			filteredList[count++] = manuever.cost;
 			filteredList[count++] = manuever.defaultTN;
-			
+			}
 			// later: add buy/force-enter initiative option
 		}
 		
@@ -3302,7 +3567,10 @@ class FightState {
 	public function getEnemyManueverAt(index:int):Object {
 		return enemyManuevers[index];
 	}
-	
+	public function getManueverAt(index:int):Object 
+	{
+		return manuevers[index];
+	}
 	
 	public function isUnderAttack():Boolean 
 	{
@@ -3313,6 +3581,13 @@ class FightState {
 	{
 		return enemyManuevers.length;
 	}
+	
+	public function unableToAct():Boolean 
+	{
+		return combatPool == 0;
+	}
+	
+	
 	
 }
 
@@ -3345,7 +3620,7 @@ class Data {
 		fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, 
 		ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
         "enemy": { type:"enemy", state:"w0", num:"1", func: { key:Enemy.key },  visual:"stand", components: {
-			char:CharacterSheet.createBase("Enemy", { "swordshield":5  }, HumanoidBody.getInstance(),  WeaponSheet.find("Short Sword"), null, 5),
+			char:CharacterSheet.createBase("Enemy", { "swordshield":5 , "pugilism":6 }, HumanoidBody.getInstance(), null, null, 5),
 			fight:new FightState().setSideAggro(FightState.SIDE_ENEMY) }, 
 			ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
