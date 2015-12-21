@@ -164,6 +164,9 @@ class UITros extends Sprite {
 		addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
 	}
 	
+	public static function assert(condition:Boolean, label:String=""):void {
+		if (!condition) throw new Error("Assertion failed:" + label);
+	}
 	
 	
 	public function mapUpdate(dungeon:Dungeon):void 
@@ -259,12 +262,12 @@ class UITros extends Sprite {
 			arrowDown.alpha = manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 		}
 		
-		if (gotEnemy) {  // TODO: proper context-facing info of enemy fight info instead...later on...
+		if (gotEnemy) {  
 			setFightInfo(manFight, manCharSheet);
 		}
 		
 		if (manFight.s == 2) {
-			btnWait.label = (manFight.attacking ? "ATK" : manFight.manuevers[0].manuever == 0 ? "FLEE" :  "DEF");
+			btnWait.label = (manFight.attacking ? "ATK" : manFight.isFleeing() ? "FLEE" :  "DEF");
 			var engagedMultiple:Boolean = manFight.numEnemies > 1;
 			arrowRight.visible =   arrowRight.alpha == 0 ? (rightRollHolder.visible=false) : (engagedMultiple &&  (manFight.flags & 1) != 0);  // 
 			arrowLeft.visible =   arrowLeft.alpha == 0 ? ( leftRollHolder.visible=false) :  (engagedMultiple &&  (manFight.flags & 2) !=0);  // 
@@ -490,7 +493,8 @@ class UITros extends Sprite {
 		messageBox = new TextField();
 		messageBox.multiline = true;
 		messageBox.wordWrap = true;
-		messageBox.width = stage.stageWidth * .65;
+		
+		messageBox.width = stage.stageWidth * .75;
 		messageBox.height = 166;
 		messageBox.x = 5;
 		messageBox.y = stage.stageHeight - 166 - 5;
@@ -689,9 +693,12 @@ class Dungeon extends Sprite{
 	}
 	
 	private var manueverStack:ManueverStack = new ManueverStack();
+	private var defManueverStack:ManueverStack = new ManueverStack();
 	
 	private function resolveFightStack():void 
 	{
+		//UITros.TRACE("Resolving fight stack!");
+		var withStr:String;
 		var entList:Vector.<GameObject>;
 		var primaryManuever:Object;
 		var fight:FightState;
@@ -710,7 +717,7 @@ class Dungeon extends Sprite{
 				continue;
 			}
 			
-			primaryManuever = fight.manuevers[0];
+			primaryManuever = fight.getPrimaryManuever();
 			entList = checkComponent(fight.x, fight.y, "fight");
 			if (entList.length > 0) {
 				ent = entList[0];
@@ -734,29 +741,14 @@ class Dungeon extends Sprite{
 				defenderList.push({entity:ent, reflexScore: charSheet.getReflex()* 1000 + Math.random() * 10 });
 			}
 			
-			// tODO later
-			// go through other manuevers if necessary 
-			for (var k:int = 1; k < fight.manuevers.length; k++) {
-				var kManuever:Object = fight.manuevers[k];  // assumed manuever is explicitly defined
-				//if (kManuever.attacking) {
-					
-					/*
-					kManuever.from = ent;
-					kManuever.to  = checkComponent(fight.x+ent.moveArray[0],fight.y+ent.moveArray[1], "fight")[0];
-					if (primaryManuever.to == null) throw new Error("Could not find attack initiative's target");
-					
-					primaryManuever.reflexScore = charSheet.getReflex()* 1000 + Math.random() * 10;
-					manueverStack.pushManuever( primaryManuever );
-					*/
-				//}
-			}
+			
 		}
 		
 		// Declare menuvers
 		manueverStack.sortOnHighestToLowest("reflexScore");
 		
 		var cManuever:Object;
-		var playerAtkInterfaceShown:Boolean = false;
+		var playerMenuInterfaceShown:Boolean = false;
 		var playerBeingAttacked:Boolean = false;
 		var targetEnt:GameObject;
 		var targetCharSheet:CharacterSheet;
@@ -776,18 +768,36 @@ class Dungeon extends Sprite{
 			targetCharSheet = targetEnt.components.char;
 			targetFight = targetEnt.components.fight;
 			
-			if ( ent != man) {  // is AI
-				 // get AI to decide on a specific manuever from a list of available manuevers 
-				 //fight.enemyManuevers.length > 0 ? fight.enemyManuevers,
-				 dManuever = fight.enemyManuevers.length > 0 ? fight.enemyManuevers[0] : null; // todo: proper pick function based on facing direction of attack
-				arrOfAvailManuevers = fight.getListOfAvailableManuevers(charSheet, fight, ent, dManuever != null ?  dManuever.manuever : null, dManuever != null ? dManuever.numDice : 0, dManuever != null ? dManuever.targetZone : 0 );
-			//	throw new Error(JSON.stringify(arrOfAvailManuevers));
+			 // get AI to decide on a specific default manuever from a list of available manuevers 
+			 dManuever = fight.getPrimaryEnemyManuever(); 
+			arrOfAvailManuevers = fight.getListOfAvailableManuevers(charSheet, fight, ent, dManuever != null ?  dManuever.manuever : null, dManuever != null ? dManuever.numDice : 0, dManuever != null ? dManuever.targetZone : 0 );
+		//	throw new Error(JSON.stringify(arrOfAvailManuevers));
+			
+			if (cManuever.manuever == null) {
 				if (ent.func.aiChooseManuever != null) {
 					ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
 				}
 				else {
 					FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
 				}
+			}
+			else {
+			
+				//throw new Error("Already have pre-assigned attack manuever!");
+				FightState.applyManueverChoiceDetails( FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers), cManuever );
+				if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
+					
+					if (ent.func.aiChooseManueverDetails != null) {
+						ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
+					}
+					else {
+						FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
+					}
+				}
+			}
+			
+			if ( ent != man) {  // is AI
+				
 				// NOTE: if manuever is double attack or some composite, then need to find a way to split attack.into 2.
 				// Also need to handle case for simulatenous block/strike ,?
 				
@@ -795,11 +805,13 @@ class Dungeon extends Sprite{
 					playerBeingAttacked = true;
 					
 					// with detected manuever
-					var withStr:String = "with:"+ (cManuever.manuever as Manuever).name + ", "+cManuever.numDice + " CP. tn:"+cManuever.tn;
-					UITros.TRACE(!playerAtkInterfaceShown ? "Player detects " + getNameWithDirToMan(ent) + " attacking..."+withStr : "("+getNameWithDirToMan(ent) + " is attacking )")
+					withStr = "with:" + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. tn:" + cManuever.tn;
+					
+					// 2 conditions for detections, you mustn't be busy with the menu and (the enemy must be within your scope, or you aren't attacked yet)
+					UITros.TRACE(!playerMenuInterfaceShown && (cManuever.to == man || !playerBeingAttacked) ? "You detected " + getNameWithDirToMan(ent) + " attacking "+getNameWithDirToMan(cManuever.to)+" "+withStr : "("+getNameWithDirToMan(ent) + " is attacking )")
 			
 				}
-				else { 
+				else {  // entity is attacking someone else
 					
 				}
 				
@@ -809,65 +821,92 @@ class Dungeon extends Sprite{
 				
 				
 			}
-			else {  // from player, break and defer the rest of the declaration for the remaining AI ??? For now, just let AI attack blindly
+			else {  // from player, break and defer the rest of the declaration for the remaining AI ??? For now, just let AI attack/defend blindly
 				//Show player decision manuever interface...list of available manuevers
+				withStr = "";// "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. tn:" + cManuever.tn;
+				UITros.TRACE("Player is attacking..."+withStr);
+				playerMenuInterfaceShown = true;
 				
-				UITros.TRACE("Player is attacking...");
-				playerAtkInterfaceShown = true;
+				// TODO: Show menu for player
+				// later: should defer decisions of AI later in the queue and only perform them after player confirms his decision
 			}
 	
 		}
 		
-		if (!playerAtkInterfaceShown && playerBeingAttacked) { 
-			// for informational purposes only
-			// var totalEnemyAttacks:int = (man.components.fight as FightState).enemyManuevers.length;
-			//UITros.TRACE("Player is defending...");
-			
-		}
+		
 		
 		
 		defenderList = defenderList.sortOn("reflexScore", Array.DESCENDING);
 		// go through defender list
 		i = defenderList.length;
 		while (--i > -1) {
-			var defender:GameObject = defenderList[i].entity;
-			fight = defender.components.fight;
-			if ( defender != man) {
-				///*
-				if (fight.enemyManuevers.length > 0) {  // defender must respond to immiment enemy attack in his facing direction, 
-					// if he lacks facing direction, then he must turn to closest facing direction rnadomly, or turn behind.
-					dManuever = fight.enemyManuevers[0];  // todo: proper pick function
-					if (fight.manuevers[0].manuever == 0) {}    // TODO: full evasion case, should pick FUll Evasion by default...just need to spend approipiate CP
+			
+			 ent= defenderList[i].entity;
+			fight = ent.components.fight;
+			cManuever = fight.getPrimaryManuever();
+			
+			if (fight.isUnderAttack() ) { 
+				dManuever = fight.getPrimaryEnemyManuever();
+			
+				arrOfAvailManuevers =  fight.getListOfAvailableManuevers(charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
+				if (cManuever.manuever == null) {
 					
-					
-					fight.getListOfAvailableManuevers(charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
-					
-					cManuever = { };
 					if (ent.func.aiChooseManuever != null) {
 						ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
 					}
 					else {
 						FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
 					}
-					// later: ability to defend against multiple attacks via 1 left hand/1 right hand/ and as many partial evasions
-					dManuever.defManuever = cManuever;
-					UITros.TRACE( "Defending with:"+ (cManuever.manuever as Manuever).name + ", "+cManuever.numDice + " CP. tn:"+cManuever.tn);
-					
-					// later : if defensive manuever is Full Evade, need to check it in wth direction .
-				
 				}
 				else {
-					// LATER:
-					// defender might still want to force-enter initiative, or attempt to defend just in case, if he is adjacient to a potential enemy that hasn't declared his move yet.
+				//	throw new Error("Already have pre-assigned defensive manuveverr!");
+					FightState.applyManueverChoiceDetails( FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers), cManuever );
+					if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
+						
+						if (ent.func.aiChooseManueverDetails != null) {
+							ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
+						}
+						else {
+							FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
+							
+						}
+					}
 				}
+				
+				cManuever.from = ent;
+				defManueverStack.pushManuever(cManuever);
+				dManuever.defManuever = cManuever;
+				
 				
 			}
 			else {
-				 // show player decision defending manuever interface...list of available manuevers
-				var totalEnemyAttacks:int = (man.components.fight as FightState).enemyManuevers.length;
-				UITros.TRACE("Player is defending...");
+				// LATER:
+				// defender might still want to force-enter initiative, or attempt to still defend just in case, if he is adjacient to a potential enemy that hasn't declared his move yet.
 			}
-			
+					
+					
+			if ( ent != man) {
+				///*
+				
+				
+				if (cManuever != null && cManuever.manuever != null) {
+						// check in manuever??
+						UITros.TRACE(playerMenuInterfaceShown ? "("+getNameWithDirToMan(ent)+" is on the defensive...)" :  getNameWithDirToMan(ent)+" defending with:"+ (cManuever.manuever as Manuever).name + ", "+cManuever.numDice + " CP. tn:"+cManuever.tn);
+
+				}
+				
+				
+			}
+			else {	 
+				var totalEnemyAttacks:int = (man.components.fight as FightState).getTotalEnemyManuevers();
+				withStr = ""; // cManuever != null ? "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. tn:" + cManuever.tn : "";
+				
+				playerMenuInterfaceShown = true;
+				UITros.TRACE("Player is defending..."+withStr);
+				// TODO: Show menu for player
+				
+				// later: should defer decisions of AI later in the queue and only perform them after player confirms his decision
+			}
 		}
 
 		
@@ -891,7 +930,40 @@ class Dungeon extends Sprite{
 		manueverStack.sortOnLowestToHighest("reflexScore");
 	}
 	
+	private function makeDownpaymentManueverStack():void {
+		var i:int = manueverStack.stack.length;
+		var fight:FightState;
+		var ent:GameObject;
+		var cManuever:Object;
+		var dManuever:Object;
+		while (--i > -1) {
+			cManuever = manueverStack.stack[i];
+			ent = cManuever.from;
+			
+			fight = ent.components.fight;
+		//	UITros.assert(cManuever.cost != null);
+			
+			fight.combatPool -= cManuever.cost + cManuever.numDice;  
+		}
+		
+		i = defManueverStack.stack.length;
+		while (--i > -1 ) {
+			dManuever = defManueverStack.stack[i];
+			ent = dManuever.from;
+			
+			fight = ent.components.fight;
+			
+			fight.combatPool -= dManuever.cost + dManuever.numDice;  
+		}
+	}
+	
+	
+	
+	
+	
 	private function resolveManueverStack():void {
+		//
+		
 		var ent:GameObject;
 		var targetEnt:GameObject;
 		var tarCharSheet:CharacterSheet;
@@ -907,6 +979,8 @@ class Dungeon extends Sprite{
 			targetEnt = cManuever.to;
 			charSheet = ent.components.char;
 			tarCharSheet = targetEnt.components.char;
+			
+			// TODO: perform actual resolution to deal damage 
 			UITros.TRACE(getNameWithDirToMan(ent) + " resolved attack against " + getNameWithDirToMan(targetEnt));
 		}
 
@@ -1136,9 +1210,11 @@ class Dungeon extends Sprite{
 				
 				if (canInteract && keyEvent != null) {
 					UITros.CLEAR_TRACE();
+					makeDownpaymentManueverStack();
 					reorderManueverStackForResolution();
 					resolveManueverStack();
 					manueverStack.reset(); // end of fight resolution
+					defManueverStack.reset();
 				}
 				
                 var see:Array = SEE;
@@ -1390,7 +1466,7 @@ class Man{
 		
 		var lastDir:String = man.dir;
 		
-        if ( true || dir == man.dir ) {  // TODO: For now, i disable turning ability. Later can re-incorpriate if got time.
+        if ( true || dir == man.dir ) {  // later: For now, i disable turning ability. Later can re-incorpriate if got time.
 			man.dir = dir;
             var arr:Array = [[1,0],[-1,0],[0,1],[0,-1]]["rlbf".indexOf(man.dir)];
             man.moveArray = arr;
@@ -1420,7 +1496,10 @@ class Man{
 			}
 			else {
 				fight.attacking = false;  // imply defense always
-				if (man.moving && !fight.lastAttacking ) fight.setManuever( 0);  // if man is moving into empty square and he wasn't attacking in last exchange, imply that he is retreating, else, will reset it to no implied manuever
+				if (man.moving && !fight.lastAttacking ) {
+					fight.setManuever( ManueverSheet.getDefensiveManueverById("fullevade") );  // if man is moving into empty square and he wasn't attacking in last exchange, imply that he is retreating, else, will reset it to no implied manuever
+
+				}
 				else fight.resetManuevers();
  			}
 			man.bumping = false;
@@ -1497,6 +1576,10 @@ class Enemy{
 			}
 			else {
 				fight.attacking = false;  // imply defense always
+				if (enm.moving && !fight.lastAttacking ) {
+					fight.setManuever( ManueverSheet.getDefensiveManueverById("fullevade") );  // if man is moving into empty square and he wasn't attacking in last exchange, imply that he is retreating, else, will reset it to no implied manuever
+				}
+				else fight.resetManuevers();
 			}
 			
 			
@@ -1566,6 +1649,7 @@ class Manuever {
 	public var spamIndividualOnly:Boolean;
 	public var regionMask:uint;
 	public var offHanded:Boolean;
+	public var stanceModifier:int;
 	
 	public var manueverType:int;
 	public static const MANUEVER_TYPE_MELEE:int = 0;
@@ -1612,6 +1696,7 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 		defaultTN = 0;
 		customRange = 0;
 		customMinRange = 0;
+		stanceModifier = 2;
 		attackTypes = ATTACK_TYPE_STRIKE | ATTACK_TYPE_THRUST;
 		damageType = 0;
 		requiredLevel = 0;
@@ -1717,6 +1802,10 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 		this.spamIndividualOnly = spamIndividualOnly;
 		return this;
 		
+	}
+	public function _stanceModifier(val:int):Manuever {
+		stanceModifier = val;
+		return this;
 	}
 	
 	public function _regions(val:uint):Manuever {
@@ -1859,18 +1948,18 @@ class ManueverSheet {
 		,new Manuever("murderstroke", "Murder Stroke")._lev(5)._tn(6)._range(1)._customRequire()._regions(0)._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customPreResolve()._customDamage()
 		,new Manuever("pommelbash", "Pommel Bash")._lev(5)._tn(7)._range(1)._customRequire()._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._customDamage()
 		,new Manuever("quickdraw", "Quick Draw")._lev(6)._customResolve()
-		,new Manuever("blockstrike", "Simultaenous Block and Strike")._customRequire()._customSplit()
+		,new Manuever("blockstrike", "Simultaenous Block and Strike")._customRequire()._customSplit()._stanceModifier(0)
 		,new Manuever("stopshort", "Stop Short")._lev(3)._customResolve()._spamPenalize(1)	
 		,new Manuever("toss", "Toss")._customRequire()._tn(7)._customResolve()
 		,new Manuever("twitching", "Twitching")._lev(8)._customSplit()._customResolve()
 		];
 		
 		public static var defensiveMelee:Array = [ // NOTE: full evade must always be the first. In fact, first 3 should be evasive manuevers by convention
-			new Manuever("fullevade", "Full Evasion")._tn(4)  // staionery full evade is possible (ie. didn't displace)...but need terrain roll TN7 saving throw
+			new Manuever("fullevade", "Full Evasion")._tn(4)._stanceModifier(0)  // staionery full evade is possible (ie. didn't displace)...but need terrain roll TN7 saving throw
 			,new Manuever("partialevade", "Partial Evasion")._tn(7)._customResolve()  // partial buying initiative will cost 2cp only, non-standard
 			,new Manuever("duckweave", "Duck and Weave")._tn(9)._customResolve()
 			,new Manuever("block", "Block")._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customRequire()
-			,new Manuever("blockopenstrike", "Block Open and Strike")._lev(6)._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customResolve()
+			,new Manuever("blockopenstrike", "Block Open and Strike")._lev(6)._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customResolve()._stanceModifier(0)
 			,new Manuever("counter", "Counter")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
 			,new Manuever("disarm", "Disarm", 1)._lev(4)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
 			,new Manuever("expulsion", "Expulsion")._lev(5)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)
@@ -1886,7 +1975,12 @@ class ManueverSheet {
 		public static var defensiveMeleeHash:Object = createHashIndex(defensiveMelee);
 		
 		
-		
+		public static function getDefensiveManueverById(id:String):Manuever {
+			return defensiveMelee[defensiveMeleeHash[id]];
+		}
+		public static function getOffensiveManueverById(id:String):Manuever {
+			return offensiveMelee[offensiveMeleeHash[id]];
+		}
 		public static function createHashIndex(arr:Array):Object {
 			var obj:Object = { };
 			var len:int = arr.length;
@@ -2031,8 +2125,8 @@ class WeaponSheet {
 	//http://knight.burrowowl.net/doku.php?id=equipment:weapons
 	public static var LIST:Array = [
 		//Weapon.createDyn("Akinakes", "
-		Weapon.createDyn("Kick", ["pugilism"], { "range":0, "ATN":7, "DTN":8,   "damage":-1, "blunt":true  } )
-		,Weapon.createDyn("Punch", ["pugilism"], { "range":0, "ATN":5, "DTN":6,   "damage":-2, "blunt":true  } )
+		Weapon.createDyn("Kick", ["pugilism"], { "range":0, "ATN":7, "DTN":8,  "shieldLimit":1, "damage":-1, "blunt":true  } )
+		,Weapon.createDyn("Punch", ["pugilism"], { "range":0, "ATN":5, "DTN":6, "shieldLimit":1,  "damage":-2, "blunt":true  } )
 		
 		,Weapon.createDyn("Short Sword", ["cutthrust", "swordshield"], { "range":1, "ATN":7, "ATN2":5, "DTN":7,   "damage": -1, "damage2":1  } )
 		,Weapon.createDyn("Gladius", ["swordshield"], { "range":1, "ATN":6, "ATN2":6, "DTN":7,   "damage":0, "damage2":1, "drawCutModifier":0  } )
@@ -2423,12 +2517,19 @@ class CharacterSheet {
 			
 		}
 		else {
-			
-			useWeapon = manuever.isDefensiveOffHanded() ? weaponOffhand : weapon;
+			var usingOffhand:Boolean = manuever.isDefensiveOffHanded();
+			useWeapon =usingOffhand  ? weaponOffhand : weapon;
 			if (useWeapon == null) useWeapon = WeaponSheet.find("Punch");
 			
+			//if (usingOffhand) throw new Error("Using offhand");
+			// check for shield limit
+			if (usingOffhand && useWeapon.shieldLimit &&  enemyDiceRolled > useWeapon.shieldLimit  ) {
+				// unable to defend against attack because amount of enemy CP used exceeds shield limt
+				return 0;
+			}
+			
 			if (manuever.manueverType == Manuever.MANUEVER_TYPE_MELEE) {
-				return enemyDiceRolled <= 4 && Manuever.isThrustingMotion(enemyTargetZone)  ?  // LATER, post-emptive DTN cases
+				return enemyDiceRolled <= 4 && Manuever.isThrustingMotion(enemyTargetZone)  ? 
 						(useWeapon.DTNt != 0 ? useWeapon.DTNt : useWeapon.DTN)  : useWeapon.DTN;
 			}
 			else return useWeapon.DTN2;
@@ -2509,8 +2610,8 @@ class FightState {
 	
 	// Declared manuevers info
 	//public var manuever:int = -1;  // primary manuever index (declared move) for the current turn
-	public var manuevers:Array = [ { manuever: -1, dice:0 } ]; // for composite/multiple manuevers within the stack
-	public var enemyManuevers:Array = [];  // any detected enemy manuevers made against you...
+	private var manuevers:Array = [ { manuever: -1, numDice:0 } ]; // for composite/multiple manuevers within the stack
+	private var enemyManuevers:Array = [];  // any detected enemy manuevers made against you...
 	
 	// The state of the fight
 	public var rounds:int = 0;
@@ -2526,15 +2627,30 @@ class FightState {
 		
 	}
 	
+	public function isFleeing():Boolean {
+		return manuevers[0].manuever != null && manuevers[0].manuever.id == "fullevade";
+	}
+	
+	
+	
+	
 	public static function pickDefaultManuever(charSheet:CharacterSheet, fightState:FightState, manueverEntry:Object,  defaultList:Array, gameObject:GameObject):void {
 		
 		var manueverCost:int = int.MAX_VALUE;
 		var manueverTN:int = int.MAX_VALUE;
+		
 		var pickedManuever:Manuever;
 		// simply pick manuever with lowest TN and lowest cost, and deals basic damage.
+		
+		
 		var len:int = defaultList.length;
 		for (var i:int = 0; i < len; i += 3) {
 			var manuever:Manuever = defaultList[i];
+			
+			// skip full evasion, will not pick it by default for this method. More better AI functions should consider this
+			if (manuever.id == "fullevade") continue;  
+			
+			
 			var cost:int =  defaultList[i + 1];
 			var tn:int =    defaultList[i + 2];
 			if (tn < manueverTN) {
@@ -2550,10 +2666,12 @@ class FightState {
 		}
 		if (pickedManuever == null) throw new Error("Could not find default manuever!");
 		
+		
 		// targetZone:??, numDice:?,  tn:?,
 		manueverEntry.manuever = pickedManuever;
 		manueverEntry.tn = manueverTN;
-		manueverEntry.numDice = int( (fightState.combatPool - manueverCost) / 2 );
+		manueverEntry.numDice = int( (fightState.combatPool - manueverCost) / (fightState.e ? 1 :  2) );
+		manueverEntry.cost = manueverCost;
 		if (manueverEntry.numDice == 0) manueverEntry.numDice = 1;
 		
 		if (fightState.attacking) {
@@ -2561,8 +2679,54 @@ class FightState {
 			manueverEntry.targetZone =  pickRandomTargetZone; // TODO: pick targetzone based off character sheet's body refernece
 		}
 		// later: if !fight.attacking, ie. defending...avoid using the Full Evade manuever and Partial Evade, unless partial evade TN is lower
-		
 	}
+	
+	// manuever and cost already supplied, assumarbly	
+	public static function pickDefaultManueverDetails(charSheet:CharacterSheet, fightState:FightState, manueverEntry:Object,  gameObject:GameObject):void 
+	{
+
+		if (manueverEntry.numDice  ==0 ) {
+			manueverEntry.numDice = ( (fightState.combatPool - manueverEntry.cost) / (fightState.e ? 1 :  2) ); 
+			if ( !fightState.attacking) {
+				manueverEntry.numDice = Math.ceil(manueverEntry.numDice);
+			}
+			else {
+				manueverEntry.numDice = Math.floor(manueverEntry.numDice);
+			}
+		}
+		
+		if (fightState.attacking) {
+			if (manueverEntry.targetZone == null) {
+				var pickRandomTargetZone:int =   HumanoidBody.CENTER_OF_MASS[0]; // HumanoidBody.CENTER_OF_MASS[int(Math.random() * 2)]; // + Math.random() * 5 * Math.random();
+				manueverEntry.targetZone =  pickRandomTargetZone; // TODO: pick targetzone based off character sheet's body refernece
+			}
+		}
+		
+		
+
+	}
+	
+	public static function getManueverChoiceDetailsFromList(findManuever:Manuever, filteredList:Array):Object {
+		var details:Object = { };
+		var len:int = filteredList.length;
+		for (var i:int = 0; i < len; i += 3) {
+			var manuever:Manuever = filteredList[i];
+			
+			var cost:int =  filteredList[i + 1];
+			var tn:int =    filteredList[i + 2];
+			if (manuever === findManuever) {
+				return { cost:cost, tn:tn };
+			}
+		}
+		throw new Error("Failed to find details from filtered list exception!");
+		return null; 
+	}
+	
+	public static function applyManueverChoiceDetails(details:Object, cManuever:Object):void {
+		cManuever.cost = details.cost;
+		cManuever.tn = details.tn;
+	}
+	
 	
 	public static var AVAILABLE_MANUEVERS:Array = [];
 	public function getListOfAvailableManuevers(charSheet:CharacterSheet, fight:FightState, ent:GameObject, enemyManuever:Manuever=null, enemyDiceRolled:int=0, enemyTargetZone:int=0 ):Array {
@@ -2601,8 +2765,6 @@ class FightState {
 				// todo: apply range penalties to manuever costs
 				
 				
-				
-				
 				if (cost >= combatPool) {  // you can't afford it
 					continue;
 				}
@@ -2610,17 +2772,31 @@ class FightState {
 				filteredList[count++] = manuever;
 				filteredList[count++] = cost;
 				filteredList[count++] = tn;
+				
 			}
 			
 		}
 
 		//throw new Error(traceList);
 		
-		if (!attacking) {  // add the 2 evasive manuevers, full evade is a situational choice (return 0 instead of >0)
-		
-			// also add buy initiative manuever at bottom
+		if (!attacking) {  // add the 3 evasive manuevers
+			manuever = ManueverSheet.defensiveMelee[0];  // full evade assumed
+			filteredList[count++] = manuever;
+			filteredList[count++] = manuever.cost;
+			filteredList[count++] = manuever.defaultTN;
+			
+			manuever = ManueverSheet.defensiveMelee[1];  // partial evade assumed
+			filteredList[count++] = manuever;
+			filteredList[count++] = manuever.cost;
+			filteredList[count++] = manuever.defaultTN;
+			
+			manuever = ManueverSheet.defensiveMelee[2];  // duck and weave assumed
+			filteredList[count++] = manuever;
+			filteredList[count++] = manuever.cost;
+			filteredList[count++] = manuever.defaultTN;
+			
+			// later: add buy/force-enter initiative option
 		}
-		
 		
 		
 		filteredList.length = count;
@@ -2628,16 +2804,34 @@ class FightState {
 	}
 	
 	public function resetManuevers():void {
-		manuevers[0].manuever = -1;
-		manuevers[0].dice = 0;
+		var primary:Object = manuevers[0];
+		primary.manuever = null;
+		primary.numDice = 0;
+		primary.from = null;
+		primary.tn = 0;
+		primary.to = null;
+		primary.targetZone = null;
+		primary.cost = null;
+		primary.defManuever = null;
 		manuevers.length = 1;
 		enemyManuevers.length = 0;
+	//	UITros.TRACE("resetting manuevers");
+		
 	}
-	public function setManuever(val:int, numDice:int=0, at:uint = 0):void {
+	
+	static public function manueverNeedsElaboration(cManuever:Object):Boolean 
+	{
+		return cManuever.numDice == 0 || (cManuever.to != null ? cManuever.targetZone == null : false);
+	}
+	
+	
+	public function setManuever(val:Manuever, numDice:int=0, at:uint = 0):void {
 		if (at >= manuevers.length) throw new Error("out of range!:"+at + "/"+manuevers.length);
 		manuevers[at].manuever = val;
+	//	UITros.TRACE("Pre-setting manuever: " + val.id);
+		
 	}
-	public function appendManuever(val:int):void {
+	public function appendManuever(val:Manuever):void {
 		manuevers.push( { manuever:val } );
 	}
 	
@@ -2662,7 +2856,7 @@ class FightState {
 			
 			
 			// if valid fleeing situation, resolve it! Note ta resolveAgainst() can cancel out fleeing manuever==0
-			if (!attacking && manuevers[0].manuever == 0 && man.moveArray != null && man.moveArray.length != 0 && (man.moveArray[0] !=0 || man.moveArray[1]!=0)) {
+			if (!attacking &&  isFleeing() && man.moveArray != null && man.moveArray.length != 0 && (man.moveArray[0] !=0 || man.moveArray[1]!=0)) {
 				
 				if ( !man.dungeon.checkBumpable(man.mapX + man.moveArray[0], man.mapY + man.moveArray[1]) ) {
 				//	throw new Error(
@@ -2919,6 +3113,8 @@ class FightState {
 		}
 	
 	}
+
+
 	
 	private function getSchedule():Array 
 	{
@@ -2946,7 +3142,7 @@ class FightState {
 		shortRangeAdvantage = false;
 		paused = true;
 		
-		//manuever = -1;
+		
 		if (disengaged) {  // full disengagement
 			numEnemies = 0;
 			flags = 0;
@@ -3024,6 +3220,25 @@ class FightState {
 	public function notifyAttack(atkManuever:Object):void 
 	{
 		enemyManuevers.push(atkManuever);
+	}
+	
+	public function getPrimaryManuever():Object 
+	{
+		return manuevers[0];
+	}
+	public function getPrimaryEnemyManuever():Object   // todo: should be based off facing..and force-reflect this
+	{
+		return enemyManuevers.length > 0 ? enemyManuevers[0] : null;
+	}
+	
+	public function isUnderAttack():Boolean 
+	{
+		return enemyManuevers.length > 0;
+	}
+	
+	public function getTotalEnemyManuevers():int 
+	{
+		return enemyManuevers.length;
 	}
 	
 }
