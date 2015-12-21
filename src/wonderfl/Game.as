@@ -807,8 +807,10 @@ class Dungeon extends Sprite{
 					// with detected manuever
 					withStr = "with:" + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. tn:" + cManuever.tn;
 					
-					// 2 conditions for detections, you mustn't be busy with the menu and (the enemy must be within your scope, or you aren't attacked yet)
-					UITros.TRACE(!playerMenuInterfaceShown && (cManuever.to == man || !playerBeingAttacked) ? "You detected " + getNameWithDirToMan(ent) + " attacking "+getNameWithDirToMan(cManuever.to)+" "+withStr : "("+getNameWithDirToMan(ent) + " is attacking )")
+					// considering..2 conditions for detections, you mustn't be busy with the menu and (the enemy must be within your scope, or you aren't attacked yet)
+					//&& (cManuever.to == man || !playerBeingAttacked)
+					
+					UITros.TRACE(!playerMenuInterfaceShown  ? "You detected " + getNameWithDirToMan(ent) + " attacking "+getNameWithDirToMan(cManuever.to)+" "+withStr : "("+getNameWithDirToMan(ent) + " is attacking )")
 			
 				}
 				else {  // entity is attacking someone else
