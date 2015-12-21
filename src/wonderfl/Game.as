@@ -848,7 +848,6 @@ class Dungeon extends Sprite{
 			cManuever = fight.getPrimaryManuever();
 			
 			if (fight.isUnderAttack() ) { 
-				// TODO: should process all enemyManuevers in fightState
 				
 				var kLen:int = fight.getTotalEnemyManuevers();
 				for (var k:int = 0; k < kLen; k++) {
