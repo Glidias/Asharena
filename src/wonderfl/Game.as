@@ -798,7 +798,7 @@ class Dungeon extends Sprite{
 			
 			if ( ent != man) {  // is AI
 				
-				// NOTE: if manuever is double attack or some composite, then need to find a way to split attack.into 2.
+				// later: if manuever is double attack or some composite, then need to find a way to split attack.into 2.
 				// Also need to handle case for simulatenous block/strike ,?
 				
 				if (targetEnt == man) {  // player character being attacked
@@ -809,7 +809,6 @@ class Dungeon extends Sprite{
 					
 					// considering..2 conditions for detections, you mustn't be busy with the menu and (the enemy must be within your scope, or you aren't attacked yet)
 					//&& (cManuever.to == man || !playerBeingAttacked)
-					
 					UITros.TRACE(!playerMenuInterfaceShown  ? "You detected " + getNameWithDirToMan(ent) + " attacking "+getNameWithDirToMan(cManuever.to)+" "+withStr : "("+getNameWithDirToMan(ent) + " is attacking )")
 			
 				}
@@ -841,7 +840,7 @@ class Dungeon extends Sprite{
 		defenderList = defenderList.sortOn("reflexScore", Array.DESCENDING);
 		// go through defender list
 		i = defenderList.length;
-		while (--i > -1) {
+		while (--i > -1) { 
 			
 			 ent= defenderList[i].entity;
 			fight = ent.components.fight;
@@ -850,6 +849,7 @@ class Dungeon extends Sprite{
 			if (fight.isUnderAttack() ) { 
 				dManuever = fight.getPrimaryEnemyManuever();
 			
+				
 				arrOfAvailManuevers =  fight.getListOfAvailableManuevers(charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
 				if (cManuever.manuever == null) {
 					
@@ -861,6 +861,11 @@ class Dungeon extends Sprite{
 					}
 				}
 				else {
+	
+					// TODO: if attacked twice in turn and already have primary manuever default as a result, can skip this step
+					 // later: is he attacked twice? limit defensive manuevers based on limbs for AI, important when going up against multiple enemies
+					 // arrOfAvailManuevers
+					 
 				//	throw new Error("Already have pre-assigned defensive manuveverr!");
 					FightState.applyManueverChoiceDetails( FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers), cManuever );
 					if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
@@ -3228,7 +3233,7 @@ class FightState {
 	{
 		return manuevers[0];
 	}
-	public function getPrimaryEnemyManuever():Object   // todo: should be based off facing..and force-reflect this
+	public function getPrimaryEnemyManuever():Object   // todo: should be based off facing priority..and force-reflect this
 	{
 		return enemyManuevers.length > 0 ? enemyManuevers[0] : null;
 	}
