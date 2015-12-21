@@ -2248,7 +2248,7 @@ class ManueverSheet {
 			,new Manuever("blockopenstrike", "Block Open and Strike")._lev(6)._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customResolve()._stanceModifier(0)
 			,new Manuever("counter", "Counter")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
 			,new Manuever("disarm", "Disarm", 1)._lev(4)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
-			,new Manuever("expulsion", "Expulsion")._lev(5)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)
+			,new Manuever("expulsion", "Expulsion")._lev(5)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
 			,new Manuever("grapple",  "Grapple")._tn(5)._customResolve()
 		//	,new Manuever("halfsword", "Half Sword").
 			,new Manuever("masterstrike", "Master Strike")._lev(15)._customRequire()._customSplit()
