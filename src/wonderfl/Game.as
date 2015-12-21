@@ -639,7 +639,8 @@ class Dungeon extends Sprite{
 			case Keyboard.ENTER:
 			case Keyboard.NUMPAD_ENTER:
 			case Keyboard.NUMPAD_5:
-			case Keyboard.P: break;
+			//case Keyboard.P: 
+			break;
 			case Keyboard.UP:
 				if (!uiTros.arrowUp.visible) e.keyCode = Keyboard.P;
 			break;
@@ -805,7 +806,7 @@ class Dungeon extends Sprite{
 					playerBeingAttacked = true;
 					
 					// with detected manuever
-					withStr = "with:" + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. tn:" + cManuever.tn;
+					withStr = "- " + (cManuever.manuever as Manuever).name + ", "+targetCharSheet.getAtkZoneDesc(cManuever.targetZone, charSheet.weapon)+"("+cManuever.numDice + " CP)";  //+" (tn" + cManuever.tn+")"
 					
 					// considering..2 conditions for detections, you mustn't be busy with the menu and (the enemy must be within your scope, or you aren't attacked yet)
 					//&& (cManuever.to == man || !playerBeingAttacked)
@@ -824,7 +825,7 @@ class Dungeon extends Sprite{
 			}
 			else {  // from player, break and defer the rest of the declaration for the remaining AI ??? For now, just let AI attack/defend blindly
 				//Show player decision manuever interface...list of available manuevers
-				withStr = "";// "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. tn:" + cManuever.tn;
+				withStr = "";// "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. (tn" + cManuever.tn+")";
 				UITros.TRACE("Player is attacking..."+withStr);
 				playerMenuInterfaceShown = true;
 				
@@ -847,42 +848,69 @@ class Dungeon extends Sprite{
 			cManuever = fight.getPrimaryManuever();
 			
 			if (fight.isUnderAttack() ) { 
-				dManuever = fight.getPrimaryEnemyManuever();
-			
+				// TODO: should process all enemyManuevers in fightState
 				
-				arrOfAvailManuevers =  fight.getListOfAvailableManuevers(charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
-				if (cManuever.manuever == null) {
+				var kLen:int = fight.getTotalEnemyManuevers();
+				for (var k:int = 0; k < kLen; k++) {
+					dManuever = fight.getEnemyManueverAt(k);  // the enemy manuever in question..
+				
 					
-					if (ent.func.aiChooseManuever != null) {
-						ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
-					}
-					else {
-						FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
-					}
-				}
-				else {
-	
-					// TODO: if attacked twice in turn and already have primary manuever default as a result, can skip this step
-					 // later: is he attacked twice? limit defensive manuevers based on limbs for AI, important when going up against multiple enemies
-					 // arrOfAvailManuevers
-					 
-				//	throw new Error("Already have pre-assigned defensive manuveverr!");
-					FightState.applyManueverChoiceDetails( FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers), cManuever );
-					if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
+					arrOfAvailManuevers =  fight.getListOfAvailableManuevers(charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
+					if (cManuever.manuever == null) {
 						
-						if (ent.func.aiChooseManueverDetails != null) {
-							ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
+						if (ent.func.aiChooseManuever != null) {
+							ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
 						}
 						else {
-							FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
-							
+							FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
 						}
+						
+						defManueverStack.pushManuever(cManuever);
+						dManuever.defManuever = cManuever;
 					}
-				}
+					else  {
+						
+						 if (cManuever.from == null) {  // this is a pre-assigned manuever  that may need further processing
+							//	throw new Error("Already have pre-assigned defensive manuveverr!");
+								FightState.applyManueverChoiceDetails( FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers), cManuever );
+								if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
+									
+									if (ent.func.aiChooseManueverDetails != null) {
+										ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
+									}
+									else {
+										FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
+										
+									}
+								}
+								
+								defManueverStack.pushManuever(cManuever);
+								dManuever.defManuever = cManuever;
+						 }
+						 else {   // user is attacked again by some other offensive manuever 
+							 if (man != ent) {
+									if (!fight.isFleeing()) {
+										// later: AI should consider adding more defensive manuvers.
+										// limit defensive manuevers deceisions based on limbs for AI, important when going up against multiple enemies  or offensive manuevrs
+										// ai defensive manuever default AI should consider multiple enemies and determine
+										//cManuever = ;  // a new defensive manuever by AI
+									}
+							  }
+							  else {
+								  // do nothing. let player handle the other attacks as he sees fit via the menu interface
+							  }
+							  
+							  if (fight.isFleeing()) {  // if fleeing (assumed using Full Evade), the same primary evasion manuever can be used against all assailants at no extra cost by default
+								  dManuever.defManuever =  fight.getPrimaryManuever();
+							  }
+							  
+						 }
+					}
 				
-				cManuever.from = ent;
-				defManueverStack.pushManuever(cManuever);
-				dManuever.defManuever = cManuever;
+				
+					cManuever.from = ent;
+				}
+			
 				
 				
 			}
@@ -898,7 +926,7 @@ class Dungeon extends Sprite{
 				
 				if (cManuever != null && cManuever.manuever != null) {
 						// check in manuever??
-						UITros.TRACE(playerMenuInterfaceShown ? "("+getNameWithDirToMan(ent)+" is on the defensive...)" :  getNameWithDirToMan(ent)+" defending with:"+ (cManuever.manuever as Manuever).name + ", "+cManuever.numDice + " CP. tn:"+cManuever.tn);
+						UITros.TRACE(playerMenuInterfaceShown ? "("+getNameWithDirToMan(ent)+" is on the defensive...)" :  getNameWithDirToMan(ent)+" defending <- "+ (cManuever.manuever as Manuever).name + ", "+cManuever.numDice + " CP." ); // tn("+cManuever.tn +")
 
 				}
 				
@@ -1261,7 +1289,7 @@ class Dungeon extends Sprite{
 			
 					
 				// Those that have empty squares to move into (non-bumpers), will move first.
-				// todo: proper initiative ladder for move-sliding based off RPG stats
+				// later: proper initiative ladder for move-sliding based off RPG stats
                 for(i = startX; i<=endX; i++ ){for(j = startY; j<=endY; j++ ){
                         for each( o in map[i][j] ) { if (o.moving) { o.slide(); } }
                 } }
@@ -1270,7 +1298,6 @@ class Dungeon extends Sprite{
 			
 					// check if  bumped-into square is vacated, if so , need to defer map update till next keypress
 					if (!checkBumpable(man.mapX + man.moveArray[0], man.mapY + man.moveArray[1]) ) {
-						// todo: uiTros must handle map.bumping case to only show possible moves only, without updating exchange info
 						// consider limited movement allowance for movers , those that have to roll, can neither bump nor move
 						
 						// for next keypress frame, only consider bumpers, and do this ONLY once!
@@ -1685,6 +1712,14 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 	
 	public static const DEFEND_TYPE_OFFHAND:uint = 1;
 	public static const DEFEND_TYPE_MASTERHAND:uint = 2;
+	
+	public function getAvailableAtkTypes(weapon:Weapon):uint {
+		return attackTypes != (ATTACK_TYPE_STRIKE | ATTACK_TYPE_THRUST) ? attackTypes :   // if got exclusive attack type (either one), use that one
+				damageType  == 0 ? (weapon.blunt ? (ATTACK_TYPE_STRIKE | ATTACK_TYPE_THRUST) : ATTACK_TYPE_STRIKE) :   // else depends on damage type of manuever or weapon if no damage type found.
+				damageType == DAMAGE_TYPE_CUTTING ? ATTACK_TYPE_STRIKE :
+				damageType == DAMAGE_TYPE_PUNCTURING ? ATTACK_TYPE_THRUST : 
+				(ATTACK_TYPE_STRIKE | ATTACK_TYPE_THRUST);   // damage type bludgeining, assuming either spiking or thrusting
+	}
 	
 	//public var requirements:uint;
 	//public static const REQUIRE_SHIELD:uint = (0 << 1);
@@ -2176,12 +2211,24 @@ class BodyChar {  // base class to handle different body types later (ie. for no
 	public var zones:Vector.<ZoneBody>;   // zones for bladed attacks
 	public var zonesB:Vector.<ZoneBody>;  // zones for blunt attacks
 	public var thrustStartIndex:int; // at what index attack zones become thrusting/spiking motions.
-	public var centerOfMass:Array;  // the zone indices that indicate the center of mass of the given body
+	public var centerOfMass:Array;  // the zone indices that indicate the center of mass of the given body for cutting
+	public var centerOfMassT:Array;  // the zone indices that indicate the center of mass of the given body for thrusting
 	
 	// damage table for different body parts
 	public var partsCut:Object;  
 	public var partsPuncture:Object;
 	public var partsBludgeon:Object;
+	
+	public function getCenterOfMassIndexRandom(manuever:Manuever, weapon:Weapon):int {
+		var atkTypes:uint = manuever.getAvailableAtkTypes(weapon);
+		var center:Array = atkTypes == Manuever.ATTACK_TYPE_STRIKE ? centerOfMass : atkTypes == Manuever.ATTACK_TYPE_THRUST ? centerOfMassT : Math.random() > .5 ? centerOfMassT : centerOfMass;
+		return  center[int(Math.random() * center.length)]; 
+	}
+	public function getPrimaryCenterOfMassIndex(manuever:Manuever, weapon:Weapon):int {
+		var atkTypes:uint = manuever.getAvailableAtkTypes(weapon);
+		var center:Array = atkTypes == Manuever.ATTACK_TYPE_STRIKE ? centerOfMass : atkTypes == Manuever.ATTACK_TYPE_THRUST ? centerOfMassT : Math.random() > .5 ? centerOfMassT : centerOfMass;
+		return center[0];
+	}
 	
 }
 
@@ -2201,7 +2248,8 @@ class HumanoidBody extends BodyChar {
 	public static const ZONE_XIII:int = 12;
 	public static const ZONE_XIV:int = 13;
 
-	public static const CENTER_OF_MASS:Array = [ZONE_III, ZONE_II];
+	public static const CENTER_OF_MASS:Array = [ZONE_III, ZONE_II, ZONE_V, ZONE_VI];
+	public static const CENTER_OF_MASS_T:Array = [ZONE_X, ZONE_XI, ZONE_XI, ZONE_XII];
 	
 	private static var INSTANCE:HumanoidBody;
 	public static function getInstance():HumanoidBody {
@@ -2246,26 +2294,26 @@ class HumanoidBody extends BodyChar {
 		zones[ZONE_XIV] = ZoneBody.create("to the Arm", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm" ] );
 		
 		// Blunt
-		zones[ZONE_I] = ZoneBody.create("to the Lower Legs", new <Number>[1,3,2], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas"] );
-		zones[ZONE_II] = ZoneBody.create("to the Upper Legs", new < Number > [2, 3, 1], ["knee_and_nearby_areas", "thigh", "hip"] );
-		zones[ZONE_III] = ZoneBody.create("for Horizontal Swing", new < Number > [1, 1, 1, 2, 1], ["hip", "upper_abdomen", "lower_abdomen", "ribcage", "arms"] );
-		zones[ZONE_IV] = ZoneBody.create("for Overhand Swing", new < Number > [2, 1, 1, 1, 1], ["upper_arm_and_shoulder", "upper_body", "neck", "lower_head", "upper_head"] );
-		zones[ZONE_V] = ZoneBody.create("for Downward Swing from Above", new < Number > [2, 1, 3], ["shoulder", "lower_head", "upper_head" ] );
-		zones[ZONE_VI] = ZoneBody.create("for Upward Swing from Below", new < Number > [3, 1, 1, 1], ["inner_thigh", "groin", "abdomen", "lower_head" ] );
-		zones[ZONE_VII] = ZoneBody.create("to the Arms", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm_and_shoulder" ] );
+		zonesB[ZONE_I] = ZoneBody.create("to the Lower Legs", new <Number>[1,3,2], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas"] );
+		zonesB[ZONE_II] = ZoneBody.create("to the Upper Legs", new < Number > [2, 3, 1], ["knee_and_nearby_areas", "thigh", "hip"] );
+		zonesB[ZONE_III] = ZoneBody.create("for Horizontal Swing", new < Number > [1, 1, 1, 2, 1], ["hip", "upper_abdomen", "lower_abdomen", "ribcage", "arms"] );
+		zonesB[ZONE_IV] = ZoneBody.create("for Overhand Swing", new < Number > [2, 1, 1, 1, 1], ["upper_arm_and_shoulder", "upper_body", "neck", "lower_head", "upper_head"] );
+		zonesB[ZONE_V] = ZoneBody.create("for Downward Swing from Above", new < Number > [2, 1, 3], ["shoulder", "lower_head", "upper_head" ] );
+		zonesB[ZONE_VI] = ZoneBody.create("for Upward Swing from Below", new < Number > [3, 1, 1, 1], ["inner_thigh", "groin", "abdomen", "lower_head" ] );
+		zonesB[ZONE_VII] = ZoneBody.create("to the Arms", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm_and_shoulder" ] );
 		// thrusts
-		zones[ZONE_VIII] = ZoneBody.create("to the Lower Legs", new < Number > [1, 3, 1, 1], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas",  "" ] );
-		zones[ZONE_IX] = ZoneBody.create("to the Upper Legs", new < Number > [2, 3, 1], ["knee_and_nearby_areas", "thigh", "hip" ] );
-		zones[ZONE_X] = ZoneBody.create("to the Pelvis", new < Number > [2, 2, 2], ["hip", "groin", "lower_abdomen" ] );  // NOTE: missing rules for female/male cases
-		zones[ZONE_XI] = ZoneBody.create("to the Belly", new < Number > [6], ["lower_abdomen"] );
-		zones[ZONE_XII] = ZoneBody.create("to the Chest", new < Number > [2,4], ["upper_abdomen", "chest" ] );
-		zones[ZONE_XIII] = ZoneBody.create("to the Head", new < Number > [1, 1.5, 1.5, 2], ["neck", "face", "lower_head",  "upper_head" ] );
-		zones[ZONE_XIV] = ZoneBody.create("to the Arm", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm_and_shoulder" ] );
+		zonesB[ZONE_VIII] = ZoneBody.create("to the Lower Legs", new < Number > [1, 3, 1, 1], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas",  "" ] );
+		zonesB[ZONE_IX] = ZoneBody.create("to the Upper Legs", new < Number > [2, 3, 1], ["knee_and_nearby_areas", "thigh", "hip" ] );
+		zonesB[ZONE_X] = ZoneBody.create("to the Pelvis", new < Number > [2, 2, 2], ["hip", "groin", "lower_abdomen" ] );  // NOTE: missing rules for female/male cases
+		zonesB[ZONE_XI] = ZoneBody.create("to the Belly", new < Number > [6], ["lower_abdomen"] );
+		zonesB[ZONE_XII] = ZoneBody.create("to the Chest", new < Number > [2,4], ["upper_abdomen", "chest" ] );
+		zonesB[ZONE_XIII] = ZoneBody.create("to the Head", new < Number > [1, 1.5, 1.5, 2], ["neck", "face", "lower_head",  "upper_head" ] );
+		zonesB[ZONE_XIV] = ZoneBody.create("to the Arm", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm_and_shoulder" ] );
 		
 	
 		
 		centerOfMass = CENTER_OF_MASS;
-	
+		centerOfMassT = CENTER_OF_MASS_T;
 		//zones[ZONE_I] = new ZoneBody();
 	}
 	
@@ -2526,7 +2574,7 @@ class CharacterSheet {
 		else {
 			var usingOffhand:Boolean = manuever.isDefensiveOffHanded();
 			useWeapon =usingOffhand  ? weaponOffhand : weapon;
-			if (useWeapon == null) useWeapon = WeaponSheet.find("Punch");
+			if (useWeapon == null) useWeapon = getUnarmedWeapon();
 			
 			//if (usingOffhand) throw new Error("Using offhand");
 			// check for shield limit
@@ -2544,6 +2592,10 @@ class CharacterSheet {
 		}
 	}
 	
+	private function getUnarmedWeapon():Weapon {
+		return WeaponSheet.find("Punch");
+	}
+	
 	public static function createBase(name:String, profeciencies:Object, bodyType:BodyChar, weapon:Weapon=null, weaponOffHand:Weapon=null, baseAttr:int = 5):CharacterSheet {
 		var c:CharacterSheet = new CharacterSheet();
 		c.name = name;
@@ -2553,7 +2605,15 @@ class CharacterSheet {
 		c.weaponOffhand = weaponOffHand;
 		c.resetAllAttributes(baseAttr);
 		c.refreshDefaultProfs();
+		c.bodyType = bodyType;
 		return c;
+	}
+	
+	public function getAtkZoneDesc(index:int, weapon:Weapon=null):String 
+	{
+		if (weapon == null) weapon = getUnarmedWeapon();
+		var zoneArr:Vector.<ZoneBody> = weapon.blunt ? bodyType.zonesB : bodyType.zones;
+		return zoneArr[index].name;
 	}
 	
 	
@@ -2682,8 +2742,9 @@ class FightState {
 		if (manueverEntry.numDice == 0) manueverEntry.numDice = 1;
 		
 		if (fightState.attacking) {
-			var pickRandomTargetZone:int =   HumanoidBody.CENTER_OF_MASS[0]; // HumanoidBody.CENTER_OF_MASS[int(Math.random() * 2)]; // + Math.random() * 5 * Math.random();
-			manueverEntry.targetZone =  pickRandomTargetZone; // TODO: pick targetzone based off character sheet's body refernece
+			if ( manueverEntry.to == null) throw new Error("Null manueverEntry.to exception");
+			
+			manueverEntry.targetZone =  manueverEntry.to.components.char.bodyType.getCenterOfMassIndexRandom(manueverEntry.manuever, charSheet.weapon);
 		}
 		// later: if !fight.attacking, ie. defending...avoid using the Full Evade manuever and Partial Evade, unless partial evade TN is lower
 	}
@@ -2692,6 +2753,7 @@ class FightState {
 	public static function pickDefaultManueverDetails(charSheet:CharacterSheet, fightState:FightState, manueverEntry:Object,  gameObject:GameObject):void 
 	{
 
+		
 		if (manueverEntry.numDice  ==0 ) {
 			manueverEntry.numDice = ( (fightState.combatPool - manueverEntry.cost) / (fightState.e ? 1 :  2) ); 
 			if ( !fightState.attacking) {
@@ -2704,8 +2766,8 @@ class FightState {
 		
 		if (fightState.attacking) {
 			if (manueverEntry.targetZone == null) {
-				var pickRandomTargetZone:int =   HumanoidBody.CENTER_OF_MASS[0]; // HumanoidBody.CENTER_OF_MASS[int(Math.random() * 2)]; // + Math.random() * 5 * Math.random();
-				manueverEntry.targetZone =  pickRandomTargetZone; // TODO: pick targetzone based off character sheet's body refernece
+				if ( manueverEntry.to == null) throw new Error("Null manueverEntry.to exception");
+				manueverEntry.targetZone =  manueverEntry.to.components.char.bodyType.getCenterOfMassIndexRandom(manueverEntry.manuever, charSheet.weapon);
 			}
 		}
 		
@@ -3238,6 +3300,11 @@ class FightState {
 		return enemyManuevers.length > 0 ? enemyManuevers[0] : null;
 	}
 	
+	public function getEnemyManueverAt(index:int):Object {
+		return enemyManuevers[index];
+	}
+	
+	
 	public function isUnderAttack():Boolean 
 	{
 		return enemyManuevers.length > 0;
@@ -3279,7 +3346,7 @@ class Data {
 		fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, 
 		ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
         "enemy": { type:"enemy", state:"w0", num:"1", func: { key:Enemy.key },  visual:"stand", components: {
-			char:CharacterSheet.createBase("Enemy", { "swordshield":5  }, HumanoidBody.getInstance(),  WeaponSheet.find("Gladius"), null, 5),
+			char:CharacterSheet.createBase("Enemy", { "swordshield":5  }, HumanoidBody.getInstance(),  WeaponSheet.find("Short Sword"), null, 5),
 			fight:new FightState().setSideAggro(FightState.SIDE_ENEMY) }, 
 			ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
