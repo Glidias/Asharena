@@ -1214,6 +1214,9 @@ class Dungeon extends Sprite{
 			fight = ent.components.fight;
 			
 			fight.combatPool -= dManuever.cost + dManuever.numDice;  
+			
+			// pre-roll defenses first
+			Manuever.makeIndividualRoll(dManuever.numDice, dManuever.tn, dManuever);
 		}
 	}
 	
@@ -1228,20 +1231,64 @@ class Dungeon extends Sprite{
 		var targetEnt:GameObject;
 		var tarCharSheet:CharacterSheet;
 		var charSheet:CharacterSheet;
+		var fight:FightState;
+		var tarFight:FightState;
 		
 		var cManuever:Object;
+		var reflexScore:Number = -1;
 		
-	
 		var i:int = manueverStack.stack.length;
+		var dManuever:Object;
+		var manuever:Manuever;
 		while (--i > -1) {
 			cManuever = manueverStack.stack[i];
 			ent = cManuever.from;
+			manuever = cManuever.manuever;
 			targetEnt = cManuever.to;
 			charSheet = ent.components.char;
 			tarCharSheet = targetEnt.components.char;
+			dManuever = cManuever.defManuever;
+			fight = ent.components.fight;
+			tarFight = targetEnt.components.fight;
+			var challengeResult:int = Manuever.makeChallengeRoll(cManuever.numDice, cManuever.tn, (dManuever ? dManuever.successes : 1 ) );
+			if (challengeResult < 0) {  // failed to hit.
+				UITros.TRACE(dManuever.manuever.evasive ? getNameWithDirToMan(ent) + " misses!" :  getNameWithDirToMan(ent) + "'s strike was successfully blocked." );
+				// default behaviour for failing to hit
+				// todo: initaitive mechanic
+				//tarFight.initiative = false;
+			}
+			else {  
+
+				
+				if ( fight.isFleeing() ) {
+					UITros.TRACE( getNameWithDirToMan(ent) + "'s fleeing attempt failed." );
+					fight.resetManuevers();
+				}
+				
+				if (challengeResult > 0) {
+					// todo: damage modifiers,
+					var dmg:int = charSheet.getPrimaryWeaponUsed().getDamageTo(tarCharSheet.bodyType, manuever, cManuever.targetZone, challengeResult, charSheet);
+					
+					// later: include armor reduction
+					dmg -= tarCharSheet.toughness;
+					if (dmg > 0) {
+						if (dmg > 5) dmg = 5; // clamp
+						tarCharSheet.inflictWound(dmg, cManuever.targetZone);
+						UITros.TRACE( getNameWithDirToMan(ent) + " hits " + getNameWithDirToMan(targetEnt) + " with a Level " + dmg + " hit.." + tarCharSheet.getAtkZoneDesc(cManuever.targetZone, charSheet.getPrimaryWeaponUsed() ) );
+						
+					}
+					else {
+						UITros.TRACE( getNameWithDirToMan(ent) + "'s blow glances off with no damage." );
+					}
+					
+				}
+				
+					
+				
+			}
 			
-			// TODO: perform actual resolution to deal damage 
-			UITros.TRACE(getNameWithDirToMan(ent) + " resolved attack against " + getNameWithDirToMan(targetEnt));
+			
+			
 		}
 
 	}
@@ -1912,6 +1959,7 @@ class Manuever {
 	public var regionMask:uint;
 	public var offHanded:Boolean;
 	public var stanceModifier:int;
+	public var evasive:Boolean;
 	
 	public var devTempDisabled:Boolean;  // temporary dev flag to disable currently WIP manuvers.
 	
@@ -1980,11 +2028,12 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 		spamIndividualOnly = false;
 		regionMask = 0;
 		offHanded = false;
-		
+		evasive = false;
 		manueverType = MANUEVER_TYPE_MELEE;
 	}
 	
 	private static var NUM_ONES:int = 0;
+	public static var LAST_ROLL_SUCCESSES:int;
 	public static function getRollNumSuccesses(amountDice:int, tn:int):int {
 		var result:int;
 		NUM_ONES = 0;
@@ -2007,6 +2056,7 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 			}
 		}
 		
+		LAST_ROLL_SUCCESSES = numSuccesses;
 		return numSuccesses;
 	}
 	
@@ -2019,9 +2069,12 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 		return numSuccesses >= requiredSuccesses ? numSuccesses - requiredSuccesses : NUM_ONES >= (amountDice > 1 ? 2 : 1) ? ROLL_RESULT_BOTCH : ROLL_RESULT_FAILED;
 	}
 	
-	public static function makeIndividualRoll(amountDice:int, tn:int):Object {
+	public static function makeIndividualRoll(amountDice:int, tn:int, tarObject:Object = null):Object {
+		tarObject = tarObject != null ? tarObject : { };
 		var num:int = getRollNumSuccesses(amountDice, tn);
-		return { successes:num , mayBotch: NUM_ONES >= (amountDice > 1 ? 2 : 1)  };
+		tarObject.successes = num;
+		tarObject.mayBotch =  NUM_ONES >= (amountDice > 1 ? 2 : 1);
+		return tarObject; 
 	}
 	
 
@@ -2049,6 +2102,11 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 	
 	public function _offHanded(val:Boolean):Manuever {
 		offHanded = val;
+		return this;
+	}
+	
+	public function _evasive(val:Boolean):Manuever {
+		evasive = val;
 		return this;
 	}
 	
@@ -2241,9 +2299,9 @@ class ManueverSheet {
 		];
 		
 		public static var defensiveMelee:Array = [ // NOTE: full evade must always be the first. In fact, first 3 should be evasive manuevers by convention
-			new Manuever("fullevade", "Full Evasion")._tn(4)._stanceModifier(0)  // staionery full evade is possible (ie. didn't displace)...but need terrain roll TN7 saving throw
-			,new Manuever("partialevade", "Partial Evasion")._tn(7) //._customResolve()  // partial buying initiative will cost 2cp only, post _customPostResolve, non-standard
-			,new Manuever("duckweave", "Duck & Weave")._tn(9)._customResolve()
+		new Manuever("fullevade", "Full Evasion")._tn(4)._stanceModifier(0)._evasive(true)  // staionery full evade is possible (ie. didn't displace)...but need terrain roll TN7 saving throw
+			,new Manuever("partialevade", "Partial Evasion")._tn(7)._evasive(true) //._customResolve()  // partial buying initiative will cost 2cp only, post _customPostResolve, non-standard
+			,new Manuever("duckweave", "Duck & Weave")._tn(9)._customResolve()._evasive(true)
 			,new Manuever("block", "Block")._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customRequire()
 			,new Manuever("blockopenstrike", "Block Open and Strike")._lev(6)._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customResolve()._stanceModifier(0)
 			,new Manuever("counter", "Counter")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
@@ -2362,7 +2420,21 @@ class Weapon {
 	
 	public var range:int;
 	
+	public static const ATTR_BASE_NONE:int = -1;
 	public static const ATTR_BASE_STRENGTH:int = 0;
+	public function getDamageTo(body:BodyChar, manuever:Manuever, targetZone:int, margin:int, from:CharacterSheet):int {
+		var dmg:int
+		if (damage3 != 0 && (blunt || manuever.damageType == Manuever.DAMAGE_TYPE_BLUDGEONING) ) {
+			dmg = damage3;
+		}
+		else {
+			dmg = Manuever.isThrustingMotion(targetZone, body) ? damage2 : damage;
+		}
+		
+		dmg += margin;
+		if (attrBaseIndex == ATTR_BASE_STRENGTH) dmg += from.strength;
+		return dmg;
+	}
 
 	public function Weapon(name:String, profGroups:Array) {
 		this.name = name;
@@ -2871,6 +2943,18 @@ class CharacterSheet {
 	{
 		return weapon != null ? weapon : getUnarmedWeapon();
 	}
+	
+	public function inflictWound(level:int, targetZone:int):void 
+	{
+		//Math.random() * 6;
+	}
+	
+	/*
+	public function inflictMargin(weapon:Weapon, manuever:Manuever, targetZone:int, margin:int, from:CharacterSheet):void 
+	{
+		weapon.getDamageTo(bodyType, manuever, targetZone, margin, from);
+	}
+	*/
 	
 	
 }
