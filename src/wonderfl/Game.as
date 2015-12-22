@@ -156,6 +156,8 @@ class UITros extends Sprite {
 	
 	public static const STR_DONE:String = "Okay";
 	
+	public static const STR_NO_ACTION:String = "Wait";
+	
 	public var messageBox:TextField;
 	
 	private var manueverMenu:VBox;
@@ -217,7 +219,7 @@ class UITros extends Sprite {
 		}
 		
 
-		
+		var unableToAct:Boolean =  manFight.unableToAct();
 		
 		arrowRight.visible = rightRollHolder.visible  = !(wallMask & 1);
 		arrowLeft.visible =  leftRollHolder.visible  = !(wallMask & 2);
@@ -228,7 +230,7 @@ class UITros extends Sprite {
 		arrowUp.alpha = 1;
 		arrowDown.alpha = 1;
 		
-		var emptySquareMoveString:String = gotEnemy ?  manFight.s < 1 ? STR_MOVE : STR_FULL_EVADE : STR_MOVE;  
+		var emptySquareMoveString:String = gotEnemy ?  manFight.s < 1 ? unableToAct ? STR_NO_ACTION :   STR_MOVE : STR_FULL_EVADE : STR_MOVE;  
 		var atkStateString:String;
 		var defendStateString:String;
 		
@@ -243,38 +245,39 @@ class UITros extends Sprite {
 		//infoMoveStep.visible = gotEnemy;
 		
 		var fState:FightState;
-	
+		
 		
 		if (manFight.flags & FightState.FLAG_ENEMY_EAST) {
+			fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 0);
+			defendStateString =unableToAct ? STR_NO_ACTION :  ( manFight.mustRollNow(fState)  ? STR_DEFEND : STR_DEFEND_TEMP );
 			
-			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 0))  ? STR_DEFEND : STR_DEFEND_TEMP );
-			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX : ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			atkStateString =unableToAct ? STR_NO_ACTION :   radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX : ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowRight.label = manFight.flags & FightState.FLAG_INITIATIVE_EAST  ? atkStateString : defendStateString;
 			arrowRight.alpha = manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 			
 		}
 		
 		if (manFight.flags & FightState.FLAG_ENEMY_WEST) {
-		
-			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 1))  ? STR_DEFEND : STR_DEFEND_TEMP );
-			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 1);
+			defendStateString = unableToAct ? STR_NO_ACTION :  ( manFight.mustRollNow(fState)  ? STR_DEFEND : STR_DEFEND_TEMP );
+			atkStateString = unableToAct ? STR_NO_ACTION :  radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowLeft.label = manFight.flags & FightState.FLAG_INITIATIVE_WEST  ? atkStateString : defendStateString;
 			arrowLeft.alpha =manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 		}
 		
 		
 		if (manFight.flags & FightState.FLAG_ENEMY_NORTH) {
-			
-			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 2))  ? STR_DEFEND : STR_DEFEND_TEMP );
-			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 2);
+			defendStateString = unableToAct ? STR_NO_ACTION :  ( manFight.mustRollNow(fState)  ? STR_DEFEND : STR_DEFEND_TEMP );
+			atkStateString =unableToAct ? STR_NO_ACTION :   radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowUp.label = manFight.flags & FightState.FLAG_INITIATIVE_NORTH   ? atkStateString : defendStateString;
 			arrowUp.alpha =manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 		}
 		
 		if (manFight.flags & FightState.FLAG_ENEMY_SOUTH) {
-	
-			defendStateString = ( manFight.mustRollNow(fState=FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY,3))  ? STR_DEFEND : STR_DEFEND_TEMP );
-			atkStateString = radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY,3);
+			defendStateString = unableToAct ? STR_NO_ACTION :  ( manFight.mustRollNow(fState)  ? STR_DEFEND : STR_DEFEND_TEMP );
+			atkStateString =unableToAct ? STR_NO_ACTION :   radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowDown.label = manFight.flags & FightState.FLAG_INITIATIVE_SOUTH   ? atkStateString : defendStateString;
 			arrowDown.alpha = manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 		}
@@ -284,7 +287,7 @@ class UITros extends Sprite {
 		}
 		
 		if (manFight.s == 2) {
-			btnWait.label = (manFight.attacking ? "ATK" : manFight.isFleeing() ? "FLEE" :  "DEF");
+			btnWait.label = unableToAct ? STR_DONE : (manFight.attacking ? "ATK" : manFight.isFleeing() ? unableToAct ? STR_WAIT :  "FLEE" :  "DEF");
 			var engagedMultiple:Boolean = manFight.numEnemies > 1;
 			arrowRight.visible =   arrowRight.alpha == 0 ? (rightRollHolder.visible=false) : (engagedMultiple &&  (manFight.flags & 1) != 0);  // 
 			arrowLeft.visible =   arrowLeft.alpha == 0 ? ( leftRollHolder.visible=false) :  (engagedMultiple &&  (manFight.flags & 2) !=0);  // 
@@ -309,7 +312,7 @@ class UITros extends Sprite {
 			
 		}
 		else if (manFight.s == 1) {
-			var evadeStr:String = manFight.lastAttacking ? STR_PARTIAL_EVADE : STR_FULL_EVADE;
+			var evadeStr:String = unableToAct ? STR_NO_ACTION   :  manFight.lastAttacking ? STR_PARTIAL_EVADE :  STR_FULL_EVADE;
 			if (arrowRight.visible && arrowRight.label === STR_MOVE) {
 				arrowRight.label = evadeStr;
 			}
@@ -673,7 +676,8 @@ class UITros extends Sprite {
 	
 	public function getCombatString(fight:FightState, charSheet:CharacterSheet, combatPoolAmount:int):String 
 	{
-return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + "),  CP: " + fight.combatPool + "/" + fight.getRefreshCombatPoolAmount(charSheet) + "(-"+charSheet.cpDepletion+"),  BL:"+charSheet.getTotalBloodLost() +", HP: "+charSheet.getCurrentHealth() + "/"+charSheet.health;
+		
+return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + "),  CP: " + combatPoolAmount + "/" + fight.getRefreshCombatPoolAmount(charSheet) + "(-"+charSheet.cpDepletion+"),  BL:"+charSheet.getTotalBloodLost() +", HP: "+charSheet.getCurrentHealth() + "/"+charSheet.health;
 	}
 
 	private var arrOfAvailManuevers:Array;
@@ -709,6 +713,9 @@ return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + 
 			count++;
 		}
 		
+		manueverSlider.setSliderParams(1, fight.combatPool - priCManuever.cost, priCManuever.numDice);
+		onManueverSlideCP();
+		
 		if (priCManuever.to != null) { // assumed attacking
 			_manueverAttackTypes = (priCManuever.manuever as Manuever).attackTypes;
 			setupTargetZoneSelection();
@@ -723,8 +730,7 @@ return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + 
 		
 		if (selectIndex < 0) throw new Error("Exception couldn't find selected index");
 		
-		manueverSlider.setSliderParams(1, fight.combatPool - priCManuever.cost, priCManuever.numDice);
-		onManueverSlideCP();
+		
 		
 		manueverDropdown.items = list;
 		manueverDropdown.selectedIndex = selectIndex;
@@ -938,7 +944,8 @@ class Dungeon extends Sprite{
 		i = fightStack.length;
 		while (--i > -1) {
 			fight = fightStack[i];
-			if ( !fight.isRolling() || fight.unableToAct() ) {
+			if ( !fight.isRolling()) {
+				
 				continue;
 			}
 			
@@ -952,6 +959,11 @@ class Dungeon extends Sprite{
 				throw new Error("Exception fight missing at location!");
 			}
 			charSheet = ent.components.char;
+			if (fight.unableToAct() ) {
+				UITros.TRACE(ent.dungeon.getNameWithDirToMan(ent) + " does not have enough CP to act for this exchange.");
+				fight.resetManuevers();
+				continue;
+			}
 			
 			// manuever.to might be different in some cases...
 			if (fight.attacking) {
@@ -1051,7 +1063,8 @@ class Dungeon extends Sprite{
 			else {  // from player, break and defer the rest of the declaration for the remaining AI ??? For now, just let AI attack/defend blindly
 				//Show player decision manuever interface...list of available manuevers
 				withStr = "";// "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. (tn" + cManuever.tn+")";
-				UITros.TRACE("Player is attacking..."+withStr);
+				UITros.TRACE("Player is attacking..." + withStr);
+				//if (!fight.attacking) throw new Error("MIsmatch");
 				playerMenuInterfaceShown = true;
 				
 
@@ -1251,10 +1264,14 @@ class Dungeon extends Sprite{
 		var i:int = manueverStack.stack.length;
 		var dManuever:Object;
 		var manuever:Manuever;
+		
+		//if (man.components.fight.attacking && manueverStack.stack.length <= 0 ) throw new Error("EXCEPTION!");
+		//UITros.TRACE("Resolving manuever stack:" + manueverStack.stack.length);
 		while (--i > -1) {
 			cManuever = manueverStack.stack[i];
 			manuever = cManuever.manuever;
 			if (manuever == null) {  // assumed player is dead already
+				UITros.TRACE( getNameWithDirToMan(ent) + " no more manuever!" );
 				continue;
 			}
 			ent = cManuever.from;
@@ -1273,6 +1290,7 @@ class Dungeon extends Sprite{
 			}
 			
 			var challengeResult:int = Manuever.makeChallengeRoll(cManuever.numDice, cManuever.tn, (dManuever ? dManuever.successes : 1 ) );
+			cManuever.marginSuccess = challengeResult;
 			if (challengeResult < 0) {  // failed to hit.
 			
 
@@ -1281,18 +1299,23 @@ class Dungeon extends Sprite{
 					UITros.TRACE(getNameWithDirToMan(ent) + " misses completely!");
 				}
 				
-				// default behaviour for failing to hit
-				// TODO: initaitive mechanic
-				//tarFight.initiative = false;
+				// default initiative behaviour for failing to hit
+				//if (dManuever != null) { 
+					fight.initiative = false; 
+					fight.lostInitiative = true;
+				//}
 			}
 			else {  
-				
+				tarFight.lostInitiative = true;
+				tarFight.initiative = false;
 				
 				if ( tarFight.isFleeing() ) {
 					UITros.TRACE( getNameWithDirToMan(targetEnt) + "'s fleeing attempt failed." );
 					tarFight.resetManuevers();
-					continue;
+					//continue;
 				}
+				
+				
 				
 				if (challengeResult > 0) {
 					// TODO: damage modifiers,
@@ -1302,9 +1325,12 @@ class Dungeon extends Sprite{
 					dmg -= tarCharSheet.toughness;  // later: include TFOB limits for toughenss reduction
 					//if (dmg < 0) dmg = 0;
 					
+					
+					
 					if (dmg > 0) {
 						if (dmg > 5) dmg = 5; // clamp
 						
+						//dmg = 1; // for testing
 						
 						wound = tarCharSheet.inflictWound(dmg, manuever, charSheet.getPrimaryWeaponUsed(), cManuever.targetZone);
 						if (wound == null) {
@@ -1352,7 +1378,8 @@ class Dungeon extends Sprite{
 						
 						// main stats is only shown if inflicted upon main character, so you won't know exactly the stats of enemy
 						var statsStr:String = (diceLost > 0 ? "(-" + diceLost + "d," + (wound.shock - diceLost) + "s)" : "(" + wound.shock + "s)" );
-						UITros.TRACE( getNameWithDirToMan(ent) + " hits " + getNameWithDirToMan(targetEnt) + " with a Level " + dmg + " hit to the " + wound.part + (targetEnt != man ?  "" : statsStr)  );
+						var simult:String = tarPrimaryManuever!=null && tarPrimaryManuever.to != null && tarPrimaryManuever.reflexScore == cManuever.reflexScore && tarPrimaryManuever.marginSuccess == null && !tarCharSheet.outOfAction() && tarPrimaryManuever.numDice > 0 ? " while..." : "";
+						UITros.TRACE( getNameWithDirToMan(ent) + " hits " + getNameWithDirToMan(targetEnt) + " with a Level " + dmg + " hit to the " + wound.part + (targetEnt != man ?  "" : statsStr)  +simult );
 						
 						if (tarCharSheet.canNoLongerFight() ) {
 							if (targetEnt != man) {  // LATER: just remove off surrendered AI for now, no point leaving them there unless you want to execute/interroate/heal them..lol
@@ -1369,6 +1396,9 @@ class Dungeon extends Sprite{
 					
 
 					
+				}
+				else {
+					UITros.TRACE( getNameWithDirToMan(ent) + "'s near-hit blow throws "+getNameWithDirToMan(targetEnt) + " off a bit." );
 				}
 				
 					
@@ -3038,6 +3068,9 @@ class CharacterSheet {
 	public function canNoLongerFight():Boolean {
 		return getMeleeCombatPoolAmount() <= 0;
 	}
+	public function outOfAction():Boolean {
+		return  canNoLongerFight() || isDeadOrComa();
+	}
 	
 	
 	public function getTotalPain():int {
@@ -3346,6 +3379,8 @@ class FightState {
 	public var lastAttacking:Boolean = false; // flag to indicate if was attacking on last declared move
 	public var combatPool:int;
 	public var shock:int;
+	public var lostInitiative:Boolean = false;
+	public var lastHadInitiative:Boolean = false;
 
 	
 	
@@ -3495,7 +3530,7 @@ class FightState {
 					cost = costWithProf[manuever.id] != null ? costWithProf[manuever.id] is Array ? ProfeciencySheet.resolveProfManueverCostChoice(manuever.id, costWithProf[manuever.id], ent.components ) : costWithProf[manuever.id]   :   0;
 				}
 				// later: apply stance modifiers to manuever costs
-				// todo: apply zone aim penalties to manuever costs
+				// todo: apply zone aim penalties to manuever costs, this has to be applied elsewhere and reflected in the GUI
 				// todo: apply range penalties to manuever costs
 				
 				
@@ -3543,6 +3578,9 @@ class FightState {
 	public function resetManuevers():void {
 		var primary:Object = manuevers[0];
 		primary.manuever = null;
+		primary.marginSuccess = null;
+		primary.reflexScore = null;
+		primary.successes = null;
 		primary.numDice = 0;
 		primary.from = null;
 		primary.tn = 0;
@@ -3590,7 +3628,7 @@ class FightState {
 		
 		if ( resolvable() ) { 
 			lastAttacking = attacking;
-			
+			lastHadInitiative = initiative;
 			
 			// if valid fleeing situation, resolve it! Note ta resolveAgainst() can cancel out fleeing manuever==0
 			if (!attacking &&  isFleeing() && man.moveArray != null && man.moveArray.length != 0 && (man.moveArray[0] !=0 || man.moveArray[1]!=0)) {
@@ -3623,13 +3661,25 @@ class FightState {
 				}
 				
 			}
+			else {
+				if (!lostInitiative) { // auto regain it back
+					if (!initiative) UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" regained back initiative...");
+					initiative = true;  // regain back initiative if wasn't disturbed
+				}
+				else {
+					if (lastHadInitiative)  UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" lost the initiative...");
+				}
+				
+				
+
+			}
 			
 		
 			if (e) {
 				
 				refreshCombatPool(charSheet); 
 				if (combatPool > 0) {
-					UITros.TRACE("Refreshing combat pool for: " + man.dungeon.getNameWithDirToMan(man));
+					if (!man.dungeon._gameOver) UITros.TRACE("Refreshing combat pool for: " + man.dungeon.getNameWithDirToMan(man));
 				}
 				else {
 					if ( charSheet.canNoLongerFight() ) {
@@ -3658,6 +3708,7 @@ class FightState {
 	
 	public function step():void {
 			shock = 0;
+			lostInitiative = false;
 			s++;
 			if (s >= 3) {
 				s = 0;
@@ -3891,6 +3942,7 @@ class FightState {
 		shortRangeAdvantage = false;
 		paused = true;
 		shock = 0;
+		lostInitiative = false;
 		
 		
 		if (disengaged) {  // full disengagement
@@ -4006,6 +4058,8 @@ class FightState {
 	
 	
 	
+	
+	
 }
 
 // End Riddle of Steel classes
@@ -4033,11 +4087,11 @@ class Data {
     
     static public const OBJECT:Object = {
         "man": { type:"man", state:"w0", visual:"stand",  func: { key:Man.key }, components: { 
-			char:CharacterSheet.createBase("Player", { "rapier":9, "swordshield":6 }, HumanoidBody.getInstance(), WeaponSheet.find("Rapier"), null, 5),
+			char:CharacterSheet.createBase("Player", { "rapier":9, "swordshield":9 }, HumanoidBody.getInstance(), WeaponSheet.find("Gladius"), null, 5),
 		fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, 
 		ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
         "enemy": { type:"enemy", state:"w0", num:"1", func: { key:Enemy.key },  visual:"stand", components: {
-			char:CharacterSheet.createBase("Enemy", { "swordshield":7 , "pugilism":6 }, HumanoidBody.getInstance(), WeaponSheet.find("Gladius"), WeaponSheet.find("Small Shield"), 5),
+			char:CharacterSheet.createBase("Enemy", { "swordshield":6 , "pugilism":6 }, HumanoidBody.getInstance(), WeaponSheet.find("Gladius"), WeaponSheet.find("Small Shield"), 5),
 			fight:new FightState().setSideAggro(FightState.SIDE_ENEMY) }, 
 			ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
