@@ -1328,7 +1328,10 @@ class Dungeon extends Sprite{
 								//UITros.TRACE( getNameWithDirToMan(ent) + "is dead!" );
 								//fight.resetManuevers();
 							}
+							
 						}
+						
+						
 						
 						//tarCharSheet.getAtkZoneDesc(cManuever.targetZone, charSheet.getPrimaryWeaponUsed() )
 						var stunDisplay:String = "";// "(" + wound.shock + ")";
@@ -1350,6 +1353,15 @@ class Dungeon extends Sprite{
 						// main stats is only shown if inflicted upon main character, so you won't know exactly the stats of enemy
 						var statsStr:String = (diceLost > 0 ? "(-" + diceLost + "d," + (wound.shock - diceLost) + "s)" : "(" + wound.shock + "s)" );
 						UITros.TRACE( getNameWithDirToMan(ent) + " hits " + getNameWithDirToMan(targetEnt) + " with a Level " + dmg + " hit to the " + wound.part + (targetEnt != man ?  "" : statsStr)  );
+						
+						if (tarCharSheet.canNoLongerFight() ) {
+							if (targetEnt != man) {  // LATER: just remove off surrendered AI for now, no point leaving them there unless you want to execute/interroate/heal them..lol
+								UITros.TRACE( getNameWithDirToMan(ent) + " is incapacitated and surrenders!"  );
+								
+								tarFight.resetManuevers();
+								killEntity(targetEnt);
+							}
+						}
 					}
 					else {
 						UITros.TRACE( getNameWithDirToMan(ent) + "'s blow glances off with no damage." );
@@ -1374,7 +1386,7 @@ class Dungeon extends Sprite{
 		}
 		
 		if ( !_gameOver && (man.components.char as CharacterSheet).canNoLongerFight() ) {  // later: do some medical 
-			UITros.TRACE("You are incapicitated and can no longer fight!");
+			UITros.TRACE("You are incapacitated and can no longer fight!");
 			showGameOver();
 			removeObjAt(man.mapX, man.mapY, man);
 		}
