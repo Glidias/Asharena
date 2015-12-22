@@ -139,6 +139,19 @@
 								obj.d = 1;
 							}
 							
+							if (!obj.shock) {
+								obj.shock = 0;
+							}
+							if (!obj.shockWP) {
+								obj.shockWP = 0;
+							}
+							if (!obj.pain) {
+								obj.pain = 0;
+							}
+							if (!obj.painWP) {
+								obj.painWP = 0;
+							}
+							
 							
 						}
 					}
@@ -1180,7 +1193,7 @@ P: 8-WP<br>
 		var partsPunctureTemp = [
 			"foot"
 			,"shin_and_lower_leg"
-			,"knee_and_nearby_area"
+			,"knee_and_nearby_areas"
 			,"thigh"
 			,"groin"
 			,"hip"

@@ -178,6 +178,16 @@ class UITros extends Sprite {
 	
 	public function mapUpdate(dungeon:Dungeon):void 
 	{
+		if (dungeon._gameOver) {
+			infoPanel.visible  = false;
+			arrowControls.visible = false;
+			return;
+		}
+		
+		//infoPanel.visible  = true;
+		arrowControls.visible = true;
+		
+		//if (game
 		var directions:Array = FightState.DIRECTIONS;// [[1, 0], [ -1, 0], [0, 1], [0, -1]];  //["rlbf".indexOf(man.dir)];
 		//var initiativeMask:int = 0;
 		//var enemyMask:int = 0;
@@ -663,7 +673,7 @@ class UITros extends Sprite {
 	
 	public function getCombatString(fight:FightState, charSheet:CharacterSheet, combatPoolAmount:int):String 
 	{
-return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + "),  CP: " +combatPoolAmount + "/" + charSheet.getMeleeCombatPoolAmount() + "(-"+charSheet.cpDepletion+")";
+return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + "),  CP: " + fight.combatPool + "/" + fight.getRefreshCombatPoolAmount(charSheet) + "(-"+charSheet.cpDepletion+"),  BL:"+charSheet.getTotalBloodLost() +", HP: "+charSheet.getCurrentHealth() + "/"+charSheet.health;
 	}
 
 	private var arrOfAvailManuevers:Array;
@@ -875,7 +885,8 @@ class Dungeon extends Sprite{
 	}
 	private function getPlayerCharInfoStr():String {
 		var charSheet:CharacterSheet = man.components.char;
-		 return "Health:" + charSheet.getCurrentHealth() + "/" + charSheet.health + ", RoundCP:" + charSheet.getMeleeCombatPoolAmount() + ", BL:" + charSheet.getTotalBloodLost() + ", Pain:" + charSheet.getTotalPain();
+		var fight:FightState = man.components.fight;
+		 return "Health:" + charSheet.getCurrentHealth() + "/" + charSheet.health + ", RoundCP:" + fight.getRefreshCombatPoolAmount(charSheet) + ", BL:" + charSheet.getTotalBloodLost() + ", Pain:" + charSheet.getTotalPain();
 	}
 	private function tracePlayerCharInfo():void 
 	{
@@ -1236,50 +1247,115 @@ class Dungeon extends Sprite{
 		
 		var cManuever:Object;
 		var reflexScore:Number = -1;
-		
+		var wound:Object;
 		var i:int = manueverStack.stack.length;
 		var dManuever:Object;
 		var manuever:Manuever;
 		while (--i > -1) {
 			cManuever = manueverStack.stack[i];
-			ent = cManuever.from;
 			manuever = cManuever.manuever;
+			if (manuever == null) {  // assumed player is dead already
+				continue;
+			}
+			ent = cManuever.from;
+			
 			targetEnt = cManuever.to;
 			charSheet = ent.components.char;
 			tarCharSheet = targetEnt.components.char;
 			dManuever = cManuever.defManuever;
 			fight = ent.components.fight;
 			tarFight = targetEnt.components.fight;
+			
+			
+			if (cManuever.numDice <= 0) {  // movement is ignored, not enough CP to execute
+				UITros.TRACE( getNameWithDirToMan(ent) + " failed to attack due to shock!" );
+				continue;
+			}
+			
 			var challengeResult:int = Manuever.makeChallengeRoll(cManuever.numDice, cManuever.tn, (dManuever ? dManuever.successes : 1 ) );
 			if (challengeResult < 0) {  // failed to hit.
-				UITros.TRACE(dManuever.manuever.evasive ? getNameWithDirToMan(ent) + " misses!" :  getNameWithDirToMan(ent) + "'s strike was successfully blocked." );
+			
+
+				if (dManuever != null) UITros.TRACE(dManuever.manuever.evasive ? getNameWithDirToMan(ent) + " misses!" :  getNameWithDirToMan(ent) + "'s strike was successfully blocked." );
+				else {
+					UITros.TRACE(getNameWithDirToMan(ent) + " misses completely!");
+				}
+				
 				// default behaviour for failing to hit
-				// todo: initaitive mechanic
+				// TODO: initaitive mechanic
 				//tarFight.initiative = false;
 			}
 			else {  
-
 				
-				if ( fight.isFleeing() ) {
-					UITros.TRACE( getNameWithDirToMan(ent) + "'s fleeing attempt failed." );
-					fight.resetManuevers();
+				
+				if ( tarFight.isFleeing() ) {
+					UITros.TRACE( getNameWithDirToMan(targetEnt) + "'s fleeing attempt failed." );
+					tarFight.resetManuevers();
+					continue;
 				}
 				
 				if (challengeResult > 0) {
-					// todo: damage modifiers,
+					// TODO: damage modifiers,
 					var dmg:int = charSheet.getPrimaryWeaponUsed().getDamageTo(tarCharSheet.bodyType, manuever, cManuever.targetZone, challengeResult, charSheet);
 					
 					// later: include armor reduction
-					dmg -= tarCharSheet.toughness;
+					dmg -= tarCharSheet.toughness;  // later: include TFOB limits for toughenss reduction
+					//if (dmg < 0) dmg = 0;
+					
 					if (dmg > 0) {
 						if (dmg > 5) dmg = 5; // clamp
-						tarCharSheet.inflictWound(dmg, cManuever.targetZone);
-						UITros.TRACE( getNameWithDirToMan(ent) + " hits " + getNameWithDirToMan(targetEnt) + " with a Level " + dmg + " hit.." + tarCharSheet.getAtkZoneDesc(cManuever.targetZone, charSheet.getPrimaryWeaponUsed() ) );
 						
+						
+						wound = tarCharSheet.inflictWound(dmg, manuever, charSheet.getPrimaryWeaponUsed(), cManuever.targetZone);
+						if (wound == null) {
+							UITros.TRACE(getNameWithDirToMan(ent) + " misses him "+tarCharSheet.getAtkZoneDesc(cManuever.targetZone, charSheet.getPrimaryWeaponUsed() ));
+							continue;
+						}
+						if (wound.d != null) {
+							if (wound.d == 2) {
+								
+								UITros.TRACE( getNameWithDirToMan(ent) + " KILLS " + getNameWithDirToMan(targetEnt) + " with a Level " + dmg + " hit to the " + wound.part  );
+								tarFight.resetManuevers();
+								killEntity(targetEnt);
+								if (targetEnt == man) {
+									showGameOver();
+									return;
+								}
+								
+								continue;
+							}
+							else if (wound.d == 1) {  // later: handle destruction of bodypart case
+								//UITros.TRACE( getNameWithDirToMan(ent) + "is dead!" );
+								//fight.resetManuevers();
+							}
+						}
+						
+						//tarCharSheet.getAtkZoneDesc(cManuever.targetZone, charSheet.getPrimaryWeaponUsed() )
+						var stunDisplay:String = "";// "(" + wound.shock + ")";
+						var diceLost:int = 0;
+						tarFight.shock += wound.shock;
+						var tarPrimaryManuever:Object = tarFight.getPrimaryManuever();
+						if ( tarPrimaryManuever!= null && tarFight.attacking && tarPrimaryManuever.to != null && tarPrimaryManuever.reflexScore < cManuever.reflexScore ) {
+							tarPrimaryManuever.numDice -= wound.shock;
+							diceLost  += wound.shock;
+							if (tarPrimaryManuever.numDice < 0) {
+								diceLost += tarPrimaryManuever.numDice;
+								tarFight.combatPool += tarPrimaryManuever.numDice;
+							}
+						}
+						else {
+							tarFight.combatPool -= wound.shock;
+						}
+						
+						// main stats is only shown if inflicted upon main character, so you won't know exactly the stats of enemy
+						var statsStr:String = (diceLost > 0 ? "(-" + diceLost + "d," + (wound.shock - diceLost) + "s)" : "(" + wound.shock + "s)" );
+						UITros.TRACE( getNameWithDirToMan(ent) + " hits " + getNameWithDirToMan(targetEnt) + " with a Level " + dmg + " hit to the " + wound.part + (targetEnt != man ?  "" : statsStr)  );
 					}
 					else {
 						UITros.TRACE( getNameWithDirToMan(ent) + "'s blow glances off with no damage." );
 					}
+					
+
 					
 				}
 				
@@ -1290,7 +1366,33 @@ class Dungeon extends Sprite{
 			
 			
 		}
+		
+		var manFight:FightState = (man.components.fight as FightState);
+		if ( manFight.s == 2) {  // show outcome of round for man
+			
+			//if (manFight.shock > 0) UITros.TRACE( getNameWithDirToMan(man) + " took "+ manFight.shock+" points of shock.");
+		}
+		
+		if ( !_gameOver && (man.components.char as CharacterSheet).canNoLongerFight() ) {  // later: do some medical 
+			UITros.TRACE("You are incapicitated and can no longer fight!");
+			showGameOver();
+			removeObjAt(man.mapX, man.mapY, man);
+		}
 
+	}
+	
+	public var _gameOver:Boolean;
+	private function showGameOver():void 
+	{
+		_gameOver = true;
+		UITros.TRACE("Game over!");
+	}
+	
+	public function killEntity(targetEnt:GameObject):void 
+	{
+		
+		removeObjAt(targetEnt.mapX, targetEnt.mapY, targetEnt);
+		targetEnt.dungeon.view.scene.removeChild(targetEnt.plane);
 	}
 	
 	public function getNameWithDirToMan(ent:GameObject):String {
@@ -1322,6 +1424,18 @@ class Dungeon extends Sprite{
 	
 	public function containsObjAt(x:int, y:int, gobj:GameObject):Boolean {
 		  for each( var obj:GameObject in map[x][y] ) { if (gobj === obj) return true;  } 
+        return false;
+	}
+	
+	public function removeObjAt(x:int, y:int, gobj:GameObject):Boolean {
+		var arr:Array = map[x][y];
+		 var i:int = arr.length;
+		 while (--i > -1) {
+			 if (arr[i] === gobj) {
+				 arr.splice(i, 1);
+				 return true;
+			 }
+		 }
         return false;
 	}
 	
@@ -1516,7 +1630,7 @@ class Dungeon extends Sprite{
                 count++;
 				
 				if (canInteract && keyEvent != null) {
-					UITros.CLEAR_TRACE();
+					if (!_gameOver) UITros.CLEAR_TRACE();
 					makeDownpaymentManueverStack();
 					reorderManueverStackForResolution();
 					resolveManueverStack();
@@ -1655,6 +1769,7 @@ class GameObject extends Object {
     
     public var bitmapData:BitmapData;
     public var plane:Plane;
+
     
     //tween?
     public var tweenFrame:Vector.<int>;
@@ -1843,7 +1958,7 @@ class Enemy{
         if( enm.dungeon.count % 12 == 0 ){
             switch( enm.param.walkType ){
                 case "room": if( enm.dungeon.check(enm.dungeon.man.mapX,enm.dungeon.man.mapY,"room").length == 0 ){ random(enm); break; }
-                case "chase": chase(enm); break;
+                case "chase": if (!enm.dungeon._gameOver) { chase(enm); break; }
                 default: random(enm); break;
             }
         }
@@ -1858,7 +1973,7 @@ class Enemy{
 		 
             switch( enm.param.walkType ){
                 case "room": if( enm.dungeon.check(enm.dungeon.man.mapX,enm.dungeon.man.mapY,"room").length == 0 ){ random(enm); break; }
-				case "chase": chase(enm); break;
+				case "chase":  if (!enm.dungeon._gameOver) { chase(enm); break; }
                 default: random(enm); break;
             }
     }
@@ -2416,7 +2531,7 @@ class Weapon {
 	public var movePenalty:Number;
 	public var shield:Boolean;  // does this function as a shield for Block manuever?
 	public var shieldLimit:int;  // when up against a certain amount of CPs, then it can function as a Blockgin shield, otherwise, no Block manuever is available.
-	public var blunt:Boolean;  // flag to treat always as bludgeoning damage regardless, even for spiking/thrusting maoves
+	public var blunt:Boolean;  // flag to treat always as bludgeoning damage regardless, even for spiking/thrusting maoves...ie. a totally blunt weapon
 	
 	public var range:int;
 	
@@ -2527,6 +2642,25 @@ class ZoneBody {
 		zb.partWeights = partWeights;
 		return zb;
 	}
+	public static const WEIGHTS_TOTAL:Number = 6;
+	public function getBodyPart(floatRatio:Number):String {
+		floatRatio *= WEIGHTS_TOTAL;
+		
+		var len:int = partWeights.length;
+		var accum:Number = 0;
+		var result:int = 0;
+		for (var i:int = 0; i < len; i++)  {
+			if ( floatRatio < accum ) {
+				break;
+			}
+			accum += partWeights[i];
+			result = i;
+		}	
+		return parts[result];
+	}
+	
+
+	
 }
 
 // Body char definition
@@ -2542,6 +2676,13 @@ class BodyChar {  // base class to handle different body types later (ie. for no
 	public var partsPuncture:Object;
 	public var partsBludgeon:Object;
 	
+	public static const WOUND_TYPE_CUT:int = 1;
+	public static const WOUND_TYPE_PIERCE:int = 2;
+	public static const WOUND_TYPE_BLUNT_TRAUMA:int = 4;
+	
+	public static const WOUND_D_DESTROY:int = 1;
+	public static const WOUND_D_DEATH:int = 2;
+	
 	public function getCenterOfMassIndexRandom(manuever:Manuever, weapon:Weapon):int {
 		var atkTypes:uint = manuever.getAvailableAtkTypes(weapon);
 		var center:Array = atkTypes == Manuever.ATTACK_TYPE_STRIKE ? centerOfMass : atkTypes == Manuever.ATTACK_TYPE_THRUST ? centerOfMassT : Math.random() > .5 ? centerOfMassT : centerOfMass;
@@ -2552,6 +2693,48 @@ class BodyChar {  // base class to handle different body types later (ie. for no
 		var center:Array = atkTypes == Manuever.ATTACK_TYPE_STRIKE ? centerOfMass : atkTypes == Manuever.ATTACK_TYPE_THRUST ? centerOfMassT : Math.random() > .5 ? centerOfMassT : centerOfMass;
 		return center[0];
 	}
+	
+	public function getWound(level:int, manuever:Manuever, weapon:Weapon, targetZone:int, rand:Number = -1):Object {
+		
+		level--; // indexify it
+		
+		var wound:Object = { };
+		
+		var zs:Vector.<ZoneBody>;
+		var woundType:int;
+		var damageTable:Object;
+		var damageTableStr:String;
+		if ( manuever.damageType == Manuever.DAMAGE_TYPE_BLUDGEONING || weapon.blunt ) { // blunt weapon
+			zs = zonesB;
+			damageTable = partsBludgeon;	
+			woundType = WOUND_TYPE_BLUNT_TRAUMA;
+			damageTableStr = "bludgeinong";
+		}
+		else {   // else sharp weapon
+			zs = zones;
+			var isThrusting:Boolean = Manuever.isThrustingMotion(targetZone, this);
+			damageTable = isThrusting ? partsPuncture : partsCut;
+			woundType = isThrusting ? WOUND_TYPE_PIERCE : WOUND_TYPE_CUT;
+			damageTableStr = isThrusting ? "puncturing" : "ctting";
+		
+		}
+		if (rand < 0) rand = Math.random();
+		
+	
+		var part:String =  zs[targetZone].getBodyPart(rand);
+		if (part == "") return null;
+		var row:Array =  damageTable[part];
+		if (row == null) throw new Error("Could not find row:"+part + ", "+damageTableStr);
+		var damagePart:Object = row[level];
+		wound.part = part;
+		wound.level = level;
+		wound.type = woundType;
+		wound.entry = damagePart;
+	
+		return wound;
+	}
+	
+	
 	
 }
 
@@ -2583,14 +2766,16 @@ class HumanoidBody extends BodyChar {
 		super();
 		
 		// http://knight.burrowowl.net/doku.php?id=rules:master_damage_table
+		// riddle/damagetables.html
 		// d is for destruction level.   1, destroy part.  2,  character dies
-		partsBludgeon = {"foot":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"KD":3,"BL":0,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"KD":1,"BL":0,"shock":6,"shockWP":0,"pain":8,"painWP":1},{"KD":-1,"BL":1,"shock":9,"shockWP":0,"pain":10,"painWP":1}],"shin_and_lower_leg":[{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":2,"BL":0,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":0,"shock":6,"shockWP":0,"pain":7,"painWP":1},{"KD":-3,"BL":2,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"KD":-1,"BL":5,"shock":10,"shockWP":0,"pain":12,"painWP":1}],"knee_and_nearby_areas":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":2,"shock":8,"shockWP":0,"pain":8,"painWP":1},{"KD":-5,"BL":6,"shock":10,"shockWP":0},{"KD":-1,"BL":8,"shock":15,"shockWP":0,"pain":12,"painWP":1}],"thigh":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"KD":2,"BL":0,"shock":5,"shockWP":0,"pain":4,"painWP":1},{"KD":0,"BL":0,"shock":7,"shockWP":0,"pain":7,"painWP":1},{"KD":-4,"BL":3,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"KD":-1,"BL":7,"shock":10,"shockWP":0,"pain":12,"painWP":1}],"inner_thigh":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"KD":2,"BL":0,"shock":5,"shockWP":0,"pain":4,"painWP":1},{"KD":0,"BL":0,"shock":7,"shockWP":0,"pain":7,"painWP":1},{"KD":-4,"BL":3,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"KD":-1,"BL":7,"shock":10,"shockWP":0,"pain":12,"painWP":1}],"hip":[{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":0,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"KD":-1,"BL":2,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":10,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":20,"shock":-1,"shockWP":0,"pain":13,"painWP":1,"d":1}],"groin":[{"BL":0,"shock":7,"shockWP":0,"pain":9,"painWP":1},{"ko":0,"BL":0,"shock":9,"shockWP":0,"pain":10,"painWP":1},{"ko":-2,"BL":3,"shock":11,"shockWP":0,"pain":15,"painWP":1},{"ko":-1,"BL":18,"shock":-1,"shockWP":0,"pain":-1,"painWP":0},{"BL":20,"shock":-1,"shockWP":0,"pain":-1,"painWP":0,"d":2}],"abdomen":[{"BL":0,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"ko":3,"BL":0,"shock":7,"shockWP":0,"pain":6,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":8,"painWP":1},{"BL":8,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"ko":-3,"BL":15,"shock":-1,"shockWP":0,"pain":15,"painWP":1}],"ribcage":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"ko":2,"BL":1,"shock":8,"shockWP":0,"pain":6,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"ko":-3,"BL":9,"shock":-1,"shockWP":0,"pain":15,"painWP":1}],"upper_abdomen":[{"BL":0,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"ko":3,"BL":0,"shock":7,"shockWP":0,"pain":6,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":8,"painWP":1},{"BL":8,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"ko":-3,"BL":15,"shock":-1,"shockWP":0,"pain":15,"painWP":1}],"chest":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"ko":2,"BL":1,"shock":8,"shockWP":0,"pain":6,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"ko":0,"BL":9,"shock":-1,"shockWP":0,"pain":15,"painWP":1}],"upper_body":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"ko":2,"BL":1,"shock":8,"shockWP":0,"pain":6,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"ko":-3,"BL":9,"shock":-1,"shockWP":0,"pain":15,"painWP":1}],"neck":[{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":1,"shock":7,"shockWP":0,"pain":9,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":3,"shock":-1,"shockWP":0,"pain":15,"painWP":1},{}],"face":[{"ko":3,"BL":0,"shock":5,"shockWP":1,"pain":0,"painWP":0},{"ko":1,"BL":1,"shock":8,"shockWP":0,"pain":6,"painWP":1},{"BL":4,"shock":10,"shockWP":0,"pain":0,"painWP":0},{"ko":-3,"BL":6,"shock":12,"shockWP":0,"pain":9,"painWP":1},{"d":2}],"lower_head":[{"ko":3,"BL":0,"shock":5,"shockWP":1,"pain":0,"painWP":0},{"ko":1,"BL":1,"shock":8,"shockWP":0,"pain":6,"painWP":1},{"BL":4,"shock":10,"shockWP":0,"pain":0,"painWP":0},{"ko":-3,"BL":6,"shock":12,"shockWP":0,"pain":9,"painWP":1},{"d":2}],"upper_head":[{"ko":2,"BL":0,"shock":8,"shockWP":1,"pain":5,"painWP":1},{"ko":0,"BL":3,"shock":8,"shockWP":0,"pain":8,"painWP":1},{"ko":-3,"BL":4,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":6,"shock":-1,"shockWP":0,"pain":-1,"painWP":0},{"d":2}],"upper_arm_and_shoulder":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":5,"shockWP":0,"pain":5,"painWP":1},{"BL":1,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":5,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"BL":10,"shock":13,"shockWP":0,"pain":12,"painWP":1}],"hand":[{"BL":0,"shock":4,"shockWP":1,"pain":0,"painWP":0},{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":0,"shock":7,"shockWP":1,"pain":5,"painWP":1},{"BL":1,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":3,"shock":9,"shockWP":0,"pain":9,"painWP":1}],"forearm":[{"BL":0,"shock":4,"shockWP":1,"pain":0,"painWP":0},{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":1,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":2,"shock":8,"shockWP":0,"pain":8,"painWP":1},{"BL":3,"shock":10,"shockWP":0,"pain":10,"painWP":1}],"elbow":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":5,"shockWP":0,"pain":4,"painWP":1},{"BL":0,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":1,"shock":8,"shockWP":0,"pain":7,"painWP":1},{"BL":3,"shock":9,"shockWP":0,"pain":10,"painWP":0}]};
+		partsBludgeon = {"foot":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"KD":3,"BL":0,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"KD":1,"BL":0,"shock":6,"shockWP":0,"pain":8,"painWP":1},{"KD":-1,"BL":1,"shock":9,"shockWP":0,"pain":10,"painWP":1}],"shin_and_lower_leg":[{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":2,"BL":0,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":0,"shock":6,"shockWP":0,"pain":7,"painWP":1},{"KD":-3,"BL":2,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"KD":-1,"BL":5,"shock":10,"shockWP":0,"pain":12,"painWP":1}],"knee_and_nearby_areas":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":2,"shock":8,"shockWP":0,"pain":8,"painWP":1},{"KD":-5,"BL":6,"shock":10,"shockWP":0,"pain":0,"painWP":0},{"KD":-1,"BL":8,"shock":15,"shockWP":0,"pain":12,"painWP":1}],"thigh":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"KD":2,"BL":0,"shock":5,"shockWP":0,"pain":4,"painWP":1},{"KD":0,"BL":0,"shock":7,"shockWP":0,"pain":7,"painWP":1},{"KD":-4,"BL":3,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"KD":-1,"BL":7,"shock":10,"shockWP":0,"pain":12,"painWP":1}],"inner_thigh":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"KD":2,"BL":0,"shock":5,"shockWP":0,"pain":4,"painWP":1},{"KD":0,"BL":0,"shock":7,"shockWP":0,"pain":7,"painWP":1},{"KD":-4,"BL":3,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"KD":-1,"BL":7,"shock":10,"shockWP":0,"pain":12,"painWP":1}],"hip":[{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":0,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"KD":-1,"BL":2,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":10,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":20,"shock":-1,"shockWP":0,"pain":13,"painWP":1,"d":1}],"groin":[{"BL":0,"shock":7,"shockWP":0,"pain":9,"painWP":1},{"ko":0,"BL":0,"shock":9,"shockWP":0,"pain":10,"painWP":1},{"ko":-2,"BL":3,"shock":11,"shockWP":0,"pain":15,"painWP":1},{"ko":-1,"BL":18,"shock":-1,"shockWP":0,"pain":-1,"painWP":0},{"BL":20,"shock":-1,"shockWP":0,"pain":-1,"painWP":0,"d":2}],"abdomen":[{"BL":0,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"ko":3,"BL":0,"shock":7,"shockWP":0,"pain":6,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":8,"painWP":1},{"BL":8,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"ko":-3,"BL":15,"shock":-1,"shockWP":0,"pain":15,"painWP":1}],"ribcage":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"ko":2,"BL":1,"shock":8,"shockWP":0,"pain":6,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"ko":-3,"BL":9,"shock":-1,"shockWP":0,"pain":15,"painWP":1}],"upper_abdomen":[{"BL":0,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"ko":3,"BL":0,"shock":7,"shockWP":0,"pain":6,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":8,"painWP":1},{"BL":8,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"ko":-3,"BL":15,"shock":-1,"shockWP":0,"pain":15,"painWP":1}],"chest":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"ko":2,"BL":1,"shock":8,"shockWP":0,"pain":6,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"ko":0,"BL":9,"shock":-1,"shockWP":0,"pain":15,"painWP":1}],"upper_body":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"ko":2,"BL":1,"shock":8,"shockWP":0,"pain":6,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"ko":-3,"BL":9,"shock":-1,"shockWP":0,"pain":15,"painWP":1}],"neck":[{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":1,"shock":7,"shockWP":0,"pain":9,"painWP":1},{"ko":0,"BL":3,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":3,"shock":-1,"shockWP":0,"pain":15,"painWP":1},{"shock":0,"shockWP":0,"pain":0,"painWP":0}],"face":[{"ko":3,"BL":0,"shock":5,"shockWP":1,"pain":0,"painWP":0},{"ko":1,"BL":1,"shock":8,"shockWP":0,"pain":6,"painWP":1},{"BL":4,"shock":10,"shockWP":0,"pain":0,"painWP":0},{"ko":-3,"BL":6,"shock":12,"shockWP":0,"pain":9,"painWP":1},{"d":2,"shock":0,"shockWP":0,"pain":0,"painWP":0}],"lower_head":[{"ko":3,"BL":0,"shock":5,"shockWP":1,"pain":0,"painWP":0},{"ko":1,"BL":1,"shock":8,"shockWP":0,"pain":6,"painWP":1},{"BL":4,"shock":10,"shockWP":0,"pain":0,"painWP":0},{"ko":-3,"BL":6,"shock":12,"shockWP":0,"pain":9,"painWP":1},{"d":2,"shock":0,"shockWP":0,"pain":0,"painWP":0}],"upper_head":[{"ko":2,"BL":0,"shock":8,"shockWP":1,"pain":5,"painWP":1},{"ko":0,"BL":3,"shock":8,"shockWP":0,"pain":8,"painWP":1},{"ko":-3,"BL":4,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":6,"shock":-1,"shockWP":0,"pain":-1,"painWP":0},{"d":2,"shock":0,"shockWP":0,"pain":0,"painWP":0}],"upper_arm_and_shoulder":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":5,"shockWP":0,"pain":5,"painWP":1},{"BL":1,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":5,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"BL":10,"shock":13,"shockWP":0,"pain":12,"painWP":1}],"hand":[{"BL":0,"shock":4,"shockWP":1,"pain":0,"painWP":0},{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":0,"shock":7,"shockWP":1,"pain":5,"painWP":1},{"BL":1,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":3,"shock":9,"shockWP":0,"pain":9,"painWP":1}],"forearm":[{"BL":0,"shock":4,"shockWP":1,"pain":0,"painWP":0},{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":1,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":2,"shock":8,"shockWP":0,"pain":8,"painWP":1},{"BL":3,"shock":10,"shockWP":0,"pain":10,"painWP":1}],"elbow":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":5,"shockWP":0,"pain":4,"painWP":1},{"BL":0,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":1,"shock":8,"shockWP":0,"pain":7,"painWP":1},{"BL":3,"shock":9,"shockWP":0,"pain":10,"painWP":0}]};
 
-		partsCut ={"foot":[{"BL":0,"shock":3,"shockWP":1,"pain":2,"painWP":1},{"BL":1,"shock":3,"shockWP":0,"pain":3,"painWP":1},{"KD":3,"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":1,"BL":5,"shock":6,"shockWP":0,"pain":6,"painWP":1},{"KD":0,"BL":10,"shock":9,"shockWP":0,"pain":8,"painWP":1}],"shin_and_lower_leg":[{"BL":0,"shock":3,"shockWP":0,"pain":2,"painWP":1},{"KD":2,"BL":2,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":4,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"KD":-2,"BL":8,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"KD":0,"BL":13,"shock":9,"shockWP":0,"pain":10,"painWP":1}],"knee_and_nearby_areas":[{"BL":0,"shock":5,"shockWP":1,"pain":3,"painWP":1},{"BL":2,"shock":5,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":4,"shock":8,"shockWP":0,"pain":8,"painWP":1},{"KD":-5,"BL":8,"shock":10,"shockWP":0,"pain":13,"painWP":1},{"KD":0,"BL":13,"shock":12,"shockWP":0,"pain":12,"painWP":1}],"thigh":[{"BL":1,"shock":4,"shockWP":1,"pain":3,"painWP":1},{"KD":2,"BL":2,"shock":2,"shockWP":0,"pain":4,"painWP":1},{"KD":2,"BL":4,"shock":5,"shockWP":0,"pain":4,"painWP":1},{"KD":2,"BL":4,"shock":5,"shockWP":0,"pain":4,"painWP":1},{"KD":2,"BL":4,"shock":5,"shockWP":0,"pain":4,"painWP":1}],"inner_thigh":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":6,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":9,"shock":5,"shockWP":0,"pain":16,"painWP":1},{"BL":12,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":17,"shock":7,"shockWP":0,"pain":10,"painWP":1,"d":2}],"groin":[{"BL":6,"shock":9,"shockWP":0,"pain":9,"painWP":1},{"BL":9,"shock":9,"shockWP":0,"pain":10,"painWP":1},{"BL":12,"shock":10,"shockWP":0,"pain":12,"painWP":1,"d":1},{"BL":18,"shock":-1,"shockWP":0,"pain":-1,"painWP":0},{"BL":20,"shock":-1,"shockWP":0,"pain":-1,"painWP":0,"d":2}],"hip":[{"BL":0,"shock":4,"shockWP":1,"pain":3,"painWP":1},{"BL":2,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":4,"shock":5,"shockWP":0,"pain":7,"painWP":1},{"KD":-2,"BL":8,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"KD":-1,"BL":12,"shock":10,"shockWP":0,"pain":12,"painWP":1}],"abdomen":[{"BL":1,"shock":2,"shockWP":0,"pain":5,"painWP":1},{"BL":3,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"BL":7,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":10,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":20,"shock":-1,"shockWP":0,"pain":-1,"painWP":0}],"ribcage":[{"BL":0,"shock":2,"shockWP":0,"pain":4,"painWP":1},{"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":3,"shock":8,"shockWP":0,"pain":7,"painWP":1},{"BL":9,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":20,"d":2}],"chest":[{"BL":0,"shock":2,"shockWP":0,"pain":4,"painWP":1},{"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":3,"shock":8,"shockWP":0,"pain":7,"painWP":1},{"BL":9,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":20,"d":2}],"upper_arm_and_shoulder":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":4,"shock":5,"shockWP":0,"pain":8,"painWP":1},{"BL":8,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":12,"shock":13,"shockWP":0,"pain":14,"painWP":1}],"shoulder":[{"BL":1,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":5,"shock":6,"shockWP":0,"pain":7,"painWP":1},{"BL":10,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":25,"shock":10,"shockWP":0,"pain":11,"painWP":1}],"neck":[{"BL":1,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":4,"shock":7,"shockWP":0,"pain":10,"painWP":1},{"BL":9,"shock":10,"shockWP":0,"pain":11,"painWP":1},{"BL":20,"shock":13,"shockWP":0,"pain":14,"painWP":1},{"d":2}],"face":[{"BL":0,"shock":5,"shockWP":1,"pain":0,"painWP":0},{"BL":2,"shock":8,"shockWP":0,"pain":5,"painWP":1},{"BL":5,"shock":1,"shockWP":1,"pain":7,"painWP":1},{"BL":7,"shock":10,"shockWP":0,"pain":10,"painWP":1},{"d":2}],"lower_head":[{"BL":0,"shock":5,"shockWP":1,"pain":0,"painWP":0},{"BL":2,"shock":8,"shockWP":0,"pain":5,"painWP":1},{"BL":5,"shock":1,"shockWP":1,"pain":7,"painWP":1},{"BL":7,"shock":10,"shockWP":0,"pain":10,"painWP":1},{"d":2}],"upper_head":[{"BL":3,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":3,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":4,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"ko":0,"BL":10,"shock":-1,"shockWP":0,"pain":-1,"painWP":0},{"d":2}],"hand":[{"BL":0,"shock":7,"shockWP":1,"pain":4,"painWP":1},{"BL":2,"pain":4,"painWP":1},{"BL":6,"shock":9,"shockWP":1,"pain":6,"painWP":1},{"BL":8,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"BL":10,"shock":10,"shockWP":0,"pain":11,"painWP":1,"d":1}],"forearm":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":7,"painWP":1},{"BL":4,"shock":5,"shockWP":0,"pain":7,"painWP":1},{"BL":6,"shock":8,"shockWP":0,"pain":8,"painWP":1},{"BL":12,"shock":10,"shockWP":0,"pain":12,"painWP":1,"d":1}],"elbow":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":3,"shock":6,"shockWP":0,"pain":6,"painWP":1},{"BL":6,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"BL":12,"shock":10,"shockWP":0,"pain":10,"painWP":1}]};
+		partsCut ={"foot":[{"BL":0,"shock":3,"shockWP":1,"pain":2,"painWP":1},{"BL":1,"shock":3,"shockWP":0,"pain":3,"painWP":1},{"KD":3,"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":1,"BL":5,"shock":6,"shockWP":0,"pain":6,"painWP":1},{"KD":0,"BL":10,"shock":9,"shockWP":0,"pain":8,"painWP":1}],"shin_and_lower_leg":[{"BL":0,"shock":3,"shockWP":0,"pain":2,"painWP":1},{"KD":2,"BL":2,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":4,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"KD":-2,"BL":8,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"KD":0,"BL":13,"shock":9,"shockWP":0,"pain":10,"painWP":1}],"knee_and_nearby_areas":[{"BL":0,"shock":5,"shockWP":1,"pain":3,"painWP":1},{"BL":2,"shock":5,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":4,"shock":8,"shockWP":0,"pain":8,"painWP":1},{"KD":-5,"BL":8,"shock":10,"shockWP":0,"pain":13,"painWP":1},{"KD":0,"BL":13,"shock":12,"shockWP":0,"pain":12,"painWP":1}],"thigh":[{"BL":1,"shock":4,"shockWP":1,"pain":3,"painWP":1},{"KD":2,"BL":2,"shock":2,"shockWP":0,"pain":4,"painWP":1},{"KD":2,"BL":4,"shock":5,"shockWP":0,"pain":4,"painWP":1},{"KD":2,"BL":4,"shock":5,"shockWP":0,"pain":4,"painWP":1},{"KD":2,"BL":4,"shock":5,"shockWP":0,"pain":4,"painWP":1}],"inner_thigh":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":6,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":9,"shock":5,"shockWP":0,"pain":16,"painWP":1},{"BL":12,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":17,"shock":7,"shockWP":0,"pain":10,"painWP":1,"d":2}],"groin":[{"BL":6,"shock":9,"shockWP":0,"pain":9,"painWP":1},{"BL":9,"shock":9,"shockWP":0,"pain":10,"painWP":1},{"BL":12,"shock":10,"shockWP":0,"pain":12,"painWP":1,"d":1},{"BL":18,"shock":-1,"shockWP":0,"pain":-1,"painWP":0},{"BL":20,"shock":-1,"shockWP":0,"pain":-1,"painWP":0,"d":2}],"hip":[{"BL":0,"shock":4,"shockWP":1,"pain":3,"painWP":1},{"BL":2,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":4,"shock":5,"shockWP":0,"pain":7,"painWP":1},{"KD":-2,"BL":8,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"KD":-1,"BL":12,"shock":10,"shockWP":0,"pain":12,"painWP":1}],"abdomen":[{"BL":1,"shock":2,"shockWP":0,"pain":5,"painWP":1},{"BL":3,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"BL":7,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":10,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":20,"shock":-1,"shockWP":0,"pain":-1,"painWP":0}],"ribcage":[{"BL":0,"shock":2,"shockWP":0,"pain":4,"painWP":1},{"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":3,"shock":8,"shockWP":0,"pain":7,"painWP":1},{"BL":9,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":20,"shock":0,"shockWP":0,"pain":0,"painWP":0,"d":2}],"chest":[{"BL":0,"shock":2,"shockWP":0,"pain":4,"painWP":1},{"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":3,"shock":8,"shockWP":0,"pain":7,"painWP":1},{"BL":9,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":20,"shock":0,"shockWP":0,"pain":0,"painWP":0,"d":2}],"upper_arm_and_shoulder":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":4,"shock":5,"shockWP":0,"pain":8,"painWP":1},{"BL":8,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":12,"shock":13,"shockWP":0,"pain":14,"painWP":1}],"shoulder":[{"BL":1,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":5,"shock":6,"shockWP":0,"pain":7,"painWP":1},{"BL":10,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":25,"shock":10,"shockWP":0,"pain":11,"painWP":1}],"neck":[{"BL":1,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":4,"shock":7,"shockWP":0,"pain":10,"painWP":1},{"BL":9,"shock":10,"shockWP":0,"pain":11,"painWP":1},{"BL":20,"shock":13,"shockWP":0,"pain":14,"painWP":1},{"d":2,"shock":0,"shockWP":0,"pain":0,"painWP":0}],"face":[{"BL":0,"shock":5,"shockWP":1,"pain":0,"painWP":0},{"BL":2,"shock":8,"shockWP":0,"pain":5,"painWP":1},{"BL":5,"shock":1,"shockWP":1,"pain":7,"painWP":1},{"BL":7,"shock":10,"shockWP":0,"pain":10,"painWP":1},{"d":2,"shock":0,"shockWP":0,"pain":0,"painWP":0}],"lower_head":[{"BL":0,"shock":5,"shockWP":1,"pain":0,"painWP":0},{"BL":2,"shock":8,"shockWP":0,"pain":5,"painWP":1},{"BL":5,"shock":1,"shockWP":1,"pain":7,"painWP":1},{"BL":7,"shock":10,"shockWP":0,"pain":10,"painWP":1},{"d":2,"shock":0,"shockWP":0,"pain":0,"painWP":0}],"upper_head":[{"BL":3,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":3,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":4,"shock":10,"shockWP":0,"pain":12,"painWP":1},{"ko":0,"BL":10,"shock":-1,"shockWP":0,"pain":-1,"painWP":0},{"d":2,"shock":0,"shockWP":0,"pain":0,"painWP":0}],"hand":[{"BL":0,"shock":7,"shockWP":1,"pain":4,"painWP":1},{"BL":2,"shock":0,"shockWP":0,"pain":4,"painWP":1},{"BL":6,"shock":9,"shockWP":1,"pain":6,"painWP":1},{"BL":8,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"BL":10,"shock":10,"shockWP":0,"pain":11,"painWP":1,"d":1}],"forearm":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":7,"painWP":1},{"BL":4,"shock":5,"shockWP":0,"pain":7,"painWP":1},{"BL":6,"shock":8,"shockWP":0,"pain":8,"painWP":1},{"BL":12,"shock":10,"shockWP":0,"pain":12,"painWP":1,"d":1}],"elbow":[{"BL":0,"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":3,"shock":6,"shockWP":0,"pain":6,"painWP":1},{"BL":6,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"BL":12,"shock":10,"shockWP":0,"pain":10,"painWP":1}]};
 		
 		
-		partsPuncture = {"foot":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"KD":3,"BL":2,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"KD":-1,"BL":3,"shock":7,"shockWP":0,"pain":7,"painWP":1},{"KD":-1,"BL":3,"shock":7,"shockWP":0,"pain":7,"painWP":1}],"shin_and_lower_leg":[{"BL":0,"shock":4,"shockWP":0,"pain":4,"painWP":1},{"KD":2,"BL":1,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":2,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"KD":-2,"BL":2,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"KD":0,"BL":4,"shock":7,"shockWP":0,"pain":8,"painWP":1}],"knee_and_nearby_area":[{"BL":0,"shock":5,"shockWP":1,"pain":5,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":3,"shock":6,"shockWP":0,"pain":6,"painWP":1},{"KD":-2,"BL":4,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"KD":-5,"BL":6,"shock":9,"shockWP":0,"pain":11,"painWP":1}],"thigh":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"KD":2,"BL":1,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"KD":0,"BL":2,"shock":5,"shockWP":0,"pain":5,"painWP":1},{"KD":-2,"BL":4,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":8,"shock":5,"shockWP":0,"pain":7,"painWP":1}],"groin":[{"BL":6,"shock":7,"shockWP":0,"pain":9,"painWP":1},{"BL":8,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":10,"shock":10,"shockWP":0,"pain":15,"painWP":1},{"shock":-1,"shockWP":0,"pain":-1,"painWP":0},{"BL":15,"shock":-1,"shockWP":0,"pain":-1,"painWP":0}],"hip":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":1,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":9,"painWP":1},{"KD":-2,"BL":6,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"KD":0,"BL":10,"shock":10,"shockWP":0,"pain":12,"painWP":1}],"flesh_to_the_side":[{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1}],"lower_abdomen":[{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":6,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"BL":8,"shock":7,"shockWP":0,"pain":9,"painWP":1},{"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":18,"shock":-1,"shockWP":0,"pain":-1,"painWP":0}],"upper_abdomen":[{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":8,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":10,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":13,"shock":13,"shockWP":0,"pain":15,"painWP":1},{"BL":19,"shock":-1,"shockWP":0,"pain":-1,"painWP":0}],"chest":[{"BL":0,"shock":9,"shockWP":1,"pain":5,"painWP":1},{"BL":4,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"BL":8,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":19,"shock":13,"shockWP":0,"pain":13,"painWP":1,"d":2},{"d":2}],"collar_and_throat":[{"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":6,"shock":7,"shockWP":0,"pain":6,"painWP":1},{"shock":13,"shockWP":0,"pain":15,"painWP":1},{"BL":15,"shock":-1,"shockWP":0,"pain":20,"painWP":1},{"d":2}],"face":[{"BL":1,"shock":7,"shockWP":1,"pain":4,"painWP":1},{"BL":2,"shock":6,"shockWP":0,"pain":6,"painWP":1},{"ko":-3,"BL":8,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"ko":0,"BL":19,"shock":13,"shockWP":0,"pain":13,"painWP":0},{"d":2}],"head":[{"BL":1,"shock":7,"shockWP":1,"pain":4,"painWP":1},{"BL":2,"shock":6,"shockWP":0,"pain":6,"painWP":1},{"ko":-3,"BL":8,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"ko":0,"BL":19,"shock":13,"shockWP":0,"pain":13,"painWP":0},{"d":2}],"hand":[{"BL":0,"shock":6,"shockWP":1,"pain":5,"painWP":1},{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":2,"shock":9,"shockWP":1,"pain":6,"painWP":1},{"BL":5,"shock":7,"shockWP":0,"pain":9,"painWP":1},{"BL":9,"shock":8,"shockWP":0,"pain":9,"painWP":1}],"forearm":[{"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":1,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":2,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":6,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":7,"shock":8,"shockWP":0,"pain":9,"painWP":1}],"elbow":[{"BL":0,"shock":6,"shockWP":1,"pain":5,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"BL":3,"shock":6,"shockWP":0,"pain":7,"painWP":1},{"BL":5,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"BL":7,"shock":9,"shockWP":0,"pain":11,"painWP":1}],"upper_arm":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":1,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":5,"shock":6,"shockWP":0,"pain":7,"painWP":1},{"BL":7,"shock":7,"shockWP":0,"pain":8,"painWP":1}]}
+		partsPuncture = {"foot":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":0,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"KD":3,"BL":2,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"KD":-1,"BL":3,"shock":7,"shockWP":0,"pain":7,"painWP":1},{"KD":-1,"BL":3,"shock":7,"shockWP":0,"pain":7,"painWP":1}],"shin_and_lower_leg":[{"BL":0,"shock":4,"shockWP":0,"pain":4,"painWP":1},{"KD":2,"BL":1,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":2,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"KD":-2,"BL":2,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"KD":0,"BL":4,"shock":7,"shockWP":0,"pain":8,"painWP":1}],"knee_and_nearby_areas":[{"BL":0,"shock":5,"shockWP":1,"pain":5,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"KD":0,"BL":3,"shock":6,"shockWP":0,"pain":6,"painWP":1},{"KD":-2,"BL":4,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"KD":-5,"BL":6,"shock":9,"shockWP":0,"pain":11,"painWP":1}],"thigh":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"KD":2,"BL":1,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"KD":0,"BL":2,"shock":5,"shockWP":0,"pain":5,"painWP":1},{"KD":-2,"BL":4,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":8,"shock":5,"shockWP":0,"pain":7,"painWP":1}],"groin":[{"BL":6,"shock":7,"shockWP":0,"pain":9,"painWP":1},{"BL":8,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":10,"shock":10,"shockWP":0,"pain":15,"painWP":1},{"shock":-1,"shockWP":0,"pain":-1,"painWP":0},{"BL":15,"shock":-1,"shockWP":0,"pain":-1,"painWP":0}],"hip":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":1,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":9,"painWP":1},{"KD":-2,"BL":6,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"KD":0,"BL":10,"shock":10,"shockWP":0,"pain":12,"painWP":1}],"flesh_to_the_side":[{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1}],"lower_abdomen":[{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":6,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"BL":8,"shock":7,"shockWP":0,"pain":9,"painWP":1},{"shock":10,"shockWP":0,"pain":12,"painWP":1},{"BL":18,"shock":-1,"shockWP":0,"pain":-1,"painWP":0}],"upper_abdomen":[{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":8,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":10,"shock":8,"shockWP":0,"pain":10,"painWP":1},{"BL":13,"shock":13,"shockWP":0,"pain":15,"painWP":1},{"BL":19,"shock":-1,"shockWP":0,"pain":-1,"painWP":0}],"chest":[{"BL":0,"shock":9,"shockWP":1,"pain":5,"painWP":1},{"BL":4,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"BL":8,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":19,"shock":13,"shockWP":0,"pain":13,"painWP":1,"d":2},{"d":2,"shock":0,"shockWP":0,"pain":0,"painWP":0}],"collar_and_throat":[{"BL":2,"shock":4,"shockWP":0,"pain":5,"painWP":1},{"BL":6,"shock":7,"shockWP":0,"pain":6,"painWP":1},{"shock":13,"shockWP":0,"pain":15,"painWP":1},{"BL":15,"shock":-1,"shockWP":0,"pain":20,"painWP":1},{"d":2,"shock":0,"shockWP":0,"pain":0,"painWP":0}],"face":[{"BL":1,"shock":7,"shockWP":1,"pain":4,"painWP":1},{"BL":2,"shock":6,"shockWP":0,"pain":6,"painWP":1},{"ko":-3,"BL":8,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"ko":0,"BL":19,"shock":13,"shockWP":0,"pain":13,"painWP":0},{"d":2,"shock":0,"shockWP":0,"pain":0,"painWP":0}],"head":[{"BL":1,"shock":7,"shockWP":1,"pain":4,"painWP":1},{"BL":2,"shock":6,"shockWP":0,"pain":6,"painWP":1},{"ko":-3,"BL":8,"shock":10,"shockWP":0,"pain":9,"painWP":1},{"ko":0,"BL":19,"shock":13,"shockWP":0,"pain":13,"painWP":0},{"d":2,"shock":0,"shockWP":0,"pain":0,"painWP":0}],"hand":[{"BL":0,"shock":6,"shockWP":1,"pain":5,"painWP":1},{"BL":0,"shock":3,"shockWP":0,"pain":4,"painWP":1},{"BL":2,"shock":9,"shockWP":1,"pain":6,"painWP":1},{"BL":5,"shock":7,"shockWP":0,"pain":9,"painWP":1},{"BL":9,"shock":8,"shockWP":0,"pain":9,"painWP":1}],"forearm":[{"shock":5,"shockWP":1,"pain":4,"painWP":1},{"BL":1,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":2,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":6,"shock":7,"shockWP":0,"pain":8,"painWP":1},{"BL":7,"shock":8,"shockWP":0,"pain":9,"painWP":1}],"elbow":[{"BL":0,"shock":6,"shockWP":1,"pain":5,"painWP":1},{"BL":0,"shock":4,"shockWP":0,"pain":6,"painWP":1},{"BL":3,"shock":6,"shockWP":0,"pain":7,"painWP":1},{"BL":5,"shock":8,"shockWP":0,"pain":9,"painWP":1},{"BL":7,"shock":9,"shockWP":0,"pain":11,"painWP":1}],"upper_arm":[{"BL":0,"shock":4,"shockWP":1,"pain":4,"painWP":1},{"BL":1,"shock":3,"shockWP":0,"pain":5,"painWP":1},{"BL":3,"shock":5,"shockWP":0,"pain":6,"painWP":1},{"BL":5,"shock":6,"shockWP":0,"pain":7,"painWP":1},{"BL":7,"shock":7,"shockWP":0,"pain":8,"painWP":1}]};
 
+	
 		
 
 		// http://knight.burrowowl.net/doku.php?id=rules:attack_locations
@@ -2617,6 +2802,7 @@ class HumanoidBody extends BodyChar {
 		zones[ZONE_XIV] = ZoneBody.create("to the Arm", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm" ] );
 		
 		// Blunt
+		// swings
 		zonesB[ZONE_I] = ZoneBody.create("to the Lower Legs", new <Number>[1,3,2], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas"] );
 		zonesB[ZONE_II] = ZoneBody.create("to the Upper Legs", new < Number > [2, 3, 1], ["knee_and_nearby_areas", "thigh", "hip"] );
 		zonesB[ZONE_III] = ZoneBody.create("for Horizontal Swing", new < Number > [1, 1, 1, 2, 1], ["hip", "upper_abdomen", "lower_abdomen", "ribcage", "arms"] );
@@ -2625,7 +2811,7 @@ class HumanoidBody extends BodyChar {
 		zonesB[ZONE_VI] = ZoneBody.create("for Upward Swing from Below", new < Number > [3, 1, 1, 1], ["inner_thigh", "groin", "abdomen", "lower_head" ] );
 		zonesB[ZONE_VII] = ZoneBody.create("to the Arms", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm_and_shoulder" ] );
 		// thrusts
-		zonesB[ZONE_VIII] = ZoneBody.create("to the Lower Legs", new < Number > [1, 3, 1, 1], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas",  "" ] );
+		zonesB[ZONE_VIII] = ZoneBody.create("to the Lower Legs", new < Number > [1, 3, 1, 1], ["foot", "shin_and_lower_leg", "knee_and_nearby_areas", ""] );
 		zonesB[ZONE_IX] = ZoneBody.create("to the Upper Legs", new < Number > [2, 3, 1], ["knee_and_nearby_areas", "thigh", "hip" ] );
 		zonesB[ZONE_X] = ZoneBody.create("to the Pelvis", new < Number > [2, 2, 2], ["hip", "groin", "lower_abdomen" ] );  // NOTE: missing rules for female/male cases
 		zonesB[ZONE_XI] = ZoneBody.create("to the Belly", new < Number > [6], ["lower_abdomen"] );
@@ -2633,11 +2819,49 @@ class HumanoidBody extends BodyChar {
 		zonesB[ZONE_XIII] = ZoneBody.create("to the Head", new < Number > [1, 1.5, 1.5, 2], ["neck", "face", "lower_head",  "upper_head" ] );
 		zonesB[ZONE_XIV] = ZoneBody.create("to the Arm", new < Number > [1, 2, 1, 2], ["hand", "forearm", "elbow", "upper_arm_and_shoulder" ] );
 		
+		
+		// monkey patch fixes..not sure if it's correct.. create duplicates of existing values?
+		partsBludgeon.lower_abdomen = partsBludgeon.abdomen;
+		partsBludgeon.arms = partsBludgeon.upper_arm_and_shoulder;
+		partsBludgeon.shoulder = partsBludgeon.upper_arm_and_shoulder;
+		validateZoneWithDamageTable(zonesB, partsBludgeon, "blud");
+		
+		validateZoneWithDamageTable(zones, partsPuncture, "punc", thrustStartIndex-1);
+		
+		partsCut.lower_abdomen = partsCut.abdomen;
+		partsCut.upper_abdomen = partsCut.abdomen;
+		partsCut.arms = partsCut.upper_arm_and_shoulder;
+		validateZoneWithDamageTable(zones, partsCut, "cut", -1, thrustStartIndex);
 	
 		
 		centerOfMass = CENTER_OF_MASS;
 		centerOfMassT = CENTER_OF_MASS_T;
 		//zones[ZONE_I] = new ZoneBody();
+	}
+	
+	private function validateZoneWithDamageTable(zones:Vector.<ZoneBody>, damageTable:Object, desc:String, limit:int=-1, startIndex:int=-1 ):void {
+		
+		var zonesHas:Object = { };
+			if (startIndex < 0) startIndex = zones.length;
+			var i:int = startIndex;
+		while (--i > limit) {
+			var parts:Array = zones[i].parts;
+			var p:int = parts.length;
+			while (--p > -1) {
+				if (parts[p] == "") continue;
+			//	if (!parts[p] ) throw new Error("SHOULD NOT BE EMPTY:"+parts[p] + ", "+i);
+				zonesHas[parts[p]] = true;
+			}
+		}
+		var missing:Array = [];
+		for (var par:String in zonesHas) {
+			if (!damageTable[par]) {
+				missing.push(par);
+			}
+		}
+		if (missing.length > 0) {
+			throw new Error("Missing:" + desc + ":: "+missing);
+		}
 	}
 	
 }
@@ -2668,9 +2892,6 @@ class CharacterSheet {
 	public var weapon:Weapon;
 	public var weaponOffhand:Weapon;
 	
-	public static const WOUND_TYPE_CUT:int = 1;
-	public static const WOUND_TYPE_PIERCE:int = 2;
-	public static const WOUND_TYPE_BLUNT_TRAUMA:int = 4;
 	
 	public var wounds:Object;  // object hash to keep track of wounds, their pain,bloodlost and shock... and wound types involved (uses a bitmask),  
 	//   using part_id:{}     keyvalue pair  
@@ -2726,8 +2947,9 @@ class CharacterSheet {
 		c.weaponOffhand = weaponOffhand;
 		c.profeciencyIdCache = profeciencyIdCache;
 		
+		// NOTE: this clone method does not clone the wounds!
 		c.bodyType = bodyType;
-		c.wounds = wounds;
+		c.wounds = {};
 		
 		return c;
 	}
@@ -2779,14 +3001,43 @@ class CharacterSheet {
 	
 	
 	public function getTotalBloodLost():int {
-		return 0;
-	}
-	public function getCurrentHealth():int {
-		return health - getTotalBloodLost();
+		var accum:int = 0;
+		for (var p:String in wounds) {
+			var w:Object = wounds[p];
+			if (w.BL) {
+				accum += w.BL;
+			}
+		}
+		return accum;
 	}
 	
+	// TODO, blood lost rolls, blood is lost every 6 turns:
+	public var bloodLostSoFar:int = 0;
+	
+	public function getCurrentHealth():int {
+		return health - bloodLostSoFar; // - getTotalBloodLost();
+	}
+	public function criticalCondition():Boolean {
+		return getCurrentHealth() == 1;
+	}
+	public function isDeadOrComa():Boolean {
+		return getCurrentHealth() <= 0;
+	}
+	public function canNoLongerFight():Boolean {
+		return getMeleeCombatPoolAmount() <= 0;
+	}
+	
+	
 	public function getTotalPain():int {
-		return 0;
+		var accum:int = 0;
+		for (var p:String in wounds) {
+			var w:Object = wounds[p];
+		
+			accum += w.pain;
+			
+		}
+		return accum;
+		
 	}
 	
 	private function pickBestProfeciency(weapProfs:Array):String {
@@ -2845,7 +3096,12 @@ class CharacterSheet {
 	public var cpDepletion:int = 0;
 	
 	public function getMeleeCombatPoolAmount(carryOverShock:int=0):int {
-		return getMeleeProfeciencyLevel() + getReflex() - (cpDepletion=Math.max(getTotalPain(), carryOverShock)); 
+		var amount:int =  getMeleeProfeciencyLevel() + getReflex() - (cpDepletion = Math.max(getTotalPain(), carryOverShock)); 
+		if (amount > 0 && criticalCondition() ) {
+			amount *= .5;
+		}
+		if (amount < 0) amount = 0;
+		return amount;
 	}
 	
 	/**
@@ -2944,9 +3200,59 @@ class CharacterSheet {
 		return weapon != null ? weapon : getUnarmedWeapon();
 	}
 	
-	public function inflictWound(level:int, targetZone:int):void 
+	public function inflictWound(level:int, manuever:Manuever, weapon:Weapon, targetZone:int):Object 
 	{
+		var painInflicted:Number;
+		var shockInflicted:Number;
+		
 		//Math.random() * 6;
+		if (level > 5) {
+			
+			throw new Error("should not be level >5");
+			level = 5;
+		}
+		var wound:Object = bodyType.getWound(level, manuever, weapon, targetZone);
+		if (wound == null) return null;
+
+		var existingWound:Object = wounds[wound.part] != null ? wounds[wound.part] : (wounds[wound.part] = { pain:0, BL:0, shock:0, woundTypes:0 } );
+		// {"KD":3,"BL":0,"shock":4,"shockWP":0,"pain":6,"painWP":1, d:.}
+		existingWound.woundTypes |= wound.type;
+		var woundEntry:Object = wound.entry;
+		
+		// later: not sure how to handle ALL cases, need to check the rules
+		if (woundEntry.shock == -1) {  
+			shockInflicted = getMeleeProfeciencyLevel() + getReflex();
+		}
+		else {
+			shockInflicted = woundEntry.shock;
+		}
+		
+		if (woundEntry.pain == -1) {  
+			painInflicted = getMeleeProfeciencyLevel() + getReflex();
+		}
+		else {
+			painInflicted = woundEntry.pain;
+		}
+		shockInflicted -= woundEntry.shockWP * willpower;
+		painInflicted -= woundEntry.painWP * willpower;
+		
+		if (painInflicted > existingWound.pain) {
+			existingWound.pain =painInflicted;
+		}
+		if (shockInflicted > existingWound.shock) {
+			existingWound.shock = shockInflicted;
+		}
+		if (woundEntry.BL > existingWound.BL) {
+			existingWound.BL = woundEntry.BL;
+		}
+		existingWound.d = woundEntry.d;  
+		
+		if (isNaN(shockInflicted)) throw new Error("SHock inflicted is NAN:"+wound.part+", "+level);
+		wound.shock = shockInflicted;
+		wound.d = woundEntry.d;
+		
+		
+		return wound;
 	}
 	
 	/*
@@ -3027,6 +3333,7 @@ class FightState {
 	public var shortRangeAdvantage:Boolean = false;
 	public var lastAttacking:Boolean = false; // flag to indicate if was attacking on last declared move
 	public var combatPool:int;
+	public var shock:int;
 
 	
 	
@@ -3176,6 +3483,7 @@ class FightState {
 					cost = costWithProf[manuever.id] != null ? costWithProf[manuever.id] is Array ? ProfeciencySheet.resolveProfManueverCostChoice(manuever.id, costWithProf[manuever.id], ent.components ) : costWithProf[manuever.id]   :   0;
 				}
 				// later: apply stance modifiers to manuever costs
+				// todo: apply zone aim penalties to manuever costs
 				// todo: apply range penalties to manuever costs
 				
 				
@@ -3306,8 +3614,17 @@ class FightState {
 			
 		
 			if (e) {
-				UITros.TRACE("Refreshing combat pool for: " + man.dungeon.getNameWithDirToMan(man));
+				
 				refreshCombatPool(charSheet); 
+				if (combatPool > 0) {
+					UITros.TRACE("Refreshing combat pool for: " + man.dungeon.getNameWithDirToMan(man));
+				}
+				else {
+					if ( charSheet.canNoLongerFight() ) {
+						UITros.TRACE( man.dungeon.getNameWithDirToMan(man) + " is no longer in fighting condition!");
+					}
+					else UITros.TRACE( man.dungeon.getNameWithDirToMan(man) + " is too shocked to fight this exchange!");
+				}
 				// refresh combat pool, because later in loop will step from e to !e
 			}
 			
@@ -3315,7 +3632,10 @@ class FightState {
 	}
 	
 	public function refreshCombatPool(charSheet:CharacterSheet):void {
-		 combatPool =  charSheet.getMeleeCombatPoolAmount(combatPool < 0 ? -combatPool : 0);
+		 combatPool =  getRefreshCombatPoolAmount(charSheet);
+	}
+	public function getRefreshCombatPoolAmount(charSheet:CharacterSheet):int  {
+		return charSheet.getMeleeCombatPoolAmount(combatPool < 0 ? -combatPool : 0);
 	}
 	
 	public function clone():FightState {
@@ -3325,7 +3645,7 @@ class FightState {
 	}
 	
 	public function step():void {
-		
+			shock = 0;
 			s++;
 			if (s >= 3) {
 				s = 0;
@@ -3558,6 +3878,7 @@ class FightState {
 		lastAttacking = false;
 		shortRangeAdvantage = false;
 		paused = true;
+		shock = 0;
 		
 		
 		if (disengaged) {  // full disengagement
@@ -3668,7 +3989,7 @@ class FightState {
 	
 	public function unableToAct():Boolean 
 	{
-		return combatPool == 0;
+		return combatPool <= 0;
 	}
 	
 	
@@ -3704,7 +4025,7 @@ class Data {
 		fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, 
 		ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
         "enemy": { type:"enemy", state:"w0", num:"1", func: { key:Enemy.key },  visual:"stand", components: {
-			char:CharacterSheet.createBase("Enemy", { "swordshield":5 , "pugilism":6 }, HumanoidBody.getInstance(), null, null, 5),
+			char:CharacterSheet.createBase("Enemy", { "swordshield":5 , "pugilism":6 }, HumanoidBody.getInstance(), WeaponSheet.find("Gladius"), null, 5),
 			fight:new FightState().setSideAggro(FightState.SIDE_ENEMY) }, 
 			ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
@@ -3901,6 +4222,8 @@ class Data {
             break;
         }
     }
+	
+	
     
 }
 
