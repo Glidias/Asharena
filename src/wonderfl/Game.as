@@ -1356,7 +1356,7 @@ class Dungeon extends Sprite{
 						
 						if (tarCharSheet.canNoLongerFight() ) {
 							if (targetEnt != man) {  // LATER: just remove off surrendered AI for now, no point leaving them there unless you want to execute/interroate/heal them..lol
-								UITros.TRACE( getNameWithDirToMan(ent) + " is incapacitated and surrenders!"  );
+								UITros.TRACE( getNameWithDirToMan(targetEnt) + " is incapacitated and surrenders!"  );
 								
 								tarFight.resetManuevers();
 								killEntity(targetEnt);
