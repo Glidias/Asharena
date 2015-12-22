@@ -4037,7 +4037,7 @@ class Data {
 		fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, 
 		ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
         "enemy": { type:"enemy", state:"w0", num:"1", func: { key:Enemy.key },  visual:"stand", components: {
-			char:CharacterSheet.createBase("Enemy", { "swordshield":5 , "pugilism":6 }, HumanoidBody.getInstance(), WeaponSheet.find("Gladius"), null, 5),
+			char:CharacterSheet.createBase("Enemy", { "swordshield":7 , "pugilism":6 }, HumanoidBody.getInstance(), WeaponSheet.find("Gladius"), WeaponSheet.find("Small Shield"), 5),
 			fight:new FightState().setSideAggro(FightState.SIDE_ENEMY) }, 
 			ability:{ map:false,block:true }, anim:Enemy.anim, animState:"walk", dir:"f" },
         "item": { func: { pick:null }, ability:{ map:false,block:true } },
