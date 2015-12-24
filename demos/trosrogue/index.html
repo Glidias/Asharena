@@ -29,7 +29,7 @@
 	</script>
 	<style>
 		html, body { height:100%; overflow:auto; }
-		body { margin:0; }
+		body { margin:0; font-size:12px;  }
 	</style>
 </head>
 <body>
@@ -42,14 +42,39 @@
 Use arrow keys to move/roll-on enemies (Attack if possible) <br/>
 ENTER key to Wait (Defend) or proceed on...<br/>
 GUI directional touch controls at corner shows possible actions for character. <br/>Use "I" key to show character info. <br/>
+
+<h4>How to fight:</h4>
+
+<p>
+A new fight starts the moment you are adjacient to an enemy. A fight consists of Rounds that will continue on indefinitely so long as you are adjacient to the enemy and do not seperate. Each Round consist of two exchanges, (Exchange #1, and Exchange #2), representing the 1st and 2nd half of the round respectively. You have a pool of dice (Combat Pool,  known as CPs), which you spend to roll and perform manuevers across the 2 exchanges, after which it refreshes back to full on Exchange #1 in the next Round (taking into account any pain/injuries you sustained). The more dice you roll for a manuever against the enemy's defense (if any), the better your chances of succeeding and dealing more damage, albeit it'll leave you with lesser dice in your pool in Exchange #2. At the beginning of each exchange, (eg. Exchange #1 Move 0/1  .... Exchange #2 Move 0/1), you have a movement allowance of 1 square before having to roll to either attack (if possible) or defend/flee (if there's clearance to flee to another square).
+</p>
+
+
+<p>
+There is a thing we call initiative, which is the ability to choose whether to attack or defend (known as rolling "red" or "white", in the pen and paper rpg's terms). During a fight, your initiative will be lost if you attack the enemy while the enemy successfully blocks/defends against you. When you lose the initiative to the enemy, you can only roll to defend on the next exchange, and never roll to attack.  This happens likewise vice versa, if you opt to defend instead and block the enemy successfully in a given exchange, you can attack the enemy in the next exchange while  the enemy is forced to roll defense. Note: there are some special rules to include later on that allows you(or the enemy) to buy initaitive to perform an attack manuever even though you(or the enemy) rolled defense (and doing so will incur a pretty high CP cost penalty), but this is not included yet. In some cases, both opponents can lose the initiative if they both land blows against each other within the exchange, causing both of them to "have to recover" in the next exchange before regaining back their initiatives. If you successfully hit the enemy, you maintain initiative throughout and the enemy is forced to defend in the next exchange until he seizes back the initiative from you by successfully defending.
+</p>
+
+
+<p>
+	Both can regain new initiative if they seperate from each other and start a new fight later, or both Rolled defense, within a given exchange, allowing a "break" to occur in the fight before proceeding to the next Round. Sometimes, if you find yourselves not having enough CP at the 2nd half of the round and do not want to attack for fear of missing, you can choose to not put further pressure on the enemy but let him regain his initiative back. Additionally you may plan to defend against the enemy in the next Round, and wait for him to attack you, in order have a better guage on how strong the enemy currently (based on how much CP he spent on his attack.).
+</p>
+
+<p>Naturally, if you defend, you should spend more dice on defense instead of attack, because if you gain the initaitive to attack, even attacking with few dice might still allow you to land some minor blows (without risking being hit yourself), and these blows (across different parts of the body) can accumulate against the enemy and weaken him gradually before you go for the "big one". There is a TN for each manuever which is the target number to roll against (for a d10 sided dice) in order to gain points. The lower the number, the easier it is to gain points with that manuever with the amount of dice (d10s) you are rolling in your dice combat pool. The TN varies base on your equipment and such. Some manuevers have an additional cost of dice (you have to pay/sacrifice), in order to be able to use it, and this is shown in as a number in brackets beside the manuever label.</p>
+
+<p>If you sustain too much wounds/pain and your CP reduces to zero or less, you are no longer in fighting condition and is most likely going to drop down incapicitated and have to surrender. If you CP is very low due to wounds, you're probably not going to fare well as well so it's best to avoid getting injured/hit at all, or you'll have to give up fighting. You may also die if the enemy lands a killing blow on you during a fight. Currently, blood lost mechanic is yet to be put in, once First aid is included in as well, so it's also possible to die as well by losing blood.</p>
+
+<p>
+There are some missing stuff at the moment to adequately handle multiple opponents. Currently, if you face multiple opponents during a about-to-roll situation (at Move 1/1), you're pretty much toasted since you can only deal with one at the time at the moment. Always try to FLEE (ie. Full Evade) in such a situation with lots of CP dice to cover you, assuming you have space to flee, since this is the only manuever that works simulatenously against all opponents, and has a low TN of 4. This move is also useful if you find yourself unable to regain back initaitive easily, and opt to fall back in order to regain it back (but the enemy still keeps his initiative). Also, you have a movement allowance of 1 square at 'Move 0/1' per exchange, that may allow you to outrun the enemies so that you only face one enemy.
+</p>
+
 <h4>Errata and missing rules (todos):</h4>
-<ul style="overflow:scroll;max-height:150px;border:1px solid gray;font-size:12px">
-	<li>Manuevers and rolls to handle multiple opponents<br/>(currently, if you face multiple opponents, you're pretty toasted since you can only deal with one. Always try to FLEE in such a situation with lots of CP dice to cover you)</li>
+<ul style="overflow:scroll;max-height:150px;border:1px solid gray;font-size:11px">
+	<li>Manuevers, terrain rolls and directional controls to handle multiple opponents</li>
 	<li>The other special manuevers with their modifiers and handlers</li>
 	<li>ui: Pre-roll initiative state against opponents should be shown</li>
 	<li>Finalise initiative resolutions between combatants, particularly for red/red</li>
 	<li>Directional selections to be adjustable when selecting Full Evade</li>
-	<li>Armour inclusion. And shield/sword-hilt passive protection.</li>
+	<li>Armour inclusion so characters aren't so fragile. And shield/sword-hilt passive protection.</li>
 	<li>Stance selection. Apply stance modifiers to manuever costs</li>
 	<li>Apply zone aim penalties to manuever costs</li>
 	<li>Apply relative weapon reach penalties to manuever costs</li>
