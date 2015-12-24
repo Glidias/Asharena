@@ -645,7 +645,18 @@ class UITros extends Sprite {
 		_manueverItem.targetZone  = ( targetZoneDropdown.selectedItem as UIZoneItem).index;
 	}
 	
+	private var _lastMessages:String = "";
+	public function showLastMessages(ifEmpty:Boolean = true, prepend:Boolean=true):void {
+		if (ifEmpty && messageBox.text != "") {
+			return;
+		}
+		messageBox.text = (prepend ? messageBox.text  : "") +  _lastMessages;
+	}
+	
 	private function clearMessages():void {
+		if (messageBox.text != "") {
+			_lastMessages = messageBox.text;
+		}
 		messageBox.text = "";
 		//messageBox.scrollV = 99999999;
 	}
@@ -884,6 +895,9 @@ class Dungeon extends Sprite{
 			break;
 			case Keyboard.I:
 				tracePlayerCharInfo();
+			return;
+			case Keyboard.M:
+				uiTros.showLastMessages();
 			return;
 			default:return;
 		}
@@ -1271,7 +1285,7 @@ class Dungeon extends Sprite{
 			cManuever = manueverStack.stack[i];
 			manuever = cManuever.manuever;
 			if (manuever == null) {  // assumed player is dead already
-				UITros.TRACE( getNameWithDirToMan(ent) + " no more manuever!" );
+				//UITros.TRACE( getNameWithDirToMan(ent) + " no more manuever!" );
 				continue;
 			}
 			ent = cManuever.from;
@@ -1294,7 +1308,7 @@ class Dungeon extends Sprite{
 			if (challengeResult < 0) {  // failed to hit.
 			
 
-				if (dManuever != null) UITros.TRACE(dManuever.manuever.evasive ? getNameWithDirToMan(ent) + " misses!" :  getNameWithDirToMan(ent) + "'s strike was successfully blocked." );
+				if (dManuever != null) UITros.TRACE(dManuever.manuever.evasive ? getNameWithDirToMan(ent) + " misses!" :  getNameWithDirToMan(targetEnt) + " successfully blocks "+getNameWithDirToMan(ent)+"'s strike!" );
 				else {
 					UITros.TRACE(getNameWithDirToMan(ent) + " misses completely!");
 				}
@@ -2456,10 +2470,10 @@ class ManueverSheet {
 		];
 		
 		public static var defensiveMelee:Array = [ // NOTE: full evade must always be the first. In fact, first 3 should be evasive manuevers by convention
-		new Manuever("fullevade", "Full Evasion")._tn(4)._stanceModifier(0)._evasive(true)  // staionery full evade is possible (ie. didn't displace)...but need terrain roll TN7 saving throw
+			new Manuever("fullevade", "Full Evasion")._tn(4)._stanceModifier(0)._evasive(true)  // staionery full evade is possible (ie. didn't displace)...but need terrain roll TN7 saving throw
 			,new Manuever("partialevade", "Partial Evasion")._tn(7)._evasive(true) //._customResolve()  // partial buying initiative will cost 2cp only, post _customPostResolve, non-standard
 			,new Manuever("duckweave", "Duck & Weave")._tn(9)._customResolve()._evasive(true)
-			,new Manuever("block", "Block")._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customRequire()
+			
 			,new Manuever("blockopenstrike", "Block Open and Strike")._lev(6)._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customResolve()._stanceModifier(0)
 			,new Manuever("counter", "Counter")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
 			,new Manuever("disarm", "Disarm", 1)._lev(4)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
@@ -2468,9 +2482,11 @@ class ManueverSheet {
 		//	,new Manuever("halfsword", "Half Sword").
 			,new Manuever("masterstrike", "Master Strike")._lev(15)._customRequire()._customSplit()
 			,new Manuever("overrun", "Overrun")._lev(12)._tn(7)._customSplit()
-			,new Manuever("parry", "Parry")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)
+			
 			,new Manuever("quickdraw", "Quick Draw")._lev(6)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
 			,new Manuever("rota", "Rota")._customRequire()._lev(3)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
+			,new Manuever("parry", "Parry")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)
+			,new Manuever("block", "Block")._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customRequire()
 		];
 		public static var offensiveMeleeHash:Object = createHashIndex(offensiveMelee);
 		public static var defensiveMeleeHash:Object = createHashIndex(defensiveMelee);
@@ -2543,8 +2559,13 @@ class ProfeciencySheet {
 	*/
 	
 	public static function resolveProfManueverCostChoice(id:String, arr:Array, components:Object):int {
+		var charSheet:CharacterSheet;
 		if (id === "counter") {
-			var charSheet:CharacterSheet = components.char;
+			charSheet = components.char;
+			return charSheet.weaponOffhand != null && charSheet.weaponOffhand.shield ? arr[0] : arr[1];
+		}
+		else if (id === "parry") {
+			charSheet = components.char;
 			return charSheet.weaponOffhand != null && charSheet.weaponOffhand.shield ? arr[0] : arr[1];
 		}
 		return arr[0];
@@ -3380,7 +3401,7 @@ class FightState {
 	public var combatPool:int;
 	public var shock:int;
 	public var lostInitiative:Boolean = false;
-	public var lastHadInitiative:Boolean = false;
+	public var lastHadInitiative:Boolean = true;
 
 	
 	
@@ -3508,8 +3529,10 @@ class FightState {
 		var traceMask:int = 0;
 		
 		
+		var inc:int = attacking  ? 1 : -1;
+		var startIndex:int = attacking ? 0 : len - 1;
 		
-		for (var i:uint = 0; i < len; i++) {
+		for (var i:int = startIndex; (attacking ? i < len : i>=0); i+=inc) {
 			if (  (mask & (1 << i)) != 0 ) {
 				var manuever:Manuever = list[i];
 				if (manuever.devTempDisabled ) {
@@ -3950,6 +3973,7 @@ class FightState {
 			flags = 0;
 			rounds = 0;
 			bumping = false;
+			lastHadInitiative = true;
 			resetManuevers();
 		}
 		return this;
