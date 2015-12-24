@@ -28,7 +28,7 @@
 			flashvars, params, attributes);
 	</script>
 	<style>
-		html, body { height:100%; overflow:hidden; }
+		html, body { height:100%; overflow:auto; }
 		body { margin:0; }
 	</style>
 </head>
@@ -39,9 +39,23 @@
 	</div>
 	<p>
 	
-Use arrow keys to move/roll-on enemies (attack if possible) <br/>
-ENTER key to Wait (defend) or proceed on...<br/>
-GUI touch controls at corner shows possible actions for arrow keys and ENTER key. "I" key is to show character info. <br/>
+Use arrow keys to move/roll-on enemies (Attack if possible) <br/>
+ENTER key to Wait (Defend) or proceed on...<br/>
+GUI directional touch controls at corner shows possible actions for character. <br/>Use "I" key to show character info. <br/>
+<h4>Errata and todos:</h4>
+<ul style="overflow:scroll;max-height:150px;border:1px solid gray;font-size:12px">
+	<li>Manuevers and rolls to handle multiple opponents<br/>(currently, if you face multiple opponents, you're pretty toasted since you can only deal with one. Always try to FLEE in such a situation with lots of CP dice to cover you)</li>
+	<li>The other special manuevers</li>
+	<li>Proper exchange intiative resolutions between multiple combatants beyond 1-to-1 context, particularly for red/red</li>
+	<li>Directional selections to be adjustable when selecting Full Evade</li>
+	<li>Armour</li>
+	<li>Stance selection. Apply stance modifiers to manuever costs</li>
+	<li>Apply zone aim penalties to manuever costs</li>
+	<li>Apply relative weapon reach penalties to manuever costs</li>
+	<li>Buy/force-enter initiative manuevers when defending</li>
+	<li>Blood lost to include in</li>
+	<li>Ability to heal, apply first aid, painkillers, etc. or otherwise evacuate the map (most likely switch character) if your current one is too battered.</li>
+</ul>
 	</p>
 </body>
 </html>
