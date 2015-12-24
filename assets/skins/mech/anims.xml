@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<anims loop="false">
+	<a f="1-34" id="walk" loop="true" />
+	<a f="35-110" id="die" />
+	<a f="1" id="idle"  />
+</anims>

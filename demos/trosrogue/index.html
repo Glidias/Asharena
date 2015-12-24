@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<title>Riddle of Steel roguelike tactics</title>
+	<meta name="description" content="" />
+	
+	<script src="../js/swfobject.js"></script>
+	<script>
+		var flashvars = {
+		
+		};
+		var params = {
+			menu: "false",
+			scale: "noScale",
+			allowFullscreen: "true",
+			allowScriptAccess: "always",
+			bgcolor: "",
+			wmode: "direct" // can cause issues with FP settings & webcam
+		};
+		var attributes = {
+			id:"Ash3DAS3"
+		};
+		swfobject.embedSWF(
+			"TROSRoguelike.swf", 
+			"altContent", "468", "468", "10.0.0", 
+			"expressInstall.swf", 
+			flashvars, params, attributes);
+	</script>
+	<style>
+		html, body { height:100%; overflow:auto; }
+		body { margin:0; }
+	</style>
+</head>
+<body>
+	<div id="altContent">
+		<h1>Ash3D_AS3</h1>
+		<p><a href="http://www.adobe.com/go/getflashplayer">Get Adobe Flash player</a></p>
+	</div>
+	<p>
+	
+Use arrow keys to move/roll-on enemies (Attack if possible) <br/>
+ENTER key to Wait (Defend) or proceed on...<br/>
+GUI directional touch controls at corner shows possible actions for character. <br/>Use "I" key to show character info. <br/>
+<h4>Errata and missing rules (todos):</h4>
+<ul style="overflow:scroll;max-height:150px;border:1px solid gray;font-size:12px">
+	<li>Manuevers and rolls to handle multiple opponents<br/>(currently, if you face multiple opponents, you're pretty toasted since you can only deal with one. Always try to FLEE in such a situation with lots of CP dice to cover you)</li>
+	<li>The other special manuevers with their modifiers and handlers</li>
+	<li>ui: Pre-roll initiative state against opponents should be shown</li>
+	<li>Finalise initiative resolutions between combatants, particularly for red/red</li>
+	<li>Directional selections to be adjustable when selecting Full Evade</li>
+	<li>Armour inclusion. And shield/sword-hilt passive protection.</li>
+	<li>Stance selection. Apply stance modifiers to manuever costs</li>
+	<li>Apply zone aim penalties to manuever costs</li>
+	<li>Apply relative weapon reach penalties to manuever costs</li>
+	<li>Buy/force-enter initiative manuevers when defending</li>
+	<li>Blood lost</li>
+	<li>Ability to heal, apply first aid, painkillers, etc. or otherwise evacuate the map (most likely switch character) if your current one is too battered.</li>
+	<li>UX/UI: Better indicators to show current exchange/round/initiative situation</li>
+	<li>AI: different/randomised enemy stats and fighting styles/routines.</li>
+	<li>AI: Non-zombie movement AI that can't be exploited.</li>
+</ul>
+	
+</body>
+</html>
