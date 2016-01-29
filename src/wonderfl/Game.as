@@ -162,9 +162,15 @@ class UITros extends Sprite {
 	
 	private var manueverMenu:VBox;
 	private var manueverDropdown:ComboBox;
+	private var manueverDropdown2:ComboBox;
 	private var targetZoneDropdown:ComboBox;
+	private var targetZoneDropdown2:ComboBox;
+	private var actionTypeDropdown:ComboBox;
 	private var manueverSlider:HSlider;
+	private var manueverSlider2:HSlider;
 	private var labelCPToRoll:Label;
+	
+	private var opponentNameLabel:Label;
 	// once exchange is resolved from Move 1/1, next exchange begins immediately.
 	
 	
@@ -428,6 +434,7 @@ class UITros extends Sprite {
 	private var DEFEND_ICON_CACHE:Array = [];
 	private var ATTACK_ICON_CACHE:Array = [];
 	
+	
 	private function getIconSquare(color:uint):Shape {
 		var shape:Shape = new Shape();
 		
@@ -465,6 +472,20 @@ class UITros extends Sprite {
 		disp.rotation = rot;
 		contDirection.addChild( disp );
 	
+	}
+	
+	public static const DROPDOWN_HEIGHT:Number = 20;
+	public static const SLIDER_HEIGHT:Number = 10;
+	
+	public function showDropdown(ui:DisplayObject, vis:Boolean = true):void {
+		ui.visible = vis;
+		ui.height = vis ? DROPDOWN_HEIGHT : 0;
+		
+	}
+	
+	public function showSlider(ui:DisplayObject, vis:Boolean = true):void {
+		ui.visible = vis;
+		ui.height = vis ? SLIDER_HEIGHT : 0;
 	}
 	
 	private function onAddedToStage(e:Event):void 
@@ -528,31 +549,49 @@ class UITros extends Sprite {
 		//messageBox.blendMode = "invert";
 		addChild(messageBox);
 		
-		manueverMenu = new VBox(infoPanel, stage.stageWidth - 150, stage.stageHeight - 160);
+	
+		
+		manueverMenu = new VBox(infoPanel, stage.stageWidth - 150, stage.stageHeight - 180);
+		
+		opponentNameLabel = new Label(manueverMenu, 0,0, "vs: ");
+		opponentNameLabel.blendMode = "invert";
+		
+		new Label(manueverMenu, 0, 0, "Action type:");
+		actionTypeDropdown = new ComboBox(manueverMenu, 0, 0, "", null);
+	//	actionTypeDropdown.enabled = false;
+		
 		new Label(manueverMenu, 0, 0, "Manuever:");
 		manueverDropdown = new ComboBox(manueverMenu, 0, 0, "", null);
 		manueverDropdown.addEventListener(Event.SELECT, onManueverDropdownSelect);
+		manueverDropdown2 = new ComboBox(manueverMenu, 0, 0, "", null);    // todo: onManueverDropdownSelect2
 		labelCPToRoll = new Label(manueverMenu, 0, 0, "CP to roll:");
 		labelCPToRoll.blendMode = "invert";
 		manueverSlider = new HSlider(manueverMenu, 0, 0, onManueverSlideCP);
 		manueverSlider.setSliderParams(1, 5, 1);
-		
+		manueverSlider2 = new HSlider(manueverMenu, 0, 0);  // todo: onManueverSlideCP2
+		manueverSlider2.setSliderParams(1, 5, 1);
+	
 		//manueverSlider.minimum = 1;
-		
-		
 		new Label(manueverMenu, 0, 0, "Aim at:");
 		targetZoneDropdown = new ComboBox(manueverMenu, 0, 0, "", null);
 		targetZoneDropdown.addEventListener(Event.SELECT, onTargetZonedownSelect);
+		targetZoneDropdown2 = new ComboBox(manueverMenu, 0, 0, "", null);  // todo: onTargetZonedownSelect2
 		
+		actionTypeDropdown.width = 140;
 		manueverDropdown.width = 140;
+		manueverDropdown2.width = 140;
 		manueverSlider.width = 130;
+		manueverSlider2.width = 130;
 		targetZoneDropdown.width = 140;
+		targetZoneDropdown2.width = 140;
 
 		//	messageBox.setTextFormat( messageBox.defaultTextFormat = new TextFormat("PF Ronda") );
 			//messageBox.embedFonts = true;
 		
 	
-		
+		showSlider(manueverSlider2, false);
+		showDropdown(targetZoneDropdown2, false);
+		showDropdown(manueverDropdown2, false);
 		
 		
 		removeEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
@@ -696,9 +735,11 @@ return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + 
 	private var _manueverItem:Object;
 	private var _manueverAttackTypes:int = -1;
 	
-	public function showManueverMenu(arrOfAvailManuevers:Array, ent:GameObject, chosenIndex:int=0):void 
+	public function showManueverMenu(arrOfAvailManuevers:Array, ent:GameObject, chosenIndex:int=0, towards:GameObject=null):void 
 	{
 		manueverEnt = ent;
+		
+		
 		
 		this.arrOfAvailManuevers = arrOfAvailManuevers;
 		manueverMenu.visible = true;
@@ -709,6 +750,21 @@ return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + 
 		_manueverItem = priCManuever;
 		
 		var priManuever:Manuever = priCManuever.manuever;
+		
+		if (towards == null) {
+			var nTarget:GameObject = FightState.getNeighbourEnt(ent.dungeon, ent.mapX, ent.mapY, FightState.getDirIndex(ent.dir) ); //FightState.getDirIndex(ent.dir)
+			if (nTarget != null) opponentNameLabel.text = "vs: " +ent.dungeon.getNameWithDirToMan(nTarget)
+			else {
+				//throw new Error("Exception failed to find neighbor facing opponent to fight:" + ent.dir);
+				opponentNameLabel.text = "exception: " +ent.dir + " >> "+ FightState.getDirIndex(ent.dir) + ": "+FightState.DIRECTIONS[FightState.getDirIndex(ent.dir)];
+			}
+		}
+		else {
+			opponentNameLabel.text = "vs: " +towards.dungeon.getNameWithDirToMan(towards);
+			
+		}
+		
+		
 		var list:Array = [];
 		var selectIndex:int = -1;
 		var len:int = arrOfAvailManuevers.length;
@@ -1832,18 +1888,22 @@ class GameObject extends Object {
     public var tween:Vector.<Object>;
 	
 	// (starting from right) first bit: x is non-zero,   second bit: non-zero value is positive
-	public static var DIR_STRING_LOOKUP:Array = [
+	public static var DIR_STRING_BIT_LOOKUP:Array = [
 		//[[1, 0], [ -1, 0], [0, 1], [0, -1]]["rlbf"
 		"f",  	  //0 : 00   //  y is negative 
 		"l",      //1 : 01   //  x is negative 
 		"b",      //2 : 10   //  y is positive 
 		"r"	 	  //3 : 11   // x is positive 
 	];
+	
+	public static const DIR_STRING:String = "rlbf";
+	
+	
 	public static function getDirection(x:int, y:int):String {
 			var bits:int = 0;
 					bits |= x != 0 ?  1 : 0;
 					bits |= x != 0 ?  (x > 0 ? 2 : 0)  :  (y > 0 ? 2 : 0); 
-					return DIR_STRING_LOOKUP[bits];
+					return DIR_STRING_BIT_LOOKUP[bits];
 					
 		
 	}
@@ -3375,6 +3435,10 @@ class FightState {
 			return DIR_INDEX_LOOKUP[bits];
 	}
 	
+	public static function getDirIndex(dir:String):int {
+		return GameObject.DIR_STRING.indexOf(dir);
+	}
+	
 	// by right, these position values shouldn't be here, duplicate stored values at given timestamp
 	public var x:int;
 	public var y:int;
@@ -3743,6 +3807,15 @@ class FightState {
 	}
 	
 	// static controller methods (later to re-factor out if necessary..)
+	
+	public static function getNeighbourEnt(dungeon:Dungeon, x:int, y:int, directionIndex:int):GameObject {
+		
+		var dir:Array = DIRECTIONS[directionIndex];
+		var vec:Vector.<GameObject> = dungeon.checkComponent( x + dir[0], y + dir[1], "fight");
+		return vec.length  ? vec[0] : null;
+	}
+	
+	
 	public static function getNeighbour(dungeon:Dungeon, x:int, y:int, directionIndex:int):FightState {
 		
 		var dir:Array = DIRECTIONS[directionIndex];
