@@ -3547,7 +3547,7 @@ class FightState {
 	Move 0/1:
 	------------
 	If got uncertain initiative after a pause, 
-	  show "Orientation:", else show current initaitive state.
+	  show "Orientation...", else show current initaitive state.
 
 	Keyboard orientation movement controls:
 	(ToEnemy: Approach enemy aggressively)
@@ -3639,7 +3639,7 @@ class FightState {
 	
 	public function getStateLabel():String {
 		var lbl:String = "";
-		if (!e) {  // 1st action
+		if (!e) {  // 1st exchange
 			if (s == 0) {
 				if (paused) {
 					lbl = "Orientation..."
