@@ -17,11 +17,13 @@ package saboteur.spawners
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.spriteset.materials.TextureAtlasMaterial;
+	import alternativa.engine3d.utils.A3DUtils;
 	import alternativa.engine3d.utils.Object3DUtils;
 	import ash.core.Engine;
 	import ash.core.Entity;
 	import components.DirectionVectors;
 	import components.Pos;
+	import de.popforge.revive.geom.BoundingBox;
 	import flash.display.BitmapData;
 	import flash.display.Sprite;
 	import flash.display.Stage3D;
@@ -241,8 +243,11 @@ package saboteur.spawners
 			root._scaleX = root._scaleY = root._scaleZ =  SPAWN_SCALE;
 			
 			
-			
 			if (firstSpawn) {
+			//var bb:BoundBox = 	Object3DUtils.calculateHierarchyBoundBox(genesis);
+			//	.calculateBoundBox();
+			//throw new Error((bb.maxX - bb.minZ)*SPAWN_SCALE)
+			
 				GameBuilder3D.addMeshSetsToScene(scene, genesis, jettyMaterial, root, context3D);
 				firstSpawn = false;
 			}

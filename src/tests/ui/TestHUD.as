@@ -140,38 +140,46 @@ package tests.ui
 			parserA3D.parse( new LINE_SEGMENT() );
 			
 					var borderItem:Mesh = parserA3D.objects[0] as Mesh || parserA3D.objects[1] as Mesh;
-			
-			borderItem.scaleX = 1;
-			borderItem.scaleY = 1;
-			borderItem.scaleZ = 1;
-		//	clampGeometryX(borderItem.geometry);
-			
-		borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0x00FF00, 1), 0, null, 1);
-		borderMeshset.z = 132;
+				//clampGeometryX(borderItem.geometry);
+				
+			borderItem.scaleX =8/JettySpawner.SPAWN_SCALE;
+			borderItem.scaleY = 8/JettySpawner.SPAWN_SCALE;
+			borderItem.scaleZ = 1 / JettySpawner.SPAWN_SCALE;
+			var tileX:Number = gameBuilder._gridSquareBound.maxX *2;
+			var tileY:Number = gameBuilder._gridSquareBound.maxY *2;
+		
+		borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0x00FF00, 1), 30, null, 1|MeshSetClonesContainerMod.FLAG_PREVENT_Z_FIGHTING);
+	//	borderMeshset.z = 0;
+		borderMeshset.x = -tileX * .5;
+		borderMeshset.y = tileY * .5;
+		borderMeshset.z = gameBuilder._gridSquareBound.maxZ - GameBuilder3D.Z_BOUND_PADDING - 83/JettySpawner.SPAWN_SCALE;// (gameBuilder._gridSquareBound.maxZ + gameBuilder._gridSquareBound.minZ) * .5;// gameBuilder._gridSquareBound.maxZ * .5;
+		borderMeshset.setThicknesses(8/JettySpawner.SPAWN_SCALE, 1/JettySpawner.SPAWN_SCALE);
 		SpawnerBundle.uploadResources(borderMeshset.getResources());
 		
 			 borderMeshset.numClones = 0;
 			 _template3D.scene.addChild(borderMeshset);
-			 var outliner:Vector.<int> = new <int>[0,0, 1,0 , 1,1, 0,1  ];
+			 gameBuilder.startScene.addChild(borderMeshset);
+			 
+			 var outliner:Vector.<int> =  new <int>[0,0, 1,0 , 1,1,  0, 1 ]; // new <int>[0,0, 0,-1 , 1,-1, 1, 0 ];
 			 var total:int = outliner.length;
 				 for (var i:int = 0; i < total; i+=2) {
 					// outliner[i];
 					// outliner[i + 1];
 					var clone:MeshSetClone = borderMeshset.addNewOrAvailableClone();
-					clone.root.x =  outliner[i] * 256;
-					clone.root.y =  -outliner[i + 1] * 256;
+					clone.root.x =  outliner[i] * tileX;
+					clone.root.y =  -outliner[i + 1] * tileY;
 					 clone.root.z =  0;// heightMapData[ outliner[i + 1] * _across + outliner[i]];
 					 
 					 var i2:int = i + 2;
 					 if (i2 >= total) {
 						 i2 = 0;
 					 }
-					  var x2:Number= outliner[i2] * 256;
-						 var y2:Number = -outliner[i2 + 1] * 256;
+					  var x2:Number= outliner[i2] * tileX;
+						 var y2:Number = -outliner[i2 + 1] * tileY;
 							x2-= clone.root.x;
 							y2 -= clone.root.y;
 							var d:Number = 1;// x2 == 0 || y2 == 0 ? 1 : GKEdge.DIAGONAL_LENGTH;
-							d *= 256;
+							d *= x2 != 0 ? tileX : tileY;
 							d = 1 / d;
 							x2 *= d;
 							y2 *= d;
@@ -275,7 +283,7 @@ package tests.ui
 			
 			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
 
-			jettySpawner.minimap.createJettyWithBuilder(63, (ent.get(GameBuilder3D) as GameBuilder3D) );
+			jettySpawner.minimap.createJettyWithBuilder(63, (gameBuilder=ent.get(GameBuilder3D) as GameBuilder3D) );
 			pathBuilder.onBuildSucceeded.add(jettySpawner.minimap.createJettyWithBuilder);
 			pathBuilder.onDelSucceeded.add(jettySpawner.minimap.removeJettyWithBuilder);
 			
@@ -339,6 +347,7 @@ package tests.ui
 		private var hudAssets:SaboteurHud;
 		private var hud:Hud2D;
 		private var pickupSpawner:PickupItemSpawner;
+		private var gameBuilder:GameBuilder3D;
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
 				

@@ -76,8 +76,10 @@ package tests.pvp
 		private var startBox:Mesh;
 		private var outliner:Vector.<int> = new Vector.<int>();
 		
-		private var borderMeshset:MeshSetClonesContainerMod;
+		
 		private var _lock:Boolean = false;
+		
+		private var borderMeshset:MeshSetClonesContainerMod;
 		
 		[Embed(source="../../../resources/hud/linesegment2.a3d", mimeType="application/octet-stream")]
 		private var LINE_SEGMENT:Class;
@@ -238,11 +240,12 @@ package tests.pvp
 			borderItem.scaleX = 88;
 			borderItem.scaleY = 88;
 			borderItem.scaleZ = 88;
-			clampGeometryX(borderItem.geometry);
+			
 			
 			//new Box(100,100,42,1,1,1)
 			// | MeshSetClonesContainer.FLAG_PREVENT_Z_FIGHTING)
 				borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0x00FF00, 1), 0, null, 1);
+				borderMeshset.setThicknesses(88, 88);
 			_template3D.scene.addChild(borderMeshset);
 			
 			
@@ -354,7 +357,7 @@ package tests.pvp
 				 // _graphGrid.performOutlineBorderRender(outliner);
 				 // _graphGrid.performOutlineRender(outliner);
 //
-
+				
 				//	total = 80;
 				 borderMeshset.numClones = 0;
 				 for (var i:int = 0; i < total; i+=2) {

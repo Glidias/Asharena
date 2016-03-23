@@ -58,6 +58,7 @@ package saboteur.util
 		static public const COLOR_VALID:uint = 0x00FF22;
 		static public const COLOR_OUTSIDE:uint =0xAAFF66   ;
 		static public const OCCUPIED_FLOOR_ALPHA:Number = .4;
+		static public const Z_BOUND_PADDING:Number = 45;
 		
 		public var _gridSquareBound:BoundBox;
 		
@@ -302,8 +303,8 @@ package saboteur.util
 			 _floor.scaleY = yd;
 			
 	
-				_gridSquareBound.maxZ += 45;
-				_gridSquareBound.minZ -= 45;
+				_gridSquareBound.maxZ += Z_BOUND_PADDING;
+				_gridSquareBound.minZ -= Z_BOUND_PADDING;
 				
 				_boundGridBoxConvex3D = CollisionUtil.getCollisionGraph(new Box((_gridSquareBound.maxX - _gridSquareBound.minX), (_gridSquareBound.maxY - _gridSquareBound.minY), (_gridSquareBound.maxZ - _gridSquareBound.minZ) ) );
 				

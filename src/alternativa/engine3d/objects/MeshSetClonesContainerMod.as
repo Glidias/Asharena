@@ -388,9 +388,9 @@ package alternativa.engine3d.objects {
 				drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cCam"), cameraToLocalTransform.d, cameraToLocalTransform.h, cameraToLocalTransform.l);
 				drawUnit.setVertexConstantsFromNumbers(vertexShader.getVariableIndex("cTrm"), localToCameraTransform.i, localToCameraTransform.j, localToCameraTransform.k, localToCameraTransform.l);
 			}
-			else {	
-				drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cRight"), 0, 1, 0, 0);
-			}
+		
+			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cRight"), 0, 1, 0, 0);
+			
 	
 			var offsetNumMeshes:int = _offsetNumMeshes;
 			drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cVars"), offsetNumMeshes * constantsPerMesh, 0, 0, 1);
@@ -431,7 +431,7 @@ package alternativa.engine3d.objects {
 				}
 				
 				
-			if (!(_options & FLAG_PREVENT_Z_FIGHTING)) {  // this is a mod
+			//if (!(_options & FLAG_PREVENT_Z_FIGHTING)) {  // this is a mod
 				// TODO: proper last index limit count checker
 				
 				var lastIndexer:int = i * constantsPerMesh;
@@ -448,14 +448,15 @@ package alternativa.engine3d.objects {
 				//}
 			//	drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cLastPoint"), 0, 1, 0, 0);  // pre-calculated right vector of last point xyz, w for lastPoint.z
 				drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cThickness"), lastIndexer, _thicknessY, _thicknessZ, 2);
-			}
+			//}
 				
 			
 					
 		}
 		
-		private var _thicknessY:Number = 88;
-		private var _thicknessZ:Number = 88;
+		// todo: clean this up, seems like sample object scale must match thicknesses
+		private var _thicknessY:Number = 4;
+		private var _thicknessZ:Number = 4;
 		
 		public function setThicknesses(horizontal:Number = -1, verticalHeight:Number = -1):void {
 			if (verticalHeight >= 0) {
@@ -774,7 +775,7 @@ package alternativa.engine3d.objects {
 			var res:Procedure = transformProcedures[numMeshes];
 			if (res != null) return res;
 		
-			res = transformProcedures[numMeshes] = new Procedure(null, "MeshSetTransformProcedure"+(!channelNorm ? "Decal" : ""));
+			res = transformProcedures[numMeshes] = new Procedure(null, "MeshSetTransformProcedureMod"+(!channelNorm ? "Decal" : ""));
 			var arr:Array = channelNorm ? ["#a0=joint", "#c1=cVars",  
 			"#c2=cThickness",  // c2.w = 2, c2.y and c2.z is thickness according to scale setting
 			"#c3=cRight",
@@ -841,43 +842,95 @@ package alternativa.engine3d.objects {
 			
 			
 			:
-			["#a0=joint", "#c1=cVars", 
-			"#c2=cTrm", // Third line of the transforming to camera matrix
-			"#c3=cCam", // Camera position in object space, w = 1 - offset/(far - near)
-			"#c4=cProj",	// Camera projection matrix settings
+				
+				["#a0=joint", "#c1=cVars",  
+			"#c2=cThickness",  // c2.w = 2, c2.y and c2.z is thickness according to scale setting
+			"#c3=cRight",
 			
-			"sub t0, a0.x, c1.x",
-			"m34 t0.xyz, i0, c[t0.x]", 
-			"mov t0.w, i0.w",
 			
-			// dummy declarations
-			//"mov t1, c2",
-			//	"mov t1, c3",
-				//	"mov t1, c4",
-					
+			"#c4=cTrm", // Third line of the transforming to camera matrix
+			"#c5=cCam", // Camera position in object space, w = 1 - offset/(far - near)
+			"#c6=cProj",	// Camera projection matrix settings
+			
+				
+						"sub t0.x, a0.x, c1.x",  
+
+			"mov t1, i0",
+			"slt t2.w, t1.y, c1.z", // this is whether to move right down, assume t1.y < 0 ie. -1. saved to t2.w
+			//"mul t2.w, t2.w, c1.z",  // cancel above action
+			//"mul t2.w, t2.w, c2.y",
+			"add t1.y, t1.y, t2.w",   // fix off id position   
+		
+			"mov t4, c3",
+			"m34 t4.xyz, t4, c[t0.x]",   // get first GUY right vector
+			"nrm t4.xyz, t4.xyz",
+
+			//"add t1.w, t0.x, c1.w",  // // move to next +1 .y
+			//"add t1.w, t1.w, c1.w",  //  move to next +1 .z
+			"add t1.w, t0.x, c2.w",
+			
+			"mov t4.w, c[t1.w].w",
+			"add t1.w, t1.w, c1.w",   //  move to next +1 .x (NEXT GUY matrix)
+
+			"mov t3, c3", 		// get right vector of next guy
+			"m34 t3.xyz, t3, c[t1.w]", 
+			"nrm t3.xyz, t3.xyz", 
+			
+			//"mov t2.xyz, t3.xyz",  // this is move offset right down saved to t2
+			"mul t2.xyz, t3.xyz, t2.www",
+			"mul t2.xyz, t2.xyz, c2.yyy",  
+		
+			"add t3.xyz, t3.xyz, t4.xyz",   // now we get the miter normal
+			"nrm t3.xyz, t3.xyz",  
+			
+			"sge t3.w, t1.x, c2.w",  // whether to offset along miter
+			"sub t1.xy, t1.xy, t3.ww",  // fix off id position	
+		
+			
+			"mul t3.xyz, t3.xyz, t3.www", 
+			"mul t3.xyz, t3.xyz, c2.yyy",
+			
+			//"add t1.w, t1.w, c1.w",   //  move to next +1 .y
+			//"add t1.w, t1.w, c1.w",   //  move to next +1 .z 
+			"add t1.w, t1.w, c2.w",
+			
+			"mov t4.z, c[t1.w].w",   // get z value of next segment 
+			"sub t4.z, t4.z, t4.w",  // height offset vector here
+			"sge t4.w, i0.x, c3.y",   // to consider height offset?
+			"mul t4.z, t4.z, t4.w",
+
+			// finally 
+			"mov t1.w, i0.w",
+			"m34 t0.xyz, t1, c[t0.x]", 
+	
+			// finalise offsets
+			"add t0.xyz, t0.xyz, t2.xyz",
+			"add t0.xyz, t0.xyz, t3.xyz",
+			"add t0.z, t0.z, t4.z",
+			
 			"mov o0.xyz, t0.xyz",
-			///*
+			"mov o0.w, i0.w",
 			
-			"mov t1, t0",
+			//"mov t1, t0",
 			
 			// Z in a camera
-			"dp4 t0.z, t1, c2",
+			"dp4 t0.z, t1, c4",
 			// z = m14/(m14/z + 1/N)
-			"div t0.x, c4.z, t0.z",		// t0.x = m14/t0.z
-			"sub t0.x, t0.x, c4.w",		// t0.x = t0.x + 1/N
-			"div t0.y, c4.z, t0.x",		// t0.y = m14/t0.x
+			"div t0.x, c6.z, t0.z",		// t0.x = m14/t0.z
+			"sub t0.x, t0.x, c6.w",		// t0.x = t0.x + 1/N
+			"div t0.y, c6.z, t0.x",		// t0.y = m14/t0.x
 			// Correction coefficient
 			"div t0.w, t0.y, t0.z",		// t0.w = t0.y / t0.z
 			// Vector from a camera to vertex
-			"sub t0.xyz, t1.xyz, c3.xyz",	// t0.xyz = i0.xyz - c1.xyz
+			"sub t0.xyz, t1.xyz, c5.xyz",	// t0.xyz = i0.xyz - c1.xyz
 			// Correction of the vector
-			"mul t0.xyz, t0.xyz, t0.w",		// t0.xyz = t0.xyz*t0.w
+			"mul t0.xyz, t0.xyz, t0.w" 	// t0.xyz = t0.xyz*t0.w
 			// Get new position
-			"add o0.xyz, c3.xyz, t0.xyz",	//o0.xyz = c1.xyz + t0.xyz
-			"mov o0.w, t1.w",				// o0.w = i0.w
+			//,"add o0.xyz, c5.xyz, t0.xyz",	//o0.xyz = c1.xyz + t0.xyz
+			//"mov o0.w, t1.w",				// o0.w = i0.w
 			
 			// 
-			"mov o0.w, t1.w"				// o0.w = i0.w
+			//"mov o0.w, t1.w"				// o0.w = i0.w
 			];
 	
 			res.compileFromArray(arr);
