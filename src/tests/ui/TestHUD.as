@@ -14,11 +14,18 @@ package tests.ui
 	import alternativa.engine3d.alternativa3d;
 	import alternativa.engine3d.core.events.MouseEvent3D;
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.VertexAttributes;
+	import alternativa.engine3d.loaders.ParserA3D;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.objects.Hud2D;
+	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.objects.MeshSetClone;
+	import alternativa.engine3d.objects.MeshSetClonesContainer;
+	import alternativa.engine3d.objects.MeshSetClonesContainerMod;
 	import alternativa.engine3d.objects.Sprite3D;
 	import alternativa.engine3d.RenderingSystem;
+	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.spriteset.materials.MaskColorAtlasMaterial;
 	import alternativa.engine3d.spriteset.materials.SpriteSheet8AnimMaterial;
 	import alternativa.engine3d.spriteset.materials.TextureAtlasMaterial;
@@ -62,6 +69,8 @@ package tests.ui
 	import views.ui.bit101.PreloaderBar;
 	import views.ui.indicators.CanBuildIndicator;
 	import views.ui.UISpriteLayer;
+	import alternativa.engine3d.alternativa3d;
+	use namespace alternativa3d;
 	/**
 	 * Third person view and Spectator ghost flyer switching with wall collision against builded paths
 	 * @author Glenn Ko
@@ -86,6 +95,11 @@ package tests.ui
 		private var _preloader:PreloaderBar = new PreloaderBar();
 		
 		private var spectatorPerson:SimpleFlyController;
+		
+		private var borderMeshset:MeshSetClonesContainerMod;
+		
+		[Embed(source="../../../resources/hud/linesegment2.a3d", mimeType="application/octet-stream")]
+		private var LINE_SEGMENT:Class;
 
 		
 		public function TestHUD() 
@@ -103,6 +117,70 @@ package tests.ui
 			_template3D.visible = false;
 		}
 		
+		private function clampGeometryX(geometry:Geometry):void {
+			var vec:Vector.<Number>  = geometry.getAttributeValues(VertexAttributes.POSITION);
+			
+			for (var i:int = 0; i < vec.length; i += 3) {
+				vec[i] = Math.round(vec[i ]);
+				vec[i+ 1] = Math.round(vec[i + 1]);
+				vec[i+2] = Math.round(vec[i + 2]);
+			//	if (vec[i] < 0) vec[i] = 0;
+				//if (vec[i] > 1) vec[i] = 1;
+				
+			//	if (vec[i] < 0) vec[i] = 0;
+			
+			
+			}
+			//throw new Error(vec);
+			geometry.setAttributeValues(VertexAttributes.POSITION, vec);
+		}
+		
+		private function setupLineDrawer():void { 
+				var parserA3D:ParserA3D = new ParserA3D();
+			parserA3D.parse( new LINE_SEGMENT() );
+			
+					var borderItem:Mesh = parserA3D.objects[0] as Mesh || parserA3D.objects[1] as Mesh;
+			
+			borderItem.scaleX = 1;
+			borderItem.scaleY = 1;
+			borderItem.scaleZ = 1;
+		//	clampGeometryX(borderItem.geometry);
+			
+		borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0x00FF00, 1), 0, null, 1);
+		borderMeshset.z = 132;
+		SpawnerBundle.uploadResources(borderMeshset.getResources());
+		
+			 borderMeshset.numClones = 0;
+			 _template3D.scene.addChild(borderMeshset);
+			 var outliner:Vector.<int> = new <int>[0,0, 1,0 , 1,1, 0,1  ];
+			 var total:int = outliner.length;
+				 for (var i:int = 0; i < total; i+=2) {
+					// outliner[i];
+					// outliner[i + 1];
+					var clone:MeshSetClone = borderMeshset.addNewOrAvailableClone();
+					clone.root.x =  outliner[i] * 256;
+					clone.root.y =  -outliner[i + 1] * 256;
+					 clone.root.z =  0;// heightMapData[ outliner[i + 1] * _across + outliner[i]];
+					 
+					 var i2:int = i + 2;
+					 if (i2 >= total) {
+						 i2 = 0;
+					 }
+					  var x2:Number= outliner[i2] * 256;
+						 var y2:Number = -outliner[i2 + 1] * 256;
+							x2-= clone.root.x;
+							y2 -= clone.root.y;
+							var d:Number = 1;// x2 == 0 || y2 == 0 ? 1 : GKEdge.DIAGONAL_LENGTH;
+							d *= 256;
+							d = 1 / d;
+							x2 *= d;
+							y2 *= d;
+							
+							///*
+							clone.root.rotationZ =  Math.atan2(y2, x2);
+							clone.root.scaleX = 1 / d;
+				}
+		}
 		
 		
 		
@@ -236,7 +314,7 @@ package tests.ui
 			
 			hudAssets.addToHud3D(hud);
 			hudAssets.txt_chatChannel.appendSpanTagMessage('The quick brown <span u="2">fox</span> jumps over the lazy dog. The <span u="1">quick brown fox</span> jumps over the lazy <span u="3">dog</span>. The <span u="1">quick brown fox</span> jumps over the lazy dog.');
-		
+			setupLineDrawer();
 		
 			game.gameStates.engineState.changeState("thirdPerson");
 			jettySpawner.minimap.setupBuildModelAndView(pathBuilder, pathBuilder.getCurBuilder(), hudAssets.radarBlueprintOverlay);  //
