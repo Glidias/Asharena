@@ -323,6 +323,8 @@ package tests.pvp
 			geometry.setAttributeValues(VertexAttributes.POSITION, vec);
 		}
 		
+		private var breakOutlines:Vector.<int> = new Vector.<int>();
+		
 		private function tick(time:Number):void 
 		{
 			var across:int = _across;
@@ -352,7 +354,11 @@ package tests.pvp
 				 
 				// /*
 			
-				 var total:int = 	 _graphGrid.performIsoOutlineRender(outliner);
+				 var total:int = 	 _graphGrid.performIsoOutlineRender(outliner, breakOutlines);
+				  var breakpointCount:int = 0;
+				 var breakpoint:int = breakOutlines.length > 0 ? breakOutlines[breakpointCount++] : 0;
+				
+				 var loopIndex:int = 0;
 				// _graphGrid.renderBordersAlgo(outliner); 
 				 // _graphGrid.performOutlineBorderRender(outliner);
 				 // _graphGrid.performOutlineRender(outliner);
@@ -360,17 +366,29 @@ package tests.pvp
 				
 				//	total = 80;
 				 borderMeshset.numClones = 0;
+				 var pointCount:int = 0;
 				 for (var i:int = 0; i < total; i+=2) {
 					// outliner[i];
 					// outliner[i + 1];
+					
+					if (pointCount == breakpoint) {  // considered last point of current outline shape, can skip...
+					//	if (pointCount  != breakpoint) throw new Error("SHould not be..shoudl be =="+pointCount + ", "+breakpoint);
+						breakpoint += breakOutlines[breakpointCount++];
+						pointCount++;	
+						loopIndex += (pointCount << 1);
+						continue;
+					}
+					pointCount++;
+					
 					var clone:MeshSetClone = borderMeshset.addNewOrAvailableClone();
 					clone.root.x =  outliner[i] * 256;
 					clone.root.y =  -outliner[i + 1] * 256;
 					 clone.root.z =  heightMapData[ outliner[i + 1] * _across + outliner[i]];
 					 
 					 var i2:int = i + 2;
-					 if (i2 >= total) {
-						 i2 = 0;
+					 if (i2 >=  (breakpoint<<1) ) {
+						 i2 = loopIndex;
+						if ( loopIndex >= (  breakpoint << 1 ) ) throw new Error("SHOIULD NOT BE:"+loopIndex + ", "+ (breakpoint << 1) + "/ "+total);
 					 }
 					  var x2:Number= outliner[i2] * 256;
 						 var y2:Number = -outliner[i2 + 1] * 256;
@@ -385,16 +403,7 @@ package tests.pvp
 							///*
 							clone.root.rotationZ =  Math.atan2(y2, x2);
 							clone.root.scaleX = 1 / d;
-							clone.root.composeTransforms();
-							var transform:Transform3D = clone.root.transform;
-							var forwardNormal:Vector3D = new Vector3D(transform.a, transform.b, transform.c);
-							forwardNormal.normalize();
-							//throw new Error(clone.root.transform.toString().split(",").join("\n") + ", "+( Vector3D.Z_AXIS.crossProduct( forwardNormal) ) );
-						//	clone.root.scaleY = -32;
-							//*/
-							
-							//clone.root.x += x2 * 50* clone.root.scaleX;
-							//clone.root.y += y2 * 50 ;
+						
 						
 							
 					 

@@ -431,24 +431,24 @@ package alternativa.engine3d.objects {
 				}
 				
 				
-			//if (!(_options & FLAG_PREVENT_Z_FIGHTING)) {  // this is a mod
+				//var lastIndexer:int = i * constantsPerMesh;
+				// This is to loop back to first by adding another constant at the tail end 
 				// TODO: proper last index limit count checker
+				if (true) {
+
+					i = i >= numVisibleClones  ? 0 : i;
+					
+					meshes = visibleClones[i].surfaceMeshes[_curSurfaceIndex];
+				//	for (var m:int = offsetNumMeshes; m < meshesLen; m++) {
+					
+					 mesh = meshes[0];			
+					setupMesh(drawUnit, i, count * constantsPerMesh, mesh);
+				}
 				
-				var lastIndexer:int = i * constantsPerMesh;
-				
-				
-				i = i >= numVisibleClones  ? 0 : i;
-				
-				meshes = visibleClones[i].surfaceMeshes[_curSurfaceIndex];
-			//	for (var m:int = offsetNumMeshes; m < meshesLen; m++) {
-				
-				 mesh = meshes[0];			
-				setupMesh(drawUnit, i, count * constantsPerMesh, mesh);
-			
 				//}
 			//	drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cLastPoint"), 0, 1, 0, 0);  // pre-calculated right vector of last point xyz, w for lastPoint.z
-				drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cThickness"), lastIndexer, _thicknessY, _thicknessZ, 2);
-			//}
+				drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cThickness"), 0, _thicknessY, _thicknessZ, 2);  // lastIndexer
+			
 				
 			
 					
@@ -461,10 +461,35 @@ package alternativa.engine3d.objects {
 		public function setThicknesses(horizontal:Number = -1, verticalHeight:Number = -1):void {
 			if (verticalHeight >= 0) {
 				_thicknessZ = verticalHeight;
+			
 			}
 			if (horizontal >= 0) {
 				_thicknessY = horizontal;
 			}
+			validateThicknesses();
+		}
+		
+		private function validateThicknesses():void {
+			var i:int  = clones.length;
+			root._scaleZ = _thicknessZ;
+			root._scaleY = _thicknessY;
+			root.composeTransforms();
+			while (--i > -1) {
+				var theRoot:Object3D = clones[i].root;
+				theRoot._scaleZ = _thicknessZ;
+				theRoot._scaleY = _thicknessY;
+				theRoot.transformChanged = true;
+			}
+		}
+		
+		public function increaseThicknesses(horizontal:Number = 0, verticalHeight:Number = 0):void {
+			
+			_thicknessZ += verticalHeight;
+			root.scaleZ = _thicknessZ;
+
+			_thicknessY += horizontal;
+			root.scaleX = root.scaleY = _thicknessY;
+			validateThicknesses();
 		}
 		
 		protected function setupMesh(drawUnit:DrawUnit, cloneIndex:int, firstRegister:int, mesh:Mesh):void { // hook method for extendability
@@ -908,8 +933,8 @@ package alternativa.engine3d.objects {
 			"add t0.xyz, t0.xyz, t3.xyz",
 			"add t0.z, t0.z, t4.z",
 			
-			"mov o0.xyz, t0.xyz",
-			"mov o0.w, i0.w",
+			"mov t1.xyz, t0.xyz",
+			"mov t1.w, i0.w",
 			
 			//"mov t1, t0",
 			
@@ -926,8 +951,8 @@ package alternativa.engine3d.objects {
 			// Correction of the vector
 			"mul t0.xyz, t0.xyz, t0.w" 	// t0.xyz = t0.xyz*t0.w
 			// Get new position
-			//,"add o0.xyz, c5.xyz, t0.xyz",	//o0.xyz = c1.xyz + t0.xyz
-			//"mov o0.w, t1.w",				// o0.w = i0.w
+			,"add o0.xyz, c5.xyz, t0.xyz",	//o0.xyz = c1.xyz + t0.xyz
+			"mov o0.w, t1.w",				// o0.w = i0.w
 			
 			// 
 			//"mov o0.w, t1.w"				// o0.w = i0.w
