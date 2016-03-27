@@ -58,7 +58,7 @@ package tests.pvp
 		
 		static public const GRID_SIZE:Number = 32;
 		public var MOVEMENT_POINTS:Number = 15 * 2;
-		public var HEIGHTMAPMULT:Number =  100;
+		public var HEIGHTMAPMULT:Number = 144;
 		
 		private var _across:int = 80;
 		private var _graphGrid:GraphGrid;
@@ -205,6 +205,7 @@ package tests.pvp
 			
 			
 		}
+		public var borderThickness:Number = 88;
 		
 		private function replace2D():void 
 		{
@@ -232,20 +233,20 @@ package tests.pvp
 			StandardMaterial.fogFar = 13000;
 			var box:Box = new Box(16, 16, 1, 1, 1, 1, false, new StandardMaterial( new BitmapTextureResource( new BitmapData(4,4,false,0x00FF00)), new BitmapTextureResource( new BitmapData(4,4,false,0x0000FF))));
 			var boxClones:MeshSetClonesContainer = new MeshSetClonesContainer(box, box.getSurface(0).material );
-		//	_template3D.scene.addChild(boxClones);
+			//_template3D.scene.addChild(boxClones);
 			
 			//
 			var borderItem:Mesh = parserA3D.objects[0] as Mesh || parserA3D.objects[1] as Mesh;
 			
-			borderItem.scaleX = 88;
-			borderItem.scaleY = 88;
-			borderItem.scaleZ = 88;
+			borderItem.scaleX = borderThickness;
+			borderItem.scaleY = borderThickness;
+			borderItem.scaleZ = borderThickness;
 			
 			
 			//new Box(100,100,42,1,1,1)
 			// | MeshSetClonesContainer.FLAG_PREVENT_Z_FIGHTING)
 				borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0x00FF00, 1), 0, null, 1);
-				borderMeshset.setThicknesses(88, 88);
+				borderMeshset.setThicknesses(borderThickness, borderThickness);
 			_template3D.scene.addChild(borderMeshset);
 			
 			
@@ -346,14 +347,15 @@ package tests.pvp
 				 startPt.y = y * GRID_SIZE;
 				 startBox.x = x * 256;
 				 startBox.y = -y * 256;
-				 startBox.z =  heightMapData[y*_across+x];
+				 startBox.z =  y*_across+x < heightMapData.length ? heightMapData[y*_across+x] : 0;
 				 
 				 	 _graphGrid.search(_x, _y, MOVEMENT_POINTS);
-				 _graphGrid.renderVisitedToScaledImages(_arrDots, .25);
-				 _graphGrid.renderOutlineBorderToScaledImages(_arrDots,0);
+			//	 _graphGrid.renderVisitedToScaledImages(_arrDots, .25);
+			//	 _graphGrid.renderOutlineBorderToScaledImages(_arrDots,0);
 				 
 				// /*
-			
+				breakOutlines.length = 0;  // temporary for now...until modify graphGraid class to include traced count of lines
+				
 				 var total:int = 	 _graphGrid.performIsoOutlineRender(outliner, breakOutlines);
 				  var breakpointCount:int = 0;
 				 var breakpoint:int = breakOutlines.length > 0 ? breakOutlines[breakpointCount++] : 0;
@@ -366,48 +368,71 @@ package tests.pvp
 				
 				//	total = 80;
 				 borderMeshset.numClones = 0;
+			//	 if (total != (breakpoint << 1)) return;  // test single loop case
+				
+				 
 				 var pointCount:int = 0;
+				 
 				 for (var i:int = 0; i < total; i+=2) {
 					// outliner[i];
 					// outliner[i + 1];
 					
-					if (pointCount == breakpoint) {  // considered last point of current outline shape, can skip...
-					//	if (pointCount  != breakpoint) throw new Error("SHould not be..shoudl be =="+pointCount + ", "+breakpoint);
-						breakpoint += breakOutlines[breakpointCount++];
-						pointCount++;	
-						loopIndex += (pointCount << 1);
-						continue;
-					}
-					pointCount++;
+					var i1:int = i;
 					
+					if (pointCount == breakpoint) {  // considered last point of current outline shape, can skip...
+						i1 = loopIndex;
+		
+					}
+					
+
 					var clone:MeshSetClone = borderMeshset.addNewOrAvailableClone();
-					clone.root.x =  outliner[i] * 256;
-					clone.root.y =  -outliner[i + 1] * 256;
-					 clone.root.z =  heightMapData[ outliner[i + 1] * _across + outliner[i]];
+					
+					clone.root.x =  outliner[i1] * 256;
+					clone.root.y =  -outliner[i1 + 1] * 256;
+					var tarIndex:int  =  outliner[i1 + 1] * _across + outliner[i1];
+					 clone.root.z =  tarIndex < heightMapData.length ? heightMapData[tarIndex] : 0;
 					 
-					 var i2:int = i + 2;
+					 var i2:int = i1 + 2;
+		
 					 if (i2 >=  (breakpoint<<1) ) {
 						 i2 = loopIndex;
-						if ( loopIndex >= (  breakpoint << 1 ) ) throw new Error("SHOIULD NOT BE:"+loopIndex + ", "+ (breakpoint << 1) + "/ "+total);
+						//if ( loopIndex >= (  breakpoint << 1 ) ) throw new Error("SHOIULD NOT BE:"+loopIndex + ", "+ (breakpoint << 1) + "/ "+total);
 					 }
+					
+								 
 					  var x2:Number= outliner[i2] * 256;
-						 var y2:Number = -outliner[i2 + 1] * 256;
-							x2-= clone.root.x;
-							y2 -= clone.root.y;
-							var d:Number = x2 == 0 || y2 == 0 ? 1 : GKEdge.DIAGONAL_LENGTH;
-							d *= 256;
-							d = 1 / d;
-							x2 *= d;
-							y2 *= d;
-							
-							///*
-							clone.root.rotationZ =  Math.atan2(y2, x2);
-							clone.root.scaleX = 1 / d;
+					 var y2:Number = -outliner[i2 + 1] * 256;
+					x2-= clone.root.x;
+					y2 -= clone.root.y;
+					var d:Number = x2 == 0 || y2 == 0 ? 1 : GKEdge.DIAGONAL_LENGTH;
+					d *= 256;
+					d = 1 / d;
+					x2 *= d;
+					y2 *= d;
+					
+					///*
+					clone.root.rotationZ =  Math.atan2(y2, x2);
+					clone.root.scaleX = 1 / d;
+					clone.root.scaleY = borderThickness;
+					clone.root.scaleZ = borderThickness;
+		
 						
 						
-							
+					if (pointCount == breakpoint) {
+						clone.root.scaleX = 0;
+						clone.root.scaleY = 0;
+						clone.root.scaleZ = 0;
+						clone.root.rotationZ = 0;
+						var stillGotLap:Boolean =  breakpointCount < breakOutlines.length;
+					
+						breakpoint = stillGotLap ? breakpoint + breakOutlines[breakpointCount++] : total;	
+						//	throw new Error("A"+breakpoint + ", "+breakOutlines);
+						loopIndex = (pointCount << 1);
+						//if (loopIndex >= (breakpoint<<1) ) throw new Error("ECEEDED:"+loopIndex + "/"+total+","+(breakpoint << 1));
+					}
+					pointCount++;		
 					 
-				//	 clone.root.scaleZ = .015 * i / 2;
+				
 				 }
 				// */
 				 

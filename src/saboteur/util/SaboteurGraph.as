@@ -41,6 +41,12 @@ package saboteur.util
 			if (b.getArc(a) == null) b.addArc(a);
 		}
 		
+		public function getNode(east:int, south:int):GraphNode {
+			var key:uint = pathUtil.getGridKey(east, south);
+			var node:GraphNode = graphGrid[key];
+			return node;
+		}
+		
 		public function addNode(east:int, south:int, value:uint):GraphNode {
 			var key:uint = pathUtil.getGridKey(east, south);
 			var node:GraphNode = graphGrid[key];

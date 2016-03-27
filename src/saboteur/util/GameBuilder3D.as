@@ -348,6 +348,21 @@ package saboteur.util
 			return true;	
 		}
 		
+		public function setVectorPositionLocally(pos:Vector3D, east:int, south:int):void {
+			pos.x = 0;
+			pos.y = 0;
+			localCardinal.transformPos(localCardinal.east, pos, localCardinal.getDist(localCardinal.east, _gridSquareBound)* east );
+			localCardinal.transformPos(localCardinal.south, pos, localCardinal.getDist(localCardinal.south, _gridSquareBound) * south );
+		}
+		
+		
+		public function setObjectLocally(obj:Object3D, east:int, south:int):void {
+			obj._x = 0;
+			obj._y = 0;
+			localCardinal.transform(localCardinal.east, obj, localCardinal.getDist(localCardinal.east, _gridSquareBound)* east );
+			localCardinal.transform(localCardinal.south, obj, localCardinal.getDist(localCardinal.south, _gridSquareBound) * south );
+		}
+		
 		public function buildAt(gridEast:int, gridSouth:int, value:uint):void 
 		{
 			
@@ -378,6 +393,8 @@ package saboteur.util
 					pathGraph.addNode(gridEast, gridSouth, _value);
 					pathGraph.recalculateEndpoints();
 		}
+		
+		
 		
 		private function buildCollidablesAt(gridEast:int, gridSouth:int, refer:Object3D, value:uint):void {
 		

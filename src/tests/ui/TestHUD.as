@@ -1,6 +1,7 @@
 package tests.ui
 {
 	import alternativa.a3d.collisions.CollisionBoundNode;
+	import alternativa.a3d.collisions.CollisionUtil;
 	import alternativa.a3d.controller.SimpleFlyController;
 	import alternativa.a3d.controller.ThirdPersonController;
 	import alternativa.a3d.cullers.BVHCuller;
@@ -24,6 +25,8 @@ package tests.ui
 	import alternativa.engine3d.objects.MeshSetClonesContainer;
 	import alternativa.engine3d.objects.MeshSetClonesContainerMod;
 	import alternativa.engine3d.objects.Sprite3D;
+	import alternativa.engine3d.primitives.Box;
+	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.RenderingSystem;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.spriteset.materials.MaskColorAtlasMaterial;
@@ -31,6 +34,8 @@ package tests.ui
 	import alternativa.engine3d.spriteset.materials.TextureAtlasMaterial;
 	import alternativa.engine3d.spriteset.SpriteSet;
 	import alternativa.engine3d.Template;
+	import alternativa.engine3d.utils.GeometryUtil;
+	import alternativa.engine3d.utils.Object3DTransformUtil;
 	import ash.core.Engine;
 	import ash.core.Entity;
 	import ash.tick.FrameTickProvider;
@@ -38,6 +43,8 @@ package tests.ui
 	import com.bit101.components.ComboBox;
 	import components.Pos;
 	import components.Rot;
+	import de.polygonal.ds.BitVector;
+	import de.polygonal.ds.GraphNode;
 	import de.polygonal.motor.geom.primitive.AABB2;
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
@@ -46,9 +53,12 @@ package tests.ui
 	import flash.events.Event;
 	import flash.events.IEventDispatcher;
 	import flash.events.KeyboardEvent;
+	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.geom.Vector3D;
 	import flash.system.System;
 	import flash.ui.Keyboard;
+	import hxGeomAlgo.IsoContours;
 	import input.KeyPoll;
 	import saboteur.models.PlayerInventory;
 	import saboteur.spawners.JettySpawner;
@@ -135,6 +145,23 @@ package tests.ui
 			geometry.setAttributeValues(VertexAttributes.POSITION, vec);
 		}
 		
+		private function setupDebugMeshContainer():void 
+		{
+			var mat:FillMaterial = new FillMaterial(0xFF0000, 1);
+			debugMeshContainer = new MeshSetClonesContainer(new Box(5, 5, 5, 1, 1, 1, false, mat), mat);
+			
+						var tileX:Number = gameBuilder._gridSquareBound.maxX *2;
+				var tileY:Number = gameBuilder._gridSquareBound.maxY *2;
+				SpawnerBundle.uploadResourcesOf(debugMeshContainer);
+		
+			//debugMeshContainer.x = -tileX * .5;
+			//debugMeshContainer.y = tileY * .5;
+			debugMeshContainer.z = gameBuilder._gridSquareBound.maxZ - GameBuilder3D.Z_BOUND_PADDING - 83/JettySpawner.SPAWN_SCALE;// (gameBuilder._gridSquareBound.maxZ + gameBuilder._gridSquareBound.minZ) * .5;// gameBuilder._gridSquareBound.maxZ * .5;
+			gameBuilder.startScene.addChild(debugMeshContainer);
+			
+			
+		}
+		
 		private function setupLineDrawer():void { 
 				var parserA3D:ParserA3D = new ParserA3D();
 			parserA3D.parse( new LINE_SEGMENT() );
@@ -175,37 +202,373 @@ package tests.ui
 			 
 			 var outliner:Vector.<int>;
 			  var total:int;
-			 outliner = new <int>[0,0 , -1,0, -1,1, 0,1, 0,2 ,1,2  ,1,1  ,2,1   ,2,0    ,1,0  ,1,-1   ,0,-1   ]; 
-				total = outliner.length;
-				drawOutline(borderMeshset, outliner, total);
+			  var planeTest:Plane = createOffsetPlane();
+			  	SpawnerBundle.uploadResourcesOf(planeTest);
+			contPlaneTest = new Object3D();
+			contPlaneTest.x = borderMeshset.x;
+		contPlaneTest.y = borderMeshset.y;
+			contPlaneTest.z = borderMeshset.z;
+			
+			
+			 outliner = getCardinalRadiusOutline(1, true); // new <int>[0,0 , -1,0, -1,1, 0,1, 0,2 ,1,2  ,1,1  ,2,1   ,2,0    ,1,0  ,1,-1   ,0,-1   ]; 
+			 total = outliner.length;
+				drawOutline(borderMeshset, outliner, total, tileX, tileY, true);
+							
 				
-				 outliner = new <int>[-2,0 , -3,0, -3,1, -2,1, -2,2 , -1,2  ,-1,3  ,0,3   ,0,4,  1,4, 1,3,  2,3, 2,2,  3,2,  3,1,   4,1,  4,0,  3,0,  3,-1,  2,-1, 2,-2,  1,-2,  1,-3,  0,-3,   0,-2,   -1,-2,    -1,-1,  -2,-1  ]; 
-				total = outliner.length;
-				drawOutline(borderMeshset2, outliner, total);
+				 outliner = getCardinalRadiusOutline(MOVEMENT_ALLOWANCE, true);// new <int>[-2,0 , -3,0, -3,1, -2,1, -2,2 , -1,2  ,-1,3  ,0,3   ,0,4,  1,4, 1,3,  2,3, 2,2,  3,2,  3,1,   4,1,  4,0,  3,0,  3,-1,  2,-1, 2,-2,  1,-2,  1,-3,  0,-3,   0,-2,   -1,-2,    -1,-1,  -2,-1  ]; 
+				 total = outliner.length;
+				drawOutline(borderMeshset2, outliner, total, tileX, tileY, true);
+				
+					addToCont(createPlanesWithEdgePoints(planeTest, outliner, total, tileX, tileY), contPlaneTest);
+				gameBuilder.startScene.addChild(contPlaneTest  );
+				contPlaneTest.visible = false;
+				 contPlaneGraph = CollisionUtil.getCollisionGraph(contPlaneTest) ;
+				//gameBuilder.collisionGraph.addChild(contPlaneGraph);
+				var across:int =  1 + MOVEMENT_ALLOWANCE * 2;
+				across *= 2;
+				traversibleContours = new IsoContours(new BitVector(across*across),across);
+				
+			 
+		
+		}
+		private static var MOVEMENT_ALLOWANCE:Number = 3;
+		private var debugMeshContainer:MeshSetClonesContainer;
+		
+		private var _currentOutlinerPos:Vector3D = new Vector3D();
+		
+		private function moveOutliners2(ge:int, gs:int):void {
+			var startNode:GraphNode = gameBuilder.pathGraph.getNode(ge, gs);
+			gameBuilder.pathGraph.graph.clearMarks();
+			 gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, startNode, dummyProcess); 
+		}
+		private function moveOutliners(ge:int, gs:int):void {
+			/*
+
+			//var lastGridEast:Number = 
+			
+			var startNode:GraphNode = gameBuilder.pathGraph.getNode(ge, gs);
+			gameBuilder.pathGraph.graph.clearMarks();
+			//debugMeshContainer.numClones = 0;
+			//if (startNode != null) gameBuilder.pathGraph.graph.DFS( false, startNode, processNodeTraversibleDebug); 
+			
+			debugMeshContainer.numClones = 0;
+			borderMeshset.numClones = 0;
+			borderMeshset2.numClones = 0;
+		
+			gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, startNode, processNodeTraversibleOutlineTiles); 
+		
+			
+		
+			//return;
+			*/
+			
+		//	gameBuilder.setObjectLocally(
+			
+	//	/*
+	
+			
+			var startNode:GraphNode = gameBuilder.pathGraph.getNode(ge, gs);
+			gameBuilder.pathGraph.graph.clearMarks();
+			traversibleContours.pixels.clrAll();
+			//	traversibleContours.pixels.set(MOVEMENT_ALLOWANCE * traversibleContours.width + MOVEMENT_ALLOWANCE);
+			gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, startNode, flagBitVector); 
+			var arrOfPoints:Array = traversibleContours.find(false);
+			
+			
+			drawContours(arrOfPoints);
+			 
+			var tileX:Number = gameBuilder._gridSquareBound.maxX * 2;
+			var tileY:Number = gameBuilder._gridSquareBound.maxY * 2;
+			gameBuilder.setVectorPositionLocally(_currentOutlinerPos,	ge, gs);
+			var tarX:Number = -tileX * .5 + _currentOutlinerPos.x;
+			var tarY:Number = tileY * .5 + _currentOutlinerPos.y;
+	
+			borderMeshset.x = tarX ;
+			borderMeshset.y = tarY;
+			borderMeshset2.x = tarX;
+			borderMeshset2.y = tarY;
+			contPlaneTest.x = tarX;
+			contPlaneTest.y = tarY;
+			contPlaneGraph.updateTransform(tarX, tarY, contPlaneTest.z, contPlaneTest.rotationX, contPlaneTest.rotationY, contPlaneTest.rotationZ, contPlaneTest.scaleX, contPlaneTest.scaleY, contPlaneTest.scaleZ);
+		//	*/
+		}
+		
+		private function drawContours(arrOfPoints:Array):void 
+		{
+			borderMeshset2.numClones = 0;
+			
+			var tileX:Number = gameBuilder._gridSquareBound.maxX * 2;
+			var tileY:Number = gameBuilder._gridSquareBound.maxY * 2;
+			var i:int = arrOfPoints.length;
+			while (--i > -1) {
+				var list:Vector.<int> = hxPointToVector(arrOfPoints[i]);
+			//	throw new Error("A:"+arrOfPoints[i]);
+			//throw new Error(list);
+				drawOutline( borderMeshset2, list, list.length, tileX, tileY, true);
+			}
+		}
+		private function hxPointToVector(arr:Array):Vector.<int> {
+			var vec:Vector.<int> = new Vector.<int>(arr.length * 2, true);
+			var count:int = 0;
+			for (var i:int = 0; i < arr.length; i++) {
+				var pt:Object = arr[i];
+				vec[count++] = (pt.x - MOVEMENT_ALLOWANCE)/2;
+				vec[count++] = (pt.y - MOVEMENT_ALLOWANCE)/2;
+			}
+			return vec;
+			
+			
 		}
 		
 		
-		private function drawOutline(borderMeshset:MeshSetClonesContainerMod, outliner:Vector.<int>, total:int ):void {
-					var tileX:Number = gameBuilder._gridSquareBound.maxX *2;
-			var tileY:Number = gameBuilder._gridSquareBound.maxY *2;
-					var diagonalEdgeLength:Number = Math.sqrt(tileX * tileX + tileY * tileY);
-		var diagonalEdgeLengthX:Number = diagonalEdgeLength / tileX;
-		var diagonalEdgeLengthY:Number = diagonalEdgeLength / tileY;
+		private var outlinePathList:Vector.<int> = new Vector.<int>();
+		private var offsetVec:Vector3D = new Vector3D();
+		private function drawTile(borderMeshset:MeshSetClonesContainerMod, ge:int, gs:int):void {
+				var tileX:Number = gameBuilder._gridSquareBound.maxX * 2;
+			var tileY:Number = gameBuilder._gridSquareBound.maxY * 2;
+			var count:int = 0;
+			gameBuilder.setVectorPositionLocally(offsetVec, ge, gs);
+			
+			outlinePathList[count++] = 0; outlinePathList[count++] = 1;
+				outlinePathList[count++] = 1; outlinePathList[count++] = 1;
+			outlinePathList[count++] = 1; outlinePathList[count++] = 0;
+			outlinePathList[count++] = 0; outlinePathList[count++] = 0;
+			
+			drawOutline(borderMeshset, outlinePathList, count, tileX, tileY, true, offsetVec.x, offsetVec.y);
+		}
 		
-			 for (var i:int = 0; i < total; i+=2) {
+		private function drawTile2(borderMeshset:MeshSetClonesContainerMod, ge:int, gs:int):void {
+				var tileX:Number = gameBuilder._gridSquareBound.maxX * 2;
+			var tileY:Number = gameBuilder._gridSquareBound.maxY * 2;
+			var count:int = 0;
+			gameBuilder.setVectorPositionLocally(offsetVec, ge, gs);
+			
+			outlinePathList[count++] = 0; outlinePathList[count++] = 1;
+			outlinePathList[count++] = 1; outlinePathList[count++] = 1;
+			
+			outlinePathList[count++] = 1; outlinePathList[count++] = 1;
+			outlinePathList[count++] = 1; outlinePathList[count++] = 0;
+			
+			outlinePathList[count++] = 1; outlinePathList[count++] = 0;
+			outlinePathList[count++] = 0; outlinePathList[count++] = 0;
+			
+			outlinePathList[count++] = 0; outlinePathList[count++] = 0;
+			outlinePathList[count++] = 0; outlinePathList[count++] = 1;
+			
+			// 0,1, 0,0, 0,0, 1,0, 0,1
+			
+			drawOutline(borderMeshset, outlinePathList, count, tileX, tileY, true, offsetVec.x, offsetVec.y);
+		}
+		
+		private function processNodeTraversibleDebug(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
+		{
+			var clone:MeshSetClone = debugMeshContainer.addNewOrAvailableClone();
+			var dataArr:Array = node.val as Array;
+			clone.root.scaleX = clone.root.scaleY = node.depth > 1 ? .5 : 1;
+			gameBuilder.setObjectLocally( clone.root, dataArr[0], dataArr[1]);
+		//	if (node.depth >= MOVEMENT_ALLOWANCE) return false;
+			return true;
+		}
+		private function dummyProcess(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
+		{
+
+			return true;
+		}
+		
+		private function flagBitVector(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
+		{
+			var dataArr:Array = node.val as Array;
+			traversibleContours.pixels.set((MOVEMENT_ALLOWANCE * 2 + dataArr[1] * 2) * traversibleContours.width + (MOVEMENT_ALLOWANCE * 2 + dataArr[0] * 2));
+			traversibleContours.pixels.set((MOVEMENT_ALLOWANCE * 2 + dataArr[1] * 2 +1) * traversibleContours.width + (MOVEMENT_ALLOWANCE * 2 + dataArr[0] * 2));
+			traversibleContours.pixels.set((MOVEMENT_ALLOWANCE * 2 + dataArr[1] * 2) * traversibleContours.width + (MOVEMENT_ALLOWANCE * 2 + dataArr[0] * 2+1));
+			traversibleContours.pixels.set((MOVEMENT_ALLOWANCE * 2 + dataArr[1] * 2+1) * traversibleContours.width + (MOVEMENT_ALLOWANCE * 2 + dataArr[0] * 2 + 1));
+			
+			return true;
+		}
+		private function processNodeTraversibleOutlineTiles(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
+		{
+			var dataArr:Array = node.val as Array;
+			drawTile2( node.depth > 1 ? borderMeshset2 : borderMeshset, dataArr[0], dataArr[1]);
+		//	if (node.depth >= MOVEMENT_ALLOWANCE) return false;
+			return true;
+		}
+		
+		public static function createOffsetPlane(height:Number=100):Plane {
+			var mat:FillMaterial = new FillMaterial(0x000000, .3);
+			var plane:Plane = new Plane(1, height, 1, 1, false , false, mat, mat);
+			plane.rotationX = Math.PI * .5;
+			plane.x = .5;
+			plane.z =height*.5;
+			GeometryUtil.globalizeMesh(plane);
+			return plane;
+		}
+		
+		public static function addToCont(list:Vector.<Object3D>, cont:Object3D):Object3D {
+			var len:int = list.length;
+			for (var i:int = 0; i < len; i++) {
+				cont.addChild(list[i]);
+			}
+			return cont;
+		}
+		
+		public static function getCardinalRadiusOutline(radius:int, reverse:Boolean=false):Vector.<int> {
+			 var i:int;
+			 var vec:Vector.<int> = new Vector.<int>();
+			 
+			 var quart:int = radius - 1;
+			var count:int = 0;
+			var dx:int;
+			var dy:int; 
+			var dx2:int;
+			var dy2:int;
+			var x:int;
+			var y:int;
+			
+			// north cardinal
+			//vec[count++] = 1; vec[count++] =radius;
+			vec[count++] =  1; vec[count++] = radius+1;
+			vec[count++] =  0; vec[count++] =  radius+1;
+			vec[count++] = x = 0; vec[count++] = y = radius; 
+			dx = -1; dy = 0;
+		    dx2 = 0; dy2 = -1;
+			 for (i = 0; i < quart; i++) {
+				vec[count++] = x += dx; vec[count++] = y += dy;
+				vec[count++] = x += dx2; vec[count++] = y += dy2;
+			 }
+			
+			 
+			 // west cardinal
+			//vec[count++] = -radius+1; vec[count++] = 1;
+			vec[count++] =  -radius; vec[count++]  = 1;
+			vec[count++] = -radius; vec[count++]  = 0;
+			vec[count++] = x = -radius + 1; vec[count++] = y = 0;
+			dx = 0; dy = -1;
+		    dx2 = 1; dy2 = 0;
+			 for (i = 0; i < quart; i++) {
+				vec[count++] = x += dx; vec[count++] = y += dy;
+				vec[count++] = x += dx2; vec[count++] = y += dy2;
+			 }
+			  
+
+			 // south cardinal
+			//vec[count++] =  0; vec[count++] = -radius+1;
+			vec[count++] = 0; vec[count++] = -radius;
+			vec[count++] = 1; vec[count++]  = -radius;
+			vec[count++] = x = 1; vec[count++] = y = -radius+1;
+			dx = 1; dy = 0;
+		    dx2 = 0; dy2 = 1;
+			 for (i = 0; i < quart; i++) {
+				vec[count++] = x += dx; vec[count++] = y += dy;
+				vec[count++] = x += dx2; vec[count++] = y += dy2;
+			 }
+			 
+			 
+			  
+			 // east cardinal
+			//vec[count++] =  radius; vec[count++] = 0;		
+			vec[count++] = radius+1; vec[count++] = 0;
+			vec[count++] =  radius+1; vec[count++] = 1;
+			vec[count++] = x = radius; vec[count++] = y = 1;
+
+			dx = 0; dy = 1;
+		    dx2 = -1; dy2 = 0;
+			 for (i = 0; i < quart; i++) {
+				vec[count++] = x += dx; vec[count++] = y += dy;
+				vec[count++] = x += dx2; vec[count++] = y += dy2;
+			 }
+			 
+			
+			 return reverse ? vec.reverse() : vec;
+		}
+		
+		
+		
+		public static function createPlanesWithEdgePoints( toClone:Object3D, outliner:Vector.<int>, total:int, tileX:Number, tileY:Number, loopClose:Boolean=true):Vector.<Object3D> {
+			var list:Vector.<Object3D> = new Vector.<Object3D>();
+			var clone:Object3D;
+				var diagonalEdgeLength:Number = Math.sqrt(tileX * tileX + tileY * tileY);
+			var diagonalEdgeLengthX:Number = diagonalEdgeLength / tileX;
+			var diagonalEdgeLengthY:Number = diagonalEdgeLength / tileY;
+			var limit:int = total;
+			var count:int = 0;
+			if (!loopClose) limit -= 2;
+			var startIndex:int = 0;
+		//if (startIndex > 0) startIndex += 1;
+			 for (var i:int = 0; i < limit; i+=2) {
 					// outliner[i];
 					// outliner[i + 1];
-					var clone:MeshSetClone = borderMeshset.addNewOrAvailableClone();
-					clone.root.x =  outliner[i] * tileX;
-					clone.root.y =  -outliner[i + 1] * tileY;
-					 clone.root.z = 0;  // Math.random()*12;//
+					var i2:int;
+					
+					clone = toClone.clone();
+					list[count++] = clone;
+					clone.x =  outliner[i] * tileX;
+					clone.y =  -outliner[i + 1] * tileY;
+					 clone.z =  0;// Math.random() * 11;//
 					 
-					 var i2:int = i + 2;
+					 i2 = i + 2;
 					 if (i2 >= total) {
 						 i2 = 0;
 					 }
 					  var x2:Number= outliner[i2] * tileX;
 						 var y2:Number = -outliner[i2 + 1] * tileY;
+							x2-= clone.x;
+							y2 -= clone.y;
+							var d:Number;  // check distance with a particular method
+							d = Math.sqrt(x2 * x2 + y2 * y2); // euler distance check
+							//d = x2 == 0 || y2 == 0 ? (x2 != 0 ? tileX : tileY) : (x2 != 0 ? diagonalEdgeLengthX*tileX : diagonalEdgeLengthY*tileY);  // 1 tile move assumption check
+							
+							d = 1 / d;
+							x2 *= d;
+							y2 *= d;
+							
+							///*
+							clone.rotationZ =  Math.atan2(y2, x2);
+							clone.scaleX = 1 / d;
+						
+				}
+				if (!loopClose) {
+					startIndex = list.length - 1;// borderMeshset.numClones - 1;
+				}
+				clone = toClone.clone();
+				list[count++] = clone;
+			//	clone.root.transform = borderMeshset.clones[0].root.transform;
+				
+				clone.x = list[startIndex].x;
+			 	clone.y = list[startIndex].y;
+			 	clone.z =  list[startIndex].z;
+				 clone.scaleX = 0;
+				  clone.scaleY = 0;
+				    clone.scaleZ = 0;
+					return list;
+		}
+		
+		
+		public static function drawOutline(borderMeshset:MeshSetClonesContainerMod, outliner:Vector.<int>, total:int, tileX:Number, tileY:Number, loopClose:Boolean = true , x:int = 0, y:int=0 ):void {
+				var clone:MeshSetClone;
+			
+				var diagonalEdgeLength:Number = Math.sqrt(tileX * tileX + tileY * tileY);
+		var diagonalEdgeLengthX:Number = diagonalEdgeLength / tileX;
+		var diagonalEdgeLengthY:Number = diagonalEdgeLength / tileY;
+		var limit:int = total;
+		if (!loopClose) limit -= 2;
+		var startIndex:int = ( borderMeshset.numClones );
+	//if (startIndex > 0) startIndex += 1;
+			 for (var i:int = 0; i < limit; i+=2) {
+					// outliner[i];
+					// outliner[i + 1];
+					var i2:int;
+					
+					clone = borderMeshset.addNewOrAvailableClone();
+					clone.root.x = x+  outliner[i] * tileX;
+					clone.root.y =  y+ -outliner[i + 1] * tileY;
+					 clone.root.z =  0;// Math.random() * 11;//
+					 
+					 i2 = i + 2;
+					 if (i2 >= total) {
+						 i2 = 0;
+					 }
+					  var x2:Number= x+ outliner[i2] * tileX;
+						 var y2:Number =y+ -outliner[i2 + 1] * tileY;
 							x2-= clone.root.x;
 							y2 -= clone.root.y;
 							var d:Number;  // check distance with a particular method
@@ -219,7 +582,22 @@ package tests.ui
 							///*
 							clone.root.rotationZ =  Math.atan2(y2, x2);
 							clone.root.scaleX = 1 / d;
+						
 				}
+				if (!loopClose) {
+					startIndex = borderMeshset.numClones-1;
+				}
+				clone = borderMeshset.addNewOrAvailableClone();
+			//	clone.root.transform = borderMeshset.clones[0].root.transform;
+				
+				clone.root.x = borderMeshset.clones[startIndex].root.x;
+			 	clone.root.y = borderMeshset.clones[startIndex].root.y;
+			 	clone.root.z =  borderMeshset.clones[startIndex].root.z;
+				 clone.root.scaleX = 0;
+				  clone.root.scaleY = 0;
+				    clone.root.scaleZ = 0;
+			
+				
 		}
 		
 		
@@ -257,8 +635,8 @@ package tests.ui
 		
 			
 			
-			var pathBuilder:PathBuilderSystem = new PathBuilderSystem(_template3D.camera);
-			 
+			pathBuilder = new PathBuilderSystem(_template3D.camera);
+			 pathBuilder.onPositionTileChange.add(onPositionTileChange);
 			game.gameStates.thirdPerson.addInstance(pathBuilder).withPriority(SystemPriorities.render);
 			//game.engine.addSystem(pathBuilder, SystemPriorities.postRender );
 			pathBuilder.signalBuildableChange.add( onBuildStateChange);
@@ -317,6 +695,7 @@ package tests.ui
 
 			jettySpawner.minimap.createJettyWithBuilder(63, (gameBuilder=ent.get(GameBuilder3D) as GameBuilder3D) );
 			pathBuilder.onBuildSucceeded.add(jettySpawner.minimap.createJettyWithBuilder);
+			pathBuilder.onBuildSucceeded.add(onBuildUpdateBorder);
 			pathBuilder.onDelSucceeded.add(jettySpawner.minimap.removeJettyWithBuilder);
 			
 		
@@ -355,12 +734,85 @@ package tests.ui
 			hudAssets.addToHud3D(hud);
 			hudAssets.txt_chatChannel.appendSpanTagMessage('The quick brown <span u="2">fox</span> jumps over the lazy dog. The <span u="1">quick brown fox</span> jumps over the lazy <span u="3">dog</span>. The <span u="1">quick brown fox</span> jumps over the lazy dog.');
 			setupLineDrawer();
+			setupDebugMeshContainer();
 		
 			game.gameStates.engineState.changeState("thirdPerson");
 			jettySpawner.minimap.setupBuildModelAndView(pathBuilder, pathBuilder.getCurBuilder(), hudAssets.radarBlueprintOverlay);  //
 		
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false,1);
 		
+		}
+		
+	
+		
+		private function onBuildUpdateBorder(value:uint, builder:GameBuilder3D ):void 
+		{
+			updateToCurrentPos();
+		//	hudAssets.txt_chatChannel.appendMessage("You've built a path!");
+		}
+		
+		private function updateToCurrentPos():void 
+		{
+			_lastES.x = pathBuilder.lastGe;
+			_lastES.y = pathBuilder.lastGs;
+			moveOutliners(pathBuilder.lastGe, pathBuilder.lastGs);
+		}
+		
+		private var _lastES:Point = new Point();
+		private var _foundWithinRange:Boolean = false;
+		private function onPositionTileChange(ge:int, gs:int ):void 
+		{
+			/*
+			var rootNode:GraphNode = gameBuilder.pathGraph.getNode(ge, gs);
+			gameBuilder.pathGraph.graph.clearMarks();
+			
+		hudAssets.txt_chatChannel.appendMessage("moved:"+Math.random());
+			
+			if (rootNode != null) {
+				var startNode:GraphNode = gameBuilder.pathGraph.getNode(_lastES.x, _lastES.y);
+				if (startNode != null) {
+						_foundWithinRange = false;
+					gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, rootNode, checkIfNodeIsWithinRange, startNode); 
+					if (!_foundWithinRange) {
+						_lastES.x = pathBuilder.lastGe;
+						_lastES.y = pathBuilder.lastGs;
+						moveOutliners(pathBuilder.lastGe, pathBuilder.lastGs);
+					}
+				}
+			}
+			*/
+			
+		//	/*
+			if (getCardinalDist(ge, gs, _lastES) > MOVEMENT_ALLOWANCE) {
+				_lastES.x = pathBuilder.lastGe;
+				_lastES.y = pathBuilder.lastGs;
+				moveOutliners(pathBuilder.lastGe, pathBuilder.lastGs);
+		
+			}
+		//	*/
+		}
+		
+		private function checkIfNodeIsWithinRange(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
+		{
+			
+			
+			
+			if (node === data) {
+				_foundWithinRange = true;
+				return false;
+			}
+			
+		
+			return true;
+		}
+		
+		
+		private function getCardinalDist(ge:int, gs:int, pt:Point):int {
+			ge -= pt.x;
+			ge = ge < 0 ? -ge : ge;
+			gs -= pt.y;
+			gs = gs < 0 ? -gs : gs;
+			return ge + gs;
 		}
 		
 		
@@ -381,6 +833,11 @@ package tests.ui
 		private var pickupSpawner:PickupItemSpawner;
 		private var gameBuilder:GameBuilder3D;
 		private var borderMeshset2:MeshSetClonesContainerMod;
+		private var contPlaneTest:Object3D;
+		private var contPlaneGraph:CollisionBoundNode;
+		private var pathBuilder:PathBuilderSystem;
+		private var traversibleContours:IsoContours;
+		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
 				
@@ -409,6 +866,9 @@ package tests.ui
 				}
 				else if  (e.keyCode === Keyboard.END &&   !game.keyPoll.isDown(Keyboard.END)) {
 					hudAssets.txt_chatChannel.scrollEndHistory();
+				}
+				else if  (e.keyCode === Keyboard.BACKSPACE &&   !game.keyPoll.isDown(Keyboard.BACKSPACE)) {
+					updateToCurrentPos();
 				}
 				
 				if (e.keyCode === Keyboard.BACKSLASH &&   !game.keyPoll.isDown(Keyboard.BACKSLASH)) { // && 

@@ -425,6 +425,8 @@ package alternativa.engine3d.objects {
 					count++;
 				}
 			}
+			
+			
 				
 			if (triCount != surface.numTriangles) {
 					surface.numTriangles = triCount;
@@ -433,8 +435,9 @@ package alternativa.engine3d.objects {
 				
 				//var lastIndexer:int = i * constantsPerMesh;
 				// This is to loop back to first by adding another constant at the tail end 
-				// TODO: proper last index limit count checker
-				if (true) {
+				/// TODO: proper last index limit count checker
+			///*
+				
 
 					i = i >= numVisibleClones  ? 0 : i;
 					
@@ -443,7 +446,8 @@ package alternativa.engine3d.objects {
 					
 					 mesh = meshes[0];			
 					setupMesh(drawUnit, i, count * constantsPerMesh, mesh);
-				}
+			
+			// */
 				
 				//}
 			//	drawUnit.setVertexConstantsFromNumbers( vertexShader.getVariableIndex("cLastPoint"), 0, 1, 0, 0);  // pre-calculated right vector of last point xyz, w for lastPoint.z
@@ -574,8 +578,9 @@ package alternativa.engine3d.objects {
 					_curBatchCount = totalClones - c;
 					_curBatchCount = _curBatchCount > minClonesPerBatch ? minClonesPerBatch : _curBatchCount;
 					
-					outputSurface.numTriangles = surface.numTriangles * _curBatchCount - lastNumAddTriangles + addNumTriangles;
-				
+					//- surfaceMeshes[0][0].geometry.numTriangles
+					outputSurface.numTriangles = surface.numTriangles * _curBatchCount - lastNumAddTriangles + addNumTriangles ;
+					
 					_material.collectDraws(camera, outputSurface, geometry, lights, lightsLength, useShadow, objectRenderPriority);
 				//	traceStr += "\n"+  (surfaceMeshesLen * _curBatchCount-_offsetNumMeshes) + "," + addNumMeshes +  " , " + _offsetNumMeshes + ": "+ _curCloneIndex + ", "+_curBatchCount + " | "+outputSurface.indexBegin + " + "+outputSurface.numTriangles + ", "+surface.numTriangles + " >> " +addNumTriangles;
 		

@@ -10,6 +10,8 @@ package saboteur.systems
 	import ash.signals.Signal0;
 	import ash.signals.Signal1;
 	import ash.signals.Signal2;
+	import ash.signals.Signal3;
+	import ash.signals.SignalAny;
 	import components.ActionIntSignal;
 	import components.ActionUIntSignal;
 	import components.DirectionVectors;
@@ -77,7 +79,9 @@ package saboteur.systems
 		
 		private var nodeList:NodeList;
 		public var onEndPointStateChange:ActionIntSignal = new ActionIntSignal();
-
+		private var _lastGe:int = 0;
+		private var _lastGs:int = 0;
+		
 		
 		private function validateVis():void 
 		{
@@ -102,7 +106,7 @@ package saboteur.systems
 		public const onDelSucceeded:Signal1 = new Signal1();
 		
 		public var buildToValidity:Boolean=false;  // set this to true to use traditional boardgame saboteur rules where spatial position of videogame player avatar doesn't matter
-		
+		public var onPositionTileChange:Signal2 = new Signal2();
 		
 		
 		public function PathBuilderSystem(camera:Camera3D=null) 
@@ -202,6 +206,7 @@ package saboteur.systems
 				
 				
 				if (fromPos != null) {
+					
 					origin.x = fromPos.x - builder.startScene._x;
 					origin.y = fromPos.y - builder.startScene._y;
 					origin.z = fromPos.z - builder.startScene._z;
@@ -234,6 +239,12 @@ package saboteur.systems
 					}
 					ge = Math.round(eastVal * builder.gridEastWidth_i);
 					gs = Math.round(southVal * builder.gridSouthWidth_i);
+					if (ge != _lastGe || gs != _lastGs) {
+				
+						onPositionTileChange.dispatch(ge, gs);
+						_lastGe = ge;
+						_lastGs = gs;
+					}	
 				}
 				else if (camera != null) {
 					origin.x = camera._x - builder.startScene._x;
@@ -248,6 +259,13 @@ package saboteur.systems
 					
 					ge =  Math.round(eastVal * builder.gridEastWidth_i);
 					gs =  Math.round(southVal * builder.gridSouthWidth_i);
+					/*
+					if (ge != _lastGe || gs != _gs) {
+						_lastGe = ge;
+						_gs = gs;
+						Log.trace("Updating coordinate:" + _lastGe + ", " + _gs);
+					}
+					*/
 				}
 				else {  // without camera, need at least a fromPos
 					throw new Error("Need at least fromPos or camera to continue!");
@@ -405,6 +423,16 @@ package saboteur.systems
 			public function get lastResult():int 
 			{
 				return _lastResult;
+			}
+			
+			public function get lastGe():int 
+			{
+				return _lastGe;
+			}
+			
+			public function get lastGs():int 
+			{
+				return _lastGs;
 			}
 		
 	

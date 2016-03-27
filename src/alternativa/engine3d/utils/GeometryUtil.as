@@ -1,5 +1,6 @@
 package alternativa.engine3d.utils 
 {
+	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.core.VertexStream;
 	import alternativa.engine3d.materials.Material;
@@ -79,6 +80,40 @@ package alternativa.engine3d.utils
 			geometry._numVertices += geom._numVertices;
 			
 		}
+		
+		public static function globalizeMesh(mesh:Mesh):void {
+			if (mesh.transformChanged) mesh.composeTransforms();
+			var vertices:Vector.<Number> = mesh.geometry.getAttributeValues(VertexAttributes.POSITION);
+			var len:int = vertices.length;
+			var t:Transform3D = mesh.transform;
+			for (var i:int = 0; i < len; i += 3) {
+				var x:Number = vertices[i];
+				var y:Number = vertices[i+1];
+				var z:Number = vertices[i + 2];
+				vertices[i] = t.a * x + t.b * y + t.c * z + t.d;
+				vertices[i+1] = t.e * x + t.f * y + t.g * z + t.h;
+				vertices[i+2] = t.i * x + t.j * y + t.k * z + t.l;
+				
+			}
+			
+			mesh._x = 0;
+			mesh._y = 0;
+			mesh._z = 0;
+			mesh._rotationX = 0;
+			mesh._rotationY = 0;
+			mesh._rotationZ = 0;
+				mesh._scaleX = 1;
+			mesh._scaleY = 1;
+			mesh._scaleZ = 1;
+			
+			mesh.composeTransforms();
+			
+			
+			mesh.geometry.setAttributeValues(VertexAttributes.POSITION, vertices);
+			
+			mesh.boundBox = Object3DUtils.calculateHierarchyBoundBox(mesh);
+		}
+		
 		
 		private static function appendGeom(geometry:Geometry, geom:Geometry, constantsPerMesh:int):void {
 				

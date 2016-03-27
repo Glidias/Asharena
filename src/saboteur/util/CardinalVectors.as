@@ -50,7 +50,20 @@ public class CardinalVectors {
 		obj.z += vec.z * distance;
 	}
 	
+	public function transformPos(vec:Vector3D, obj:Vector3D, distance:Number):void {
+		obj.x += vec.x * distance;
+		obj.y += vec.y * distance;
+		obj.z += vec.z * distance;
+	}
+	
 	public function set(vec:Vector3D, obj:Object3D, distance:Number):void {
+		obj.x = vec.x * distance;
+		obj.y = vec.y * distance;
+		obj.z = vec.z * distance;
+	}
+	
+	
+	public function setPos(vec:Vector3D, obj:Vector3D, distance:Number):void {
 		obj.x = vec.x * distance;
 		obj.y = vec.y * distance;
 		obj.z = vec.z * distance;

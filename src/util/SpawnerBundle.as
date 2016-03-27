@@ -1,5 +1,6 @@
 package util 
 {
+	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Resource;
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import ash.signals.Signal1;
@@ -52,6 +53,12 @@ package util
 			while (--i > -1) {
 				vec[i].upload(context3D);
 			}
+		}
+		public static function uploadResourcesOf(obj:Object3D,hierachy:Boolean=false):Object3D {
+		
+			uploadResources(obj.getResources(hierachy));
+			return obj;
+			
 		}
 		
 		public static  function uploadResources(vec:Vector.<Resource>):void {
