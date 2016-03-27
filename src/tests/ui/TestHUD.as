@@ -224,8 +224,8 @@ package tests.ui
 				contPlaneTest.visible = false;
 				 contPlaneGraph = CollisionUtil.getCollisionGraph(contPlaneTest) ;
 				//gameBuilder.collisionGraph.addChild(contPlaneGraph);
-				var across:int =  1 + MOVEMENT_ALLOWANCE * 2;
-				across *= 2;
+				var across:int =  1 + MOVEMENT_ALLOWANCE * 2 + 1;
+
 				traversibleContours = new IsoContours(new BitVector(across*across),across);
 				
 			 
@@ -269,10 +269,10 @@ package tests.ui
 			
 			var startNode:GraphNode = gameBuilder.pathGraph.getNode(ge, gs);
 			gameBuilder.pathGraph.graph.clearMarks();
-			traversibleContours.pixels.clrAll();
+			traversibleContours.pixels.setAll();
 			//	traversibleContours.pixels.set(MOVEMENT_ALLOWANCE * traversibleContours.width + MOVEMENT_ALLOWANCE);
 			gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, startNode, flagBitVector); 
-			var arrOfPoints:Array = traversibleContours.find(false);
+			var arrOfPoints:Array = traversibleContours.find();
 			
 			
 			drawContours(arrOfPoints);
@@ -304,7 +304,7 @@ package tests.ui
 				var list:Vector.<int> = hxPointToVector(arrOfPoints[i]);
 			//	throw new Error("A:"+arrOfPoints[i]);
 			//throw new Error(list);
-				drawOutline( borderMeshset2, list, list.length, tileX, tileY, true);
+				drawOutline( borderMeshset2, list, list.length, tileX, tileY);
 			}
 		}
 		private function hxPointToVector(arr:Array):Vector.<int> {
@@ -312,8 +312,8 @@ package tests.ui
 			var count:int = 0;
 			for (var i:int = 0; i < arr.length; i++) {
 				var pt:Object = arr[i];
-				vec[count++] = (pt.x - MOVEMENT_ALLOWANCE)/2;
-				vec[count++] = (pt.y - MOVEMENT_ALLOWANCE)/2;
+				vec[count++] = pt.x - MOVEMENT_ALLOWANCE;
+				vec[count++] = pt.y - MOVEMENT_ALLOWANCE;
 			}
 			return vec;
 			
@@ -378,10 +378,10 @@ package tests.ui
 		private function flagBitVector(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
 		{
 			var dataArr:Array = node.val as Array;
-			traversibleContours.pixels.set((MOVEMENT_ALLOWANCE * 2 + dataArr[1] * 2) * traversibleContours.width + (MOVEMENT_ALLOWANCE * 2 + dataArr[0] * 2));
-			traversibleContours.pixels.set((MOVEMENT_ALLOWANCE * 2 + dataArr[1] * 2 +1) * traversibleContours.width + (MOVEMENT_ALLOWANCE * 2 + dataArr[0] * 2));
-			traversibleContours.pixels.set((MOVEMENT_ALLOWANCE * 2 + dataArr[1] * 2) * traversibleContours.width + (MOVEMENT_ALLOWANCE * 2 + dataArr[0] * 2+1));
-			traversibleContours.pixels.set((MOVEMENT_ALLOWANCE * 2 + dataArr[1] * 2+1) * traversibleContours.width + (MOVEMENT_ALLOWANCE * 2 + dataArr[0] * 2 + 1));
+			traversibleContours.pixels.clr((MOVEMENT_ALLOWANCE  + dataArr[1] ) * traversibleContours.width + (MOVEMENT_ALLOWANCE  + dataArr[0] ));
+			traversibleContours.pixels.clr((MOVEMENT_ALLOWANCE + dataArr[1]  +1) * traversibleContours.width + (MOVEMENT_ALLOWANCE + dataArr[0] ));
+			traversibleContours.pixels.clr((MOVEMENT_ALLOWANCE  + dataArr[1] ) * traversibleContours.width + (MOVEMENT_ALLOWANCE + dataArr[0] +1));
+			traversibleContours.pixels.clr((MOVEMENT_ALLOWANCE  + dataArr[1] +1) * traversibleContours.width + (MOVEMENT_ALLOWANCE + dataArr[0] + 1));
 			
 			return true;
 		}
