@@ -267,6 +267,10 @@ class IsoContours
 	
 		return fromValue == toValue ? 0 : fromValue ? 1 : 0;
 	}
+	public function interpBFloat( fromValue:Bool, toValue:Bool):Float {
+		return interp(1, fromValue ? 1 : 0, toValue ? 1 : 0);
+	//	return fromValue == toValue ? 0 : fromValue ? 1 : 0;
+	}
 	
 
 	//static

@@ -355,6 +355,13 @@ package saboteur.util
 			localCardinal.transformPos(localCardinal.south, pos, localCardinal.getDist(localCardinal.south, _gridSquareBound) * south );
 		}
 		
+			public function setVectorTilePositionLocally(pos:Vector3D, east:int, south:int):void {
+			pos.x = 0;
+			pos.y = 0;
+			localCardinal.transformPos(localCardinal.east, pos,  east );
+			localCardinal.transformPos(localCardinal.south, pos, south );
+		}
+		
 		
 		public function setObjectLocally(obj:Object3D, east:int, south:int):void {
 			obj._x = 0;

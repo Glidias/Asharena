@@ -45,6 +45,8 @@ package tests.ui
 	import components.Rot;
 	import de.polygonal.ds.BitVector;
 	import de.polygonal.ds.GraphNode;
+	import de.polygonal.ds.GraphNodeIterator;
+	import de.polygonal.ds.Itr;
 	import de.polygonal.motor.geom.primitive.AABB2;
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
@@ -145,6 +147,8 @@ package tests.ui
 			geometry.setAttributeValues(VertexAttributes.POSITION, vec);
 		}
 		
+		
+		
 		private function setupDebugMeshContainer():void 
 		{
 			var mat:FillMaterial = new FillMaterial(0xFF0000, 1);
@@ -225,12 +229,13 @@ package tests.ui
 				 contPlaneGraph = CollisionUtil.getCollisionGraph(contPlaneTest) ;
 				//gameBuilder.collisionGraph.addChild(contPlaneGraph);
 				var across:int =  1 + MOVEMENT_ALLOWANCE * 2 + 1;
-
+				across *= BIT_MULTIPLIER;
 				traversibleContours = new IsoContours(new BitVector(across*across),across);
 				
 			 
 		
 		}
+		private static const BIT_MULTIPLIER:int = 10;
 		private static var MOVEMENT_ALLOWANCE:Number = 3;
 		private var debugMeshContainer:MeshSetClonesContainer;
 		
@@ -239,9 +244,13 @@ package tests.ui
 		private function moveOutliners2(ge:int, gs:int):void {
 			var startNode:GraphNode = gameBuilder.pathGraph.getNode(ge, gs);
 			gameBuilder.pathGraph.graph.clearMarks();
-			 gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, startNode, dummyProcess); 
+			 gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, startNode, emptyProcess); 
 		}
 		private function moveOutliners(ge:int, gs:int):void {
+			var node:GraphNode;
+			var nodeItr:GraphNodeIterator;
+			var arrOfPoints:Array;
+			var startNode:GraphNode;
 			/*
 
 			//var lastGridEast:Number = 
@@ -267,16 +276,43 @@ package tests.ui
 	//	/*
 	
 			
-			var startNode:GraphNode = gameBuilder.pathGraph.getNode(ge, gs);
+			startNode = gameBuilder.pathGraph.getNode(ge, gs);
 			gameBuilder.pathGraph.graph.clearMarks();
-			traversibleContours.pixels.setAll();
-			//	traversibleContours.pixels.set(MOVEMENT_ALLOWANCE * traversibleContours.width + MOVEMENT_ALLOWANCE);
-			gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, startNode, flagBitVector); 
-			var arrOfPoints:Array = traversibleContours.find();
+			traversibleContours.pixels.clrAll();
+			borderMeshset2.numClones = 0;
+			fillCardinalRadius(MOVEMENT_ALLOWANCE, ge, gs);		
+			//gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, startNode, flagBitVector); 
+			gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, startNode, emptyProcess); 
+			nodeItr = gameBuilder.pathGraph.graph.nodeIterator() as GraphNodeIterator;
+			while (nodeItr.hasNext() ) {
+				node = nodeItr.next() as GraphNode;
+				if (!node.marked) {
+					clrBitVectorPx( node.val[0], node.val[1]);
+				}
+			}
+			arrOfPoints = traversibleContours.find();
+			
+		//	borderMeshset.numClones = 0;
+			drawContours(arrOfPoints, borderMeshset2);
 			
 			
-			drawContours(arrOfPoints);
-			 
+			
+			gameBuilder.pathGraph.graph.clearMarks();
+			traversibleContours.pixels.clrAll();
+			borderMeshset.numClones = 0;
+			fillCardinalRadius(1, ge, gs);		
+			gameBuilder.pathGraph.graph.DLBFS(1, false, startNode, emptyProcess); 
+			nodeItr = gameBuilder.pathGraph.graph.nodeIterator() as GraphNodeIterator;
+			while (nodeItr.hasNext() ) {
+				node = nodeItr.next() as GraphNode;
+				if (!node.marked) {
+					clrBitVectorPx( node.val[0], node.val[1]);
+				}
+			}
+			arrOfPoints = traversibleContours.find();
+			drawContours(arrOfPoints, borderMeshset);
+			
+		//	 return;
 			var tileX:Number = gameBuilder._gridSquareBound.maxX * 2;
 			var tileY:Number = gameBuilder._gridSquareBound.maxY * 2;
 			gameBuilder.setVectorPositionLocally(_currentOutlinerPos,	ge, gs);
@@ -293,28 +329,33 @@ package tests.ui
 		//	*/
 		}
 		
-		private function drawContours(arrOfPoints:Array):void 
+		private function drawContours(arrOfPoints:Array, borderMeshset:MeshSetClonesContainerMod):void 
 		{
-			borderMeshset2.numClones = 0;
+		
 			
 			var tileX:Number = gameBuilder._gridSquareBound.maxX * 2;
 			var tileY:Number = gameBuilder._gridSquareBound.maxY * 2;
 			var i:int = arrOfPoints.length;
 			while (--i > -1) {
 				var list:Vector.<int> = hxPointToVector(arrOfPoints[i]);
-			//	throw new Error("A:"+arrOfPoints[i]);
-			//throw new Error(list);
-				drawOutline( borderMeshset2, list, list.length, tileX, tileY);
+			
+				drawOutline( borderMeshset, list, list.length, tileX, tileY, false);
 			}
 		}
+		
+		
 		private function hxPointToVector(arr:Array):Vector.<int> {
 			var vec:Vector.<int> = new Vector.<int>(arr.length * 2, true);
 			var count:int = 0;
+			var bitDivider:Number = 1 / BIT_MULTIPLIER;
 			for (var i:int = 0; i < arr.length; i++) {
 				var pt:Object = arr[i];
-				vec[count++] = pt.x - MOVEMENT_ALLOWANCE;
-				vec[count++] = pt.y - MOVEMENT_ALLOWANCE;
+				vec[count++] =  1 -Math.round( ( (pt.y + _lastES.y)  - MOVEMENT_ALLOWANCE * BIT_MULTIPLIER) / BIT_MULTIPLIER) ;
+				vec[count++] =  Math.round( ( (pt.x + _lastES.x) - MOVEMENT_ALLOWANCE * BIT_MULTIPLIER) / BIT_MULTIPLIER) ;
+			
+			
 			}
+		//	throw new Error(vec);
 			return vec;
 			
 			
@@ -369,7 +410,7 @@ package tests.ui
 		//	if (node.depth >= MOVEMENT_ALLOWANCE) return false;
 			return true;
 		}
-		private function dummyProcess(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
+		private function emptyProcess(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
 		{
 
 			return true;
@@ -378,13 +419,39 @@ package tests.ui
 		private function flagBitVector(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
 		{
 			var dataArr:Array = node.val as Array;
-			traversibleContours.pixels.clr((MOVEMENT_ALLOWANCE  + dataArr[1] ) * traversibleContours.width + (MOVEMENT_ALLOWANCE  + dataArr[0] ));
-			traversibleContours.pixels.clr((MOVEMENT_ALLOWANCE + dataArr[1]  +1) * traversibleContours.width + (MOVEMENT_ALLOWANCE + dataArr[0] ));
-			traversibleContours.pixels.clr((MOVEMENT_ALLOWANCE  + dataArr[1] ) * traversibleContours.width + (MOVEMENT_ALLOWANCE + dataArr[0] +1));
-			traversibleContours.pixels.clr((MOVEMENT_ALLOWANCE  + dataArr[1] +1) * traversibleContours.width + (MOVEMENT_ALLOWANCE + dataArr[0] + 1));
+			
+			fillBitVectorPx( dataArr[0], dataArr[1]);
 			
 			return true;
 		}
+		
+		private function fillBitVectorPx( x:int, y:int):void 
+		{
+			var baseY:int = ( (MOVEMENT_ALLOWANCE+(y-_lastES.y)) * BIT_MULTIPLIER );
+			var baseX:int =  ( (MOVEMENT_ALLOWANCE+(x - _lastES.x)) * BIT_MULTIPLIER );
+			//if (
+			for (var x:int = 0; x < BIT_MULTIPLIER; x++ ) {
+				for (var y:int = 0; y < BIT_MULTIPLIER; y++) {
+					traversibleContours.pixels.set((baseY+y)* traversibleContours.width +baseX+x);
+				}
+			}
+		}
+		
+		private function clrBitVectorPx( x:int, y:int):void 
+		{
+			var baseY:int = ( (MOVEMENT_ALLOWANCE+(y-_lastES.y)) * BIT_MULTIPLIER );
+			var baseX:int =  ( (MOVEMENT_ALLOWANCE+(x - _lastES.x)) * BIT_MULTIPLIER );
+			//if (
+			for (var x:int = 0; x < BIT_MULTIPLIER; x++ ) {
+				for (var y:int = 0; y < BIT_MULTIPLIER; y++) {
+					traversibleContours.pixels.clr((baseY+y)* traversibleContours.width +baseX+x);
+				}
+			}
+		}
+		
+		
+		
+		
 		private function processNodeTraversibleOutlineTiles(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
 		{
 			var dataArr:Array = node.val as Array;
@@ -410,6 +477,34 @@ package tests.ui
 			}
 			return cont;
 		}
+		
+		
+		public  function fillCardinalRadius(radius:int, px:int, py:int ):void {
+			var i:int;
+			var x:int;
+			
+			var r:int;
+			r = 0;
+			
+			for (i = -radius; i <= 0; i++) {
+				for (x = -r; x <= r; x++ ) {
+					fillBitVectorPx(px+x, py+i);
+				}
+				r++;
+			}
+			r--;
+			r--;
+			for (i = 1; i <= radius; i++) {
+				for (x = -r; x <= r; x++ ) {
+					fillBitVectorPx(px+x, py+i);
+				}
+				r--;
+			}
+			
+			
+			
+		}
+	
 		
 		public static function getCardinalRadiusOutline(radius:int, reverse:Boolean=false):Vector.<int> {
 			 var i:int;
@@ -640,9 +735,9 @@ package tests.ui
 			game.gameStates.thirdPerson.addInstance(pathBuilder).withPriority(SystemPriorities.render);
 			//game.engine.addSystem(pathBuilder, SystemPriorities.postRender );
 			pathBuilder.signalBuildableChange.add( onBuildStateChange);
-			var canBuildIndicator:CanBuildIndicator = new CanBuildIndicator();
-			addChild(canBuildIndicator);
-			pathBuilder.onEndPointStateChange.add(canBuildIndicator.setCanBuild);
+		//	var canBuildIndicator:CanBuildIndicator = new CanBuildIndicator();
+		//	addChild(canBuildIndicator);
+		//	pathBuilder.onEndPointStateChange.add(canBuildIndicator.setCanBuild);
 			
 		
 	
@@ -671,7 +766,7 @@ package tests.ui
 			//_template3D.camera.orthographic = true;
 			_template3D.camera.addChild( hud = new Hud2D() );
 			hud.z = 1.1;
-			
+		//	hud.visible = false;
 	
 
 			
@@ -732,7 +827,7 @@ package tests.ui
 			
 			
 			hudAssets.addToHud3D(hud);
-			hudAssets.txt_chatChannel.appendSpanTagMessage('The quick brown <span u="2">fox</span> jumps over the lazy dog. The <span u="1">quick brown fox</span> jumps over the lazy <span u="3">dog</span>. The <span u="1">quick brown fox</span> jumps over the lazy dog.');
+			hudAssets.txt_chatChannel.appendSpanTagMessage('Welcome to the <span u="2">Saboteur Jetty-Building Challenge!</span>.');
 			setupLineDrawer();
 			setupDebugMeshContainer();
 		
@@ -762,11 +857,11 @@ package tests.ui
 		private var _foundWithinRange:Boolean = false;
 		private function onPositionTileChange(ge:int, gs:int ):void 
 		{
-			/*
+			
 			var rootNode:GraphNode = gameBuilder.pathGraph.getNode(ge, gs);
 			gameBuilder.pathGraph.graph.clearMarks();
 			
-		hudAssets.txt_chatChannel.appendMessage("moved:"+Math.random());
+			//hudAssets.txt_chatChannel.appendMessage("moved:"+Math.random());
 			
 			if (rootNode != null) {
 				var startNode:GraphNode = gameBuilder.pathGraph.getNode(_lastES.x, _lastES.y);
@@ -780,16 +875,9 @@ package tests.ui
 					}
 				}
 			}
-			*/
 			
-		//	/*
-			if (getCardinalDist(ge, gs, _lastES) > MOVEMENT_ALLOWANCE) {
-				_lastES.x = pathBuilder.lastGe;
-				_lastES.y = pathBuilder.lastGs;
-				moveOutliners(pathBuilder.lastGe, pathBuilder.lastGs);
-		
-			}
-		//	*/
+			
+			
 		}
 		
 		private function checkIfNodeIsWithinRange(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
@@ -886,10 +974,12 @@ package tests.ui
 				
 			}
 			else if (e.keyCode === Keyboard.NUMPAD_ADD) {
-				borderMeshset.increaseThicknesses(1/JettySpawner.SPAWN_SCALE, 1/JettySpawner.SPAWN_SCALE);
+				borderMeshset.increaseThicknesses(1 / JettySpawner.SPAWN_SCALE, 1 / JettySpawner.SPAWN_SCALE);
+				borderMeshset2.increaseThicknesses(1/JettySpawner.SPAWN_SCALE, 1/JettySpawner.SPAWN_SCALE);
 			}
 			else if (e.keyCode === Keyboard.NUMPAD_SUBTRACT) {
-				borderMeshset.increaseThicknesses(-1/JettySpawner.SPAWN_SCALE, -1/JettySpawner.SPAWN_SCALE);
+				borderMeshset.increaseThicknesses( -1 / JettySpawner.SPAWN_SCALE, -1 / JettySpawner.SPAWN_SCALE);
+				borderMeshset2.increaseThicknesses(-1/JettySpawner.SPAWN_SCALE, -1/JettySpawner.SPAWN_SCALE);
 			}
 		
 		}

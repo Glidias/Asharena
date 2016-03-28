@@ -201,12 +201,13 @@ class GraphGrid
 		}
 	}
 	
-	public function performIsoOutlineRender(tupleMap:Vector<Int>):Int {
+	public function performIsoOutlineRender(tupleMap:Vector<Int>, breakToNewPaths:Vector<Int>):Int {
 		var count:Int = 0;
 		var paths = isoContours.find(false);
+		var bCount:Int = 0;
 		for (path in paths) {
 			var len = path.length;
-			
+			breakToNewPaths[bCount++] = len;
 			for (i in 0...len) {
 				var pt = path[i];
 				tupleMap[count++] = Std.int(pt.x);

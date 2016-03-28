@@ -75,9 +75,10 @@ package alternativa.engine3d.controllers
         public function OrbitCameraMan(camera:Camera3D,  cameraTarget:Object3D, stager:InteractiveObject, scene:Object3D, followTarget:Object3D=null, rot:Rot=null, useMouseWheel:Boolean=false) 
         {
 			this.rot = rot;
+			
 			var controller:OrbitCameraController = new OrbitCameraController(camera, new Object3D(), stager, stager, stager, false, useMouseWheel, mouseWheelHandler);
             this._followTarget = followTarget || (controller._followTarget);
-			alphaSetter = new DummyAlpha();
+			alphaSetter =  new DummyAlpha();
             this.scene = scene;
             this.controller = controller;
             _preferedZoom = controller.getDistance();
@@ -176,6 +177,7 @@ package alternativa.engine3d.controllers
                         limit  = limit < 0 ? 0 : limit;
                         limit = minFadeAlpha + limit * (maxFadeAlpha - minFadeAlpha);
                        alphaSetter.alpha = limit;
+					   
                     }
                     else alphaSetter.alpha = preferedAlpha;
                 }
@@ -266,15 +268,44 @@ package alternativa.engine3d.controllers
 			controller.update(0);
 			}
 		}
+		
+		public function setVisAlphaInstance(ob:Object3D, threshold:Number=.1):void {
+			var instance:VisAlpha = (alphaSetter as VisAlpha || (alphaSetter = new VisAlpha(ob) ) );
+			instance.obj = ob;
+			instance.threshold = threshold;
+			//return instance;
+		}
         
     }
 
 }
+import alternativa.engine3d.core.Object3D;
 
 class DummyAlpha {
 	
 	public var alpha:Number;
 	public function DummyAlpha() {
 		alpha = 1;
+	}
+}
+
+class VisAlpha {
+	public var obj:Object3D;
+	private var _alpha:Number;
+	public var threshold:Number = 0;
+	public function VisAlpha(obj:Object3D):void {
+		this.obj = obj;
+		
+	}
+	
+	public function get alpha():Number 
+	{
+		return _alpha;
+	}
+	
+	public function set alpha(value:Number):void 
+	{
+		_alpha = value;
+		 obj.visible = value > threshold;
 	}
 }
