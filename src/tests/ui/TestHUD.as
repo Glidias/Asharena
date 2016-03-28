@@ -228,7 +228,7 @@ package tests.ui
 				contPlaneTest.visible = false;
 				 contPlaneGraph = CollisionUtil.getCollisionGraph(contPlaneTest) ;
 				//gameBuilder.collisionGraph.addChild(contPlaneGraph);
-				var across:int =  1 + MOVEMENT_ALLOWANCE * 2 + 1;
+				var across:int =  1 + MOVEMENT_ALLOWANCE * 2 + 1;  // todo: extend beyond got bug
 				across *= BIT_MULTIPLIER;
 				traversibleContours = new IsoContours(new BitVector(across*across),across);
 				
@@ -427,6 +427,8 @@ package tests.ui
 		
 		private function fillBitVectorPx( x:int, y:int):void 
 		{
+			if (!withinCardinalRange(x, y)) return;
+			
 			var baseY:int = ( (MOVEMENT_ALLOWANCE+(y-_lastES.y)) * BIT_MULTIPLIER );
 			var baseX:int =  ( (MOVEMENT_ALLOWANCE+(x - _lastES.x)) * BIT_MULTIPLIER );
 			//if (
@@ -439,6 +441,8 @@ package tests.ui
 		
 		private function clrBitVectorPx( x:int, y:int):void 
 		{
+			if (!withinCardinalRange(x, y)) return;
+			
 			var baseY:int = ( (MOVEMENT_ALLOWANCE+(y-_lastES.y)) * BIT_MULTIPLIER );
 			var baseX:int =  ( (MOVEMENT_ALLOWANCE+(x - _lastES.x)) * BIT_MULTIPLIER );
 			//if (
@@ -788,8 +792,8 @@ package tests.ui
 			
 			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
 
-			jettySpawner.minimap.createJettyWithBuilder(63, (gameBuilder=ent.get(GameBuilder3D) as GameBuilder3D) );
-			pathBuilder.onBuildSucceeded.add(jettySpawner.minimap.createJettyWithBuilder);
+			jettySpawner.minimap.createJettyWithBuilder(63, (gameBuilder=ent.get(GameBuilder3D) as GameBuilder3D), 0, 0 );
+			gameBuilder.onBuildMade.add(jettySpawner.minimap.createJettyWithBuilder);
 			pathBuilder.onBuildSucceeded.add(onBuildUpdateBorder);
 			pathBuilder.onDelSucceeded.add(jettySpawner.minimap.removeJettyWithBuilder);
 			
@@ -831,11 +835,14 @@ package tests.ui
 			setupLineDrawer();
 			setupDebugMeshContainer();
 		
+		
 			game.gameStates.engineState.changeState("thirdPerson");
 			jettySpawner.minimap.setupBuildModelAndView(pathBuilder, pathBuilder.getCurBuilder(), hudAssets.radarBlueprintOverlay);  //
 		
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false,1);
-		
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false, 1);
+			
+			gameBuilder.setupSaboteur1MapGoals();
+
 		}
 		
 	
@@ -901,6 +908,10 @@ package tests.ui
 			gs -= pt.y;
 			gs = gs < 0 ? -gs : gs;
 			return ge + gs;
+		}
+		
+		private function withinCardinalRange(ge:int, gs:int):Boolean {
+			return getCardinalDist(ge, gs, _lastES) <= MOVEMENT_ALLOWANCE;
 		}
 		
 		

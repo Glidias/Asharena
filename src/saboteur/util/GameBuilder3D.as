@@ -21,6 +21,7 @@ package saboteur.util
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.ExternalTextureResource;
 	import alternativa.engine3d.utils.Object3DUtils;
+	import ash.signals.SignalAny;
 	import flash.display3D.Context3D;
 	import flash.geom.Matrix3D;
 	import flash.geom.Transform;
@@ -28,6 +29,7 @@ package saboteur.util
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
 	import alternativa.engine3d.alternativa3d;
+	import ash.signals.Signal2;
 	import haxe.Log;
 	use namespace alternativa3d;
 
@@ -87,6 +89,8 @@ package saboteur.util
 		public var collisionGraph:CollisionBoundNode;
 		public var showOccupied:Boolean = false;
 		public var pathGraph:SaboteurGraph;
+		public static var AUTO_SETUP_START:Boolean = true;
+		public const onBuildMade:SignalAny = new SignalAny();
 		
 		private static function checkIdentityRotScale(obj:Object3D):void {
 			if (obj._rotationX != 0 || obj._rotationZ != 0 || obj._rotationY != 0 || obj._scaleX != 1 || obj._scaleY != 1 || obj._scaleZ != 1) throw new Error("not normalized Rot scale meshes!:" + (new Vector3D(obj._rotationX, obj._rotationY, obj._rotationZ) ));
@@ -250,10 +254,11 @@ package saboteur.util
 			refreshValue();
 			
 			setup();
-				addRenderable(genesis);
+	
 		}
 		
 		private function addRenderable(obj:Object3D):Vector.<MeshSetClone> {
+		
 			var meshSets:Object = MESH_SETS;
 			var meshSetClones:Vector.<MeshSetClone> = new Vector.<MeshSetClone>();
 			for (var c:Object3D = obj.childrenList; c != null; c = c.next) {
@@ -321,14 +326,25 @@ package saboteur.util
 			
 		
 			this.startScene.addChild(_floor);
+						
+			if (AUTO_SETUP_START) {
+				pathGraph.addStartNodeDirectly( pathGraph.addNode(gridEast, gridSouth, _value) );
+				pathGraph.recalculateEndpoints();
 			
-			pathGraph.addStartNodeDirectly( pathGraph.addNode(gridEast, gridSouth, _value) );
-			pathGraph.recalculateEndpoints();
+				pathUtil.buildAt(buildDict, gridEast, gridSouth, _value  ); 
+				buildCollidablesAt( gridEast, gridSouth, collision, _value );
+				addRenderable(genesis);
+			}
+		
+		}
+		
+		public function setupSaboteur1MapGoals(middleCardFurtherHouseRule:Boolean = false):void {
+			var SIDE_CARD_DIST:int = 8;
+			var MIDDLE_CARD_DIST:int = middleCardFurtherHouseRule ? SIDE_CARD_DIST + 1 : SIDE_CARD_DIST;
 			
-			pathUtil.buildAt(buildDict, gridEast, gridSouth, _value  ); 
-			
-			buildCollidablesAt( gridEast, gridSouth, collision, _value );	
-			//buildAt(1, 1, 63);
+			buildAt(-SIDE_CARD_DIST, -2, pathUtil.getValue( SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL), false );
+			buildAt(-MIDDLE_CARD_DIST, 0, pathUtil.getValue( SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL), false );
+			buildAt(-SIDE_CARD_DIST, 2, pathUtil.getValue( SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL),false );
 		}
 		
 	
@@ -370,7 +386,7 @@ package saboteur.util
 			localCardinal.transform(localCardinal.south, obj, localCardinal.getDist(localCardinal.south, _gridSquareBound) * south );
 		}
 		
-		public function buildAt(gridEast:int, gridSouth:int, value:uint):void 
+		public function buildAt(gridEast:int, gridSouth:int, value:uint, addGraphNode:Boolean=true):void 
 		{
 			
 				pathUtil.buildAt(buildDict, gridEast, gridSouth, value  );
@@ -381,10 +397,13 @@ package saboteur.util
 					
 					localCardinal.transform(localCardinal.east, newBuilding, localCardinal.getDist(localCardinal.east, _gridSquareBound)* gridEast );
 					localCardinal.transform(localCardinal.south, newBuilding, localCardinal.getDist(localCardinal.south, _gridSquareBound) * gridSouth );
+						blueprint._x = newBuilding._x;
+					blueprint._y = newBuilding._y;
 					
 					var collisionBuilding:Object3D = collision;
 					collisionBuilding._x = newBuilding._x;
 					collisionBuilding._y = newBuilding._y;
+				
 					collisionBuilding.transformChanged = true;
 					visJetty3DByValueRecursive(collisionBuilding, value);
 					var renderableClones:Vector.<MeshSetClone> = addRenderable( newBuilding);
@@ -397,8 +416,12 @@ package saboteur.util
 					
 					build3DGrid[pathUtil.getGridKey(gridEast, gridSouth)] =  new BuildPayload3D(renderableClones, node);
 					
-					pathGraph.addNode(gridEast, gridSouth, _value);
-					pathGraph.recalculateEndpoints();
+					if (addGraphNode) {
+						pathGraph.addNode(gridEast, gridSouth, value);
+						pathGraph.recalculateEndpoints();
+					}
+						
+					onBuildMade.dispatch(value, this, gridEast, gridSouth);
 		}
 		
 		

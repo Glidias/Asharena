@@ -23,6 +23,7 @@ package saboteur.util
         public static const NORTH_WEST:uint = (NORTH | WEST);
         public static const SOUTH_WEST:uint = (SOUTH | WEST);
         public static const SOUTH_EAST:uint = (SOUTH | EAST);
+		public static const ALL_SIDES:uint = (NORTH | EAST | WEST | SOUTH);
         
         public static const ARC_VERTICAL:uint = (1 << 0);
         public static const ARC_HORIZONTAL:uint = (1 << 1);

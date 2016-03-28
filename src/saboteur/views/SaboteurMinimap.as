@@ -191,12 +191,12 @@ package saboteur.views
 		private var builders:Dictionary = new Dictionary();
 		
 		
-		public function createJettyWithBuilder(value:uint, builder:GameBuilder3D):void {
+		public function createJettyWithBuilder(value:uint, builder:GameBuilder3D, floorGridEast:int, floorGridSouth:int):void {
 			var buildDict:Dictionary = builders[builder];
 			if (buildDict == null) buildDict = builders[builder] = new Dictionary();
 			var parentCont:Object3D = getSprParentContainerOf(builder.startScene);
 			var cloned:SpriteMeshSetClone;
-			buildDict[pathUtil.getGridKey( builder.floorGridEast, builder.floorGridSouth)] = cloned = createJettyAt(builder.floorGridEast, builder.floorGridSouth, pathUtil.getIndexByValue(value), DEFAULT_CARDINAL, builder.startScene.x, builder.startScene.y);
+			buildDict[pathUtil.getGridKey( floorGridEast, floorGridSouth)] = cloned = createJettyAt(floorGridEast, floorGridSouth, pathUtil.getIndexByValue(value), DEFAULT_CARDINAL, builder.startScene.x, builder.startScene.y);
 			
 			cloned.root._parent = parentCont;
 		}
