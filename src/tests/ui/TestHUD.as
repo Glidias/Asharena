@@ -223,19 +223,24 @@ package tests.ui
 				 total = outliner.length;
 				drawOutline(borderMeshset2, outliner, total, tileX, tileY, true);
 				
-					addToCont(createPlanesWithEdgePoints(planeTest, outliner, total, tileX, tileY), contPlaneTest);
+				addToCont(createPlanesWithEdgePoints(planeTest, outliner, total, tileX, tileY), contPlaneTest);
 				gameBuilder.startScene.addChild(contPlaneTest  );
 				contPlaneTest.visible = false;
 				 contPlaneGraph = CollisionUtil.getCollisionGraph(contPlaneTest) ;
 				//gameBuilder.collisionGraph.addChild(contPlaneGraph);
 				var across:int =  1 + MOVEMENT_ALLOWANCE * 2 + 1;  // todo: extend beyond got bug
+				if ( (across & 1)) across++;
+				traversibleContourOffset = across * .5;
 				across *= BIT_MULTIPLIER;
+				
 				traversibleContours = new IsoContours(new BitVector(across*across),across);
 				
 			 
 		
 		}
-		private static const BIT_MULTIPLIER:int = 10;
+		private var traversibleContourOffset:int;
+		
+		private static const BIT_MULTIPLIER:int = 5;
 		private static var MOVEMENT_ALLOWANCE:Number = 3;
 		private var debugMeshContainer:MeshSetClonesContainer;
 		
@@ -273,7 +278,7 @@ package tests.ui
 			
 		//	gameBuilder.setObjectLocally(
 			
-	//	/*
+		///*
 	
 			
 			startNode = gameBuilder.pathGraph.getNode(ge, gs);
@@ -290,6 +295,8 @@ package tests.ui
 					clrBitVectorPx( node.val[0], node.val[1]);
 				}
 			}
+			
+			
 			arrOfPoints = traversibleContours.find();
 			
 		//	borderMeshset.numClones = 0;
@@ -311,8 +318,8 @@ package tests.ui
 			}
 			arrOfPoints = traversibleContours.find();
 			drawContours(arrOfPoints, borderMeshset);
-			
-		//	 return;
+		//	*/
+	
 			var tileX:Number = gameBuilder._gridSquareBound.maxX * 2;
 			var tileY:Number = gameBuilder._gridSquareBound.maxY * 2;
 			gameBuilder.setVectorPositionLocally(_currentOutlinerPos,	ge, gs);
@@ -326,7 +333,7 @@ package tests.ui
 			contPlaneTest.x = tarX;
 			contPlaneTest.y = tarY;
 			contPlaneGraph.updateTransform(tarX, tarY, contPlaneTest.z, contPlaneTest.rotationX, contPlaneTest.rotationY, contPlaneTest.rotationZ, contPlaneTest.scaleX, contPlaneTest.scaleY, contPlaneTest.scaleZ);
-		//	*/
+	
 		}
 		
 		private function drawContours(arrOfPoints:Array, borderMeshset:MeshSetClonesContainerMod):void 
@@ -336,26 +343,38 @@ package tests.ui
 			var tileX:Number = gameBuilder._gridSquareBound.maxX * 2;
 			var tileY:Number = gameBuilder._gridSquareBound.maxY * 2;
 			var i:int = arrOfPoints.length;
+			
 			while (--i > -1) {
 				var list:Vector.<int> = hxPointToVector(arrOfPoints[i]);
 			
-				drawOutline( borderMeshset, list, list.length, tileX, tileY, false);
+				drawOutline( borderMeshset, list, list.length, tileX, tileY, true);
 			}
 		}
 		
 		
 		private function hxPointToVector(arr:Array):Vector.<int> {
-			var vec:Vector.<int> = new Vector.<int>(arr.length * 2, true);
+
+			var vec:Vector.<int> = new Vector.<int>();
 			var count:int = 0;
 			var bitDivider:Number = 1 / BIT_MULTIPLIER;
+			var lastX:int = -99999;
+			var lastY:int = -99999;
 			for (var i:int = 0; i < arr.length; i++) {
 				var pt:Object = arr[i];
-				vec[count++] =  1 -Math.round( ( (pt.y + _lastES.y)  - MOVEMENT_ALLOWANCE * BIT_MULTIPLIER) / BIT_MULTIPLIER) ;
-				vec[count++] =  Math.round( ( (pt.x + _lastES.x) - MOVEMENT_ALLOWANCE * BIT_MULTIPLIER) / BIT_MULTIPLIER) ;
+				var x:int = 1 -Math.round( ( (pt.y + _lastES.y)  - traversibleContourOffset * BIT_MULTIPLIER) / BIT_MULTIPLIER);
+				var y:int = Math.round( ( (pt.x + _lastES.x) - traversibleContourOffset * BIT_MULTIPLIER) / BIT_MULTIPLIER) ;
+				if (lastX != x || lastY != y) {
+					vec[count++] =  x;
+					vec[count++] =  y;
+				}
+				lastX = x;
+				lastY = y;
 			
 			
 			}
-		//	throw new Error(vec);
+			
+			
+			
 			return vec;
 			
 			
@@ -429,8 +448,8 @@ package tests.ui
 		{
 			if (!withinCardinalRange(x, y)) return;
 			
-			var baseY:int = ( (MOVEMENT_ALLOWANCE+(y-_lastES.y)) * BIT_MULTIPLIER );
-			var baseX:int =  ( (MOVEMENT_ALLOWANCE+(x - _lastES.x)) * BIT_MULTIPLIER );
+			var baseY:int = ( (traversibleContourOffset+(y-_lastES.y)) * BIT_MULTIPLIER );
+			var baseX:int =  ( (traversibleContourOffset+(x - _lastES.x)) * BIT_MULTIPLIER );
 			//if (
 			for (var x:int = 0; x < BIT_MULTIPLIER; x++ ) {
 				for (var y:int = 0; y < BIT_MULTIPLIER; y++) {
@@ -443,8 +462,8 @@ package tests.ui
 		{
 			if (!withinCardinalRange(x, y)) return;
 			
-			var baseY:int = ( (MOVEMENT_ALLOWANCE+(y-_lastES.y)) * BIT_MULTIPLIER );
-			var baseX:int =  ( (MOVEMENT_ALLOWANCE+(x - _lastES.x)) * BIT_MULTIPLIER );
+			var baseY:int = ( (traversibleContourOffset+(y-_lastES.y)) * BIT_MULTIPLIER );
+			var baseX:int =  ( (traversibleContourOffset+(x - _lastES.x)) * BIT_MULTIPLIER );
 			//if (
 			for (var x:int = 0; x < BIT_MULTIPLIER; x++ ) {
 				for (var y:int = 0; y < BIT_MULTIPLIER; y++) {
@@ -681,6 +700,8 @@ package tests.ui
 							///*
 							clone.root.rotationZ =  Math.atan2(y2, x2);
 							clone.root.scaleX = 1 / d;
+							clone.root.scaleY = borderMeshset._thicknessY;
+							clone.root.scaleZ = borderMeshset._thicknessZ;
 						
 				}
 				if (!loopClose) {

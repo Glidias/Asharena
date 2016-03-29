@@ -459,8 +459,8 @@ package alternativa.engine3d.objects {
 		}
 		
 		// todo: clean this up, seems like sample object scale must match thicknesses
-		private var _thicknessY:Number = 4;
-		private var _thicknessZ:Number = 4;
+		alternativa3d var _thicknessY:Number = 4;
+		alternativa3d var _thicknessZ:Number = 4;
 		
 		public function setThicknesses(horizontal:Number = -1, verticalHeight:Number = -1):void {
 			if (verticalHeight >= 0) {
