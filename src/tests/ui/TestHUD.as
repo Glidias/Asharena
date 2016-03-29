@@ -68,6 +68,7 @@ package tests.ui
 	import saboteur.spawners.SaboteurHud;
 	import saboteur.systems.PathBuilderSystem;
 	import saboteur.systems.PlayerInventoryControls;
+	import saboteur.util.GameBuilder;
 	import saboteur.util.GameBuilder3D;
 	import saboteur.util.Saboteur2Deck;
 	import saboteur.util.SaboteurDeck;
@@ -891,6 +892,7 @@ package tests.ui
 			gameBuilder.setupSaboteur1MapGoals();
 			deck = new SaboteurDeck().setupPlayableDeck();
 			Saboteur2Deck;
+			GameBuilder;
 		}
 		
 	

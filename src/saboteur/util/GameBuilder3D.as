@@ -440,14 +440,8 @@ package saboteur.util
 			
 		}
 		
-			public function tryBuild(buildToValidity:Boolean):void 
-			{
-
-				if (checkBuildableResult(_value, buildToValidity) > 0) {
-					buildAt(gridEast, gridSouth, _value);	
-					checkBuildableResult(_value, buildToValidity);
-				}
-			}
+		
+			
 			
 			
 
