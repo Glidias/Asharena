@@ -228,7 +228,8 @@ package tests.ui
 				contPlaneTest.visible = false;
 				 contPlaneGraph = CollisionUtil.getCollisionGraph(contPlaneTest) ;
 				//gameBuilder.collisionGraph.addChild(contPlaneGraph);
-				var across:int =  1 + MOVEMENT_ALLOWANCE * 2 + 1;  // todo: extend beyond got bug
+				var across:int =  1 + MOVEMENT_ALLOWANCE * 2 + 2;  // todo: extend beyond got bug
+
 				if ( (across & 1)) across++;
 				traversibleContourOffset = across * .5;
 				across *= BIT_MULTIPLIER;
@@ -279,7 +280,6 @@ package tests.ui
 		//	gameBuilder.setObjectLocally(
 			
 		///*
-	
 			
 			startNode = gameBuilder.pathGraph.getNode(ge, gs);
 			gameBuilder.pathGraph.graph.clearMarks();
@@ -295,11 +295,7 @@ package tests.ui
 					clrBitVectorPx( node.val[0], node.val[1]);
 				}
 			}
-			
-			
-			arrOfPoints = traversibleContours.find();
-			
-		//	borderMeshset.numClones = 0;
+			arrOfPoints = traversibleContours.find(true, true);
 			drawContours(arrOfPoints, borderMeshset2);
 			
 			
@@ -316,7 +312,7 @@ package tests.ui
 					clrBitVectorPx( node.val[0], node.val[1]);
 				}
 			}
-			arrOfPoints = traversibleContours.find();
+			arrOfPoints = traversibleContours.find(true, true);
 			drawContours(arrOfPoints, borderMeshset);
 		//	*/
 	
@@ -361,14 +357,35 @@ package tests.ui
 			var lastY:int = -99999;
 			for (var i:int = 0; i < arr.length; i++) {
 				var pt:Object = arr[i];
-				var x:int = 1 -Math.round( ( (pt.y + _lastES.y)  - traversibleContourOffset * BIT_MULTIPLIER) / BIT_MULTIPLIER);
+			
+				/*
+				 * var x:int = 1 -Math.round( ( (pt.y + _lastES.y)  - traversibleContourOffset * BIT_MULTIPLIER) / BIT_MULTIPLIER);
 				var y:int = Math.round( ( (pt.x + _lastES.x) - traversibleContourOffset * BIT_MULTIPLIER) / BIT_MULTIPLIER) ;
+				*/
+				
+				// node x,y positions offsets
+				// don't ask me why this 1- reverse pt.x/y works in this case..hmm...may need to think of some better way of coordinate conversion then this "magic" number approach
+				var x:int = 1-(Math.round(pt.y / BIT_MULTIPLIER) - traversibleContourOffset);
+				var y:int = (Math.round(pt.x / BIT_MULTIPLIER) - traversibleContourOffset);
+				
+				/* // reference formulas for above
+				var baseX:int =  (traversibleContourOffset + (x - _lastES.x)) * BIT_MULTIPLIER;
+				var baseY:int =  (traversibleContourOffset+(y-_lastES.y)) * BIT_MULTIPLIER;
+				*/
+			
 				if (lastX != x || lastY != y) {
+					lastX = x;
+					lastY = y;
+					
+					//gameBuilder.setVectorTilePositionLocally(offsetVec, x, y);
+					//x =  offsetVec.x;
+					//y = offsetVec.y;
+
+					
 					vec[count++] =  x;
 					vec[count++] =  y;
 				}
-				lastX = x;
-				lastY = y;
+				
 			
 			
 			}
@@ -446,13 +463,17 @@ package tests.ui
 		
 		private function fillBitVectorPx( x:int, y:int):void 
 		{
-			if (!withinCardinalRange(x, y)) return;
+			if (!withinCardinalRange(x, y)) {
+				return;
+			}
 			
-			var baseY:int = ( (traversibleContourOffset+(y-_lastES.y)) * BIT_MULTIPLIER );
-			var baseX:int =  ( (traversibleContourOffset+(x - _lastES.x)) * BIT_MULTIPLIER );
+
+			var baseX:int =  (traversibleContourOffset + (x - _lastES.x)) * BIT_MULTIPLIER;
+			var baseY:int =  (traversibleContourOffset+(y-_lastES.y)) * BIT_MULTIPLIER;
 			//if (
 			for (var x:int = 0; x < BIT_MULTIPLIER; x++ ) {
 				for (var y:int = 0; y < BIT_MULTIPLIER; y++) {
+					var tarI:int = (baseY + y) * traversibleContours.width +baseX + x;
 					traversibleContours.pixels.set((baseY+y)* traversibleContours.width +baseX+x);
 				}
 			}
@@ -460,10 +481,12 @@ package tests.ui
 		
 		private function clrBitVectorPx( x:int, y:int):void 
 		{
-			if (!withinCardinalRange(x, y)) return;
-			
-			var baseY:int = ( (traversibleContourOffset+(y-_lastES.y)) * BIT_MULTIPLIER );
-			var baseX:int =  ( (traversibleContourOffset+(x - _lastES.x)) * BIT_MULTIPLIER );
+			if (!withinCardinalRange(x, y)) {
+				return;
+			}
+
+			var baseX:int = (traversibleContourOffset + (x - _lastES.x)) * BIT_MULTIPLIER;
+			var baseY:int = (traversibleContourOffset+(y-_lastES.y)) * BIT_MULTIPLIER;
 			//if (
 			for (var x:int = 0; x < BIT_MULTIPLIER; x++ ) {
 				for (var y:int = 0; y < BIT_MULTIPLIER; y++) {
@@ -987,7 +1010,7 @@ package tests.ui
 				else if  (e.keyCode === Keyboard.END &&   !game.keyPoll.isDown(Keyboard.END)) {
 					hudAssets.txt_chatChannel.scrollEndHistory();
 				}
-				else if  (e.keyCode === Keyboard.BACKSPACE &&   !game.keyPoll.isDown(Keyboard.BACKSPACE)) {
+				else if  (e.keyCode === Keyboard.BACKSLASH &&   !game.keyPoll.isDown(Keyboard.BACKSLASH)) {
 					updateToCurrentPos();
 				}
 				

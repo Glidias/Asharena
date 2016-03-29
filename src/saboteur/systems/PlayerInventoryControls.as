@@ -58,9 +58,19 @@ package saboteur.systems
 				else if (kc === Keyboard.R && !keypoll.isDown(Keyboard.R) ) {
 					unequip();
 				}
+				else if (kc === Keyboard.BACKSPACE && !keypoll.isDown(Keyboard.BACKSPACE) ) {
+					unequip();
+				}
+				else if (kc === Keyboard.J && !keypoll.isDown(Keyboard.J) ) {
+					unequip();
+					inventory.assignRandomPaths();
+					hud.syncWithInventory(inventory);
+				}
 			}
 			else if (kc === Keyboard.J && !keypoll.isDown(Keyboard.J)) {
-				inventory.assignRandomPaths();
+				
+				//inventory.assignRandomPaths();
+				inventory.assignFixedPaths();
 				hud.syncWithInventory(inventory);
 			}
 			

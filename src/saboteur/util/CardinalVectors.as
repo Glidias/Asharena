@@ -77,6 +77,15 @@ public class CardinalVectors {
 		return val;
 	}
 	
+	public function getUnitDist(vec:Vector3D,  numGridSquares:uint=1, scaler:Number=2):Number {
+		var val:Number =  (1 * vec.x +  1 * vec.y +  1 * vec.z);
+		val = val < 0 ? -val : val;
+		val *= numGridSquares;
+		val *= scaler;
+		
+		return val;
+	}
+	
 	public function syncNorthWest():void 
 	{
 		west.x = -east.x;

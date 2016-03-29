@@ -53,6 +53,12 @@ package saboteur.models
 				addItemAtSlot(i,  int(Math.random() * numPathCards)  );
 			}
 		}
+		public function assignFixedPaths(value:uint=63):void {
+			var len:int = getCapacity();
+			for (var i:int = 0; i < len; i++) {
+				addItemAtSlot(i,  SaboteurPathUtil.getInstance().getIndexByValue(value)  );
+			}
+		}
 		
 		public function setCapacity(amt:int):void {
 			
