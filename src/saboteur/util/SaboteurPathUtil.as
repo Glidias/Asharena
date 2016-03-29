@@ -360,13 +360,7 @@ package saboteur.util
             //    */
             ///return false;
         }
-		
-		public function getNewDictionary(startX:int = 0, startY:int=0 ):Dictionary 
-		{
-			var dict:Dictionary = new Dictionary();
-			buildAt(dict, startX, startY, getValue(EAST|NORTH|WEST|SOUTH,  ARC_HORIZONTAL|ARC_VERTICAL  ) );
-			return dict;
-		}
+
         
 	
 	}
