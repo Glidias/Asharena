@@ -3,7 +3,7 @@ package saboteur.util
 	import alternativa.protocol.codec.primitive.UIntCodec;
 	import flash.utils.Dictionary;
 	/**
-	 * Utility for Saboteur building path rules
+	 * Utility for Saboteur building path rules to support both Saboteur-1 and 2.
 	 * @author Glenn Ko
 	 */
 	public class SaboteurPathUtil {
@@ -32,8 +32,19 @@ package saboteur.util
         public static const ARC_SOUTH_WEST:uint = (1 << 4);
         public static const ARC_SOUTH_EAST:uint = (1 << 5);
         
-        public static const ARC_MASK:uint =  ~15;  
+        public static const ARC_MASK:uint =  (ARC_VERTICAL | ARC_HORIZONTAL | ARC_NORTH_EAST | ARC_NORTH_WEST | ARC_SOUTH_EAST | ARC_SOUTH_WEST);  // originally ~15;
         static public const ARC_SHIFT:uint = 4;
+		
+		// Saboteur 2 flags
+		public static const SABO2_DOOR_GREEN:uint = (1 << 0);
+        public static const SABO2_DOOR_RED:uint = (1 << 1);
+        public static const SABO2_CRYSTAL:uint = (1 << 2);
+        public static const SABO2_TUNNEL:uint = (1 << 3); // assumes tunnel goes horizontal always as per Saboteur convention
+        public static const SABO2_LADDER:uint = (1 << 4);
+		static public const SABO2_MASK:uint =  (SABO2_DOOR_GREEN | SABO2_DOOR_RED | SABO2_CRYSTAL | SABO2_TUNNEL | SABO2_LADDER );
+		static public const SABO2_DOOR_MASK:uint = (SABO2_DOOR_GREEN | SABO2_DOOR_RED);
+	    static public const SABO2_SHIFT:uint = ARC_SHIFT + 6;
+		 
     
         // predicted: 2^5 (standard 90deg east,north,west,south,center mask) = 32
         // + 8 (diagonal steer bendey cards, 2 steering mirrors and 6 with-orphan portions included)
@@ -267,8 +278,12 @@ package saboteur.util
 			return (value & ARC_MASK) >> ARC_SHIFT;
 		}
 		
+		public function isDeadEnd(value:uint):Boolean {
+			return getArcValue(value) == 0;
+		}
+		
 		public function getEdgeValue(value:uint):uint {
-			return  value & ~ARC_MASK;
+			return  value & ALL_SIDES;
 		}
 		
 		public function hasCenterConnection(arcValue:uint):Boolean {
@@ -290,7 +305,7 @@ package saboteur.util
             var arcValue:uint = (value & ARC_MASK) >> ARC_SHIFT;
             //if (arcValue != arcValueList[index]) throw new Error("MISMATCH!:"+arcValue + ", "+arcValueList[index]);
     
-            var edgeValue:uint = value & ~ARC_MASK;
+            var edgeValue:uint = value & ALL_SIDES;
             var top90Deg:Boolean = arcValue === (ARC_NORTH_WEST | ARC_NORTH_EAST)  || (arcValue === (ARC_NORTH_EAST) && edgeValue===NORTH_EAST) || (arcValue === (ARC_NORTH_WEST) && edgeValue === NORTH_WEST);
             var bottom90Deg:Boolean = arcValue === (ARC_SOUTH_EAST | ARC_SOUTH_WEST)  || (arcValue === (ARC_SOUTH_EAST) && edgeValue === SOUTH_EAST) || (arcValue === (ARC_SOUTH_WEST) && edgeValue === SOUTH_WEST);
             var centerNarrow:Boolean = (arcValue === ARC_VERTICAL) && (edgeValue & (EAST | WEST)) != 0;
