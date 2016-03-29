@@ -1,6 +1,6 @@
 package saboteur.util 
 {
-	import alternativa.protocol.codec.primitive.UIntCodec;
+
 	import flash.utils.Dictionary;
 	/**
 	 * Utility for Saboteur building path rules to support both Saboteur-1 and 2.
