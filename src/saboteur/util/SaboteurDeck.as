@@ -127,12 +127,13 @@ package saboteur.util
 
 		}
 		
-		public function setupPlayableDeck(pathCards:Boolean = true, actionCards:Boolean = true, doShuffle:Boolean=true):SaboteurDeck {
+		public function setupPlayableDeck(includePathCards:Boolean = true, includeActionCards:Boolean = true, doShuffle:Boolean=true):SaboteurDeck {
 			playableCards = [];
-			if (pathCards) playableCards = playableCards.concat(pathCards);
-			if (actionCards) playableCards = playableCards.concat(actionCards);
+			if (includePathCards) playableCards = playableCards.concat(pathCards);
+			if (includeActionCards) playableCards = playableCards.concat(actionCards);
 			
 			if (doShuffle) shuffle();
+		
 			return this;
 		}
 		
@@ -163,8 +164,30 @@ package saboteur.util
 		
 		public function shuffle():void {
 			if (playableCards == null) throw new Error("No playable deck yet. WHy not setupPlayableDeck() first!?");
-			
+			arrayShuffleFisherYates(playableCards);
 		}
+		
+		public static function arrayShuffleFisherYates(array:Array):Array
+		{
+			var m:int = array.length;
+			var i:int;
+			var temp:*;
+		 
+			// while there are still elements to shuffle
+			while (m)
+			{
+				i = int(Math.random() * m--);
+		 
+				// swap it with the current element
+				temp = array[m];
+				array[m] = array[i];
+				array[i] = temp;
+			}
+		 
+			return array;
+		}
+		
+		
 		
 	}
 

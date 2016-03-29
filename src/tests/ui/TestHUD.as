@@ -69,6 +69,8 @@ package tests.ui
 	import saboteur.systems.PathBuilderSystem;
 	import saboteur.systems.PlayerInventoryControls;
 	import saboteur.util.GameBuilder3D;
+	import saboteur.util.Saboteur2Deck;
+	import saboteur.util.SaboteurDeck;
 	import saboteur.util.SaboteurPathUtil;
 	import spawners.arena.GladiatorBundle;
 	import systems.collisions.EllipsoidCollider;
@@ -109,6 +111,7 @@ package tests.ui
 		private var spectatorPerson:SimpleFlyController;
 		
 		private var borderMeshset:MeshSetClonesContainerMod;
+		private var deck:SaboteurDeck;
 		
 		[Embed(source="../../../resources/hud/linesegment2.a3d", mimeType="application/octet-stream")]
 		private var LINE_SEGMENT:Class;
@@ -236,7 +239,7 @@ package tests.ui
 				
 				traversibleContours = new IsoContours(new BitVector(across*across),across);
 				
-			 
+				
 		
 		}
 		private var traversibleContourOffset:int;
@@ -886,7 +889,8 @@ package tests.ui
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false, 1);
 			
 			gameBuilder.setupSaboteur1MapGoals();
-
+			deck = new SaboteurDeck().setupPlayableDeck();
+			Saboteur2Deck;
 		}
 		
 	

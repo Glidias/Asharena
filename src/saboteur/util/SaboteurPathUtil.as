@@ -37,12 +37,12 @@ package saboteur.util
 		
 		// Saboteur 2 flags
 		public static const SABO2_DOOR_GREEN:uint = (1 << 0);
-        public static const SABO2_DOOR_RED:uint = (1 << 1);
+        public static const SABO2_DOOR_BLUE:uint = (1 << 1);
         public static const SABO2_CRYSTAL:uint = (1 << 2);
         public static const SABO2_TUNNEL:uint = (1 << 3); // assumes tunnel goes horizontal always as per Saboteur convention
         public static const SABO2_LADDER:uint = (1 << 4);
-		static public const SABO2_MASK:uint =  (SABO2_DOOR_GREEN | SABO2_DOOR_RED | SABO2_CRYSTAL | SABO2_TUNNEL | SABO2_LADDER );
-		static public const SABO2_DOOR_MASK:uint = (SABO2_DOOR_GREEN | SABO2_DOOR_RED);
+		static public const SABO2_MASK:uint =  (SABO2_DOOR_GREEN | SABO2_DOOR_BLUE | SABO2_CRYSTAL | SABO2_TUNNEL | SABO2_LADDER );
+		static public const SABO2_DOOR_MASK:uint = (SABO2_DOOR_GREEN | SABO2_DOOR_BLUE);
 	    static public const SABO2_SHIFT:uint = ARC_SHIFT + 6;
 		 
     
@@ -174,8 +174,8 @@ package saboteur.util
 			dict[getGridKey(east, south)] = value;
 		}
 		
-		public function getValue(availableSides:uint, availableArcs:uint):uint {
-			return availableSides | (availableArcs << ARC_SHIFT);
+		public function getValue(availableSides:uint, availableArcs:uint, sabo2:uint=0):uint {
+			return availableSides | (availableArcs << ARC_SHIFT) | (sabo2 << SABO2_SHIFT);
 		}
 		
 		public function getValueByIndex(index:int):uint {
