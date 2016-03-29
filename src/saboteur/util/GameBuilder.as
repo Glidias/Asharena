@@ -47,7 +47,7 @@ package saboteur.util
 		
 		
 		
-		private function getBuildableResult(gridEast:int, gridSouth:int, value:uint):int 
+		public function getBuildableResult(gridEast:int, gridSouth:int, value:uint):int 
 		{
 			return pathUtil.getValidResult(buildDict, gridEast, gridSouth, value, null );
 		}
