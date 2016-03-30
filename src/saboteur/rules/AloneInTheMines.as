@@ -1,6 +1,7 @@
 package saboteur.rules 
 {
 	import ash.signals.Signal0;
+	import ash.signals.Signal1;
 	import saboteur.util.GameBuilder;
 	import saboteur.util.SaboteurActionCard;
 	import saboteur.util.SaboteurDeck;
@@ -18,7 +19,7 @@ package saboteur.rules
 		
 		public var gameEnded:Boolean;
 		public var onGameEnded:Signal0;
-		public var onHandChange:Signal0;
+		public var onHandChange:Signal1;
 		
 		
 		public var deck:SaboteurDeck;
@@ -44,7 +45,7 @@ package saboteur.rules
 		
 		override public function begin():void {
 			super.begin();
-			onHandChange = new Signal0();
+			onHandChange = new Signal1();
 			onGameEnded = new Signal0();
 			//lonePlayer = SaboteurPlayer.create(SaboteurPlayer.GREEN_DWARF);
 			
@@ -175,7 +176,7 @@ package saboteur.rules
 		private function _refillHand():void {
 			// TODO:
 			
-			//onHandChange.dispatch();
+			//onHandChange.dispatch(playerCards);
 		}
 		
 	}
