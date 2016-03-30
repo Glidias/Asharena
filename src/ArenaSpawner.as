@@ -183,8 +183,15 @@ package
 				skin.geometry.calculateNormals();
 				skin.geometry.calculateTangents(0);
 				
+				
 			}
 			
+			var sm:TextureMaterial = skin._surfaces[0].material as TextureMaterial;
+			if (sm) {
+			//	sm.alphaThreshold = .96;
+			//	sm.alpha = .25;
+			}
+				
 			var charClass:ArenaCharacterClass;
 			if (!charClasses[race]) {
 				charClasses[race] = charClass = new ArenaCharacterClass();

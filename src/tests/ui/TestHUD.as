@@ -63,6 +63,7 @@ package tests.ui
 	import hxGeomAlgo.IsoContours;
 	import input.KeyPoll;
 	import saboteur.models.PlayerInventory;
+	import saboteur.rules.AloneInTheMines;
 	import saboteur.spawners.JettySpawner;
 	import saboteur.spawners.PickupItemSpawner;
 	import saboteur.spawners.SaboteurHud;
@@ -892,7 +893,7 @@ package tests.ui
 			gameBuilder.setupSaboteur1MapGoals();
 			deck = new SaboteurDeck().setupPlayableDeck();
 			Saboteur2Deck;
-			GameBuilder;
+			AloneInTheMines;
 		}
 		
 	

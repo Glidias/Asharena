@@ -8,7 +8,7 @@ package saboteur.util
 	{
 		protected var pathCards:Array = [];
 		protected var actionCards:Array = [];
-		protected var playableCards:Array;
+		public var playableCards:Array;
 		protected var pathUtil:SaboteurPathUtil;
 		
 		public static const ACTION_MAP:String = "actionMap";

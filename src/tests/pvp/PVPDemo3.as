@@ -251,7 +251,7 @@ package tests.pvp
 		{
 				FSerialization.applyStyle(_waterBase.waterMaterial, FSerialization.parseStylesheet(waterSettings).getStyle("waterMaterial") );
 				
-				_waterBase.plane.z =  (-64000 +84);//_terrainBase.loadedPage.Square.MinY + 444;
+				_waterBase.plane.z = -50+ (-64000 +84);//_terrainBase.loadedPage.Square.MinY + 444;
 			_waterBase.addToScene(_template3D.scene);
 			
 			_skyboxBase.addToScene(_template3D.scene);
@@ -289,7 +289,7 @@ package tests.pvp
 		{
 			return new <SpawnerBundle>[_gladiatorBundle = new GladiatorBundle(arenaSpawner), arenaHUD = new ArenaHUD(stage) ,
 				_modelBundle = new ModelBundle([Projectiles]),
-				_terrainBase = new TerrainBase(TerrainTest,1, .25*.25 ), //.25*.25 
+				_terrainBase = new TerrainBase(TerrainTest,1, .5 ), //.25*.25 
 				_skyboxBase = new SkyboxBase(ClearBlueSkyAssets),
 				_waterBase = new WaterBase(NormalWaterAssets),
 				new GroundBase([CarribeanTextures])
@@ -419,9 +419,9 @@ package tests.pvp
 		
 		// RULES
 		private var movementPoints:MovementPoints = new MovementPoints();	
-		private  var MAX_MOVEMENT_POINTS:Number = 4;// 9999;// 7;
+		private  var MAX_MOVEMENT_POINTS:Number = 1000;// 4;// 9999;// 7;
 		private  var MAX_COMMAND_POINTS:int = 5;
-		private  var ASSIGNED_HP:int = 120;
+		private  var ASSIGNED_HP:int = 1120; // 120;
 		private var COMMAND_POINTS_PER_TURN:int = 5;
 		private var commandPoints:Vector.<int> = new <int>[0,0];
 		private var collOtherClass:Class = ImmovableCollidable;
@@ -797,6 +797,12 @@ package tests.pvp
 			}
 			else if (keyCode === Keyboard.RIGHTBRACKET) {
 				_terrainBase.terrain.debug = ! _terrainBase.terrain.debug;
+			}
+			else if (keyCode === Keyboard.NUMPAD_ADD) {
+				_template3D.camera.fov += 1 * Math.PI/180;
+			}
+			else if (keyCode === Keyboard.NUMPAD_SUBTRACT) {
+				_template3D.camera.fov -= 1 * Math.PI/180;
 			}
 			//*/
 		}
@@ -1195,6 +1201,7 @@ package tests.pvp
 			//arcSystem.arcs.visible = !_targetMode;
 			
 			if (_targetMode) {
+				
 				thirdPersonController.thirdPerson.preferedZoom = TARGET_MODE_ZOOM;
 				thirdPersonController.thirdPerson.controller.disableMouseWheel();
 				movementPointSystem.noDeplete = true;
@@ -1586,6 +1593,7 @@ package tests.pvp
 			//arenaSpawner.currentPlayerSkin.getSurface(0).material as 
 			//arenaSpawner.currentPlayerSkin.getSurface(0).material
 			thirdPersonController.thirdPerson.setFollowComponents( arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Rot) as Rot);
+			thirdPersonController.thirdPerson.setVisAlphaInstance( arenaSpawner.currentPlayer, .95 );
 			thirdPersonAiming.setCameraParameters(thirdPersonController.thirdPerson.followTarget, _template3D.camera, thirdPersonController.thirdPerson.cameraForward);
 			thirdPersonAiming.setEntity( arenaSpawner.currentPlayerEntity);
 			
@@ -1907,13 +1915,14 @@ package tests.pvp
 			// possible to  set raycastScene  parameter to something else besides "collisionScene"...
 			thirdPersonController = new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, true);
 			thirdPersonController.thirdPerson.instantZoom = 140;
+
 			var terrainRaycast:TerrainRaycastImpl;
 			collisionScene.addChild( terrainRaycast = new TerrainRaycastImpl(_terrainBase.terrain) );
 			
-		thirdPersonController.thirdPerson.preferedMinDistance = 100;
+		thirdPersonController.thirdPerson.preferedMinDistance = 0.1;// 100;
 		thirdPersonController.thirdPerson.controller.minDistance = 0;
 		thirdPersonController.thirdPerson.controller.maxDistance = 2240;
-		thirdPersonController.thirdPerson.offsetZ = CHASE_Z_OFFSET;
+		thirdPersonController.thirdPerson.offsetZ = 22;// CHASE_Z_OFFSET;
 		//thirdPersonController.thirdPerson.offsetX = 22;
 			game.gameStates.thirdPerson.addInstance( thirdPersonAiming = new ThirdPersonAiming() ).withPriority(SystemPriorities.preRender);
 			game.gameStates.thirdPerson.addInstance(thirdPersonController).withPriority(SystemPriorities.postRender);
@@ -1987,11 +1996,14 @@ package tests.pvp
 			game.gameStates.thirdPerson.addInstance( _animAttackSystem =  new AnimAttackSystem() ).withPriority(SystemPriorities.stateMachines);
 		//	game.gameStates.( _animAttackSystem=  new AnimAttackSystem() ).withPriority(SystemPriorities.stateMachines);
 			game.gameStates.thirdPerson.addInstance( _enemyAggroSystem = new A3DEnemyAggroSystem(collisionScene) ).withPriority(SystemPriorities.stateMachines);
+			
 			_enemyAggroSystem.timeChecker = _animAttackSystem;
 			//_enemyAggroSystem.onEnemyAttack.add(onEnemyAttack);
 		//	_enemyAggroSystem.onEnemyReady.add(onEnemyReady);
-			_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
-			//_enemyAggroSystem.onEnemyCooldown.add(onEnemyCooldown);
+	
+		//		_enemyAggroSystem.onEnemyStrike.add(onEnemyStrike);
+		
+		//_enemyAggroSystem.onEnemyCooldown.add(onEnemyCooldown);
 			
 			
 			// aggro mem manager
@@ -2070,7 +2082,7 @@ package tests.pvp
 					if ( movementPoints.movementTimeLeft < 0) movementPoints.movementTimeLeft = 0;
 					var gladiatorStance:GladiatorStance = arenaSpawner.currentPlayerEntity.get(IStance) as GladiatorStance;
 					if (gladiatorStance != null) {
-						gladiatorStance.enableFast = false;
+						//gladiatorStance.enableFast = false;
 						if (sceneLocked) gladiatorStance.flinch();
 					
 					}

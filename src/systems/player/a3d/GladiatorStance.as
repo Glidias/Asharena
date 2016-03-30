@@ -163,7 +163,7 @@ package systems.player.a3d
 		
 		private var speed_backwards_fast:Number = 50*SPEED_SCALE;
 		private var speed_backwards:Number = 50 * SPEED_SCALE;
-				private var speed_strafe_fast:Number = 50*SPEED_SCALE;
+				private var speed_strafe_fast:Number = 100*SPEED_SCALE;
 		private var speed_strafe:Number = 50* SPEED_SCALE;
 		
 		private var speed_jog:Number = 100*SPEED_SCALE;

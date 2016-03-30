@@ -8,13 +8,15 @@ package saboteur.util
 	 */
 	public class GameBuilder 
 	{
+		public var attemptBuildResult:int;
 		
-		private var pathUtil:SaboteurPathUtil;
+		protected var pathUtil:SaboteurPathUtil;
 		public var pathGraph:SaboteurGraph;
 		
 		public const onBuildMade:SignalAny = new SignalAny();
 		
-		public var buildDict:Dictionary;
+		protected var buildDict:Dictionary;
+		protected var buildDictOutside:Dictionary;
 
 		
 		public function GameBuilder() 
@@ -22,12 +24,19 @@ package saboteur.util
 			buildDict = new Dictionary();
 			pathUtil = SaboteurPathUtil.getInstance();
 			pathGraph = new SaboteurGraph();
+			
+			buildDictOutside = new Dictionary();
 	
 		}
 		
-		public function buildAt(gridEast:int, gridSouth:int, value:uint, addGraphNode:Boolean=true):void 
+		public function buildStartNodeAt(gridEast:int, gridSouth:int, value:uint):void {
+			buildAt(  gridEast, gridSouth, value  );		
+			pathGraph.addStartNode(gridEast, gridSouth);
+		}
+		
+		public function buildAt(gridEast:int, gridSouth:int, value:uint, addGraphNode:Boolean=true, buildWithinGame:Boolean=true):void 
 		{
-			pathUtil.buildAt(buildDict, gridEast, gridSouth, value  );		
+			pathUtil.buildAt( buildWithinGame ? buildDict : buildDictOutside, gridEast, gridSouth, value  );		
 			if (addGraphNode) {
 				pathGraph.addNode(gridEast, gridSouth, value);
 				pathGraph.recalculateEndpoints();
@@ -38,18 +47,20 @@ package saboteur.util
 		
 		public function attemptBuild(gridEast:int, gridSouth:int, value:uint):Boolean 
 		{
-			if ( getBuildableResult(gridEast, gridSouth, value)  === SaboteurPathUtil.RESULT_VALID) {
+			if ( (attemptBuildResult=getBuildableResult(gridEast, gridSouth, value))  === SaboteurPathUtil.RESULT_VALID) {
 				buildAt(gridEast, gridSouth, value);
 				return true;
 			}
 			return false;
 		}
 		
-		
+		public function canBuildAt(gridEast:int, gridSouth:int, value:uint):Boolean {
+			return getBuildableResult(gridEast, gridSouth, value) === SaboteurPathUtil.RESULT_VALID;
+		}
 		
 		public function getBuildableResult(gridEast:int, gridSouth:int, value:uint):int 
 		{
-			return pathUtil.getValidResult(buildDict, gridEast, gridSouth, value, null );
+			return pathUtil.getValidResult(buildDict, gridEast, gridSouth, value, pathGraph );
 		}
 		
 		
