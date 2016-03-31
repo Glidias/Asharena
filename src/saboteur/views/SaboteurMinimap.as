@@ -21,6 +21,7 @@ package saboteur.views
 	import flash.utils.Dictionary;
 	import saboteur.models.IBuildModel;
 	import saboteur.spawners.JettySpawner;
+	import saboteur.util.Builder3D;
 	import saboteur.util.CardinalVectors;
 	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
@@ -54,14 +55,14 @@ package saboteur.views
 		private var blueprintColorFloor:Object3D;
 		private var blueprintMaterial:FillHudMaterial;
 		private var buildModel:IBuildModel;
-		private var builder:GameBuilder3D;
+		private var builder:Builder3D;
 		private var _scal:Number = 1;
 		private var offsetGridPlaceVector:Vector3D = new Vector3D(0, -2,0);
 		private var offsetDeltaPlaceVector:Vector3D = new Vector3D(0, -2, 0);
 		
 		private var jettySetParents:Dictionary = new Dictionary();
 		
-		public function setupBuildModelAndView(model:IBuildModel, builder3:GameBuilder3D,  blueprintColorFloor:Mesh=null):void  {
+		public function setupBuildModelAndView(model:IBuildModel, builder3:Builder3D,  blueprintColorFloor:Mesh=null):void  {
 			if (blueprint == null) {
 				blueprint = jettySet.createClone() as SpriteMeshSetClone;
 				blueprint.root.scaleX =  jettyTileSize.x ;
@@ -191,7 +192,8 @@ package saboteur.views
 		private var builders:Dictionary = new Dictionary();
 		
 		
-		public function createJettyWithBuilder(value:uint, builder:GameBuilder3D, floorGridEast:int, floorGridSouth:int):void {
+
+		public function createJettyWithBuilder(value:uint, builder:Builder3D, floorGridEast:int, floorGridSouth:int):void {
 			var buildDict:Dictionary = builders[builder];
 			if (buildDict == null) buildDict = builders[builder] = new Dictionary();
 			var parentCont:Object3D = getSprParentContainerOf(builder.startScene);

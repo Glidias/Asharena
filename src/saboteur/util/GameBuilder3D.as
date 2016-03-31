@@ -328,7 +328,7 @@ package saboteur.util
 			this.startScene.addChild(_floor);
 						
 			if (AUTO_SETUP_START) {
-				pathGraph.addStartNodeDirectly( pathGraph.addNode(gridEast, gridSouth, _value) );
+				pathGraph.setAsStartNodeDirectly( pathGraph.addNode(gridEast, gridSouth, _value) );
 				pathGraph.recalculateEndpoints();
 			
 				pathUtil.buildAt(buildDict, gridEast, gridSouth, _value  ); 

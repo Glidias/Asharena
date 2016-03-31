@@ -35,7 +35,7 @@ package saboteur.util
 		
 		public function buildStartNodeAt(gridEast:int, gridSouth:int, value:uint):void {
 			buildAt(  gridEast, gridSouth, value  );		
-			pathGraph.addStartNode(gridEast, gridSouth);
+			pathGraph.setAsStartNodeAt(gridEast, gridSouth);
 		}
 		
 		public function buildAt(gridEast:int, gridSouth:int, value:uint, addGraphNode:Boolean=true, buildWithinGame:Boolean=true):void 

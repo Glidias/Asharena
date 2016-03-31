@@ -43,8 +43,8 @@ package saboteur.rules
 			gameEnded = false;
 		}
 		
-		override public function begin():void {
-			super.begin();
+		override public function setup():void {
+			
 			onHandChange = new Signal1();
 			onGameEnded = new Signal0();
 			//lonePlayer = SaboteurPlayer.create(SaboteurPlayer.GREEN_DWARF);

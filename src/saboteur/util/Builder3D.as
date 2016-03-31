@@ -480,14 +480,49 @@ package saboteur.util
 		
 		private function onRemovedPath(gridEast:int, gridSouth:int):void {
 			//if ( (gameBuilder.signalFlags & GameBuilder.FLAG_ATTEMPTED) )
+			var key:uint = pathUtil.getGridKey(gridEast, gridSouth);
+			var payload:BuildPayload3D = build3DGrid[key];	
+			if (payload == null) return;
+			collisionGraph.removeChild(payload.collisionNode);
+			//startScene.removeChild(payload.object);
+			payload.clearObjects(MESH_SETS);
 			
 			
+			delete build3DGrid[key];
+
 		}
 		
+		public function setVectorPositionLocally(pos:Vector3D, east:int, south:int):void {
+			pos.x = 0;
+			pos.y = 0;
+			localCardinal.transformPos(localCardinal.east, pos, localCardinal.getDist(localCardinal.east, _gridSquareBound)* east );
+			localCardinal.transformPos(localCardinal.south, pos, localCardinal.getDist(localCardinal.south, _gridSquareBound) * south );
+		}
+		
+		public function setVectorTilePositionLocally(pos:Vector3D, east:int, south:int):void {
+			pos.x = 0;
+			pos.y = 0;
+			localCardinal.transformPos(localCardinal.east, pos, east );
+			localCardinal.transformPos(localCardinal.south, pos, south );
+			
+			
+			//pos.y *= -1;
+		}
+		
+		
+		public function setObjectLocally(obj:Object3D, east:int, south:int):void {
+			obj._x = 0;
+			obj._y = 0;
+			localCardinal.transform(localCardinal.east, obj, localCardinal.getDist(localCardinal.east, _gridSquareBound)* east );
+			localCardinal.transform(localCardinal.south, obj, localCardinal.getDist(localCardinal.south, _gridSquareBound) * south );
+		}
+
+
 		private function addRenderable(obj:Object3D):Vector.<MeshSetClone> {
 		
 			var meshSets:Object = MESH_SETS;
 			var meshSetClones:Vector.<MeshSetClone> = new Vector.<MeshSetClone>();
+		
 			for (var c:Object3D = obj.childrenList; c != null; c = c.next) {
 				if (c.visible) {
 					var cont:MeshSetClonesContainer = meshSets[c.name];

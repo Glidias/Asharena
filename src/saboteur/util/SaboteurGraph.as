@@ -155,18 +155,20 @@ package saboteur.util
 		}
 		
 		
-		public function addStartNode(ge:int, gs:int):void {
+		public function setAsStartNodeAt(ge:int, gs:int):void {
 			var key:uint = pathUtil.getGridKey(ge, gs);
 			if (startPoints[key]) return;
 		
-			var foundNode:GraphNode =  graph.findNode(key);
+			var foundNode:GraphNode =   graphGrid[key];
 			if (foundNode == null) throw new Error("Could not find graph node");
 			startPoints[key] = foundNode;
 			startNodes.push(foundNode);
 			
+			recalculateEndpoints();
 		}
 		
-		public function addStartNodeDirectly(graphNode:GraphNode):void {
+		
+		public function setAsStartNodeDirectly(graphNode:GraphNode):void {
 			var keyer:Array = graphNode.val as Array;
 			var key:uint = pathUtil.getGridKey(keyer[0], keyer[1]);
 			if (startPoints[key]) return;
@@ -174,6 +176,8 @@ package saboteur.util
 	
 			startPoints[key] = graphNode;
 			startNodes.push(graphNode);
+			
+			recalculateEndpoints();
 		}
 		
 		

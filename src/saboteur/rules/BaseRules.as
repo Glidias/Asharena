@@ -19,14 +19,14 @@ package saboteur.rules
 		
 		public function BaseRules() 
 		{
-			
-		}
-		
-		public function begin():void {
 			builder = new GameBuilder();
 			onPlayBuildFailed = new SignalAny();
 			onPlayBuildSuccess = new SignalAny();
 			pathUtil = SaboteurPathUtil.getInstance();
+		}
+		
+		public function setup():void {  // overwrite this for custom implementation
+			
 		}
 		
 		public function playPathCard(east:int, south:int, value:uint, playerIndex:int = 0):Boolean {

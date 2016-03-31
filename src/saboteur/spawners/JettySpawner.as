@@ -33,7 +33,9 @@ package saboteur.spawners
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.utils.ByteArray;
+	import saboteur.util.Builder3D;
 	import saboteur.util.CardinalVectors;
+	import saboteur.util.GameBuilder;
 	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
 	import saboteur.views.SaboteurMinimap;
@@ -238,7 +240,7 @@ package saboteur.spawners
 		private var firstSpawn:Boolean = true;
 		//public var collisionRoot:CollisionBoundNode = new CollisionBoundNode();
 	
-		public function spawn(engine:Engine, scene:Object3D, pos:Pos=null, rayDir:DirectionVectors=null):Entity {
+		public function spawn(engine:Engine, scene:Object3D, gameBuilder:GameBuilder, pos:Pos=null, rayDir:DirectionVectors=null):Entity {
 			var root:Object3D = scene.addChild(new Object3D());
 			root._scaleX = root._scaleY = root._scaleZ =  SPAWN_SCALE;
 			
@@ -248,18 +250,18 @@ package saboteur.spawners
 			//	.calculateBoundBox();
 			//throw new Error((bb.maxX - bb.minZ)*SPAWN_SCALE)
 			
-				GameBuilder3D.addMeshSetsToScene(scene, genesis, jettyMaterial, root, context3D);
+				Builder3D.addMeshSetsToScene(scene, genesis, jettyMaterial, root, context3D);
 				firstSpawn = false;
 			}
 			
 			
 			
-			var gameBuilder:GameBuilder3D = new GameBuilder3D(root, genesis, blueprint, collision, injectMaterial, editorMat, _floor);
+			var builder3D:Builder3D = new Builder3D(gameBuilder, root, genesis, blueprint, collision, injectMaterial, editorMat, _floor);
 			
 			//collisionRoot.addChild(gameBuilder.collisionGraph);
 			
 			var cardinal:CardinalVectors = new CardinalVectors();
-			var entity:Entity = new Entity().add(cardinal).add(gameBuilder);
+			var entity:Entity = new Entity().add(cardinal).add(builder3D);
 			if (pos != null) entity.add(pos, Pos);
 			if (rayDir != null) entity.add(rayDir, DirectionVectors);
 			engine.addEntity(entity);
