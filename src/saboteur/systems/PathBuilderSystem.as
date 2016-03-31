@@ -125,14 +125,19 @@ package saboteur.systems
 		{
 			var head:PathBuildingNode = nodeList.head as PathBuildingNode;
 			if (head == null) {
-				onDelFailed.dispatch();
+				//onDelFailed.dispatch();
 				return false;
 			}
 			if (_lastResult === SaboteurPathUtil.RESULT_OCCUPIED) {
-				if (head.builder.attemptRemove()) {
+				// double check for  3d builders as well?
+				 //pathUtil.getValidResult(head.builder.getBuildDict(), head.builder3.gridBuildAt.x, head.builder3.gridBuildAt.y, head.builder3.value, null ) === SaboteurPathUtil.RESULT_OCCUPIED
+				if (head.builder.attemptRemove()) {   
 					onDelSucceeded.dispatch(head.builder)
 				}
-				else onDelFailed.dispatch();
+				else {
+					onDelFailed.dispatch();
+					Log.trace("del failed exception. this shoudn't conventionally happen due to doublecheck with frame coherancy")
+				}
 			}
 			return true;
 		}
@@ -140,18 +145,25 @@ package saboteur.systems
 		public function attemptBuild():Boolean {
 			var head:PathBuildingNode = nodeList.head as PathBuildingNode;
 			if (head == null) {
+				//onBuildFailed.dispatch();
+			
+				return false;
+			}
+			if (_lastResult != SaboteurPathUtil.RESULT_VALID) {  
 				onBuildFailed.dispatch();
 				return false;
 			}
-			if (_lastResult != SaboteurPathUtil.RESULT_VALID) {
-				onBuildFailed.dispatch();
-				return false;
-			}
-			if (head.builder.attemptBuild()) {
+			
+			// double check for 3d builders as well?
+			// pathUtil.getValidResult(head.builder.getBuildDict(), head.builder3.gridBuildAt.x, head.builder3.gridBuildAt.y, head.builder3.value, null ) === SaboteurPathUtil.RESULT_VALID
+			if (head.builder.attemptBuild()) { 
 				onBuildSucceeded.dispatch(curBuildId, head.builder);
 				return true;
 			}
-			else onBuildFailed.dispatch();
+			else {
+				onBuildFailed.dispatch();
+				Log.trace("build failed exception. this shoudlnt' conventionally happen due to doublecheck with frame coherancy")
+			}
 			return false;
 		}
 		

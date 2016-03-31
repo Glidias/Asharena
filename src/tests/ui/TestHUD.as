@@ -62,11 +62,14 @@ package tests.ui
 	import flash.ui.Keyboard;
 	import hxGeomAlgo.IsoContours;
 	import input.KeyPoll;
+
+	import saboteur.models.IBuildModel;
 	import saboteur.models.PlayerInventory;
 	import saboteur.rules.AloneInTheMines;
 	import saboteur.spawners.JettySpawner;
 	import saboteur.spawners.PickupItemSpawner;
 	import saboteur.spawners.SaboteurHud;
+	import saboteur.systems.IBuildAttempter;
 	import saboteur.systems.PathBuilderSystem;
 	import saboteur.systems.PlayerInventoryControls;
 	import saboteur.util.Builder3D;
@@ -785,6 +788,9 @@ package tests.ui
 			
 			
 			pathBuilder = new PathBuilderSystem(_template3D.camera);
+			curBuildAttempter = pathBuilder;
+			curBuildModel = pathBuilder;
+			
 			 pathBuilder.onPositionTileChange.add(onPositionTileChange);
 			game.gameStates.thirdPerson.addInstance(pathBuilder).withPriority(SystemPriorities.render);
 			//game.engine.addSystem(pathBuilder, SystemPriorities.postRender );
@@ -808,9 +814,9 @@ package tests.ui
 			
 			
 			uiLayer.addChild( stepper = new BuildStepper());
-			stepper.onBuild.add(pathBuilder.attemptBuild);
-			stepper.onStep.add(pathBuilder.setBuildIndex);
-			stepper.onDelete.add(pathBuilder.attemptDel);
+			stepper.onBuild.add(curBuildAttempter.attemptBuild);
+			stepper.onStep.add( onStepperIndexChanged  )
+			stepper.onDelete.add(curBuildAttempter.attemptDel);
 			
 			ticker = new FrameTickProvider(stage);
 			ticker.add(tick);
@@ -849,7 +855,7 @@ package tests.ui
 			
 		
 
-			var playerControls:PlayerInventoryControls = new PlayerInventoryControls(game.keyPoll, new PlayerInventory(), hudAssets, pathBuilder, jettySpawner.minimap, stage);
+			var playerControls:PlayerInventoryControls = new PlayerInventoryControls(game.keyPoll, new PlayerInventory(), hudAssets, pathBuilder, jettySpawner.minimap, stage, pathBuilder);
 			game.gameStates.thirdPerson.addInstance(playerControls).withPriority(SystemPriorities.preRender);
 			
 			if (game.colliderSystem) {
@@ -887,7 +893,7 @@ package tests.ui
 		
 		
 			game.gameStates.engineState.changeState("thirdPerson");
-			jettySpawner.minimap.setupBuildModelAndView(pathBuilder, pathBuilder.getCurBuilder(), hudAssets.radarBlueprintOverlay);  //
+			jettySpawner.minimap.setupBuildModelAndView(pathBuilder, gameBuilder, hudAssets.radarBlueprintOverlay);  //
 		
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false, 1);
 			
@@ -896,6 +902,11 @@ package tests.ui
 			Builder3D;
 			Saboteur2Deck;
 			AloneInTheMines;
+		}
+		
+		private function onStepperIndexChanged(index:int):void 
+		{
+			 curBuildModel.setBuildId( SaboteurPathUtil.getInstance().getValueByIndex(index) );
 		}
 		
 	
@@ -989,6 +1000,8 @@ package tests.ui
 		private var contPlaneGraph:CollisionBoundNode;
 		private var pathBuilder:PathBuilderSystem;
 		private var traversibleContours:IsoContours;
+		private var curBuildAttempter:IBuildAttempter;
+		private var curBuildModel:IBuildModel;
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
