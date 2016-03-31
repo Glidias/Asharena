@@ -1,5 +1,6 @@
 package saboteur.util 
 {
+	import ash.signals.Signal2;
 	import flash.utils.Dictionary;
 	import ash.signals.SignalAny;
 	/**
@@ -14,9 +15,13 @@ package saboteur.util
 		public var pathGraph:SaboteurGraph;
 		
 		public const onBuildMade:SignalAny = new SignalAny();
+		public const onRemoved:Signal2 = new Signal2();
 		
 		protected var buildDict:Dictionary;
 		protected var buildDictOutside:Dictionary;
+		
+		public static const FLAG_ATTEMPTED:uint = 1;
+		public var signalFlags:uint = 0;
 
 		
 		public function GameBuilder() 
@@ -41,13 +46,16 @@ package saboteur.util
 				pathGraph.addNode(gridEast, gridSouth, value);
 				pathGraph.recalculateEndpoints();
 			}
-						
+					
+			
 			onBuildMade.dispatch(value, this, gridEast, gridSouth);
+			signalFlags = 0;
 		}
 		
 		public function attemptBuild(gridEast:int, gridSouth:int, value:uint):Boolean 
 		{
-			if ( (attemptBuildResult=getBuildableResult(gridEast, gridSouth, value))  === SaboteurPathUtil.RESULT_VALID) {
+			if ( (attemptBuildResult = getBuildableResult(gridEast, gridSouth, value))  === SaboteurPathUtil.RESULT_VALID) {
+				signalFlags = 1;
 				buildAt(gridEast, gridSouth, value);
 				return true;
 			}
@@ -68,6 +76,7 @@ package saboteur.util
 		{
 			// any value would be fine in this case...
 			if ( isOccupiedAt(gridEast, gridSouth) ) {
+				signalFlags = 1;
 				removeAt(gridEast, gridSouth);
 				return true;
 			}
@@ -82,6 +91,10 @@ package saboteur.util
 			delete buildDict[key];
 			pathGraph.removeNode(gridEast, gridSouth);
 			pathGraph.recalculateEndpoints();
+			
+			
+			onRemoved.dispatch(gridEast, gridSouth);
+			signalFlags = 0;
 			return true;	
 		}
 		

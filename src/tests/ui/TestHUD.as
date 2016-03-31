@@ -69,6 +69,7 @@ package tests.ui
 	import saboteur.spawners.SaboteurHud;
 	import saboteur.systems.PathBuilderSystem;
 	import saboteur.systems.PlayerInventoryControls;
+	import saboteur.util.Builder3D;
 	import saboteur.util.GameBuilder;
 	import saboteur.util.GameBuilder3D;
 	import saboteur.util.Saboteur2Deck;
@@ -892,6 +893,7 @@ package tests.ui
 			
 			gameBuilder.setupSaboteur1MapGoals();
 			deck = new SaboteurDeck().setupPlayableDeck();
+			Builder3D;
 			Saboteur2Deck;
 			AloneInTheMines;
 		}
