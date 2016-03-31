@@ -19,6 +19,7 @@ package saboteur.systems
 	import flash.geom.Point;
 	import flash.geom.Vector3D;
 	import haxe.Log;
+
 	import saboteur.models.IBuildModel;
 	import saboteur.util.CardinalVectors;
 	import alternativa.engine3d.core.Camera3D;
@@ -44,7 +45,7 @@ package saboteur.systems
 	 * 
 	 * @author Glenn Ko
 	 */
-	public class PathBuilderSystem extends System implements IBuildModel
+	public class PathBuilderSystem extends System implements IBuildModel, IBuildAttempter
 	{
 		/**
 		 * Build distance ratio in relation to current grid east/south width to indicate how near to edge required
@@ -52,6 +53,7 @@ package saboteur.systems
 		 */
 		public var buildDistRatio:Point =  new Point(.5, .5);
 		
+		// relavant data if this is used as the IBUildModel
 		private var curBuildId:int = -1; // -1;  // 63
 		public function setBuildId(val:int):void  {
 			curBuildId = val;
@@ -60,15 +62,14 @@ package saboteur.systems
 		public function getCurBuildID():int {
 			return curBuildId;
 		}
+	
 		
-		public function setBuildIndex(index:uint):void {
-			setBuildId(  SaboteurPathUtil.getInstance().getValueByIndex(index) );
-		}
 		
 		public function getCurBuilder():GameBuilder3D {
 			if (nodeList == null) throw new Error("not yet added to engine yet!");
 			return nodeList.head ? (nodeList.head as PathBuildingNode).builder : null;
 		}
+
 		
 		private var camera:Camera3D;
 		private var fromPos:Pos;
@@ -82,14 +83,16 @@ package saboteur.systems
 		private var _lastGe:int = 0;
 		private var _lastGs:int = 0;
 		
+		private var _buildModel:IBuildModel;
 		
 		private function validateVis():void 
 		{
 			if ( nodeList && nodeList.head) {
 				fromPos = (nodeList.head as PathBuildingNode).entity.get(Pos) as Pos;
 				fromDirection = (nodeList.head as PathBuildingNode).entity.get(DirectionVectors) as DirectionVectors;
-				(nodeList.head as PathBuildingNode).builder.value = curBuildId;
-				if (curBuildId >= 0) (nodeList.head as PathBuildingNode).builder.setBlueprintIdVis(curBuildId)
+				var resultId:int;
+				(nodeList.head as PathBuildingNode).builder.value = resultId= _buildModel.getCurBuildID();
+				if (curBuildId >= 0) {  (nodeList.head as PathBuildingNode).builder.setBlueprintVis(true) }
 				else (nodeList.head as PathBuildingNode).builder.setBlueprintVis(false);
 			}
 		}
@@ -112,17 +115,18 @@ package saboteur.systems
 		public function PathBuilderSystem(camera:Camera3D=null) 
 		{
 			this.camera = camera;
+			_buildModel = this;
 			//	camPos  = new Vector3D();
 			onEndPointStateChange.current = -2;
 			
 			
 		}
-		public function attemptDel():void 
+		public function attemptDel():Boolean 
 		{
 			var head:PathBuildingNode = nodeList.head as PathBuildingNode;
 			if (head == null) {
 				onDelFailed.dispatch();
-				return;
+				return false;
 			}
 			if (_lastResult === SaboteurPathUtil.RESULT_OCCUPIED) {
 				if (head.builder.attemptRemove()) {
@@ -130,6 +134,7 @@ package saboteur.systems
 				}
 				else onDelFailed.dispatch();
 			}
+			return true;
 		}
 			
 		public function attemptBuild():Boolean {
@@ -433,6 +438,17 @@ package saboteur.systems
 			public function get lastGs():int 
 			{
 				return _lastGs;
+			}
+			
+			public function get buildModel():IBuildModel 
+			{
+				return _buildModel;
+			}
+			
+			public function set buildModel(value:IBuildModel):void 
+			{
+				_buildModel = value;
+				validateVis();
 			}
 		
 	

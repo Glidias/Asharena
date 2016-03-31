@@ -7,12 +7,12 @@ package saboteur.models
 	 */
 	public interface IBuildModel 
 	{
-		
+		// negative buildIds refer to null build id selections
 		function setBuildId(val:int):void;
 		
 		function getCurBuildID():int;
 		
-		function attemptBuild():Boolean;
+		
 		
 	}
 	

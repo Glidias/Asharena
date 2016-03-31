@@ -589,13 +589,7 @@ package saboteur.util
 					
 			}
 			
-			public function setBlueprintIdVis(val:uint):void 
-			{
-				for (var obj:Object3D = blueprint.childrenList; obj != null; obj = obj.next) {
-					obj.visible = pathUtil.visJetty(val, obj.name);
-				}
-			}
-			
+	
 			
 			public function attemptBuild():Boolean 
 			{
@@ -628,7 +622,8 @@ package saboteur.util
 				if (_value === value) return;
 				_value = value;
 				
-				if (_value >= 0) refreshValue();
+				refreshValue();
+				
 			}
 			
 			private function refreshValue():void {
@@ -636,6 +631,8 @@ package saboteur.util
 					 c.visible = pathUtil.visJetty(_value, c.name);
 				 }
 			}
+			
+			
 		
 		
 		

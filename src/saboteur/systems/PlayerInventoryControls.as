@@ -6,6 +6,7 @@ package saboteur.systems
 	import flash.events.KeyboardEvent;
 	import flash.ui.Keyboard;
 	import input.KeyPoll;
+
 	import saboteur.models.IBuildModel;
 	import saboteur.models.PlayerInventory;
 	import saboteur.spawners.SaboteurHud;
@@ -24,9 +25,11 @@ package saboteur.systems
 		private var stage:Stage;
 		private var minimap:SaboteurMinimap;
 		private var equipedSlot:int = -1;
+		private var buildAttempter:IBuildAttempter;
 		
-		public function PlayerInventoryControls(keypoll:KeyPoll, inventory:PlayerInventory, hud:SaboteurHud,  buildModel:IBuildModel, minimap:SaboteurMinimap, stage:Stage) 
+		public function PlayerInventoryControls(keypoll:KeyPoll, inventory:PlayerInventory, hud:SaboteurHud,  buildModel:IBuildModel, minimap:SaboteurMinimap, stage:Stage, buildAttempter:IBuildAttempter) 
 		{
+			this.buildAttempter = buildAttempter;
 			this.minimap = minimap;
 			this.stage = stage;
 			this.buildModel = buildModel;
@@ -100,10 +103,11 @@ package saboteur.systems
 			inventory.itemSlots[equipedSlot] = index;
 		}
 		
+		// TODO: with the rules impl
 		private function executeEquipSlot():void 
 		{
 			if (inventory.itemSlotCategories[equipedSlot] === PlayerInventory.CATEGORY_PATH) {
-				if (buildModel.attemptBuild()) {
+				if (buildAttempter.attemptBuild()) {
 					inventory.removeItemAtSlot(equipedSlot);
 					hud.syncWithInventory(inventory);
 					buildModel.setBuildId( -1);

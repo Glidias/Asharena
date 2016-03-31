@@ -81,7 +81,7 @@ package saboteur.util
 		public var collisionScene:Object3D;
 		
 		
-		// TODO: factor out this _value to another model. This represents selected path card/orientation
+		//  This represents selected path card/orientation that should be binded  via some system or binding listener that validates values prior to setting it
 		private var _value:uint;
 		public function get value():uint 
 		{
@@ -93,7 +93,8 @@ package saboteur.util
 			if (_value === value) return;
 			_value = value;
 			
-			if (_value >= 0) refreshValue();
+			//if (_value >= 0)   // assumption made due to uint value type coercion. Make sure this is validated and not binded directly
+			refreshValue();
 		}
 		private function refreshValue():void {
 		   for (var c:Object3D = blueprint.childrenList; c != null; c = c.next) {
@@ -463,14 +464,8 @@ package saboteur.util
 			  c.visible = pathUtil.visJetty(value, c.name);
 			}
 		}
-		
-		// TODO: check if is this really required?
-		public function setBlueprintIdVis(val:uint):void 
-		{
-			for (var obj:Object3D = blueprint.childrenList; obj != null; obj = obj.next) {
-				obj.visible = pathUtil.visJetty(val, obj.name);
-			}
-		}
+
+
 		
 		private function visJetty3DByValueRecursive(obj:Object3D, value:uint):void {
 			
