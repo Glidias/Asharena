@@ -14,15 +14,14 @@ package saboteur.util
 		protected var pathUtil:SaboteurPathUtil;
 		public var pathGraph:SaboteurGraph;
 		
-		public const onBuildMade:SignalAny = new SignalAny();
-		public const onRemoved:Signal2 = new Signal2();
-		
 		protected var buildDict:Dictionary;
 		protected var buildDictOutside:Dictionary;
 		
 		public static const FLAG_ATTEMPTED:uint = 1;
 		public var signalFlags:uint = 0;
-
+		public const onBuildMade:SignalAny = new SignalAny();
+		public const onRemoved:Signal2 = new Signal2();
+		
 		
 		public function GameBuilder() 
 		{

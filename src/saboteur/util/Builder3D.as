@@ -80,7 +80,28 @@ package saboteur.util
 		alternativa3d var _floor:Object3D;
 		public var collisionScene:Object3D;
 		
+		
+		// TODO: factor out this _value to another model. This represents selected path card/orientation
 		private var _value:uint;
+		public function get value():uint 
+		{
+			return _value;
+		}
+		
+		public function set value(value:uint):void 
+		{
+			if (_value === value) return;
+			_value = value;
+			
+			if (_value >= 0) refreshValue();
+		}
+		private function refreshValue():void {
+		   for (var c:Object3D = blueprint.childrenList; c != null; c = c.next) {
+				 c.visible = pathUtil.visJetty(_value, c.name);
+			 }
+		}
+		
+		
 		private var startEditorAlpha:Number;
 		private var _boundGridBoxConvex3D:CollisionBoundNode;
 		public var minSquareBuildDistance:Number;
@@ -202,11 +223,9 @@ package saboteur.util
 			this.startScene.addChild(_floor);
 		}
 		
-		private function refreshValue():void {
-		   for (var c:Object3D = blueprint.childrenList; c != null; c = c.next) {
-				 c.visible = pathUtil.visJetty(_value, c.name);
-			 }
-		}
+		
+		
+		
 		
 		
 	
@@ -281,16 +300,187 @@ package saboteur.util
 		
 		private function onBuildMade(value:uint, gameBuilder:GameBuilder, gridEast:int, gridSouth:int):void 
 		{
-			//if ( (gameBuilder.signalFlags & GameBuilder.FLAG_ATTEMPTED) )
-			var key:uint = pathUtil.getGridKey(gridEast, gridSouth);
-			var payload:BuildPayload3D = build3DGrid[key];	
-			if (payload == null) return;
-			collisionGraph.removeChild(payload.collisionNode);
-			//startScene.removeChild(payload.object);
-			payload.clearObjects(MESH_SETS);
-
-			delete build3DGrid[key];
+		
+					var newBuilding:Object3D =genesis;  // should be genesis or blueprint and re-apply material? depends...for now, just use genesis!
+					newBuilding._x = 0;
+					newBuilding._y = 0;
+					visJetty3DByValue(newBuilding, value);
+					
+					localCardinal.transform(localCardinal.east, newBuilding, localCardinal.getDist(localCardinal.east, _gridSquareBound)* gridEast );
+					localCardinal.transform(localCardinal.south, newBuilding, localCardinal.getDist(localCardinal.south, _gridSquareBound) * gridSouth );
+						blueprint._x = newBuilding._x;
+					blueprint._y = newBuilding._y;
+					
+					var collisionBuilding:Object3D = collision;
+					collisionBuilding._x = newBuilding._x;
+					collisionBuilding._y = newBuilding._y;
+				
+					collisionBuilding.transformChanged = true;
+					visJetty3DByValueRecursive(collisionBuilding, value);
+					var renderableClones:Vector.<MeshSetClone> = addRenderable( newBuilding);
+					
+					
+					var node:CollisionBoundNode;
+					collisionGraph.addChild( node = CollisionUtil.getCollisionGraph(collisionBuilding) );
+				//		node.debug = true;
+					//collisionScene.addChild(collisionBuilding);
+					
+					build3DGrid[pathUtil.getGridKey(gridEast, gridSouth)] =  new BuildPayload3D(renderableClones, node);
+					
+		
 			
+		}
+		
+			
+		private function buildCollidablesAt(gridEast:int, gridSouth:int, refer:Object3D, value:uint):void {
+		
+			visJetty3DByValueRecursive(refer, value);
+			
+			localCardinal.transform(localCardinal.east, refer, localCardinal.getDist(localCardinal.east, _gridSquareBound)* gridEast );
+			localCardinal.transform(localCardinal.south, refer, localCardinal.getDist(localCardinal.south, _gridSquareBound) * gridSouth );
+			collisionGraph.addChild( CollisionUtil.getCollisionGraph(refer) );
+		
+			
+		}
+		
+		
+			
+			
+			
+
+		
+		
+		private function setMaterialToCont(mat:Material, cont:Object3D):void 
+		{
+			for (var c:Object3D = cont.childrenList; c != null; c = c.next) {
+				var mesh:Mesh = c as Mesh;
+				if (mesh != null) {
+					mesh.setMaterialToAllSurfaces(mat);
+				}
+			}
+		}
+		
+		public static function setMaterialToCont(mat:Material, cont:Object3D):void 
+		{
+			for (var c:Object3D = cont.childrenList; c != null; c = c.next) {
+				var mesh:Mesh = c as Mesh;
+				if (mesh != null) {
+					mesh.setMaterialToAllSurfaces(mat);
+				}
+			}
+		}
+		
+		public function updateFloorPosition(ge:int, gs:int):int 
+			{
+								gridBuildAt.x = ge;
+				gridBuildAt.y = gs;
+					//_floor.x = ge*gridEastWidth;
+					//_floor.y = gs * gridSouthWidth;
+					var eastD:Number = gridEastWidth * ge;
+					var southD:Number = gridSouthWidth * gs;
+					
+					_floor._x = eastD * localCardinal.east.x;
+					_floor._y = eastD * localCardinal.east.y;
+					_floor._x += southD * localCardinal.south.x;
+					_floor._y += southD * localCardinal.south.y;
+					
+					blueprint._x = _floor._x;
+					blueprint._y = _floor._y;
+					
+					_boundGridBoxConvex3D.updateTransform(blueprint._x, blueprint._y, blueprint.z);
+					blueprint.transformChanged = true;
+					_floor.transformChanged = true;
+					
+					return checkBuildableResult(_value);
+					
+			}
+			
+			public function setFloorPosition(ge:int, gs:int):void {
+				gridBuildAt.x = ge;
+				gridBuildAt.y = gs;
+					//_floor.x = ge*gridEastWidth;
+					//_floor.y = gs * gridSouthWidth;
+					var eastD:Number = gridEastWidth * ge;
+					var southD:Number = gridSouthWidth * gs;
+					
+					_floor._x = eastD * localCardinal.east.x;
+					_floor._y = eastD * localCardinal.east.y;
+					_floor._x += southD * localCardinal.south.x;
+					_floor._y += southD * localCardinal.south.y;
+					
+					blueprint._x = _floor._x;
+					blueprint._y = _floor._y;
+					
+					_boundGridBoxConvex3D.updateTransform(blueprint._x, blueprint._y, blueprint.z);
+					blueprint.transformChanged = true;
+					_floor.transformChanged = true;
+			}
+			
+			private function checkBuildableResult(value:uint):int 
+			{
+		
+				var gridEast:int = gridBuildAt.x;
+				var gridSouth:int = gridBuildAt.y;
+				var result:int = gameBuilder.getBuildableResult(gridEast, gridSouth, value);  
+					if (result === SaboteurPathUtil.RESULT_OCCUPIED) {
+						if (gridEast!=0 || gridSouth != 0) {
+							editorMat.alpha =  OCCUPIED_FLOOR_ALPHA;
+							editorMat.color = COLOR_OCCUPIED;
+							blueprint.visible = showOccupied;
+							if ( _boundGridBoxConvex3D._parent ) collisionGraph._removeHead();
+						}
+						else {  // outta range
+							blueprint.visible = false;
+							_floor.visible = false;
+							if ( _boundGridBoxConvex3D._parent ) collisionGraph._removeHead();
+							result =  SaboteurPathUtil.RESULT_OUT;
+						}
+					//	_floor.visible = showOccupied;
+						//throw new Error(pathUtil.getGridKey(ge, gs));
+					}
+					else if (result === SaboteurPathUtil.RESULT_INVALID) {
+						editorMat.color = COLOR_INVALID;
+						editorMat.alpha = startEditorAlpha;
+						
+					}
+					else if (result === SaboteurPathUtil.RESULT_OUT) {
+							editorMat.color = COLOR_OUTSIDE;
+							editorMat.alpha = startEditorAlpha;
+					}
+					else {  // result valid (doublecheck buildToValidity if required!)
+						
+						editorMat.color = COLOR_VALID;
+						editorMat.alpha = startEditorAlpha;
+						
+					}
+					
+					return result;
+			}
+		
+		private function visJetty3DByValue(obj:Object3D, value:uint):void {
+
+			for (var c:Object3D = obj.childrenList; c != null; c = c.next) {
+			  c.visible = pathUtil.visJetty(value, c.name);
+			}
+		}
+		
+		// TODO: check if is this really required?
+		public function setBlueprintIdVis(val:uint):void 
+		{
+			for (var obj:Object3D = blueprint.childrenList; obj != null; obj = obj.next) {
+				obj.visible = pathUtil.visJetty(val, obj.name);
+			}
+		}
+		
+		private function visJetty3DByValueRecursive(obj:Object3D, value:uint):void {
+			
+			//if (obj is Mesh) (obj as Mesh).setMaterialToAllSurfaces(new FillMaterial(0xFF0000));
+			//obj.visible = pathUtil.visJetty(value, obj.name);
+			for (var c:Object3D = obj.childrenList; c != null; c = c.next) {
+				c.visible = pathUtil.visJetty(value, c.name);
+				//if (c is Mesh) (c as Mesh).setMaterialToAllSurfaces(new FillMaterial(0xFF0000));
+				if (c.childrenList != null) visJetty3DByValueRecursive(c, value);	 
+			}
 		}
 		
 		private function onRemovedPath(gridEast:int, gridSouth:int):void {
