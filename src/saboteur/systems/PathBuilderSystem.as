@@ -19,6 +19,8 @@ package saboteur.systems
 	import flash.geom.Point;
 	import flash.geom.Vector3D;
 	import haxe.Log;
+	import saboteur.util.Builder3D;
+	import saboteur.util.GameBuilder;
 
 	import saboteur.models.IBuildModel;
 	import saboteur.util.CardinalVectors;
@@ -65,10 +67,7 @@ package saboteur.systems
 	
 		
 		
-		public function getCurBuilder():GameBuilder3D {
-			if (nodeList == null) throw new Error("not yet added to engine yet!");
-			return nodeList.head ? (nodeList.head as PathBuildingNode).builder : null;
-		}
+		private var gameBuilder:GameBuilder;
 
 		
 		private var camera:Camera3D;
@@ -112,9 +111,10 @@ package saboteur.systems
 		public var onPositionTileChange:Signal2 = new Signal2();
 		
 		
-		public function PathBuilderSystem(camera:Camera3D=null) 
+		public function PathBuilderSystem(gameBuilder:GameBuilder, camera:Camera3D=null) 
 		{
 			this.camera = camera;
+			this.gameBuilder = gameBuilder;
 			_buildModel = this;
 			//	camPos  = new Vector3D();
 			onEndPointStateChange.current = -2;
@@ -129,9 +129,8 @@ package saboteur.systems
 				return false;
 			}
 			if (_lastResult === SaboteurPathUtil.RESULT_OCCUPIED) {
-				// double check for  3d builders as well?
-				 //pathUtil.getValidResult(head.builder.getBuildDict(), head.builder3.gridBuildAt.x, head.builder3.gridBuildAt.y, head.builder3.value, null ) === SaboteurPathUtil.RESULT_OCCUPIED
-				if (head.builder.attemptRemove()) {   
+				// double check for  3d builders as well...even though practically due to expected game behaviour, the negative exception should not happen.
+				if (   gameBuilder.getBuildableResult(head.builder.floorGridEast, head.builder.floorGridSouth, head.builder.value ) === SaboteurPathUtil.RESULT_OCCUPIED ) {   
 					onDelSucceeded.dispatch(head.builder)
 				}
 				else {
@@ -143,6 +142,7 @@ package saboteur.systems
 		}
 			
 		public function attemptBuild():Boolean {
+			
 			var head:PathBuildingNode = nodeList.head as PathBuildingNode;
 			if (head == null) {
 				//onBuildFailed.dispatch();
@@ -154,9 +154,9 @@ package saboteur.systems
 				return false;
 			}
 			
-			// double check for 3d builders as well?
-			// pathUtil.getValidResult(head.builder.getBuildDict(), head.builder3.gridBuildAt.x, head.builder3.gridBuildAt.y, head.builder3.value, null ) === SaboteurPathUtil.RESULT_VALID
-			if (head.builder.attemptBuild()) { 
+			// double check for  3d builders as well...even though practically due to expected game behaviour, the negative exception should not happen.
+			if (  gameBuilder.getBuildableResult( head.builder.floorGridEast, head.builder.floorGridSouth, head.builder.value ) === SaboteurPathUtil.RESULT_VALID  ) { 
+				gameBuilder.buildAt(head.builder.floorGridEast, head.builder.floorGridSouth, head.builder.value );
 				onBuildSucceeded.dispatch(curBuildId, head.builder);
 				return true;
 			}
@@ -164,6 +164,7 @@ package saboteur.systems
 				onBuildFailed.dispatch();
 				Log.trace("build failed exception. this shoudlnt' conventionally happen due to doublecheck with frame coherancy")
 			}
+			
 			return false;
 		}
 		
@@ -209,7 +210,7 @@ package saboteur.systems
 			if (curBuild == null) return;
 			
 			
-			var builder:GameBuilder3D = curBuild.builder;
+			var builder:Builder3D = curBuild.builder;
 			var cardinal:CardinalVectors = builder.cardinal;
 			
 			var eastVal:Number;
@@ -223,7 +224,7 @@ package saboteur.systems
 				
 				
 				if (fromPos != null) {
-					
+				
 					origin.x = fromPos.x - builder.startScene._x;
 					origin.y = fromPos.y - builder.startScene._y;
 					origin.z = fromPos.z - builder.startScene._z;
@@ -235,29 +236,30 @@ package saboteur.systems
 					southVal = origin.x * cardinal.south.x + origin.y * cardinal.south.y + origin.z * cardinal.south.z ;
 					
 					if (camera == null && fromDirection == null) {
+						
 						// resolve now (consider using floor instead of round, or hiding vis if occupied)
 						ge = Math.round(eastVal * builder.gridEastWidth_i);
-						gs = Math.round(southVal * builder.gridSouthWidth_i);
+						gs = Math.round(southVal * builder.gridSouthWidth_i);	
 						key = pathUtil.getGridKey(ge, gs);
-						endPtResult = builder.pathGraph.endPoints[key] != null ? builder.pathGraph.endPoints[key]  : -1;
 						
-						// TODO: this case won't be correct
+						endPtResult = gameBuilder.pathGraph.endPoints[key] != null ? gameBuilder.pathGraph.endPoints[key]  : -1;
+						
+						// todo minor: this case won't be correct ??
 						if (curBuildId < 0 || endPtResult<= 0) {  // !builder.isOccupiedAt(ge, gs)  // where builder is located (gridEast2/gridSouth2)
 							builder.setBlueprintVis(false);
-							builder.updateFloorPosition(ge, gs, buildToValidity);
+							builder.updateFloorPosition(ge, gs);  // buildToValidity parameter not used internally now
 							onEndPointStateChange.set(endPtResult); 
 							return;
 						}
 						
 						builder.setBlueprintVis(true);
-						builder.updateFloorPosition(ge, gs, buildToValidity);
+						builder.updateFloorPosition(ge, gs);
 						onEndPointStateChange.set(endPtResult); 
 						return;
 					}
 					ge = Math.round(eastVal * builder.gridEastWidth_i);
 					gs = Math.round(southVal * builder.gridSouthWidth_i);
 					if (ge != _lastGe || gs != _lastGs) {
-				
 						onPositionTileChange.dispatch(ge, gs);
 						_lastGe = ge;
 						_lastGs = gs;
@@ -287,13 +289,13 @@ package saboteur.systems
 				else {  // without camera, need at least a fromPos
 					throw new Error("Need at least fromPos or camera to continue!");
 				}
-			
+			//	throw new Error("Break:");
 				//if (!buildToValidity) {
 					key = pathUtil.getGridKey(ge, gs);
-					endPtResult = builder.pathGraph.endPoints[key] != null ? builder.pathGraph.endPoints[key]  : -1;
+					endPtResult = gameBuilder.pathGraph.endPoints[key] != null ? gameBuilder.pathGraph.endPoints[key]  : -1;
 				//}
 				
-				if (curBuildId < 0 || !builder.isOccupiedAt(ge, gs) ) {  //  // where builder is located (gridEast2/gridSouth2)
+				if (curBuildId < 0 || !gameBuilder.isOccupiedAt(ge, gs) ) {  //  // where builder is located (gridEast2/gridSouth2)
 					builder.setBlueprintVis(false);
 					//builder.updateFloorPosition(ge, gs);
 					result = SaboteurPathUtil.RESULT_OUT;
@@ -304,7 +306,7 @@ package saboteur.systems
 					onEndPointStateChange.set(endPtResult); 
 					return;
 				}
-
+				
 				if (fromDirection == null) {
 					if (fromPos == null) {   // calculate ray manually from camera screen center
 						
@@ -393,7 +395,7 @@ package saboteur.systems
 					
 					if (!buildToValidity && endPtResult <= 0 ) {  // exit case for no valid path to build at location
 						builder.setBlueprintVis(true);
-						result = builder.updateFloorPosition(ge, gs, buildToValidity);
+						result = builder.updateFloorPosition(ge, gs);  // buildToValidity parameter not used internally now
 						if (result != SaboteurPathUtil.RESULT_OCCUPIED) {
 							result = SaboteurPathUtil.RESULT_OUT;
 							builder.setBlueprintVis(false);
@@ -408,7 +410,7 @@ package saboteur.systems
 					}
 					
 					if ( xt < yt ?   xt - int(xt) > buildDistRatio.x  :   yt - int(yt) > buildDistRatio.y ) {  
-						result = builder.updateFloorPosition(ge , gs,buildToValidity );
+						result = builder.updateFloorPosition(ge , gs );  // buildToValidity parameter not used internally now
 						if (result === SaboteurPathUtil.RESULT_VALID) {
 							builder.editorMat.color = GameBuilder3D.COLOR_OUTSIDE;
 							result = SaboteurPathUtil.RESULT_OUT;
@@ -422,7 +424,7 @@ package saboteur.systems
 						return;
 					}
 
-					result = builder.updateFloorPosition(ge, gs, buildToValidity);
+					result = builder.updateFloorPosition(ge, gs);  // buildToValidity parameter not used internally now
 					
 					//if (ge === 0 && gs === 0) result = SaboteurPathUtil.RESULT_OUT;  // not allowed to bulid at genesis rule. 
 					if (result != _lastResult) {
@@ -472,12 +474,13 @@ import alternativa.engine3d.core.Camera3D;
 import ash.ClassMap;
 import ash.core.Node;
 import components.Pos;
+import saboteur.util.Builder3D;
 import saboteur.util.CardinalVectors;
 import saboteur.util.GameBuilder3D;
 
 
 class PathBuildingNode extends Node {
-	public var builder:GameBuilder3D;
+	public var builder:Builder3D;
 	//public var playerPos:Pos;
 	
 	public function PathBuildingNode() {
@@ -489,7 +492,7 @@ class PathBuildingNode extends Node {
 	public static function _getComponents():ClassMap {
 		if(_components == null) {
 				_components = new ash.ClassMap();
-				_components.set(GameBuilder3D, "builder");
+				_components.set(Builder3D, "builder");
 				//_components.set(Camera3D, "camera");
 			}
 			return _components;

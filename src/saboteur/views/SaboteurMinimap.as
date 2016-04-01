@@ -23,6 +23,7 @@ package saboteur.views
 	import saboteur.spawners.JettySpawner;
 	import saboteur.util.Builder3D;
 	import saboteur.util.CardinalVectors;
+	import saboteur.util.GameBuilder;
 	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
 	import alternativa.engine3d.alternativa3d;
@@ -172,8 +173,9 @@ package saboteur.views
 			blueprintColorFloor.visible = false;
 		}
 		
-		public function SaboteurMinimap(jettyMaterial:TextureAtlasMaterial, jettyColumns:int, jettyTileSize:Point, pixelToMinimapScale:Number) 
+		public function SaboteurMinimap(jettyMaterial:TextureAtlasMaterial, jettyColumns:int, jettyTileSize:Point, pixelToMinimapScale:Number, builder3D:Builder3D) 
 		{
+			this.builder3D = builder3D;
 			this.jettyMaterial = jettyMaterial;
 			this.pixelToMinimapScale = pixelToMinimapScale;
 			this.jettyTileSize = jettyTileSize;
@@ -190,15 +192,15 @@ package saboteur.views
 		}
 		
 		private var builders:Dictionary = new Dictionary();
-		
-		
+		private var builder3D:Builder3D;  // minimap can only be tied to 1 builder3D? by now, stick to this single-player convention, bleh.
 
-		public function createJettyWithBuilder(value:uint, builder:Builder3D, floorGridEast:int, floorGridSouth:int):void {
-			var buildDict:Dictionary = builders[builder];
-			if (buildDict == null) buildDict = builders[builder] = new Dictionary();
-			var parentCont:Object3D = getSprParentContainerOf(builder.startScene);
+		public function createJettyWithBuilder(value:uint, gameBuilder:GameBuilder, floorGridEast:int, floorGridSouth:int):void {
+
+			var buildDict:Dictionary = builders[gameBuilder];
+			if (buildDict == null) buildDict = builders[gameBuilder] = new Dictionary();
+			var parentCont:Object3D = getSprParentContainerOf(builder3D.startScene);
 			var cloned:SpriteMeshSetClone;
-			buildDict[pathUtil.getGridKey( floorGridEast, floorGridSouth)] = cloned = createJettyAt(floorGridEast, floorGridSouth, pathUtil.getIndexByValue(value), DEFAULT_CARDINAL, builder.startScene.x, builder.startScene.y);
+			buildDict[pathUtil.getGridKey( floorGridEast, floorGridSouth)] = cloned = createJettyAt(floorGridEast, floorGridSouth, pathUtil.getIndexByValue(value), DEFAULT_CARDINAL, builder3D.startScene.x, builder3D.startScene.y);
 			
 			cloned.root._parent = parentCont;
 		}

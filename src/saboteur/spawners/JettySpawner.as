@@ -218,8 +218,9 @@ package saboteur.spawners
 		//	bytes.encode();
 			var diffuser:BitmapTextureResource = new BitmapTextureResource(snapshot);
 			diffuser.upload(context3D);
+			
 			if (minimap == null) {
-				minimap = new SaboteurMinimap( new TextureAtlasMaterial(diffuser), 8, new Point(32, H), cloned.scaleX );
+				minimap = new SaboteurMinimap( new TextureAtlasMaterial(diffuser), 8, new Point(32, H), cloned.scaleX, builder3D );
 				minimap.upload(context3D);
 			}
 			return snapshot;
@@ -238,9 +239,13 @@ package saboteur.spawners
 		}
 		
 		private var firstSpawn:Boolean = true;
+		private var builder3D:Builder3D;  // last built, technically i htink 
 		//public var collisionRoot:CollisionBoundNode = new CollisionBoundNode();
 	
-		public function spawn(engine:Engine, scene:Object3D, gameBuilder:GameBuilder, pos:Pos=null, rayDir:DirectionVectors=null):Entity {
+		public function spawn(engine:Engine, scene:Object3D, gameBuilder:GameBuilder, pos:Pos = null, rayDir:DirectionVectors = null):Entity {
+			
+			if (!firstSpawn) throw new Error("Already spawned. Currently this doesn't support multiple spawnings, and is tied to single player reference only");
+			
 			var root:Object3D = scene.addChild(new Object3D());
 			root._scaleX = root._scaleY = root._scaleZ =  SPAWN_SCALE;
 			
@@ -256,7 +261,7 @@ package saboteur.spawners
 			
 			
 			
-			var builder3D:Builder3D = new Builder3D(gameBuilder, root, genesis, blueprint, collision, injectMaterial, editorMat, _floor);
+			builder3D = new Builder3D(gameBuilder, root, genesis, blueprint, collision, injectMaterial, editorMat, _floor);
 			
 			//collisionRoot.addChild(gameBuilder.collisionGraph);
 			

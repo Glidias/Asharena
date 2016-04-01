@@ -44,6 +44,7 @@ package saboteur.models
 			
 			setCapacity(6);
 			
+			
 		//	assignRandomPaths();
 		}
 		

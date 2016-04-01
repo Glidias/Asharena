@@ -72,8 +72,8 @@ package saboteur.systems
 			}
 			else if (kc === Keyboard.J && !keypoll.isDown(Keyboard.J)) {
 				
-				//inventory.assignRandomPaths();
-				inventory.assignFixedPaths();
+				inventory.assignRandomPaths();
+				//inventory.assignFixedPaths();
 				hud.syncWithInventory(inventory);
 			}
 			

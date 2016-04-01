@@ -23,6 +23,7 @@ package saboteur.util
 		public const onRemoved:Signal2 = new Signal2();
 		
 		
+		
 		public function GameBuilder() 
 		{
 			buildDict = new Dictionary();
@@ -31,6 +32,10 @@ package saboteur.util
 			
 			buildDictOutside = new Dictionary();
 	
+		}
+		
+		public function getValidResult(east:int, south:int, value:uint):int {
+			return pathUtil.getValidResult(buildDict, east, south, value, pathGraph);
 		}
 		
 		public function buildStartNodeAt(gridEast:int, gridSouth:int, value:uint):void {

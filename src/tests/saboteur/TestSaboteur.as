@@ -190,7 +190,7 @@ package tests.saboteur
 			var tileX:Number = builder3D._gridSquareBound.maxX *2;
 			var tileY:Number = builder3D._gridSquareBound.maxY *2;
 		
-		borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0x00FF00, 1), 38, null, 1|MeshSetClonesContainerMod.FLAG_PREVENT_Z_FIGHTING);
+		borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0x00FF00, 1), 38, null, 0);
 	
 		borderMeshset.x = -tileX * .5;
 		borderMeshset.y = tileY * .5;
@@ -199,14 +199,14 @@ package tests.saboteur
 		borderMeshset.setThicknesses(HORIZONTAL_THICKNESS/JettySpawner.SPAWN_SCALE, VERTICAL_THICKNESS/JettySpawner.SPAWN_SCALE);
 		SpawnerBundle.uploadResources(borderMeshset.getResources());
 		
-			borderMeshset2 = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0xFF0000, 1), 38, null, 1|MeshSetClonesContainerMod.FLAG_PREVENT_Z_FIGHTING);
+			borderMeshset2 = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0xFF0000, 1), 38, null, 0);
 	
 		borderMeshset2.x = -tileX * .5;
 		borderMeshset2.y = tileY * .5;
 		borderMeshset2.z = builder3D._gridSquareBound.maxZ - GameBuilder3D.Z_BOUND_PADDING - 83/JettySpawner.SPAWN_SCALE;// (builder3D._gridSquareBound.maxZ + builder3D._gridSquareBound.minZ) * .5;// builder3D._gridSquareBound.maxZ * .5;
 		
 		borderMeshset2.setThicknesses(HORIZONTAL_THICKNESS/JettySpawner.SPAWN_SCALE, VERTICAL_THICKNESS/JettySpawner.SPAWN_SCALE);
-		SpawnerBundle.uploadResources(borderMeshset2.getResources());  // TODO: re-use geometry from first borderMeshset
+		SpawnerBundle.uploadResources(borderMeshset2.getResources());  // todo minor: re-use geometry from first borderMeshset
 		
 			// _template3D.scene.addChild(borderMeshset);
 		
@@ -237,7 +237,7 @@ package tests.saboteur
 				contPlaneTest.visible = false;
 				 contPlaneGraph = CollisionUtil.getCollisionGraph(contPlaneTest) ;
 				//gameBuilder.collisionGraph.addChild(contPlaneGraph);
-				var across:int =  1 + MOVEMENT_ALLOWANCE * 2 + 2;  // todo: extend beyond got bug
+				var across:int =  1 + MOVEMENT_ALLOWANCE * 2 + 2;  
 
 				if ( (across & 1)) across++;
 				traversibleContourOffset = across * .5;
@@ -790,7 +790,7 @@ package tests.saboteur
 			Saboteur2Deck;
 
 			
-			pathBuilder = new PathBuilderSystem(_template3D.camera);
+			pathBuilder = new PathBuilderSystem(gameBuilder, _template3D.camera);
 			curBuildAttempter = pathBuilder;
 			curBuildModel = pathBuilder;
 			
@@ -839,6 +839,14 @@ package tests.saboteur
 			
 			spriteSet = hudAssets.txt_chat.spriteSet;
 			
+			
+			
+				
+			
+			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, gameBuilder, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
+
+			builder3D = ent.get(Builder3D) as Builder3D;
+			
 				var bitmapData:BitmapData = jettySpawner.createBlueprintSheet(_template3D.camera, _template3D.stage3D, hud);
 			//	addChild( new Bitmap(bitmapData));
 		
@@ -847,15 +855,8 @@ package tests.saboteur
 				jettySpawner.minimap.addToContainer( hudAssets.radarGridHolder);
 				jettySpawner.minimap.setCuller(hudAssets.circleRadarCuller);
 			
-				
-			
-			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, gameBuilder, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
-
-			builder3D = ent.get(Builder3D) as Builder3D;
-			
-			// TODO: bind minimap with GameBuilder's build notificiations and Builder3D integration
-			//jettySpawner.minimap.createJettyWithBuilder(63, builder3D, 0, 0 );
-			//gameBuilder.onBuildMade.add(jettySpawner.minimap.createJettyWithBuilder);
+		
+			gameBuilder.onBuildMade.add(jettySpawner.minimap.createJettyWithBuilder);
 			
 			pathBuilder.onBuildSucceeded.add(onBuildUpdateBorder);
 			pathBuilder.onDelSucceeded.add(jettySpawner.minimap.removeJettyWithBuilder);

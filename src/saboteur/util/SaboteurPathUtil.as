@@ -32,8 +32,9 @@ package saboteur.util
         public static const ARC_SOUTH_WEST:uint = (1 << 4);
         public static const ARC_SOUTH_EAST:uint = (1 << 5);
         
-        public static const ARC_MASK:uint =  (ARC_VERTICAL | ARC_HORIZONTAL | ARC_NORTH_EAST | ARC_NORTH_WEST | ARC_SOUTH_EAST | ARC_SOUTH_WEST);  // originally ~15;
-        static public const ARC_SHIFT:uint = 4;
+		 static public const ARC_SHIFT:uint = 4;
+        public static const ARC_MASK:uint =  (ARC_VERTICAL | ARC_HORIZONTAL | ARC_NORTH_EAST | ARC_NORTH_WEST | ARC_SOUTH_WEST | ARC_SOUTH_EAST) << ARC_SHIFT;  // originally ~15;
+       
 		
 		// Saboteur 2 flags
 		public static const SABO2_DOOR_GREEN:uint = (1 << 0);
@@ -41,9 +42,10 @@ package saboteur.util
         public static const SABO2_CRYSTAL:uint = (1 << 2);
         public static const SABO2_TUNNEL:uint = (1 << 3); // assumes tunnel goes horizontal always as per Saboteur convention
         public static const SABO2_LADDER:uint = (1 << 4);
-		static public const SABO2_MASK:uint =  (SABO2_DOOR_GREEN | SABO2_DOOR_BLUE | SABO2_CRYSTAL | SABO2_TUNNEL | SABO2_LADDER );
+		
 		static public const SABO2_DOOR_MASK:uint = (SABO2_DOOR_GREEN | SABO2_DOOR_BLUE);
 	    static public const SABO2_SHIFT:uint = ARC_SHIFT + 6;
+		static public const SABO2_MASK:uint =  (SABO2_DOOR_GREEN | SABO2_DOOR_BLUE | SABO2_CRYSTAL | SABO2_TUNNEL | SABO2_LADDER ) << SABO2_SHIFT;
 		 
     
         // predicted: 2^5 (standard 90deg east,north,west,south,center mask) = 32
@@ -300,7 +302,7 @@ package saboteur.util
         
         
         public function visJetty(value:uint, groupName:String):Boolean {
-
+			
         
             var arcValue:uint = (value & ARC_MASK) >> ARC_SHIFT;
             //if (arcValue != arcValueList[index]) throw new Error("MISMATCH!:"+arcValue + ", "+arcValueList[index]);
@@ -333,7 +335,8 @@ package saboteur.util
                     return  !centerNarrow && (arcValue & ARC_VERTICAL)!=0 || bottom90Deg;   // has cut thru or T junction from bottom
             
                 case "corner0_turn":  
-                    return (arcValue & ARC_NORTH_EAST)!=0  &&  !top90Deg;  // and doesn't  have T junction from top
+                    return (arcValue & ARC_NORTH_EAST) != 0  &&  !top90Deg;  // and doesn't  have T junction from top
+					
                 case "corner1_turn":
                     return (arcValue & ARC_NORTH_WEST)!=0  &&  !top90Deg;
                 case "corner2_turn":

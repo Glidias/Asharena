@@ -14,7 +14,7 @@ package saboteur.rules
 	public class AloneInTheMines extends BaseRules
 	{
 		private var _horizDir:int;
-		public var reverseDirection:Boolean;
+
 		public var middleCardFuther:Boolean;
 		
 		public var gameEnded:Boolean;
@@ -39,7 +39,7 @@ package saboteur.rules
 			super();
 			this.middleCardFuther = middleCardFuther;
 			this.MOVEMENT_ALLOWANCE = 3;
-			this.reverseDirection = reverseDirection;
+			_horizDir = reverseDirection ? -1 : 0;
 			gameEnded = false;
 		}
 		
@@ -58,7 +58,7 @@ package saboteur.rules
 			builder.buildAt(_horizDir * 8, -2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
 			builder.buildAt(_horizDir * (middleCardFuther ? 8+1 : 8), 0, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
 			builder.buildAt(_horizDir * 8, 2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
-			_horizDir = reverseDirection ? -1 : 1;
+
 		
 			// setup deck and draw out 3 cards for player
 			deck = new SaboteurDeck();

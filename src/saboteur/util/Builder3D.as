@@ -33,7 +33,7 @@ package saboteur.util
 	use namespace alternativa3d;
 	
 	/**
-	 * Refactored GameBuilder3D with better sepeartion of concerns. Alternativa3D specific class.
+	 * Refactored GameBuilder3D with better sepeartion of concerns. Alternativa3D specific class. This is tailored mainly only for single-player case atm.
 	 * @author Glenn Ko
 	 */
 	public class Builder3D 
@@ -301,20 +301,26 @@ package saboteur.util
 		
 		private function onBuildMade(value:uint, gameBuilder:GameBuilder, gridEast:int, gridSouth:int):void 
 		{
+			
+
 		
 					var newBuilding:Object3D =genesis;  // should be genesis or blueprint and re-apply material? depends...for now, just use genesis!
 					newBuilding._x = 0;
 					newBuilding._y = 0;
 					visJetty3DByValue(newBuilding, value);
 					
-					localCardinal.transform(localCardinal.east, newBuilding, localCardinal.getDist(localCardinal.east, _gridSquareBound)* gridEast );
+					localCardinal.transform(localCardinal.east, newBuilding, localCardinal.getDist(localCardinal.east, _gridSquareBound) * gridEast );
+					
 					localCardinal.transform(localCardinal.south, newBuilding, localCardinal.getDist(localCardinal.south, _gridSquareBound) * gridSouth );
 						blueprint._x = newBuilding._x;
 					blueprint._y = newBuilding._y;
 					
+					
 					var collisionBuilding:Object3D = collision;
 					collisionBuilding._x = newBuilding._x;
 					collisionBuilding._y = newBuilding._y;
+					
+				
 				
 					collisionBuilding.transformChanged = true;
 					visJetty3DByValueRecursive(collisionBuilding, value);
