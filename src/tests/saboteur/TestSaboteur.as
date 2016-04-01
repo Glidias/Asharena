@@ -350,7 +350,7 @@ package tests.saboteur
 			while (--i > -1) {
 				var list:Vector.<int> = hxPointToVector(arrOfPoints[i]);
 			
-				drawOutline( borderMeshset, list, list.length, tileX, tileY, false);
+				drawOutline( borderMeshset, list, list.length, tileX, tileY, true);
 			}
 		}
 		
@@ -397,8 +397,8 @@ package tests.saboteur
 			
 			}
 			
-			
-			
+				vec.pop();
+			vec.pop();
 			return vec;
 			
 			
