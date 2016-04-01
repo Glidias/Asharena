@@ -188,7 +188,7 @@ package tests.saboteur
 			var tileX:Number = builder3D._gridSquareBound.maxX *2;
 			var tileY:Number = builder3D._gridSquareBound.maxY *2;
 		
-		borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0x00FF00, 1), 38, null, 0);
+		borderMeshset = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0x00FF00, 1), 38, null, 1|MeshSetClonesContainerMod.FLAG_PREVENT_Z_FIGHTING);
 	
 		borderMeshset.x = -tileX * .5;
 		borderMeshset.y = tileY * .5;
@@ -197,7 +197,7 @@ package tests.saboteur
 		borderMeshset.setThicknesses(HORIZONTAL_THICKNESS/JettySpawner.SPAWN_SCALE, VERTICAL_THICKNESS/JettySpawner.SPAWN_SCALE);
 		SpawnerBundle.uploadResources(borderMeshset.getResources());
 		
-			borderMeshset2 = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0xFF0000, 1), 38, null, 0);
+			borderMeshset2 = new MeshSetClonesContainerMod(borderItem, new FillMaterial(0xFF0000, 1), 38, null, 1|MeshSetClonesContainerMod.FLAG_PREVENT_Z_FIGHTING);
 	
 		borderMeshset2.x = -tileX * .5;
 		borderMeshset2.y = tileY * .5;
@@ -350,7 +350,7 @@ package tests.saboteur
 			while (--i > -1) {
 				var list:Vector.<int> = hxPointToVector(arrOfPoints[i]);
 			
-				drawOutline( borderMeshset, list, list.length, tileX, tileY, true);
+				drawOutline( borderMeshset, list, list.length, tileX, tileY, false);
 			}
 		}
 		
