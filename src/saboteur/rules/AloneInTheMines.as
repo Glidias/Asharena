@@ -21,18 +21,20 @@ package saboteur.rules
 		public var onGameEnded:Signal0;
 		public var onHandChange:Signal1;
 		
+		public var deck:SaboteurDeck;  // the main deck of usable cards
 		
-		public var deck:SaboteurDeck;
-		
+		// solo player's position
 		public var playerEast:int;
 		public var playerSouth:int;
 		public var lastPlayerEast:int;
 		public var lastPlayerSouth:int;
-		//public var player:SaboteurPlayer;
 		
-		public var playerCards:Array;
+		//public var player:SaboteurPlayer;  // not needed atm since this is singleplayer rules
+		public var playerCards:Array;  // cards in player's hands
+		public var maxHandCardsAllowed:int;  // max amount of cards allowed in player's hands
 		
-		public var MOVEMENT_ALLOWANCE:int;
+		public var MOVEMENT_ALLOWANCE:int;  // movement allowance
+		public var pathCardsOnly:Boolean = false;
 		
 		public function AloneInTheMines(reverseDirection:Boolean=false, middleCardFuther:Boolean=false) 
 		{
@@ -62,7 +64,7 @@ package saboteur.rules
 		
 			// setup deck and draw out 3 cards for player
 			deck = new SaboteurDeck();
-			deck.setupPlayableDeck(true, true, true);
+			deck.setupPlayableDeck(true, !pathCardsOnly, true);
 			playerCards = [];
 		}
 		
@@ -165,7 +167,7 @@ package saboteur.rules
 		
 		public function cardIsPlayableAt(index:int):Boolean {
 			if (playerCards[index] == null) return false;
-			return playerCards[index] is SaboteurActionCard ? actionCardIsPlayable(playerCards[index]) : pathCardIsPlayable(playerCards[index]);
+			return SaboteurDeck.cardIsAction( playerCards[index] )  ? actionCardIsPlayable(playerCards[index]) : pathCardIsPlayable(playerCards[index]);
 		}
 		
 		
@@ -175,8 +177,21 @@ package saboteur.rules
 				
 		private function _refillHand():void {
 			// TODO:
+
+			var i:int = playerCards.length - maxHandCardsAllowed;
 			
-			//onHandChange.dispatch(playerCards);
+			while (--i > -1) {
+				if (playerCards.length == 0) break;
+				var card:* = playerCards.pop();
+				if ( SaboteurDeck.cardIsAction(card) )  {
+				//	if (playerCards.length
+				}
+				else {
+					playerCards.push(card);
+				}
+			}
+			
+			onHandChange.dispatch(playerCards);
 		}
 		
 	}

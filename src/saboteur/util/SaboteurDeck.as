@@ -127,6 +127,10 @@ package saboteur.util
 
 		}
 		
+		public static function cardIsAction(card:*):Boolean {
+			return card is SaboteurActionCard;
+		}
+		
 		public function setupPlayableDeck(includePathCards:Boolean = true, includeActionCards:Boolean = true, doShuffle:Boolean=true):SaboteurDeck {
 			playableCards = [];
 			if (includePathCards) playableCards = playableCards.concat(pathCards);

@@ -75,8 +75,6 @@ package tests.saboteur
 	import saboteur.util.Builder3D;
 	import saboteur.util.GameBuilder;
 	import saboteur.util.GameBuilder3D;
-	import saboteur.util.Saboteur2Deck;
-	import saboteur.util.SaboteurDeck;
 	import saboteur.util.SaboteurPathUtil;
 	import spawners.arena.GladiatorBundle;
 	import systems.collisions.EllipsoidCollider;
@@ -117,7 +115,7 @@ package tests.saboteur
 		private var spectatorPerson:SimpleFlyController;
 		
 		private var borderMeshset:MeshSetClonesContainerMod;
-		private var deck:SaboteurDeck;
+
 		
 		[Embed(source="../../../resources/hud/linesegment2.a3d", mimeType="application/octet-stream")]
 		private var LINE_SEGMENT:Class;
@@ -785,9 +783,8 @@ package tests.saboteur
 			gladiatorBundle.arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage, 0, 0, START_PLAYER_Z + 33).add( game.keyPoll );
 			
 			rules = new AloneInTheMines(true, false);
+			rules.pathCardsOnly = true;
 			gameBuilder = rules.getBuilder();
-			deck = new SaboteurDeck().setupPlayableDeck();
-			Saboteur2Deck;
 
 			
 			pathBuilder = new PathBuilderSystem(gameBuilder, _template3D.camera);
