@@ -1,6 +1,7 @@
 package saboteur.util 
 {
 	import ash.signals.Signal2;
+	import de.polygonal.ds.GraphNode;
 	import flash.utils.Dictionary;
 	import ash.signals.SignalAny;
 	/**
@@ -88,6 +89,76 @@ package saboteur.util
 			return false;
 		}
 		
+			private var _playableCount:int = 0;
+		private var _playableCollector:Array;
+		private var _playCheckValue:uint;
+		private static const ALLOW_FLIP:uint = (1 << 0);  // 1
+		private static const EARLY_OUT:uint = (1 << 1);
+
+		
+		public function getPlayablePathCardLocationsByGraph(locations:Array, value:uint, flags:uint = 1, rangelimit:int=2147483647):int 
+		{
+		
+			_playableCount = 0;
+			_playableCollector = locations;
+			_playCheckValue = value;
+			
+			pathGraph.graph.clearMarks();
+			
+			var len:int = pathGraph.startNodes.length;
+			for (var i:int = 0; i < len; i++) {
+				var startNode:GraphNode = pathGraph.startNodes[i];
+				pathGraph.graph.DLBFS(rangelimit, false, startNode, checkForPlayableEdges, flags);
+			}
+			return _playableCount;
+		}
+		
+		
+		
+		private function checkForPlayableEdges(node:GraphNode, preflight:Boolean, data:Object = null):Boolean {
+			var valueArr:Array = node.val as Array;
+			var east:int = valueArr[0];
+			var south:int = valueArr[1];
+			var foundOne:Boolean = false;
+			var endPoints:Dictionary = pathGraph.endPoints;
+			var value:uint = _playCheckValue;
+		
+		//	var toNorth:uint = pathUtil.getGridKey(east, south - 1);
+		//	var toSouth:uint = pathUtil.getGridKey(east, south + 1);
+		//	var toWest:uint = pathUtil.getGridKey(east-1, south);
+			//var toEast:uint = pathUtil.getGridKey(east + 1, south);
+			
+			var key:uint =  pathUtil.getGridKey(east, south);
+			var endPointAccum:uint = endPoints[key] != null ? endPoints[key] : 0;
+			var flags:uint = data != null ? uint(data) : 0;
+				var earlyOut:Boolean = (flags & EARLY_OUT) !=0;
+				
+			if ( (endPointAccum & SaboteurPathUtil.NORTH)!=0 ) {
+				if ( pathUtil.getValidResult(buildDict, east, south - 1, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+					foundOne = true;
+				}
+			}
+			if ( (endPointAccum & SaboteurPathUtil.SOUTH)!=0 ) {
+				if ( pathUtil.getValidResult(buildDict, east, south + 1, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+					foundOne = true;
+				}
+			}
+			if ( (endPointAccum & SaboteurPathUtil.EAST)!=0 ) {
+				if ( pathUtil.getValidResult(buildDict, east+1, south, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+					foundOne = true;
+				}
+			}
+			if ( (endPointAccum & SaboteurPathUtil.WEST)!=0 ) {
+				if ( pathUtil.getValidResult(buildDict, east - 1, south , value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+					foundOne = true;
+				}
+			}
+			
+			
+			return earlyOut && foundOne ? false : true;
+		}
+		
+		
 		public function removeAt(gridEast:int, gridSouth:int):Boolean { 
 			var key:uint = pathUtil.getGridKey(gridEast, gridSouth);
 
@@ -106,7 +177,8 @@ package saboteur.util
 		public function isOccupiedAt(ge:int, gs:int):Boolean {
 			return buildDict[pathUtil.getGridKey(ge, gs)] != null;
 		}
-	
+		
+		
 	}
 
 }

@@ -1,6 +1,7 @@
 package saboteur.util 
 {
 	import de.polygonal.ds.Graph;
+	import de.polygonal.ds.GraphArc;
 	import de.polygonal.ds.GraphNode;
 	import flash.utils.Dictionary;
 	/**
@@ -31,7 +32,6 @@ package saboteur.util
 			endPoints = new Dictionary();
 			graphGrid = new Dictionary();
 		}
-		
 
 		
 		private function addMutualArc(a:GraphNode, b:GraphNode):void {

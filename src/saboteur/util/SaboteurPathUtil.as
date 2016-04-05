@@ -13,6 +13,11 @@ package saboteur.util
         public static const NORTH:uint = (1 << 1);
         public static const WEST:uint = (1 << 2);
         public static const SOUTH:uint = (1 << 3);
+		
+		public static const EAST_FLIP:uint = (1 << 4);  
+        public static const NORTH_FLIP:uint = (1 << 5);
+        public static const WEST_FLIP:uint = (1 << 6);
+        public static const SOUTH_FLIP:uint = (1 << 7);
         
         public static const NORTHEAST:uint = (1 << 0);
         public static const NORTHWEST:uint = (1 << 1);
@@ -235,6 +240,9 @@ package saboteur.util
 			
 			collectNumCombinations(); 
 		}
+		
+		
+		
         
         private function collectNumCombinations():void 
         {

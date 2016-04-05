@@ -42,7 +42,7 @@ package saboteur.rules
 		
 		public function getPlayablePathCardLocations(value:uint):Array  {
 			var locations:Array = [];
-			// TODO:
+			gameBuilder.getPlayablePathCardLocations(locations, value);
 			return locations;
 		}
 		
