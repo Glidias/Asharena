@@ -2,11 +2,15 @@ package saboteur.rules
 {
 	import ash.signals.Signal0;
 	import ash.signals.Signal1;
+	import ash.signals.Signal2;
+	import de.polygonal.ds.GraphNode;
+	import haxe.Log;
 	import saboteur.util.GameBuilder;
 	import saboteur.util.SaboteurActionCard;
 	import saboteur.util.SaboteurDeck;
 	import saboteur.util.SaboteurPathUtil;
 	import saboteur.util.SaboteurPlayer;
+	import util.geom.Vec3;
 	/**
 	 * A solitaire variant of Saboteur
 	 * @author Glenn Ko
@@ -20,14 +24,14 @@ package saboteur.rules
 		public var gameEnded:Boolean;
 		public var onGameEnded:Signal0;
 		public var onHandChange:Signal1;
+		public var onPositionChange:Signal2 = new Signal2();
 		
 		public var deck:SaboteurDeck;  // the main deck of usable cards
 		
-		// solo player's position
+		// current solo player's position
 		public var playerEast:int;
 		public var playerSouth:int;
-		public var lastPlayerEast:int;
-		public var lastPlayerSouth:int;
+		private var _lastES:Vec3; // last pivot position
 		
 		//public var player:SaboteurPlayer;  // not needed atm since this is singleplayer rules
 		public var playerCards:Array;  // cards in player's hands
@@ -36,12 +40,16 @@ package saboteur.rules
 		public var MOVEMENT_ALLOWANCE:int;  // movement allowance
 		public var pathCardsOnly:Boolean = false;
 		
+		
+	
+		
 		public function AloneInTheMines(reverseDirection:Boolean=false, middleCardFuther:Boolean=false) 
 		{
 			super();
 			this.middleCardFuther = middleCardFuther;
 			this.MOVEMENT_ALLOWANCE = 3;
 			_horizDir = reverseDirection ? -1 : 0;
+			_lastES = new Vec3();
 			gameEnded = false;
 		}
 		
@@ -52,14 +60,14 @@ package saboteur.rules
 			//lonePlayer = SaboteurPlayer.create(SaboteurPlayer.GREEN_DWARF);
 			
 			// setup  map and starting player location
-			playerEast = lastPlayerEast = 0;
-			playerSouth = lastPlayerSouth= 0;
-			builder.buildStartNodeAt(0, 0, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ) ); 
+			playerEast  = 0;
+			playerSouth = 0;
+			gameBuilder.buildStartNodeAt(0, 0, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ) ); 
 	
 			// todo: refer to saboteur deck for proper turning layout
-			builder.buildAt(_horizDir * 8, -2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
-			builder.buildAt(_horizDir * (middleCardFuther ? 8+1 : 8), 0, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
-			builder.buildAt(_horizDir * 8, 2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
+			gameBuilder.buildAt(_horizDir * 8, -2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
+			gameBuilder.buildAt(_horizDir * (middleCardFuther ? 8+1 : 8), 0, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
+			gameBuilder.buildAt(_horizDir * 8, 2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
 
 		
 			// setup deck and draw out 3 cards for player
@@ -79,29 +87,59 @@ package saboteur.rules
 		
 		
 		public function setPlayerPosition(east:int, south:int):void {
+		
+			_validatePlayerPos(east, south);
 			playerEast = east;
 			playerSouth = south;
-			_validatePlayerPos();
+		//	Log.trace(east + ", " + south);
 		}
 		
 		
-		private function _validatePlayerPos():void 
+		private function _validatePlayerPos(ge:int, gs:int):void 
 		{
-			// TODO: if outta range...
-			// _updateLastPlayerPos()
+
+			var rootNode:GraphNode = gameBuilder.pathGraph.getNode(ge, gs);
+			gameBuilder.pathGraph.graph.clearMarks();
+			
+			//hudAssets.txt_chatChannel.appendMessage("moved:"+Math.random());
+			
+			if (rootNode != null) {
+				var startNode:GraphNode = gameBuilder.pathGraph.getNode(_lastES.x, _lastES.y);
+				if (startNode != null) {
+						_foundWithinRange = false;
+					gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, rootNode, checkIfNodeIsWithinRange, startNode); 
+					if (!_foundWithinRange) {
+						_lastES.x = playerEast;
+						_lastES.y = playerSouth;
+						onPositionChange.dispatch(_lastES.x, _lastES.y);
+					}
+				}
+			}
+		}
+		
+		private var _foundWithinRange:Boolean;
+		private function checkIfNodeIsWithinRange(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
+		{
+			if (node === data) {
+				_foundWithinRange = true;
+				return false;
+			}
+			return true;
 		}
 		
 		private function _updateLastPlayerPos():void 
 		{
-			lastPlayerEast = playerEast;
-			lastPlayerSouth = playerSouth;
+			_lastES.x = playerEast;
+			_lastES.y = playerSouth;
+			
+			onPositionChange.dispatch(_lastES.x, _lastES.y);
 		}
 
 		override public function playPathCard(east:int, south:int, value:uint, playerIndex:int = 0):Boolean {
 			var result:Boolean = super.playPathCard(east, south, value, playerIndex);
 			
 			// TODO: check range and see if can reach target destination given amount of cards in deck
-			//builder.pathGraph.getNode(east, south);
+			//gameBuilder.pathGraph.getNode(east, south);
 			
 			if (result) {
 				// check if reach into openable treasure spot
@@ -170,6 +208,11 @@ package saboteur.rules
 			return SaboteurDeck.cardIsAction( playerCards[index] )  ? actionCardIsPlayable(playerCards[index]) : pathCardIsPlayable(playerCards[index]);
 		}
 		
+		public function forceUpdateToCurrentPos():void 
+		{
+			_updateLastPlayerPos();
+		}
+		
 		
 		
 		
@@ -192,6 +235,11 @@ package saboteur.rules
 			}
 			
 			onHandChange.dispatch(playerCards);
+		}
+		
+		public function get lastES():Vec3 
+		{
+			return _lastES;
 		}
 		
 	}

@@ -36,7 +36,7 @@ package saboteur.spawners
 	import saboteur.util.Builder3D;
 	import saboteur.util.CardinalVectors;
 	import saboteur.util.GameBuilder;
-	import saboteur.util.GameBuilder3D;
+	import saboteur.util.Builder3D;
 	import saboteur.util.SaboteurPathUtil;
 	import saboteur.views.SaboteurMinimap;
 	import util.SpawnerBundle;
@@ -76,7 +76,7 @@ package saboteur.spawners
 		override protected function init():void 
 		{
 			 var plane:Plane = new Plane(1, 1, 1, 1, false, false, editorMat, editorMat);
-			 editorMat.color = GameBuilder3D.COLOR_OCCUPIED;
+			 editorMat.color = Builder3D.COLOR_OCCUPIED;
 		
 			_floor = plane;	
 		 _floor.z += 8;
@@ -144,7 +144,7 @@ package saboteur.spawners
 			// testing
 			var cloned:Object3D = genesis.clone();
 			//cont.addChild(cloned);
-			GameBuilder3D.setMaterialToCont(new TextureMaterial(diffuse), cloned);
+			Builder3D.setMaterialToCont(new TextureMaterial(diffuse), cloned);
 	
 			
 			cloned.scaleX =  32 / w;
@@ -174,7 +174,7 @@ package saboteur.spawners
 				child.x = xOffset + x * w;
 				child.y = yOffset + y * w;
 			
-				GameBuilder3D.visJetty3DByValue(pathUtil, child, value);
+				Builder3D.visJetty3DByValue(pathUtil, child, value);
 				x++;
 				if (x >= rowLimit) {
 					x = 0;

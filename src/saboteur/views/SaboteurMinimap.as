@@ -24,7 +24,6 @@ package saboteur.views
 	import saboteur.util.Builder3D;
 	import saboteur.util.CardinalVectors;
 	import saboteur.util.GameBuilder;
-	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
 	import alternativa.engine3d.alternativa3d;
 	use namespace alternativa3d;
@@ -226,7 +225,7 @@ package saboteur.views
 			return obj;
 		}
 		
-		public function removeJettyWithBuilder(builder:GameBuilder3D):void {
+		public function removeJettyWithBuilder(builder:Builder3D):void {
 			var key:uint = pathUtil.getGridKey(builder.floorGridEast, builder.floorGridSouth);	
 			var buildDict:Dictionary = builders[builder];
 			jettySet.removeClone(buildDict[key]);

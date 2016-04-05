@@ -62,6 +62,7 @@ package tests.saboteur
 	import flash.ui.Keyboard;
 	import hxGeomAlgo.IsoContours;
 	import input.KeyPoll;
+	import util.geom.Vec3;
 
 	import saboteur.models.IBuildModel;
 	import saboteur.models.PlayerInventory;
@@ -74,7 +75,6 @@ package tests.saboteur
 	import saboteur.systems.PlayerInventoryControls;
 	import saboteur.util.Builder3D;
 	import saboteur.util.GameBuilder;
-	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
 	import spawners.arena.GladiatorBundle;
 	import systems.collisions.EllipsoidCollider;
@@ -167,7 +167,7 @@ package tests.saboteur
 		
 			//debugMeshContainer.x = -tileX * .5;
 			//debugMeshContainer.y = tileY * .5;
-			debugMeshContainer.z = builder3D._gridSquareBound.maxZ - GameBuilder3D.Z_BOUND_PADDING - 83/JettySpawner.SPAWN_SCALE;// (builder3D._gridSquareBound.maxZ + builder3D._gridSquareBound.minZ) * .5;// builder3D._gridSquareBound.maxZ * .5;
+			debugMeshContainer.z = builder3D._gridSquareBound.maxZ - Builder3D.Z_BOUND_PADDING - 83/JettySpawner.SPAWN_SCALE;// (builder3D._gridSquareBound.maxZ + builder3D._gridSquareBound.minZ) * .5;// builder3D._gridSquareBound.maxZ * .5;
 			builder3D.startScene.addChild(debugMeshContainer);
 			
 			
@@ -192,7 +192,7 @@ package tests.saboteur
 	
 		borderMeshset.x = -tileX * .5;
 		borderMeshset.y = tileY * .5;
-		borderMeshset.z = builder3D._gridSquareBound.maxZ - GameBuilder3D.Z_BOUND_PADDING - 83/JettySpawner.SPAWN_SCALE;// (builder3D._gridSquareBound.maxZ + builder3D._gridSquareBound.minZ) * .5;// builder3D._gridSquareBound.maxZ * .5;
+		borderMeshset.z = builder3D._gridSquareBound.maxZ - Builder3D.Z_BOUND_PADDING - 83/JettySpawner.SPAWN_SCALE;// (builder3D._gridSquareBound.maxZ + builder3D._gridSquareBound.minZ) * .5;// builder3D._gridSquareBound.maxZ * .5;
 		
 		borderMeshset.setThicknesses(HORIZONTAL_THICKNESS/JettySpawner.SPAWN_SCALE, VERTICAL_THICKNESS/JettySpawner.SPAWN_SCALE);
 		SpawnerBundle.uploadResources(borderMeshset.getResources());
@@ -201,7 +201,7 @@ package tests.saboteur
 	
 		borderMeshset2.x = -tileX * .5;
 		borderMeshset2.y = tileY * .5;
-		borderMeshset2.z = builder3D._gridSquareBound.maxZ - GameBuilder3D.Z_BOUND_PADDING - 83/JettySpawner.SPAWN_SCALE;// (builder3D._gridSquareBound.maxZ + builder3D._gridSquareBound.minZ) * .5;// builder3D._gridSquareBound.maxZ * .5;
+		borderMeshset2.z = builder3D._gridSquareBound.maxZ - Builder3D.Z_BOUND_PADDING - 83/JettySpawner.SPAWN_SCALE;// (builder3D._gridSquareBound.maxZ + builder3D._gridSquareBound.minZ) * .5;// builder3D._gridSquareBound.maxZ * .5;
 		
 		borderMeshset2.setThicknesses(HORIZONTAL_THICKNESS/JettySpawner.SPAWN_SCALE, VERTICAL_THICKNESS/JettySpawner.SPAWN_SCALE);
 		SpawnerBundle.uploadResources(borderMeshset2.getResources());  // todo minor: re-use geometry from first borderMeshset
@@ -254,12 +254,9 @@ package tests.saboteur
 		
 		private var _currentOutlinerPos:Vector3D = new Vector3D();
 		
-		private function moveOutliners2(ge:int, gs:int):void {
-			var startNode:GraphNode = gameBuilder.pathGraph.getNode(ge, gs);
-			gameBuilder.pathGraph.graph.clearMarks();
-			 gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, startNode, emptyProcess); 
-		}
+
 		private function moveOutliners(ge:int, gs:int):void {
+			//hudAssets.txt_chatChannel.appendMessage("loc:" + ge + ", " + gs);
 			var node:GraphNode;
 			var nodeItr:GraphNodeIterator;
 			var arrOfPoints:Array;
@@ -784,7 +781,9 @@ package tests.saboteur
 			
 			rules = new AloneInTheMines(true, false);
 			rules.pathCardsOnly = true;
-			gameBuilder = rules.getBuilder();
+			rules.onPositionChange.add(moveOutliners);
+			gameBuilder = rules.getGameBuilder();
+			_lastES = rules.lastES;
 
 			
 			pathBuilder = new PathBuilderSystem(gameBuilder, _template3D.camera);
@@ -921,59 +920,27 @@ package tests.saboteur
 		private function onBuildUpdateBorder(value:uint, builder3D:Builder3D ):void 
 		{
 			updateToCurrentPos();
+			
 		//	hudAssets.txt_chatChannel.appendMessage("You've built a path!");
 		}
 		
 		private function updateToCurrentPos():void 
 		{
-			_lastES.x = pathBuilder.lastGe;
-			_lastES.y = pathBuilder.lastGs;
-			moveOutliners(pathBuilder.lastGe, pathBuilder.lastGs);
+			rules.forceUpdateToCurrentPos();
 		}
 		
-		private var _lastES:Point = new Point();
-		private var _foundWithinRange:Boolean = false;
+		private var _lastES:Vec3;   // to reference from rules only, readonly!
+
 		private function onPositionTileChange(ge:int, gs:int ):void 
 		{
 			
-			var rootNode:GraphNode = gameBuilder.pathGraph.getNode(ge, gs);
-			gameBuilder.pathGraph.graph.clearMarks();
-			
-			//hudAssets.txt_chatChannel.appendMessage("moved:"+Math.random());
-			
-			if (rootNode != null) {
-				var startNode:GraphNode = gameBuilder.pathGraph.getNode(_lastES.x, _lastES.y);
-				if (startNode != null) {
-						_foundWithinRange = false;
-					gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, rootNode, checkIfNodeIsWithinRange, startNode); 
-					if (!_foundWithinRange) {
-						_lastES.x = pathBuilder.lastGe;
-						_lastES.y = pathBuilder.lastGs;
-						moveOutliners(pathBuilder.lastGe, pathBuilder.lastGs);
-					}
-				}
-			}
-			
-			
+			rules.setPlayerPosition(ge, gs);
 			
 		}
 		
-		private function checkIfNodeIsWithinRange(node:GraphNode, preflight:Boolean, data:Object=null):Boolean 
-		{
-			
-			
-			
-			if (node === data) {
-				_foundWithinRange = true;
-				return false;
-			}
-			
+	
 		
-			return true;
-		}
-		
-		
-		private function getCardinalDist(ge:int, gs:int, pt:Point):int {
+		private function getCardinalDist(ge:int, gs:int, pt:Vec3):int {
 			ge -= pt.x;
 			ge = ge < 0 ? -ge : ge;
 			gs -= pt.y;
@@ -1042,8 +1009,9 @@ package tests.saboteur
 				else if  (e.keyCode === Keyboard.END &&   !game.keyPoll.isDown(Keyboard.END)) {
 					hudAssets.txt_chatChannel.scrollEndHistory();
 				}
-				else if  (e.keyCode === Keyboard.BACKSLASH &&   !game.keyPoll.isDown(Keyboard.BACKSLASH)) {
-					updateToCurrentPos();
+				else if  (e.keyCode === Keyboard.BACKSLASH &&   !game.keyPoll.isDown(Keyboard.BACKSLASH)) {  // CHEAT CODE
+					//updateToCurrentPos();
+					
 				}
 				
 				if (e.keyCode === Keyboard.BACKSLASH &&   !game.keyPoll.isDown(Keyboard.BACKSLASH)) { // && 

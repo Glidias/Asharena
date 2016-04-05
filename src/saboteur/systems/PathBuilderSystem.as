@@ -26,7 +26,6 @@ package saboteur.systems
 	import saboteur.util.CardinalVectors;
 	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.alternativa3d;
-	import saboteur.util.GameBuilder3D;
 	import saboteur.util.SaboteurPathUtil;
 	use namespace alternativa3d;
 	
@@ -412,7 +411,7 @@ package saboteur.systems
 					if ( xt < yt ?   xt - int(xt) > buildDistRatio.x  :   yt - int(yt) > buildDistRatio.y ) {  
 						result = builder.updateFloorPosition(ge , gs );  // buildToValidity parameter not used internally now
 						if (result === SaboteurPathUtil.RESULT_VALID) {
-							builder.editorMat.color = GameBuilder3D.COLOR_OUTSIDE;
+							builder.editorMat.color = Builder3D.COLOR_OUTSIDE;
 							result = SaboteurPathUtil.RESULT_OUT;
 						}
 						if (result != _lastResult) {
@@ -476,7 +475,6 @@ import ash.core.Node;
 import components.Pos;
 import saboteur.util.Builder3D;
 import saboteur.util.CardinalVectors;
-import saboteur.util.GameBuilder3D;
 
 
 class PathBuildingNode extends Node {

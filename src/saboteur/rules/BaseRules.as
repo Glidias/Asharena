@@ -11,7 +11,7 @@ package saboteur.rules
 	 */
 	public class BaseRules 
 	{
-		protected var builder:GameBuilder;
+		protected var gameBuilder:GameBuilder;
 		protected var pathUtil:SaboteurPathUtil;
 		public var onPlayBuildFailed:SignalAny;
 		public var onPlayBuildSuccess:SignalAny;
@@ -19,7 +19,7 @@ package saboteur.rules
 		
 		public function BaseRules() 
 		{
-			builder = new GameBuilder();
+			gameBuilder = new GameBuilder();
 			onPlayBuildFailed = new SignalAny();
 			onPlayBuildSuccess = new SignalAny();
 			pathUtil = SaboteurPathUtil.getInstance();
@@ -30,7 +30,7 @@ package saboteur.rules
 		}
 		
 		public function playPathCard(east:int, south:int, value:uint, playerIndex:int = 0):Boolean {
-			if ( builder.attemptBuild(east, south, value) ) {
+			if ( gameBuilder.attemptBuild(east, south, value) ) {
 				onPlayBuildSuccess.dispatch(east, south, value, playerIndex);
 				return true;
 			}
@@ -52,8 +52,8 @@ package saboteur.rules
 		
 		
 		
-		public function getBuilder():GameBuilder {
-			return builder;
+		public function getGameBuilder():GameBuilder {
+			return gameBuilder;
 		}
 		
 	}
