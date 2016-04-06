@@ -40,11 +40,7 @@ package saboteur.rules
 			}
 		}
 		
-		public function getPlayablePathCardLocations(value:uint):Array  {
-			var locations:Array = [];
-			gameBuilder.getPlayablePathCardLocations(locations, value);
-			return locations;
-		}
+		
 		
 		public function playActionCard(card:SaboteurActionCard, playerIndex:int = 0, toPlayerIndex:int = 0):Boolean {
 			return true;

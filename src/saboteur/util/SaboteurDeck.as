@@ -79,20 +79,25 @@ package saboteur.util
 			pathCards.push(value, value, value, value);  // assymetry here with 4 cards instead of 3, this favours saboteurs if game-map is played horizontally as per standard
 			
 			// T-junction along horizontal
-			value = pathUtil.getValue(SaboteurPathUtil.NORTH | SaboteurPathUtil.SOUTH | SaboteurPathUtil.EAST, SaboteurPathUtil.ARC_VERTICAL | SaboteurPathUtil.ARC_NORTH_EAST | SaboteurPathUtil.ARC_NORTH_WEST);
-			pathCards.push(value,value,value);
-			value = pathUtil.getValue(SaboteurPathUtil.NORTH | SaboteurPathUtil.SOUTH | SaboteurPathUtil.WEST, SaboteurPathUtil.ARC_VERTICAL | SaboteurPathUtil.ARC_SOUTH_EAST | SaboteurPathUtil.ARC_SOUTH_WEST); // flip congruent value
+			value = pathUtil.getValue(SaboteurPathUtil.NORTH | SaboteurPathUtil.SOUTH | SaboteurPathUtil.EAST, SaboteurPathUtil.ARC_NORTH_EAST | SaboteurPathUtil.ARC_SOUTH_EAST);
+			pathCards.push(value, value, value);
+
+			value = pathUtil.getValue(SaboteurPathUtil.NORTH | SaboteurPathUtil.SOUTH | SaboteurPathUtil.WEST, SaboteurPathUtil.ARC_SOUTH_WEST | SaboteurPathUtil.ARC_NORTH_WEST); // flip congruent value
 			pathCards.push(value, value);  
 			
+		
+			
 			// T-junction along vertical
-			value = pathUtil.getValue(SaboteurPathUtil.WEST | SaboteurPathUtil.EAST | SaboteurPathUtil.NORTH, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_NORTH_EAST | SaboteurPathUtil.ARC_NORTH_WEST);
+			value = pathUtil.getValue(SaboteurPathUtil.WEST | SaboteurPathUtil.EAST | SaboteurPathUtil.NORTH, SaboteurPathUtil.ARC_NORTH_EAST | SaboteurPathUtil.ARC_NORTH_WEST);
 			pathCards.push(value,value,value,value);
-			value = pathUtil.getValue(SaboteurPathUtil.WEST | SaboteurPathUtil.EAST | SaboteurPathUtil.SOUTH, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_SOUTH_EAST | SaboteurPathUtil.ARC_SOUTH_WEST); // flip congruent value
+			value = pathUtil.getValue(SaboteurPathUtil.WEST | SaboteurPathUtil.EAST | SaboteurPathUtil.SOUTH,  SaboteurPathUtil.ARC_SOUTH_EAST | SaboteurPathUtil.ARC_SOUTH_WEST); // flip congruent value
 			pathCards.push(value);  // the flip congruent, why does the deck I use has only 1 of this but the above has 4? Why not 3/2 which is more balanced? Ask the game designer again...lol!
 			
 			// ...and the 5 crosses
 			value = pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_VERTICAL | SaboteurPathUtil.ARC_HORIZONTAL);
 			pathCards.push(value, value, value, value, value);
+			
+			
 			
 			// ensure 40 path cards total....
 			//throw new Error(pathCards.length);
@@ -124,12 +129,30 @@ package saboteur.util
 			
 			// ensure 27 action cards total....
 			//throw new Error(actionCards.length);
+			
+		//	validatePathCards();
+			
 
+		}
+		
+		public function validatePathCards():Boolean {
+			for (var i:int = 0; i < pathCards.length; i++) {
+				if ( pathUtil.getIndexByValue( pathCards[i] ) < 0)  {
+					throw new Error("invalid:" + pathCards[i] + ", @" + i);
+					return false;
+				}
+			}
+			return true;
 		}
 		
 		public static function cardIsAction(card:*):Boolean {
 			return card is SaboteurActionCard;
 		}
+		/*
+		public static function cardIsPath(card:*):Boolean {
+			return !(card is SaboteurActionCard);
+		}
+		*/
 		
 		public function setupPlayableDeck(includePathCards:Boolean = true, includeActionCards:Boolean = true, doShuffle:Boolean=true):SaboteurDeck {
 			playableCards = [];

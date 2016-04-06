@@ -170,11 +170,11 @@ package saboteur.util
 			return (south + INT_LIMIT) * INT_LIMIT * 2 + (east + INT_LIMIT);
 		}
 		
-		public function getEast(value:uint):int {
-			return (value / (INT_LIMIT * 2)) - INT_LIMIT;
+		public function getEast(key:uint):int {
+			return (key / (INT_LIMIT * 2)) - INT_LIMIT;
 		}
-		public function getSouth(value:uint):int {
-			return (value % (INT_LIMIT * 2)) - INT_LIMIT;
+		public function getSouth(key:uint):int {
+			return (key % (INT_LIMIT * 2)) - INT_LIMIT;
 		}
 		
 		public function buildAt(dict:Dictionary, east:int, south:int, value:uint):void {

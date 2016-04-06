@@ -859,6 +859,7 @@ package tests.saboteur
 		
 
 			var playerControls:PlayerInventoryControls = new PlayerInventoryControls(game.keyPoll, new PlayerInventory(), hudAssets, pathBuilder, jettySpawner.minimap, stage, pathBuilder);
+			rules.onHandChange.add( playerControls.updateCards );
 			game.gameStates.thirdPerson.addInstance(playerControls).withPriority(SystemPriorities.preRender);
 				
 			
@@ -919,7 +920,8 @@ package tests.saboteur
 		
 		private function onBuildUpdateBorder(value:uint, builder3D:Builder3D ):void 
 		{
-			updateToCurrentPos();
+			//updateToCurrentPos();
+			rules.notifyPlayBuildSuccess();
 			
 		//	hudAssets.txt_chatChannel.appendMessage("You've built a path!");
 		}

@@ -150,6 +150,8 @@ package saboteur.util
 				throw new Error("Node not found at: "+east+" ,"+south);
 			}
 			graph.removeNode(node);
+			delete endPoints[key];
+			
 			delete graphGrid[key];
 			
 		}

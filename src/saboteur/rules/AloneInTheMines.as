@@ -23,7 +23,7 @@ package saboteur.rules
 		
 		public var gameEnded:Boolean;
 		public var onGameEnded:Signal0;
-		public var onHandChange:Signal1;
+		public var onHandChange:Signal2;
 		public var onPositionChange:Signal2 = new Signal2();
 		
 		public var deck:SaboteurDeck;  // the main deck of usable cards
@@ -48,15 +48,29 @@ package saboteur.rules
 			super();
 			this.middleCardFuther = middleCardFuther;
 			this.MOVEMENT_ALLOWANCE = 3;
+			maxHandCardsAllowed = 3;
 			_horizDir = reverseDirection ? -1 : 0;
 			_lastES = new Vec3();
 			gameEnded = false;
+			onHandChange = new Signal2();
+			onGameEnded = new Signal0();
+			onPlayBuildSuccess.add(onPlayBuildSuccessful);
+		}
+		
+		private function onPlayBuildSuccessful(east:int, south:int, value:int, playerIndex:int=0):void {
+			
+			notifyPlayBuildSuccess();
+		}
+		
+		public function notifyPlayBuildSuccess():void 
+		{
+			_refillHand();
+			_updateLastPlayerPos();
 		}
 		
 		override public function setup():void {
 			
-			onHandChange = new Signal1();
-			onGameEnded = new Signal0();
+			
 			//lonePlayer = SaboteurPlayer.create(SaboteurPlayer.GREEN_DWARF);
 			
 			// setup  map and starting player location
@@ -70,21 +84,16 @@ package saboteur.rules
 			gameBuilder.buildAt(_horizDir * 8, 2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
 
 		
-			// setup deck and draw out 3 cards for player
+			// setup deck and draw out cards for player
 			deck = new SaboteurDeck();
 			deck.setupPlayableDeck(true, !pathCardsOnly, true);
 			playerCards = [];
-		}
-		
-		
-		
-		override public function getPlayablePathCardLocations(value:uint):Array  {
-			var locations:Array = super.getPlayablePathCardLocations(value);
-			// TODO: check if the locations are in range for expenditure..., if not splice em
 			
-			return locations;
+			_refillHand(true);
 		}
 		
+		
+	
 		
 		public function setPlayerPosition(east:int, south:int):void {
 		
@@ -135,7 +144,7 @@ package saboteur.rules
 			onPositionChange.dispatch(_lastES.x, _lastES.y);
 		}
 
-		override public function playPathCard(east:int, south:int, value:uint, playerIndex:int = 0):Boolean {
+		override public function playPathCard(east:int, south:int, value:uint, playerIndex:int = 0):Boolean {  // todo: relink to this  method for Ibuildattempter
 			var result:Boolean = super.playPathCard(east, south, value, playerIndex);
 			
 			// TODO: check range and see if can reach target destination given amount of cards in deck
@@ -193,14 +202,31 @@ package saboteur.rules
 			return true;
 		}
 		
+		
+		protected var _endPointsCollected:Array = [];
+		protected var _endPointsCollectCount:int = 0;
+		
+		public function getPathCardValueLocations(value:uint):int  {
+			// TODO: range limit based off remaining deck size
+			var count:int = gameBuilder.getPlayablePathCardLocationsByGraph(_endPointsCollected, value, GameBuilder.ALLOW_FLIP);
+			_endPointsCollectCount = count;
+			return count;
+		}
+		
 		public function pathCardIsPlayable(value:uint):Boolean {
-			var arr:Array = getPlayablePathCardLocations(value);
-			return arr.length > 0;
+			// TODO: range limit based off remaining deck size
+			var count:int = gameBuilder.getPlayablePathCardLocationsByGraph(_endPointsCollected, value, GameBuilder.ALLOW_FLIP | GameBuilder.EARLY_OUT);
+			_endPointsCollectCount = count;
+			return count !=0;
 		}
 		
 		public function actionCardIsPlayable(card:SaboteurActionCard):Boolean {
 			// this will always return true, because repair cards act as auto-blockers when you draw a sabotage card...
 			return true;
+		}
+		public function getEndPointsCollected():Array 
+		{
+			return _endPointsCollected.slice(0, _endPointsCollectCount);
 		}
 		
 		public function cardIsPlayableAt(index:int):Boolean {
@@ -212,35 +238,40 @@ package saboteur.rules
 		{
 			_updateLastPlayerPos();
 		}
-		
-		
-		
-		
-		
 				
-		private function _refillHand():void {
-			// TODO:
+		private function _refillHand(firstDraw:Boolean=false):void {
+	
 
-			var i:int = playerCards.length - maxHandCardsAllowed;
+			var i:int = maxHandCardsAllowed - playerCards.length;
 			
 			while (--i > -1) {
-				if (playerCards.length == 0) break;
-				var card:* = playerCards.pop();
+				if (deck.playableCards.length == 0) break;
+				var card:* = deck.drawSingle();
 				if ( SaboteurDeck.cardIsAction(card) )  {
-				//	if (playerCards.length
+					// TODO:
+					//	if (playerCards.length
 				}
 				else {
+
+				//	if (pathUtil.getIndexByValue(card) < 0) throw new Error("Invalid path card drawn:"+card);
 					playerCards.push(card);
 				}
 			}
+			var usabilityMask:uint = 0;
+			var len:int = playerCards.length;
+			for (i=0 ; i < len; i++) {
+				usabilityMask |= cardIsPlayableAt(i) ? (1 << i) : 0;
+			}
 			
-			onHandChange.dispatch(playerCards);
+			onHandChange.dispatch(playerCards, usabilityMask);
 		}
 		
 		public function get lastES():Vec3 
 		{
 			return _lastES;
 		}
+		
+	
 		
 	}
 

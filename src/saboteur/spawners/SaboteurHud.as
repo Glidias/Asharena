@@ -42,6 +42,9 @@ package saboteur.spawners
 	import input.KeyPoll;
 	import saboteur.models.PlayerInventory;
 	import saboteur.ui.SaboteurHUDLayout;
+	import saboteur.util.Saboteur2Deck;
+	import saboteur.util.SaboteurActionCard;
+	import saboteur.util.SaboteurDeck;
 	import saboteur.views.SaboteurMinimap;
 	import views.ui.hud.BindDockPin;
 	import views.ui.hud.BindLayoutObjCenterScale;
@@ -483,6 +486,8 @@ package saboteur.spawners
 			return parenter;
 		}
 		
+	
+		
 		public function syncWithInventory(inventory:PlayerInventory):void {  var itemSetSpr:SpriteMeshSetClone;
 		// helper method to sync view with inventory model, also needs minimap dependency atm (for now)!
 			var capacity:int = inventory.getCapacity();
@@ -494,7 +499,7 @@ package saboteur.spawners
 					hudMeshSet.addClone(itemHudSprite);
 				}
 				
-				var category:int = inventory.itemSlotCategories[i];
+				var category:int = PlayerInventory.getCategoryIndexer(inventory.itemSlots[i]);
 				setSlot(i, false, category);
 				if (category != 0) { // got item, ensure it's correct icon representation
 					itemSetSpr = itemSetSlots[i] || (itemSetSlots[i] = itemSet.getNewSprite());

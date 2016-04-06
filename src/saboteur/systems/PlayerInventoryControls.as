@@ -5,7 +5,9 @@ package saboteur.systems
 	import flash.display.Stage;
 	import flash.events.KeyboardEvent;
 	import flash.ui.Keyboard;
+	import haxe.Log;
 	import input.KeyPoll;
+	import saboteur.util.SaboteurDeck;
 
 	import saboteur.models.IBuildModel;
 	import saboteur.models.PlayerInventory;
@@ -45,6 +47,13 @@ package saboteur.systems
 			hud.syncWithInventory(inventory);
 		}
 		
+		public function updateCards(cards:Array, usabilityMask:uint):void {
+			inventory.updateCards(cards);
+		//	Log.trace("A");
+		//	throw new Error(cards + ">>>>" + usabilityMask);
+			hud.syncWithInventory(inventory);
+		}
+		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
 			var cc:uint = e.charCode;
@@ -65,23 +74,23 @@ package saboteur.systems
 					unequip();
 				}
 				else if (kc === Keyboard.J && !keypoll.isDown(Keyboard.J) ) {
-					unequip();
-					inventory.assignRandomPaths();
-					hud.syncWithInventory(inventory);
+				//	unequip();
+				//	inventory.assignRandomPaths();
+				//	hud.syncWithInventory(inventory);
 				}
 			}
 			else if (kc === Keyboard.J && !keypoll.isDown(Keyboard.J)) {
 				
-				inventory.assignRandomPaths();
+			//	inventory.assignRandomPaths();
 				//inventory.assignFixedPaths();
-				hud.syncWithInventory(inventory);
+				//hud.syncWithInventory(inventory);
 			}
 			
 		}
 		
 		private function executeSwitch():void 
 		{
-			if (inventory.itemSlotCategories[equipedSlot] === PlayerInventory.CATEGORY_PATH) {
+			if (!SaboteurDeck.cardIsAction(equipedSlot) ) {
 				attemptPathCardFlip();
 			}
 			else {
@@ -103,22 +112,18 @@ package saboteur.systems
 			inventory.itemSlots[equipedSlot] = index;
 		}
 		
-		// TODO: with the rules impl
 		private function executeEquipSlot():void 
 		{
-			if (inventory.itemSlotCategories[equipedSlot] === PlayerInventory.CATEGORY_PATH) {
+			if ( !SaboteurDeck.cardIsAction(equipedSlot) ) {
 				if (buildAttempter.attemptBuild()) {
-					inventory.removeItemAtSlot(equipedSlot);
-					hud.syncWithInventory(inventory);
+					//inventory.removeItemAtSlot(equipedSlot);
+				//	hud.syncWithInventory(inventory);
 					buildModel.setBuildId( -1);
 				}
 			}
-			else {
+			else { // todo: properly handle this with game rules
 				unequip();
 			}
-			
-			
-			
 		}
 		
 		
@@ -133,18 +138,22 @@ package saboteur.systems
 				unequip();
 				return;
 			}
-			var category:int = inventory.itemSlotCategories[slotIndex]
+			var category:int = PlayerInventory.getCategoryIndexer(inventory.itemSlots[equipedSlot]);// inventory.itemSlotCategories[slotIndex]
+			/*
 			if (category == 0) {
 				unequip();
 				return;
 			}
+			*/
 			unequip();
 			equipedSlot = slotIndex;
 			hud.setSlot(slotIndex, true, category);
 			
-			var buildValue:uint = inventory.getPathValueAtSlot(slotIndex);
-			if (buildValue >= 0) {
-				buildModel.setBuildId(buildValue);
+			if ( !SaboteurDeck.cardIsAction(inventory.itemSlots[equipedSlot])) {
+				var buildValue:uint = inventory.getPathValueAtSlot(slotIndex);
+				if (buildValue >= 0) {
+					buildModel.setBuildId(buildValue);
+				}
 			}
 		}
 
@@ -156,7 +165,7 @@ package saboteur.systems
 		private function unequip():void 
 		{
 			if (equipedSlot >= 0) {
-				hud.setSlot(equipedSlot, false, inventory.itemSlotCategories[equipedSlot]);
+				hud.setSlot(equipedSlot, false, PlayerInventory.getCategoryIndexer(inventory.itemSlots[equipedSlot]) );
 				equipedSlot = -1;
 				buildModel.setBuildId(-1);
 			}

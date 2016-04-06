@@ -92,8 +92,8 @@ package saboteur.util
 			private var _playableCount:int = 0;
 		private var _playableCollector:Array;
 		private var _playCheckValue:uint;
-		private static const ALLOW_FLIP:uint = (1 << 0);  // 1
-		private static const EARLY_OUT:uint = (1 << 1);
+		public static const ALLOW_FLIP:uint = (1 << 0);  // 1
+		public static const EARLY_OUT:uint = (1 << 1);
 
 		
 		public function getPlayablePathCardLocationsByGraph(locations:Array, value:uint, flags:uint = 1, rangelimit:int=2147483647):int 
@@ -113,13 +113,84 @@ package saboteur.util
 			return _playableCount;
 		}
 		
+	
+		public function checkEndPointsForPlayableEdges(locations:Array, value:uint, flags:uint = 1):int {
+			var earlyOut:Boolean = (flags & EARLY_OUT) != 0;
+			var endPoints:Dictionary = pathGraph.endPoints;
+			var count:int = 0;
+
+			for (var k:* in endPoints) {
+			
+				if (endPoints[k] != null) {
+					var key:uint = k;
+					var endPointAccum:uint  = endPoints[key];
+					var myAccum:uint = 0;
+					var east:int = pathUtil.getEast(key);
+					var south:int = pathUtil.getSouth(key);
+					if ( (endPointAccum & SaboteurPathUtil.NORTH)!=0 ) {
+					if ( pathUtil.getValidResult(buildDict, east, south - 1, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+						myAccum |= SaboteurPathUtil.NORTH;
+					}
+					}
+					if ( (endPointAccum & SaboteurPathUtil.SOUTH)!=0 ) {
+						if ( pathUtil.getValidResult(buildDict, east, south + 1, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+							myAccum |= SaboteurPathUtil.SOUTH;
+						}
+					}
+					if ( (endPointAccum & SaboteurPathUtil.EAST)!=0 ) {
+						if ( pathUtil.getValidResult(buildDict, east+1, south, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+							myAccum |= SaboteurPathUtil.EAST;
+						}
+					}
+					if ( (endPointAccum & SaboteurPathUtil.WEST)!=0 ) {
+						if ( pathUtil.getValidResult(buildDict, east - 1, south , value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+							myAccum |= SaboteurPathUtil.WEST;
+						}
+					}
+					
+					var flipValue:uint = pathUtil.getFlipValue(value);
+
+					if ( flipValue != value && (flags & ALLOW_FLIP) != 0 ) {
+						value = flipValue;
+						
+							if ( (endPointAccum & SaboteurPathUtil.NORTH)!=0 ) {
+								if ( pathUtil.getValidResult(buildDict, east, south - 1, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+									myAccum |= SaboteurPathUtil.NORTH_FLIP;
+								}
+							}
+							if ( (endPointAccum & SaboteurPathUtil.SOUTH)!=0 ) {
+								if ( pathUtil.getValidResult(buildDict, east, south + 1, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+									myAccum |= SaboteurPathUtil.SOUTH_FLIP;
+								}
+							}
+							if ( (endPointAccum & SaboteurPathUtil.EAST)!=0 ) {
+								if ( pathUtil.getValidResult(buildDict, east+1, south, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+									myAccum |= SaboteurPathUtil.EAST_FLIP;
+								}
+							}
+							if ( (endPointAccum & SaboteurPathUtil.WEST)!=0 ) {
+								if ( pathUtil.getValidResult(buildDict, east - 1, south , value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+									myAccum |= SaboteurPathUtil.WEST_FLIP;
+								}
+							}
+						}
+						
+						if (myAccum!=0) {
+							locations[count++] = key;
+							locations[count++] = myAccum;
+						}
+				
+				}
+			}
+			return count;
+		}
 		
 		
 		private function checkForPlayableEdges(node:GraphNode, preflight:Boolean, data:Object = null):Boolean {
 			var valueArr:Array = node.val as Array;
 			var east:int = valueArr[0];
 			var south:int = valueArr[1];
-			var foundOne:Boolean = false;
+	
 			var endPoints:Dictionary = pathGraph.endPoints;
 			var value:uint = _playCheckValue;
 		
@@ -131,31 +202,66 @@ package saboteur.util
 			var key:uint =  pathUtil.getGridKey(east, south);
 			var endPointAccum:uint = endPoints[key] != null ? endPoints[key] : 0;
 			var flags:uint = data != null ? uint(data) : 0;
-				var earlyOut:Boolean = (flags & EARLY_OUT) !=0;
+				var earlyOut:Boolean = (flags & EARLY_OUT) != 0;
+			var myAccum:uint = 0;
 				
 			if ( (endPointAccum & SaboteurPathUtil.NORTH)!=0 ) {
 				if ( pathUtil.getValidResult(buildDict, east, south - 1, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
-					foundOne = true;
+					myAccum |= SaboteurPathUtil.NORTH;
 				}
 			}
 			if ( (endPointAccum & SaboteurPathUtil.SOUTH)!=0 ) {
 				if ( pathUtil.getValidResult(buildDict, east, south + 1, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
-					foundOne = true;
+					myAccum |= SaboteurPathUtil.SOUTH;
 				}
 			}
 			if ( (endPointAccum & SaboteurPathUtil.EAST)!=0 ) {
 				if ( pathUtil.getValidResult(buildDict, east+1, south, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
-					foundOne = true;
+					myAccum |= SaboteurPathUtil.EAST;
 				}
 			}
 			if ( (endPointAccum & SaboteurPathUtil.WEST)!=0 ) {
 				if ( pathUtil.getValidResult(buildDict, east - 1, south , value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
-					foundOne = true;
+					myAccum |= SaboteurPathUtil.WEST;
 				}
 			}
 			
+			var flipValue:uint = pathUtil.getFlipValue(value);
+		
 			
-			return earlyOut && foundOne ? false : true;
+			if ( flipValue != value && (flags & ALLOW_FLIP) != 0 ) {
+				value = flipValue;
+				
+				if ( (endPointAccum & SaboteurPathUtil.NORTH)!=0 ) {
+					if ( pathUtil.getValidResult(buildDict, east, south - 1, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+						myAccum |= SaboteurPathUtil.NORTH_FLIP;
+					}
+				}
+				if ( (endPointAccum & SaboteurPathUtil.SOUTH)!=0 ) {
+					if ( pathUtil.getValidResult(buildDict, east, south + 1, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+						myAccum |= SaboteurPathUtil.SOUTH_FLIP;
+					}
+				}
+				if ( (endPointAccum & SaboteurPathUtil.EAST)!=0 ) {
+					if ( pathUtil.getValidResult(buildDict, east+1, south, value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+						myAccum |= SaboteurPathUtil.EAST_FLIP;
+					}
+				}
+				if ( (endPointAccum & SaboteurPathUtil.WEST)!=0 ) {
+					if ( pathUtil.getValidResult(buildDict, east - 1, south , value, pathGraph)  === SaboteurPathUtil.RESULT_VALID ) {
+						myAccum |= SaboteurPathUtil.WEST_FLIP;
+					}
+				}
+			}
+			
+			if (myAccum!=0) {
+				_playableCollector[_playableCount++] = key;
+				_playableCollector[_playableCount++] = myAccum;
+				if (earlyOut) return false;
+			}
+			
+			
+			return true;
 		}
 		
 		
