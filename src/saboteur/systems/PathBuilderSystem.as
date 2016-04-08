@@ -19,6 +19,7 @@ package saboteur.systems
 	import flash.geom.Point;
 	import flash.geom.Vector3D;
 	import haxe.Log;
+	import saboteur.rules.BaseRules;
 	import saboteur.util.Builder3D;
 	import saboteur.util.GameBuilder;
 
@@ -108,6 +109,8 @@ package saboteur.systems
 		
 		public var buildToValidity:Boolean=false;  // set this to true to use traditional boardgame saboteur rules where spatial position of videogame player avatar doesn't matter
 		public var onPositionTileChange:Signal2 = new Signal2();
+		
+		public var rules:BaseRules;  // optional, if so, will re-route build/discard requests to rules
 		
 		
 		public function PathBuilderSystem(gameBuilder:GameBuilder, camera:Camera3D=null) 

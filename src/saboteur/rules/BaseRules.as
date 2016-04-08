@@ -29,6 +29,8 @@ package saboteur.rules
 			
 		}
 		
+		
+		// validation + action attempts via rules. Return true if successful, false if not successful.
 		public function playPathCard(east:int, south:int, value:uint, playerIndex:int = 0):Boolean {
 			if ( gameBuilder.attemptBuild(east, south, value) ) {
 				onPlayBuildSuccess.dispatch(east, south, value, playerIndex);
@@ -39,10 +41,10 @@ package saboteur.rules
 				return false;
 			}
 		}
-		
-		
-		
 		public function playActionCard(card:SaboteurActionCard, playerIndex:int = 0, toPlayerIndex:int = 0):Boolean {
+			return true;
+		}
+		public function discardCard(card:*, playerIndex:int = 0):Boolean {
 			return true;
 		}
 		

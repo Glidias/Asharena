@@ -815,7 +815,7 @@ package tests.saboteur
 			uiLayer.addChild( stepper = new BuildStepper());
 			stepper.onBuild.add(curBuildAttempter.attemptBuild);
 			stepper.onStep.add( onStepperIndexChanged  )
-			stepper.onDelete.add(curBuildAttempter.attemptDel);
+			stepper.onDelete.add(pathBuilder.attemptDel);
 			
 			ticker = new FrameTickProvider(stage);
 			ticker.add(tick);

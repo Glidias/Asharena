@@ -193,7 +193,7 @@ package saboteur.rules
 			return true;
 		}
 		
-		public function discardCard(card:*, playerIndex:int = 0):Boolean {
+		override public function discardCard(card:*, playerIndex:int = 0):Boolean {
 			if (!discardingIsAllowed()) {
 				return false;
 			}

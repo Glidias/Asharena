@@ -2,7 +2,7 @@ package saboteur.models
 {
 	
 	/**
-	 * ...
+	 * Selection state of build
 	 * @author Glenn Ko
 	 */
 	public interface IBuildModel 
