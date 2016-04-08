@@ -156,6 +156,20 @@ package saboteur.systems
 				return false;
 			}
 			
+			if (rules != null) {  // use rules instead
+				if ( rules.playPathCard(   head.builder.floorGridEast, head.builder.floorGridSouth, head.builder.value ) ) {
+					onBuildSucceeded.dispatch(curBuildId, head.builder);
+					return true;
+				}
+				else {
+					onBuildFailed.dispatch();
+					Log.trace("build failed exception. this shoudlnt' conventionally happen due to doublecheck with frame coherancy");
+				}
+				return false;
+			}
+			
+			
+			
 			// double check for  3d builders as well...even though practically due to expected game behaviour, the negative exception should not happen.
 			if (  gameBuilder.getBuildableResult( head.builder.floorGridEast, head.builder.floorGridSouth, head.builder.value ) === SaboteurPathUtil.RESULT_VALID  ) { 
 				gameBuilder.buildAt(head.builder.floorGridEast, head.builder.floorGridSouth, head.builder.value );
