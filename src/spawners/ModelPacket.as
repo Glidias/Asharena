@@ -19,7 +19,6 @@ package spawners
 		public var animManager:AnimationManager;  // $_ANIMATIONS  parsed .ani file to produce animation manager for handling multiple animation clips
 		public var animClip:AnimationClip;  // .a3d file (any single animation clip within)...assumed only meant to handle 1 single animation clip (or you must slice 'em up manually on your own)
 		
-		public var animOutput:*;  // this could either be AnimationManager of AnimationController of a single animationclip
 		
 		public function ModelPacket() {
 			
@@ -37,20 +36,22 @@ package spawners
 			return ref.clone() as Skin;
 		}
 		
-		public function get3DAnimatedSkin(optionalAnimatable:Boolean=false):Skin {
+		public function get3DAnimatedSkin(optionalAnimatable:Boolean=false):Array {
 			var ref:Skin = get3DStaticSkin();
-			setupAnimFor(ref, optionalAnimatable);
-			return ref;
+			var anim:* = setupAnimFor(ref, optionalAnimatable);
+			return anim ? [ref, anim] : [ref];
 		}
 		
-		public function get3DAnimatedModel(optionalAnimatable:Boolean=false):Object3D {
+		public function get3DAnimatedModel(optionalAnimatable:Boolean=false):Array {
 			var ref:Object3D = get3DStaticModel();
-			setupAnimFor(ref, optionalAnimatable);
-			return ref;
+			var anim:* = setupAnimFor(ref, optionalAnimatable);
+			return anim ? [ref, anim ] : [ref];
 		}
 		
-		private function setupAnimFor(ref:Object3D, optionalAnimatable:Boolean):void 
+		private function setupAnimFor(ref:Object3D, optionalAnimatable:Boolean):* 
 		{
+			var animOutput:* = null;
+			
 			if (animManager != null) {
 				animOutput = animManager.cloneFor(ref);
 			}
@@ -65,6 +66,7 @@ package spawners
 			else if (!optionalAnimatable) {
 				throw new Error("Didn't find animation dependencies for:" + model);
 			}
+			return  animOutput;
 		}
 		
 		
