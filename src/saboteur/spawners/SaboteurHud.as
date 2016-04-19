@@ -136,6 +136,7 @@ package saboteur.spawners
 		public const BOX_YELLOW:Vector.<Number> = new <Number>[6/8, 0, 1/8, 1/8];
 		public const CATEGORIES:Vector.<Vector.<Number>> = new <Vector.<Number>>[null, BOX_GRAY, BOX_BLUE, BOX_RED, BOX_GREEN, BOX_PURPLE, BOX_YELLOW];
 		
+		public static const DISABLED_PATH_BOX_INDEX:int = 0;
 		
 		public static const BOX_DARKGRAY:Vector.<Number> = new <Number>[7/8, 1/8, 1/8, 1/8];
 		public static const BOX_BRIGHT:Vector.<Number> = new <Number>[7/8, 2/8, 1/8, 1/8];
@@ -218,6 +219,19 @@ package saboteur.spawners
 			}
 			setActivated(activated, true);
 			
+		}
+		
+		public function setEnabledCardSlot(slotIndex:int, enabled:Boolean=true):void {
+			var hudSprite:SpriteMeshSetClone = slotIndex >= 0 && slotIndex < itemSlots.length ? itemSlots[slotIndex] : null;
+			if (hudSprite != null) {
+				if (!enabled) {
+					setSlot(slotIndex, false,  SaboteurHud.DISABLED_PATH_BOX_INDEX );
+				}
+				else {
+					
+					
+				}
+			}
 		}
 		
 		private function myInit():void {
@@ -479,7 +493,9 @@ package saboteur.spawners
 			//  health and stamina bars
 			hudSprite = createHudSprite(0,0,size  / hudBmpData.width, size * 4 / hudBmpData.height, size * 0 + 10 + size*.5 , -10   -size*6  );
 			hudSprite.root._parent = parenter;
-			hudMeshSet.addClone(hudSprite);
+			
+			//hudMeshSet.addClone(hudSprite);
+			
 			_healthBars = hudSprite;
 			
 			// 
@@ -514,9 +530,10 @@ package saboteur.spawners
 						itemSetSpr.root._scaleX *= 1.25;
 						itemSetSpr.root._scaleY *= 1.25;
 						itemSetSpr.root._parent = _mainItemHud;
-						itemSetSpr.root._rotationZ = Math.PI*.5;
+						itemSetSpr.root._rotationZ = 0;// Math.PI * .5;
 					}
 					itemSetSpr.root._rotationX = Math.PI;
+					
 					if (itemSetSpr.index < 0) {
 						itemSet.addClone(itemSetSpr);
 					}
@@ -525,9 +542,11 @@ package saboteur.spawners
 					itemSetSpr = itemSetSlots[i];
 					if (itemSetSpr != null && itemSetSpr.index  >= 0) {
 						itemSet.removeClone(itemSetSpr);
+						
 					}
 				}
 			}
+			itemSet.numClones  = capacity;
 			
 			var endIndex:int = i;
 			while (i < 9) {

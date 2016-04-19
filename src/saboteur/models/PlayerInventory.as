@@ -1,5 +1,6 @@
 package saboteur.models 
 {
+	import ash.signals.Signal1;
 	import saboteur.util.Saboteur2Deck;
 	import saboteur.util.SaboteurActionCard;
 	import saboteur.util.SaboteurDeck;
@@ -52,8 +53,8 @@ package saboteur.models
 		
 		public const pathUtil:SaboteurPathUtil =SaboteurPathUtil.getInstance() ;
 		public const numPathCards:int = SaboteurPathUtil.getInstance().combinations.length;
-		
-
+		private var _equipedSlot:int = -1;
+		public var usabilityMask:int = int.MAX_VALUE;
 		
 		
 		public function PlayerInventory() 
@@ -146,6 +147,22 @@ package saboteur.models
 			}
 			
 		}
+		
+		public function get equipedSlot():int 
+		{
+			return _equipedSlot;
+		}
+		
+		public function set equipedSlot(value:int):void 
+		{
+			if (equipedSlot != value) {
+				_equipedSlot = value;
+				onEquipedSlotChange.dispatch(value);
+			}
+		}
+		public var onEquipedSlotChange:Signal1 = new Signal1();
+		public var playerIndex:int=0;
+		
 		
 	}
 

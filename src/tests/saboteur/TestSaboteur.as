@@ -787,6 +787,7 @@ package tests.saboteur
 
 			
 			pathBuilder = new PathBuilderSystem(gameBuilder, _template3D.camera);
+			pathBuilder.rules = rules;
 			curBuildAttempter = pathBuilder;
 			curBuildModel = pathBuilder;
 			
@@ -857,11 +858,11 @@ package tests.saboteur
 			pathBuilder.onBuildSucceeded.add(onBuildUpdateBorder);
 			pathBuilder.onDelSucceeded.add(jettySpawner.minimap.removeJettyWithBuilder);
 		
-
-			var playerControls:PlayerInventoryControls = new PlayerInventoryControls(game.keyPoll, new PlayerInventory(), hudAssets, pathBuilder, jettySpawner.minimap, stage, pathBuilder);
+		
+			var playerControls:PlayerInventoryControls = new PlayerInventoryControls(game.keyPoll, rules.playerInventory, hudAssets, pathBuilder, jettySpawner.minimap, stage, pathBuilder);
 			rules.onHandChange.add( playerControls.updateCards );
+			playerControls.rules = rules;
 			game.gameStates.thirdPerson.addInstance(playerControls).withPriority(SystemPriorities.preRender);
-				
 			
 			
 			if (game.colliderSystem) {

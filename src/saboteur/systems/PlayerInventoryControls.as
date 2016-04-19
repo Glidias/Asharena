@@ -7,6 +7,7 @@ package saboteur.systems
 	import flash.ui.Keyboard;
 	import haxe.Log;
 	import input.KeyPoll;
+	import saboteur.rules.BaseRules;
 	import saboteur.util.SaboteurDeck;
 
 	import saboteur.models.IBuildModel;
@@ -26,8 +27,9 @@ package saboteur.systems
 		private var buildModel:IBuildModel;
 		private var stage:Stage;
 		private var minimap:SaboteurMinimap;
-		private var equipedSlot:int = -1;
+		//private var equipedSlot:int = -1;
 		private var buildAttempter:IBuildAttempter;
+		public var rules:BaseRules;// optional
 		
 		public function PlayerInventoryControls(keypoll:KeyPoll, inventory:PlayerInventory, hud:SaboteurHud,  buildModel:IBuildModel, minimap:SaboteurMinimap, stage:Stage, buildAttempter:IBuildAttempter) 
 		{
@@ -36,6 +38,7 @@ package saboteur.systems
 			this.stage = stage;
 			this.buildModel = buildModel;
 			this.keypoll = keypoll;
+			
 			this.inventory = inventory;
 			this.hud = hud;
 			hud.setupItemTextureSet( minimap.jettyMaterial, minimap );
@@ -47,17 +50,37 @@ package saboteur.systems
 			hud.syncWithInventory(inventory);
 		}
 		
-		public function updateCards(cards:Array, usabilityMask:uint):void {
+		public function updateCards(cards:Array, usabilityMask:int):void {
 			inventory.updateCards(cards);
-		//	Log.trace("A");
-		//	throw new Error(cards + ">>>>" + usabilityMask);
+			//	Log.trace("A");
+			//	throw new Error(cards + ">>>>" + usabilityMask);
+		
 			hud.syncWithInventory(inventory);
+				
+
+			if (usabilityMask < 0) usabilityMask = int.MAX_VALUE;
+
+			
+			//  usabilities
+			var len:int = cards.length;
+			for (var i:int = 0; i < len; i++) {
+				if ( (usabilityMask & (1<<i)) == 0) {
+					//Log.trace("item at slot:" + i + " is not unusable!");
+					hud.setEnabledCardSlot(i, false);
+				}
+				else {
+					hud.setEnabledCardSlot(i, true);
+				}
+			}
+			
+		
 		}
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{
 			var cc:uint = e.charCode;
 			var kc:uint = e.keyCode;
+			var equipedSlot:int = inventory.equipedSlot;
 			//if (cc < 
 			if (  cc >= 49 && cc < 58 && !keypoll.isDown(kc) ) {  // temp
 				trySetSlot(cc - 49); 
@@ -90,6 +113,7 @@ package saboteur.systems
 		
 		private function executeSwitch():void 
 		{
+			var equipedSlot:int = inventory.equipedSlot;
 			if (!SaboteurDeck.cardIsAction(equipedSlot) ) {
 				attemptPathCardFlip();
 			}
@@ -100,6 +124,7 @@ package saboteur.systems
 		
 		private function attemptPathCardFlip():void 
 		{
+			var equipedSlot:int = inventory.equipedSlot;
 			var lastIndex:uint =  inventory.itemSlots[equipedSlot];
 			var val:uint = inventory.pathUtil.getFlipValue( inventory.pathUtil.getValueByIndex(lastIndex) );
 			buildModel.setBuildId( val );
@@ -114,7 +139,8 @@ package saboteur.systems
 		
 		private function executeEquipSlot():void 
 		{
-			if ( !SaboteurDeck.cardIsAction(equipedSlot) ) {
+			var equipedSlot:int = inventory.equipedSlot;
+			if ( !SaboteurDeck.cardIsAction(inventory.itemSlots[equipedSlot]) ) {
 				if (buildAttempter.attemptBuild()) {
 					//inventory.removeItemAtSlot(equipedSlot);
 				//	hud.syncWithInventory(inventory);
@@ -130,6 +156,9 @@ package saboteur.systems
 		
 		private function trySetSlot(slotIndex:int):void 
 		{
+			
+			
+			var equipedSlot:int = inventory.equipedSlot;
 			if (slotIndex === equipedSlot) {
 				executeSwitch();
 				return;
@@ -138,6 +167,11 @@ package saboteur.systems
 				unequip();
 				return;
 			}
+			
+			if ( rules && !rules.canSelectCard(inventory.playerIndex, slotIndex) ) {
+				return;
+			}
+			
 			var category:int = PlayerInventory.getCategoryIndexer(inventory.itemSlots[equipedSlot]);// inventory.itemSlotCategories[slotIndex]
 			/*
 			if (category == 0) {
@@ -146,7 +180,7 @@ package saboteur.systems
 			}
 			*/
 			unequip();
-			equipedSlot = slotIndex;
+			inventory.equipedSlot = equipedSlot = slotIndex;
 			hud.setSlot(slotIndex, true, category);
 			
 			if ( !SaboteurDeck.cardIsAction(inventory.itemSlots[equipedSlot])) {
@@ -164,9 +198,10 @@ package saboteur.systems
 		
 		private function unequip():void 
 		{
+			var equipedSlot:int = inventory.equipedSlot;
 			if (equipedSlot >= 0) {
-				hud.setSlot(equipedSlot, false, PlayerInventory.getCategoryIndexer(inventory.itemSlots[equipedSlot]) );
-				equipedSlot = -1;
+				hud.setSlot(equipedSlot, false, ( (inventory.usabilityMask & (1<<equipedSlot))!=0 ) ? PlayerInventory.getCategoryIndexer(inventory.itemSlots[equipedSlot]) : SaboteurHud.DISABLED_PATH_BOX_INDEX );
+				inventory.equipedSlot = equipedSlot = -1;
 				buildModel.setBuildId(-1);
 			}
 		}

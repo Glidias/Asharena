@@ -132,15 +132,27 @@ package saboteur.systems
 			}
 			if (_lastResult === SaboteurPathUtil.RESULT_OCCUPIED) {
 				// double check for  3d builders as well...even though practically due to expected game behaviour, the negative exception should not happen.
+				
+				if (rules != null) {  // use rules instead
+					//if ( rules.(   head.builder.floorGridEast, head.builder.floorGridSouth, head.builder.value ) ) {
+					//onBuildSucceeded.dispatch(curBuildId, head.builder);
+					//return true;
+				}
+				else {
+				//	onBuildFailed.dispatch();
+					//Log.trace("build failed exception. this shoudlnt' conventionally happen due to doublecheck with frame coherancy");
+				}
+
 				if (   gameBuilder.getBuildableResult(head.builder.floorGridEast, head.builder.floorGridSouth, head.builder.value ) === SaboteurPathUtil.RESULT_OCCUPIED ) {   
-					onDelSucceeded.dispatch(head.builder)
+					onDelSucceeded.dispatch(head.builder);
+					return true;
 				}
 				else {
 					onDelFailed.dispatch();
 					Log.trace("del failed exception. this shoudn't conventionally happen due to doublecheck with frame coherancy")
 				}
 			}
-			return true;
+			return false;
 		}
 			
 		public function attemptBuild():Boolean {

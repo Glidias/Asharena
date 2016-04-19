@@ -160,7 +160,7 @@ package saboteur.util
 			if (includeActionCards) playableCards = playableCards.concat(actionCards);
 			
 			if (doShuffle) shuffle();
-		
+			
 			return this;
 		}
 		
@@ -213,6 +213,8 @@ package saboteur.util
 		 
 			return array;
 		}
+		
+		
 		
 		
 		

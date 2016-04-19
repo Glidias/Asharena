@@ -5,6 +5,7 @@ package saboteur.rules
 	import ash.signals.Signal2;
 	import de.polygonal.ds.GraphNode;
 	import haxe.Log;
+	import saboteur.models.PlayerInventory;
 	import saboteur.util.GameBuilder;
 	import saboteur.util.SaboteurActionCard;
 	import saboteur.util.SaboteurDeck;
@@ -34,7 +35,8 @@ package saboteur.rules
 		private var _lastES:Vec3; // last pivot position
 		
 		//public var player:SaboteurPlayer;  // not needed atm since this is singleplayer rules
-		public var playerCards:Array;  // cards in player's hands
+		private var playerCards:Array;  // cards in player's hands
+		private var _playerInventory:PlayerInventory;
 		public var maxHandCardsAllowed:int;  // max amount of cards allowed in player's hands
 		
 		public var MOVEMENT_ALLOWANCE:int;  // movement allowance
@@ -49,15 +51,18 @@ package saboteur.rules
 			this.middleCardFuther = middleCardFuther;
 			this.MOVEMENT_ALLOWANCE = 3;
 			maxHandCardsAllowed = 3;
+			_playerInventory = new PlayerInventory();
+			_playerInventory.onEquipedSlotChange.add(setDefaultHandIndex);
 			_horizDir = reverseDirection ? -1 : 0;
 			_lastES = new Vec3();
 			gameEnded = false;
 			onHandChange = new Signal2();
+
 			onGameEnded = new Signal0();
 			onPlayBuildSuccess.add(onPlayBuildSuccessful);
 		}
 		
-		private function onPlayBuildSuccessful(east:int, south:int, value:int, playerIndex:int=0):void {
+		private function onPlayBuildSuccessful(east:int, south:int, value:int, playerIndex:int=0, handIndex:int=-1):void {
 			
 			notifyPlayBuildSuccess();
 		}
@@ -78,10 +83,11 @@ package saboteur.rules
 			playerSouth = 0;
 			gameBuilder.buildStartNodeAt(0, 0, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ) ); 
 	
+			var dist:int = 2;
 			// todo: refer to saboteur deck for proper turning layout
-			gameBuilder.buildAt(_horizDir * 8, -2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
-			gameBuilder.buildAt(_horizDir * (middleCardFuther ? 8+1 : 8), 0, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
-			gameBuilder.buildAt(_horizDir * 8, 2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
+			gameBuilder.buildAt(_horizDir * dist, -2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
+			gameBuilder.buildAt(_horizDir * (middleCardFuther ? dist+1 : dist), 0, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
+			gameBuilder.buildAt(_horizDir * dist, 2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
 
 		
 			// setup deck and draw out cards for player
@@ -121,6 +127,8 @@ package saboteur.rules
 						_lastES.x = playerEast;
 						_lastES.y = playerSouth;
 						onPositionChange.dispatch(_lastES.x, _lastES.y);
+						deck.drawSingle();
+					//	Log.trace(deck.playableCards.length + " cards left");
 					}
 				}
 			}
@@ -143,14 +151,28 @@ package saboteur.rules
 			
 			onPositionChange.dispatch(_lastES.x, _lastES.y);
 		}
+		
+		public var defaultHandIndex:int = -1;
+		public function setDefaultHandIndex(val:int):void {
+			defaultHandIndex = val;
+		}
+		
 
-		override public function playPathCard(east:int, south:int, value:uint, playerIndex:int = 0):Boolean {  // todo: relink to this  method for Ibuildattempter
+		override public function playPathCard(east:int, south:int, value:uint, playerIndex:int = 0, handIndex:int=-1):Boolean {  // todo: relink to this  method for Ibuildattempter
 			var result:Boolean = super.playPathCard(east, south, value, playerIndex);
+			
+			if (handIndex < 0) handIndex = defaultHandIndex;
 			
 			// TODO: check range and see if can reach target destination given amount of cards in deck
 			//gameBuilder.pathGraph.getNode(east, south);
 			
 			if (result) {
+			
+				// remove card from player hand if needed
+				if (handIndex >= 0 && handIndex < playerCards.length) {
+					playerCards.splice(handIndex, 1);
+				}
+				
 				// check if reach into openable treasure spot
 				// check if should end game or not if reach gold..
 				
@@ -175,7 +197,7 @@ package saboteur.rules
 			onGameEnded.dispatch();
 		}
 		
-		override public function playActionCard(card:SaboteurActionCard, playerIndex:int = 0, toPlayerIndex:int = 0):Boolean {
+		override public function playActionCard(card:SaboteurActionCard, playerIndex:int = 0, toPlayerIndex:int = 0, fromHandIndex:int=-1):Boolean {
 			if (!actionCardIsPlayable(card)) {
 				return false;
 			}
@@ -193,7 +215,7 @@ package saboteur.rules
 			return true;
 		}
 		
-		override public function discardCard(card:*, playerIndex:int = 0):Boolean {
+		override public function discardCard(card:*, playerIndex:int = 0, handIndex:int=0):Boolean {
 			if (!discardingIsAllowed()) {
 				return false;
 			}
@@ -238,9 +260,14 @@ package saboteur.rules
 		{
 			_updateLastPlayerPos();
 		}
+		
+		override public function canSelectCard(playerIndex:int, handIndex:int):Boolean  {
+			//throw new Error(handIndex);
+			return (_playerInventory.usabilityMask & (1<<handIndex))!=0 || _playerInventory.usabilityMask  == 0;
+		}
 				
 		private function _refillHand(firstDraw:Boolean=false):void {
-	
+		
 
 			var i:int = maxHandCardsAllowed - playerCards.length;
 			
@@ -262,13 +289,26 @@ package saboteur.rules
 			for (i=0 ; i < len; i++) {
 				usabilityMask |= cardIsPlayableAt(i) ? (1 << i) : 0;
 			}
-			
+			_playerInventory.usabilityMask = usabilityMask;
 			onHandChange.dispatch(playerCards, usabilityMask);
+			
+			//Log.trace(deck.playableCards.length + " cards left");
+			
 		}
 		
 		public function get lastES():Vec3 
 		{
 			return _lastES;
+		}
+		
+		public function get playerInventory():PlayerInventory 
+		{
+			return _playerInventory;
+		}
+		
+		public function set playerInventory(value:PlayerInventory):void 
+		{
+			_playerInventory = value;
 		}
 		
 	
