@@ -350,6 +350,14 @@ package saboteur.util
 			
 		}
 		
+		public function positionObjLocallyAt(gridEast:int, gridSouth:int, refer:Object3D, distScale:Number=1):void {
+			refer.x = 0;
+			refer.y = 0;
+			
+			localCardinal.transform(localCardinal.east, refer, localCardinal.getDist(localCardinal.east, _gridSquareBound)* gridEast*distScale );
+			localCardinal.transform(localCardinal.south, refer, localCardinal.getDist(localCardinal.south, _gridSquareBound) * gridSouth*distScale );
+		}
+		
 		
 			
 			

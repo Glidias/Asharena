@@ -42,6 +42,7 @@ package saboteur.rules
 		public var MOVEMENT_ALLOWANCE:int;  // movement allowance
 		public var pathCardsOnly:Boolean = false;
 		
+		public static const DIST:Number = 2;
 		
 	
 		
@@ -83,7 +84,7 @@ package saboteur.rules
 			playerSouth = 0;
 			gameBuilder.buildStartNodeAt(0, 0, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ) ); 
 	
-			var dist:int = 2;
+			var dist:int = DIST;
 			// todo: refer to saboteur deck for proper turning layout
 			gameBuilder.buildAt(_horizDir * dist, -2, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);
 			gameBuilder.buildAt(_horizDir * (middleCardFuther ? dist+1 : dist), 0, pathUtil.getValue(SaboteurPathUtil.ALL_SIDES, SaboteurPathUtil.ARC_HORIZONTAL | SaboteurPathUtil.ARC_VERTICAL ), false, false);

@@ -325,8 +325,35 @@ package alternativa.engine3d.objects
 		}
 		*/
 		
+		/*
+		alternativa3d override function calculateVisibility(camera:Camera3D):void {
+			super.alternativa3d::calculateVisibility(camera);
+			
+			var i:int = numClones;
+			while (--i > -1) {
+				var root:Object3D = clones[i].root;
+				if (root.transformChanged) root.composeTransforms();
+				
+				if (root._parent == null) root.localToGlobalTransform.copy(root.transform);
+				else {
+					if (root._parent.transformChanged) root._parent.composeTransforms();
+					root.localToGlobalTransform.combine(root._parent.transform, root.transform);
+				}
+				
+				calculateMeshesTransforms(root);
+			}
+		}
 		
+		private function calculateMeshesTransforms(root:Object3D):void {		
+			for (var child:Object3D = root.childrenList; child != null; child = child.next) {
+				if (child.transformChanged) child.composeTransforms();
+				// Put skin transfer matrix to localToGlobalTransform
+				child.localToGlobalTransform.combine(root.localToGlobalTransform, child.transform);
+				calculateMeshesTransforms(child);
+			}
+		}
 		
+		*/
 		
 		
 		

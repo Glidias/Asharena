@@ -15,6 +15,11 @@ package saboteur.spawners
 		public static var MODEL_vikingFlagMarker:Class;
 		[Embed(source="../../../resources/props/vikingflag_marker/marker.png")]
 		public static var TEXTURE_vikingFlagMarker:Class;
+		
+		[Embed(source="../../../resources/props/volcano/volcano.a3d", mimeType="application/octet-stream")]	
+		public static var MODEL_volcano:Class;
+		[Embed(source="../../../resources/props/volcano/texture-atlas.png")]
+		public static var TEXTURE_volcano:Class;
 	
 		public function JettyPropsAndMobs() 
 		{
