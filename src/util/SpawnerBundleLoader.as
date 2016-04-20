@@ -12,6 +12,7 @@ package util
 	import flash.utils.Dictionary;
 	import flash.utils.getQualifiedClassName;
 	import flash.utils.setTimeout;
+	import hx.Xml;
 	/**
 	 * ...
 	 * @author Glenn Ko
@@ -87,26 +88,68 @@ package util
 		}
 		
 		private function handleLoadComplete(e:Event):void {
+			var atom:XML;
 		
 			
 			(e.currentTarget as IEventDispatcher).removeEventListener(e.type, handleLoadComplete);
 			
 			var me:Object = currentLoadItem.targetInstance;
-			var variables : XMLList = describeType( me ).variable;
+			var xmler:XML = describeType( me );
+			var getSubClasses:XMLList = xmler.method.(@name == "$getSubClasses");
+			
+			var variables : XMLList = xmler.variable;
 			
 			
 			var loader:ClassLoader = (e.currentTarget as ClassLoader);
 			var classe:Class = loader.getClass( currentLoadItem.className );
 			
-			  for each ( var atom:XML in variables )
+			
+			
+		
+			  for each ( atom in variables )
 				{		
 					var componentClass : * = classe[atom.@name.toString()];			
-					if (componentClass == null) throw new Error("COuld not find classe!" + currentLoadItem.targetInstance);
-					var prop:String = atom.@name.toString();
-					if (me[prop]==null) me[prop] = componentClass;
-				
-					
+					if (componentClass != null) {
+						var prop:String = atom.@name.toString();
+						if (me[prop] == null) me[prop] = componentClass;
+					}
+					else {
+						// throw new Error("COuld not find classe!" + currentLoadItem.targetInstance);
+					}
 				}
+				
+				//TODO: get internal classes
+				//if (loader.loader.contentLoaderInfo.applicationDomain.hasDefinition("private::ElementalFire")) {
+				//	throw new Error("TES");
+				//}
+				if (getSubClasses.length()) {
+					var subClassList:Array = me["$getSubClasses"]();
+					var i:int = subClassList.length;
+					while (--i > -1 ) {
+						var subClass:Object = subClassList[i];
+						var subClassXML:XML = describeType(subClass);
+						variables = subClassXML.variable;
+						var str:String = subClass.toString();
+						str = str.slice(7, str.length - 1);
+						
+					  for each ( atom in variables )
+						{	
+							
+							prop = atom.@name.toString();
+							componentClass = loader.getClass(str+"_"+prop);
+							if (subClass[prop] == null) {
+								subClass[prop] = componentClass;
+								//throw new Error("injecting:" + componentClass);
+							}
+							//else {
+							//	throw new Error(subClass[prop]);
+							//}
+						}
+
+						//var subClass:Class = loader.getClass();
+					}
+				}
+				
 			//	currentLoadItem.doInit();
 				
 					_curLoaded++;
@@ -185,7 +228,7 @@ class LoadItem {
     class ClassLoader extends EventDispatcher {
         public static var CLASS_LOADED:String = "classLoaded";
         public static var LOAD_ERROR:String = "loadError";
-        private var loader:Loader;
+        public var loader:Loader;
         private var swfLib:String;
         private var request:URLRequest;
         private var loadedClass:Class;

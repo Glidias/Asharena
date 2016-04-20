@@ -7,6 +7,7 @@ package tests.saboteur
 	import alternativa.a3d.cullers.BVHCuller;
 	import alternativa.a3d.rayorcollide.TerrainITCollide;
 	import alternativa.a3d.rayorcollide.TerrainRaycastImpl;
+	import alternativa.a3d.systems.animation.AnimControllerComponent;
 	import alternativa.a3d.systems.radar.RadarMinimapSystem;
 	import alternativa.a3d.systems.text.FontSettings;
 	import alternativa.a3d.systems.text.StringLog;
@@ -62,6 +63,10 @@ package tests.saboteur
 	import flash.ui.Keyboard;
 	import hxGeomAlgo.IsoContours;
 	import input.KeyPoll;
+	import saboteur.spawners.JettyPropsAndMobs;
+	import spawners.ModelBundle;
+	import spawners.ModelPacket;
+	import systems.animation.IAnimatable;
 	import util.geom.Vec3;
 
 	import saboteur.models.IBuildModel;
@@ -127,6 +132,8 @@ package tests.saboteur
 			addChild(_preloader);
 			
 			game = new TheGame(stage);
+			
+			
 	
 			addChild( _template3D = new MainView3D() );
 			_template3D.onViewCreate.add(onReady3D);
@@ -761,7 +768,9 @@ package tests.saboteur
 			hudAssets = new SaboteurHud(game.engine, stage, game.keyPoll);
 			pickupSpawner = new PickupItemSpawner(game.engine);
 			
-			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[gladiatorBundle, jettySpawner, hudAssets, pickupSpawner]);
+			propsAndMobs = new ModelBundle(JettyPropsAndMobs);
+			
+			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[gladiatorBundle, jettySpawner, hudAssets, pickupSpawner, propsAndMobs]);
 			bundleLoader.progressSignal.add( _preloader.setProgress );
 			bundleLoader.loadBeginSignal.add( _preloader.setLabel );
 		}
@@ -769,13 +778,10 @@ package tests.saboteur
 		private function onSpawnerBundleLoaded():void 
 		{
 			//game.gameStates.engineState.changeState("thirdPerson");
-				
+			//	throw new Error(JettyPropsAndMobs.$getSubClasses()[0].$_MODEL);
 			_template3D.visible = true;
 			removeChild(_preloader);			
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
-			
-
-			
 		
 			gladiatorBundle.arenaSpawner.addGladiator(ArenaSpawner.RACE_SAMNIAN, stage, 0, 0, START_PLAYER_Z + 33).add( game.keyPoll );
 			
@@ -798,7 +804,6 @@ package tests.saboteur
 		//	var canBuildIndicator:CanBuildIndicator = new CanBuildIndicator();
 		//	addChild(canBuildIndicator);
 		//	pathBuilder.onEndPointStateChange.add(canBuildIndicator.setCanBuild);
-			
 		
 	
 			thirdPerson = new ThirdPersonController(stage, _template3D.camera, new Object3D(), arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity);
@@ -825,6 +830,9 @@ package tests.saboteur
 		
 			//_template3D.camera.orthographic = true;
 			_template3D.camera.addChild( hud = new Hud2D() );
+			
+			
+			
 			hud.z = 1.1;
 		//	hud.visible = false;
 	
@@ -896,6 +904,8 @@ package tests.saboteur
 			hudAssets.addToHud3D(hud);
 			hudAssets.txt_chatChannel.appendSpanTagMessage('Welcome to the <span u="2">Saboteur Jetty-Building Challenge!</span>.');
 			setupLineDrawer();
+			setupProps();
+			
 			setupDebugMeshContainer();
 		
 		
@@ -909,7 +919,35 @@ package tests.saboteur
 			
 			// important to only call this after all voiew dependencies are in place
 			rules.setup();
+		}
 		
+		private function setupProps():void 
+		{
+			var packet:ModelPacket;
+			var animArr:Array;
+			var altOffset:Number = 340 * JettySpawner.SPAWN_SCALE_INV;
+			packet = propsAndMobs.getSubModelPacket("ElementalFire");
+			ModelPacket.scale(packet.root, JettySpawner.SPAWN_SCALE_INV);
+			packet.root.z = altOffset;
+			
+			packet = propsAndMobs.getSubModelPacket("vikingFlagMarker");
+			ModelPacket.scale(packet.root, JettySpawner.SPAWN_SCALE_INV);
+			packet.model.y = packet.model.boundBox.maxY*2 + 20;// altOffset;
+			
+			packet = propsAndMobs.getSubModelPacket("ElementalEarth");
+			ModelPacket.scale(packet.root, JettySpawner.SPAWN_SCALE_INV);
+			packet.root.z = altOffset;
+			
+			
+			animArr = packet.get3DAnimatedSkinRoot();
+			builder3D.startScene.addChild( animArr[0] );
+			game.engine.addEntity( new Entity().add( new AnimControllerComponent( animArr[1] ), IAnimatable) );
+			
+			animArr = propsAndMobs.getSubModelPacket("vikingFlagMarker").get3DAnimatedSkinRoot();
+			builder3D.startScene.addChild( animArr[0] );
+			game.engine.addEntity( new Entity().add( new AnimControllerComponent( animArr[1] ), IAnimatable) );
+			
+			
 		}
 		
 		private function onStepperIndexChanged(index:int):void 
@@ -982,6 +1020,7 @@ package tests.saboteur
 		private var curBuildAttempter:IBuildAttempter;
 		private var curBuildModel:IBuildModel;
 		private var rules:AloneInTheMines;
+		private var propsAndMobs:ModelBundle;
 		
 		private function onKeyDown(e:KeyboardEvent):void 
 		{

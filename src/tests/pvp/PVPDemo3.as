@@ -13,6 +13,8 @@ package tests.pvp
 	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
 	import alternativa.a3d.systems.enemy.A3DEnemyArcSystem;
 	import alternativa.a3d.systems.hud.EdgeRaycastTester;
+	import alternativa.engine3d.materials.TextureMaterial;
+	import spawners.ModelBundle;
 	//import alternativa.a3d.systems.hud.DestCalcTester;
 	import alternativa.a3d.systems.hud.HealthBarRenderSystem;
 	import alternativa.a3d.systems.hud.TrajRaycastTester;
@@ -109,7 +111,7 @@ package tests.pvp
 	import systems.SystemPriorities;
 	import systems.tweening.TweenSystem;
 	import util.geom.PMath;
-	import util.ModelBundle;
+	
 	import util.SpawnerBundle;
 	import util.SpawnerBundleLoader;
 	import views.engine3d.MainView3D;
@@ -288,7 +290,7 @@ package tests.pvp
 		private function getSpawnerBundles():Vector.<SpawnerBundle> 
 		{
 			return new <SpawnerBundle>[_gladiatorBundle = new GladiatorBundle(arenaSpawner), arenaHUD = new ArenaHUD(stage) ,
-				_modelBundle = new ModelBundle([Projectiles]),
+				_modelBundle = new ModelBundle(Projectiles, null, true),
 				_terrainBase = new TerrainBase(TerrainTest,1, .5 ), //.25*.25 
 				_skyboxBase = new SkyboxBase(ClearBlueSkyAssets),
 				_waterBase = new WaterBase(NormalWaterAssets),
@@ -371,8 +373,14 @@ package tests.pvp
 			
 			 game.engine.addEntity( new Entity().add(arrowProjectileDomain, IProjectileDomain) );
 			  arrowProjectileDomain.setHitResolver(_animAttackSystem);
-			 
-			 var arrowLob:ArrowLobMeshSet2 =  new ArrowLobMeshSet2(_modelBundle.getModel("arrow").geometry, _modelBundle.getMaterial("arrow"));
+			  if (_modelBundle.getSubModelPacket("arrow").getMaterial() is TextureMaterial) {
+					// do nothing, basic texture material is fine for current  batch amount
+			  }
+			  else {
+				  ArrowLobMeshSet2.BATCH_AMOUNT = 58;
+			  }
+			
+			 var arrowLob:ArrowLobMeshSet2 =  new ArrowLobMeshSet2( (_modelBundle.getSubModelPacket("arrow").model as Mesh).geometry, _modelBundle.getSubModelPacket("arrow").getMaterial() );
 			_template3D.scene.addChild(arrowLob);
 			 arrowProjectileDomain.init( arrowLob );
 			 arrowLob.setGravity(216 * 3);
@@ -434,10 +442,10 @@ package tests.pvp
 		
 		private function getTestWeaponList():WeaponSlot {
 			var weapSlot:WeaponSlot = new WeaponSlot().init();
-		//	weapSlot.slots[0] = getTestRangedWeapon();
-		//	weapSlot.slots[1] = getTestWeaponFireModes();
+			weapSlot.slots[0] = getTestRangedWeapon();
+			weapSlot.slots[1] = getTestWeaponFireModes();
 			
-		weapSlot.slots[0] = getTestWeaponFireModes();
+	//	weapSlot.slots[0] = getTestWeaponFireModes();
 			return weapSlot;
 		}
 

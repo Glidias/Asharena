@@ -27,7 +27,7 @@ package alternativa.a3d.objects
 		
 
 		private var sampleNumTris:int;
-		private static var BATCH_AMOUNT:int = 60;
+		public static var BATCH_AMOUNT:int = 60;
 		
 		private static var _transformProcedures:Dictionary = new Dictionary();
 		private static var _deltaTransformProcedures:Dictionary = new Dictionary();

@@ -52,6 +52,7 @@ package saboteur.spawners
 
 		public var editorMat:FillMaterial = new FillMaterial(0, .1);
 		static public const SPAWN_SCALE:Number = 17;
+		static public const SPAWN_SCALE_INV:Number = 1/SPAWN_SCALE;
 		private var genesis:Object3D;
 		private var blueprint:Object3D;
 		private var injectMaterial:VertexLightZClipMaterial;

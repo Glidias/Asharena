@@ -11,6 +11,11 @@ package saboteur.spawners
 	public class JettyPropsAndMobs extends Sprite
 	{
 
+		[Embed(source="../../../resources/props/vikingflag_marker/tall_polemarker.a3d", mimeType="application/octet-stream")]
+		public static var MODEL_vikingFlagMarker:Class;
+		[Embed(source="../../../resources/props/vikingflag_marker/marker.png")]
+		public static var TEXTURE_vikingFlagMarker:Class;
+	
 		public function JettyPropsAndMobs() 
 		{
 			
@@ -28,18 +33,18 @@ package saboteur.spawners
 import flash.display.Sprite;
 
 class ElementalEarth {
-	[Embed(source="../../../resources/monsters/elementals/elementals_greater_earth.a3d", mimeType="application/octet-stream")]
+//[Embed(source="../../../resources/monsters/elementals/elementals_greater_earth.a3d", mimeType="application/octet-stream")]
 	public static var $_MODEL:Class;
 	
-	[Embed(source="../../../resources/monsters/elementals/elemearth.jpg")]
+	//[Embed(source="../../../resources/monsters/elementals/elemearth.jpg")]
 	public static var $_TEXTURE:Class;
 }
 
 
 class ElementalFire {
-	[Embed(source="../../../resources/monsters/elementals/elementals_lesser_fire.a3d", mimeType="application/octet-stream")]
+	//[Embed(source="../../../resources/monsters/elementals/elementals_lesser_fire.a3d", mimeType="application/octet-stream")]
 	public static var $_MODEL:Class;
 	
-	[Embed(source="../../../resources/monsters/elementals/elemfire.jpg")]
+	//[Embed(source="../../../resources/monsters/elementals/elemfire.jpg")]
 	public static var $_TEXTURE:Class;
 }
