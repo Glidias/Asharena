@@ -6,6 +6,7 @@ package spawners
 	import alternativa.engine3d.materials.Material;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import alternativa.engine3d.objects.Mesh;
+	import alternativa.engine3d.objects.Skin;
 	import alternativa.engine3d.resources.BitmapTextureResource;
 	import alternativa.engine3d.resources.ExternalTextureResource;
 	import alternativa.engine3d.utils.MaterialProcessor;
@@ -117,6 +118,13 @@ package spawners
 					
 				}
 				
+				// assumption made that if root level has no bounding box, skin (assumed animated), should NOT have a bounding box
+				// Root will ALWAYS have a calculated bounding box in relation to it's childrens' bounding boxes.
+					if (rootModelPacket.model is Skin && rootModelPacket.root.boundBox == null) {
+						rootModelPacket.model.boundBox = null;
+					}
+				
+				
 			//	if (rootModelPacket.model != null) throw new Error("Found model:" + rootModelPacket.model);
 				//if (rootModelPacket.model == null && modelPacket.texture == null) throw new Error("Model packet is empty: "+subName);
 				
@@ -136,6 +144,8 @@ package spawners
 						processClasse(parser, subClassList[i], getShortStringForClass(subClassList[i]));
 					}
 				}
+				
+			
 				
 				
 				return rootModelPacket;

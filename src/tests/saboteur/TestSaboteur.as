@@ -14,6 +14,8 @@ package tests.saboteur
 	import alternativa.a3d.systems.text.TextMessageSystem;
 	import alternativa.a3d.systems.text.TextSpawner;
 	import alternativa.engine3d.alternativa3d;
+	import alternativa.engine3d.animation.AnimationController;
+	import alternativa.engine3d.core.Debug;
 	import alternativa.engine3d.core.events.MouseEvent3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.VertexAttributes;
@@ -25,6 +27,9 @@ package tests.saboteur
 	import alternativa.engine3d.objects.MeshSetClone;
 	import alternativa.engine3d.objects.MeshSetClonesContainer;
 	import alternativa.engine3d.objects.MeshSetClonesContainerMod;
+	import alternativa.engine3d.objects.Skin;
+	import alternativa.engine3d.objects.SkinClone;
+	import alternativa.engine3d.objects.SkinClonesContainer;
 	import alternativa.engine3d.objects.Sprite3D;
 	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.primitives.Plane;
@@ -904,7 +909,7 @@ package tests.saboteur
 			hudAssets.addToHud3D(hud);
 			hudAssets.txt_chatChannel.appendSpanTagMessage('Welcome to the <span u="2">Saboteur Jetty-Building Challenge!</span>.');
 			setupLineDrawer();
-			setupProps();
+			
 			
 			setupDebugMeshContainer();
 		
@@ -914,7 +919,7 @@ package tests.saboteur
 		
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown, false, 1);
 			
-			
+			setupProps();
 			//gameBuilder.setupSaboteur1MapGoals();
 			
 			// important to only call this after all voiew dependencies are in place
@@ -925,30 +930,166 @@ package tests.saboteur
 		{
 			var packet:ModelPacket;
 			var animArr:Array;
-			var altOffset:Number = 340 * JettySpawner.SPAWN_SCALE_INV;
-			packet = propsAndMobs.getSubModelPacket("ElementalFire");
-			ModelPacket.scale(packet.root, JettySpawner.SPAWN_SCALE_INV);
-			packet.root.z = altOffset;
+			var skinClone:SkinClone
+			var altOffset:Number = 250 * JettySpawner.SPAWN_SCALE_INV;
+
 			
 			packet = propsAndMobs.getSubModelPacket("vikingFlagMarker");
 			ModelPacket.scale(packet.root, JettySpawner.SPAWN_SCALE_INV);
+
 			packet.model.y = packet.model.boundBox.maxY*2 + 20;// altOffset;
 			
 			packet = propsAndMobs.getSubModelPacket("ElementalEarth");
-			ModelPacket.scale(packet.root, JettySpawner.SPAWN_SCALE_INV);
+			ModelPacket.scale(packet.root, JettySpawner.SPAWN_SCALE_INV * .75);
+						packet.model.rotationY = Math.PI ;
 			packet.root.z = altOffset;
-			
+			//packet.root.boundBox = null;
+			//packet.model.boundBox = null;
+			var aniControllerComp:AnimControllerComponent;
 			
 			animArr = packet.get3DAnimatedSkinRoot();
+		//	_template3D.camera.addToDebug( Debug.BOUNDS, animArr[0].childrenList);
+	//	_template3D.camera.debug = true;
 			builder3D.startScene.addChild( animArr[0] );
-			game.engine.addEntity( new Entity().add( new AnimControllerComponent( animArr[1] ), IAnimatable) );
+			game.engine.addEntity( new Entity().add( aniControllerComp=new AnimControllerComponent( animArr[1] ), IAnimatable) );
+			//aniControllerComp.animate(0);
+
+			//animArr[0].calculateBoundBox();
 			
-			animArr = propsAndMobs.getSubModelPacket("vikingFlagMarker").get3DAnimatedSkinRoot();
-			builder3D.startScene.addChild( animArr[0] );
-			game.engine.addEntity( new Entity().add( new AnimControllerComponent( animArr[1] ), IAnimatable) );
+			packet =  propsAndMobs.getSubModelPacket("vikingFlagMarker");
+			var skin:Skin = packet.model as Skin;
+			skin.rotationX = Math.PI * .5;
+            skin.rotationZ = Math.PI * .5;
+			skin.x = 0;
+			skin.y = 0;
+			skin.z = 265;
+			//   skin.divide(1000);
+			//throw new Error(skin.renderedJoints.length + ", " + skin.surfaceJoints.length);
+			// skin.renderedJoints = skin.surfaceJoints[0];
+			 
+			var vikingFlags:SkinClonesContainer = new SkinClonesContainer(skin);
+			SpawnerBundle.uploadResources( vikingFlags.getResources(false, Geometry));
+			vikingFlags.setMaterialToAllSurfaces(packet.getMaterial());
+			ModelPacket.scale( vikingFlags, JettySpawner.SPAWN_SCALE_INV);
+			builder3D.startScene.addChild(vikingFlags);
+			
+			skinClone = vikingFlags.addClone( vikingFlags.createClone() );
+			packet.animClip.time = Math.random()*packet.animClip.length;
+			game.engine.addEntity( new Entity().add( new AnimControllerComponent( packet.setupAnimFor(skinClone.root) ), IAnimatable) );
+			skinClone.root.x = -95;
+			skinClone.root.y = -95;
+			skinClone.root.z = 0;
+			skinClone.root.rotationZ = Math.PI * .5;
+		
+			skinClone = vikingFlags.addClone( vikingFlags.createClone() );
+			packet.animClip.time = Math.random()*packet.animClip.length;
+			game.engine.addEntity( new Entity().add( new AnimControllerComponent( packet.setupAnimFor(skinClone.root) ), IAnimatable) );
+			skinClone.root.x = 95;
+			skinClone.root.y = 95;
+			skinClone.root.z =0
+			skinClone.root.rotationZ = Math.PI * .5;
 			
 			
+			skinClone = vikingFlags.addClone( vikingFlags.createClone() );
+			packet.animClip.time = Math.random()*packet.animClip.length;
+			game.engine.addEntity( new Entity().add( new AnimControllerComponent( packet.setupAnimFor(skinClone.root) ), IAnimatable) );
+			skinClone.root.x = 95;
+			skinClone.root.y = -95;
+			skinClone.root.z = 0;
+			skinClone.root.rotationZ = Math.PI * .5;
+			
+			
+			skinClone = vikingFlags.addClone( vikingFlags.createClone() );
+			packet.animClip.time = Math.random()*packet.animClip.length;
+			game.engine.addEntity( new Entity().add( new AnimControllerComponent( packet.setupAnimFor(skinClone.root) ), IAnimatable) );
+			skinClone.root.x = -95;
+			skinClone.root.y = 95;
+			skinClone.root.z = 0;
+			skinClone.root.rotationZ = Math.PI * .5;
+			
+			packet =  propsAndMobs.getSubModelPacket("volcano");
+			packet.animClip.speed = .15;
+			skin = packet.model as Skin;
+			skin.rotationX = Math.PI * .5;
+            skin.rotationZ = Math.PI * .5;
+			skin.x = 0;
+			skin.y = 0;
+			skin.z = -200;
+			skin.scaleX = 8;
+			skin.scaleY = 8;
+			skin.scaleZ = 8;
+			var volcanoes:SkinClonesContainer = new SkinClonesContainer(skin);
+			
+			SpawnerBundle.uploadResources( volcanoes.getResources(false, Geometry));
+			volcanoes.setMaterialToAllSurfaces(packet.getMaterial());
+			ModelPacket.scale( volcanoes, JettySpawner.SPAWN_SCALE_INV);
+			builder3D.startScene.addChild(volcanoes);
+			//packet.animClip.time = packet.animClip.length * .85;
+			
+			skinClone = volcanoes.addClone( volcanoes.createClone() );	
+			volcanoAnimComponents.push( new AnimControllerComponent( packet.setupAnimFor(skinClone.root) ) );
+			builder3D.positionObjLocallyAt( -AloneInTheMines.DIST, 2, skinClone.root, JettySpawner.SPAWN_SCALE);
+			
+			skinClone = volcanoes.addClone( volcanoes.createClone() );
+			volcanoAnimComponents.push( new AnimControllerComponent( packet.setupAnimFor(skinClone.root) ) );
+			builder3D.positionObjLocallyAt( -AloneInTheMines.DIST - (rules.middleCardFuther ? 1 : 0), 0, skinClone.root, JettySpawner.SPAWN_SCALE);
+			
+			skinClone = volcanoes.addClone( volcanoes.createClone() );
+			volcanoAnimComponents.push( new AnimControllerComponent( packet.setupAnimFor(skinClone.root) ) );
+			builder3D.positionObjLocallyAt( -AloneInTheMines.DIST, -2, skinClone.root, JettySpawner.SPAWN_SCALE);
+			
+			volcanoAnimComponents[0].animate(0);
+			volcanoAnimComponents[1].animate(0);
+			volcanoAnimComponents[2].animate(0);
+			
+			packet =  propsAndMobs.getSubModelPacket("ElementalFire");
+			packet.animClip.speed = .15;
+			skin = packet.model as Skin;
+			skin.rotationX = Math.PI * .5;
+            skin.rotationZ = Math.PI * .5;
+			skin.x = 0;
+			skin.y = 0;
+			skin.z = altOffset + 300;
+			skin.scaleX= .75;
+			skin.scaleY =.75;
+			skin.scaleZ = .75;
+			var fireElementals:SkinClonesContainer = new SkinClonesContainer(skin);
+			
+			SpawnerBundle.uploadResources( fireElementals.getResources(false, Geometry));
+			fireElementals.setMaterialToAllSurfaces(packet.getMaterial());
+			ModelPacket.scale( fireElementals, JettySpawner.SPAWN_SCALE_INV);
+			builder3D.startScene.addChild(fireElementals);
+	
+			skinClone = fireElementals.addClone( fireElementals.createClone() );
+			skinClone.root.rotationZ = Math.random() * Math.PI * 2;
+			game.engine.addEntity( new Entity().add( new AnimControllerComponent( packet.setupAnimFor(skinClone.root) ), IAnimatable) );
+			builder3D.positionObjLocallyAt( -AloneInTheMines.DIST, 2, skinClone.root, JettySpawner.SPAWN_SCALE);
+			
+			skinClone = fireElementals.addClone( fireElementals.createClone() );
+			skinClone.root.rotationZ = Math.random() * Math.PI * 2;
+			game.engine.addEntity( new Entity().add( new AnimControllerComponent( packet.setupAnimFor(skinClone.root) ), IAnimatable) );
+			builder3D.positionObjLocallyAt( -AloneInTheMines.DIST - (rules.middleCardFuther ? 1 : 0), 0, skinClone.root, JettySpawner.SPAWN_SCALE);
+			
+			skinClone = fireElementals.addClone( fireElementals.createClone() );
+			skinClone.root.rotationZ = Math.random() * Math.PI * 2;
+			game.engine.addEntity( new Entity().add( new AnimControllerComponent( packet.setupAnimFor(skinClone.root) ), IAnimatable) );
+			builder3D.positionObjLocallyAt( -AloneInTheMines.DIST, -2, skinClone.root, JettySpawner.SPAWN_SCALE);
+			
+			//volcanoes.addChild( packet.get3DAnimatedSkin()[0]);
+			
+			/*
+			 * Radar elemental position
+			Radar Player center X position
+			Radar show as black cards with 2 elementals centered
+
+			Add treasure to top, then drop it to ground on release...
+
+			Sink volcano on connect
+
+			*/
 		}
+		
+		private var volcanoAnimComponents:Array = [];
 		
 		private function onStepperIndexChanged(index:int):void 
 		{

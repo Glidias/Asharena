@@ -35,6 +35,12 @@ package spawners
 			
 		}
 		
+		public function getRootTransform():Object3D {
+			var rootC:Object3D = new Object3D();
+			rootC.matrix = root.matrix;// = root
+			return rootC;
+		}
+		
 		public function getMaterial():Material {
 			var ref:Mesh = model as Mesh;
 			return ref.getSurface(0).material;
@@ -71,15 +77,15 @@ package spawners
 		}
 		
 		public function get3DAnimatedSkinRoot(optionalAnimatable:Boolean=false):Array {
-			var ref:Skin = get3DStaticSkin();
-			var anim:* = setupAnimFor(ref, optionalAnimatable);
-			return anim ? [get3DStaticRoot(), anim] : [get3DStaticRoot()];
+			var root:Object3D = get3DStaticRoot();
+			var anim:* = setupAnimFor(root, optionalAnimatable);
+			return anim ? [root, anim] : [root];
 		}
 		
 		public function get3DAnimatedModelRoot(optionalAnimatable:Boolean=false):Array {
-			var ref:Object3D = get3DStaticModel();
-			var anim:* = setupAnimFor(ref, optionalAnimatable);
-			return anim ? [get3DStaticRoot(), anim ] : [get3DStaticRoot()];
+			var root:Object3D = get3DStaticRoot();
+			var anim:* = setupAnimFor(root, optionalAnimatable);
+			return anim ? [root, anim ] : [root];
 		}
 		
 		public function get3DAnimatedSkin(optionalAnimatable:Boolean=false):Array {
@@ -96,7 +102,7 @@ package spawners
 		
 		
 		
-		private function setupAnimFor(ref:Object3D, optionalAnimatable:Boolean):* 
+		public function setupAnimFor(ref:Object3D, optionalAnimatable:Boolean=false):* 
 		{
 			var animOutput:* = null;
 			
@@ -105,7 +111,9 @@ package spawners
 			}
 			else if (animClip != null) {
 				var cClip:AnimationClip;
-				cClip = animClip.clone();
+				cClip = animClip.clone(); 
+				cClip.time =  animClip.time;  // clone doesn't match time/speed, will perform this.
+				cClip.speed = animClip.speed;
 				cClip.attach(ref, true);
 				var controller:AnimationController = new AnimationController();
 				controller.root = cClip;
