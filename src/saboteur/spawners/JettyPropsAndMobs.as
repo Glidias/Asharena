@@ -20,6 +20,11 @@ package saboteur.spawners
 		public static var MODEL_volcano:Class;
 		[Embed(source="../../../resources/props/volcano/texture-atlas.png")]
 		public static var TEXTURE_volcano:Class;
+		
+		[Embed(source="../../../resources/props/chest_gold/treasure_iron.a3d", mimeType="application/octet-stream")]	
+		public static var MODEL_chestgrey:Class;
+		[Embed(source="../../../resources/props/chest_gold/chest_black.jpg")]
+		public static var TEXTURE_chestgrey:Class;
 	
 		public function JettyPropsAndMobs() 
 		{

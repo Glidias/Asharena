@@ -94,8 +94,8 @@ package saboteur.spawners
             
             
 			var previewMaterial:TextureMaterial = injectMaterial.clone() as TextureMaterial;
-			previewMaterial.alphaThreshold = .99;
-			previewMaterial.alpha = .4;
+		//	previewMaterial.alphaThreshold = .99;
+			//previewMaterial.alpha = .97;
 
 			
 			// Setup parsing of 3d stuff from a3d

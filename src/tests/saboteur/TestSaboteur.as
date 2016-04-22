@@ -1042,6 +1042,10 @@ package tests.saboteur
 			volcanoAnimComponents[1].animate(0);
 			volcanoAnimComponents[2].animate(0);
 			
+		//	throw new Error( (packet.model as Skin).renderedJoints );
+			//throw new Error(skinClone.renderedJoints);
+				var lastVolcanoJoint:Object3D = skinClone.renderedJoints[skinClone.renderedJoints.length-1];
+			
 			packet =  propsAndMobs.getSubModelPacket("ElementalFire");
 			packet.animClip.speed = .15;
 			skin = packet.model as Skin;
@@ -1074,6 +1078,25 @@ package tests.saboteur
 			skinClone.root.rotationZ = Math.random() * Math.PI * 2;
 			game.engine.addEntity( new Entity().add( new AnimControllerComponent( packet.setupAnimFor(skinClone.root) ), IAnimatable) );
 			builder3D.positionObjLocallyAt( -AloneInTheMines.DIST, -2, skinClone.root, JettySpawner.SPAWN_SCALE);
+			
+			
+			
+			packet =  propsAndMobs.getSubModelPacket("chestgrey");
+			skin = packet.model as Skin;
+			skin.rotationX = Math.PI * .5;
+        //    skin.rotationZ = Math.PI * .5;
+		//	skin.x = 0;
+		//	skin.y = 0;
+			//skin.z = altOffset + 300;
+			var chests:SkinClonesContainer = new SkinClonesContainer(skin);
+			SpawnerBundle.uploadResources( chests.getResources(false, Geometry));
+			skinClone = chests.addClone( chests.createClone() );	
+			skinClone.root._parent = lastVolcanoJoint;
+			
+			ModelPacket.scale( chests, JettySpawner.SPAWN_SCALE_INV);
+			builder3D.startScene.addChild(chests);
+			
+			
 			
 			//volcanoes.addChild( packet.get3DAnimatedSkin()[0]);
 			
