@@ -120,8 +120,9 @@ package spawners
 				
 				// assumption made that if root level has no bounding box, skin (assumed animated), should NOT have a bounding box
 				// Root will ALWAYS have a calculated bounding box in relation to it's childrens' bounding boxes.
-					if (rootModelPacket.model is Skin && rootModelPacket.root.boundBox == null) {
-						rootModelPacket.model.boundBox = null;
+					if ( (modelPacket.model is Skin) && modelPacket.root.boundBox == null) {
+						modelPacket.model.boundBox = null;
+				//		throw new Error("A");
 					}
 				
 				

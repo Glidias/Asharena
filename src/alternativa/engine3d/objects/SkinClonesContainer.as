@@ -56,7 +56,8 @@ package alternativa.engine3d.objects
 			
 			super(sample.maxInfluences);
 			this.clonePropertiesFrom(sample);
-		
+			childrenList = null;
+			
 			
 			_sample = sample;
 			
@@ -232,7 +233,7 @@ package alternativa.engine3d.objects
 			
 
 			
-			cloneItem.root._parent = this;
+		//	cloneItem.root._parent = this;
 			cloneItem.index = -1;
 			
 			var skin:Skin = _sample.clone() as Skin;  // lazy method to grab new set of surfaceJoints, original cloned skin is wasted away	
@@ -334,10 +335,11 @@ package alternativa.engine3d.objects
 				var root:Object3D = clones[i].root;
 				if (root.transformChanged) root.composeTransforms();
 				
-				if (root._parent == null) root.localToGlobalTransform.copy(root.transform);
+				if (root._parent == null || root._parent === this) root.localToGlobalTransform.copy(root.transform);
 				else {
 					if (root._parent.transformChanged) root._parent.composeTransforms();
 					root.localToGlobalTransform.combine(root._parent.transform, root.transform);
+					//throw new Error("A");
 				}
 				
 				calculateMeshesTransforms(root);
@@ -345,6 +347,7 @@ package alternativa.engine3d.objects
 		}
 		
 		private function calculateMeshesTransforms(root:Object3D):void {		
+			
 			for (var child:Object3D = root.childrenList; child != null; child = child.next) {
 				if (child.transformChanged) child.composeTransforms();
 				// Put skin transfer matrix to localToGlobalTransform
@@ -353,7 +356,7 @@ package alternativa.engine3d.objects
 			}
 		}
 		
-		*/
+	//	*/
 		
 		
 		

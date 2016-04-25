@@ -60,11 +60,18 @@ package spawners
 		}
 		
 	
-		
+		// temp convenience method, will depreciate and move elsewhere
 		public static function scale(obj:Object3D, scale:Number):Object3D {
 			obj._scaleX = scale;
 			obj._scaleY = scale;
 			obj._scaleZ = scale;
+			obj.transformChanged = true;
+			return obj;
+		}
+		public static function scaleBy(obj:Object3D, scale:Number):Object3D {
+			obj._scaleX *= scale;
+			obj._scaleY *= scale;
+			obj._scaleZ *= scale;
 			obj.transformChanged = true;
 			return obj;
 		}

@@ -934,11 +934,12 @@ package tests.saboteur
 			var altOffset:Number = 250 * JettySpawner.SPAWN_SCALE_INV;
 
 			
-			packet = propsAndMobs.getSubModelPacket("vikingFlagMarker");
+			packet = propsAndMobs.getSubModelPacket("vikingFlagMarker");	
 			ModelPacket.scale(packet.root, JettySpawner.SPAWN_SCALE_INV);
 
-			packet.model.y = packet.model.boundBox.maxY*2 + 20;// altOffset;
-			
+			packet.model.y = 20 + 100;
+			//packet.model.y = packet.model + 20;// altOffset;
+	
 			packet = propsAndMobs.getSubModelPacket("ElementalEarth");
 			ModelPacket.scale(packet.root, JettySpawner.SPAWN_SCALE_INV * .75);
 						packet.model.rotationY = Math.PI ;
@@ -966,7 +967,7 @@ package tests.saboteur
 			//   skin.divide(1000);
 			//throw new Error(skin.renderedJoints.length + ", " + skin.surfaceJoints.length);
 			// skin.renderedJoints = skin.surfaceJoints[0];
-			 
+		
 			var vikingFlags:SkinClonesContainer = new SkinClonesContainer(skin);
 			SpawnerBundle.uploadResources( vikingFlags.getResources(false, Geometry));
 			vikingFlags.setMaterialToAllSurfaces(packet.getMaterial());
@@ -1019,7 +1020,7 @@ package tests.saboteur
 			skin.scaleY = 8;
 			skin.scaleZ = 8;
 			var volcanoes:SkinClonesContainer = new SkinClonesContainer(skin);
-			
+
 			SpawnerBundle.uploadResources( volcanoes.getResources(false, Geometry));
 			volcanoes.setMaterialToAllSurfaces(packet.getMaterial());
 			ModelPacket.scale( volcanoes, JettySpawner.SPAWN_SCALE_INV);
@@ -1041,9 +1042,10 @@ package tests.saboteur
 			volcanoAnimComponents[0].animate(0);
 			volcanoAnimComponents[1].animate(0);
 			volcanoAnimComponents[2].animate(0);
-			
+				
 		//	throw new Error( (packet.model as Skin).renderedJoints );
 			//throw new Error(skinClone.renderedJoints);
+			var lastVolcanoClone:SkinClone = skinClone;
 				var lastVolcanoJoint:Object3D = skinClone.renderedJoints[skinClone.renderedJoints.length-1];
 			
 			packet =  propsAndMobs.getSubModelPacket("ElementalFire");
@@ -1058,7 +1060,7 @@ package tests.saboteur
 			skin.scaleY =.75;
 			skin.scaleZ = .75;
 			var fireElementals:SkinClonesContainer = new SkinClonesContainer(skin);
-			
+		
 			SpawnerBundle.uploadResources( fireElementals.getResources(false, Geometry));
 			fireElementals.setMaterialToAllSurfaces(packet.getMaterial());
 			ModelPacket.scale( fireElementals, JettySpawner.SPAWN_SCALE_INV);
@@ -1083,6 +1085,7 @@ package tests.saboteur
 			
 			packet =  propsAndMobs.getSubModelPacket("chestgrey");
 			skin = packet.model as Skin;
+			ModelPacket.scale(packet.model, 1.4);
 			skin.rotationX = Math.PI * .5;
         //    skin.rotationZ = Math.PI * .5;
 		//	skin.x = 0;
@@ -1094,12 +1097,28 @@ package tests.saboteur
 			skinClone.root._parent = lastVolcanoJoint;
 			
 			ModelPacket.scale( chests, JettySpawner.SPAWN_SCALE_INV);
-			builder3D.startScene.addChild(chests);
+			//builder3D.startScene.addChild(chests);
 			
 			
+		//	volcanoes.removeChildAt(0);
+
+			volcanoes.addChildAt(lastVolcanoClone.root , 0);
+		
+			var child:Object3D = volcanoes.getChildAt(0);// .addChild( packet.get3DAnimatedSkin()[0]);
+		
 			
-			//volcanoes.addChild( packet.get3DAnimatedSkin()[0]);
+			var chestSkin:Array = packet.get3DAnimatedSkin(); 
+		
+			ModelPacket.scaleBy( chestSkin[0], JettySpawner.SPAWN_SCALE_INV);  //
 			
+			chestSkin[0].z = 105*JettySpawner.SPAWN_SCALE_INV;
+			lastVolcanoClone.renderedJoints[lastVolcanoClone.renderedJoints.length - 1].addChild( chestSkin[0] );
+			
+			game.engine.addEntity( new Entity().add( volcanoAnimComponents[volcanoAnimComponents.length - 1], IAnimatable) );
+			
+
+			//chestSkin[0].z = 125;
+			//volcanoes.addChild( chestSkin[0] ); 
 			/*
 			 * Radar elemental position
 			Radar Player center X position
