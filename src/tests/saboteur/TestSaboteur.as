@@ -1009,7 +1009,10 @@ package tests.saboteur
 			skinClone.root.rotationZ = Math.PI * .5;
 			
 			packet =  propsAndMobs.getSubModelPacket("volcano");
+			packet.animClip = packet.animClip.slice(0, packet.animClip.length * .85);
+			packet.animClip.loop = false;
 			packet.animClip.speed = .15;
+			
 			skin = packet.model as Skin;
 			skin.rotationX = Math.PI * .5;
             skin.rotationZ = Math.PI * .5;
