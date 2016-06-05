@@ -184,6 +184,8 @@ class UITros extends Sprite {
 	private var opponentNameLabel:Label;
 	// once exchange is resolved from Move 1/1, next exchange begins immediately.
 	
+	//public var commitedOrientation:int = FightState.ORIENTATION_NONE;
+
 	
 	public function UITros():void {
 		
@@ -216,6 +218,8 @@ class UITros extends Sprite {
 		var manCharSheet:CharacterSheet = dungeon.man.components.char;
 		//FightState.updateNeighborEnemyStates(dungeon.man, manFight, dungeon);
 		
+		//infoPanel.visible = manFight.choosingOrientation();
+		
 		var len:int = directions.length;
 		var gotEnemy:Boolean = manFight.numEnemies > 0;
 		for (var i:int = 0; i < len; i++) {
@@ -238,6 +242,7 @@ class UITros extends Sprite {
 
 		var unableToAct:Boolean =  manFight.unableToAct();
 		
+		btnWait.visible = true;
 		arrowRight.visible = rightRollHolder.visible  = !(wallMask & 1);
 		arrowLeft.visible =  leftRollHolder.visible  = !(wallMask & 2);
 		arrowUp.visible =  upRollHolder.visible  = !(wallMask & 4);
@@ -263,12 +268,18 @@ class UITros extends Sprite {
 		
 		var fState:FightState;
 		
+		var choosingOrientation:Boolean = manFight.choosingOrientation();
+		_choosingOrientation = choosingOrientation;
+		var cautiousOrientation:Boolean = choosingOrientation && radioCautious.selected;
+	
+		var shiftOrientation:Boolean = choosingOrientation && radioAuto.selected && ( _gotShift ); // todo: shift case
+		
 		
 		if (manFight.flags & FightState.FLAG_ENEMY_EAST) {
 			fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 0);
 			defendStateString =unableToAct ? STR_NO_ACTION :  ( manFight.mustRollNow(fState)  ? STR_DEFEND : STR_DEFEND_TEMP );
 			
-			atkStateString =unableToAct ? STR_NO_ACTION :   radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX : ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			atkStateString =unableToAct ? STR_NO_ACTION :   radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  cautiousOrientation || shiftOrientation ? STR_MOVE + (shiftOrientation ? "!" : "") :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowRight.label = manFight.flags & FightState.FLAG_INITIATIVE_EAST  ? atkStateString : defendStateString;
 			arrowRight.alpha = manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 			
@@ -277,7 +288,7 @@ class UITros extends Sprite {
 		if (manFight.flags & FightState.FLAG_ENEMY_WEST) {
 			fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 1);
 			defendStateString = unableToAct ? STR_NO_ACTION :  ( manFight.mustRollNow(fState)  ? STR_DEFEND : STR_DEFEND_TEMP );
-			atkStateString = unableToAct ? STR_NO_ACTION :  radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			atkStateString = unableToAct ? STR_NO_ACTION :  radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  cautiousOrientation || shiftOrientation ? STR_MOVE+ (shiftOrientation ? "!" : "") : ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowLeft.label = manFight.flags & FightState.FLAG_INITIATIVE_WEST  ? atkStateString : defendStateString;
 			arrowLeft.alpha =manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 		}
@@ -286,7 +297,7 @@ class UITros extends Sprite {
 		if (manFight.flags & FightState.FLAG_ENEMY_NORTH) {
 			fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY, 2);
 			defendStateString = unableToAct ? STR_NO_ACTION :  ( manFight.mustRollNow(fState)  ? STR_DEFEND : STR_DEFEND_TEMP );
-			atkStateString =unableToAct ? STR_NO_ACTION :   radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			atkStateString =unableToAct ? STR_NO_ACTION :   radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  cautiousOrientation || shiftOrientation ? STR_MOVE+ (shiftOrientation ? "!" : "") : ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowUp.label = manFight.flags & FightState.FLAG_INITIATIVE_NORTH   ? atkStateString : defendStateString;
 			arrowUp.alpha =manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 		}
@@ -294,7 +305,7 @@ class UITros extends Sprite {
 		if (manFight.flags & FightState.FLAG_ENEMY_SOUTH) {
 			fState = FightState.getNeighbour(dungeon, dungeon.man.mapX, dungeon.man.mapY,3);
 			defendStateString = unableToAct ? STR_NO_ACTION :  ( manFight.mustRollNow(fState)  ? STR_DEFEND : STR_DEFEND_TEMP );
-			atkStateString =unableToAct ? STR_NO_ACTION :   radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :  ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
+			atkStateString =unableToAct ? STR_NO_ACTION :   radioDefend.selected ? defendStateString + DELIBERATE_DEFEND_SUFFIX :   cautiousOrientation || shiftOrientation ? STR_MOVE+ (shiftOrientation ? "!" : "") : ( manFight.mustRollNow(fState)  ? STR_ATTACK : STR_AIM );
 			arrowDown.label = manFight.flags & FightState.FLAG_INITIATIVE_SOUTH   ? atkStateString : defendStateString;
 			arrowDown.alpha = manFight.withinInitiativeScope(fState) ? 1 : manFight.withinRollableScope(fState) ? .5 : 0;
 		}
@@ -303,7 +314,7 @@ class UITros extends Sprite {
 			setFightInfo(manFight, manCharSheet);
 		}
 		
-		if (manFight.s == 2) {
+		if (manFight.s == 2) {  
 			btnWait.label = STR_DONE;// unableToAct ? STR_DONE : (manFight.attacking ? "ATK" : manFight.isFleeing() ? unableToAct ? STR_WAIT :  "FLEE" :  "DEF");
 			var engagedMultiple:Boolean = manFight.numEnemies > 1;
 			arrowRight.visible =   arrowRight.alpha == 0 ? (rightRollHolder.visible=false) : (engagedMultiple &&  (manFight.flags & 1) != 0);  // 
@@ -328,7 +339,7 @@ class UITros extends Sprite {
 			}
 			
 		}
-		else if (manFight.s == 1) {
+		else if (manFight.s == 1) {  // target selection if required...also consider setting vis
 			var evadeStr:String = unableToAct ? STR_NO_ACTION   :  manFight.lastAttacking ? STR_PARTIAL_EVADE :  STR_FULL_EVADE;
 			if (arrowRight.visible && arrowRight.label === STR_MOVE) {
 				arrowRight.label = evadeStr;
@@ -344,6 +355,73 @@ class UITros extends Sprite {
 			}
 			
 		}
+		else if (choosingOrientation) {
+			if (radioAuto.selected ) {
+				
+				if (!shiftOrientation) {
+					if (arrowRight.visible && arrowRight.label === STR_MOVE) {
+						arrowRight.label = STR_DEFEND_TEMP;
+					}
+					if (arrowLeft.visible && arrowLeft.label === STR_MOVE) {
+						arrowLeft.label = STR_DEFEND_TEMP;
+					}
+					if (arrowUp.visible && arrowUp.label === STR_MOVE) {
+						arrowUp.label = STR_DEFEND_TEMP;
+					}
+					if (arrowDown.visible && arrowDown.label === STR_MOVE) {
+						arrowDown.label = STR_DEFEND_TEMP;
+					}
+				}
+				else {
+					btnWait.label = (_KEY_MODIFIERS & KEYMASK_SHIFTDOWN_KEY_ONLY) ? STR_DEFEND_TEMP : STR_WAIT;
+				}
+			}
+			else if (radioDefend.selected) {  // defensive orientaton
+				btnWait.label = STR_DEFEND_TEMP;
+				if (arrowRight.label === STR_MOVE) {
+					arrowRight.label = STR_DEFEND_TEMP;
+				}
+				else {
+					arrowRight.visible = false;
+				}
+				if ( arrowLeft.label === STR_MOVE) {
+					arrowLeft.label = STR_DEFEND_TEMP;
+				}
+				else {
+					arrowLeft.visible = false;
+				}
+				if ( arrowUp.label === STR_MOVE) {
+					arrowUp.label = STR_DEFEND_TEMP;
+				}
+				else arrowUp.visible = false;
+				if ( arrowDown.label === STR_MOVE) {
+					arrowDown.label = STR_DEFEND_TEMP;
+				}
+				else arrowDown.visible = false;
+				
+				
+			}
+			else if (radioAttack.selected) {  // aggressive orientation
+				btnWait.visible = false;
+				if (arrowRight.visible && arrowRight.label === STR_MOVE) {
+					arrowRight.visible = false;
+				}
+				if (arrowLeft.visible && arrowLeft.label === STR_MOVE) {
+					arrowLeft.visible = false;
+				}
+				if (arrowUp.visible && arrowUp.label === STR_MOVE) {
+					arrowUp.visible = false;
+				}
+				if (arrowDown.visible && arrowDown.label === STR_MOVE) {
+					arrowDown.visible = false;
+				}
+			}
+		
+	
+			
+			
+		}
+		
 		
 		updateRolls(dungeon, manFight);
 		
@@ -553,7 +631,9 @@ class UITros extends Sprite {
 	//	radioAttack.enabled = false;
 		radioCautious = new RadioButton(infoPanel, 0, 0, TEXT_RADIO_CAUTIOUS, false, onRadioClick);
 		radioDefend = new RadioButton(infoPanel, 0, 0, TEXT_RADIO_DEFEND, false, onRadioClick);
-		radioAuto = new RadioButton(infoPanel, 0, 0, TEXT_RADIO_AUTO+RADIO_SELECT_SUFFIX, true, onRadioClick);
+		radioAuto = new RadioButton(infoPanel, 0, 0, TEXT_RADIO_AUTO + RADIO_SELECT_SUFFIX, true, onRadioClick);
+		
+		
 	
 		messageBox = new TextField();
 		
@@ -630,6 +710,8 @@ class UITros extends Sprite {
 		TRACE = addMessageLine;
 		CLEAR_TRACE = clearMessages;
 	}
+	
+
 	
 	private function onManueverSlideCP(e:Event = null):void {
 	
@@ -758,12 +840,13 @@ class UITros extends Sprite {
 	
 	public function setFightInfo(fight:FightState, charSheet:CharacterSheet):void {
 		infoExchange.text = getCombatString(fight, charSheet, fight.combatPool);
+		var choosingOrientation:Boolean = fight.choosingOrientation();
 		//+"Last attacking?:"+fight.lastAttacking
 		infoMoveStep.text =  fight.s < 2 ? "Move " + fight.s + "/1" : "Rolling "+(fight.attacking ? "Attack" : "Defense")+"...";
-		radioAttack.visible = fight.s < 1;
-		radioDefend.visible = fight.s < 1;
-		radioCautious.visible = fight.s < 1;
-		radioAuto.visible = fight.s < 1;
+		radioAttack.visible = choosingOrientation;
+		radioDefend.visible = choosingOrientation;
+		radioCautious.visible = choosingOrientation;
+		radioAuto.visible = choosingOrientation;
 		infoInstruct.text = fight.getStateLabel();
 	}
 	
@@ -778,6 +861,7 @@ return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + 
 	private var _manueverItem:Object;
 	private var _manueverAttackTypes:int = -1;
 	private var combatUI:Sprite;
+	private var _choosingOrientation:Boolean;
 	
 	public function showManueverMenu(arrOfAvailManuevers:Array, ent:GameObject, chosenIndex:int=0, towards:GameObject=null):void 
 	{
@@ -853,6 +937,55 @@ return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + 
 	public function hideManueverMenu():void  {
 		manueverMenu.visible = false;
 	}
+	
+
+	
+	private var _gotShift:Boolean = false;
+	private var _KEY_MODIFIERS:uint = 0;
+	public static const KEY_MODIFIER_SHIFT:uint = 1;
+	public static const KEY_MODIFIER_CTRL:uint = 2;
+	public static const KEY_MODIFIER_WAIT:uint = 4;
+	public static const KEYMASK_SHIFTDOWN:uint = KEY_MODIFIER_CTRL | KEY_MODIFIER_SHIFT | KEY_MODIFIER_WAIT;
+	public static const KEYMASK_SHIFTDOWN_KEY_ONLY:uint = KEY_MODIFIER_CTRL | KEY_MODIFIER_SHIFT;
+	
+	public function unflagKeyModifier(value:uint, dungeon:Dungeon):void 
+	{
+		var gotShiftKey:Boolean = (_KEY_MODIFIERS & KEYMASK_SHIFTDOWN_KEY_ONLY) !=0;
+		_KEY_MODIFIERS &= ~value;
+		var nowGotShiftKey:Boolean =  (_KEY_MODIFIERS & KEYMASK_SHIFTDOWN_KEY_ONLY) !=0;
+		
+		var gotShift:Boolean = ( (_KEY_MODIFIERS & (KEYMASK_SHIFTDOWN)) ) !=0;
+		if (gotShift != _gotShift || gotShiftKey != nowGotShiftKey) {
+			_gotShift = gotShift;
+			if (_choosingOrientation)  mapUpdate(dungeon);
+		}
+		
+	}
+	public function flagKeyModifier(value:uint, dungeon:Dungeon):void 
+	{
+		var gotShiftKey:Boolean = (_KEY_MODIFIERS & KEYMASK_SHIFTDOWN_KEY_ONLY) !=0;
+		_KEY_MODIFIERS |= value;
+		var nowGotShiftKey:Boolean =  (_KEY_MODIFIERS & KEYMASK_SHIFTDOWN_KEY_ONLY) !=0;
+		var gotShift:Boolean = ( (_KEY_MODIFIERS & (KEYMASK_SHIFTDOWN)) ) !=0;
+		if (gotShift != _gotShift  || gotShiftKey != nowGotShiftKey) {
+			_gotShift = gotShift;
+			if (_choosingOrientation) mapUpdate(dungeon);
+		}
+		
+	}
+	
+	public function isKeyFlagDown(val:uint):Boolean 
+	{
+		return  (_KEY_MODIFIERS & val) !=0;
+	}
+	
+	public function get choosingOrientation():Boolean 
+	{
+		return _choosingOrientation;
+	}
+	
+
+
 	
 }
 
@@ -934,17 +1067,37 @@ class Dungeon extends Sprite{
 	// code smell hack here
 		var i:int = fightStack.length;
 		
+		var fightingFlags:int = 0;
+		var targetingStack:Array = [];
 		
 		i = fightStack.length;
 		while ( --i > -1 ) {
 			
 			fight = fightStack[i];
+			fightingFlags = 0;
 			FightState.updateNeighborInitiative(fight, this);
+			if (fight.chosenOrientation()) {
+				UITros.TRACE(getNameWithDirToMan(checkComponent(fight.x, fight.y, "fight")[0])+" commited orientation:" + FightState.ORIENTATION_STRINGS[fight.orientation]);
+			}
+			fightingFlags |= fight.canPickTargetPhase() ? 1 : 0;
+			if (fightingFlags!=0) {
+				targetingStack.push({fight:fight, flags:fightingFlags, priority:FightState.getFightTargetingInitiative(fight, this) });
+			}
+		}
+
+		targetingStack = targetingStack.sortOn("priority", Array.NUMERIC);
+		i = targetingStack.length;
+		while (--i > -1) {  // todo: check if player in queue, create breakpoint exposure and ai feedback loop for enemies to change their mind if they have multiple targets to choose from
+			fight = targetingStack[i].fight;
+			if (fight.target == null) {
+				FightState.findNewTarget(fight, this);
+			}
 		}
 		
 		
-		
 	}
+	
+
     
     function Dungeon(d:Data){
         view = new BasicView(Data.gameWidth,Data.gameHeight,false,true,CameraType.FREE);
@@ -963,6 +1116,7 @@ class Dungeon extends Sprite{
         
         addEventListener("enterFrame", onFrame );
         stage.addEventListener("keyDown", onKeyDownCheck );
+		 stage.addEventListener("keyUp", onKeyUpCheck );
         stage.addEventListener("keyUp", onKeyUp );
         
         mask = new Bitmap( new BitmapData(1,1) );
@@ -971,7 +1125,24 @@ class Dungeon extends Sprite{
         addChild(mask);
     }
     
-	///*
+
+
+	
+	private function onKeyUpCheck(e:KeyboardEvent):void {
+		var kc:uint = e.keyCode;
+
+		switch (kc) {
+			case Keyboard.SHIFT:
+			//	throw new Error("A");
+				uiTros.unflagKeyModifier(UITros.KEY_MODIFIER_SHIFT, this);
+			return;
+			case Keyboard.CONTROL:
+				uiTros.unflagKeyModifier(UITros.KEY_MODIFIER_CTRL, this);
+			return;
+		}
+		
+	}
+	
 	private function onKeyDownCheck(e:KeyboardEvent):void {
 		var kc:uint = e.keyCode;
 
@@ -981,6 +1152,13 @@ class Dungeon extends Sprite{
 			case Keyboard.NUMPAD_5:
 			//case Keyboard.P: 
 			break;
+			case Keyboard.SHIFT:
+				uiTros.flagKeyModifier( UITros.KEY_MODIFIER_SHIFT, this);
+			return;
+			case Keyboard.CONTROL:
+				uiTros.flagKeyModifier (UITros.KEY_MODIFIER_CTRL, this);
+			return;
+				
 			case Keyboard.UP:
 				if (!uiTros.arrowUp.visible) e.keyCode = Keyboard.P;
 			break;
@@ -1457,6 +1635,12 @@ class Dungeon extends Sprite{
 								UITros.TRACE( getNameWithDirToMan(ent) + " KILLS " + getNameWithDirToMan(targetEnt) + " with a Level " + dmg + " hit to the " + wound.part  );
 								tarFight.resetManuevers();
 								killEntity(targetEnt);
+								fight.numEnemies--;
+								if (fight.numEnemies < 0) throw new Error("Should not happen, negative value for numEnemies: " + fight.numEnemies);
+								if (fight.numEnemies == 0) {
+									fight.reset(true);
+								}
+								
 								if (targetEnt == man) {
 									showGameOver();
 									return;
@@ -1501,6 +1685,11 @@ class Dungeon extends Sprite{
 								
 								tarFight.resetManuevers();
 								killEntity(targetEnt);
+								fight.numEnemies--;
+								if (fight.numEnemies < 0) throw new Error("Should not happen, negative value for numEnemies: " + fight.numEnemies);
+								if (fight.numEnemies == 0) {
+									fight.reset(true);
+								}
 							}
 						}
 					}
@@ -1552,7 +1741,7 @@ class Dungeon extends Sprite{
 	}
 	
 	public function getNameWithDirToMan(ent:GameObject):String {
-		return (man.x!=ent.x || man.y != ent.y) ? ent.components.char.name + "("+(man.x != ent.x ? ent.x < man.x ?  "W" : "E"  :  ent.y < man.y ? "S" : "N"  )+")" : ent.components.char.name;
+		return (man.mapX!=ent.mapX || man.mapY != ent.mapY) ? ent.components.char.name + "("+(man.mapX != ent.mapX ? ent.mapX < man.mapX ?  "W" : "E"  :  ent.mapY < man.mapY ? "S" : "N"  )+")" : ent.components.char.name;
 	}
 	
     //ダンジョンを下る
@@ -1656,11 +1845,13 @@ class Dungeon extends Sprite{
 		uiTros.arrowRight.mouseChildren = false;
 		uiTros.arrowDown.mouseChildren = false;
 		
+		
         uiTros.arrowLeft.addEventListener(MouseEvent.MOUSE_DOWN, onArrowDown);
         uiTros.arrowUp.addEventListener(MouseEvent.MOUSE_DOWN, onArrowDown);
         uiTros.arrowDown.addEventListener(MouseEvent.MOUSE_DOWN, onArrowDown);
         uiTros.arrowRight.addEventListener(MouseEvent.MOUSE_DOWN, onArrowDown);
-		
+		uiTros.btnWait.addEventListener(MouseEvent.MOUSE_DOWN, onWaitBtnDown);
+
 		
 		 uiTros.arrowLeft.addEventListener(MouseEvent.ROLL_OUT, onArrowRollOut);
         uiTros.arrowUp.addEventListener(MouseEvent.ROLL_OUT, onArrowRollOut);
@@ -1674,13 +1865,70 @@ class Dungeon extends Sprite{
 		*/
         
 		uiTros.radioAttack.addEventListener(MouseEvent.CLICK, onRadioInitiativeChange, false,-1);
-        uiTros.radioDefend.addEventListener(MouseEvent.CLICK, onRadioInitiativeChange, false ,-1);
+        uiTros.radioDefend.addEventListener(MouseEvent.CLICK, onRadioInitiativeChange, false , -1);
+		uiTros.radioAuto.addEventListener(MouseEvent.CLICK, onRadioInitiativeChange, false , -1);
+		uiTros.radioCautious.addEventListener(MouseEvent.CLICK, onRadioInitiativeChange, false ,-1);
         //uiTros.arrowLeft.addEventListener(MouseEvent.MOUSE_UP, onArrowUp);
        // uiTros.arrowUp.addEventListener(MouseEvent.MOUSE_UP, onArrowUp);
        // uiTros.arrowDown.addEventListener(MouseEvent.MOUSE_UP, onArrowUp);
        // uiTros.arrowRight.addEventListener(MouseEvent.MOUSE_UP, onArrowUp);
     }
 	
+	private function onWaitBtnDown(e:MouseEvent):void 
+	{
+		//if (!uiTros.choosingOrientation) return;
+		uiTros.flagKeyModifier(UITros.KEY_MODIFIER_WAIT, this);
+		
+		uiTros.arrowLeft.addEventListener(MouseEvent.MOUSE_UP, onWaitDragArrowUp);
+        uiTros.arrowUp.addEventListener(MouseEvent.MOUSE_UP, onWaitDragArrowUp);
+        uiTros.arrowDown.addEventListener(MouseEvent.MOUSE_UP, onWaitDragArrowUp);
+        uiTros.arrowRight.addEventListener(MouseEvent.MOUSE_UP, onWaitDragArrowUp);
+		stage.addEventListener(MouseEvent.MOUSE_UP, onWaitDragUp);
+	}
+	
+	private function onWaitDragArrowUp(e:MouseEvent):void 
+	{
+		
+		uiTros.unflagKeyModifier(UITros.KEY_MODIFIER_WAIT, this);
+		var curTarget:Object = e.currentTarget;
+		if (curTarget === uiTros.arrowUp) {
+			performKeyStroke(Keyboard.UP);
+		}
+		else if (curTarget === uiTros.arrowDown) {
+			performKeyStroke(Keyboard.DOWN);
+		}
+		else if (curTarget === uiTros.arrowLeft) {
+			performKeyStroke(Keyboard.LEFT);
+		}
+		else {
+			performKeyStroke(Keyboard.RIGHT);
+		}
+
+		
+	}
+	
+	private function removeWaitUpHandlers():void 
+	{
+		uiTros.arrowLeft.removeEventListener(MouseEvent.MOUSE_UP, onWaitDragArrowUp);
+        uiTros.arrowUp.removeEventListener(MouseEvent.MOUSE_UP, onWaitDragArrowUp);
+        uiTros.arrowDown.removeEventListener(MouseEvent.MOUSE_UP, onWaitDragArrowUp);
+        uiTros.arrowRight.removeEventListener(MouseEvent.MOUSE_UP, onWaitDragArrowUp);
+		stage.removeEventListener(MouseEvent.MOUSE_UP, onWaitDragUp);
+	}
+	
+	private function onWaitDragUp(e:MouseEvent):void 
+	{
+		
+		uiTros.unflagKeyModifier(UITros.KEY_MODIFIER_WAIT, this);
+		
+		removeWaitUpHandlers();
+		
+		if (uiTros.choosingOrientation && uiTros.radioAuto.selected && uiTros.isKeyFlagDown(UITros.KEYMASK_SHIFTDOWN_KEY_ONLY) ) {
+			//uiTros.commitedOrientation = FightState.ORIENTATION_AGGRESSIVE;	
+		}
+		
+	}
+
 	private function onArrowRollOut(e:MouseEvent):void 
 	{
 		 onArrowUp(null);
@@ -2031,19 +2279,61 @@ class Man{
     static public function key(e:KeyboardEvent,man:GameObject):void{
         var c:int; var dirX:int; var targets:Vector.<GameObject>; var o:GameObject
 		man.dungeon.wait = GameObject.WAITKEY_STEP_NUM_FRAMES;  // enforce wait regardless
-		 if (man.components.fight) man.components.fight.resetRolls();
+		 if (man.components.fight) {
+			 man.components.fight.resetRolls();
+		 }
 		
+		// man.moveArray[0] = 0;
+		// man.moveArray[1] = 0;
+		var didWalk:Boolean = false;
         switch( Data.keyString[e.keyCode] ){
-            case "→": walk(man,"r"); break;
-            case "←": walk(man,"l"); break;
-            case "↑": walk(man,"b"); break;
-            case "↓": walk(man,"f"); break;
+            case "→": walk(man, "r"); didWalk = true;  break;
+            case "←": walk(man,"l"); didWalk = true; break;
+            case "↑": walk(man,"b"); didWalk = true; break;
+            case "↓": walk(man,"f"); didWalk = true; break;
 			
             //case "z": man.action("kick");man.addTween( {}, 6 ); break;
             //case "x": man.action("sup");man.addTween( {}, 6 ); break;
-            case " ": if(man.dungeon.check(man.mapX,man.mapY,"stair").length > 0){man.dungeon.down()} break;
+            case " ": if (man.dungeon.check(man.mapX, man.mapY, "stair").length > 0) { man.dungeon.down() } break;
+			//default:return;
         }
+		
+		keyStep(man, didWalk);
     }
+	
+	static private function keyStep(man:GameObject, isMoving:Boolean):void 
+	{
+		var fight:FightState =  (man.components.fight as FightState);
+		if ( ( fight && fight.choosingOrientation())  ) {
+			var uiTros:UITros = man.dungeon.uiTros;
+			var uiRadioAuto:Boolean = uiTros.radioAuto.selected;
+			var uiShift:Boolean = man.dungeon.uiTros.isKeyFlagDown(UITros.KEYMASK_SHIFTDOWN);
+			//var uiWaitShift:Boolean = man.dungeon.uiTros.isKeyFlagDown(UITros.KEY_MODIFIER_WAIT);
+			
+			if (uiRadioAuto) {
+				if (man.bumping) {
+					fight.orientation =  !uiShift ? FightState.ORIENTATION_AGGRESSIVE : FightState.ORIENTATION_CAUTIOUS;
+				}
+				else {
+					// todo; ftest
+				
+					if (!uiShift) {
+						fight.orientation = isMoving ? FightState.ORIENTATION_DEFENSIVE : FightState.ORIENTATION_CAUTIOUS;
+					}
+					else {
+					
+						fight.orientation = isMoving ? FightState.ORIENTATION_CAUTIOUS : FightState.ORIENTATION_DEFENSIVE;
+					}
+					
+				}
+				
+			}
+			else {
+				fight.orientation = uiTros.radioCautious.selected ? FightState.ORIENTATION_CAUTIOUS : uiTros.radioDefend.selected ? FightState.ORIENTATION_DEFENSIVE : FightState.ORIENTATION_AGGRESSIVE;
+			}
+		
+		}
+	}
     static public function walk(man:GameObject, dir:String):void {
 		
 		var fight:FightState =  (man.components.fight as FightState);
@@ -2071,12 +2361,19 @@ class Man{
 		var eFight:FightState = man.bumping ?  man.dungeon.getComponent(man.mapX + arr[0], man.mapY + arr[1], "fight") : null;
 		
 		// if fighting and cannot move, or bumping into a guy that is fighting and cannot move
+		
 		if ( ( fight && !fight.canMove()) || (eFight &&  !eFight.canMove()) ) {
+		
+
 		//	man.moveArray = [0, 0];
 			if (man.bumping) {  // potentiality to wish to attack, 
 				fight.bumping = true;
-				fight.attacking =  man.dungeon.uiTros.radioAttack.selected && (fight.canRollAttackAgainstDirection(FightState.getDirectionIndex(man.moveArray[0], man.moveArray[1]) ));
+				
+				// TODO: change this logic
+				// man.dungeon.uiTros.radioAttack.selected &&
+				fight.attacking =  (fight.canRollAttackAgainstDirection(FightState.getDirectionIndex(man.moveArray[0], man.moveArray[1]) ));
 				fight.resetManuevers();
+				
 			}
 			else {
 				fight.attacking = false;  // imply defense always
@@ -2085,7 +2382,11 @@ class Man{
 
 				}
 				else fight.resetManuevers();
+				
  			}
+			
+	
+			
 			man.bumping = false;
 			man.moving = false;
 			if (man.moveArray[0] != 0 || man.moveArray[1] != 0) {
@@ -2136,8 +2437,46 @@ class Enemy{
 				case "chase":  if (!enm.dungeon._gameOver) { chase(enm); break; }
                 default: random(enm); break;
             }
+		
+		keyStep(enm);
+			
     }
-	
+	static private function keyStep(enm:GameObject):void 
+	{
+		var fight:FightState =  (enm.components.fight as FightState);
+		if ( ( fight && fight.choosingOrientation())  ) {
+			
+			//var uiRadioAuto:Boolean = true;
+		
+			//var uiWaitShift:Boolean = man.dungeon.uiTros.isKeyFlagDown(UITros.KEY_MODIFIER_WAIT);
+			
+		//if (uiRadioAuto) {
+				if (enm.bumping) {
+					//!uiShift ?
+					fight.orientation =  Math.random() >= .5 ? FightState.ORIENTATION_AGGRESSIVE : FightState.ORIENTATION_CAUTIOUS; 
+					//: FightState.ORIENTATION_CAUTIOUS;
+				}
+				else {
+					// todo; ftest
+					var isMoving:Boolean = enm.moveArray[0] || enm.moveArray[1];
+					if (Math.random() >= .5) {
+						fight.orientation = isMoving ? FightState.ORIENTATION_DEFENSIVE : FightState.ORIENTATION_CAUTIOUS;
+					}
+					else {
+					
+						fight.orientation = isMoving ? FightState.ORIENTATION_CAUTIOUS : FightState.ORIENTATION_DEFENSIVE;
+					}
+					
+				}
+				
+			//}
+			/*
+			else {
+				//fight.orientation = uiTros.radioCautious.selected ? FightState.ORIENTATION_CAUTIOUS : uiTros.radioDefend.selected ? FightState.ORIENTATION_DEFENSIVE : FightState.ORIENTATION_AGGRESSIVE;
+			}
+			*/
+		}
+	}
 	
     static public function walk(enm:GameObject):void {
 		
@@ -3487,33 +3826,67 @@ class FightState {
 	public var x:int;
 	public var y:int;
 	public var timestamp:uint = uint.MAX_VALUE;  // lol, unlikely to happen
+	public var bumping:Boolean = false;  // flag to keep track of fast track bump rolls for roguelike gamemode
 	
 	// riddle stuff here
 	
 	public var numEnemies:int = 0;
 	public var initiative:Boolean = true;  //  initaitive  flag. 
 	public var target:GameObject; // flag to indicate if got existing target aqquired or not
+	public var targetLocked:Boolean = false;  // flag to indicate fighter cannot change target..
 	public var forceContestInitiative:Boolean;  // even without initiative, will still contest for it
 	public var paused:Boolean = true;  // TODO: if a pause is detected, then Roll for Initiative/Orientation must be done
-	public var orientation:int = 0;
+	
 	public var lostInitiativeTo:Dictionary = new Dictionary();  // TODO: when someone successfully defended to gain initiative against you while he isn't targeting you, this hash dictionary indicates the possibiility of them switching targets to you, in order to switch initiative against you.
 	
 	// Fightstate initiative values
 	// values higher than zero indicate the possibility to perform actions with some form of Initiative (clear initiative or contesting for it)
-	public static const GOT_INITIATIVE:int = 2;  // fighter has initiative (this also imples that the target lacks mutual initiaitve)
-	public static const CONTESTING_INITIATIVE:int = 1;  // both fighters have mutual initiative, or 1 side is forced to contest for it
+	public static const GOT_INITIATIVE:int = 2;  // fighter has initiative (this also imples that the target lacks initiative)
+	public static const CONTESTING_INITIATIVE:int = 1;  // both fighters have mutual initiative, or 1 side or both is forced to contest for it during the Action itself
 	public static const NO_INITIATIVE:int = 0;  // fighter has no initiative
 	public static const REROLL_INITIATIVE:int = -1;  // both fighters have no mutual initiative, and must re-roll for it in the next round via orientation.
+	public static const UNCERTAIN_INITATIVE:int = -2; // both sides have uncertain initiative, but will determine it after targets are determined (if required) and before the action starts
 	
 	// Fight state orientation values  
 	public static const ORIENTATION_NONE:int = 0; 	// a value of zero indicates no orientation selected, and this also happens after the first manuever is resolved at the start of a bout of after a Pause.
 	public static const ORIENTATION_DEFENSIVE:int = 1;
-	public static const ORIENTATION_AGGRESSIVE:int = 3;
 	public static const ORIENTATION_CAUTIOUS:int = 2;
+	public static const ORIENTATION_AGGRESSIVE:int = 3;
+	public var orientation:int = 0;  // warning, this is used as an implicit multiplier for determining orientation initaitive (higher value higher targeting initiative..)
+	public static const ORIENTATION_STRINGS:Array = ["None", "Defensive", "Cautious", "Aggressive"];
 	
 	public function getInitiativeTowards(fightState:FightState):int {
-		return initiative ? fightState.initiative ? CONTESTING_INITIATIVE :  (forceContestInitiative ? CONTESTING_INITIATIVE :  GOT_INITIATIVE )   
+		//return initiative ? fightState.initiative ? CONTESTING_INITIATIVE :  (forceContestInitiative ? CONTESTING_INITIATIVE :  GOT_INITIATIVE )   
+		//	:  NO_INITIATIVE;
+		
+		if (orientation == 0 ) {   // legacy code  //|| s >=2 
+			return initiative ? fightState.initiative ? CONTESTING_INITIATIVE :  (forceContestInitiative ? CONTESTING_INITIATIVE :  GOT_INITIATIVE )   
 			:  NO_INITIATIVE;
+		}
+		else {  // orientation selected, need to determine
+			if (orientation != ORIENTATION_DEFENSIVE) {
+				// either cautious or aggressive, which means can attack
+				if (orientation != fightState.orientation ) {  // aggressive over cautious, or aggressive/cautious over defensive/no-orientation, vice versa
+					return orientation > fightState.orientation ? GOT_INITIATIVE : NO_INITIATIVE;
+				}
+				else {  // cautious vs cautious, or aggressive vs aggressive 
+					if (orientation == ORIENTATION_CAUTIOUS) {
+						if (fightState.orientation != ORIENTATION_CAUTIOUS)  throw new Error("Equal assertion cautious failed:"+fightState.orientation);
+						return UNCERTAIN_INITATIVE;
+					}
+					else if (orientation == ORIENTATION_AGGRESSIVE) {
+						if (fightState.orientation != ORIENTATION_AGGRESSIVE)  throw new Error("Equal assertion aggressive failed:"+fightState.orientation);
+						return CONTESTING_INITIATIVE;
+					}
+					else {
+						throw new Error("Missed out this case?? Orientation: " + orientation);
+					}
+				}
+			}
+			else {  // defensive, can never attack for this exchange...so absolutely no intiative
+				return NO_INITIATIVE;
+			}
+		}
 	}
 
 	
@@ -3525,7 +3898,6 @@ class FightState {
 	// The state of the fight
 	public var rounds:int = 0;
 	public var attacking:Boolean = false;  // flag to indicate whether is attacking on current turn roll
-	public var bumping:Boolean = false;  // flag to keep track of fast track bump rolls for roguelike gamemode
 	public var shortRangeAdvantage:Boolean = false;
 	public var lastAttacking:Boolean = false; // flag to indicate if was attacking on last declared move
 	public var combatPool:int;
@@ -3542,77 +3914,6 @@ class FightState {
 		return manuevers[0].manuever != null && manuevers[0].manuever.id == "fullevade";
 	}
 	
-	
-	/*
-	Move 0/1:
-	------------
-	If got uncertain initiative after a pause, 
-	  show "Orientation...", else show current initaitive state.
-
-	Keyboard orientation movement controls:
-	(ToEnemy: Approach enemy aggressively)
-	(SHIFT+ToEnemy: Approach enemy cautiously)
-	(Middle: Wait cautiously in current spot)
-	(SHIFT+Middle: Defend fully in current spot)
-	(ToEmptySquare: Move to empty area defensively)
-	(SHIFT+ToEmptySquare: Move to empty area cautiously)
-
-	Orientation:  if auto
-	  Agg - for enemy occupied squares  
-	  Cau - for waiting in current square  
-	  Def - for free squares 
-	When SHIFT Key is held down while:
-	  Cau - for enemy occupied squares 
-	  Def - for waiting in current square 
-	  Cau - for free squares 
-	else, if not auto, show everything as "move". If got orientation selected, determine visiblity of move buttons
-
-	Arrow key labels
-	"atk" - means aggressive orientation
-	"def" - means defensive orientation
-	"wait/move" - means cautious
-
-	Move 1/1:
-	-------------
-	Arrow buttons to adjacient targetable enemies, 
-	"Atk" if can target with  initiative, 
-	"Def" if can target but with no initiative.
-	
-	If got existing target (or only 1 target), ensure face existing target.
-
-	if got multiple targets to choose from:
-	No target: "Choose a target"
-	Have existing target: "Change new target if you wish..."
-	If click on middle button while don't have target (middle button will be "labled as auto"), target is chosen based on facing, random side target, and rear as last priority.
-	If got target selected, face current target, middle button is now  ("labeled as Done").
-
-	Based on current target facing selection:
-	No target: "Targeting ()..."
-	Have existing target: "Targeting ()..."
-	() contains state.... with Initiative, without initiative, with contested initaitive, with uncertain initaitive
-	In such a targeting state, if you repeat the arrow target  "targ" vs "Targ", will proceed to next step.
-
-	If current target facing selection is your current Target, may (optionally) simply show current initiative state.
-
-	___________
-
-	Arrow buttons to empty spaces:
-	"Flee" for now. Later can have "Move" which yields a proper Mobility Manuever attempt. No checkbox required anymore. If moved, pick most likely target: which is current target or current facing target or pick one at random from the side then back.
-	If only "Flee" is used, but no Flee is avialble, won't show buttons visiblyy.
-	
-	For mobility manuever or attempt to Flee, if threaded the needle against all opponents successfully, you will flee successfully in the respective direction if Flee is available. Else, you will use Best Defensive Manuever or Quick Defense is attmpted always, regardless of whether you have initiative or not.
-
-	___________
-	
-	Arrow buttons to non-targetable enemies,
-	Not visible.
-	
-
-	Move 2/1:
-	---------
-
-	*/
-	
 	private function getInitiativeLabel():String {
 		var lbl:String;
 		if (target != null) {
@@ -3621,7 +3922,8 @@ class FightState {
 				var initiativeState:int  =  getInitiativeTowards(fight);
 				lbl = initiativeState === GOT_INITIATIVE ? "Got Initiative..." :
 						initiativeState === CONTESTING_INITIATIVE ? "Contesting for initiative.." :
-							initiativeState === REROLL_INITIATIVE ? "No Initiative. (contest next round)" : 
+						initiativeState === REROLL_INITIATIVE ? "..no initiative until next round..." : 
+							initiativeState === UNCERTAIN_INITATIVE ? "Uncertain Initiative..." : 
 						"No Initiative."
 			}
 			else {
@@ -3651,7 +3953,8 @@ class FightState {
 			else if (s == 1) {  
 				lbl = numEnemies > 1 ?  
 						target != null ?  "Targeting (" + getInitiativeLabel() + ")" : "Choose a target..." :   // Multiple opponents
-						target != null ?  getInitiativeLabel()+" Choose to new target if you wish..." : "Targeting..."  // Only 1 opponent: latter case should not happen actually because game should pre-target beforehand
+						
+						target != null ? (orientation != 0 ? "Orienting..." : "fighting...") + getInitiativeLabel()  : "No target found..pick one now!"  // Only 1 opponent: latter case should not happen actually because game should pre-target beforehand
 			}
 			else {  // s==2 declaring manuevers to resolve round
 				lbl = getInitiativeLabel();  // later: mobility manuever declaration case
@@ -3782,6 +4085,7 @@ class FightState {
 	
 	
 	public static var AVAILABLE_MANUEVERS:Array = [];
+
 	public static function getListOfAvailableManuevers(charSheet:CharacterSheet, fight:FightState, ent:GameObject, enemyManuever:Manuever = null, enemyDiceRolled:int = 0, enemyTargetZone:int = 0 ):Array {
 		var attacking:Boolean = fight.attacking;  // later, this case might not be so simple
 		var meleeProf:String = charSheet.getMeleeProfeciencyIdCached();
@@ -3924,6 +4228,10 @@ class FightState {
 			lastHadInitiative = initiative;
 			forceContestInitiative = false;
 			
+			paused = false;
+			orientation = 0;
+			
+			
 			// if valid fleeing situation, resolve it! Note ta resolveAgainst() can cancel out fleeing manuever==0
 			if (!attacking &&  isFleeing() && man.moveArray != null && man.moveArray.length != 0 && (man.moveArray[0] !=0 || man.moveArray[1]!=0)) {
 				
@@ -3948,7 +4256,7 @@ class FightState {
 							//man.dir = 
 				
 							man.dungeon.wait = GameObject.WAITKEY_STEP_NUM_FRAMES;
-						
+						//UITros.TRACE("Attempting to flee");
 					}
 
 					
@@ -3962,11 +4270,20 @@ class FightState {
 				//paused = target != null ?  true;  // todo:  pause when neither side has initiative, or may happen if deal simulatenous hits against each other
 				
 				if (!lostInitiative) { // auto regain it back
-					if (!initiative) UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" regained back initiative...");
+					if (!initiative) {
+						UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " regained back initiative...");
+					//	paused = false;
+					}
 					initiative = true;  // regain back initiative if wasn't disturbed
+					
+					
+					
 				}
 				else {
-					if (lastHadInitiative)  UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" lost the initiative...");
+					if (lastHadInitiative) {
+						UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " lost the initiative...");
+						//paused = false;
+					}
 				}
 				
 				
@@ -4013,12 +4330,16 @@ class FightState {
 	public function step():void {
 			shock = 0;
 			lostInitiative = false;
+			targetLocked = false;
 			s++;
 			if (s >= 3) {
 				s = 0;
 				e = !e;
 				s = 0;
-				if (!e) rounds++;
+				orientation = 0;// FightState.ORIENTATION_NONE;
+				if (!e) {
+					rounds++;
+				}
 			}
 		
 	}
@@ -4187,6 +4508,7 @@ class FightState {
 			
 		//}
 	}
+
 	
 	public static function updateNeighborInitiative(manFight:FightState, dungeon:Dungeon):void { 
 		var directions:Array = DIRECTIONS;  
@@ -4245,9 +4567,24 @@ class FightState {
 		//	if ( (manFight.flags & (1|2|4|8) )) UITros.TRACE("REsetting manFight scehdule:"+(dungeon.man.components.fight === manFight) );
 		//	throw new Error("INvaliditing");
 		}
+		
+		
 	
 	}
+	
+	static public function getFightTargetingInitiative(fight:FightState, dungeon:Dungeon):Number 
+	{
+		var charSheet:CharacterSheet = dungeon.getComponent(fight.x, fight.y, "char");
+		return 1000*fight.orientation +  charSheet.getReflex() + Math.random();
+	}
+	
+	public function canPickTargetPhase():Boolean {
+		return !e && s == 1 && target==null;
+	}
 
+	public function findTarget(dungeon:Dungeon):void {
+		
+	}
 
 	
 	private function getSchedule():Array 
@@ -4272,6 +4609,7 @@ class FightState {
 		e = false;
 		orientation = 0;
 		initiative = true;
+		targetLocked = false;
 		
 		
 		forceContestInitiative = false;
@@ -4395,6 +4733,102 @@ class FightState {
 	public function unableToAct():Boolean 
 	{
 		return combatPool <= 0;
+	}
+	
+	public function choosingOrientation():Boolean 
+	{
+		return numEnemies > 0 && !e &&  s == 0 && paused;
+	}
+	
+	public function chosenOrientation():Boolean 
+	{
+		return numEnemies > 0 && !e &&  s == 1 && paused && orientation!=0;
+	}
+	
+	public static function findNewTarget(manFight:FightState, dungeon:Dungeon):Boolean 
+	{
+		var fights:Vector.<GameObject>;
+		var enemy:GameObject;
+		var enemyFight:FightState;
+		var xi:int;
+		var yi:int;
+		var dir:Array;
+		var directions:Array = DIRECTIONS;  
+		
+		var man:GameObject =  dungeon.checkComponent(manFight.x, manFight.y, "fight")[0];
+		
+		var isAI:Boolean =  man != dungeon.man;
+		
+		manFight.targetLocked = manFight.numEnemies == 1;  // imply target locked state because only 1 enemy anyway, can't change target
+	
+		
+		if ( !isAI && manFight.numEnemies > 1) { // let player choose finalised target within queue, but set an initial target to aim at first
+			var priDirIndex:int =  getDirIndex(man.dir);
+			dir = directions[priDirIndex];
+			xi = dir[0];
+			yi = dir[1];
+			xi += manFight.x;
+			yi += manFight.y;
+			fights = dungeon.checkComponent(xi, yi, "fight");
+			
+			if (fights.length) {
+				enemy = fights[0];
+				manFight.target = enemy;
+				UITros.TRACE("Player found a target in front of him ");
+				return false;
+			}
+			
+			// todo: look for immediate surroundings for any target on left/right and back and return out
+			UITros.TRACE("TODO look for player nearest target");
+			
+		}
+		
+		
+		// otherwise, pick best target with AI directions, consider the best option ?
+		var len:int = directions.length;
+		var choices:Array = [];
+		for (var i:int = 0; i < len; i++) {
+			
+			if (!(manFight.flags & (1 << i) )) continue;
+			dir = directions[i];
+			xi = dir[0];
+			yi = dir[1];
+			xi += manFight.x;
+			yi += manFight.y;
+
+			fights = dungeon.checkComponent(xi, yi, "fight");
+			if (fights.length) {
+				enemy = fights[0];
+				//enemyFight = enemy.components.fight;
+				choices.push(enemy);
+				
+			}
+			
+		}
+		
+		// force cautious players to target back, and be target-locked!
+		if (choices.length > 0 ) {
+			
+			enemy = choices[0];  // okay, just foolishly pick first choice for now, later route to AI method to make a choice
+			
+			manFight.target = enemy;
+			enemyFight = enemy.components.fight;
+			if ( (isAI || manFight.numEnemies==1 ) && enemyFight.target == null && enemyFight.orientation == ORIENTATION_CAUTIOUS ) {
+				enemyFight.target = man;
+				enemyFight.targetLocked = true;
+				if (isAI) UITros.TRACE("Enemy locked-engaged cautious player");
+				else if (manFight.numEnemies ==1) UITros.TRACE("You locked engaged enemy");
+			}
+			else {
+				if (isAI) UITros.TRACE("Enemy targets player!");
+				else   UITros.TRACE(manFight.numEnemies > 1 ? "Player targets initial selection of enemy" : "Player is auto-assigned target.");
+			}
+		}
+		else {
+			throw new Error("Should have at least 1 adjacient enemy!");
+		}
+		
+		return true;
 	}
 	
 	
