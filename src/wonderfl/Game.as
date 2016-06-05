@@ -4262,6 +4262,7 @@ class FightState {
 					
 				}
 				
+				UITros.TRACE("Flee manuever succeeded for: "+man.dungeon.getNameWithDirToMan(man));
 				paused = true;
 				
 			}
@@ -4273,8 +4274,11 @@ class FightState {
 					if (!initiative) {
 						UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " regained back initiative...");
 					//	paused = false;
+					
+						// TODO: check if new round, and if new round, it means 
 					}
 					initiative = true;  // regain back initiative if wasn't disturbed
+					
 					
 					
 					
@@ -4816,11 +4820,11 @@ class FightState {
 			if ( (isAI || manFight.numEnemies==1 ) && enemyFight.target == null && enemyFight.orientation == ORIENTATION_CAUTIOUS ) {
 				enemyFight.target = man;
 				enemyFight.targetLocked = true;
-				if (isAI) UITros.TRACE("Enemy locked-engaged cautious player");
+				if (isAI) UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" locked-engaged cautious player");
 				else if (manFight.numEnemies ==1) UITros.TRACE("You locked engaged enemy");
 			}
 			else {
-				if (isAI) UITros.TRACE("Enemy targets player!");
+				if (isAI) UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" targets player!");
 				else   UITros.TRACE(manFight.numEnemies > 1 ? "Player targets initial selection of enemy" : "Player is auto-assigned target.");
 			}
 		}
