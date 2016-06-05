@@ -3828,14 +3828,21 @@ class FightState {
 	public var timestamp:uint = uint.MAX_VALUE;  // lol, unlikely to happen
 	public var bumping:Boolean = false;  // flag to keep track of fast track bump rolls for roguelike gamemode
 	
+	
 	// riddle stuff here
 	
 	public var numEnemies:int = 0;
 	public var initiative:Boolean = true;  //  initaitive  flag. 
-	public var target:GameObject; // flag to indicate if got existing target aqquired or not
+	public var target:FightState; // flag to indicate if got existing target aqquired or not
 	public var targetLocked:Boolean = false;  // flag to indicate fighter cannot change target..
 	public var forceContestInitiative:Boolean;  // even without initiative, will still contest for it
-	public var paused:Boolean = true;  // TODO: if a pause is detected, then Roll for Initiative/Orientation must be done
+	
+	public function get paused():Boolean {
+		// no target heuristic...or if you have target, determine if target is a mututal opponent, and if so, same initiative need to re-roll
+		// else continue fighting against your target
+		return target == null || (target.target != this ? false : target.initiative == initiative)
+	}
+	
 	
 	public var lostInitiativeTo:Dictionary = new Dictionary();  // TODO: when someone successfully defended to gain initiative against you while he isn't targeting you, this hash dictionary indicates the possibiility of them switching targets to you, in order to switch initiative against you.
 	
@@ -3854,6 +3861,7 @@ class FightState {
 	public static const ORIENTATION_AGGRESSIVE:int = 3;
 	public var orientation:int = 0;  // warning, this is used as an implicit multiplier for determining orientation initaitive (higher value higher targeting initiative..)
 	public static const ORIENTATION_STRINGS:Array = ["None", "Defensive", "Cautious", "Aggressive"];
+	
 	
 	public function getInitiativeTowards(fightState:FightState):int {
 		//return initiative ? fightState.initiative ? CONTESTING_INITIATIVE :  (forceContestInitiative ? CONTESTING_INITIATIVE :  GOT_INITIATIVE )   
@@ -3917,19 +3925,16 @@ class FightState {
 	private function getInitiativeLabel():String {
 		var lbl:String;
 		if (target != null) {
-			var fight:FightState = target.components.fight;
-			if (fight != null) {
-				var initiativeState:int  =  getInitiativeTowards(fight);
-				lbl = initiativeState === GOT_INITIATIVE ? "Got Initiative..." :
-						initiativeState === CONTESTING_INITIATIVE ? "Contesting for initiative.." :
-						initiativeState === REROLL_INITIATIVE ? "..no initiative until next round..." : 
-							initiativeState === UNCERTAIN_INITATIVE ? "Uncertain Initiative..." : 
-						"No Initiative."
-			}
-			else {
-				target = null;
-				lbl = "No target to fight...";
-			}
+			
+			
+			var initiativeState:int  =  getInitiativeTowards(target);
+			lbl = initiativeState === GOT_INITIATIVE ? "Got Initiative..." :
+				initiativeState === CONTESTING_INITIATIVE ? "Contesting for initiative.." :
+				initiativeState === REROLL_INITIATIVE ? "..no initiative until next round..." : 
+					initiativeState === UNCERTAIN_INITATIVE ? "Uncertain Initiative..." : 
+				"No Initiative."
+		
+				
 		}
 		else {
 			lbl = "No target yet...";
@@ -4228,7 +4233,7 @@ class FightState {
 			lastHadInitiative = initiative;
 			forceContestInitiative = false;
 			
-			paused = false;
+			//paused = false;
 			orientation = 0;
 			
 			
@@ -4263,7 +4268,7 @@ class FightState {
 				}
 				
 				UITros.TRACE("Flee manuever succeeded for: "+man.dungeon.getNameWithDirToMan(man));
-				paused = true;
+				//paused = true;
 				
 			}
 			else {
@@ -4465,7 +4470,7 @@ class FightState {
 					var enemyFight:FightState =  enemy.components.fight;
 					//if (enemyFight.s == 2) continue;
 					//if (man.type === "enemy" && fights[0].type==="man") throw new Error("A");
-					if (enemy  === manFight.target) {
+					if (enemyFight  === manFight.target) {
 						stillHaveTarget = true;
 					}
 					
@@ -4620,7 +4625,7 @@ class FightState {
 		attacking = false;
 		lastAttacking = false;
 		shortRangeAdvantage = false;
-		paused = true;
+	//	paused = true;
 		shock = 0;
 		lostInitiative = false;
 		lostInitiativeTo = new Dictionary();
@@ -4777,7 +4782,8 @@ class FightState {
 			
 			if (fights.length) {
 				enemy = fights[0];
-				manFight.target = enemy;
+				enemyFight = enemy.components.fight;
+				manFight.target = enemyFight;
 				UITros.TRACE("Player found a target in front of him ");
 				return false;
 			}
@@ -4815,10 +4821,11 @@ class FightState {
 			
 			enemy = choices[0];  // okay, just foolishly pick first choice for now, later route to AI method to make a choice
 			
-			manFight.target = enemy;
+			
 			enemyFight = enemy.components.fight;
+			manFight.target = enemyFight;
 			if ( (isAI || manFight.numEnemies==1 ) && enemyFight.target == null && enemyFight.orientation == ORIENTATION_CAUTIOUS ) {
-				enemyFight.target = man;
+				enemyFight.target = manFight;
 				enemyFight.targetLocked = true;
 				if (isAI) UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" locked-engaged cautious player");
 				else if (manFight.numEnemies ==1) UITros.TRACE("You locked engaged enemy");
