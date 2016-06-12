@@ -4098,7 +4098,9 @@ class FightState {
 		var costWithProf:Object = attacking ? prof.atkCosts : prof.defCosts;
 		var mask:uint = attacking ? prof.offensiveManuevers : prof.defensiveManuevers;
 		var list:Array = attacking ?  ManueverSheet.offensiveMelee : ManueverSheet.defensiveMelee;
-	
+		var curCharProfLevel:int = charSheet.profeciencies[meleeProf];
+		
+		
 		var len:uint = list.length;
 		
 	//	var traceList:Array = [];
@@ -4116,10 +4118,14 @@ class FightState {
 				if (manuever.devTempDisabled ) {
 					continue;
 				}
+				if (manuever.requiredLevel > curCharProfLevel) {
+					continue;
+				}
 
 		
 				var tn:int =  charSheet.getManueverTN(manuever, attacking, fight, enemyManuever, enemyDiceRolled, enemyTargetZone);
-
+				//TODO: handle weapons with jit TN due to having varied attack zone options, but NO
+				
 				if (tn == 0) continue;  // unavailable move based off character sheet
 				
 				
