@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<title>TrosHAXE</title>
+	<meta name="description" content="" />
+	<script src="jquery-3.0.0.min.js"></script>
+	<script src="vue.js"></script>
+	<script src="balanced.min.js"></script>
+	<script src="TrosHAXE.js"></script>
+	<script>
+	
+	
+	$(document).ready( function() {
+	
+		
+function duplicateBodyPartLocations () {
+		var errorMessage;
+	var input = $("textarea");
+   var theSource = input.text();
+		var blockComments = balanced.replacements({ source: theSource, open: '///* bodyparts', close: '//*/ bodyparts', balance:true,
+ 	   replace: function (source, head, tail) {
+      var breakIndex = source.indexOf("\n");
+      
+     var tagger =  source.slice(0, breakIndex);
+     tagger = tagger.trim();
+    
+     var taggerParams = tagger.split(" ");
+     var headTag = '<div v-for="woundLoc in woundLocations">';
+       var bodyContent =  source.slice( breakIndex );
+       bodyContent = bodyContent.replace(/bodyPartName/g, '{{woundLoc.id}}');
+       var result = headTag;
+       result += bodyContent;
+       result += "</div>";
+   	    return result;
+        
+  	  }
+    });
+	
+	if (blockComments == null) {
+		alert("Not balanced!");
+		 return;
+	  }
+
+	input.text(blockComments);
+//alert(blockComments);
+}
+duplicateBodyPartLocations();
+$("pre").html($("textarea").text());
+//return;
+		
+		var humanoidBody =  troshx.tros.HumanoidBody.getInstance();
+		console.log(humanoidBody.getAllWoundLocations());
+			var vueModel = new Vue({
+		  el: '#vueapp',
+		  data: {
+			woundLocations: humanoidBody.getAllWoundLocations()
+		  },
+		  methods: {
+		   
+		  }
+		})
+	});
+	
+
+	
+	setTimeout(function() {
+		$("#savedoutput").text( $("pre").text());
+	},1);
+	</script>
+</head>
+<body>
+	
+<textarea>
+CONST WOUND_BIT_LEVEL_1 = 1
+CONST WOUND_BIT_LEVEL_2 = 2
+CONST WOUND_BIT_LEVEL_3 = 4
+CONST WOUND_BIT_LEVEL_4 = 8
+CONST WOUND_BIT_LEVEL_5 = 16
+
+CONST D_DESTROY_PART = 1
+CONST D_DEATH = 2
+
+CONST DAMAGE_TYPE_CUTTING =1
+CONST DAMAGE_TYPE_PUNCTURING = 2 
+CONST DAMAGE_TYPE_BLUDGEONING = 3
+
+// for each char.body... parts... (tag)
+///* utest player bodyparts
+///* bodyparts
+VAR charPersonName_wound_bodyPartName = "bodyPartName"
+VAR charPersonName_wound_bodyPartName_BL = 0
+VAR charPersonName_wound_bodyPartName_shock = 0
+VAR charPersonName_wound_bodyPartName_pain = 0
+VAR charPersonName_wound_bodyPartName_punctureFreshLevelMask = 0
+VAR charPersonName_wound_bodyPartName_bludgeonFreshLevelMask = 0
+VAR charPersonName_wound_bodyPartName_cutFreshLevelMask = 0
+//*/ bodyparts
+//*/ utest
+///* bodyparts
+VAR charPersonName2_wound_bodyPartName = "bodyPartName"
+VAR charPersonName2_wound_bodyPartName_BL = 0
+VAR charPersonName2_wound_bodyPartName_shock = 0
+VAR charPersonName2_wound_bodyPartName_pain = 0
+VAR charPersonName2_wound_bodyPartName_punctureFreshLevelMask = 0
+VAR charPersonName2_wound_bodyPartName_bludgeonFreshLevelMask = 0
+VAR charPersonName2_wound_bodyPartName_cutFreshLevelMask = 0
+//*/ bodyparts
+//*/ utest
+
+=== function applyWound(applyPain,  applyBL,  applyShock,  ref charPartShock, ref charPartPain, ref charPartBL )
+{
+	- applyShock  == -1:	
+		~charPartShock = 999
+}
+{
+	- applyPain  == -1:	
+		~charPartPain = 999
+}
+{
+	- applyShock > 0 && applyShock > charPartShock:
+		~charPartShock = applyShock
+}
+{
+	- applyPain > 0 && applyPain > charPartPain:
+		~charPartPain = applyPain
+}
+{
+	- applyBL > charPartBL:
+		~charPartBL = applyBL
+}
+
+
+=== function getPartWoundDamages(targetPart, woundLevel, damageType, ref applyPain, ref applyBL,  ref applyShock, ref applyDestructor, wp)
+{
+	///* woundLocations
+	<div v-for="woundLoc in woundLocations">
+	- targetPart == "{{woundLoc.id}}": 
+	{
+		<div v-if="woundLoc.cut.length">
+		-damageType== DAMAGE_TYPE_CUTTING:
+			{
+			<div v-for="w in woundLoc.cut">
+			- woundLevel == {{($index+1)}}:
+				~applyPain = {{w.pain}} - {{w.painWP}}*wp 
+				~applyBL =   {{w.BL}}
+				~applyShock =  {{w.shock}} - {{w.shockWP}}*wp 
+				~applyDestructor = {{w.d}}
+			</div>
+			
+			- else:
+				~applyPain = 0
+				~applyBL = 0
+				~applyShock = 0
+				~applyDestructor = 0
+			}
+		</div>
+		<div v-if="woundLoc.puncture.length">
+		-damageType== DAMAGE_TYPE_PUNCTURING:
+			{
+			<div v-for="w in woundLoc.puncture">
+			- woundLevel == {{($index+1)}}:
+				~applyPain = {{w.pain}} - {{w.painWP}}*wp 
+				~applyBL =   {{w.BL}}
+				~applyShock =  {{w.shock}} - {{w.shockWP}}*wp 
+				~applyDestructor = {{w.d}}
+			</div>
+			
+			- else:
+				~applyPain = 0
+				~applyBL = 0
+				~applyShock = 0
+				~applyDestructor = 0
+			}
+		</div>
+		<div v-if="woundLoc.bludgeon.length">
+		-damageType== DAMAGE_TYPE_BLUDGEONING:
+			{
+			<div v-for="w in woundLoc.bludgeon">
+			- woundLevel == {{($index+1)}}:
+				~applyPain = {{w.pain}} - {{w.painWP}}*wp 
+				~applyBL =   {{w.BL}}
+				~applyShock =  {{w.shock}} - {{w.shockWP}}*wp 
+				~applyDestructor = {{w.d}}
+			</div>
+			- else:
+				~applyPain = 0
+				~applyBL = 0
+				~applyShock = 0
+				~applyDestructor = 0
+			}
+		</div>
+		- else:
+			~elseResulted = 1
+	}
+	</div>
+	{
+		-applyShock < 0: 
+			~applyShock = 0
+	}
+	~return targetPart
+	
+	//*/ woundLocations
+	-else:
+		~elseResulted = 1
+}
+
+=== function addWoundLevelBit(mask, woundLevel)
+{
+	- woundLevel == 1:
+	 ~addBit( mask, WOUND_BIT_LEVEL_1)
+	- woundLevel == 2:
+	 ~addBit( mask, WOUND_BIT_LEVEL_2)
+	- woundLevel == 3:
+	 ~addBit( mask, WOUND_BIT_LEVEL_3)
+	- woundLevel == 4:
+	 ~addBit( mask, WOUND_BIT_LEVEL_4)
+	- woundLevel == 5:
+	 ~addBit( mask, WOUND_BIT_LEVEL_5)
+	- else:
+		~elseResulted = 1
+}
+
+
+=== function inflictWoundOn(charId, charWillpower, targetPart, woundLevel, damageType, ref shockToApply, ref painCollector, ref bloodCollector, ref applyD)
+~temp applyPain
+~temp applyBL
+~temp applyShock
+{ 
+///* utest player bodyparts
+- charId == charPersonName_id: 
+ 	{
+		-targetPart:
+			~getPartWoundDamages(targetPart, woundLevel, damageType, applyPain, applyBL, applyShock, applyD, charWillpower)
+			{ 
+				///* bodyparts
+				-targetPart == charPersonName_wound_bodyPartName:
+					~applyWound(applyPain, applyBL, applyShock, charPersonName_wound_bodyPartName_shock,  charPersonName_wound_bodyPartName_pain, charPersonName_wound_bodyPartName_BL)
+					~shockToApply = charPersonName_wound_bodyPartName_shock
+					{ 
+						-damageType == DAMAGE_TYPE_CUTTING:
+							~addWoundLevelBit(charPersonName_wound_bodyPartName_cutFreshLevelMask, woundLevel )
+						-damageType == DAMAGE_TYPE_PUNCTURING:
+							~addWoundLevelBit(charPersonName_wound_bodyPartName_punctureFreshLevelMask, woundLevel )
+						-damageType == DAMAGE_TYPE_BLUDGEONING:
+							~addWoundLevelBit(charPersonName_wound_bodyPartName_bludgeonFreshLevelMask, woundLevel )
+						-else:
+							~elseResulted =1
+							Else exception fonud for damageType search! Should not happen!
+					}
+				//*/ bodyparts
+				- else:
+					~elseResulted = 1
+			}
+			~return
+		- else:
+			///* bodyparts
+			~painCollector = painCollector + charPersonName_wound_bodyPartName_pain
+			~bloodCollector = bloodCollector + charPersonName_wound_bodyPartName_BL
+			//*/ bodyparts
+	}
+//*/
+///* utest bodyparts
+- charId == charPersonName2_id: 
+	{
+		-targetPart:
+			 ~getPartWoundDamages(targetPart, woundLevel, damageType, applyPain, applyBL, applyShock, applyD, charWillpower)
+			{ 
+				///* bodyparts
+				-targetPart == charPersonName2_wound_bodyPartName:
+					~applyWound(applyPain, applyBL, applyShock, charPersonName2_wound_bodyPartName_shock,  charPersonName2_wound_bodyPartName_pain, charPersonName2_wound_bodyPartName_BL)
+					~shockToApply = charPersonName2_wound_bodyPartName_shock
+					{ 
+						-damageType == DAMAGE_TYPE_CUTTING:
+							~addWoundLevelBit(charPersonName2_wound_bodyPartName_cutFreshLevelMask, woundLevel )
+						-damageType == DAMAGE_TYPE_PUNCTURING:
+							~addWoundLevelBit(charPersonName2_wound_bodyPartName_punctureFreshLevelMask, woundLevel )
+						-damageType == DAMAGE_TYPE_BLUDGEONING:
+							~addWoundLevelBit(charPersonName2_wound_bodyPartName_bludgeonFreshLevelMask, woundLevel )
+						-else:
+							~elseResulted =1
+							Else exception fonud for damageType search! Should not happen!
+					}
+				//*/ bodyparts
+				- else:
+					~elseResulted = 1
+			}
+		- else:
+			///* bodyparts
+			~painCollector = painCollector + charPersonName2_wound_bodyPartName_pain
+			~bloodCollector = bloodCollector + charPersonName2_wound_bodyPartName_BL
+			//*/ bodyparts
+	}
+//*/
+-else:
+	~elseResulted = 1
+}
+</textarea>
+<pre id="vueapp">
+	
+</pre>
+
+<!--
+<hr/>
+
+
+<textarea id="savedoutput" style="width:100%; height:800px;">
+	
+</textarea>
+-->
+</body>
+</html>

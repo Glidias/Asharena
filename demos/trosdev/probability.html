@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<title>TrosHAXE - Probability Calculator</title>
+	<meta name="description" content="" />
+	<script src="jquery-3.0.0.min.js"></script>
+	<script src="vue.js"></script>
+	<script src="TrosHAXE.js"></script>
+	<style>
+		.tablesection {
+			font-family:Courier New;
+			font-size:12px;
+		}
+		.tablesection table td {
+			border:1px solid grey;
+		}
+		.tablesection td .line {
+			border:1px solid black;
+			margin-top:3px;
+		}
+		
+		
+	</style>
+</head>
+<body>
+	<h2>Probability of Contested Roll:</h2>
+	<div id="probcalculator">
+		
+		<div class="fieldgroup">
+			<label>Your Number of Dice to Roll:</label>
+			<input type="number" step="1" v-model="yourDice" min="0" number />
+		</div>
+		<div class="fieldgroup">
+			<label>Your TN:</label>
+			<input type="number" step="1" v-model="yourTN" min="1" number />
+		</div>
+		
+		<hr/>
+		
+		<div class="fieldgroup">
+			<label>Against Number of Dice:</label>
+			<input type="number" step="1" v-model="againstDice" min="0" number />
+		</div>
+		
+		<div class="fieldgroup">
+			<label>Against TN:</label>
+			<input type="number" step="1" v-model="againstTN" min="1" number />
+		</div>
+		<hr/>
+		<div class="fieldgroup">
+			<label>Required BS:</label>
+			<input type="number" step="1" v-model="requiredBS" min="0" number />
+		</div>
+		<div class="fieldgroup">
+			<label>Enforce >=1 TS required:</label>
+			<input type="checkbox" v-model="requireAtLeast1TS" />
+		</div>
+		<div class="results">
+			<label>Chance to succeed: ( {{ displayAsPercentage(chanceToSucceedBS) }}% ) {{ chanceToSucceedBS }} </label>
+		
+		</div>
+		
+		<hr/>
+		
+		<div class="tablesection">
+			<table>
+				<tr>
+					<th>r Successes</th>
+					<th>r Probability</th>
+					<th>&gt;= %</th>
+					<th>nCr</th>
+					<th>Peak</th>
+				</tr>
+				<tr v-for="roll in getTabulatedRollData(yourDice, yourTN)">
+					<td>{{ roll.x }}</td>
+					<td>{{ roll.eq }}</td>
+					<td>{{ displayAsPercentage(roll.gte) }}%</td>
+					<td>{{ binomialCoef(yourDice, $index) }}</td>
+					<td>{{ roll.peak }}</td>
+					<td class="graphcell" v-bind:style="{ width:options.graphWidth+'px' }">
+						<div class="line" v-bind:style="{ width:clampProb(roll.eq)*100+'%' }"></div>
+					</td>
+				</tr>
+			</table>
+			
+			<hr/>
+			<table>
+				<tr>
+					<th>r Successes</th>
+					<th>r Probability</th>
+					<th>&gt;= %</th>
+					<th>nCr</th>
+					<th>Peak</th>
+				</tr>
+				<tr v-for="roll in getTabulatedRollData(againstDice, againstTN)">
+					<td>{{ roll.x }}</td>
+					<td>{{ roll.eq }}</td>
+					<td>{{ displayAsPercentage(roll.gte) }}%</td>
+					<td>{{ binomialCoef(againstDice, $index) }}</td>
+					<td>{{ roll.peak }}</td>
+					<td class="graphcell" v-bind:style="{ width:options.graphWidth+'px' }">
+						<div class="line" v-bind:style="{ width:clampProb(roll.eq)*100+'%' }"></div>
+					</td>
+				</tr>
+			</table>
+		</div>
+		
+		<h2>Probability of Non-Contested Roll:</h2>
+			<div class="fieldgroup">
+			<label>Your Required Successes:</label>
+			<input type="number" step="1" v-model="requiredTS" min="0" number />
+		</div>
+		<div class="results">
+			<label>Chance to succeed: ( {{ displayAsPercentage(chanceToSucceedTS) }}% ) {{ chanceToSucceedTS }} </label>
+		</div>
+		
+
+	</div>
+	
+	<script>
+		var ReflectUtil = troshx.util.ReflectUtil;
+		var TROSAI =  troshx.util.TROSAI;
+		var vueCalculatorMethods = {
+			outputSymbolsByCount: function(symbol, count) {
+				var str = "";
+				while(--count > -1) {
+					str+=symbol;
+				}
+				return str;
+			},
+			clampProb: function(val) {
+				return val < 0 ? 0 : val > 1 ? 1 : val;
+			}
+		};
+		var vueCalculatorData = {
+			yourDice:10,
+			yourTN:6,
+			againstDice:10,
+			againstTN:6,
+			requiredBS:1,
+			requireAtLeast1TS:true,
+			requiredTS:1,
+			
+			options: {
+				graphWidth:400
+			}
+		};
+		var vueCalculatorComputed = {
+			chanceToSucceedTS: function() {  // non-contested roll
+				return this.getChanceToSucceed(this.yourDice, this.yourTN,  this.requiredTS)
+			},
+			chanceToSucceedBS: function() {  // contested roll
+				return this.getChanceToSucceedContest(this.yourDice, this.yourTN, this.againstDice, this.againstTN, this.requiredBS, this.requireAtLeast1TS)
+			}
+		};
+		
+		ReflectUtil.setItemMethodsTo( TROSAI, vueCalculatorMethods, true);
+		
+		var vueCalculatorModel = new Vue({
+			el: "#probcalculator",
+			data: vueCalculatorData,
+			methods: vueCalculatorMethods,
+			computed: vueCalculatorComputed
+		});
+	
+	</script>
+</body>
+</html>
