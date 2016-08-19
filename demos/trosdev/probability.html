@@ -36,8 +36,8 @@
 			<input type="number" step="1" v-model="yourTN" min="1" number />
 		</div>
 		
-		<hr/>
 		
+		<hr/>
 		<div class="fieldgroup">
 			<label>Against Number of Dice:</label>
 			<input type="number" step="1" v-model="againstDice" min="0" number />
@@ -57,8 +57,8 @@
 			<input type="checkbox" v-model="requireAtLeast1TS" />
 		</div>
 		<div class="results">
-			<label>Chance to succeed: ( {{ displayAsPercentage(chanceToSucceedBS) }}% ) {{ chanceToSucceedBS }} </label>
-		
+			<label>Chance to succeed with BS: ( {{ displayAsPercentage(chanceToSucceedBS) }}% ) {{ chanceToSucceedBS }} </label><br/>
+			<label>Side Favoring ( {{ displayAsPercentage(averageFavoring) }}% ) {{ averageFavoring }}</label>
 		</div>
 		
 		<hr/>
@@ -108,11 +108,11 @@
 		
 		<h2>Probability of Non-Contested Roll:</h2>
 			<div class="fieldgroup">
-			<label>Your Required Successes:</label>
+			<label>Your Required Successes (RS):</label>
 			<input type="number" step="1" v-model="requiredTS" min="0" number />
 		</div>
 		<div class="results">
-			<label>Chance to succeed: ( {{ displayAsPercentage(chanceToSucceedTS) }}% ) {{ chanceToSucceedTS }} </label>
+			<label>Chance to succeed with RS: ( {{ displayAsPercentage(chanceToSucceedTS) }}% ) {{ chanceToSucceedTS }} </label>
 		</div>
 		
 
@@ -152,6 +152,12 @@
 			},
 			chanceToSucceedBS: function() {  // contested roll
 				return this.getChanceToSucceedContest(this.yourDice, this.yourTN, this.againstDice, this.againstTN, this.requiredBS, this.requireAtLeast1TS)
+			},
+			chanceToDraw: function() {  // contested roll
+				return this.getChanceToSucceedContest(this.yourDice, this.yourTN, this.againstDice, this.againstTN, 0, false)
+			},
+			averageFavoring: function() {
+				return ( this.getChanceToSucceedContest(this.yourDice, this.yourTN, this.againstDice, this.againstTN, 1, false)   +(this.chanceToDraw))/2;
 			}
 		};
 		

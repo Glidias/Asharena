@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<title>TrosHAXE: AI Testing</title>
+	<meta name="description" content="" />
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<script src="vue.js"></script>
+	<script src="dat.gui.js"></script>
+	<script src="guiGlue.js"></script>
+	<script src="vuedatguiboiler.js"></script>
+	<script src="TrosHAXE.js"></script>
+	<link rel="stylesheet" href="vuedatguiboiler.min.css" TYPE="text/css" media="screen">
+	<style>
+	#staticGUI .cr.number .c input {
+		width:50%;
+	}
+	#staticGUI .cr.number .property-name {
+		width:60%;
+	}
+	#staticGUI .cr.number .c {
+		width:40%;
+	}
+	#funcCallGUI .close-button {
+		margin-top:24px;
+	}
+	</style>
+</head>
+
+<body>
+<script type="text/javascript">
+	
+// boilerplate
+function exposeHxMappingClassesToGlobalNamespace() {
+	var p;
+	var arr = [];
+	for (p in troshx) {
+		window[p] = troshx[p];
+	}
+	for (p in troshx.tros.ai) {
+		window[p] = troshx.tros.ai[p];
+	}
+	for (p in troshx.tros) {
+		window[p] = troshx.tros[p];
+	}
+	for (p in troshx.util) {
+		window[p] = troshx.util[p];
+	}
+}
+exposeHxMappingClassesToGlobalNamespace();
+var TJSON = tjson.TJSON;
+var DatUtil = dat.gui.DatUtil;
+	
+window.onload = function() {
+
+	//GameRules.FLEE_CAP_BY_MOBILITY_EXCHANGE1;
+	GameRules.FLEE_CAP = GameRules.FLEE_CAP_BY_MOBILITY_ALL; 
+	
+
+	// vue datamodel directive
+	var PROPERTY_CHAIN_SETTER  =  new PropertyChainHolder();
+	Vue.directive('sync-instance', {
+		bind: function() {
+			var prefix =  (this.expression.split(".")[0]);
+			var instance = this.vm.getInstance(prefix);
+			this["_instance"] = instance;
+			this["_prefixLength"] = prefix.length + 1;		
+		},
+		update: function(newValue, oldValue) {
+
+			if (newValue != null && typeof(newValue) === "object") {
+				newValue = TJSON.parse(TJSON.encode(newValue));
+			}
+		var setPath = this.expression.slice(this["_prefixLength"]);
+		PROPERTY_CHAIN_SETTER.setupProperty(this["_instance"] ,  setPath);
+		 
+		var result = newValue !== undefined ? PROPERTY_CHAIN_SETTER.setPropertyChainValue(newValue) : 	PROPERTY_CHAIN_SETTER.deletePropertyChainValue(newValue);  // result purely for che
+		
+		},
+		unbind: function() {
+			console.log("VUEDAT Gui sample unbind:"+this.expression);
+			this["_instance"]= null;
+			
+		}
+	});
+
+	// setup DATGUI
+	TROSAiBot.setTypicalAVAILCostsForTesting();
+	
+	var trosAIBot_staticDef = DatUtil.setup( TROSAiBot, TROSAiBot,  { isStatic:true } );
+
+	var gui;
+	function resetToTypicalCosts() {
+		TROSAiBot.setTypicalAVAILCostsForTesting();
+		ReflectUtil.setItemFieldsTo(TROSAiBot, vueModelData.TROSAiBot, true, "bind");
+	
+	}
+	
+	var trosAIBot_staticObj =  {};
+	ReflectUtil.setItemFieldsTo(TROSAiBot,trosAIBot_staticObj, true, "bind");
+	gui = guiGlueRender(trosAIBot_staticDef,null, trosAIBot_staticObj);
+	setupGUIForVue(gui, "TROSAiBot.", "sync-instance");
+	gui.domElement.id = "staticGUI";
+	gui.add({"ResetTypical":resetToTypicalCosts }, "ResetTypical");
+	$("#staticGUI .cr.number .property-name").each( function(index, item) {
+		item = $(item);
+		var propName = item.html();
+		if (propName.split("_")[0] != "AVAIL") {
+			return;
+		}
+		item.html( propName + " (cost: {{ getCostFromAVAIL(TROSAiBot."+propName+")  }})");
+	});
+	
+	var funcGui =new dat.GUI();
+	
+	var trosAIBot_staticMethods = DatUtil.createFunctionButtonsForGUI(funcGui, trosAIBot_staticDef._functions, {},   null, {
+		handler: createGUIMethodModalHandler
+	});
+	funcGui.domElement.id = "funcGui";
+	
+	
+	
+	var targetDataModel = new TROSAiBot(); // punching bag test
+	targetDataModel.body = new HumanoidBody(); 
+	TROSAiBot.CURRENT_OPPONENT = targetDataModel;
+
+	
+	var VUEDAT_INSTANCES = {	// instance/service locator for syncring vuemodel with data models
+		"TROSAiBot": TROSAiBot,
+		"target": targetDataModel
+	};   
+		
+	// setup VUE data
+	var vueModelData = {
+		weapons: {},
+		weaponsArray: TJSON.encodeToPlainObject(WeaponSheet.LIST),
+		you: {
+			equipLeft:"",
+			equipRight:"",
+			preferOffhand:false
+		}, 
+		target: {   // TJSON.encodeToPlainObject(targetDataModel)
+			equipOffhand:"",
+			equipMasterhand:""
+		},
+		TROSAiBot: trosAIBot_staticObj,
+		result: ""
+	};
+	
+	
+	function resetVueModelDataForStatic(resetCosts) {
+		var propsToApply = {
+			you: {
+				equipLeft:"",
+				equipRight:"",
+				preferOffhand:false
+			}, 
+			target: {   // TJSON.encodeToPlainObject(targetDataModel)
+				equipOffhand:"",
+				equipMasterhand:""
+			},
+			result: ""
+		};
+		
+		if (resetCosts) {
+			resetToTypicalCosts();
+		}
+		TROSAiBot.CURRENT_OPPONENT = targetDataModel;
+		$.extend(true,vueModelData, propsToApply);
+	}
+	
+	// main body vue
+	new Vue({
+			el:"#apptest",
+			data: vueModelData,
+			methods: {
+				getInstance: getDatInstance,	
+				updateYourEquipment: function() {
+					TROSAiBot.B_EQUIP = this.you.preferOffhand ?    !WeaponSheet.weaponNameIsShield(this.you.equipLeft) ? this.you.equipLeft : "" :  this.you.equipRight;
+					TROSAiBot.D_EQUIP  =  WeaponSheet.weaponNameIsShield(this.you.equipLeft) ? this.you.equipLeft  : "";
+					TROSAiBot.B_IS_OFFHAND = this.you.preferOffhand;
+				},
+				resetCostModel:resetToTypicalCosts,
+				resetStaticModel: resetVueModelDataForStatic
+			}
+	});
+	function getDatInstance(prefix) {
+		var instance =  VUEDAT_INSTANCES[prefix];
+		if (instance == null) {  // create on demand?
+			VUEDAT_INSTANCES[prefix] = instance = {};
+			alert("No instance found for prefix:"+prefix + "..creating dummy obj!");
+		}
+		return instance;
+	}
+
+	
+	// datgui body vue
+
+	new Vue({
+			el:".dg.ac",
+			data: vueModelData,
+			methods: {
+				getInstance: getDatInstance,
+				getCostFromAVAIL: function(avail) {
+					return avail <=0 ? "~" : avail - 1;
+				}
+			}
+	});
+	
+	
+	// handlers
+	var TROSAiBot_enums = ReflectUtil.getAllEnums(TROSAiBot);
+
+	function getTROSAiBotEnumValue(val, fieldName) {
+		if ( TROSAiBot_enums._meta[fieldName] ) {
+			return TROSAiBot_enums._meta[fieldName].get(val);
+		}
+		else return val;
+	}
+	
+	function enumArray(intStrMap, arr) {
+		var i = arr.length;
+		while(--i > -1) {
+			arr[i] = intStrMap.get(arr[i]);
+		}
+	}
+	
+	
+	function executeStaticAIMethod() {
+		var result = DatUtil.callInstanceMethodWithPacket(TROSAiBot, this);
+			if (result) {
+			var metaAdditionalData = ReflectUtil.getMetaDataOfField("return", TROSAiBot, this.name, true);
+			
+			
+			if (metaAdditionalData!= null) {
+				var i;
+				var returnData = {};
+				var returnArrays = [];
+				var returnArr = null;
+				
+				var returnArrLen = -1;
+				 for (i=0; i< metaAdditionalData.length; i++) {
+					var prop = metaAdditionalData[i];
+				
+					if (returnArrLen < 0 && prop.split("_").pop() === "COUNT" && typeof(TROSAiBot[prop]) === "number") {
+						returnArrLen = TROSAiBot[prop];
+					}
+					if ($.isArray( TROSAiBot[prop])) {
+						returnArr =  TROSAiBot[prop].concat();
+						returnData[prop]  =returnArr;
+					
+						if (TROSAiBot_enums._meta[prop]) {
+							enumArray( TROSAiBot_enums._meta[prop], returnArr);
+						}
+						
+						returnArrays.push(returnArr);
+					}
+					else {
+						//if (TROSAiBot[prop] == undefined) alert("Undefined property exception found!");
+						returnData[ prop]  =getTROSAiBotEnumValue( TROSAiBot[prop], prop );
+					}
+				 }
+				 
+				 if (returnArrLen >=0 && returnArr != null) {
+					i = returnArrays.length;
+					while(--i > -1) {
+						returnArrays[i].length = returnArrLen;
+					}
+				
+				 }
+				 
+				result = {
+					returnData:returnData
+					,result:result
+				};
+			}
+		}
+		var jsonStr = JSON.stringify( result, null, "\t");
+	
+		vueModelData.result = jsonStr; //
+	}
+	
+	
+	var guiModal;
+	function createGUIMethodModalHandler() {
+		
+	
+		if (guiModal != null) {
+			$(guiModal.domElement).remove();
+			guiModal = null;
+		}
+		
+		guiModal = new dat.GUI();  
+		guiModal.domElement.id ="funcCallGUI";
+		$(gui.domElement).after(guiModal.domElement);
+		var existingFolder = guiModal.getFolderByName(this.name);
+		if (existingFolder != null) {
+			guiModal.removeFolder(this.name);
+		}
+		
+		var folder = guiModal.addFolder(this.name);
+		folder.open();
+
+		var guiSetup = DatUtil.setup( TROSAiBot, TROSAiBot,  { isStatic:true }, "", this.func);
+		
+		var untypedGUI = guiGlueRender(guiSetup, null, null, folder);
+	
+		setupGUIForVue(untypedGUI, "staticMethodCall.", "");
+		
+		untypedGUI.domElement.id = "staticMethodCall";
+		
+		var staticVMData = new Vue({
+			el:"#staticMethodCall",
+			data:	{
+				staticMethodCall: $.extend(true, {}, untypedGUI._guiGlueParams)
+			}
+		});
+		
+		
+		var packet =  {handler:executeStaticAIMethod, params:staticVMData.staticMethodCall, func:this.func, guiGlue:untypedGUI._guiGlue, name:this.name};
+		folder.add(packet, "handler").name("EXECUTE()!");
+
+		///*
+		guiModal.onClosedChange( function(val) {
+			
+			if (val) {
+				$(guiModal.domElement).remove();
+				guiModal = null;
+			}
+		});
+		//*/
+
+	}
+	
+	function closeGuiModal() {
+		if (guiModal != null) {
+			$(guiModal.domElement).remove();
+			guiModal = null;
+		}
+	}
+
+};
+	</script>
+	<h1>Riddle of Steel AI Bot wip test</h1>
+	<div id="apptest">
+		<section>
+			<h2>Static function testing:</h2>
+			<h3>Current person turn (declaring):</h3>
+			<div>
+				<label>Left hand (offhand):</label>
+				<select v-model="you.equipLeft" v-on:change="updateYourEquipment()">
+					<option value=""></option>
+					<option v-for="w in weaponsArray" value="{{w.name}}">{{w.name}}</opton>
+				</select>
+			</div>
+			<div>
+				<label>Right hand:</label>
+				<select v-model="you.equipRight" v-on:change="updateYourEquipment()">
+					<option value=""></option>
+					<option v-for="w in weaponsArray" v-if="!w.shield" value="{{w.name}}">{{w.name}}</opton>
+				</select>
+			</div>
+			<div>
+				<label for="youoffhand">Prefer offhand if possible:</label><input  v-on:change="updateYourEquipment()" v-model="you.preferOffhand" id="youoffhand" type="checkbox" />
+			</div>
+			<h3>Against Opponent:</h3>
+			<div>
+				<label>Left hand (offhand):</label>
+				<select v-sync-instance="target.equipOffhand" v-model="target.equipOffhand">
+					<option value=""></option>
+					<option v-for="w in weaponsArray" value="{{w.name}}">{{w.name}}</opton>
+				</select>
+			</div>
+			<div>
+				<label>Right hand:</label>
+				<select v-sync-instance="target.equipMasterhand" v-model="target.equipMasterhand">
+					<option value=""></option>
+					<option v-for="w in weaponsArray" v-if="!w.shield" value="{{w.name}}">{{w.name}}</opton>
+				</select>
+			</div>
+			<h3>Result:</h3>
+			<pre>
+			{{{ result }}}
+			</pre>
+			<div style="display:none">
+				<button type="reset" v-on:click="resetStaticModel()">Reset</button>
+			</div>
+		</section>
+		
+		
+	</div>
+
+</body>
+</html>

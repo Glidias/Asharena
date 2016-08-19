@@ -1,0 +1,19 @@
+.dg.ac .cr.function .property-name{width:100%;}
+.dg.ac .cr.function .c{width:0%;}
+.dg.ac .c select{width:100%;}
+.dg.main li.folder{position:relative;}
+.dg.main.disabled .folder.instance ul li.title{pointer-events:none;}
+.dg.main.disabled .folder.bitmask ul li{pointer-events:none;}
+.dg.main.disabled input{background-color:black!important;}
+.dg input[readonly=readonly]{color:yellow!important;background-color:black!important;}
+li.folder.bitmask ul{background-color:black;}
+li.folder.bitmask ul li.boolean{display:inline-block;}
+li.folder.bitmask ul li .property-name{width:auto;}
+li.folder.bitmask ul li.boolean .c{width:auto;}
+li.folder.bitmask ul li.title{whitespace:nowrap;}
+li.folder.bitmask ul li.title .labellist{word-spacing:-2px;}
+li.folder.bitmask ul li.title .labellist .prop{font-size:9px;color:magenta;margin:0 0px;}
+li.folder.instance>div>ul>li.title{background-image:none;padding-left:8px;}
+li.folder.instance>div>ul>li.title:before{margin-right:8px;content:'\2611';}
+li.folder.instance>div>ul.closed>li.title:before{content:'\2610';}
+
