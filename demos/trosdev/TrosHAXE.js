@@ -4260,9 +4260,9 @@ troshx_tros_ai_TROSAiBot.getComboAction = function(combo,cp,cp2,threatManuever,h
 	case -1:
 		if(threatManuever != null) {
 			if(!secondExchange) {
-				if(troshx_tros_ai_TROSAiBot.getBorderlineAttack(cp,cp2 - threatManuever.manueverCP,dtn,false,1)) {
+				if(troshx_tros_ai_TROSAiBot.getAdvantageGainCPOffensiveMove(false,cp,cp2 - threatManuever.manueverCP,dtn,1) || troshx_tros_ai_TROSAiBot.getBorderlineAttack(cp,cp2 - threatManuever.manueverCP,dtn,false,1)) {
 					cp -= troshx_tros_ai_TROSAiBot.MANUEVER_CHOICE.getManueverCPSpent();
-					return troshx_tros_ai_TROSAiBot.getFBDefense(true,cp,threatManuever.manueverCP,threatManuever.manueverTN,true,4,0);
+					return troshx_tros_ai_TROSAiBot.getFBDefense(true,cp,threatManuever.manueverCP,threatManuever.manueverTN,true,2,0);
 				}
 			}
 		}
