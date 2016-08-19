@@ -4191,7 +4191,7 @@ troshx_tros_ai_TROSAiBot.getComboExchangeBudgetingWithInitiative = function(comb
 	return null;
 };
 troshx_tros_ai_TROSAiBot.tryFavoredElseBorderlineAttacks = function(cp,cp2,dtn,heuristic,flags) {
-	return troshx_tros_ai_TROSAiBot.getFBAttack(true,cp,cp2,dtn,true,flags,0) || troshx_tros_ai_TROSAiBot.getAdvantageGainCPOffensiveMove(true,cp,cp2,dtn,flags) || troshx_tros_ai_TROSAiBot.getBorderlineAttack(cp,cp2,dtn,true,flags) || troshx_tros_ai_TROSAiBot.getAdvantageGainCPOffensiveMove(false,cp,cp2,dtn,flags);
+	return troshx_tros_ai_TROSAiBot.getFBAttack(true,cp,cp2,dtn,heuristic,flags,0) || troshx_tros_ai_TROSAiBot.getAdvantageGainCPOffensiveMove(true,cp,cp2,dtn,flags) || troshx_tros_ai_TROSAiBot.getBorderlineAttack(cp,cp2,dtn,heuristic,flags) || troshx_tros_ai_TROSAiBot.getAdvantageGainCPOffensiveMove(false,cp,cp2,dtn,flags);
 };
 troshx_tros_ai_TROSAiBot.getComboAction = function(combo,cp,cp2,threatManuever,hasInitiative,secondExchange) {
 	if(secondExchange == null) secondExchange = false;
