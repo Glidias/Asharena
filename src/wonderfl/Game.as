@@ -1087,7 +1087,8 @@ class Dungeon extends Sprite{
 
 		targetingStack = targetingStack.sortOn("priority", Array.NUMERIC);
 		i = targetingStack.length;
-		while (--i > -1) {  // todo: check if player in queue, create breakpoint exposure and ai feedback loop for enemies to change their mind if they have multiple targets to choose from
+		while (--i > -1) {  
+			// todo: check if player in queue, create breakpoint exposure and ai feedback loop for enemies to change their mind if they have multiple targets to choose from
 			fight = targetingStack[i].fight;
 			if (fight.target == null) {
 				FightState.findNewTarget(fight, this);
@@ -1260,9 +1261,9 @@ class Dungeon extends Sprite{
 			// manuever.to might be different in some cases...
 			if (fight.attacking) {
 				primaryManuever.from = ent;
-				primaryManuever.to  = checkComponent(fight.x+ent.moveArray[0],fight.y+ent.moveArray[1], "fight")[0];
-				if (primaryManuever.to == null) throw new Error("Could not find attack initiative's target");
-				
+				primaryManuever.to  = checkComponent(fight.x+ent.moveArray[0],fight.y+ent.moveArray[1], "fight");
+				if (primaryManuever.to == null || primaryManuever.to.length == 0) throw new Error("TODO Could not find attack initiative's target based off facing direction ");
+				primaryManuever.to = primaryManuever.to[0];
 				// charSheet.getReflex()* 1000 + Math.random() * 10
 				
 				// last 2 zero digits is granular quantum random number to roll off any ties (by the 100th integer between 0-99, should be granular enough. Supports up to ordering 100 combatants in a bout). These last 2  digits can refer to any initiative roll resolutions that might occur later
@@ -1540,15 +1541,19 @@ class Dungeon extends Sprite{
 		}
 		
 		// now, reverse the order
-		manueverStack.reverseOrder();  // to ensure proper order of resolution
-		manueverStack.sortOnLowestToHighest("reflexScore");  // fix up contested initiatives
+		manueverStack.reverseOrder(); 
+		// to ensure proper order of resolution with contested initiatves are grouped together
+		manueverStack.sortOnLowestToHighest("reflexScore");   
 		
-		// add reflex pool roll to reflexScore
+		// add reflex pool roll to reflexScore in order to make contested initiatives un-even
 		i =  manueverStack.stack.length;
 		while (--i > -1) {
 			cManuever = manueverStack.stack[i];
 			cManuever.reflexScore = int( cManuever.reflexScore / 100) * 100 +  Manuever.getRollNumSuccesses(cManuever.reflexPool, 5 ); 
 		}
+		
+		// sort again fix up contested initiatives
+		manueverStack.sortOnLowestToHighest("reflexScore");  
 		
 		// reverse order likewise for manuevers without initiatives, but these don't have contests
 		defManueverStack.reverseOrder();
@@ -1939,6 +1944,7 @@ class Dungeon extends Sprite{
 	{
 		
 		uiTros.unflagKeyModifier(UITros.KEY_MODIFIER_WAIT, this);
+		uiTros.flagKeyModifier(UITros.KEY_MODIFIER_SHIFT, this);
 		var curTarget:Object = e.currentTarget;
 		if (curTarget === uiTros.arrowUp) {
 			performKeyStroke(Keyboard.UP);
@@ -2068,6 +2074,7 @@ class Dungeon extends Sprite{
 	{
 		removeEventListener(Event.ENTER_FRAME, onNextFrameKeyDone);
 		keyEvent = null;  // shortcut
+		uiTros.unflagKeyModifier(UITros.KEY_MODIFIER_SHIFT, this);
 		//	onKeyUp(curKeyStroke);
 	}
     
@@ -2502,7 +2509,7 @@ class Enemy{
 		//if (uiRadioAuto) {
 				if (enm.bumping) {
 					//!uiShift ?
-					fight.orientation = FightState.ORIENTATION_AGGRESSIVE;// Math.random() >= .5 ? FightState.ORIENTATION_AGGRESSIVE : FightState.ORIENTATION_CAUTIOUS; 
+					fight.orientation = FightState.ORIENTATION_CAUTIOUS;// Math.random() >= .5 ? FightState.ORIENTATION_AGGRESSIVE : FightState.ORIENTATION_CAUTIOUS; 
 					//: FightState.ORIENTATION_CAUTIOUS;
 				}
 				else {
@@ -3877,6 +3884,7 @@ class FightState {
 	public var x:int;
 	public var y:int;
 	public var timestamp:uint = uint.MAX_VALUE;  // lol, unlikely to happen
+	public var orientingTimestamp:uint = uint.MAX_VALUE;
 	public var bumping:Boolean = false;  // flag to keep track of fast track bump rolls for roguelike gamemode
 	
 	
@@ -3903,7 +3911,8 @@ class FightState {
 	public static const CONTESTING_INITIATIVE:int = 1;  // both fighters have mutual initiative, or 1 side or both is forced to contest for it during the Action itself
 	public static const NO_INITIATIVE:int = 0;  // fighter has no initiative
 	public static const REROLL_INITIATIVE:int = -1;  // both fighters have no mutual initiative, and must re-roll for it in the next round via orientation.
-	public static const UNCERTAIN_INITATIVE:int = -2; // both sides have uncertain initiative, but will determine it after targets are determined (if required) and before the action starts
+	public static const UNCERTAIN_INITATIVE:int = -10; // both sides have uncertain initiative, but will determine it after targets are determined (if required) and before the action starts
+	public static const UNCERTAIN_INITIATIVE_RESOLVED:int = 10;
 	
 	// Fight state orientation values  
 	public static const ORIENTATION_NONE:int = 0; 	// a value of zero indicates no orientation selected, and this also happens after the first manuever is resolved at the start of a bout of after a Pause.
@@ -3913,6 +3922,10 @@ class FightState {
 	public var orientation:int = 0;  // warning, this is used as an implicit multiplier for determining orientation initaitive (higher value higher targeting initiative..)
 	public static const ORIENTATION_STRINGS:Array = ["None", "Defensive", "Cautious", "Aggressive"];
 	
+	
+	public function hasOrientationInitiative(targetFight:FightState):Boolean {
+		return orientation == ORIENTATION_AGGRESSIVE || (orientation != ORIENTATION_DEFENSIVE && ( (this.target==targetFight && targetFight.target !=this) || orientation > targetFight.orientation) );
+	}
 	
 	public function getInitiativeTowards(fightState:FightState):int {
 		//return initiative ? fightState.initiative ? CONTESTING_INITIATIVE :  (forceContestInitiative ? CONTESTING_INITIATIVE :  GOT_INITIATIVE )   
@@ -3931,7 +3944,7 @@ class FightState {
 				else {  // cautious vs cautious, or aggressive vs aggressive 
 					if (orientation == ORIENTATION_CAUTIOUS) {
 						if (fightState.orientation != ORIENTATION_CAUTIOUS)  throw new Error("Equal assertion cautious failed:"+fightState.orientation);
-						return UNCERTAIN_INITATIVE;
+						return initiative != fightState.initiative ? UNCERTAIN_INITIATIVE_RESOLVED : UNCERTAIN_INITATIVE;
 					}
 					else if (orientation == ORIENTATION_AGGRESSIVE) {
 						if (fightState.orientation != ORIENTATION_AGGRESSIVE)  throw new Error("Equal assertion aggressive failed:"+fightState.orientation);
@@ -3982,7 +3995,8 @@ class FightState {
 			lbl = initiativeState === GOT_INITIATIVE ? "Got Initiative..." :
 				initiativeState === CONTESTING_INITIATIVE ? "Contesting for initiative.." :
 				initiativeState === REROLL_INITIATIVE ? "..no initiative until next round..." : 
-					initiativeState === UNCERTAIN_INITATIVE ? "Uncertain Initiative..." : 
+				initiativeState === UNCERTAIN_INITATIVE ? "Uncertain Initiative..." : 
+				initiativeState === UNCERTAIN_INITIATIVE_RESOLVED ? initiative ? "Got Initiative..."  : "No Initiative.": 
 				"No Initiative."
 		
 				
@@ -3991,6 +4005,17 @@ class FightState {
 			lbl = "No target yet...";
 		}
 		return lbl;
+	}
+	
+	public static function resolveCautiousVsCautiousInitiative(fightState:FightState, charSheet:CharacterSheet, fightState2:FightState, charSheet2:CharacterSheet):int {
+		var reflex1:int = Manuever.getRollNumSuccesses(charSheet.getReflex(), 5 );
+		var reflex2:int = Manuever.getRollNumSuccesses(charSheet2.getReflex(), 5 );
+		if (reflex1 == reflex2) return 0;
+		fightState.initiative = reflex1 > reflex2;
+		fightState.attacking = fightState.initiative;
+		fightState2.initiative = !fightState.initiative ;
+		fightState2.attacking = fightState2.initiative;
+		return reflex1 > reflex2 ? 1 : -1;
 	}
 	
 	
@@ -4332,7 +4357,9 @@ class FightState {
 				
 				//paused = target != null ?  true;  // todo:  pause when neither side has initiative, or may happen if deal simulatenous hits against each other
 				
+				// need to depcreiate
 				if (!lostInitiative) { // auto regain it back
+					/*
 					if (!initiative) {
 						UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " regained back initiative...");
 					//	paused = false;
@@ -4340,7 +4367,7 @@ class FightState {
 						// TODO: check if new round, and if new round, it means 
 					}
 					initiative = true;  // regain back initiative if wasn't disturbed
-					
+					*/
 					
 					
 					
@@ -4579,7 +4606,7 @@ class FightState {
 	public static function updateNeighborInitiative(manFight:FightState, dungeon:Dungeon):void { 
 		var directions:Array = DIRECTIONS;  
 		var len:int = directions.length;
-		//var man:GameObject =  dungeon.checkComponent(manFight.x, manFight.y, "fight")[0];
+		var man:GameObject =  dungeon.checkComponent(manFight.x, manFight.y, "fight")[0];
 		
 		if ((manFight.flags & FLAG_INITIATIVE_SYNCED) != 0) {
 		//	UITros.TRACE("Already synced beforehand:" + (dungeon.man.components.fight === manFight));
@@ -4606,8 +4633,9 @@ class FightState {
 			var fights:Vector.<GameObject> = dungeon.checkComponent(xi, yi, "fight");
 			//if (fights.length > 0) {  //!gotEnemy &&
 				// assumed only stack 1 fighter at the moment. In grappling situations, can stack 2 fighters.
-				var enemyFight:FightState =  fights[0].components.fight;
-
+				var enemy:GameObject = fights[0];
+				var enemyFight:FightState =  enemy.components.fight;
+				var isAI:Boolean =  enemy != dungeon.man;
 				// Yep, this is allowed to happen below...
 				// when an enemy moves in to engage somebody that is already locked in combat exchange and resolving rolls. 
 				//if (!manFight.isSyncedWith(enemyFight)) {
@@ -4615,7 +4643,62 @@ class FightState {
 				//}
 				//if (manFight.bumping && 
 				
+				//UITros.TRACE(manFight.initiative + " vs "+enemyFight.initiative);
+				
+	
+				if  (manFight.s== 2 && manFight.target == enemyFight && manFight.orientation != 0  && manFight.isSyncedWith(enemyFight) && manFight.orientingTimestamp != dungeon.timestamp) {
+				
+					// resolve target initiative
+					//if (manFight.s != 2) throw new Error("Step != 2 assertion failed!");
+
+					var initiativeState:int  = manFight.getInitiativeTowards(enemyFight);
+					var withinScope:Boolean = manFight.withinInitiativeScope(enemyFight);
 					
+					
+					if (withinScope) {
+						if (enemyFight.target != manFight) {
+							 manFight.initiative = manFight.attacking =  true;
+						}
+						else if (initiativeState == UNCERTAIN_INITATIVE) {
+							// consider: cleanup this code and factor it into single FightState method
+							manFight.orientingTimestamp = dungeon.timestamp;
+							enemyFight.orientingTimestamp = dungeon.timestamp;
+							// assumed cautious vs cautious by sos conventions
+							var resultCC:int;
+							if ( (resultCC = FightState.resolveCautiousVsCautiousInitiative(manFight, man.components.char, enemyFight, enemy.components.char)) != 0) {	
+								if (resultCC>0) {
+									//man.dungeon.getNameWithDirToMan(man)
+									UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " takes cautious initiative over "+man.dungeon.getNameWithDirToMan(enemy)+ ".");
+								}
+								else  {
+										UITros.TRACE(man.dungeon.getNameWithDirToMan(enemy) + " takes cautious initiative over "+ man.dungeon.getNameWithDirToMan(man)+ ".");
+								}
+							
+								
+							}
+							else {
+							
+								if (isAI) {
+									//man.dungeon.getNameWithDirToMan(man)
+									UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " and " + man.dungeon.getNameWithDirToMan(enemy) + " are cautiously tied in uncertainty.");
+								}
+								else if (manFight.numEnemies == 1) {
+									UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " and " + man.dungeon.getNameWithDirToMan(enemy) + " are cautiously tied in uncertainty.");
+								}
+								else {
+									UITros.TRACE("exception manFight.numEnemies > 1");
+								}
+							}
+							
+							
+						}
+						else   {
+							 manFight.initiative = manFight.attacking =  manFight.hasOrientationInitiative(enemyFight);
+						}
+							
+					
+					}
+				}
 				
 				manFight.flags |= manFight.canRollInitiativeAgainst(enemyFight) ? ( 1 << (OFFSET_INITIATIVE+i)) : 0;
 				manFight.flags |= manFight.isSyncedWith(enemyFight) ? FLAG_INITIATIVE_SYNCED : 0;
@@ -4674,7 +4757,9 @@ class FightState {
 		s = 0;  
 		e = false;
 		orientation = 0;
-		initiative = true;
+		initiative = false;
+		lastHadInitiative = true;
+		
 		targetLocked = false;
 		
 		
@@ -4756,7 +4841,8 @@ class FightState {
 	}
 	
 	public function canRollInitiativeAgainst(fight:FightState):Boolean {
-		return getInitiativeTowards(fight) > 0  && withinInitiativeScope(fight);  //initiative  && 
+		return initiative && withinInitiativeScope(fight) && target == fight; // && ((fight.target != target)  || (getInitiativeTowards(fight) > 0) );
+		//getInitiativeTowards(fight) > 0  && withinInitiativeScope(fight);  //initiative  && 
 	}
 	
 	public function canRollAttackAgainstDirection(dirIndex:int):Boolean {
@@ -4884,8 +4970,22 @@ class FightState {
 			if ( (isAI || manFight.numEnemies==1 ) && enemyFight.target == null && enemyFight.orientation == ORIENTATION_CAUTIOUS ) {
 				enemyFight.target = manFight;
 				enemyFight.targetLocked = true;
-				if (isAI) UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" locked-engaged cautious player");
-				else if (manFight.numEnemies ==1) UITros.TRACE("You locked engaged enemy");
+				/*
+	
+				else {
+				*/
+					if (isAI) {
+						UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" locked-engaged cautious player");
+					}
+					else if (manFight.numEnemies == 1) {
+						UITros.TRACE("You locked engaged enemy");
+					}
+					else {
+						UITros.TRACE("exception manFight.numEnemies > 1");
+					}
+					
+			//	}
+				
 			}
 			else {
 				if (isAI) UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" targets player!");
