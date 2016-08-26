@@ -167,6 +167,8 @@ class UITros extends Sprite {
 	
 	public static const STR_NO_ACTION:String = "Wait";
 	
+	public static const ALLOW_HEURISTIC_DEF_WITH_INITIATIVE:Boolean = true;
+	
 	public var messageBox:TextField;
 	
 	private var manueverMenu:VBox;
@@ -791,9 +793,12 @@ class UITros extends Sprite {
 		
 		//onTargetZonedownSelect();
 	}
+	
+	
+	
 	private function updateManueverCTA(manFight:FightState ):void {
 		// "Change target (buy initiative)", "Change target (no initiative)", "Change target (defensive)"
-		actionTypeDropdown.items = [ (manFight.attacking ? "Attack" : manFight.isFleeing() ? "Flee" :  "Defend") ]; // todo: depreciate this later
+		actionTypeDropdown.items = [ (manFight.initiative ? ALLOW_HEURISTIC_DEF_WITH_INITIATIVE && !manFight.attacking ? "Defend (with initiative)"  : "Attack"  : manFight.isFleeing() ? "Flee" :  "Defend") ]; // todo: depreciate this later
 		actionTypeDropdown.selectedIndex = 0;
 		btnWait.label = STR_DONE;  //  (manFight.attacking ? STR_DONE : manFight.isFleeing() ? "FLEE" :  STR_DONE);
 	}
@@ -842,7 +847,8 @@ class UITros extends Sprite {
 		infoExchange.text = getCombatString(fight, charSheet, fight.combatPool);
 		var choosingOrientation:Boolean = fight.choosingOrientation();
 		//+"Last attacking?:"+fight.lastAttacking
-		infoMoveStep.text =  fight.s < 2 ? "Move " + fight.s + "/1" : "Rolling "+(fight.attacking ? "Attack" : "Defense")+"...";
+		infoMoveStep.text =  fight.s < 2 ? "Move " + fight.s + "/1" : "Choose your action:";
+		//"Rolling "+(fight.attacking ? "Attack" : "Defense")+"...";
 		radioAttack.visible = choosingOrientation;
 		radioDefend.visible = choosingOrientation;
 		radioCautious.visible = choosingOrientation;
@@ -880,7 +886,7 @@ return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + 
 		var priManuever:Manuever = priCManuever.manuever;
 		
 		if (towards == null) {
-			var nTarget:GameObject = FightState.getNeighbourEnt(ent.dungeon, ent.mapX, ent.mapY, FightState.getDirIndex(ent.dir) ); //FightState.getDirIndex(ent.dir)
+			var nTarget:GameObject = fight.target != null ? ent.dungeon.checkComponent(fight.target.x, fight.target.y, "fight")[0] :  FightState.getNeighbourEnt(ent.dungeon, ent.mapX, ent.mapY, FightState.getDirIndex(ent.dir) ); //FightState.getDirIndex(ent.dir)
 			if (nTarget != null) opponentNameLabel.text = "vs: " +ent.dungeon.getNameWithDirToMan(nTarget)
 			else {
 				//throw new Error("Exception failed to find neighbor facing opponent to fight:" + ent.dir);
@@ -1231,17 +1237,16 @@ class Dungeon extends Sprite{
 		var i:int = fightStack.length
 		var ent:GameObject;
 		var charSheet:CharacterSheet;
-		
+		var manueverChoiceDetails:Object;
 		var defenderList:Array = [];
 		
 		i = fightStack.length;
 		while (--i > -1) {
 			fight = fightStack[i];
-			if ( !fight.isRolling()) {
-				
+			
+			if ( !fight.isRolling()) {	
 				continue;
 			}
-			
 			
 			primaryManuever = fight.getPrimaryManuever();
 			entList = checkComponent(fight.x, fight.y, "fight");
@@ -1258,20 +1263,46 @@ class Dungeon extends Sprite{
 				continue;
 			}
 			
+			// sanity enforcement hack
+			if (!fight.initiative || fight.target == null) {  
+				// enforce characters to stop behaving as if attacking if initaitive/target flags is canceled for whatever reason...
+				fight.attacking = false;  
+			 }
+			 else {
+				 // defending with initaitive due to UI controls.?
+				if ( !fight.attacking && fight.target!=null ) {  // fight.initaitive  
+					if (ent != man) fight.attacking = true;  // Enforce AI with initaitive to always attack their target as a consideration since they have no UI controls 
+					else {
+						if ( !playerAttemptedDirMove  ) {
+							fight.attacking = true;
+							//UITros.TRACE("man is attacking from fixed position"+fight.initiative);
+						}
+					}
+				}
+			 }
+			 
+			
 			// manuever.to might be different in some cases...
-			if (fight.attacking) {
+			if (fight.attacking) {  //fight.initiative && 
 				primaryManuever.from = ent;
-				primaryManuever.to  = checkComponent(fight.x+ent.moveArray[0],fight.y+ent.moveArray[1], "fight");
-				if (primaryManuever.to == null || primaryManuever.to.length == 0) throw new Error("TODO Could not find attack initiative's target based off facing direction ");
-				primaryManuever.to = primaryManuever.to[0];
-				// charSheet.getReflex()* 1000 + Math.random() * 10
+				if (fight.target != null) {
+					primaryManuever.to  = checkComponent( fight.target.x, fight.target.y, "fight")[0];  // warning this might yield invalid index
+					//checkComponent(fight.x+ent.moveArray[0],fight.y+ent.moveArray[1], "fight");
+					//if (primaryManuever.to == null || primaryManuever.to.length == 0) throw new Error("TODO Could not find attack initiative's target based off facing direction ");
+		
+					// charSheet.getReflex()* 1000 + Math.random() * 10
+					
+					// last 2 zero digits is granular quantum random number to roll off any ties (by the 100th integer between 0-99, should be granular enough. Supports up to ordering 100 combatants in a bout). These last 2  digits can refer to any initiative roll resolutions that might occur later
+					// first 2 zero digits refer to index number of resolution that is set later on to facilitiatie sorting
+					// eg. 21 succcesses, 12th character,   3 reflex,  32112,  or if 13 reflex  132112
+					primaryManuever.reflexScore = charSheet.getReflex() * 10000 + int(Math.random() * 100);
+					primaryManuever.reflexPool  = charSheet.getReflex();
+					manueverStack.pushManuever( primaryManuever );
+				}
+				else {
+					UITros.TRACE("todo: NO target found. Likely against multiple opponents? (need to choose)");
+				}
 				
-				// last 2 zero digits is granular quantum random number to roll off any ties (by the 100th integer between 0-99, should be granular enough. Supports up to ordering 100 combatants in a bout). These last 2  digits can refer to any initiative roll resolutions that might occur later
-				// first 2 zero digits refer to index number of resolution that is set later on to facilitiatie sorting
-				// eg. 21 succcesses, 12th character,   3 reflex,  32112,  or if 13 reflex  132112
-				primaryManuever.reflexScore = charSheet.getReflex() * 10000 + int(Math.random() * 100);
-				primaryManuever.reflexPool  = charSheet.getReflex();
-				manueverStack.pushManuever( primaryManuever );
 				
 			}
 			else {
@@ -1297,21 +1328,37 @@ class Dungeon extends Sprite{
 		i = manueverStack.stack.length;
 
 		
+		
 		while (--i > -1) {
 			cManuever = manueverStack.stack[i];
 			ent = cManuever.from;
 			targetEnt = cManuever.to;
 			charSheet = ent.components.char;
 			fight  = ent.components.fight;
+
+			// else {
+			//	 fight.attacking = true;
+			// }
+			 
+			 
 			targetCharSheet = targetEnt.components.char;
 			targetFight = targetEnt.components.fight;
 			
 			 // get AI to decide on a specific default manuever from a list of available manuevers 
 			 dManuever = fight.getPrimaryEnemyManuever(); 
-			arrOfAvailManuevers = FightState.getListOfAvailableManuevers(charSheet, fight, ent, dManuever != null ?  dManuever.manuever : null, dManuever != null ? dManuever.numDice : 0, dManuever != null ? dManuever.targetZone : 0 );
-		//	throw new Error(JSON.stringify(arrOfAvailManuevers));
+	
+			arrOfAvailManuevers = FightState.getListOfAvailableManuevers((UITros.ALLOW_HEURISTIC_DEF_WITH_INITIATIVE? fight.attacking : fight.initiative), charSheet, fight, ent, dManuever != null ?  dManuever.manuever : null, dManuever != null ? dManuever.numDice : 0, dManuever != null ? dManuever.targetZone : 0 );
 			
-			if (cManuever.manuever == null) {
+		//	throw new Error(JSON.stringify(arrOfAvailManuevers));
+	//	arrOfAvailManuevers.concat(
+	
+			
+		
+			 manueverChoiceDetails = cManuever.manuever != null ?  FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers) : null;
+				
+			
+			if ( manueverChoiceDetails == null) {
+				cManuever.manuever = null;
 				if (ent.func.aiChooseManuever != null) {
 					ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
 				}
@@ -1320,9 +1367,9 @@ class Dungeon extends Sprite{
 				}
 			}
 			else {
-			
 				//throw new Error("Already have pre-assigned attack manuever!");
-				FightState.applyManueverChoiceDetails( FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers), cManuever );
+				//throw new Error("IMPLY ATTACK");
+				FightState.applyManueverChoiceDetails(manueverChoiceDetails, cManuever );
 				if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
 					
 					if (ent.func.aiChooseManueverDetails != null) {
@@ -1362,8 +1409,10 @@ class Dungeon extends Sprite{
 			}
 			else {  // from player, break and defer the rest of the declaration for the remaining AI ??? For now, just let AI attack/defend blindly
 				//Show player decision manuever interface...list of available manuevers
-				withStr = "";// "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. (tn" + cManuever.tn+")";
-				UITros.TRACE("Player is attacking..." + withStr);
+				withStr = fight.orientation != 0 ? fight.orientation == FightState.ORIENTATION_AGGRESSIVE ?  "Player is attacking..." : fight.orientation ==  FightState.ORIENTATION_DEFENSIVE ? "Player is defending..." : "Player..." : "Player...";// "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. (tn" + cManuever.tn+")";
+				UITros.TRACE(withStr);
+				//fight.attacking ? "Player is attacking..." + withStr : fight.initiative ? "Player is considering..." : "Player appears defending..."
+				
 				//if (!fight.attacking) throw new Error("MIsmatch");
 				playerMenuInterfaceShown = true;
 				
@@ -1394,10 +1443,12 @@ class Dungeon extends Sprite{
 					dManuever = fight.getEnemyManueverAt(k);  // the enemy manuever in question..
 				
 					
-					arrOfAvailManuevers =  FightState.getListOfAvailableManuevers(charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
+					arrOfAvailManuevers =  FightState.getListOfAvailableManuevers((UITros.ALLOW_HEURISTIC_DEF_WITH_INITIATIVE? fight.attacking : fight.initiative), charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
+					
+					 manueverChoiceDetails = cManuever.manuever != null ?  FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers) : null;
 					//UITros.TRACE(charSheet.getPrimaryWeaponUsed().name + ", "+charSheet.getManueverTN(ManueverSheet.getDefensiveManueverById("parry"), false, fight,  dManuever.manuever, dManuever.numDice, dManuever.targetZone   ));
-					if (cManuever.manuever == null) {
-						
+					if (manueverChoiceDetails == null ) {
+						cManuever.manuever = null;
 						if (ent.func.aiChooseManuever != null) {
 							ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
 						}
@@ -1412,7 +1463,7 @@ class Dungeon extends Sprite{
 						
 						 if (cManuever.from == null) {  // this is a pre-assigned manuever  that may need further processing
 							//	throw new Error("Already have pre-assigned defensive manuveverr!");
-								FightState.applyManueverChoiceDetails( FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers), cManuever );
+								FightState.applyManueverChoiceDetails(manueverChoiceDetails, cManuever );
 								if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
 									
 									if (ent.func.aiChooseManueverDetails != null) {
@@ -1440,7 +1491,7 @@ class Dungeon extends Sprite{
 								  // do nothing. let player handle the other attacks as he sees fit via the menu interface
 							  }
 							  
-							  if (fight.isFleeing()) {  // if fleeing (assumed using Full Evade), the same primary evasion manuever can be used against all assailants at no extra cost by default
+							  if (fight.isFleeing()) {  // if fleeing (assumed using Full Evade), the same primary evasion manuever can be used against all assailants at no extra cost by default (hmm..this differs from Song of swords rules, and tros as well..)
 								  dManuever.defManuever =  fight.getPrimaryManuever();
 							  }
 							  
@@ -1456,7 +1507,8 @@ class Dungeon extends Sprite{
 			}
 			else {
 				// LATER:
-				// defender might still want to force-enter initiative, or attempt to still defend just in case, if he is adjacient to a potential enemy that hasn't declared his move yet.
+				
+			
 			}
 					
 					
@@ -1594,7 +1646,7 @@ class Dungeon extends Sprite{
 	
 	
 	
-	private function resolveManueverStack():void {
+	private function resolveManueverStack(manueverStack:ManueverStack):void {
 		//
 		
 		var ent:GameObject;
@@ -1616,7 +1668,7 @@ class Dungeon extends Sprite{
 		while (--i > -1) {
 			cManuever = manueverStack.stack[i];
 			manuever = cManuever.manuever;
-			if (manuever == null) {  // assumed player is dead already
+			if (manuever == null || manuever.type != Manuever.TYPE_OFFENSIVE) { 
 				//UITros.TRACE( getNameWithDirToMan(ent) + " no more manuever!" );
 				continue;
 			}
@@ -1647,6 +1699,8 @@ class Dungeon extends Sprite{
 				
 				// default initiative behaviour for failing to hit
 				//if (dManuever != null) { 
+					tarFight.initiative = true;
+					tarFight.lostInitiative = false;
 					fight.initiative = false; 
 					fight.lostInitiative = true;
 				//}
@@ -1654,6 +1708,7 @@ class Dungeon extends Sprite{
 			else {  
 				tarFight.lostInitiative = true;
 				tarFight.initiative = false;
+				
 				
 				if ( tarFight.isFleeing() ) {
 					UITros.TRACE( getNameWithDirToMan(targetEnt) + "'s fleeing attempt failed." );
@@ -1716,7 +1771,8 @@ class Dungeon extends Sprite{
 						var diceLost:int = 0;
 						tarFight.shock += wound.shock;
 						var tarPrimaryManuever:Object = tarFight.getPrimaryManuever();
-						if ( tarPrimaryManuever!= null && tarFight.attacking && tarPrimaryManuever.to != null && tarPrimaryManuever.reflexScore < cManuever.reflexScore ) {
+						//
+						if ( tarPrimaryManuever!= null  && tarPrimaryManuever.to != null && (tarPrimaryManuever.manuever as Manuever) != null && (tarPrimaryManuever.manuever as Manuever).isTypeAttacking() && tarPrimaryManuever.reflexScore < cManuever.reflexScore ) {
 							tarPrimaryManuever.numDice -= wound.shock;
 							diceLost  += wound.shock;
 							if (tarPrimaryManuever.numDice < 0) {
@@ -2079,6 +2135,8 @@ class Dungeon extends Sprite{
 	}
     
 	public static const SEE:Array = [5, 5, 5, 6];
+	public var playerAttemptedDirMove:Boolean = false;
+	
 	// main game loop
     private function onFrame(e:Event = null):void {
         if(stop){
@@ -2093,7 +2151,8 @@ class Dungeon extends Sprite{
 					if (!_gameOver) UITros.CLEAR_TRACE();
 					makeDownpaymentManueverStack();
 					reorderManueverStackForResolution();
-					resolveManueverStack();
+					resolveManueverStack(manueverStack);
+					resolveManueverStack(defManueverStack);
 					manueverStack.reset(); // end of fight resolution
 					defManueverStack.reset();
 				}
@@ -2389,7 +2448,15 @@ class Man{
 			}
 		
 		}
+		
+		if (man.dungeon.man == man) {  // is currently selected player in dungeon
+			man.dungeon.playerAttemptedDirMove = isMoving;
+
+		}
+
+		
 	}
+	
     static public function walk(man:GameObject, dir:String):void {
 		
 		var fight:FightState =  (man.components.fight as FightState);
@@ -2416,6 +2483,8 @@ class Man{
 		}
 		var eFight:FightState = man.bumping ?  man.dungeon.getComponent(man.mapX + arr[0], man.mapY + arr[1], "fight") : null;
 		
+		
+		
 		// if fighting and cannot move, or bumping into a guy that is fighting and cannot move
 		
 		if ( ( fight && !fight.canMove()) || (eFight &&  !eFight.canMove()) ) {
@@ -2427,17 +2496,20 @@ class Man{
 				
 				// TODO: change this logic
 				// man.dungeon.uiTros.radioAttack.selected &&
-				fight.attacking =  (fight.canRollAttackAgainstDirection(FightState.getDirectionIndex(man.moveArray[0], man.moveArray[1]) ));
+				fight.attacking = true;//  (fight.canRollAttackAgainstDirection(FightState.getDirectionIndex(man.moveArray[0], man.moveArray[1]) ));
 				fight.resetManuevers();
+				//UITros.TRACE("IS attacking by bumping:"+fight.attacking + ", "+fight.initiative + ", "+fight.target + ", "+man.moveArray);
 				
 			}
 			else {
 				fight.attacking = false;  // imply defense always
 				if (man.moving && !fight.lastAttacking ) {
 					fight.setManuever( ManueverSheet.getDefensiveManueverById("fullevade") );  // if man is moving into empty square and he wasn't attacking in last exchange, imply that he is retreating, else, will reset it to no implied manuever
-
+					
 				}
-				else fight.resetManuevers();
+				else {
+					fight.resetManuevers();
+				}
 				
  			}
 			
@@ -2509,7 +2581,7 @@ class Enemy{
 		//if (uiRadioAuto) {
 				if (enm.bumping) {
 					//!uiShift ?
-					fight.orientation = FightState.ORIENTATION_CAUTIOUS;// Math.random() >= .5 ? FightState.ORIENTATION_AGGRESSIVE : FightState.ORIENTATION_CAUTIOUS; 
+					fight.orientation =  Math.random() >= .5 ? FightState.ORIENTATION_AGGRESSIVE : FightState.ORIENTATION_CAUTIOUS; 
 					//: FightState.ORIENTATION_CAUTIOUS;
 				}
 				else {
@@ -2532,6 +2604,7 @@ class Enemy{
 			}
 			*/
 		}
+	
 	}
 	
     static public function walk(enm:GameObject):void {
@@ -2551,14 +2624,18 @@ class Enemy{
 			
 			if (enm.bumping) {  // potentiality to wish to attack 
 				fight.bumping = true;
-				fight.attacking =  (fight.canRollAttackAgainstDirection(FightState.getDirectionIndex(enm.moveArray[0], enm.moveArray[1]) ));
+				fight.attacking = true;// (fight.canRollAttackAgainstDirection(FightState.getDirectionIndex(enm.moveArray[0], enm.moveArray[1]) ));
 			}
 			else {
-				fight.attacking = false;  // imply defense always
+				fight.attacking = false;  // imply defense always?
 				if (enm.moving && !fight.lastAttacking ) {
 					fight.setManuever( ManueverSheet.getDefensiveManueverById("fullevade") );  // if man is moving into empty square and he wasn't attacking in last exchange, imply that he is retreating, else, will reset it to no implied manuever
 				}
-				else fight.resetManuevers();
+				else {
+					fight.resetManuevers();
+					fight.attacking = fight.target != null && fight.initiative;
+					//throw new Error("A");
+				}
 			}
 			
 			
@@ -2677,7 +2754,10 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 	//public static const REQUIRE_SHIELD:uint = (0 << 1);
 	//public static const REQUIRE_FRESH_ROUND:uint = (1 << 1);
 	
-	
+	public var type:int = 0;
+	public static const TYPE_NONE:int = 0;
+	public static const TYPE_DEFENSIVE:int = 1;
+	public static const TYPE_OFFENSIVE:int = 2;
 	
 	public var index:int;  // for internal use
 	
@@ -2700,6 +2780,7 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 		offHanded = false;
 		evasive = false;
 		manueverType = MANUEVER_TYPE_MELEE;
+		
 	}
 	
 	private static var NUM_ONES:int = 0;
@@ -2870,6 +2951,11 @@ Bash(for blunt weapons...damageType:Bludgeoning,region:Strike), Spike(for blunt 
 		return this;
 	}
 	
+	public function isTypeAttacking():Boolean 
+	{
+		return type == TYPE_OFFENSIVE;
+	}
+	
 	
 	
 }
@@ -2940,7 +3026,7 @@ class ManueverStack {
 
 class ManueverSheet {
 		
-		public static var offensiveMelee:Array = [
+		public static var offensiveMelee:Array = setAsOffensiveList([
 			new Manuever("cut", "Cut")._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
 			,new Manuever("cut2", "Greater Cut", 1)._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customDamage(damageMod_add1)
 		,new Manuever("bash", "Bash")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
@@ -2971,9 +3057,9 @@ class ManueverSheet {
 		,new Manuever("stopshort", "Stop Short")._lev(3)._customResolve()._spamPenalize(1)	
 		,new Manuever("toss", "Toss")._customRequire()._tn(7)._customResolve()
 		,new Manuever("twitching", "Twitching")._lev(8)._customSplit()._customResolve()
-		];
+		]);
 		
-		public static var defensiveMelee:Array = [ // NOTE: full evade must always be the first. In fact, first 3 should be evasive manuevers by convention
+		public static var defensiveMelee:Array = setAsDefensiveList([ // NOTE: full evade must always be the first. In fact, first 3 should be evasive manuevers by convention
 			new Manuever("fullevade", "Full Evasion")._tn(4)._stanceModifier(0)._evasive(true)  // staionery full evade is possible (ie. didn't displace)...but need terrain roll TN7 saving throw
 			,new Manuever("partialevade", "Partial Evasion")._tn(7)._evasive(true) //._customResolve()  // partial buying initiative will cost 2cp only, post _customPostResolve, non-standard
 			,new Manuever("duckweave", "Duck & Weave")._tn(9)._customResolve()._evasive(true)
@@ -2991,9 +3077,24 @@ class ManueverSheet {
 			,new Manuever("rota", "Rota")._customRequire()._lev(3)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
 			,new Manuever("parry", "Parry")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)
 			,new Manuever("block", "Block")._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customRequire()
-		];
+		]);
 		public static var offensiveMeleeHash:Object = createHashIndex(offensiveMelee);
 		public static var defensiveMeleeHash:Object = createHashIndex(defensiveMelee);
+		
+		private static function setAsDefensiveList(arr:Array):Array {
+			var i:int = arr.length;
+			while (--i > -1) {
+				(arr[i] as Manuever).type = Manuever.TYPE_DEFENSIVE;
+			}
+			return arr;
+		}
+		private static function setAsOffensiveList(arr:Array) {
+			var i:int = arr.length;
+			while (--i > -1) {
+				(arr[i] as Manuever).type = Manuever.TYPE_OFFENSIVE;
+			}
+			return arr;
+		}
 		
 		public static function damageMod_add1(damage:int, cManuever:Object):int {
 			return damage + 1;
@@ -3891,7 +3992,7 @@ class FightState {
 	// riddle stuff here
 	
 	public var numEnemies:int = 0;
-	public var initiative:Boolean = true;  //  initaitive  flag. 
+	public var initiative:Boolean = false;  //  initaitive  flag. 
 	public var target:FightState; // flag to indicate if got existing target aqquired or not
 	public var targetLocked:Boolean = false;  // flag to indicate fighter cannot change target..
 	public var forceContestInitiative:Boolean;  // even without initiative, will still contest for it
@@ -3899,7 +4000,7 @@ class FightState {
 	public function get paused():Boolean {
 		// no target heuristic...or if you have target, determine if target is a mututal opponent, and if so, same initiative need to re-roll
 		// else continue fighting against your target
-		return target == null || (target.target != this ? false : target.initiative == initiative)
+		return target == null || (target.target != this ? false : !target.initiative && !initiative)
 	}
 	
 	
@@ -4002,7 +4103,7 @@ class FightState {
 				
 		}
 		else {
-			lbl = "No target yet...";
+			lbl = "No target...";
 		}
 		return lbl;
 	}
@@ -4012,9 +4113,9 @@ class FightState {
 		var reflex2:int = Manuever.getRollNumSuccesses(charSheet2.getReflex(), 5 );
 		if (reflex1 == reflex2) return 0;
 		fightState.initiative = reflex1 > reflex2;
-		fightState.attacking = fightState.initiative;
+	
 		fightState2.initiative = !fightState.initiative ;
-		fightState2.attacking = fightState2.initiative;
+
 		return reflex1 > reflex2 ? 1 : -1;
 	}
 	
@@ -4155,7 +4256,7 @@ class FightState {
 				return { cost:cost, tn:tn };
 			}
 		}
-		throw new Error("Failed to find details from filtered list exception!");
+		//throw new Error("Failed to find details from filtered list exception!:"+findManuever);
 		return null; 
 	}
 	
@@ -4167,8 +4268,8 @@ class FightState {
 	
 	public static var AVAILABLE_MANUEVERS:Array = [];
 
-	public static function getListOfAvailableManuevers(charSheet:CharacterSheet, fight:FightState, ent:GameObject, enemyManuever:Manuever = null, enemyDiceRolled:int = 0, enemyTargetZone:int = 0 ):Array {
-		var attacking:Boolean = fight.attacking;  // later, this case might not be so simple
+	public static function getListOfAvailableManuevers(attacking:Boolean, charSheet:CharacterSheet, fight:FightState, ent:GameObject, enemyManuever:Manuever = null, enemyDiceRolled:int = 0, enemyTargetZone:int = 0 ):Array {
+		
 		var meleeProf:String = charSheet.getMeleeProfeciencyIdCached();
 		var prof:Profeciency = ProfeciencySheet.getProfeciency(meleeProf);
 		var costWithProf:Object = attacking ? prof.atkCosts : prof.defCosts;
@@ -4349,7 +4450,9 @@ class FightState {
 					
 				}
 				
-				UITros.TRACE("Flee manuever succeeded for: "+man.dungeon.getNameWithDirToMan(man));
+				UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " fled successfully.");
+				
+				//UITros.TRACE("fleeing is paused assertion:"+paused);
 				//paused = true;
 				
 			}
@@ -4358,29 +4461,28 @@ class FightState {
 				//paused = target != null ?  true;  // todo:  pause when neither side has initiative, or may happen if deal simulatenous hits against each other
 				
 				// need to depcreiate
-				if (!lostInitiative) { // auto regain it back
-					/*
+				if (!lostInitiative) { // auto regain it back?
+					///*
 					if (!initiative) {
-						UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " regained back initiative...");
-					//	paused = false;
-					
-						// TODO: check if new round, and if new round, it means 
+					//	UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " regained back initiative...");
+
+						// ???: check if new round, and if new round, it means 
 					}
-					initiative = true;  // regain back initiative if wasn't disturbed
-					*/
-					
-					
-					
+				//	initiative = true;  // regain back initiative if wasn't disturbed
+					//*/
+
 				}
 				else {
 					if (lastHadInitiative) {
 						UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " lost the initiative...");
-						//paused = false;
+						
 					}
 				}
 				
+				//UITros.TRACE("Currently paused:" + paused);
+				//paused = false;
 				
-
+				//UITros.TRACE("is paused:"+paused);
 			}
 			
 		
@@ -4607,7 +4709,7 @@ class FightState {
 		var directions:Array = DIRECTIONS;  
 		var len:int = directions.length;
 		var man:GameObject =  dungeon.checkComponent(manFight.x, manFight.y, "fight")[0];
-		
+		var isAI:Boolean =  man != dungeon.man;
 		if ((manFight.flags & FLAG_INITIATIVE_SYNCED) != 0) {
 		//	UITros.TRACE("Already synced beforehand:" + (dungeon.man.components.fight === manFight));
 			if ((dungeon.man.components.fight === manFight)) {
@@ -4635,7 +4737,7 @@ class FightState {
 				// assumed only stack 1 fighter at the moment. In grappling situations, can stack 2 fighters.
 				var enemy:GameObject = fights[0];
 				var enemyFight:FightState =  enemy.components.fight;
-				var isAI:Boolean =  enemy != dungeon.man;
+				
 				// Yep, this is allowed to happen below...
 				// when an enemy moves in to engage somebody that is already locked in combat exchange and resolving rolls. 
 				//if (!manFight.isSyncedWith(enemyFight)) {
@@ -4657,7 +4759,7 @@ class FightState {
 					
 					if (withinScope) {
 						if (enemyFight.target != manFight) {
-							 manFight.initiative = manFight.attacking =  true;
+							 manFight.initiative = true;
 						}
 						else if (initiativeState == UNCERTAIN_INITATIVE) {
 							// consider: cleanup this code and factor it into single FightState method
@@ -4693,7 +4795,9 @@ class FightState {
 							
 						}
 						else   {
-							 manFight.initiative = manFight.attacking =  manFight.hasOrientationInitiative(enemyFight);
+							 manFight.initiative =  manFight.hasOrientationInitiative(enemyFight);
+							// if (!isAI) UITros.TRACE("player initiative is set to:"+manFight.initiative);
+							 
 						}
 							
 					
@@ -4975,10 +5079,10 @@ class FightState {
 				else {
 				*/
 					if (isAI) {
-						UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" locked-engaged cautious player");
+						UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" engaged cautious player");
 					}
 					else if (manFight.numEnemies == 1) {
-						UITros.TRACE("You locked engaged enemy");
+						UITros.TRACE("You engaged enemy");
 					}
 					else {
 						UITros.TRACE("exception manFight.numEnemies > 1");
