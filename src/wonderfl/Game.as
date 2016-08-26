@@ -5192,7 +5192,7 @@ class Data {
     //bitmapdataに画像を描画する
     public function draw(target:BitmapData,type:String,name:String,x:int=0,y:int=0,dir:Boolean=true):void{
         var map:String = MAP_SET[type];
-        var mtr:Matrix = new Matrix(-1,0,0,1,x+cellWidth,y)
+        var mtr:Matrix = new Matrix( -1, 0, 0, 1, x + cellWidth, y);
         if (dir) { mtr.a = 1, mtr.tx = x }
         if(-1 < IMG_NAME[type].indexOf(name)){
             target.fillRect( target.rect, 0 )
@@ -5246,7 +5246,9 @@ class Data {
         switch( g.visual ){
             case "ceil":     g.plane.z = -cellSize;
             case "floor":    g.plane.x = g.x; g.plane.y = g.y; break;
-            case "stand":    g.plane.scaleX = g.plane.scaleY = 2;g.plane.z = -cellSize/2; g.plane.x=g.x;g.plane.y=g.y+5;g.plane.rotationX=-35; break;
+            case "stand":    g.plane.scaleX = g.plane.scaleY = 2; g.plane.z = -cellSize / 2; g.plane.x = g.x; g.plane.y = g.y + 5; g.plane.rotationX =-35;   break;
+			case "knockdown":    g.plane.scaleX = g.plane.scaleY = 2; g.plane.z = -cellSize / 2; g.plane.x = g.x; g.plane.y = g.y + 5; g.plane.rotationX =-35; g.plane.y = g.y - cellHeight * .5;  g.plane.rotationZ = -45;   break;
+			case "knockout":    g.plane.scaleX = g.plane.scaleY = 2; g.plane.z = -cellSize / 2; g.plane.x = g.x; g.plane.y = g.y + 5; g.plane.rotationX =-35; g.plane.y = g.y - cellHeight * .5;  g.plane.rotationZ = -90;   break;
             case "left":     g.plane.z = -cellSize/2; g.plane.x=g.x-25;g.plane.y=g.y;g.plane.rotationX=90;g.plane.rotationZ=270; break;
             case "right":    g.plane.z = -cellSize/2; g.plane.x=g.x+25;g.plane.y=g.y;g.plane.rotationX=90;g.plane.rotationZ=90; break;
             case "front":    g.plane.z = -cellSize/2; g.plane.x=g.x;g.plane.y=g.y+25;g.plane.rotationX=90;g.plane.rotationZ=180; break;
