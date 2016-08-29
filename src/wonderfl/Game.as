@@ -1745,15 +1745,10 @@ class Dungeon extends Sprite{
 			cManuever.marginSuccess = challengeResult;
 			
 			
-			if (ts == 0) {  // did not score any successes
-				UITros.TRACE(getNameWithDirToMan(ent) + " misses completely!");
-					
-				if (tarFight.target == fight && fight.target == tarFight) fight.initiative = false; 
-				//	fight.lostInitiative = true;
-			}
-			else if (challengeResult < 0) {  // failed to hit against defense
+		
+			 if (challengeResult <= 0) {  // failed to hit against defense
 				
-				if (dManuever != null) {  // defensive manuever successful
+				if (dManuever != null && dManuever.successes > 0) {  // defensive manuever successful
 					if (dManueverToResolve == null) throw new Error("COuld not find dManuever to resolve");
 					
 
@@ -1793,7 +1788,8 @@ class Dungeon extends Sprite{
 					fight.resetManuevers()
 				}
 				else {
-					throw new Error("Exception this should not happen now! Defesive manuever would always set BS<0");
+					if (fight.target == tarFight && tarFight.target == fight) fight.initiative = false;
+					UITros.TRACE( getNameWithDirToMan(ent) + "'s uncontested attack misses completely!" );
 				}
 			
 				
@@ -1815,7 +1811,7 @@ class Dungeon extends Sprite{
 					// enforce maintain initaitive over mutually targeting opponent, if targeting opponent does not have initiative.
 					if ( tarFight.target == fight) {
 						if ( !tarFight.initiative) {
-						//	if (!fight.initiative) throw new Error("exception found ..maintain intiative..");
+							if (!fight.initiative) throw new Error("exception found ..maintain intiative..");
 							//UITros.TRACE(getNameWithDirToMan(ent)  + " "+(fight.initiative ? "maintains" : "gains")+" initiative..");
 							fight.initiative = true;
 						}
