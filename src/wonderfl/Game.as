@@ -1715,6 +1715,9 @@ class Dungeon extends Sprite{
 							if ( (manuever.evasive & Manuever.EVASIVE_NO_INITAITIVE) ) {
 								fight.initiative = false;
 							}
+							else if (fight.getPrimaryManuever() == cManuever) {
+								fight.initiative = false;
+							}
 							//UITros.TRACE("To resolve uncontested defensive manuever if needed:"+(manuever.name) + " with intitiative?"+withInitiative);
 						}
 					}
