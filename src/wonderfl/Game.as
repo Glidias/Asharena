@@ -955,6 +955,10 @@ return "Exchange #" + (fight.e ? "2" : "1") + " (Round " + (fight.rounds + 1) + 
 	public static const KEYMASK_SHIFTDOWN:uint = KEY_MODIFIER_CTRL | KEY_MODIFIER_SHIFT | KEY_MODIFIER_WAIT;
 	public static const KEYMASK_SHIFTDOWN_KEY_ONLY:uint = KEY_MODIFIER_CTRL | KEY_MODIFIER_SHIFT;
 	
+	public function get manueverMenuVisible():Boolean {
+		return manueverMenu.visible;
+	}
+	
 	public function unflagKeyModifier(value:uint, dungeon:Dungeon):void 
 	{
 		var gotShiftKey:Boolean = (_KEY_MODIFIERS & KEYMASK_SHIFTDOWN_KEY_ONLY) !=0;
@@ -1272,6 +1276,7 @@ class Dungeon extends Sprite{
 					fight.resetManuevers();
 					UITros.TRACE(ent.dungeon.getNameWithDirToMan(ent) + " does not have enough CP to act for this exchange.");
 				}
+				fight.initiative = false;
 				// todo: for AI, should reflect that they Did Nothing for this exchange
 				fight.resetManuevers();
 	
@@ -1332,7 +1337,7 @@ class Dungeon extends Sprite{
 				//defenderList.push({entity:ent, reflexPool: charSheet.getReflex(), reflexScore:  charSheet.getReflex() * 10000 + int(Math.random() * 100) });
 				
 				primaryManuever.from = ent;
-
+			
 				primaryManuever.reflexScore = charSheet.getReflex() * 10000 + int(Math.random() * 100);
 				primaryManuever.reflexPool  = charSheet.getReflex();
 				defManueverStack.pushManuever(primaryManuever);
@@ -1343,9 +1348,17 @@ class Dungeon extends Sprite{
 			
 		}
 		
+	
+		_lastDeclareIndex = declareManuevers();
+	}
+	
+	private var _lastDeclareIndex:int = 0;
+	
+	public function declareManuevers(from:int = 0, forDefenders:Boolean=false):int {
 		// Declare menuvers
 		manueverStack.sortOnHighestToLowest("reflexScore");
 		defManueverStack.sortOnHighestToLowest("reflexScore");
+	//	UITros.TRACE("Declaring sequence:" + from + " , " + forDefenders);
 		
 		var cManuever:Object;
 		var playerMenuInterfaceShown:Boolean = false;
@@ -1355,290 +1368,308 @@ class Dungeon extends Sprite{
 		var targetFight:FightState;
 		var dManuever:Object;
 		var arrOfAvailManuevers:Array;
+		var i:int;
+		var ent:GameObject;
+		var charSheet:CharacterSheet;
+		var fight:FightState;
+		var manueverChoiceDetails:Object;
+		var withStr:String;
+		
+		
+		
+		i = from == 0 ? manueverStack.stack.length : from;
 
-		i = manueverStack.stack.length;
-
+		if (from == 0 || !forDefenders) {
 	
-		while (--i > -1) {
-			
-			cManuever = manueverStack.stack[i];
-			ent = cManuever.from;
-			
-			//throw new Error("A:"+(cManuever.to is FightState));
-			targetEnt = cManuever.to;
-			charSheet = ent.components.char;
-			fight  = ent.components.fight;
-
-			// else {
-			//	 fight.attacking = true;
-			// }
-			 
-			targetCharSheet = targetEnt!= null ? targetEnt.components.char : null;
-			targetFight = targetEnt!=null ? targetEnt.components.fight  : null;
-			
-			 // get AI to decide on a specific default manuever from a list of available manuevers 
-			 
-			 dManuever = fight.getPrimaryEnemyManuever(); 
-	
-			arrOfAvailManuevers = FightState.getListOfAvailableManuevers((UITros.ALLOW_HEURISTIC_DEF_WITH_INITIATIVE? fight.attacking : fight.initiative), charSheet, fight, ent, dManuever != null ?  dManuever.manuever : null, dManuever != null ? dManuever.numDice : 0, dManuever != null ? dManuever.targetZone : 0 );
-			
-		//	throw new Error(JSON.stringify(arrOfAvailManuevers));
-	//	arrOfAvailManuevers.concat(
-	
-			
-			 manueverChoiceDetails = cManuever.manuever != null ?  FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers) : null;
+			while (--i > -1) {
 				
-			if ( manueverChoiceDetails == null) {
-				cManuever.manuever = null;
-				if (ent.func.aiChooseManuever != null) {
-					ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+				cManuever = manueverStack.stack[i];
+				if (cManuever == null) throw new Error("COuld not find initiative manuever at stack index:" + i);
+				ent = cManuever.from;
+				
+				//throw new Error("A:"+(cManuever.to is FightState));
+				targetEnt = cManuever.to;
+				charSheet = ent.components.char;
+				fight  = ent.components.fight;
+
+				// else {
+				//	 fight.attacking = true;
+				// }
+				 
+				targetCharSheet = targetEnt!= null ? targetEnt.components.char : null;
+				targetFight = targetEnt!=null ? targetEnt.components.fight  : null;
+				
+				 // get AI to decide on a specific default manuever from a list of available manuevers 
+				 
+				 dManuever = fight.getPrimaryEnemyManuever(); 
+		
+				arrOfAvailManuevers = FightState.getListOfAvailableManuevers((UITros.ALLOW_HEURISTIC_DEF_WITH_INITIATIVE? fight.attacking : fight.initiative), charSheet, fight, ent, dManuever != null ?  dManuever.manuever : null, dManuever != null ? dManuever.numDice : 0, dManuever != null ? dManuever.targetZone : 0 );
+				
+			//	throw new Error(JSON.stringify(arrOfAvailManuevers));
+		//	arrOfAvailManuevers.concat(
+		
+				
+				 manueverChoiceDetails = cManuever.manuever != null ?  FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers) : null;
+					
+				if ( manueverChoiceDetails == null) {
+					cManuever.manuever = null;
+					if (ent.func.aiChooseManuever != null) {
+						ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+					}
+					else {
+						FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+					}
 				}
 				else {
-					FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
-				}
-			}
-			else {
-				//throw new Error("Already have pre-assigned attack manuever!");
-				//throw new Error("IMPLY ATTACK");
-				FightState.applyManueverChoiceDetails(manueverChoiceDetails, cManuever );
-				if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
-					
-					if (ent.func.aiChooseManueverDetails != null) {
-						ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
-					}
-					else {
-						FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
-					}
-				}
-			}
-			
-			if ( ent != man) {  // is AI
-				
-				// later: if manuever is double attack or some composite, then need to find a way to split attack.into 2.
-				// Also need to handle case for simulatenous block/strike ,?
-				
-				if (targetEnt == man) {  
-					
-					//&& (cManuever.to == man || !playerBeingAttacked)
-					if (FightState.isAttackingChoice(cManuever))  { // player character being attacked
-						playerBeingAttacked = true;
-						withStr = "- " + (cManuever.manuever as Manuever).name + ", " + targetCharSheet.getAtkZoneDesc(cManuever.targetZone, charSheet.weapon) + "(" + cManuever.numDice + " CP)";  //+" (tn" + cManuever.tn+")"
+					//throw new Error("Already have pre-assigned attack manuever!");
+					//throw new Error("IMPLY ATTACK");
+					FightState.applyManueverChoiceDetails(manueverChoiceDetails, cManuever );
+					if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
 						
-						UITros.TRACE(!playerMenuInterfaceShown  ? "You detected " + getNameWithDirToMan(ent) + " attacking " + getNameWithDirToMan(cManuever.to) + " " + withStr : "(" + getNameWithDirToMan(ent) + " is attacking )");
+						if (ent.func.aiChooseManueverDetails != null) {
+							ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
+						}
+						else {
+							FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
+						}
 					}
-					else {
-						withStr = "- " + (cManuever.manuever as Manuever).name + "(" + cManuever.numDice + " CP)"; 
-							UITros.TRACE(!playerMenuInterfaceShown  ? "You detected " + getNameWithDirToMan(ent) + " defending " + getNameWithDirToMan(cManuever.to) + " " + withStr : "(" + getNameWithDirToMan(ent) + " is defending )");
-					}
-			
 				}
-				else {  // entity may be attacking someone else
+				
+				if ( ent != man) {  // is AI
+					
+					// later: if manuever is double attack or some composite, then need to find a way to split attack.into 2.
+					// Also need to handle case for simulatenous block/strike ,?
+					
+					if (targetEnt == man) {  
+						
+						//&& (cManuever.to == man || !playerBeingAttacked)
+						if (FightState.isAttackingChoice(cManuever))  { // player character being attacked
+							playerBeingAttacked = true;
+							withStr = "- " + (cManuever.manuever as Manuever).name + ", " + targetCharSheet.getAtkZoneDesc(cManuever.targetZone, charSheet.weapon) + "(" + cManuever.numDice + " CP)";  //+" (tn" + cManuever.tn+")"
+							
+							UITros.TRACE(!playerMenuInterfaceShown  ? "You detected " + getNameWithDirToMan(ent) + " attacking " + getNameWithDirToMan(cManuever.to) + " " + withStr : "(" + getNameWithDirToMan(ent) + " is attacking )");
+						}
+						else {
+							withStr = "- " + (cManuever.manuever as Manuever).name + "(" + cManuever.numDice + " CP)"; 
+								UITros.TRACE(!playerMenuInterfaceShown  ? "You detected " + getNameWithDirToMan(ent) + " defending " + getNameWithDirToMan(cManuever.to) + " " + withStr : "(" + getNameWithDirToMan(ent) + " is defending )");
+						}
+				
+					}
+					else {  // entity may be attacking someone else
+						
+					}
+					
+					
+					// commit enemyManuever to fight, 
+					if (FightState.isAttackingChoice(cManuever)) targetFight.notifyAttack( cManuever);
 					
 				}
-				
-				
-				// commit enemyManuever to fight, 
-				if (FightState.isAttackingChoice(cManuever)) targetFight.notifyAttack( cManuever);
-				
+				else {  // from player, break and defer the rest of the declaration for the remaining AI ??? For now, just let AI attack/defend blindly
+					//Show player decision manuever interface...list of available manuevers
+					withStr = fight.attacking ?  "Player is attacking..." :  !fight.attacking && !fight.initiative ? "Player is defending..." : "Player...";// "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. (tn" + cManuever.tn+")";
+					UITros.TRACE(withStr);
+					//fight.attacking ? "Player is attacking..." + withStr : fight.initiative ? "Player is considering..." : "Player appears defending..."
+					
+					//if (!fight.attacking) throw new Error("MIsmatch");
+					playerMenuInterfaceShown = true;
+					
+					// TODO: this should be defered to the onFrame process after player selects menu item which may be attacking or defending..
+					if (fight.attacking) targetFight.notifyAttack( cManuever);
+					
+					uiTros.showManueverMenu(arrOfAvailManuevers, ent);
+					if (i != 0) return i;
+					else if (defManueverStack.stack.length != 0)  return -defManueverStack.stack.length;
+					// later: should defer decisions of AI later in the queue and only perform them after player confirms his decision
+				}
+		
 			}
-			else {  // from player, break and defer the rest of the declaration for the remaining AI ??? For now, just let AI attack/defend blindly
-				//Show player decision manuever interface...list of available manuevers
-				withStr = fight.attacking ?  "Player is attacking..." :  !fight.attacking && !fight.initiative ? "Player is defending..." : "Player...";// "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. (tn" + cManuever.tn+")";
-				UITros.TRACE(withStr);
-				//fight.attacking ? "Player is attacking..." + withStr : fight.initiative ? "Player is considering..." : "Player appears defending..."
-				
-				//if (!fight.attacking) throw new Error("MIsmatch");
-				playerMenuInterfaceShown = true;
-				
-			//	targetFight.notifyAttack( cManuever);
-				
-				uiTros.showManueverMenu(arrOfAvailManuevers, ent);
-				// later: should defer decisions of AI later in the queue and only perform them after player confirms his decision
-				
-			}
-	
 		}
 		
 
-	
-
 		// go through defender list
-		i = defManueverStack.stack.length;
-		while (--i > -1) { 
-			
-			if (!(defManueverStack.stack[i].from is GameObject)) throw new Error(defManueverStack.stack[i].from);
-			 ent = defManueverStack.stack[i].from;
-			
-			fight = ent.components.fight;
-			cManuever = defManueverStack.stack[i];
-			charSheet = ent.components.char;
-			
-			if (fight.isUnderAttack() ) { // respond immediately to threat
+		i = from == 0 ? defManueverStack.stack.length : from;
+		
+		if (from ==0 || forDefenders) {
+			while (--i > -1) { 
+				cManuever = defManueverStack.stack[i];
+				if (cManuever == null) throw new Error("COuld not find non-initiative manuever at stack index:" + i);
+				//if (!(defManueverStack.stack[i].from is GameObject)) throw new Error(defManueverStack.stack[i].from);
+				 ent = cManuever.from;
 				
-				var kLen:int = fight.getTotalEnemyManuevers();
-				for (var k:int = 0; k < kLen; k++) {
-					dManuever = fight.getEnemyManueverAt(k);  // the enemy manuever in question..
-					cManuever.to = dManuever.from; 
+				fight = ent.components.fight;
+				
+				
+				charSheet = ent.components.char;
+				
+				if (fight.isUnderAttack() ) { // respond immediately to threat
 					
-					arrOfAvailManuevers =  FightState.getListOfAvailableManuevers((UITros.ALLOW_HEURISTIC_DEF_WITH_INITIATIVE? fight.attacking : fight.initiative), charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
-					
-					 manueverChoiceDetails = cManuever.manuever != null ?  FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers) : null;
-					//UITros.TRACE(charSheet.getPrimaryWeaponUsed().name + ", "+charSheet.getManueverTN(ManueverSheet.getDefensiveManueverById("parry"), false, fight,  dManuever.manuever, dManuever.numDice, dManuever.targetZone   ));
-					if (manueverChoiceDetails == null ) {
-						cManuever.manuever = null;
-						if (ent.func.aiChooseManuever != null) {
-							ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+					var kLen:int = fight.getTotalEnemyManuevers();
+					for (var k:int = 0; k < kLen; k++) {
+						dManuever = fight.getEnemyManueverAt(k);  // the enemy manuever in question..
+						cManuever.to = dManuever.from; 
+						
+						arrOfAvailManuevers =  FightState.getListOfAvailableManuevers((UITros.ALLOW_HEURISTIC_DEF_WITH_INITIATIVE? fight.attacking : fight.initiative), charSheet, fight, ent, dManuever.manuever, dManuever.numDice, dManuever.targetZone   );
+						
+						 manueverChoiceDetails = cManuever.manuever != null ?  FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers) : null;
+						//UITros.TRACE(charSheet.getPrimaryWeaponUsed().name + ", "+charSheet.getManueverTN(ManueverSheet.getDefensiveManueverById("parry"), false, fight,  dManuever.manuever, dManuever.numDice, dManuever.targetZone   ));
+						if (manueverChoiceDetails == null ) {
+							cManuever.manuever = null;
+							if (ent.func.aiChooseManuever != null) {
+								ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+							}
+							else {
+								FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+							}
+							
+							//UITros.TRACE(ent.name + " is defending with:"+cManuever.manuever.name + ", "+cManuever.numDice);
+							
+							//defManueverStack.pushManuever(cManuever);
+							dManuever.defManuever = cManuever;
 						}
-						else {
-							FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
-						}
-						
-						UITros.TRACE(ent.name + " is defending with:"+cManuever.manuever.name);
-						
-						//defManueverStack.pushManuever(cManuever);
-						dManuever.defManuever = cManuever;
-					}
-					else  {
-						
-						 if (cManuever.from == null) {  // this is a pre-assigned manuever  that may need further processing
-							//	throw new Error("Already have pre-assigned defensive manuveverr!");
-								FightState.applyManueverChoiceDetails(manueverChoiceDetails, cManuever );
-								if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
-									
-									if (ent.func.aiChooseManueverDetails != null) {
-										ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
-									}
-									else {
-										FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
+						else  {
+							
+							 if (cManuever.from == null) {  // this is a pre-assigned manuever  that may need further processing
+								//	throw new Error("Already have pre-assigned defensive manuveverr!");
+									FightState.applyManueverChoiceDetails(manueverChoiceDetails, cManuever );
+									if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
 										
+										if (ent.func.aiChooseManueverDetails != null) {
+											ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
+										}
+										else {
+											FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
+											
+										}
 									}
-								}
-								
-								//defManueverStack.pushManuever(cManuever);
-								dManuever.defManuever = cManuever;
-						 }
-						 else {   // user is attacked again by some other offensive manuever 
-							 if (man != ent) {
-									if (!fight.isFleeing()) {
-										// later: AI should consider adding more defensive manuvers.
-										// limit defensive manuevers deceisions based on limbs for AI, important when going up against multiple enemies  or offensive manuevrs
-										// ai defensive manuever default AI should consider multiple enemies and determine
-										//cManuever = ;  // a new defensive manuever by AI
-									}
-							  }
-							  else {
-								  // do nothing. let player handle the other attacks as he sees fit via the menu interface
-							  }
-							  
-							  if (fight.isFleeing()) {  // if fleeing (assumed using Full Evade), the same primary evasion manuever can be used against all assailants at no extra cost by default (hmm..this differs from Song of swords rules, and tros as well..)
-								  dManuever.defManuever =  fight.getPrimaryManuever();
-							  }
-							  
-						 }
-					}
-				
-				
-					cManuever.from = ent;
-				}
-			
-				
-				ent.setDirection( dManuever.from.mapX - ent.mapX, dManuever.from.mapY - ent.mapY );
-			}
-			else { 
-				// LATER:	
-				if (!fight.paused) {
-				
-					if (fight.attacking) UITros.TRACE("sanity Exception::Should not be attacking without initaitive as a default!");
-					
-					arrOfAvailManuevers =  FightState.getListOfAvailableManuevers(false, charSheet, fight, ent   );
-				
-					 manueverChoiceDetails = cManuever.manuever != null ?  FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers) : null;
-					//UITros.TRACE(charSheet.getPrimaryWeaponUsed().name + ", "+charSheet.getManueverTN(ManueverSheet.getDefensiveManueverById("parry"), false, fight,  dManuever.manuever, dManuever.numDice, dManuever.targetZone   ));
-					if (manueverChoiceDetails == null ) {
-						
-						
-						cManuever.manuever = null;
-						if (ent.func.aiChooseManuever != null) {
-							ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
-						}
-						else {
-							FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
-						}
-						
-						
-						UITros.TRACE("Todo: option to attack without initaitive...or simply adopt some form of defense against target:"+(cManuever.manuever ? cManuever.manuever.name  : "none" ) );
-						
-					}
-					else  {
-						 if (cManuever.from == null) {  // this is a pre-assigned manuever  that may need further processing
-							//	throw new Error("Already have pre-assigned defensive manuveverr!");
-								FightState.applyManueverChoiceDetails(manueverChoiceDetails, cManuever );
-								if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
 									
-									if (ent.func.aiChooseManueverDetails != null) {
-										ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
-									}
-									else {
-										FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
-										
-									}
-								}
-								
+									//defManueverStack.pushManuever(cManuever);
+									dManuever.defManuever = cManuever;
+							 }
+							 else {   // user is attacked again by some other offensive manuever 
+								 if (man != ent) {
+										if (!fight.isFleeing()) {
+											// later: AI should consider adding more defensive manuvers.
+											// limit defensive manuevers deceisions based on limbs for AI, important when going up against multiple enemies  or offensive manuevrs
+											// ai defensive manuever default AI should consider multiple enemies and determine
+											//cManuever = ;  // a new defensive manuever by AI
+										}
+								  }
+								  else {
+									  // do nothing. let player handle the other attacks as he sees fit via the menu interface
+								  }
+								  
+								  if (fight.isFleeing()) {  // if fleeing (assumed using Full Evade), the same primary evasion manuever can be used against all assailants at no extra cost by default (hmm..this differs from Song of swords rules, and tros as well..)
+									  dManuever.defManuever =  fight.getPrimaryManuever();
+								  }
+								  
+							 }
+						}
 					
-
-						 }
-						 
+					
+						
 					}
 				
-				
-					cManuever.from = ent;
 					
-				
-				
+					ent.setDirection( dManuever.from.mapX - ent.mapX, dManuever.from.mapY - ent.mapY );
 				}
-				else {
-					fight.resetManuevers();
-				}
-				
-				
-			}
+				else { 
+					// LATER:	
+					if (!fight.paused) {
 					
-					
-			if ( ent != man) {
-				///*
-				
-				if (cManuever != null && cManuever.manuever != null && fight.isUnderAttack()) {
+						if (fight.attacking) UITros.TRACE("sanity Exception::Should not be attacking without initaitive as a default!");
 						
-						UITros.TRACE(playerMenuInterfaceShown ? "("+getNameWithDirToMan(ent)+" is defending...)" :  getNameWithDirToMan(ent)+" is defending "+ (cManuever.manuever as Manuever).name + ", "+cManuever.numDice + " CP." ); // tn("+cManuever.tn +")
+						arrOfAvailManuevers =  FightState.getListOfAvailableManuevers(false, charSheet, fight, ent   );
+					
+						 manueverChoiceDetails = cManuever.manuever != null ?  FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers) : null;
+						//UITros.TRACE(charSheet.getPrimaryWeaponUsed().name + ", "+charSheet.getManueverTN(ManueverSheet.getDefensiveManueverById("parry"), false, fight,  dManuever.manuever, dManuever.numDice, dManuever.targetZone   ));
+						if (manueverChoiceDetails == null ) {
+							
+							
+							cManuever.manuever = null;
+							if (ent.func.aiChooseManuever != null) {
+								ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+							}
+							else {
+								FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+							}
+							
+							
+							UITros.TRACE("Todo: option to attack without initaitive...or simply adopt some form of defense against target:"+(cManuever.manuever ? cManuever.manuever.name  : "none" ) );
+							
+						}
+						else  {
+							 if (cManuever.from == null) {  // this is a pre-assigned manuever  that may need further processing
+								//	throw new Error("Already have pre-assigned defensive manuveverr!");
+									FightState.applyManueverChoiceDetails(manueverChoiceDetails, cManuever );
+									if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
+										
+										if (ent.func.aiChooseManueverDetails != null) {
+											ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
+										}
+										else {
+											FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
+											
+										}
+									}
+									
 						
-				}
-				
-				
-			}
-			else {	 
-				//var totalEnemyAttacks:int = (man.components.fight as FightState).getTotalEnemyManuevers();
-				withStr = ""; // cManuever != null ? "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. tn:" + cManuever.tn : "";
-				
-				playerMenuInterfaceShown = true;
-				//UITros.TRACE("Player is defending..."+withStr);
 
-				
-				if (fight.isUnderAttack()) {
-					UITros.TRACE("Player is defending..."+withStr);
-					uiTros.showManueverMenu(arrOfAvailManuevers, ent);
+							 }
+							 
+						}
+					
+					
+						
+						
+					
+					
+					}
+					else {
+						fight.resetManuevers();
+					}
+					
+					
 				}
-				else {
-					// LATER: show menu regardless for situations of wanting to force-enter initiative, or if possible to passively put up a defense
+						
+						
+				if ( ent != man) {
+					///*
+					
+					if (cManuever != null && cManuever.manuever != null && fight.isUnderAttack()) {
+							
+							UITros.TRACE(playerMenuInterfaceShown ? "("+getNameWithDirToMan(ent)+" is defending...)" :  getNameWithDirToMan(ent)+" is defending "+ (cManuever.manuever as Manuever).name + ", "+cManuever.numDice + " CP." ); // tn("+cManuever.tn +")
+							
+					}
+					
+					
+				}
+				else {	 
+					//var totalEnemyAttacks:int = (man.components.fight as FightState).getTotalEnemyManuevers();
+					withStr = ""; // cManuever != null ? "menu default: " + (cManuever.manuever as Manuever).name + ", " + cManuever.numDice + " CP. tn:" + cManuever.tn : "";
+					
+					playerMenuInterfaceShown = true;
+					//UITros.TRACE("Player is defending..."+withStr);
+
+					
+					if (fight.isUnderAttack()) {
+						UITros.TRACE("Player is defending..."+withStr);
+						uiTros.showManueverMenu(arrOfAvailManuevers, ent);
+						if (i != 0) return -(i);
+					}
+					else {
+						// LATER: show menu regardless for situations of wanting to force-enter initiative, or if possible to passively put up a defense
+					}
+					
+					// later: should defer decisions of AI later in the queue and only perform them after player confirms his decision
 				}
 				
-				// later: should defer decisions of AI later in the queue and only perform them after player confirms his decision
 			}
-			
 		}
 
 		
 		
 		fightStack.length = 0;
+		return 0;
 	}
 	
 	
@@ -1795,7 +1826,7 @@ class Dungeon extends Sprite{
 						else if (fight.getPrimaryManuever() == cManuever) {
 							fight.initiative = false;
 						}
-						UITros.TRACE("To resolve uncontested defensive manuever if needed:"+(manuever.name) + " with intitiative?"+withInitiative);
+						//UITros.TRACE("To resolve uncontested defensive manuever if needed:"+(manuever.name) + " with intitiative?"+withInitiative);
 					}
 					else {
 						UITros.TRACE("To resolve contested defensive manuever"+(manuever.name) + " with intitiative?"+withInitiative +" against:" + cManuever.to);
@@ -1825,7 +1856,7 @@ class Dungeon extends Sprite{
 			var challengeResult:int = ts - (dManuever ? dManuever.successes : 0);
 			if (dManuever != null) {
 				dManuever.marginSuccess = -challengeResult;
-				
+				//UITros.TRACE("someone defending with:" + dManuever.manuever.name + ", "+dManuever.numDice);
 			}
 				
 			//Manuever.makeChallengeRoll(cManuever.numDice, cManuever.tn, (dManuever ? dManuever.successes : 0 ) );
@@ -2355,6 +2386,7 @@ class Dungeon extends Sprite{
 		//	onKeyUp(curKeyStroke);
 	}
     
+	
 	public static const SEE:Array = [5, 5, 5, 6];
 	public var playerAttemptedDirMove:Boolean = false;
 	
@@ -2362,14 +2394,22 @@ class Dungeon extends Sprite{
     private function onFrame(e:Event = null):void {
         if(stop){
         }else {
-			 wait--;
-			 var canInteract:Boolean = wait <= 0;
+			wait--;
+			 //wait-= fightStack.length == 0 ? 1 : 0;
+			 if (fightStack.length != 0 && keyEvent != null && wait <= 0 ) {
+				declareManuevers(_lastDeclareIndex < 0 ? -_lastDeclareIndex : _lastDeclareIndex, _lastDeclareIndex<= 0);
+			}
+			 var canInteract:Boolean = wait <= 0 && fightStack.length ==0;
           //  if (wait > 0  ) { wait--;
           //  }else{
                 count++;
 				
+				
+				
 				if (canInteract && keyEvent != null) {
+					
 					if (!_gameOver) UITros.CLEAR_TRACE();
+					
 					makeDownpaymentManueverStack();
 					reorderManueverStackForResolution();
 					resolveManueverStack(manueverStack, true);
@@ -2377,6 +2417,8 @@ class Dungeon extends Sprite{
 					manueverStack.reset(); // end of fight resolution
 					defManueverStack.reset();
 				}
+				
+				
 				
                 var see:Array = SEE;
                 var startX:int = 0,startY:int = 0,endX:int = mapWidth-1,endY:int = mapHeight-1;
@@ -3260,7 +3302,7 @@ class ManueverStack {
 
 class ManueverSheet {
 		
-		public static var offensiveMelee:Array = setAsOffensiveList([
+		private static var offensiveMelee:Array = setAsOffensiveList([
 			new Manuever("cut", "Cut")._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
 			,new Manuever("cut2", "Greater Cut", 1)._dmgType(Manuever.DAMAGE_TYPE_CUTTING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)._customDamage(damageMod_add1)
 		,new Manuever("bash", "Bash")._dmgType(Manuever.DAMAGE_TYPE_BLUDGEONING)._atkTypes(Manuever.ATTACK_TYPE_STRIKE)
@@ -3293,8 +3335,10 @@ class ManueverSheet {
 		,new Manuever("twitching", "Twitching")._lev(8)._customSplit()._customResolve()
 		]);
 		
-		public static var defensiveMelee:Array = setAsDefensiveList([ // NOTE: full evade must always be the first. In fact, first 3 should be evasive manuevers by convention
-			new Manuever("fullevade", "Full Evasion")._tn(4)._stanceModifier(0)._evasive(Manuever.EVASIVE_NO_INITAITIVE_MUTUAL|Manuever.EVASIVE_UNTARGET_MUTUAL)  // staionery full evade is possible (ie. didn't displace)...but need terrain roll TN7 saving throw
+		private static var defensiveMelee:Array = setAsDefensiveList([ // NOTE: full evade must always be the first. In fact, first 3 should be evasive manuevers by convention
+			new Manuever("block", "Block")._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)//._customRequire()
+			,new Manuever("parry", "Parry")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)
+			,new Manuever("fullevade", "Full Evasion")._tn(4)._stanceModifier(0)._evasive(Manuever.EVASIVE_NO_INITAITIVE_MUTUAL|Manuever.EVASIVE_UNTARGET_MUTUAL)  // staionery full evade is possible (ie. didn't displace)...but need terrain roll TN7 saving throw
 			,new Manuever("partialevade", "Partial Evasion")._tn(7)._evasive(Manuever.EVASIVE_NO_INITAITIVE) //._customResolve()  // partial buying initiative will cost 2cp only, post _customPostResolve, non-standard
 			,new Manuever("duckweave", "Duck & Weave")._tn(9)._customResolve()._evasive(0)
 			
@@ -3309,8 +3353,7 @@ class ManueverSheet {
 			
 			,new Manuever("quickdraw", "Quick Draw")._lev(6)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
 			,new Manuever("rota", "Rota")._customRequire()._lev(3)._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)._customResolve()
-			,new Manuever("parry", "Parry")._atkTypes(Manuever.DEFEND_TYPE_MASTERHAND)
-			,new Manuever("block", "Block")._atkTypes(Manuever.DEFEND_TYPE_OFFHAND)._customRequire()
+
 		]);
 		public static var offensiveMeleeHash:Object = createHashIndex(offensiveMelee);
 		public static var defensiveMeleeHash:Object = createHashIndex(defensiveMelee);
@@ -3373,6 +3416,11 @@ class ManueverSheet {
 		
 		public static function createDefensiveMeleeMaskFor(arr:Array):uint {
 			return getMaskWithHashIndexer(arr, defensiveMeleeHash);
+		}
+		
+		static public function getManueverListArray(attacking:Boolean):Array 
+		{
+			return attacking ? offensiveMelee : defensiveMelee;
 		}
 }
 
@@ -4016,7 +4064,7 @@ class CharacterSheet {
 	 * @param   enemyTargetZone  The target zone the enemy is aiming at in the given enemy manueveer
 	 * @return	A valid TN (Target number). If target number is zero, it's assumed the manuever is unusable/invalid!
 	 */
-	public function getManueverTN(manuever:Manuever, attacking:Boolean, fight:FightState, enemyManuever:Manuever=null, enemyDiceRolled:int=0, enemyTargetZone:int=0):int {
+	public function getManueverTN(manuever:Manuever, attacking:Boolean, enemyManuever:Manuever=null, enemyDiceRolled:int=0, enemyTargetZone:int=0):int {
 		if (manuever.defaultTN != 0) {
 			return manuever.defaultTN;
 		}
@@ -4540,7 +4588,7 @@ class FightState {
 		var prof:Profeciency = ProfeciencySheet.getProfeciency(meleeProf);
 		var costWithProf:Object = attacking ? prof.atkCosts : prof.defCosts;
 		var mask:uint = attacking ? prof.offensiveManuevers : prof.defensiveManuevers;
-		var list:Array = attacking ?  ManueverSheet.offensiveMelee : ManueverSheet.defensiveMelee;
+		var list:Array = ManueverSheet.getManueverListArray(attacking); // attacking ?  ManueverSheet.offensiveMelee : ManueverSheet.defensiveMelee;
 		var curCharProfLevel:int = charSheet.profeciencies[meleeProf];
 		
 		
@@ -4552,12 +4600,13 @@ class FightState {
 		var traceMask:int = 0;
 		
 		
-		var inc:int = attacking  ? 1 : -1;
-		var startIndex:int = attacking ? 0 : len - 1;
+		//var inc:int = attacking  ? 1 : -1;
+		//var startIndex:int = attacking ? 0 : len - 1;
 		
-		for (var i:int = startIndex; (attacking ? i < len : i>=0); i+=inc) {
+		for (var i:int = 0; i < len; i++ ) {
 			if (  (mask & (1 << i)) != 0 ) {
 				var manuever:Manuever = list[i];
+				
 				if (manuever.devTempDisabled ) {
 					continue;
 				}
@@ -4565,11 +4614,14 @@ class FightState {
 					continue;
 				}
 
-		
-				var tn:int =  charSheet.getManueverTN(manuever, attacking, fight, enemyManuever, enemyDiceRolled, enemyTargetZone);
+				
+				var tn:int =  charSheet.getManueverTN(manuever, attacking,  enemyManuever, enemyDiceRolled, enemyTargetZone);
 				//TODO: handle weapons with jit TN due to having varied attack zone options, but NO
 				
-				if (tn == 0) continue;  // unavailable move based off character sheet
+				if (tn == 0) {
+				//	UITros.TRACE("manuever:" + manuever.name);
+					continue;  // unavailable move based off character sheet
+				}
 				
 				
 				var cost:int;
@@ -4597,21 +4649,21 @@ class FightState {
 		}
 
 		//throw new Error(traceList);
-		
+	//	/*
 		if (!attacking) {  // add the 3 evasive manuevers
-			manuever = ManueverSheet.defensiveMelee[0];  // full evade assumed
+			manuever = ManueverSheet.getDefensiveManueverById("fullevade");  // full evade assumed
 			filteredList[count++] = manuever;
 			filteredList[count++] = manuever.cost;
 			filteredList[count++] = manuever.defaultTN;
 			
-			manuever = ManueverSheet.defensiveMelee[1];  // partial evade assumed
+			manuever = ManueverSheet.getDefensiveManueverById("partialevade");  // partial evade assumed
 			if (!manuever.devTempDisabled) {
 			filteredList[count++] = manuever;
 			filteredList[count++] = manuever.cost;
 			filteredList[count++] = manuever.defaultTN;
 			}
 			
-			manuever = ManueverSheet.defensiveMelee[2];  // duck and weave assumed
+			manuever = ManueverSheet.getDefensiveManueverById("duckweave");  // duck and weave assumed
 			if (!manuever.devTempDisabled) {
 			filteredList[count++] = manuever;
 			filteredList[count++] = manuever.cost;
@@ -4619,7 +4671,7 @@ class FightState {
 			}
 			// later: add buy/force-enter initiative option
 		}
-		
+		//*/
 		
 		filteredList.length = count;
 		return filteredList;
@@ -5465,7 +5517,7 @@ class Data {
     
     static public const OBJECT:Object = {
         "man": { type:"man", state:"w0", visual:"stand",  func: { key:Man.key }, components: { 
-			char:CharacterSheet.createBase("Player", { "rapier":9, "swordshield":9 }, HumanoidBody.getInstance(), WeaponSheet.find("Gladius"), null, 5),
+			char:CharacterSheet.createBase("Player", { "rapier":9, "swordshield":9 }, HumanoidBody.getInstance(), WeaponSheet.find("Gladius"), WeaponSheet.find("Small Shield"), 5),
 		fight:new FightState().setSideAggro(FightState.SIDE_FRIEND) }, 
 		ability:{ map:false,block:true }, anim:Man.anim, animState:"walk1", dir:"f" },
         "enemy": { type:"enemy", state:"w0", num:"1", func: { key:Enemy.key },  visual:"stand", components: {
