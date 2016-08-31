@@ -1325,6 +1325,8 @@ class Dungeon extends Sprite{
 					primaryManuever.reflexScore = charSheet.getReflex() * 10000 + int(Math.random() * 100);
 					primaryManuever.reflexPool  = charSheet.getReflex();
 					manueverStack.pushManuever( primaryManuever );
+					
+					ent.setDirection( fight.target.x - ent.mapX, fight.target.y - ent.mapY );
 				}
 				else {
 					UITros.TRACE("todo: NO target found. Likely against multiple opponents? (need to choose)");
@@ -1341,6 +1343,10 @@ class Dungeon extends Sprite{
 				primaryManuever.reflexScore = charSheet.getReflex() * 10000 + int(Math.random() * 100);
 				primaryManuever.reflexPool  = charSheet.getReflex();
 				defManueverStack.pushManuever(primaryManuever);
+				
+				if (fight.target != null) {
+					ent.setDirection( fight.target.x - ent.mapX, fight.target.y - ent.mapY );
+				}
 			
 				
 			}
@@ -5394,13 +5400,15 @@ class FightState {
 				enemyFight = enemy.components.fight;
 				if (manFight.canTarget(enemyFight)) {
 					manFight.target = enemyFight;
+					UITros.TRACE("Player found a possible target in front of him...");
 				}
-				UITros.TRACE("Player found a possible target in front of him...");
+				
 				return false;
 			}
 			
-			// todo: look for immediate surroundings for any target on left/right and back and return out
-			UITros.TRACE("TODO look for player nearest target");
+			// look for immediate surroundings for any target on left/right and back and return out
+			//UITros.TRACE("TODO look for player nearest target");
+			// already done below?
 			
 		}
 		
@@ -5459,12 +5467,12 @@ class FightState {
 			}
 			else {
 				if (isAI) UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" targets player!");
-				else   UITros.TRACE(manFight.numEnemies > 1 ? "Player targets initial selection of enemy" : "Player is assigned sole target.");
+				else   UITros.TRACE(manFight.numEnemies > 1 ? "Player targets initial selection of enemy: "+man.dungeon.getNameWithDirToMan(man) : "Player is assigned sole target.");
 			}
 		}
 		else {
 			//throw new Error("Should have at least 1 adjacient enemy!");
-			UITros.TRACE("Can't target yet due to timing..");
+			UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" enters in late and can't target yet...");
 		}
 		
 		return true;
