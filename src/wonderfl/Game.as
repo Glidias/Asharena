@@ -1558,48 +1558,57 @@ class Dungeon extends Sprite{
 				}
 				else {  // not under attack, may consider attacking WITHOUT initiative..
 
+					if (!(fight.paused && fight.e )) {  // not paused on 2nd exchange, may consider pushing ahead with pre-assigned manuuever if available
 					
-					if (fight.attacking) UITros.TRACE("sanity Exception::Should not be attacking without initaitive as a default!");
+						if (fight.attacking) UITros.TRACE("sanity Exception::Should not be attacking without initaitive as a default!");
+						
+						arrOfAvailManuevers =  FightState.getListOfAvailableManuevers(false, charSheet, fight, ent   );
 					
-					// TODO: choice type should set to Do Nothing/Misc category, by default, with option type to be able execute some defensive manuevers that can resolve on their own...and also option type to attack without initiative
-					arrOfAvailManuevers =  FightState.getListOfAvailableManuevers(false, charSheet, fight, ent   );
-				
-					 manueverChoiceDetails = cManuever.manuever != null ?  FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers) : null;
-					//UITros.TRACE(charSheet.getPrimaryWeaponUsed().name + ", "+charSheet.getManueverTN(ManueverSheet.getDefensiveManueverById("parry"), false, fight,  dManuever.manuever, dManuever.numDice, dManuever.targetZone   ));
-					if (manueverChoiceDetails == null  ) {
-						
-						
-						if (!fight.paused) {
-							cManuever.manuever = null;
-							if (ent.func.aiChooseManuever != null) {
-								ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+						 manueverChoiceDetails = cManuever.manuever != null ?  FightState.getManueverChoiceDetailsFromList(cManuever.manuever, arrOfAvailManuevers) : null;
+						//UITros.TRACE(charSheet.getPrimaryWeaponUsed().name + ", "+charSheet.getManueverTN(ManueverSheet.getDefensiveManueverById("parry"), false, fight,  dManuever.manuever, dManuever.numDice, dManuever.targetZone   ));
+						if (manueverChoiceDetails == null  ) {
+							
+							// TODO: choice type should set to Do Nothing/Misc category, by default, with option type to be able execute some defensive manuevers that can resolve on their own...and also option type to attack without initiative
+							if (!fight.paused) {  // not paused, may consider attacking without initiative
+								cManuever.manuever = null;
+								if (ent.func.aiChooseManuever != null) {
+									ent.func.aiChooseManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+								}
+								else {
+									FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+								}
 							}
 							else {
-								FightState.pickDefaultManuever(charSheet, fight, cManuever, arrOfAvailManuevers, ent);
+								fight.resetManuevers();
 							}
 						}
-						else {
-							fight.resetManuevers();
+						else  { 
+							
+							 if (cManuever.tn == 0) {  // this is a pre-assigned manuever  that may need further processing
+							
+									FightState.applyManueverChoiceDetails(manueverChoiceDetails, cManuever );
+									if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone?
+										
+										if (ent.func.aiChooseManueverDetails != null) {
+											ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
+										}
+										else {
+											FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
+										}
+									}
+							 }
+							 else {
+								 throw new Error("This case is depreciated and should not happen!");
+							 }
+							 
 						}
+
 					}
-					else  { 
+					else {
 						
-						 if (cManuever.tn == 0) {  // this is a pre-assigned manuever  that may need further processing
-								FightState.applyManueverChoiceDetails(manueverChoiceDetails, cManuever );
-								if (FightState.manueverNeedsElaboration(cManuever)) {  // need to define number of dice or targetZone
-									
-									if (ent.func.aiChooseManueverDetails != null) {
-										ent.func.aiChooseManueverDetails(charSheet, fight, cManuever, ent);
-									}
-									else {
-										FightState.pickDefaultManueverDetails(charSheet, fight, cManuever, ent);
-									}
-								}
-						 }
-						 else {
-							 throw new Error("This case is depreciated and should not happen!");
-						 }
-						 
+						 fight.resetManuevers();
+						
+						
 					}
 
 				}
