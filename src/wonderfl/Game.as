@@ -219,7 +219,6 @@ class UITros extends Sprite {
 		var manFight:FightState = dungeon.man.components.fight; 
 		var manCharSheet:CharacterSheet = dungeon.man.components.char;
 		manFight.targetedByFlags = 0;
-		//FightState.updateNeighborEnemyStates(dungeon.man, manFight, dungeon);
 		
 		//infoPanel.visible = manFight.choosingOrientation();
 		
@@ -1228,10 +1227,10 @@ class Dungeon extends Sprite{
 	
 	private function handleTimestampUpdate():void {
 		 FightState.updateSurroundingStates(this, man.mapX, man.mapY, mapWidth >= mapHeight ? mapWidth : mapHeight);
-		uiTros.mapUpdate(this);
-		
-		
+
+
 		resolveFightStack();
+		uiTros.mapUpdate(this);
 		
 		//tracePlayerCharInfo();
 	}
@@ -1524,7 +1523,7 @@ class Dungeon extends Sprite{
 						else  {
 							 if (cManuever.tn == 0) {  // this is a pre-assigned manuever  that may need further processing
 								 
-									UITros.TRACE("Setting up manuever choice details for pre-chosen manuever!");
+									//UITros.TRACE("Setting up manuever choice details for pre-chosen manuever!");
 									FightState.applyManueverChoiceDetails(manueverChoiceDetails, cManuever );
 									if (FightState.manueverNeedsElaboration(cManuever)) { 
 										
@@ -1536,12 +1535,10 @@ class Dungeon extends Sprite{
 											
 										}
 									}
-									
-				
 									dManuever.defManuever = cManuever;
 							 }
 							 else {  
-									throw new Error("Exception:: This case is depreciated and should not happen");
+									UITros.TRACE("Exception:: This case is depreciated and should not happen?:"+cManuever.manuever.name + ", "+cManuever.tn + ", "+ent.name);
 								  
 									if (fight.isFleeing()) { 
 									  dManuever.defManuever =  fight.getPrimaryManuever();
@@ -1598,7 +1595,7 @@ class Dungeon extends Sprite{
 									}
 							 }
 							 else {
-								 throw new Error("This case is depreciated and should not happen!");
+								UITros.TRACE("This case is depreciated and should not happen??:"+cManuever.tn + ", "+cManuever.numDice + ", "+cManuever.manuever.name + ", "+ ent.name);
 							 }
 							 
 						}
@@ -1934,7 +1931,7 @@ class Dungeon extends Sprite{
 					}
 					else  {  // target is targeting someone else or nothing...
 						//if (!fight.initiative) throw new Error("exception found ..maintain intiative target other..");
-						UITros.TRACE(getNameWithDirToMan(ent) +(fight.initiative ? " maintains" : " gains")+" initiative..");
+						//UITros.TRACE(getNameWithDirToMan(ent) +(fight.initiative ? " maintains" : " gains")+" initiative..");
 						
 						fight.initiative = true;
 					}
@@ -2012,9 +2009,9 @@ class Dungeon extends Sprite{
 						// main stats is only shown if inflicted upon main character, so you won't know exactly the stats of enemy
 						var statsStr:String = (diceLost > 0 ? "(-" + diceLost + "d," + (wound.shock - diceLost) + "s)" : "(" + wound.shock + "s)" );
 						var simult:String = tarPrimaryManuever!=null && tarPrimaryManuever.to != null && tarPrimaryManuever.reflexScore == cManuever.reflexScore && tarPrimaryManuever.marginSuccess == null && !tarCharSheet.outOfAction() && tarPrimaryManuever.numDice > 0 ? " while..." : "";
-						if (simult != "") {
-								UITros.TRACE("Neither party won the initiative contest...");
-						}
+						//if (simult != "") {
+						//		UITros.TRACE("Neither party won the initiative contest...");
+						//}
 						UITros.TRACE( getNameWithDirToMan(ent) + " hits " + getNameWithDirToMan(targetEnt) + " with a Level " + dmg + " hit to the " + wound.part + (targetEnt != man ?  "" : statsStr)  +simult );
 						
 						
@@ -2081,6 +2078,10 @@ class Dungeon extends Sprite{
 	
 	public function getNameWithDirToMan(ent:GameObject):String {
 		return (man.mapX!=ent.mapX || man.mapY != ent.mapY) ? ent.components.char.name + "("+(man.mapX != ent.mapX ? ent.mapX < man.mapX ?  "W" : "E"  :  ent.mapY < man.mapY ? "S" : "N"  )+")" : ent.components.char.name;
+	}
+	
+	public function getDirLabelFromMan(ent:GameObject):String {
+		return (man.mapX!=ent.mapX || man.mapY != ent.mapY) ?"("+(man.mapX != ent.mapX ? ent.mapX < man.mapX ?  "W" : "E"  :  ent.mapY < man.mapY ? "S" : "N"  )+")" : "";
 	}
 	
     //ダンジョンを下る
@@ -2393,6 +2394,7 @@ class Dungeon extends Sprite{
 					resolveManueverStack(defManueverStack,false);
 					manueverStack.reset(); // end of fight resolution
 					defManueverStack.reset();
+					
 				}
 				
 				
@@ -2417,7 +2419,10 @@ class Dungeon extends Sprite{
 								// if bump  phase, skip this.
 								
 			
-								if ( canInteract && keyEvent != null && (o.components && o.components.fight != null)) o.components.fight.resolve(o);
+								if ( canInteract && keyEvent != null && (o.components && o.components.fight != null)) {
+									o.components.fight.resolve(o);
+									o.components.fight.resetManuevers();
+								}
 								
 								// if bump phase, only go through key for post bumpers, for humans only
 								 if(  canInteract  && (o.tween == null || o.tween.length == 0) && keyEvent != null && o.func.key != null ){ o.func.key(keyEvent,o); } 
@@ -2662,6 +2667,7 @@ class Man{
 			var uiTros:UITros = man.dungeon.uiTros;
 			var uiRadioAuto:Boolean = uiTros.radioAuto.selected;
 			var uiShift:Boolean = man.dungeon.uiTros.isKeyFlagDown(UITros.KEYMASK_SHIFTDOWN);
+			var uiRadioCautious:Boolean = uiTros.radioCautious.selected;
 			//var uiWaitShift:Boolean = man.dungeon.uiTros.isKeyFlagDown(UITros.KEY_MODIFIER_WAIT);
 			
 			if (uiRadioAuto) {
@@ -2677,9 +2683,21 @@ class Man{
 					
 						fight.orientation = isMoving ? FightState.ORIENTATION_CAUTIOUS : FightState.ORIENTATION_DEFENSIVE;
 					}
-					
 				}
+			}
+			else if (uiRadioCautious) {
+				if (man.bumping) {
+					fight.orientation =  !uiShift ? FightState.ORIENTATION_CAUTIOUS : FightState.ORIENTATION_AGGRESSIVE;
+				}
+				else {
 				
+					if (!uiShift) {
+						fight.orientation = FightState.ORIENTATION_CAUTIOUS;
+					}
+					else {
+						fight.orientation = isMoving ? FightState.ORIENTATION_DEFENSIVE : FightState.ORIENTATION_DEFENSIVE;
+					}
+				}
 			}
 			else {
 				fight.orientation = uiTros.radioCautious.selected ? FightState.ORIENTATION_CAUTIOUS : uiTros.radioDefend.selected ? FightState.ORIENTATION_DEFENSIVE : FightState.ORIENTATION_AGGRESSIVE;
@@ -2740,7 +2758,7 @@ class Man{
 			else {
 				fight.attacking = false;  // imply defense always
 				if (man.moving && !fight.lastAttacking ) {
-					fight.setManuever( ManueverSheet.getDefensiveManueverById("fullevade") );  // if man is moving into empty square and he wasn't attacking in last exchange, imply that he is retreating, else, will reset it to no implied manuever
+					fight.setMakeshiftManuever( ManueverSheet.getDefensiveManueverById("fullevade") );  // if man is moving into empty square and he wasn't attacking in last exchange, imply that he is retreating, else, will reset it to no implied manuever
 					
 				}
 				else {
@@ -2865,7 +2883,7 @@ class Enemy{
 			else {
 				fight.attacking = false;  // imply defense always?
 				if (enm.moving && !fight.lastAttacking ) {
-					fight.setManuever( ManueverSheet.getDefensiveManueverById("fullevade") );  // if man is moving into empty square and he wasn't attacking in last exchange, imply that he is retreating, else, will reset it to no implied manuever
+					fight.setMakeshiftManuever( ManueverSheet.getDefensiveManueverById("fullevade") );  // if man is moving into empty square and he wasn't attacking in last exchange, imply that he is retreating, else, will reset it to no implied manuever
 				}
 				else {
 					fight.resetManuevers();
@@ -4380,12 +4398,14 @@ class FightState {
 			
 			
 			var initiativeState:int  =  getInitiativeTowards(target);
-			lbl = initiativeState === GOT_INITIATIVE ? "Got Initiative..." :
-				initiativeState === CONTESTING_INITIATIVE ? "Contesting for initiative.." :
-				initiativeState === REROLL_INITIATIVE ? "..no initiative until next round..." : 
-				initiativeState === UNCERTAIN_INITATIVE ? "Uncertain Initiative..." : 
-				initiativeState === UNCERTAIN_INITIATIVE_RESOLVED ? initiative ? "Got Initiative..."  : "No Initiative.": 
-				"No Initiative."
+			var dirLabel:String = getDirLabelToTarget();
+			dirLabel = dirLabel ? " ("+dirLabel+")" : "";
+			lbl = initiativeState === GOT_INITIATIVE ? "Got Initiative..."+dirLabel:
+				initiativeState === CONTESTING_INITIATIVE ? "Contesting for initiative.." +dirLabel:
+				initiativeState === REROLL_INITIATIVE ? "..no initiative until next round..." +dirLabel: 
+				initiativeState === UNCERTAIN_INITATIVE ? "Uncertain Initiative..."+dirLabel : 
+				initiativeState === UNCERTAIN_INITIATIVE_RESOLVED ? initiative ? "Got Initiative..."+dirLabel  : "No Initiative."+dirLabel : 
+				"No Initiative."+dirLabel
 		
 				
 		}
@@ -4394,6 +4414,12 @@ class FightState {
 		}
 		return lbl;
 	}
+	
+	public function getDirLabelToTarget():String {
+		return (x!=target.x || y != target.y) ?""+(x != target.x ? target.x < x ?  "W" : "E"  :  target.y < y ? "S" : "N"  )+"" : "";
+	}
+	
+	
 	
 	public static function resolveCautiousVsCautiousInitiative(fightState:FightState, charSheet:CharacterSheet, fightState2:FightState, charSheet2:CharacterSheet):int {
 		var reflex1:int = Manuever.getRollNumSuccesses(charSheet.getReflex(), 5 );
@@ -4676,7 +4702,11 @@ class FightState {
 		return cManuever.numDice == 0 || (cManuever.to != null ? cManuever.targetZone == null : false);
 	}
 	
-	
+	public function setMakeshiftManuever(val:Manuever, numDice:int=0, at:uint = 0):void {
+		if (at >= manuevers.length) throw new Error("out of range!:" + at + "/" + manuevers.length);
+		resetManueverObj(manuevers[at]);
+		manuevers[at].manuever = val;
+	}
 	public function setManuever(val:Manuever, numDice:int=0, at:uint = 0):void {
 		if (at >= manuevers.length) throw new Error("out of range!:"+at + "/"+manuevers.length);
 		manuevers[at].manuever = val;
@@ -4859,10 +4889,9 @@ class FightState {
 					if (fState.timestamp != dungeon.timestamp) {
 						fState.timestamp = dungeon.timestamp;
 						var lastNumEnemies:int = fState.numEnemies;
-						//if (fState.s < 2 ) {
-						updateNeighborEnemyStates(gameObj, fState, dungeon);
-						
-						dungeon.fightStack.push(fState);
+						//if (fState.s < 2 ) {  // preivously this block was commented away (not sure why)
+							updateNeighborEnemyStates(gameObj, fState, dungeon);
+							dungeon.fightStack.push(fState);
 						//}
 						
 						if (lastNumEnemies == 0 && fState.numEnemies > 0) {
@@ -4873,18 +4902,20 @@ class FightState {
 						if (lastNumEnemies > 0) {
 							if (  fState.numEnemies == 0 ) {
 								fState.reset(true);
-								
+							//	UITros.TRACE("reseting char..no enemies");
 							}
 							else {
-								
+								//UITros.TRACE("adding char to stepStack");
 								//	fState.step();
 								myStack.push(fState);
 								
 							}
 						}
 						else if ( (fState.flags & FLAG_INITIATIVE_SYNCED) ) {
+							//UITros.TRACE("adding char to stepStack");
 							myStack.push(fState);
 							//throw new Error("TO STEP FORWARD SYNCED");
+							
 							
 						}
 						
@@ -4897,9 +4928,13 @@ class FightState {
 		  }
 		  
 		  var k:int = myStack.length; // dungeon.fightStack.length;
+		 // UITros.TRACE("Stepping forward " + k + " combatants. NumEnemies:"+dungeon.man.components.fight.numEnemies); 
 		  while (--k > -1) {
 			  myStack[k].step();
+			 //  UITros.TRACE("Stepping to:" + myStack[k].s + ", "+myStack[k].e); 
 		  }
+		  
+		  
 		  
 		  // for the sake of defering...bah!!
 		  dungeon.clearFightStack();  // warning,,,backtrack code smell hack here
@@ -4941,11 +4976,14 @@ class FightState {
 					// whoever i bumped-rolled against 
 				
 					// apparently the below condition is causing problems... dunno why
-					// enemyFight.s != manFight.s &&  /
-						if ( manFight.withinExchangeWindow() && enemyFight.withinExchangeWindow() &&  (manFight.bumping||enemyFight.bumping)  && dungeon.containsObjAt( man.mapX + man.moveArray[0], man.mapY + man.moveArray[1], fights[0])  ) {
-							//
-							//if (manFight.target == null) UITros.TRACE("Syncing step fast-track 111..:" + man.dungeon.getNameWithDirToMan(man) + ", "+ manFight.s + ", "+manFight.orientation+"/"+manFight.initiative);
-							//if (enemyFight.target == null) UITros.TRACE("Syncing step fast-track 222..:"+man.dungeon.getNameWithDirToMan(enemy) + ", "+enemyFight.s+ ", "+enemyFight.orientation+"/"+enemyFight.initiative);
+				
+					
+					// requires explicit bumping-into condition in order to syncronise step?
+					// (manFight.bumping||enemyFight.bumping)  && dungeon.containsObjAt( man.mapX + man.moveArray[0], man.mapY + man.moveArray[1], fights[0])
+					
+						if ( (!manFight.isSyncedWith(enemyFight) || manFight.orientation == 0 && enemyFight.orientation!=0) && manFight.firstExchangeWindow() && enemyFight.firstExchangeWindow()  ) {
+							//UITros.TRACE("Last-minute syncing step entering-fight:"+manFight.s + " vs "+enemyFight.s + " for : "+man.dungeon.getNameWithDirToMan(man.dungeon.man) + " for e:"+manFight.e);
+							
 							manFight.syncStepWith(enemyFight);
 							manFight.flags |= FLAG_INITIATIVE_SYNCED;
 							enemyFight.flags |= FLAG_INITIATIVE_SYNCED;
@@ -4959,8 +4997,11 @@ class FightState {
 							//if (man === man.dungeon.man) throw new Error("A");
 							//throw new Error("A:"+manFight.firstExchangeWindow() + ", "+enemyFight.firstExchangeWindow() );
 						}
+						
 						manFight.numEnemies++;
 						manFight.flags |= (1 << i);  
+						
+						
 						
 						
 						
@@ -5010,15 +5051,6 @@ class FightState {
 		var len:int = directions.length;
 		var man:GameObject =  dungeon.checkComponent(manFight.x, manFight.y, "fight")[0];
 		var isAI:Boolean =  man != dungeon.man;
-		if ((manFight.flags & FLAG_INITIATIVE_SYNCED) != 0) {
-		//	UITros.TRACE("Already synced beforehand:" + (dungeon.man.components.fight === manFight));
-			if ((dungeon.man.components.fight === manFight)) {
-				var nFight:FightState = getNeighbour(dungeon, manFight.x, manFight.y, getDirectionIndex(dungeon.man.moveArray[0], dungeon.man.moveArray[1]) );
-				if ( nFight &&  !(nFight.flags & FLAG_INITIATIVE_SYNCED) ) {
-					UITros.TRACE("some minor exception..no sync match against target.");
-				}
-			}
-		}
 		
 		for (var i:int = 0; i < len; i++) {
 		
@@ -5037,40 +5069,34 @@ class FightState {
 				// assumed only stack 1 fighter at the moment. In grappling situations, can stack 2 fighters.
 				var enemy:GameObject = fights[0];
 				var enemyFight:FightState =  enemy.components.fight;
-				
-				// Yep, this is allowed to happen below...
-				// when an enemy moves in to engage somebody that is already locked in combat exchange and resolving rolls. 
-				//if (!manFight.isSyncedWith(enemyFight)) {
-					//throw new Error("Out of sync situation traced:"+ fights[0].type + ":" + enemyFight.getSchedule() + " | "+manFight.getSchedule());
-				//}
-				//if (manFight.bumping && 
-				
-				//UITros.TRACE(manFight.initiative + " vs "+enemyFight.initiative);
-				
+		
 	
-				if  (manFight.s== 2 && manFight.target == enemyFight && manFight.orientation != 0  && manFight.isSyncedWith(enemyFight) && manFight.orientingTimestamp != dungeon.timestamp) {
-				
-					// resolve target initiative
-					//if (manFight.s != 2) throw new Error("Step != 2 assertion failed!");
-
+				//&& manFight.orientation != 0   // target initiative is always checked whether or not orientation is in play or not..
+				if  (manFight.s == 2 && manFight.target == enemyFight   && manFight.isSyncedWith(enemyFight) && (manFight.orientingTimestamp != dungeon.timestamp || manFight.orientation == 0)) {
+					
 					var initiativeState:int  = manFight.getInitiativeTowards(enemyFight);
 					var withinScope:Boolean = manFight.withinInitiativeScope(enemyFight);
 					
-					
 					if (withinScope) {
+						//if (manFight.orientation == 0) UITros.TRACE("Resolving initaitive for orientationless char...")
+						//else UITros.TRACE("Resolving initaitive for char with orientation");
+						// resolve target initiative
+
+						
 						if (enemyFight.target != manFight) {
+							// initaitive over enemy that isn't targeting back
 							 manFight.initiative = true;
+							// UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" has target initiative on "+man.dungeon.getNameWithDirToMan(enemy)+", who isn't targeting back");
 						}
-						else if (initiativeState == UNCERTAIN_INITATIVE) {
-							// consider: cleanup this code and factor it into single FightState method
+						else if (manFight.orientation != 0 && initiativeState == UNCERTAIN_INITATIVE) {
+						
 							manFight.orientingTimestamp = dungeon.timestamp;
 							enemyFight.orientingTimestamp = dungeon.timestamp;
 							// assumed cautious vs cautious by sos conventions
 							var resultCC:int;
 							if ( (resultCC = FightState.resolveCautiousVsCautiousInitiative(manFight, man.components.char, enemyFight, enemy.components.char)) != 0) {	
 								if (resultCC>0) {
-									//man.dungeon.getNameWithDirToMan(man)
-									UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " takes cautious initiative over "+man.dungeon.getNameWithDirToMan(enemy)+ ".");
+									UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " takes cautious initiative on "+man.dungeon.getNameWithDirToMan(enemy)+ ".");
 								}
 								else  {
 										UITros.TRACE(man.dungeon.getNameWithDirToMan(enemy) + " takes cautious initiative over "+ man.dungeon.getNameWithDirToMan(man)+ ".");
@@ -5081,27 +5107,40 @@ class FightState {
 							else {
 							
 								if (isAI) {
-									//man.dungeon.getNameWithDirToMan(man)
 									UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " and " + man.dungeon.getNameWithDirToMan(enemy) + " are cautiously tied in uncertainty.");
 								}
 								else if (manFight.numEnemies == 1) {
 									UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " and " + man.dungeon.getNameWithDirToMan(enemy) + " are cautiously tied in uncertainty.");
 								}
 								else {
-									UITros.TRACE("exception manFight.numEnemies > 1");
+									UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " and " + man.dungeon.getNameWithDirToMan(enemy) + " are cautiously tied in uncertainty.");
 								}
 							}
 							
 							
 						}
 						else   {
-							 manFight.initiative =  manFight.hasOrientationInitiative(enemyFight);
-							// if (!isAI) UITros.TRACE("player initiative is set to:"+manFight.initiative);
-							 
+							if (manFight.orientation != 0) {
+								// use orientation to determine initaitive over enemy
+								manFight.initiative =  manFight.hasOrientationInitiative(enemyFight);
+							}
+							else if (enemyFight.target != manFight) {
+								// initaitive over enemy that isn't targeting back
+								manFight.initiative = true;
+								// UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" has target initiative over "+man.dungeon.getNameWithDirToMan(enemy)+", who isn't targeting back...");
+							}
+							
+
 						}
 							
 					
 					}
+					else {
+						UITros.TRACE("Outside initiative scope for particular combatant:"+man.dungeon.getNameWithDirToMan(man));
+					}
+				}
+				else {
+						//if (manFight.s ==2) UITros.TRACE("no resolution of initiative required?:"+[ (manFight.s==2), (manFight.target == enemyFight ? "true" : manFight.target), manFight.isSyncedWith(enemyFight) ]);
 				}
 				
 				manFight.flags |= manFight.canRollInitiativeAgainst(enemyFight) ? ( 1 << (OFFSET_INITIATIVE+i)) : 0;
@@ -5130,6 +5169,7 @@ class FightState {
 		var charSheet:CharacterSheet = dungeon.getComponent(fight.x, fight.y, "char");
 		return 1000*fight.orientation +  charSheet.getReflex() + Math.random();
 	}
+
 	
 	public function canPickTargetPhase():Boolean {
 		//!e && 
@@ -5225,6 +5265,11 @@ class FightState {
 	public function isSyncedWith(fight:FightState):Boolean {
 		return s == fight.s && e == fight.e;
 	}
+	/*
+	public function detectLateComer(fight:FightState):Boolean {
+		return  s != fight.s ? fight.s > s ? this : fight  :    orientation == 0 ? this : fight;
+	}
+	*/
 	
 	public function firstExchangeWindow():Boolean {
 		return  !e  && s < 2;
@@ -5303,7 +5348,8 @@ class FightState {
 	
 	public function chosenOrientation():Boolean 
 	{
-		return numEnemies > 0 && !e &&  s == 1 && paused && orientation!=0;
+		//numEnemies > 0 && !e &&  s == 1 && paused && 
+		return  s == 1 && orientation!=0;
 	}
 	
 	public static function findNewTarget(manFight:FightState, dungeon:Dungeon):Boolean 
@@ -5338,9 +5384,10 @@ class FightState {
 				if (manFight.canTarget(enemyFight)) {
 					manFight.target = enemyFight;
 					UITros.TRACE("Player found a possible target in front of him...");
+					return false;
 				}
 				
-				return false;
+				//return false;
 			}
 			
 			// look for immediate surroundings for any target on left/right and back and return out
@@ -5374,7 +5421,7 @@ class FightState {
 			
 		}
 		
-		// force cautious players to target back, and be target-locked!
+		
 		if (choices.length > 0 ) {
 			
 			enemy = choices[0];  // okay, just foolishly pick first choice for now, later route to AI method to make a choice
@@ -5409,7 +5456,9 @@ class FightState {
 		}
 		else {
 			//throw new Error("Should have at least 1 adjacient enemy!");
-			UITros.TRACE(man.dungeon.getNameWithDirToMan(man)+" enters in late and can't target yet...");
+			if (isAI) UITros.TRACE(man.dungeon.getNameWithDirToMan(man) + " (enters in late/displaces) " + (manFight.e ? "for second exchange " : "") + "and can't target yet till next round...");
+			
+			
 		}
 		
 		return true;
@@ -5417,7 +5466,13 @@ class FightState {
 	
 	public function canTarget(enemyFight:FightState):Boolean  // the minimal "closeBy" requirement
 	{
-		return (orientation != 0 || enemyFight.target == this) && withinInitiativeScope(enemyFight); // isSyncedWith(enemyFight);
+		// isSyncedWith(enemyFight);  // this condition isn'tt needed so long canTarget() is called within context of sync check states
+		
+		// classic approach  // without orientation, can only target those that are targeting you back
+		//return (orientation != 0 || enemyFight.target == this) && withinInitiativeScope(enemyFight); 
+		
+		// roguelike approach  (so long as ajaciency of square within first exchange window, also allowable)
+		return (orientation != 0 || (enemyFight.target == this || firstExchangeWindow()) )  && withinInitiativeScope(enemyFight)
 	}
 	
 	public static function isAttackingChoice(choice:Object):Boolean {
@@ -5482,7 +5537,7 @@ class Data {
     
     public static var FLOOR:Array = [　//各階の構造に関するデータ
         {//0階(デフォルト値）
-            enMax:2, enMin:1,    //敵の数
+            enMax:3, enMin:1,    //敵の数
             itMax:2, itMin:0,    //アイテムの数
             width:35, height:35,
             roomWidth:6, roomHeight:6,
@@ -5771,7 +5826,7 @@ class MapUtil {
     }
     static public function addEnemy( dun:Dungeon, d:Object  ):void{
         for(var i:int=1;i < dun.rooms.length;i++){
-            var l:int = Math.random()*(d.enMax-d.enMin+1) + d.enMin;
+            var l:int =  Math.random() * (d.enMax - d.enMin + 1) + d.enMin;
             for(var j:int=0;j < l;j++){
                 var o:GameObject = roomAdd( dun, dun.rooms[i], "enemy" );
                 var rand:int = d.enemy[ int(d.enemy.length*Math.random()) ];
