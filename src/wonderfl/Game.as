@@ -4277,7 +4277,7 @@ class FightState {
 	public var initiative:Boolean = false;  //  initaitive  flag. 
 	public var target:FightState; // flag to indicate if got existing target aqquired or not
 	public var targetLocked:Boolean = false;  // flag to indicate fighter cannot change target..
-	public var forceContestInitiative:Boolean;  // even without initiative, will still contest for it
+
 	
 	public function get paused():Boolean {
 		// no target heuristic...or if you have target, determine if target is a mututal opponent, and if so, same initiative need to re-roll
@@ -4318,11 +4318,9 @@ class FightState {
 	}
 	
 	public function getInitiativeTowards(fightState:FightState):int {
-		//return initiative ? fightState.initiative ? CONTESTING_INITIATIVE :  (forceContestInitiative ? CONTESTING_INITIATIVE :  GOT_INITIATIVE )   
-		//	:  NO_INITIATIVE;
 		
 		if (orientation == 0 ) {   // legacy code  //|| s >=2 
-			return initiative ? fightState.initiative ? CONTESTING_INITIATIVE :  (forceContestInitiative ? CONTESTING_INITIATIVE :  GOT_INITIATIVE )   
+			return initiative ? fightState.initiative ? CONTESTING_INITIATIVE :  GOT_INITIATIVE   
 			:  NO_INITIATIVE;
 		}
 		else {  // orientation selected, need to determine
@@ -4737,7 +4735,6 @@ class FightState {
 		if ( resolvable() ) { 
 			lastAttacking = attacking;
 			//lastHadInitiative = initiative;
-			forceContestInitiative = false;
 			
 			//paused = false;
 			orientation = 0;
@@ -5207,7 +5204,6 @@ class FightState {
 		
 		targetLocked = false;
 		
-		forceContestInitiative = false;
 		attacking = false;
 		lastAttacking = false;
 		shortRangeAdvantage = false;
