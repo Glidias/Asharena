@@ -3649,7 +3649,7 @@ class BodyChar {  // base class to handle different body types later (ie. for no
 			zs = zonesB;
 			damageTable = partsBludgeon;	
 			woundType = WOUND_TYPE_BLUNT_TRAUMA;
-			damageTableStr = "bludgeinong";
+			damageTableStr = "bludgeoning";
 		}
 		else {   // else sharp weapon
 			zs = zones;
@@ -5500,9 +5500,9 @@ class Data {
     //各オブジェクトに使うビットマップデータの設定
     public var MAP_SET:Object = { "man":"man0", "enemy":"enemy0", "room":"room0"}
     static public const URL:Object = {
-        "man0":"http://assets.wonderfl.net/images/related_images/7/7a/7ab2/7ab26a6103d0b93fb53b431d9f9a241c84ce73d1",
-        "room0":"http://assets.wonderfl.net/images/related_images/5/5f/5fcb/5fcbda915901271b3e1f41b64477a8556b55824e",
-        "enemy0":"http://assets.wonderfl.net/images/related_images/f/fb/fb74/fb74951b6511ced8e7659452228703af0d991662"        
+        "man0":"assets/wonderfl/trosrogue/7ab26a6103d0b93fb53b431d9f9a241c84ce73d1.png",
+        "room0":"assets/wonderfl/trosrogue/5fcbda915901271b3e1f41b64477a8556b55824e.png",
+        "enemy0":"assets/wonderfl/trosrogue/fb74951b6511ced8e7659452228703af0d991662.png"        
     }
     static public const URL_NAME:Array = ["man0","room0","enemy0"];
     static public const IMG_NAME:Object = {
