@@ -49,7 +49,7 @@
 		</div>
 		<hr/>
 		<div class="fieldgroup">
-			<label>Required BS:</label>
+			<label>Required MOS:</label>
 			<input type="number" step="1" v-model="requiredBS" min="0" number />
 		</div>
 		<div class="fieldgroup">
@@ -57,7 +57,7 @@
 			<input type="checkbox" v-model="requireAtLeast1TS" />
 		</div>
 		<div class="results">
-			<label>Chance to succeed with BS: ( {{ displayAsPercentage(chanceToSucceedBS) }}% ) {{ chanceToSucceedBS }} </label><br/>
+			<label>Chance to succeed with MOS: ( {{ displayAsPercentage(chanceToSucceedBS) }}% ) {{ chanceToSucceedBS }} </label><br/>
 			<label>Side Favoring ( {{ displayAsPercentage(averageFavoring) }}% ) {{ averageFavoring }}</label>
 		</div>
 		
