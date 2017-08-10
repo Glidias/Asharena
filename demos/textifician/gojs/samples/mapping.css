@@ -1,0 +1,299 @@
+.draggable {
+  display: inline-block;
+  vertical-align: top;
+  border: 4px solid #BBB;
+  border-radius: 4px;
+  background-color: #F5F5F5;
+
+  position: absolute;
+  top: 20px;
+  left: 120px;
+  z-index: 500;
+}
+
+.dg textarea {
+	font-size:12px;
+}
+.dg input[type=text] {
+	font-size:12px;
+}
+
+
+
+.formelem {
+	margin:5px 0;
+}
+.formelem input {
+	display:inline-block;
+	margin:0px 2px;
+
+}
+.formelem button {
+	display:inline-block;
+	margin:0px 2px;
+
+
+}
+.formelem label {
+	display:inline-block;
+	margin:0px 2px;
+
+	
+}
+.formelem select {
+	display:inline-block;
+	width:auto;
+	margin:0px 2px;
+
+}
+
+li.folder.bitmask ul {
+	background-color:black;
+}
+li.folder.bitmask ul li.boolean {
+	display:inline-block;
+}
+li.folder.bitmask ul li .property-name {
+	width:auto;
+}
+li.folder.bitmask ul li.boolean .c {
+	width:auto;
+}
+
+li.folder.bitmask ul li.title {
+	white-space:nowrap; 
+}
+li.folder.bitmask ul li.title .labellist {
+ word-spacing: -2px;
+
+ }
+li.folder.bitmask ul li.title .labellist .prop {
+	font-size:9px;
+	color:magenta;
+	margin:0 0px;
+	
+
+}
+
+li.folder.instance > div > ul >  li.title {
+	background-image:none;
+	padding-left:8px;
+}
+
+li.folder.instance  > div > ul >  li.title:before {
+	margin-right:8px;
+	content:'\2611';
+}
+
+li.folder.instance  > div > ul.closed >  li.title:before {
+	content:'\2610';
+}
+
+
+
+.handle {
+  background-color: lightblue;
+  cursor: move;
+  text-align: center;
+  font: bold 12px sans-serif;
+}
+
+#infoDraggable {
+  font: 12px helvetica, sans-serif;
+  background-color:rgba(45,45,45,.8);
+}	
+
+#infoDraggable .inspector {
+	background-color:#000000;
+	
+	display:block;
+}
+
+#myInfo {
+  padding: 6px;
+}
+
+#myPaletteDiv {
+  background-color: #F5F5F5;
+  width: 100%;
+  height: 100%;
+}
+
+/*
+One simple way of making a div fill its space,
+with allowances for the title (top) and the resize handle (bottom)
+*/
+#paletteContainer {
+  position:absolute;
+  bottom: 14px;
+  left: 0px;
+  right: 0px;
+  top: 14px;
+}
+#guiZoner > ul:before {
+	content: 'zone definition';
+	display:block;
+	padding-left:10px;
+	background-color:#666666;	
+}
+#guiMainMenu > ul:before {
+	content: 'Main Menu';
+	display:block;
+	padding-left:10px;
+	background-color:#666666;	
+}
+#locationDefGUI > ul:before {
+	content: 'location definition';
+	display:block;
+	padding-left:10px;
+	background-color:#666666;	
+}
+#locationDefGUIOverwriter > ul:before {
+	content: 'location overwrites';
+	display:block;
+	padding-left:10px;
+	background-color:#666666;	
+}
+#locationStateGUI > ul:before {
+	content: 'location state';
+	display:block;
+	padding-left:10px;
+	background-color:#666666;	
+}
+
+.inspector-button-container {
+	float:left;
+	margin-left:0;
+}
+.inspector-button-container  input {
+	margin:0;
+}
+#prefix-btn-container   button {
+	margin:0;
+	margin-top:6px;
+	width:28px;
+}
+#prefix-btn-container {
+	
+	margin:0 auto;
+	margin-left:0;
+	padding-left:0;
+	display:block;
+	
+	float:left;
+	text-align:center;
+}
+#prefix-btn-container[hidden=hidden] {
+	display:none;
+}
+
+#infoDraggableInstruct  {
+	
+}
+#infoDraggableInstruct span {
+	font-style:normal;	
+	font-weight:bold;
+	color:yellow;
+}
+#infoDraggableInstruct i {
+	font-size:11px;
+	font-weight:normal;
+}
+ canvas:focus{outline:none;}
+ 
+ 
+.dg.main.disabled li.cr:hover:after, .dg.main.disabled li.folder.instance:hover:after {
+	content:'Direct editing is disabled. * Save/Load into a new location definition id first on left sidepanel.';
+	display:block;
+	position:absolute;
+	z-index:1;
+	line-height:18px;
+	right:20px;
+	max-width:100px;
+	background-color:black;
+	padding:2px;
+	
+}
+
+.dg.main.disabled li.cr.function  {
+	pointer-events:none;
+	
+}
+.dg.main.disabled li.cr.function >div {
+	opacity:.4;
+	
+}
+
+/*.dg.main .cr.boolean .property-name,*/
+.dg.main .cr.function .property-name {
+	overflow:visible;
+	white-space: nowrap;
+}
+
+.dg.main li.folder.instance .overwritetrigger {
+/*
+	background-color:black;position:relative;z-index:1;top:0;left:0px;padding-left:10px;                 
+*/
+	}
+.dg.main .property-name  {
+	position:relative;
+}
+.dg.main .property-name .overwritetrigger, .dg.main li.folder.instance .overwritetrigger, .dg.main li.folder.bitmask .overwritetrigger {
+	position:absolute;
+	right:10px;
+	width:auto;
+	top:0px;
+	color:rgb(127,179,176);
+}
+.dg.main li.folder.instance .overwritetrigger, .dg.main li.folder.bitmask .overwritetrigger {
+	top:6px;
+	z-index:1;
+}
+.dg.main li.folder {
+	position:relative;
+}
+.dg.main .overwritetrigger {
+	cursor:pointer;
+}
+.dg.main .overwritetrigger:hover {
+	color:red !important;
+}
+
+.dg.main.disabled .c {
+	pointer-events:none;
+	opacity:.4;
+}
+
+
+.dg.main.disabled .folder.instance ul li.title {
+	pointer-events:none;
+	
+}
+
+
+.dg.main.disabled .folder.bitmask ul li {
+	pointer-events:none;
+
+}
+
+ .dg.main.disabled input {
+	background-color:black !important;
+}
+
+
+
+ .dg input[readonly=readonly] {
+	color:yellow !important;
+	background-color:black !important;
+}
+
+#btn_addToPal {
+	position:absolute;
+	bottom:-25px;
+	left:0;
+}
+#btn_removeFromPal {
+	position:absolute;
+	bottom:-2px;
+	left:-25px;
+}
