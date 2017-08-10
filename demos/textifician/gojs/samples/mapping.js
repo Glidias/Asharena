@@ -1336,7 +1336,7 @@
 
 		
 
-		var goParams = [go.Node, go.Panel.Spot,
+		var goParams = [go.Node, go.Panel.Spot, { selectionObjectName:"MyContents" },
 		{ locationSpot: go.Spot.Center },
 		new go.Binding("location", "loc").makeTwoWay(), new go.Binding("category", "", function(v) {  return v._node ? v._node.val.def.gameplayCategory  ? v._node.val.def.gameplayCategory :  getCategoryStringFromType(v._node.val.defOverwrites && v._node.val.defOverwrites.type!=null ? v._node.val.defOverwrites.type : v._node.val.def.type) : v.category; }  ) ];
 		
@@ -1354,7 +1354,7 @@
 		}
 
 
-		var goParams2 = [go.Panel, panelLayout];
+		var goParams2 = [go.Panel, panelLayout, { name:"MyContents" } ];
 
 	
 		if (panelLayout == go.Panel.Spot)  {
@@ -2016,7 +2016,7 @@
 	  { locid:"Path", isProto:true, text:"Path",  category:"path",  size:GO_SIZES[1] },
 	  { locid:"Region", isProto:true,  text:"Region",  category:"region", size:GO_SIZES[2] },
 	{ locid:"RegionPlay", isProto:true,  text:"RegionPlay",  category:"regionPlay", size:GO_SIZES[2] },
-	  { locid:"CharPlay", isProto:true,  text:"Char",  category:"char", size:GO_SIZES[3] },
+	  { locid:"CharPlay", isProto:true,  text:"CharPlay",  category:"char", size:GO_SIZES[3] },
 	  { locid:"", zoneid:false, isProto:true,  text:"Zone",  pictureOpacity:DEFAULT_PICTURE_OPACITY, pictureSrc:"http://ingridwu.dmmdmcfatter.com/wp-content/uploads/2015/01/placeholder.png", category:"zone", size:new go.Size(POINT_SIZE,POINT_SIZE) }
 	]);
 	
