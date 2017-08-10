@@ -1286,7 +1286,7 @@
 			
 			new go.Binding("desiredSize", "", function(v) { return (v._node ? getScaledUniformSize(v._node.val.defOverwrites && v._node.val.defOverwrites.size ? v._node.val.defOverwrites.size : v._node.val.def.size, INFLUENCE_SIZE_SCALE) : v.size*INFLUENCE_SIZE_SCALE); } )
 			,
-			new go.Binding("visible", "", function(v) { return false } )
+			new go.Binding("visible", "", function(v) { return false; } )
 			,
 			new go.Binding("fromLinkable", "", function(data) {
 				return myDiagram.model.modelData.linkable;
@@ -1336,7 +1336,7 @@
 
 		
 
-		var goParams = [go.Node, go.Panel.Spot,
+		var goParams = [go.Node, go.Panel.Spot, { selectionObjectName:"MyContent" },
 		{ locationSpot: go.Spot.Center },
 		new go.Binding("location", "loc").makeTwoWay(), new go.Binding("category", "", function(v) {  return v._node ? v._node.val.def.gameplayCategory  ? v._node.val.def.gameplayCategory :  getCategoryStringFromType(v._node.val.defOverwrites && v._node.val.defOverwrites.type!=null ? v._node.val.defOverwrites.type : v._node.val.def.type) : v.category; }  ) ];
 		
@@ -1354,7 +1354,7 @@
 		}
 
 
-		var goParams2 = [go.Panel, panelLayout];
+		var goParams2 = [go.Panel, panelLayout, { name:"MyContent" } ];
 
 	
 		if (panelLayout == go.Panel.Spot)  {
