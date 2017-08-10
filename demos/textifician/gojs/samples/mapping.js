@@ -300,6 +300,13 @@
 			//var newModel = new go.GraphLinksModel(goData.nodes, goData.links);
 			myDiagram.model.nodeDataArray = goData.nodes;
 			myDiagram.model.linkDataArray = goData.links;
+
+			var arr = myDiagram.model.nodeDataArray;
+			var i = arr.length;
+			while(--i > -1) {
+				Object.defineProperty(arr[i],"text",textProxy);
+				//e.model.updateTargetBindings(o, "text");
+			}
 			this.copyToClipboard = "";
 			guiMainMenu.getControllerByName("copyToClipboard").updateDisplay();
 			alert("New map loaded successfully.");
@@ -1361,7 +1368,6 @@
 			new go.Binding("desiredSize", "", function(v) { return v._node ? getUniformSize(v._node.val.defOverwrites && v._node.val.defOverwrites.size ?v._node.val.defOverwrites.size : v._node.val.def.size) : v.size; } )
 			,
 			new go.Binding("fromLinkable", "", function(v) {
-				console.log((v._node && v._node.val.def.gameplayCategory) + ", "+myDiagram.model.modelData.linkable);
 				return myDiagram.model.modelData.linkable && (vuePanel.viewMode == VIEW_MODE_EDIT  || (v._node && v._node.val.def.gameplayCategory!=null));
 			}),
 			new go.Binding("toLinkable", "", function(v) {
@@ -1380,7 +1386,7 @@
 
 		var goParams = [go.Node, go.Panel.Spot, { selectionObjectName:"MyContent" },
 		{ locationSpot: go.Spot.Center },
-		new go.Binding("location", "loc").makeTwoWay(), new go.Binding("category", "", function(v) {  return v._node ? v._node.val.def.gameplayCategory  ? v._node.val.def.gameplayCategory :  getCategoryStringFromType(v._node.val.defOverwrites && v._node.val.defOverwrites.type!=null ? v._node.val.defOverwrites.type : v._node.val.def.type) : v.category; }  ) ];
+		new go.Binding("location", "loc").makeTwoWay(), new go.Binding("category", "", function(v) {  return v._node ? v._node.val.def.gameplayCategory!=null  ? v._node.val.def.gameplayCategory :  getCategoryStringFromType(v._node.val.defOverwrites && v._node.val.defOverwrites.type!=null ? v._node.val.defOverwrites.type : v._node.val.def.type) : v.category; }  ) ];
 		
 		
 
@@ -1535,7 +1541,7 @@
 		  
 	var textProxy = {
 	   get : function() {
-			return ((vuePanel.viewFlags & VIEWFLAG_VIS)!=0)  ? this._node ? extractVisNotation(this._node.val) : "null node" :  
+			return ((vuePanel.viewFlags & VIEWFLAG_VIS)!=0) && this._node && this._node.val.def.gameplayCategory==null  ? this._node ? extractVisNotation(this._node.val) : "null node" :  
 			this._node && this._node.val.defOverwrites != null && this._node.val.defOverwrites.label  ? this._node.val.defOverwrites.label : (this._node ? this._node.val.def.label : "null node");
 	   },
 	   set : function(val) {
