@@ -1235,8 +1235,8 @@
 	// define several shared Brushes
 	var fill1 = "rgb(243,134,48)"
 	var brush1 = "rgb(203,84,08)";
-
-	
+	var fill1fade = "rgba(243,134,48,0.5)"
+	var brush1fade = "rgba(203,84,08,0.35)";
 	
 
 	var fill2 = "rgba(167,219,216, .65)"
@@ -1438,12 +1438,12 @@
 	myDiagram.nodeTemplateMap.add("zone",getNodeTemplate("Circle",fill1,brush1, POINT_SIZE, go.Panel.Spot, "Background", {copyable:false}, ""));
 
 	var NODE_TEMPLATE_VIS = new go.Map();
-	NODE_TEMPLATE_VIS.add("point", getNodeTemplate("Square",fill1,brush1, POINT_PLAY_SIZE, null, "Points", {movable:false} ));
-	NODE_TEMPLATE_VIS.add("path", getNodeTemplate("Square",fill1,brush1, POINT_PLAY_SIZE, null, "Points", {movable:false}));
-	NODE_TEMPLATE_VIS.add("region", getNodeTemplate("Square",fill1,brush1, POINT_PLAY_SIZE, null, "Points", {movable:false}));
-	NODE_TEMPLATE_VIS.add("char", getNodeTemplate("Circle",fill4,brush4, MAX_SHAPE_SIZE, null, "Characters"));
+	NODE_TEMPLATE_VIS.add("point", getNodeTemplate("Square",fill1fade,brush1fade, POINT_PLAY_SIZE, null, "Points", {movable:false} ));
+	NODE_TEMPLATE_VIS.add("path", getNodeTemplate("Square",fill1fade,brush1fade, POINT_PLAY_SIZE, null, "Points", {movable:false}));
+	NODE_TEMPLATE_VIS.add("region", getNodeTemplate("Square",fill1fade,brush1fade, POINT_PLAY_SIZE, null, "Points", {movable:false}));
+	NODE_TEMPLATE_VIS.add("char", getNodeTemplate("Circle",fill4, brush4, MAX_SHAPE_SIZE, null, "Characters"));
 	NODE_TEMPLATE_VIS.add("regionPlay", getNodeTemplate("Circle",fillPlay,brushPlay, MAX_SHAPE_SIZE,  go.Panel.Spot, "RegionsPlay"));
-	NODE_TEMPLATE_VIS.add("zone",getNodeTemplate("Circle",fill1,brush1, POINT_SIZE, go.Panel.Spot, "Background", {movable:false, copyable:false}, ""));
+	NODE_TEMPLATE_VIS.add("zone",getNodeTemplate("Circle",fill1fade,brush1fade, POINT_SIZE, go.Panel.Spot, "Background", {movable:false, copyable:false}, ""));
 	  
 
 	  function scaleLink(link, newscale) {
