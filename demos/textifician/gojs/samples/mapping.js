@@ -16,8 +16,19 @@
 	var TEXTLABEL_BASEWIDTH = 80;
 	var MAX_SHAPE_SIZE = 512;
 	var POINT_SIZE = 5;
+	var POINT_PLAY_SIZE = window["POINT_PLAY_SIZE"] != null ? window["POINT_PLAY_SIZE"] : 3;  
 	var CHAR_SIZE = window["MAP_CHARACTER_SIZE"] != null ? window["MAP_CHARACTER_SIZE"] : 10;
 	var INFLUENCE_SIZE_SCALE = window["INFLUENCE_SIZE_SCALE"] != null ? window["INFLUENCE_SIZE_SCALE"] : 2.5*2; 
+
+	var VIEW_MODE_EDIT = 1;
+	var VIEW_MODE_PLAY = 2;
+
+	var VIEWFLAG_VIS = 1;
+	var VIEWFLAG_FULL_SIZE = 2;
+	var VIEWFLAG_ENFORCE_ALL_LABELS = 4;
+	var VIEWFLAG_SHOW_ARCS = 8;
+
+	var vuePanel;
 
 	function onUIDragStart() {
 		myDiagramDivs.css("pointer-events", "none");
@@ -165,6 +176,13 @@
 			isProto:false,
 			multiSelectedLocations:false,
 			selectedArc: null,
+			viewOptions: {
+				viewMode:VIEW_MODE_EDIT,
+				visLabels:false,
+				fullSizes:false,
+				enforceAllLabels:false,
+				showArcs:false
+			},
 			goSelectionCount: true,
 			ignoreAutoSync:false,
 			selectedArcOptions: {
@@ -757,7 +775,7 @@
 	var _inspectedGoNodeData = null;
 	var _selectedGoNodeData = null;
 	var _selectedGoArcData = null;
-	var leafBindingHash = { size:"desiredSize", label:"text", type:"category" };
+	var leafBindingHash = { size:"desiredSize", description:"text", label:"text", type:"category" };
 	
 	
 	Vue.directive('arc', function(newValue, oldValue) {
@@ -1018,6 +1036,26 @@
 		}, 0);
 	}
 	
+	function isGameplayArc(arc, goArc) {
+		var tryThis = arc.node.val.def.gameplayCategory; 
+		if (tryThis) return true;
+		
+		var mutualNode = myDiagram.model.findNodeDataForKey(goArc.from);
+		//console.log("AFAWAW");
+		//console.log( );
+		if (mutualNode) mutualNode =mutualNode._node;
+		/*
+		if (mutualNode) {
+		
+			arc = mutualNode.getArc(arc.node);
+		//	console.log("DONE:?"+arc);
+		}
+		*/
+		//if (mutualNode) {
+		//	console.log(mutualNode.val);
+		//}
+		return mutualNode ? mutualNode.val.def.gameplayCategory != null: false;
+	}
 
 	var lastInspectedLocDef = null;
 	function inspectGoNode(goNode) {
@@ -1029,6 +1067,11 @@
 		//guiOverwriter.domElement.removeAttribute("hidden");
 		
 		var node = goNode._node;
+		var lastNodeData = null;
+		if (_inspectedGoNodeData && _inspectedGoNodeData !== goNode) {
+			lastNodeData = _inspectedGoNodeData;
+		}
+
 		_inspectedGoNodeData = goNode;
 		
 		var nodeVal = node.val;
@@ -1067,6 +1110,7 @@
 		vueModel.selected = newVueModelData;
 
 		// nodeVal.state
+		
 	
 	}
 
@@ -1152,7 +1196,7 @@
 			// the Shape.fill color depends on whether Link.isHighlighted is true
 			new go.Binding("fill", "isHighlighted", function(h) { return h ? "red" : "black"; }).ofObject()
 		),
-		new go.Binding("visible", "", function(h) { return true } ),  // TODO with vue 
+		new go.Binding("visible", "", function(h) {  return (h._arc && isGameplayArc(h._arc, h)) || (vuePanel.viewFlags & VIEWFLAG_SHOW_ARCS)!=0; } ),  // TODO with vue 
 		/*
 		GO(go.TextBlock,
 			{ 
@@ -1249,11 +1293,13 @@
 		///*
 		//if (panelLayout === go.Panel.Spot) {
 			textBlockParams.push(
-				   new go.Binding("fromLinkable", "", function(data) {
-						return myDiagram.model.modelData.linkable;
+				   new go.Binding("fromLinkable", "", function(v) {
+					  // alert(v._node.val.def.gameplayCategory);
+						return myDiagram.model.modelData.linkable  && (vuePanel.viewMode == VIEW_MODE_EDIT  || (v._node && v._node.val.def.gameplayCategory!=null));
 				  }),
-					new go.Binding("toLinkable", "", function(data) {
+					new go.Binding("toLinkable", "", function(v) {
 						return myDiagram.model.modelData.linkable;
+						// && (vuePanel.viewMode == VIEW_MODE_EDIT  || (v._node && v._node.val.def.gameplayCategory!=null))
 				  })
 		  );
 		//}
@@ -1276,7 +1322,7 @@
 		  	,pickable:false,
 			fromLinkableSelfNode: false, fromLinkableDuplicates: false,
 			toLinkableSelfNode: false, toLinkableDuplicates: false
-			
+			,fromLinkable:false, toLinkable:false,
 			},
 			
 			// new go.Binding("figure", "figure"),
@@ -1286,14 +1332,8 @@
 			
 			new go.Binding("desiredSize", "", function(v) { return (v._node ? getScaledUniformSize(v._node.val.defOverwrites && v._node.val.defOverwrites.size ? v._node.val.defOverwrites.size : v._node.val.def.size, INFLUENCE_SIZE_SCALE) : v.size*INFLUENCE_SIZE_SCALE); } )
 			,
-			new go.Binding("visible", "", function(v) { return false; } )
-			,
-			new go.Binding("fromLinkable", "", function(data) {
-				return myDiagram.model.modelData.linkable;
-			}),
-			new go.Binding("toLinkable", "", function(data) {
-				return myDiagram.model.modelData.linkable;
-			})
+			new go.Binding("visible", "", function(v) { var foundNode = myDiagram.findNodeForKey(v.key); return (foundNode ? foundNode.isSelected : false)  ||  (vuePanel.viewFlags & VIEWFLAG_FULL_SIZE)!=0; } )
+			
 		));
 
 
@@ -1320,13 +1360,15 @@
 			
 			new go.Binding("desiredSize", "", function(v) { return v._node ? getUniformSize(v._node.val.defOverwrites && v._node.val.defOverwrites.size ?v._node.val.defOverwrites.size : v._node.val.def.size) : v.size; } )
 			,
-				new go.Binding("fromLinkable", "", function(data) {
-					return myDiagram.model.modelData.linkable;
-				}),
-				new go.Binding("toLinkable", "", function(data) {
-					return myDiagram.model.modelData.linkable;
-				})
-			,
+			new go.Binding("fromLinkable", "", function(v) {
+				console.log((v._node && v._node.val.def.gameplayCategory) + ", "+myDiagram.model.modelData.linkable);
+				return myDiagram.model.modelData.linkable && (vuePanel.viewMode == VIEW_MODE_EDIT  || (v._node && v._node.val.def.gameplayCategory!=null));
+			}),
+			new go.Binding("toLinkable", "", function(v) {
+				return myDiagram.model.modelData.linkable;
+				//  && (vuePanel.viewMode == VIEW_MODE_EDIT  || (v._node && v._node.val.def.gameplayCategory!=null))
+			})
+			
 			);
 			  
 		if (imgSrc != null) {
@@ -1390,9 +1432,9 @@
 	myDiagram.nodeTemplateMap.add("zone",getNodeTemplate("Circle",fill1,brush1, POINT_SIZE, go.Panel.Spot, "Background", {copyable:false}, ""));
 
 	var NODE_TEMPLATE_VIS = new go.Map();
-	NODE_TEMPLATE_VIS.add("point", getNodeTemplate("Square",fill1,brush1, POINT_SIZE, null, "Regions", {movable:false} ));
-	NODE_TEMPLATE_VIS.add("path", getNodeTemplate("Square",fill1,brush1, POINT_SIZE, null, "Regions", {movable:false}));
-	NODE_TEMPLATE_VIS.add("region", getNodeTemplate("Square",fill1,brush1, POINT_SIZE, null, "Regions", {movable:false}));
+	NODE_TEMPLATE_VIS.add("point", getNodeTemplate("Square",fill1,brush1, POINT_PLAY_SIZE, null, "Points", {movable:false} ));
+	NODE_TEMPLATE_VIS.add("path", getNodeTemplate("Square",fill1,brush1, POINT_PLAY_SIZE, null, "Points", {movable:false}));
+	NODE_TEMPLATE_VIS.add("region", getNodeTemplate("Square",fill1,brush1, POINT_PLAY_SIZE, null, "Points", {movable:false}));
 	NODE_TEMPLATE_VIS.add("char", getNodeTemplate("Circle",fill4,brush4, MAX_SHAPE_SIZE, null, "Characters"));
 	NODE_TEMPLATE_VIS.add("regionPlay", getNodeTemplate("Circle",fillPlay,brushPlay, MAX_SHAPE_SIZE,  go.Panel.Spot, "RegionsPlay"));
 	NODE_TEMPLATE_VIS.add("zone",getNodeTemplate("Circle",fill1,brush1, POINT_SIZE, go.Panel.Spot, "Background", {movable:false, copyable:false}, ""));
@@ -1480,17 +1522,20 @@
 
 	function extractVisNotation(nodeVal) {
 		var desc = nodeVal.defOverwrites != null && nodeVal.defOverwrites.description  ? nodeVal.defOverwrites.description : nodeVal.def.description;
+		var label = nodeVal.defOverwrites != null && nodeVal.defOverwrites.label  ? nodeVal.defOverwrites.label : nodeVal.def.label;
+		var visDesc = "";
 		if (desc.charAt(0)=== "~") {
-			return desc.split("\n")[0].slice(1);
+			 visDesc = desc.split("\n")[0].slice(1);
 		}
 		else {
-			return "0";
+			visDesc =  "0";
 		}
+		return (vuePanel.viewFlags & VIEWFLAG_ENFORCE_ALL_LABELS) !=0 ? label + " ~"+visDesc : visDesc;
 	}
 		  
 	var textProxy = {
 	   get : function() {
-			return myDiagram.nodeTemplateMap !== NODE_TEMPLATE_DEFAULT ? this._node ? extractVisNotation(this._node.val) : "null node" :  
+			return ((vuePanel.viewFlags & VIEWFLAG_VIS)!=0)  ? this._node ? extractVisNotation(this._node.val) : "null node" :  
 			this._node && this._node.val.defOverwrites != null && this._node.val.defOverwrites.label  ? this._node.val.defOverwrites.label : (this._node ? this._node.val.def.label : "null node");
 	   },
 	   set : function(val) {
@@ -1776,7 +1821,7 @@
 						if (n != null) {
 							n.val.x = c.newValue.x;
 							n.val.y = c.newValue.y;
-							if (_selectedGoNodeData === c.object) {  // sync location with vue gui
+							if (_selectedGoNodeData === c.object && vueModel.selected) {  // sync location with vue gui
 								vueModel.selected.x = c.newValue.x;
 								vueModel.selected.y = c.newValue.y;
 							}
@@ -2016,7 +2061,7 @@
 	  { locid:"Path", isProto:true, text:"Path",  category:"path",  size:GO_SIZES[1] },
 	  { locid:"Region", isProto:true,  text:"Region",  category:"region", size:GO_SIZES[2] },
 	{ locid:"RegionPlay", isProto:true,  text:"RegionPlay",  category:"regionPlay", size:GO_SIZES[2] },
-	  { locid:"CharPlay", isProto:true,  text:"Char",  category:"char", size:GO_SIZES[3] },
+	  { locid:"CharPlay", isProto:true,  text:"CharPlay",  category:"char", size:GO_SIZES[3] },
 	  { locid:"", zoneid:false, isProto:true,  text:"Zone",  pictureOpacity:DEFAULT_PICTURE_OPACITY, pictureSrc:"http://ingridwu.dmmdmcfatter.com/wp-content/uploads/2015/01/placeholder.png", category:"zone", size:new go.Size(POINT_SIZE,POINT_SIZE) }
 	]);
 	
@@ -2071,10 +2116,29 @@
 		return arr.length > 1 ? arr : false;
 	}
 	
+	var lastDiagramSelection;
 	// handles either node or arc selection (<- bleh this method is badly  contructed)...
 	myDiagram.addDiagramListener("ChangedSelection", function(e) {
 		var selection = myDiagram.selection.first();
-		
+		var iter;
+		if (lastDiagramSelection) {
+			iter = lastDiagramSelection.iterator;
+			while(iter.next()) {
+				if (iter.value instanceof go.Node) {
+					// myDiagram.model.updateTargetBindings(iter.value.data, "visible");
+					if (!myDiagram.selection.contains(iter.value)) myDiagram.model.updateTargetBindings(iter.value.data, "visible");
+				}
+			}
+		}
+		iter = myDiagram.selection.iterator;
+		while(iter.next()) {
+			if (iter.value instanceof go.Node) {
+				// myDiagram.model.updateTargetBindings(iter.value.data, "visible");
+				myDiagram.model.updateTargetBindings(iter.value.data, "visible");
+			}
+		}
+		lastDiagramSelection = myDiagram.selection.copy();
+
 		myDiagram.clearHighlighteds();
 		vueModel.goSelectionCount = myDiagram.selection.count;
 		
@@ -2117,16 +2181,21 @@
 		
 		  if (selection === null || !(selection instanceof go.Node) || !selection.data || !selection.data._node ) {  // hide UIs
 			_inspectedNodeVal = null;
-			if (selection && selection.data != null) _selectedGoNodeData = selection.data
+			if (selection && selection.data != null) _selectedGoNodeData = selection.data;
 			vueModel.gotLocation = false;
 			vueModel.selected = null; 
 			 
 			return;
 		}
+
+
+
+		
 		
 		
 		
 		_selectedGoNodeData = selection.data;
+	
 		inspectGoNode(selection.data);
 
 	
@@ -2186,9 +2255,10 @@
 		  inspectorBtnContainer.append('<div class="formelem"><label>#</label><select style="width:70%" v-on:change="loadSelectedLocationDef" v-model="selectedLocationDefId"><option v-for="id in locationDefIds" value="{{id}}">{{id}}</option></select><button v-show="gotLocation" v-on:click="loadSelectedLocationDef">Load</button><button v-show="gotLocation && selectedLocationDefId!=null" v-on:click="applySelectedLocationDef">Apply{{ multiSelectedLocations ? " to all" : ""}}</button><button v-show="!gotLocation" v-on:click="editSelectedLocationDef">Edit</button></div><hr/>'); 
 		
 		 inspectorBtnContainer.append(prefixBtnContainer = $('<div v-show="gotLocation"></div>'));
-		
-		
-		 prefixBtnContainer.append('<div class="formelem"><label style="">Query</label><select style="min-width:60%"></select><button>Go</button></div>'); 
+		 var inputOptions ='<label><input type="checkbox" v-model="viewOptions.visLabels"></input>Visibility notation</label><label><input type="checkbox" v-model="viewOptions.fullSizes"></input>All Sizes</label><br/><label><input type="checkbox" v-model="viewOptions.enforceAllLabels" :disabled="viewOptions.viewMode ==1"></input>Enforce All Labels</label><label><input type="checkbox" v-model="viewOptions.showArcs" :disabled="viewOptions.viewMode ==1"></input>Show Arcs</label>';
+		 inspectorBtnContainer.append($('<div v-show="!gotLocation"><label>Mode:</label><select number v-model="viewOptions.viewMode"><option value="1">Edit Mode</option><option value="2">Play Mode</option></select><label>Options:</label>'+inputOptions+'</div>'));
+
+		 prefixBtnContainer.append('<div class="formelem"><label style="">Query</label><select number style="min-width:60%"></select><button>Go</button></div>'); 
 		 
 		
 		  vuePalette = new Vue({ 
@@ -2263,9 +2333,36 @@
 			}
 		 });
 		 
-		var vuePanel = new Vue({
+		 vuePanel = new Vue({
 			el:"#infoDraggable",
 			data: vueModelData,
+			computed: {
+				viewFlags: function() {
+					var viewMode = this.viewOptions.viewMode;
+					var flags = 0;
+					console.log("UPDATING");
+					flags |= this.viewOptions.visLabels ? VIEWFLAG_VIS : 0;
+					flags |= this.viewOptions.fullSizes ? VIEWFLAG_FULL_SIZE : 0;
+					flags |= this.viewOptions.enforceAllLabels && viewMode != VIEW_MODE_EDIT   ? VIEWFLAG_ENFORCE_ALL_LABELS : 0;
+					flags |= this.viewOptions.showArcs  || viewMode === VIEW_MODE_EDIT ? VIEWFLAG_SHOW_ARCS : 0;
+
+					return flags;
+				},
+				viewMode: function(newValue, oldValue) {
+					return this.viewOptions.viewMode;
+				}
+			},
+			watch: {
+				viewMode: function(newValue, oldValue) {
+					myDiagram.nodeTemplateMap = newValue == VIEW_MODE_PLAY ? NODE_TEMPLATE_VIS : NODE_TEMPLATE_DEFAULT;
+				},
+				viewFlags: function(newValue, oldValue) {
+					console.log("UPdating target bindings:"+newValue);
+					myDiagram.updateAllTargetBindings("visible");
+					myDiagram.updateAllTargetBindings("text");
+					//myDiagram.updateAllTargetBindings();
+				}
+			},
 			methods: {
 				addTextPrefix: function(prefix) {
 					var inputText = jQuery("#infoDraggable > .inspector >  .inspector-section input[type='text']");
