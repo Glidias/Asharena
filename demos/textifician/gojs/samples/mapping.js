@@ -114,7 +114,7 @@
 	var DEFAULT_PICTURE_OPACITY = .75;
 	var DEFAULT_LOADED_ARC_OPACITY = 0.8;
 	var DEFAULT_ARC_OPACITY =  1; //0.3;
-	var NON_WALKABLE_ARC_OPACITY = 0.6;
+	var NON_WALKABLE_ARC_OPACITY = 0.7;
 
 	var world = new TextificianWorld();
 	world.setupDefaultNew();
@@ -1172,7 +1172,7 @@
 	 myDiagram.linkTemplate = GO(go.Link,
 	  { routing: go.Link.Normal, toShortLength: 4, selectable: true },
 		GO(go.Shape,
-			{ isPanelMain: true, stroke: "black", strokeWidth: 1 },
+			{ isPanelMain: true, stroke: "black", strokeWidth: 0.25 },
 			// the Shape.stroke color depends on whether Link.isHighlighted is true
 			new go.Binding("stroke", "isHighlighted", function(h) { return h ? "red" : "black"; })
 				.ofObject(),
