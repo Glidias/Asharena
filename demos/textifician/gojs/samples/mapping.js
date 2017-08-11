@@ -1,16 +1,4 @@
 (function() {
-	/* TODO:
-	Viewing mode flag: 
-
-	(implied,  all nodes cannot be moved, all links from loaded map uses 100% and all nodes from loaded maps are non-deletable,  char nodes are deletable with admin access)
-
-	- Visibility Labels (will replace Labels with Visibility notations)
-	- Show influence radiuses (prefably with influence radius expansion from dot)
-	_______
-	- Enforce All Labels ( will combine Labels + Visibility Notations, if any)
-	- Show arcs (will show/hide arcs created by loaded map..)
-	*/
-
 	var myDiagramDivs;
 	
 	var TEXTLABEL_BASEWIDTH = 80;
@@ -1195,7 +1183,7 @@
 
 			new go.Binding("opacity", "", function(h) { return  h._arc ?  ( h._arc.val && (h._arc.val.flags & (ArcPacket.FLAG_VISIBILITY_ONLY | ArcPacket.FLAG_TELEPORT ) )  ?   NON_WALKABLE_ARC_OPACITY :  (myDiagram.nodeTemplateMap !== NODE_TEMPLATE_DEFAULT && h._arc.isLoaded ?  DEFAULT_LOADED_ARC_OPACITY : DEFAULT_ARC_OPACITY ) )
 			: 1;	
-			})	
+			}),
 		),
 
 		GO(go.Shape,
@@ -1203,7 +1191,9 @@
 			// the Shape.fill color depends on whether Link.isHighlighted is true
 			new go.Binding("fill", "isHighlighted", function(h) { return h ? "red" : "black"; }).ofObject()
 		),
-		new go.Binding("visible", "", function(h) {  return (h._arc && isGameplayArc(h._arc, h)) || (vuePanel.viewFlags & VIEWFLAG_SHOW_ARCS)!=0; } ),  // TODO with vue 
+		new go.Binding("visible", "", function(h) {  return (h._arc && isGameplayArc(h._arc, h)) || (vuePanel.viewFlags & VIEWFLAG_SHOW_ARCS)!=0; } ), 
+		new go.Binding("copyable", "", function(h) { return vuePanel.viewMode == VIEW_MODE_EDIT || isGameplayArc(h._arc, h);  }),
+		new go.Binding("deletable", "", function(h) { return vuePanel.viewMode == VIEW_MODE_EDIT || isGameplayArc(h._arc, h); })
 		/*
 		GO(go.TextBlock,
 			{ 
@@ -1438,12 +1428,12 @@
 	myDiagram.nodeTemplateMap.add("zone",getNodeTemplate("Circle",fill1,brush1, POINT_SIZE, go.Panel.Spot, "Background", {copyable:false}, ""));
 
 	var NODE_TEMPLATE_VIS = new go.Map();
-	NODE_TEMPLATE_VIS.add("point", getNodeTemplate("Square",fill1fade,brush1fade, POINT_PLAY_SIZE, null, "Points", {movable:false} ));
-	NODE_TEMPLATE_VIS.add("path", getNodeTemplate("Square",fill1fade,brush1fade, POINT_PLAY_SIZE, null, "Points", {movable:false}));
-	NODE_TEMPLATE_VIS.add("region", getNodeTemplate("Square",fill1fade,brush1fade, POINT_PLAY_SIZE, null, "Points", {movable:false}));
+	NODE_TEMPLATE_VIS.add("point", getNodeTemplate("Square",fill1fade,brush1fade, POINT_PLAY_SIZE, null, "Points", {movable:false, copyable:false, deletable:false } ));
+	NODE_TEMPLATE_VIS.add("path", getNodeTemplate("Square",fill1fade,brush1fade, POINT_PLAY_SIZE, null, "Points", {movable:false, copyable:false, deletable:false}));
+	NODE_TEMPLATE_VIS.add("region", getNodeTemplate("Square",fill1fade,brush1fade, POINT_PLAY_SIZE, null, "Points", {movable:false, copyable:false, deletable:false}));
 	NODE_TEMPLATE_VIS.add("char", getNodeTemplate("Circle",fill4, brush4, MAX_SHAPE_SIZE, null, "Characters"));
 	NODE_TEMPLATE_VIS.add("regionPlay", getNodeTemplate("Circle",fillPlay,brushPlay, MAX_SHAPE_SIZE,  go.Panel.Spot, "RegionsPlay"));
-	NODE_TEMPLATE_VIS.add("zone",getNodeTemplate("Circle",fill1fade,brush1fade, POINT_SIZE, go.Panel.Spot, "Background", {movable:false, copyable:false}, ""));
+	NODE_TEMPLATE_VIS.add("zone",getNodeTemplate("Circle",fill1fade,brush1fade, POINT_SIZE, go.Panel.Spot, "Background", {movable:false, copyable:false, deletable:false}, ""));
 	  
 
 	  function scaleLink(link, newscale) {
@@ -2262,7 +2252,7 @@
 		
 		 inspectorBtnContainer.append(prefixBtnContainer = $('<div v-show="gotLocation"></div>'));
 		 var inputOptions ='<label><input type="checkbox" v-model="viewOptions.visLabels"></input>Visibility notation</label><label><input type="checkbox" v-model="viewOptions.fullSizes"></input>All Sizes</label><br/><label><input type="checkbox" v-model="viewOptions.enforceAllLabels" :disabled="viewOptions.viewMode ==1"></input>Enforce All Labels</label><label><input type="checkbox" v-model="viewOptions.showArcs" :disabled="viewOptions.viewMode ==1"></input>Show Arcs</label>';
-		 inspectorBtnContainer.append($('<div v-show="!gotLocation"><label>Mode:</label><select number v-model="viewOptions.viewMode"><option value="1">Edit Mode</option><option value="2">Play Mode</option></select><label>Options:</label>'+inputOptions+'</div>'));
+		 inspectorBtnContainer.append($('<hr/><div id="view-options"><label>Viewing Mode:</label><select number v-model="viewOptions.viewMode"><option value="1">Edit Mode</option><option value="2">Play Mode</option></select><label>Options:</label>'+inputOptions+'</div>'));
 
 		 prefixBtnContainer.append('<div class="formelem"><label style="">Query</label><select number style="min-width:60%"></select><button>Go</button></div>'); 
 		 
@@ -2363,8 +2353,10 @@
 					myDiagram.nodeTemplateMap = newValue == VIEW_MODE_PLAY ? NODE_TEMPLATE_VIS : NODE_TEMPLATE_DEFAULT;
 				},
 				viewFlags: function(newValue, oldValue) {
-					console.log("UPdating target bindings:"+newValue);
+					
 					myDiagram.updateAllTargetBindings("visible");
+					myDiagram.updateAllTargetBindings("copyable");
+					myDiagram.updateAllTargetBindings("pastable");
 					myDiagram.updateAllTargetBindings("text");
 					//myDiagram.updateAllTargetBindings();
 				}
