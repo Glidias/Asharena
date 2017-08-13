@@ -1146,7 +1146,9 @@
 	
 		// setup new location def
 		var jsonStr = TJSON.encode(nodeVal);  
+	
 		var newVueModelData = TJSON.parse(jsonStr);  // consider todo: should this be a plain JSON parse?
+		if (locDef.gameplayCategory) newVueModelData.def.gameplayCategory = locDef.gameplayCategory;
 		vueModel.selected = newVueModelData;
 		vueModel.selected.key = goNode.key;
 
@@ -1500,7 +1502,8 @@
 	  
 
 	if (initQueryParams.play != null && initQueryParams.play!="0") {
-		 myDiagram.nodeTemplateMap = NODE_TEMPLATE_VIS;
+		myDiagram.nodeTemplateMap = NODE_TEMPLATE_VIS;
+		$("#infoDraggableInstruct").css("display", "none");
 		
 	}
 
@@ -2449,7 +2452,7 @@
 		  prefixBtnContainer.after('<div style="clear:both"></div><hr/>');
 		  
 		 inspectorBtnContainer =  $("#infoDraggable");
-		  inspectorBtnContainer.append('<div class="formelem"><label>#</label><select style="width:70%" v-on:change="loadSelectedLocationDef" v-model="selectedLocationDefId"><option v-for="id in locationDefIds" value="{{id}}">{{id}}</option></select><button v-show="gotLocation" v-on:click="loadSelectedLocationDef">Load</button><button v-show="gotLocation && selectedLocationDefId!=null" v-on:click="applySelectedLocationDef">Apply{{ multiSelectedLocations ? " to all" : ""}}</button><button v-show="!gotLocation" v-on:click="editSelectedLocationDef">Edit</button></div><hr/>'); 
+		  inspectorBtnContainer.append('<div class="formelem" v-show="viewMode == 1"><label>#</label><select style="width:70%" v-on:change="loadSelectedLocationDef" v-model="selectedLocationDefId"><option v-for="id in locationDefIds" value="{{id}}">{{id}}</option></select><button v-show="gotLocation" v-on:click="loadSelectedLocationDef">Load</button><button v-show="gotLocation && selectedLocationDefId!=null" v-on:click="applySelectedLocationDef">Apply{{ multiSelectedLocations ? " to all" : ""}}</button><button v-show="!gotLocation" v-on:click="editSelectedLocationDef">Edit</button></div><hr/>'); 
 		
 		 inspectorBtnContainer.append(prefixBtnContainer = $('<div v-show="gotLocation"></div>'));
 		 var inputOptions ='<label><input type="checkbox" v-model="viewOptions.visLabels"></input>Visibility notation</label><label><input type="checkbox" v-model="viewOptions.fullSizes"></input>All Sizes</label><br/><label><input type="checkbox" v-model="viewOptions.enforceAllLabels" :disabled="viewOptions.viewMode ==1"></input>Enforce All Labels</label><label><input type="checkbox" v-model="viewOptions.showArcs" :disabled="viewOptions.viewMode ==1"></input>Show Arcs</label>';
@@ -2484,6 +2487,9 @@
 							return;
 						}
 					}
+
+
+
 					var type = this.$get("vueData.selected.defOverwrites.type");
 					if (type == null) type = this.vueData.selected.def.type;
 					var catType;
@@ -2496,6 +2502,19 @@
 						return;
 					}
 					
+					var gameplayCategory = this.$get("vueData.selected.def.gameplayCategory");
+				
+					if ( vuePanel.viewMode === VIEW_MODE_PLAY && !gameplayCategory) {
+						alert("Cannot add to pallette editing token in play mode")
+						return;
+					}
+					
+					
+					if (vuePanel.viewMode === VIEW_MODE_EDIT && !gameplayCategory ) {
+				
+						alert("Sorry, this feature is currently disabled at the moment for editing tokens. Use Copy+Paste instead.")
+						return;
+					}
 					
 					var selFirst = myDiagram.selection.first();
 					
@@ -2552,6 +2571,12 @@
 			watch: {
 				viewMode: function(newValue, oldValue) {
 					myDiagram.nodeTemplateMap = newValue == VIEW_MODE_PLAY ? NODE_TEMPLATE_VIS : NODE_TEMPLATE_DEFAULT;
+					if (newValue == VIEW_MODE_PLAY) {
+						$("#infoDraggableInstruct").css("display", "none");
+					}
+					else {
+						$("#infoDraggableInstruct").css("display", "block");
+					}
 				},
 				viewFlags: function(newValue, oldValue) {
 					
@@ -2599,8 +2624,9 @@
 						else {   // regular case edit
 							var jsonStr = TJSON.encode(locDef);
 							var vueModelSelectedDef = TJSON.parse(jsonStr);
+							if (locDef.gameplayCategory) vueModelSelectedDef.gameplayCategory = locDef.gameplayCategory;
 							_inspectedNodeVal = { def:locDef };
-						
+							
 							this.selected =  { def:vueModelSelectedDef };
 						}
 	
