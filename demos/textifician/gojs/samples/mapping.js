@@ -22,7 +22,7 @@
 	}
 	var initQueryParams = getUrlVars();
 
-	var initedMapDomain = "iedaw6";
+	var initedMapDomain = initQueryParams.domain ? initQueryParams.domain : "iedaw6";
 	var initedWithDashboard = initQueryParams.dashboard && initQueryParams.dashboard != '0' ? true : false;
 
 	var VIEW_MODE_EDIT = 1;
