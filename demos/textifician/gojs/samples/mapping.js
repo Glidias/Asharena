@@ -1148,7 +1148,7 @@
 		var jsonStr = TJSON.encode(nodeVal);  
 	
 		var newVueModelData = TJSON.parse(jsonStr);  // consider todo: should this be a plain JSON parse?
-		if (locDef.gameplayCategory) newVueModelData.def.gameplayCategory = locDef.gameplayCategory;
+		if (locDef && locDef.gameplayCategory) newVueModelData.def.gameplayCategory = locDef.gameplayCategory;
 		vueModel.selected = newVueModelData;
 		vueModel.selected.key = goNode.key;
 
@@ -2624,7 +2624,7 @@
 						else {   // regular case edit
 							var jsonStr = TJSON.encode(locDef);
 							var vueModelSelectedDef = TJSON.parse(jsonStr);
-							if (locDef.gameplayCategory) vueModelSelectedDef.gameplayCategory = locDef.gameplayCategory;
+							if (locDef && locDef.gameplayCategory) vueModelSelectedDef.gameplayCategory = locDef.gameplayCategory;
 							_inspectedNodeVal = { def:locDef };
 							
 							this.selected =  { def:vueModelSelectedDef };
