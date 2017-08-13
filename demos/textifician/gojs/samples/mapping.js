@@ -6,7 +6,24 @@
 	var POINT_SIZE = 5;
 	var POINT_PLAY_SIZE = window["POINT_PLAY_SIZE"] != null ? window["POINT_PLAY_SIZE"] : 3;  
 	var CHAR_SIZE = window["MAP_CHARACTER_SIZE"] != null ? window["MAP_CHARACTER_SIZE"] : 10;
-	var INFLUENCE_SIZE_SCALE = window["INFLUENCE_SIZE_SCALE"] != null ? window["INFLUENCE_SIZE_SCALE"] : 2.5*2; 
+	var INFLUENCE_SIZE_SCALE = window["INFLUENCE_SIZE_SCALE"] != null ? window["INFLUENCE_SIZE_SCALE"] : 1; 
+
+	function getUrlVars()
+	{
+		var vars = [], hash;
+		var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+		for(var i = 0; i < hashes.length; i++)
+		{
+			hash = hashes[i].split('=');
+			vars.push(hash[0]);
+			vars[hash[0]] =decodeURIComponent( hash[1]);
+		}
+		return vars;
+	}
+	var initQueryParams = getUrlVars();
+
+	var initedMapDomain = "iedaw6";
+	var initedWithDashboard = initQueryParams.dashboard && initQueryParams.dashboard != '0' ? true : false;
 
 	var VIEW_MODE_EDIT = 1;
 	var VIEW_MODE_PLAY = 2;
@@ -26,13 +43,10 @@
 	}
 	
 	// TODO:
-	
-	// pin adornment
-	// do not allow selection of prototypes, hide locationdefinition guis for prototypes
-	
-	// location definition overwrites
-	// location definition list dropdown
-	
+	/*
+	- Unique keys for loaded items
+	- The map itself
+	*/
 	
 	function getCategoryStringFromType(newValue) {
 	
@@ -120,11 +134,14 @@
 	world.setupDefaultNew();
 	var CHAR_LOC_DEF = LocationDefinition.create(LocationDefinition.TYPE_REGION, "CharPlay", "CharPlay");
 	var REGIONPLAY_LOC_DEF = LocationDefinition.create(LocationDefinition.TYPE_REGION, "RegionPlay", "RegionPlay");
+	var POINTPLAY_LOC_DEF = LocationDefinition.create(LocationDefinition.TYPE_POINT, "PointPlay", "PointPlay");
 	REGIONPLAY_LOC_DEF.gameplayCategory = "regionPlay";
 	CHAR_LOC_DEF.gameplayCategory = "char";
+	POINTPLAY_LOC_DEF.gameplayCategory = "pointPlay";
   
 	world.addLocationDef( CHAR_LOC_DEF );
 	world.addLocationDef( REGIONPLAY_LOC_DEF );
+	world.addLocationDef( POINTPLAY_LOC_DEF );
 	var worldProtoLocIds = world.getDefaultLocationDefIdHash();
 
 	
@@ -155,7 +172,31 @@
 	gui.getControllerByName("size").__input.setAttribute("step", "any");
 	
 	
-	
+	function loadWorld(mapStream) {
+		world.loadWorld(mapStream);
+		world.addLocationDef( CHAR_LOC_DEF, true );
+		world.addLocationDef( REGIONPLAY_LOC_DEF, true );
+		world.addLocationDef( POINTPLAY_LOC_DEF, true);
+		vueModelData.locationDefIds = world.getLocationDefinitionIds(world.getDefaultLocationDefIdHash());
+		var goData = world.getGOGraphData(GO_SIZES, DEFAULT_PICTURE_OPACITY);
+		//var newModel = new go.GraphLinksModel(goData.nodes, goData.links);
+		myDiagram.model.nodeDataArray = goData.nodes;
+		myDiagram.model.linkDataArray = goData.links;
+
+		var arr = myDiagram.model.nodeDataArray;
+		var i = arr.length;
+		while(--i > -1) {
+			if (arr[i].zoneid != null)  {
+				Object.defineProperty(arr[i],"text",zoneTextProxy);
+				INFLUENCE_SIZE_SCALE = arr[i]._node.val.scale;
+			}
+			else Object.defineProperty(arr[i],"text",textProxy);
+			//e.model.updateTargetBindings(o, "text");
+		}
+		
+		
+	}
+
 	// Vuemodel for minimal selected LocationPacket containing LocationDefinition only
 	var vueModelData;
 	function setupNewVueModelData() {  // Default vueModel template
@@ -177,7 +218,7 @@
 				autoSyncMutual:false,
 				alwaysResetAutoSyncOnUnselect:false
 			},
-			selected: { x:0, y:0, z:0, def: $.extend(true, {}, gui._guiGlueParams) }, 
+			selected: { x:0, y:0, z:0, key:"", def: $.extend(true, {}, gui._guiGlueParams) }, 
 			locationDefIds:world.getLocationDefinitionIds(world.getDefaultLocationDefIdHash())	
 		});
 	}
@@ -228,6 +269,19 @@
 		myDiagram.model.updateTargetBindings(_selectedGoNodeData, "pictureOpacity");
 		pictureOpacityNumberObj.pictureOpacity = val;
 	});
+	guiZoner.add({influenceScale:1}, "influenceScale").onChange( function(val) {
+	
+		if (_selectedGoNodeData._node) {  // for this purpose, we store the value in zone data's scale.
+			_selectedGoNodeData._node.val.scale = val;
+			guiZoner.getControllerByName("scale").object.scale = val;
+	
+			guiZoner.getControllerByName("scale").updateDisplay();
+			INFLUENCE_SIZE_SCALE = val;
+		}
+		else {
+			alert("Zone exception no node found for selected!")
+		}
+	});
 
 	var pictureOpacityController = guiZoner.getControllerByName("pictureOpacity");
 	var pictureOpacityNumberObj = pictureOpacityController.object;
@@ -240,8 +294,9 @@
 	guiPacketer = setupGUIGeneric( guiGlueRender( DatUtil.setup(new LocationPacket()), null, {}, guiPacketer) );
 	guiPacketer.domElement.setAttribute("id", "guiPacketer");
 	$( guiPacketer.getFolderByName("state").domElement.firstChild ).children("li.title").html("Location state{{selected.state ? ':' : '?' }}");
-	$( guiPacketer.getFolderByName("position").domElement.firstChild ).children("li.title").html("position: {{ (selected && selected.x!== undefined ? '('+selected.x + ',' + selected.y + ',' + selected.z+')' : '') }}");
-	$( guiPacketer.getFolderByName("position").domElement.firstChild).append( $(guiPacketer.domElement).find("li.position") );
+
+	//&nbsp;&nbsp;&nbsp;id:<span class='keyer'> {{ selected.key }}</span>
+	$( guiPacketer.getFolderByName("position").domElement.firstChild ).children("li.title").html("position: {{ (selected && selected.x!== undefined ? '('+selected.x.toFixed(2) + ', ' + selected.y.toFixed(2) + ', ' + selected.z.toFixed(2)+')' : '') }}").append( $(guiPacketer.domElement).find("li.position") );
 	
 	
 	
@@ -280,21 +335,7 @@
 	var guiMainMenuData  = {
 		copyToClipboard: "",
 		loadMap: function() {
-			world.loadWorld(this.copyToClipboard);
-			world.addLocationDef( CHAR_LOC_DEF, true );
-			world.addLocationDef( REGIONPLAY_LOC_DEF, true );
-			vueModelData.locationDefIds = world.getLocationDefinitionIds(world.getDefaultLocationDefIdHash());
-			var goData = world.getGOGraphData(GO_SIZES, DEFAULT_PICTURE_OPACITY);
-			//var newModel = new go.GraphLinksModel(goData.nodes, goData.links);
-			myDiagram.model.nodeDataArray = goData.nodes;
-			myDiagram.model.linkDataArray = goData.links;
-
-			var arr = myDiagram.model.nodeDataArray;
-			var i = arr.length;
-			while(--i > -1) {
-				Object.defineProperty(arr[i],"text",textProxy);
-				//e.model.updateTargetBindings(o, "text");
-			}
+			loadWorld(this.copyToClipboard);
 			this.copyToClipboard = "";
 			guiMainMenu.getControllerByName("copyToClipboard").updateDisplay();
 			alert("New map loaded successfully.");
@@ -303,11 +344,15 @@
 		saveMap: function() {
 			this.copyToClipboard = world.saveWorld();
 			guiMainMenu.getControllerByName("copyToClipboard").updateDisplay();
-		}
+		},
+		"Open Dashboard": function() {
+			vueDashboard.isShowingDashboard = true;
+		},
 	}
 	guiMainMenu.addTextArea(guiMainMenuData, "copyToClipboard");
 	guiMainMenu.add(guiMainMenuData, "saveMap");
 	guiMainMenu.add(guiMainMenuData, "loadMap");
+	guiMainMenu.add(guiMainMenuData, "Open Dashboard");
 	guiMainMenu.closed = true;
 	
 	function executeLocDefMethodHandler() {
@@ -950,8 +995,7 @@
 					}
 				}
 				*/
-				// TODO.. lookup functon
-				//valueToSync;
+			
 				
 				//(okoko,curVal)
 				
@@ -1103,8 +1147,8 @@
 		var jsonStr = TJSON.encode(nodeVal);  
 		var newVueModelData = TJSON.parse(jsonStr);  // consider todo: should this be a plain JSON parse?
 		vueModel.selected = newVueModelData;
+		vueModel.selected.key = goNode.key;
 
-		// nodeVal.state
 		
 	
 	}
@@ -1221,9 +1265,11 @@
 	myDiagram.addLayerBefore(GO(go.Layer, {name:"RegionsPlay"}), myDiagram.findLayer(""));
 	myDiagram.addLayerAfter(GO(go.Layer, {name:"Points"}), myDiagram.findLayer(""));
 	myDiagram.addLayerAfter(GO(go.Layer, {name:"Characters"}), myDiagram.findLayer(""));
+	myDiagram.addLayerAfter(GO(go.Layer, {name:"PointsPlay"}), myDiagram.findLayer(""));
 	
 	// define several shared Brushes
 	var fill1 = "rgb(243,134,48)"
+	var fill1play = "rgb(243,244,48)"
 	var brush1 = "rgb(203,84,08)";
 	var fill1fade = "rgba(243,134,48,0.5)"
 	var brush1fade = "rgba(203,84,08,0.35)";
@@ -1265,6 +1311,8 @@
 		var gotLayerName = layerName != null;
 		if (!layerName) layerName = "";
 		
+		var fontSizePx = 9;
+		
 		var textBlockParams = [go.TextBlock,
 			{ 
 			maxSize: new go.Size(TEXTLABEL_BASEWIDTH, NaN),
@@ -1272,8 +1320,9 @@
 			textAlign: "center",
 			editable: false,
 			pickable: false,
+			
 			portId:"",
-			font: "bold 7pt Arial, sans-serif",
+			font: "bold "+fontSizePx+"px Arial, sans-serif",
 			name: "TEXT" , portId:""
 			},
 			new go.Binding("text", "text" ).makeTwoWay()
@@ -1304,14 +1353,19 @@
 		var textBlock  =  GO.apply(null, textBlockParams);
 
 		
-		var influenceShape = GO(go.Panel, go.Panel.Spot,  GO(go.Shape, "Ellipse",
-			{ strokeWidth: 1,  name: "SHAPE"
+		var influenceShape =   GO(go.Panel, go.Panel.Position,  GO(go.Shape,  // position offset hack..
+			{ strokeWidth: 1,  name: "SHAPE_INFLUENCE"
+			
+			//,position: new go.Point(0,9)
 			, desiredSize: new go.Size(116, 116)
 			,minSize:  new go.Size(0,0)
 			//,maxSize:  new go.Size(maxSize ? maxSize : NaN, maxSize  ? maxSize : NaN)
 			,figure:"circle"
 			,fill:influenceFill
+			,position: new go.Point(0, panelLayout===go.Panel.Spot ? 0 : fontSizePx )  // position offset hack..
 			//,alignment
+			,alignment:go.Spot.Center
+			//,alignmentFocus:go.Spot.Center
 			,stroke:influenceStroke
 			//,portId: "none" 
 			
@@ -1335,7 +1389,7 @@
 
 
 				
-		var shape = GO(go.Shape, "Ellipse",
+		var shape = GO(go.Shape,
 			{ strokeWidth: 2, name: "SHAPE"
 			, desiredSize: new go.Size(16, 16)
 			,minSize:  new go.Size(1,1)
@@ -1374,13 +1428,12 @@
 
 		
 
-		var goParams = [go.Node, go.Panel.Spot, { selectionObjectName:"MyContent" },
-		{ locationSpot: go.Spot.Center },
+		var goParams = [go.Node, go.Panel.Spot, {locationSpot: go.Spot.Center,  locationObjectName:"SHAPE",  selectionObjectName:"MyContent" },
 		new go.Binding("location", "loc").makeTwoWay(), new go.Binding("category", "", function(v) {  return v._node ? v._node.val.def.gameplayCategory!=null  ? v._node.val.def.gameplayCategory :  getCategoryStringFromType(v._node.val.defOverwrites && v._node.val.defOverwrites.type!=null ? v._node.val.defOverwrites.type : v._node.val.def.type) : v.category; }  ) ];
 		
 		
 
-		if (gotLayerName && layerName != "Background" && layerName != "Characters" && layerName != "RegionsPlay") { // imply 'layerName' has influecne radius
+		if (gotLayerName && layerName != "Background" && layerName != "Characters" && layerName != "RegionsPlay" && layerName != "PointsPlay")  { // imply 'layerName' has influecne radius
 	
 			goParams.push(influenceShape);
 		
@@ -1425,6 +1478,7 @@
 	myDiagram.nodeTemplateMap.add("region",getNodeTemplate("Circle",fill3,brush3, MAX_SHAPE_SIZE, go.Panel.Spot, "Regions"));
 	myDiagram.nodeTemplateMap.add("char", getNodeTemplate("Circle",fill4,brush4, MAX_SHAPE_SIZE, null, "Characters"));
 	myDiagram.nodeTemplateMap.add("regionPlay", getNodeTemplate("Circle",fillPlay,brushPlay, MAX_SHAPE_SIZE,  go.Panel.Spot, "RegionsPlay"));
+	myDiagram.nodeTemplateMap.add("pointPlay", getNodeTemplate("Square",fill1play,brush1, POINT_SIZE, null, "PointsPlay"));
 	myDiagram.nodeTemplateMap.add("zone",getNodeTemplate("Circle",fill1,brush1, POINT_SIZE, go.Panel.Spot, "Background", {copyable:false}, ""));
 
 	var NODE_TEMPLATE_VIS = new go.Map();
@@ -1433,6 +1487,7 @@
 	NODE_TEMPLATE_VIS.add("region", getNodeTemplate("Square",fill1fade,brush1fade, POINT_PLAY_SIZE, null, "Points", {movable:false, copyable:false, deletable:false}));
 	NODE_TEMPLATE_VIS.add("char", getNodeTemplate("Circle",fill4, brush4, MAX_SHAPE_SIZE, null, "Characters"));
 	NODE_TEMPLATE_VIS.add("regionPlay", getNodeTemplate("Circle",fillPlay,brushPlay, MAX_SHAPE_SIZE,  go.Panel.Spot, "RegionsPlay"));
+	NODE_TEMPLATE_VIS.add("pointPlay", getNodeTemplate("Square",fill1play,brush1, POINT_PLAY_SIZE, null, "PointsPlay"));
 	NODE_TEMPLATE_VIS.add("zone",getNodeTemplate("Circle",fill1fade,brush1fade, POINT_SIZE, go.Panel.Spot, "Background", {movable:false, copyable:false, deletable:false}, ""));
 	  
 
@@ -1822,6 +1877,7 @@
 								vueModel.selected.y = c.newValue.y;
 							}
 							///vueModel.val.x = c.newValue.x;
+
 							//vueModel.val.y = 
 						}
 					}
@@ -1954,10 +2010,10 @@
 						
 						if (zone.imageURL) {
 							o.pictureSrc = zone.imageURL;
-							
+
 						}
 						else if (o.pictureSrc) {
-							zone.imageURL = o.pictureSrc;
+							zone.imageURL = o.pictureSrc	;
 							
 						}
 						
@@ -2029,6 +2085,123 @@
 	  
 	}
   });
+
+
+
+  	var vueDashboard = new Vue({
+			el: "#dashboard-app",
+			data: {
+				isShowingDashboard:initedWithDashboard,
+				mapDomain:initedMapDomain,
+				mapDomainLoading:false,
+				loadedMaps: [],
+				mapLoadingError:false,
+				currentMapIndex: -1,
+				queryParams: initQueryParams,
+				resumed:false,
+			},
+			created: function() {
+				if (this.isShowingDashboard && !this.mapDomainLoading) {
+					this.loadMaps();
+				}
+			},
+			methods: {
+				openLoadedMap: function(index, dontExit) {
+
+					try {
+					loadWorld(this.loadedMaps[index].stream);
+					}
+					catch(err) {
+						alert("Oops, something went wrong couldn't load map stream! See console for details.")
+						console.log("Failed to load map stream:", this.loadedMaps[index].stream);
+						return;	
+					}
+					if (!dontExit) this.isShowingDashboard = false;
+
+
+				},
+				returnToCurrentMap: function(index ) {
+					this.isShowingDashboard = false;
+				},
+				loadMaps: function() {
+					this.loadedMaps = [];
+					this.currentMapIndex = -1;
+					this.mapDomainLoading = true;
+					var self = this;
+					$.ajax({url:"https://effuse-church.000webhostapp.com/curlgink.php", dataType:"json", data:{id:this.mapDomain} } ).done( function(e) {
+						self.mapLoadingError = false;
+
+						var newMaps = [];
+						var i;
+						if (!Array.isArray(e)) {
+							alert("Failed to load maps..Data format not array!")
+							return;
+						}
+						var len = e.length;
+						var obj;
+						for(i=0;i<len; i++) {
+							obj = e[i];
+							
+							if (!obj.children || obj.children.length == 0) {
+								alert(i+": Failed to load obj children stream of:!"+obj.content)
+								continue;
+							}
+							if (obj.content == self.queryParams.current) {
+								self.currentMapIndex = i;
+							}
+							newMaps.push({ name:obj.content, credit:(obj.children.length > 1 ? obj.children[1].content : ""), stream:obj.children[0].content });
+						}
+
+						
+						self.loadedMaps = newMaps;
+						
+					
+						self.mapDomainLoading = false;
+
+
+						if (!this.resumed && self.currentMapIndex >= 0) {
+							self.openLoadedMap(self.currentMapIndex, true);
+							if (self.queryParams.dashboard == "skip") {
+								self.returnToCurrentMap();
+							}
+							self.currentMapIndex = -1;
+							self.queryParams.current = null;
+						}
+
+					
+
+						
+					}).error( function() {
+						self.mapLoadingError = true;
+
+						self.mapDomainLoading = false;
+					});  
+				},
+				reloadMapDomain: function() {
+					this.loadMaps();
+				},
+			},
+			watch: {
+				isShowingDashboard: function(newValue, oldValue) {
+					if (!newValue) {  // no longer showing..
+						// CleanUp:
+						//this.loadedMaps =[];
+						this.currentMapIndex = -1;
+						this.resumed = true;
+					}
+					else {
+						if (this.loadedMaps.length == 0 && !this.mapDomainLoading) {
+							this.loadMaps();
+						}
+					}
+				}
+			},
+			computed: {
+			  baseurl: function() {
+				  return window.location.href.split("?")[0];
+			  }
+		  }
+	  });
 		  
 	function classify(instance) {
 		instance["class"] = "awawaawtwaaw";
@@ -2042,10 +2215,12 @@
 	
 //	palTemplate.findObject("SHAPE").maxSize = new go.Size(20,20);
 	myPalette.nodeTemplateMap.add("point", getNodeTemplate("Square",fill1,brush1,20));
-	 myPalette.nodeTemplateMap.add("path", getNodeTemplate("Diamond",fill2,brush2,20));
-	 myPalette.nodeTemplateMap.add("region",getNodeTemplate("Circle",fill3,brush3,20));
+	myPalette.nodeTemplateMap.add("path", getNodeTemplate("Diamond",fill2,brush2,20));
+	myPalette.nodeTemplateMap.add("region",getNodeTemplate("Circle",fill3,brush3,20));
 	myPalette.nodeTemplateMap.add("regionPlay",getNodeTemplate("Circle",fillPlay,brushPlay,20));
-	  myPalette.nodeTemplateMap.add("char", getNodeTemplate("Circle",fill4,brush4,20));
+	myPalette.nodeTemplateMap.add("char", getNodeTemplate("Circle",fill4,brush4,20));
+	myPalette.nodeTemplateMap.add("pointPlay", getNodeTemplate("Square",fill1play,brush1,20));
+	
 
 
 	myPalette.nodeTemplateMap.add("zone",getNodeTemplate("Circle",fill1,brush1, POINT_SIZE));
@@ -2058,6 +2233,7 @@
 	  { locid:"Region", isProto:true,  text:"Region",  category:"region", size:GO_SIZES[2] },
 	{ locid:"RegionPlay", isProto:true,  text:"RegionPlay",  category:"regionPlay", size:GO_SIZES[2] },
 	  { locid:"CharPlay", isProto:true,  text:"CharPlay",  category:"char", size:GO_SIZES[3] },
+	{ locid:"PointPlay", isProto:true,  text:"PointPlay",  category:"pointPlay", size:GO_SIZES[0] },
 	  { locid:"", zoneid:false, isProto:true,  text:"Zone",  pictureOpacity:DEFAULT_PICTURE_OPACITY, pictureSrc:"http://ingridwu.dmmdmcfatter.com/wp-content/uploads/2015/01/placeholder.png", category:"zone", size:new go.Size(POINT_SIZE,POINT_SIZE) }
 	]);
 	

@@ -109,6 +109,32 @@ li.folder.instance  > div > ul.closed >  li.title:before {
 	display:block;
 }
 
+#dashboard {
+	z-index:9999;
+	position:fixed;
+
+	overflow:auto;
+	width:100%;
+	height:100%;
+	top:0;
+	left:0;
+	background-color:white;
+	box-sizing:border-box;
+	padding:15px;
+
+
+}
+#dashboard li {
+	margin-bottom:10px;
+}
+span.keyer {
+	color:yellow;
+}
+
+#dashboard a.credit {
+	font-size:12px;
+}
+
 #infoDraggable input {
 	-webkit-touch-callout: none; /* iOS Safari */
 	-webkit-user-select: none; /* Safari */

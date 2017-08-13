@@ -60,5 +60,51 @@
   
 
 </div>
+
+<div id="dashboard-app">
+<div id="dashboard" v-show="isShowingDashboard" style="display:block">
+	<div id="available-maps">
+		<h2>Available Maps:</h2>
+
+		<label>Domain: </label><input type="text" v-model="mapDomain"></input>
+		<button v-on:click="reloadMapDomain()" :disabled="mapDomainLoading">Refresh</button>
+
+		<div class="loading" v-show="mapDomainLoading">Loading...</div>
+		<div class="error" v-show="mapLoadingError">Oops, load error!</div>
+
+		<ul>
+			<li v-for="(index, item) in loadedMaps"><span v-if="this.currentMapIndex == index">(current) </span><button v-on:click="openLoadedMap(index)">{{ item.name }}</button>&nbsp;&nbsp;<a class="credit" v-if="item.credit" href="{{ item.credit }}" target="_blank">{{ item.credit }}</a></li>
+		</ul>
+	</div>
+
+	<hr/>
+
+	<button v-on:click="returnToCurrentMap()" v-html="this.currentMapIndex < 0 ? '&lt; Return to current map' : 'Proceed to current map &gt;'"></button>
+
+
+	<h2>Basic Controls</h2>
+	<h3>Panning:</h3>
+	Without clicking on any token on the map, click+hold and drag on the map canvas.
+
+	<h3>Zooming in/out:</h3>
+	CTRL + Mouse Wheel
+
+	<h3>Selecting tokens and other stuffs:</h3>
+	Single click to select a single token. SHIFT + Click to select multiple tokens.
+	Or click and hold for a few seconds, then drag to create a selection box to select multiple tokens within box. 
+
+	<h3>Deleting/Copying/Pasting selection:</h3>
+	Press Delete, CTRL+C, or CTRL+V for deleting/copying/pasting of selection respectively. During Play View Mode, you can only delete/copy/paste Play tokens/connections only.
+
+	<h3>Adding connections:</h3>
+	While holding the Shift key, hold a click on a token and drag to another token to make a directional connection between them. During Play View Mode, you can only make connections from/to Play tokens only.
+
+	<h3>Adding information overwrites to specific token</h3>
+	With a particular token on the map selected, click on the `+` at a given info parameter field area to add any additional overwriting data unique to that token/connection.
+</div>
+</div>
+
+
+
 </body>
 </html>
