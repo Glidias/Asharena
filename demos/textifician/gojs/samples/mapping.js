@@ -2196,6 +2196,7 @@
 						// CleanUp:
 						//this.loadedMaps =[];
 						this.currentMapIndex = -1;
+						this.queryParams.current = null;
 						this.resumed = true;
 					}
 					else {

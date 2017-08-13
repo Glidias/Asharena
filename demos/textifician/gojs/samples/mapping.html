@@ -79,7 +79,7 @@
 
 	<hr/>
 
-	<button v-on:click="returnToCurrentMap()" v-html="this.currentMapIndex < 0 ? '&lt; Return to current map' : 'Proceed to current map &gt;'"></button>
+	<button v-show="queryParams.current == null || !mapDomainLoading" v-on:click="returnToCurrentMap()" v-html="this.currentMapIndex < 0 ? '&lt; Return to current map' : 'Proceed to current map &gt;'"></button>
 
 
 	<h2>Basic Controls</h2>
