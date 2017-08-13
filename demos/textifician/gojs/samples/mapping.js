@@ -8,6 +8,7 @@
 	var CHAR_SIZE = window["MAP_CHARACTER_SIZE"] != null ? window["MAP_CHARACTER_SIZE"] : 10;
 	var INFLUENCE_SIZE_SCALE = window["INFLUENCE_SIZE_SCALE"] != null ? window["INFLUENCE_SIZE_SCALE"] : 1; 
 
+
 	function getUrlVars()
 	{
 		var vars = [], hash;
@@ -206,7 +207,7 @@
 			multiSelectedLocations:false,
 			selectedArc: null,
 			viewOptions: {
-				viewMode:VIEW_MODE_EDIT,
+				viewMode: (initQueryParams.play != null && initQueryParams.play!="0" ? VIEW_MODE_PLAY : VIEW_MODE_EDIT),
 				visLabels:false,
 				fullSizes:false,
 				enforceAllLabels:false,
@@ -1462,8 +1463,15 @@
 		
 		goParams.push({layerName:layerName});
 		
-		if (addedParams) goParams.push(addedParams);
-
+		if (addedParams) {
+			if (!Array.isArray(addedParams)) goParams.push(addedParams);
+			else {
+				var i;
+				for (i=0;i<addedParams.length;i++) {
+					goParams.push(addedParams);
+				}
+			}
+		}
 		
 		
 		return GO.apply(null, goParams);
@@ -1490,6 +1498,11 @@
 	NODE_TEMPLATE_VIS.add("pointPlay", getNodeTemplate("Square",fill1play,brush1, POINT_PLAY_SIZE, null, "PointsPlay"));
 	NODE_TEMPLATE_VIS.add("zone",getNodeTemplate("Circle",fill1fade,brush1fade, POINT_SIZE, go.Panel.Spot, "Background", {movable:false, copyable:false, deletable:false}, ""));
 	  
+
+	if (initQueryParams.play != null && initQueryParams.play!="0") {
+		 myDiagram.nodeTemplateMap = NODE_TEMPLATE_VIS;
+		
+	}
 
 	  function scaleLink(link, newscale) {
 		link.curviness = 1 * origscale/newscale;
@@ -2224,16 +2237,18 @@
 	myPalette.allowZoom = false;
 	
 //	palTemplate.findObject("SHAPE").maxSize = new go.Size(20,20);
-	myPalette.nodeTemplateMap.add("point", getNodeTemplate("Square",fill1,brush1,20));
-	myPalette.nodeTemplateMap.add("path", getNodeTemplate("Diamond",fill2,brush2,20));
-	myPalette.nodeTemplateMap.add("region",getNodeTemplate("Circle",fill3,brush3,20));
+	myPalette.nodeTemplateMap.add("point", getNodeTemplate("Square",fill1,brush1,20,undefined,undefined, [new go.Binding("opacity", "", function(h) { return vuePanel.viewMode == VIEW_MODE_EDIT ? 1 : 0.25; } ), new go.Binding("selectable", "", function(h) { return vuePanel.viewMode == VIEW_MODE_EDIT; } )]));
+	myPalette.nodeTemplateMap.add("path", getNodeTemplate("Diamond",fill2,brush2,20,undefined,undefined, [new go.Binding("opacity", "", function(h) { return vuePanel.viewMode == VIEW_MODE_EDIT ? 1 : 0.25; } ),new go.Binding("selectable", "", function(h) { return vuePanel.viewMode == VIEW_MODE_EDIT; } )]));
+	myPalette.nodeTemplateMap.add("region",getNodeTemplate("Circle",fill3,brush3,20,undefined,undefined, [new go.Binding("opacity", "", function(h) { return vuePanel.viewMode == VIEW_MODE_EDIT ? 1 : 0.25; } ),new go.Binding("selectable", "", function(h) { return vuePanel.viewMode == VIEW_MODE_EDIT; } )]));
 	myPalette.nodeTemplateMap.add("regionPlay",getNodeTemplate("Circle",fillPlay,brushPlay,20));
 	myPalette.nodeTemplateMap.add("char", getNodeTemplate("Circle",fill4,brush4,20));
 	myPalette.nodeTemplateMap.add("pointPlay", getNodeTemplate("Square",fill1play,brush1,20));
 	
+	
+
+	myPalette.nodeTemplateMap.add("zone",getNodeTemplate("Circle",fill1,brush1, POINT_SIZE,undefined,undefined, [new go.Binding("opacity", "", function(h) { return vuePanel.viewMode == VIEW_MODE_EDIT ? 1 : 0.25; } ),new go.Binding("selectable", "", function(h) { return vuePanel.viewMode == VIEW_MODE_EDIT; } )]));
 
 
-	myPalette.nodeTemplateMap.add("zone",getNodeTemplate("Circle",fill1,brush1, POINT_SIZE));
   	
 	var GO_SIZES = [new go.Size(POINT_SIZE,POINT_SIZE), new go.Size(12,12), new go.Size(30,30), new go.Size(CHAR_SIZE, CHAR_SIZE) ];
 	 
@@ -2544,6 +2559,8 @@
 					myDiagram.updateAllTargetBindings("copyable");
 					myDiagram.updateAllTargetBindings("pastable");
 					myDiagram.updateAllTargetBindings("text");
+
+					myPalette.updateAllTargetBindings("selectable");
 					//myDiagram.updateAllTargetBindings();
 				}
 			},
