@@ -2142,14 +2142,18 @@
 						for(i=0;i<len; i++) {
 							obj = e[i];
 							
+							
 							if (!obj.children || obj.children.length == 0) {
 								alert(i+": Failed to load obj children stream of:!"+obj.content)
 								continue;
 							}
-							if (obj.content == self.queryParams.current) {
+							var trimedTitle = obj.content.trim();
+							if (trimedTitle == self.queryParams.current) {
 								self.currentMapIndex = i;
+								
+								
 							}
-							newMaps.push({ name:obj.content, credit:(obj.children.length > 1 ? obj.children[1].content : ""), stream:obj.children[0].content });
+							newMaps.push({ name:trimedTitle, credit:(obj.children.length > 1 ? obj.children[1].content : ""), stream:obj.children[0].content });
 						}
 
 						
@@ -2158,13 +2162,18 @@
 					
 						self.mapDomainLoading = false;
 
-
-						if (!this.resumed && self.currentMapIndex >= 0) {
+						//!this.resumed && 
+						if (self.currentMapIndex >= 0) {
+							
 							self.openLoadedMap(self.currentMapIndex, true);
+
+						
 							if (self.queryParams.dashboard == "skip") {
 								self.returnToCurrentMap();
+								
 							}
-							self.currentMapIndex = -1;
+							
+							
 							self.queryParams.current = null;
 						}
 
