@@ -36,18 +36,16 @@
 
 	var vuePanel;
 
+	var hashPosition = new hashids.Hashids("salt", 0, "abcdefghijkLmnopqrstuvwxyz1234567890ABCDEFGHJKMNPQRSTUVWXYZ" );
+
+	
+
 	function onUIDragStart() {
 		myDiagramDivs.css("pointer-events", "none");
 	}
 	function onUIDragStop() {
 		myDiagramDivs.css("pointer-events", "auto");
 	}
-	
-	// TODO:
-	/*
-	- Unique keys for loaded items
-	- The map itself
-	*/
 	
 	function getCategoryStringFromType(newValue) {
 	
@@ -297,10 +295,13 @@
 	$( guiPacketer.getFolderByName("state").domElement.firstChild ).children("li.title").html("Location state{{selected.state ? ':' : '?' }}");
 
 	//&nbsp;&nbsp;&nbsp;id:<span class='keyer'> {{ selected.key }}</span>
-	$( guiPacketer.getFolderByName("position").domElement.firstChild ).children("li.title").html("position: {{ (selected && selected.x!== undefined ? '('+selected.x.toFixed(2) + ', ' + selected.y.toFixed(2) + ', ' + selected.z.toFixed(2)+')' : '') }}").append( $(guiPacketer.domElement).find("li.position") );
+	$( guiPacketer.getFolderByName("position").domElement.firstChild ).children("li.title").html("position: {{ (selected && selected.x!== undefined ? '('+selected.x.toFixed(2) + ', ' + selected.y.toFixed(2) + ', ' + selected.z.toFixed(2)+')' : '') }}&nbsp;&nbsp;<span class='keyer'> {{ hashposId }}</span>").append( $(guiPacketer.domElement).find("li.position") );
 	
-	
-	
+
+	$("span.keyer").click( function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+	});
 	
 	var guiArc = new dat.GUI();
 	guiArc.domElement.setAttribute("id", "arcGUI");
@@ -888,11 +889,31 @@
 	
 	
 
+	function encodeNumber(num) {
+		num = Math.floor(num);
+		var isNegative = num < 0;
+		num = isNegative ? -num : num;
+		num |= isNegative ? 1073741824 : 0;
+		return num;
+	}
+
+	function decodeNumber(num) {
+		return (num & 1073741824) != 0 ? (num&(~1073741824)) * -1 : num;
+	}
+
 	
 	var vueModel = new Vue({
 		el:".dg.ac",
 		data: vueModelData,
+		computed: {
+			hashposId: function() {
+				return this.getPosHashId();
+			}
+		},
 		methods: {
+			getPosHashId: function() {
+				return this.selected ? hashPosition.encode(null, [encodeNumber(this.selected.x), encodeNumber(this.selected.y), encodeNumber(this.selected.z)]) : "";
+			},
 			addLocationDefOverwrite: function(prop, e) {
 				var result = this.$get("selected.def."+prop);
 				if (result != null && typeof result === "object") {
@@ -1503,8 +1524,6 @@
 
 	if (initQueryParams.play != null && initQueryParams.play!="0") {
 		myDiagram.nodeTemplateMap = NODE_TEMPLATE_VIS;
-		$("#infoDraggableInstruct").css("display", "none");
-		
 	}
 
 	  function scaleLink(link, newscale) {
@@ -2571,12 +2590,6 @@
 			watch: {
 				viewMode: function(newValue, oldValue) {
 					myDiagram.nodeTemplateMap = newValue == VIEW_MODE_PLAY ? NODE_TEMPLATE_VIS : NODE_TEMPLATE_DEFAULT;
-					if (newValue == VIEW_MODE_PLAY) {
-						$("#infoDraggableInstruct").css("display", "none");
-					}
-					else {
-						$("#infoDraggableInstruct").css("display", "block");
-					}
 				},
 				viewFlags: function(newValue, oldValue) {
 					
