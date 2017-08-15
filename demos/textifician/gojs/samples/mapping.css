@@ -101,13 +101,30 @@ li.folder.instance  > div > ul.closed >  li.title:before {
 #infoDraggable {
   font: 12px helvetica, sans-serif;
   background-color:rgba(45,45,45,.8);
-}	
+}
+	
 
 #infoDraggable .inspector {
 	background-color:#000000;
 	
 	display:block;
 }
+
+#infoDraggable.in-playing .inspector {
+	display: none !important;
+}
+
+#infoDraggable.in-playing #infoDraggableInstruct {
+	display:none !important;
+}
+
+#infoDraggable.in-playing .inspector-button-container, #infoDraggable.in-playing #prefix-btn-container { 
+	display:none !important;
+}
+
+
+
+
 
 #dashboard {
 	z-index:9999;
