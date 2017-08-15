@@ -2158,8 +2158,8 @@
 						for(i=0;i<len; i++) {
 							obj = e[i];
 							
-							
-							if (!obj.children || obj.children.length == 0) {
+							if (obj.content === "" ) continue; // this case is due to accounting for Gingko bug with uncleaned deleted items
+							if (!obj.children || obj.children.length == 0 ) { 
 								alert(i+": Failed to load obj children stream of:!"+obj.content)
 								continue;
 							}
