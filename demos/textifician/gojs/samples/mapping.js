@@ -308,12 +308,13 @@
 	$(guiArc.domElement).attr("v-show", "selectedArc!=null" );
 	
 	guiArc.add(guiArcMethods, "selectMutualArc");
-	
+		
 	guiArc.add(vueModelData.selectedArcOptions, "autoSyncMutual");
 	getGuiControllerLi(guiArc, "autoSyncMutual").find("input").attr("v-model", "selectedArcOptions.autoSyncMutual");  //.attr("v-show", "selectedArc.mutualGoArc != null")
 	getGuiControllerLi(guiArc, "autoSyncMutual").find(".property-name").html("Auto-sync~mutual");
 	 setupGUIGeneric( guiGlueRender( DatUtil.setup( new ArcNodeVM() ) , null, {}, guiArc  ) );
-	$(guiArc.getFolderByName("val").domElement.firstChild).children("li.title").html("Arc state{{selectedArc && selectedArc.val ? ':' : '?' }}");
+	$(guiArc.getFolderByName("val").domElement.firstChild).children("li.title").html("<span>Arc state{{selectedArc && selectedArc.val ? ':' : '?' }}</span> <span v-show='selectedArc'>d=<span style='color:yellow'>{{ selectedArcDistances }}</span></span>");
+
 	 
 	 getGuiControllerLi(guiArc, "selectMutualArc").attr("v-show", "selectedArc.mutualGoArc != null").find(".property-name").html("Select Mutual Arc");
 	
@@ -908,6 +909,10 @@
 		computed: {
 			hashposId: function() {
 				return this.getPosHashId();
+			},
+			selectedArcDistances: function() {
+				
+				return this.selectedArc ? Math.round(this.selectedArc.dist) + (this.selectedArc.dist != this.selectedArc.dist3D ? " ("+Math.round(this.selectedArc.dist3D)+")" : "")  : 0;
 			}
 		},
 		methods: {
@@ -1085,11 +1090,28 @@
 			mutualArc = mutualArc.key;
 			
 		}
+
+		
+		var ax = fromGoNodule.val.x;
+		var ay = fromGoNodule.val.y;
+		var az = fromGoNodule.val.z;
+
+		var bx = arc.node.val.x;
+		var by = arc.node.val.y;
+		var bz = arc.node.val.z;
 	
+		var dx;
+		var dy;
+		var dz;
+		
+		dx = ax - bx;
+		dy = ay - by;
+		dz = az - bz;
+
+
 
 		//console.log("New vue model:"+ newVueModelData);
-		vueModel.selectedArc = { val:newVueModelData, mutualGoArc:mutualArc }; //, cost:arc.cost
-		
+		vueModel.selectedArc = { val:newVueModelData, mutualGoArc:mutualArc, dist:Math.sqrt(dx*dx + dy*dy), dist3D:Math.sqrt(dx*dx + dy*dy  + dz*dz) }; //, cost:arc.cost
 		
 		 // timeout hack, bleh, re-enable autosync directive after temp disable directive for v-arc-sync
 		setTimeout( function() {
