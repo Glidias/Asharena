@@ -19,10 +19,18 @@
 .treeview span.icon{width:20px;display:inline-block;text-align:center;}
 td{position:relative;}
 body{font-family:Times New Roman,Arial,sans-serif;font-size:12px;background-color:#f3f5f6;}
-textarea.notes{font-family:inherit;font-size:inherit;}
+textarea.notes,input.notes{font-family:inherit;font-size:inherit;}
+.chargen ul.wounds>li input{width:40px;}
+.chargen ul.wounds>li input[type='checkbox']{width:auto;}
+.chargen ul.wounds>li input.notes{width:130px;}
+.chargen ul.wounds>li .stats{margin-left:5px;}
+.chargen ul.wounds>li .stats:before{content:' ... ';}
+.chargen ul.wounds>li .stats>*{margin-left:5px;display:inline-block;}
 td.actions{min-width:105px;}
 select{font-size:12px;font-family:Arial;}
 .gingko-tree .markdown-view{background-color:white;border:1px solid black;box-sizing:border-box;max-height:250px;overflow:auto;}
+.sweet-modal-overlay.reset{font-size:inherit!important;}
+.sweet-modal-overlay.reset .sweet-content{font-size:inherit!important;text-align:left!important;}
 td input[type='text']{position:relative;width:100%;font-size:12px;font-family:Arial;}
 td input[type='number']{position:relative;width:100%;font-size:12px;font-family:Arial;}
 .moneyfields>label{margin-right:7px;}
@@ -68,8 +76,8 @@ td.gotbtn.focus>button{display:block;width:24px;height:100%;line-height:0;positi
 .inventory .tab-list{background-color:white;}
 .inventory .tab-list .close-btn{float:right;display:block;margin:5px;}
 .inventory .tab-list label{display:inline-block;padding:5px 10px;cursor:pointer;}
-.inventory .tab-list label.selected{background-color:#e3f5f6;}
-.inventory .tab-list label:hover{background-color:#f9f9f9;}
+.inventory .tab-list label.selected{background-color:#69f9f9;}
+.inventory .tab-list label:hover{background-color:#69f9f9;text-decoration:underline;}
 .inventory .tab-list label:last-child{margin-right:0;}
 .inventory textarea.savebox{min-height:60px;}
 .inventory .popup-overlay{position:absolute;width:100%;height:100%;top:0;left:0;z-index:50;background-color:rgba(0,0,0,0.3);}
