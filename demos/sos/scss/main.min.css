@@ -19,11 +19,14 @@
 .treeview span.icon{width:20px;display:inline-block;text-align:center;}
 td{position:relative;}
 body{font-family:Times New Roman,Arial,sans-serif;font-size:12px;background-color:#f3f5f6;}
+textarea.notes{font-family:inherit;font-size:inherit;}
 td.actions{min-width:105px;}
 select{font-size:12px;font-family:Arial;}
 .gingko-tree .markdown-view{background-color:white;border:1px solid black;box-sizing:border-box;max-height:250px;overflow:auto;}
 td input[type='text']{position:relative;width:100%;font-size:12px;font-family:Arial;}
 td input[type='number']{position:relative;width:100%;font-size:12px;font-family:Arial;}
+.moneyfields>label{margin-right:7px;}
+.moneyfields>label:last-child{margin-right:0;}
 label.disabled{opacity:.5;}
 .pop-widget input[type='text']{width:auto;}
 .pop-widget input[type='number']{width:auto;}
@@ -61,7 +64,7 @@ td.gotbtn.focus>button{display:block;width:24px;height:100%;line-height:0;positi
 .inventory .save-drop-zone{display:inline-block;margin-left:15px;margin-bottom:15px;}
 .inventory .open-new-tab-zone{display:inline-block;margin-left:15px;margin-right:30px;background-color:white;padding:10px;}
 .inventory .open-new-tab-zone .show-browser-cta{margin-bottom:10px;}
-.inventory .shield-icon-inv{transform:scaleY(-1);display:inline-block;position:relative;transform-origin:center center;}
+.shield-icon-inv{transform:scaleY(-1);display:inline-block;position:relative;transform-origin:center center;}
 .inventory .tab-list{background-color:white;}
 .inventory .tab-list .close-btn{float:right;display:block;margin:5px;}
 .inventory .tab-list label{display:inline-block;padding:5px 10px;cursor:pointer;}
@@ -113,6 +116,8 @@ td.w-tags .pop-widget label{display:inline-block;}
 .chargen h2 .valuer{font-size:11px;}
 .chargen h3 .legend{font-size:11px;font-weight:normal;margin-left:20px;}
 .chargen .gen-col{display:inline-block;vertical-align:top;margin-right:15px;}
+.chargen .gen-attributes input[type="number"],.chargen .sect-arc input[type="number"]{display:inline-block;max-width:55px;}
+.chargen .sect-arc button{font-family:inherit;font-size:inherit;}
 .chargen .gen-col:last-child{margin-right:0;}
 .chargen h2 .formula{font-size:11px;margin-left:15px;font-weight:normal;display:inline-block;}
 .chargen h2 .valuer .num{font-size:16px;font-style:italic;margin-left:2px;margin-right:2px;}
@@ -122,11 +127,11 @@ section.gen-bnb .gen-comp-bb span.limit-join{font-size:17px;}
 section.gen-bnb .gen-comp-bb.canceled{text-decoration:line-through;pointer-events:none;}
 .bb-details h3 .underline{text-decoration:underline;}
 .bb-details h4{text-decoration:underline;}
-.bb-details .header-liners{font-size:12px;text-decoration:none;font-weight:normal;}
-.bb-details .header-liners a{display:inline-block;margin-left:5px;}
-.bb-details .header-liners a.canceled{text-decoration:line-through;pointer-events:none;}
-.bb-details .header-liners a:after{content:', ';}
-.bb-details .header-liners a:last-child:after{content:'';}
+.chargen .header-liners{font-size:12px;text-decoration:none;font-weight:normal;}
+.chargen .header-liners>*{display:inline-block;margin-left:10px;}
+.chargen .header-liners>.canceled{text-decoration:line-through;pointer-events:none;}
+.chargen .header-liners *:after{content:', ';}
+.chargen .header-liners *:last-child:after{content:'';}
 .bb-details>div{border-bottom:1px solid #dddddd;margin-bottom:5px;padding-bottom:15px;}
 bb-details label,.bb-details input,.bb-details textarea,.bb-details select{vertical-align:top;}
 .chargen .valuer.still-have{color:red;}
