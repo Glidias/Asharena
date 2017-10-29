@@ -32,6 +32,7 @@ select{font-size:12px;font-family:Arial;}
 .sweet-modal-overlay.reset{font-size:inherit!important;}
 .sweet-modal-overlay.reset .sweet-content{font-size:inherit!important;text-align:left!important;}
 .sweet-modal-overlay.reset-tabs .sweet-title{overflow:auto!important;height:auto!important;white-space:normal!important;line-height:26px!important;}
+ul.array-of>li>input[type='radio']+div{display:inline-block;}
 .sweet-modal-overlay.reset-tabs ul.sweet-modal-tabs{display:block;height:auto!important;}
 .sweet-modal-overlay.reset-tabs li.sweet-modal-tab{display:inline-block!important;outline:solid 1px #dddddd;height:auto!important;}
 td input[type='text']{position:relative;width:100%;font-size:12px;font-family:Arial;}
