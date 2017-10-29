@@ -31,6 +31,9 @@ select{font-size:12px;font-family:Arial;}
 .gingko-tree .markdown-view{background-color:white;border:1px solid black;box-sizing:border-box;max-height:250px;overflow:auto;}
 .sweet-modal-overlay.reset{font-size:inherit!important;}
 .sweet-modal-overlay.reset .sweet-content{font-size:inherit!important;text-align:left!important;}
+.sweet-modal-overlay.reset-tabs .sweet-title{overflow:auto!important;height:auto!important;white-space:normal!important;line-height:26px!important;}
+.sweet-modal-overlay.reset-tabs ul.sweet-modal-tabs{display:block;height:auto!important;}
+.sweet-modal-overlay.reset-tabs li.sweet-modal-tab{display:inline-block!important;outline:solid 1px #dddddd;height:auto!important;}
 td input[type='text']{position:relative;width:100%;font-size:12px;font-family:Arial;}
 td input[type='number']{position:relative;width:100%;font-size:12px;font-family:Arial;}
 .moneyfields>label{margin-right:7px;}
@@ -137,6 +140,7 @@ section.gen-bnb .gen-comp-bb.canceled{text-decoration:line-through;pointer-event
 .bb-details h4{text-decoration:underline;}
 .chargen .header-liners{font-size:12px;text-decoration:none;font-weight:normal;}
 .chargen .header-liners>*{display:inline-block;margin-left:10px;}
+button.inherit,input.inherit{font-size:inherit;font-family:inherit;}
 .chargen .header-liners>.canceled{text-decoration:line-through;pointer-events:none;}
 .chargen .header-liners *:after{content:', ';}
 .chargen .header-liners *:last-child:after{content:'';}
