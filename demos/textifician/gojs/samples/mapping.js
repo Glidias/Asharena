@@ -24,6 +24,8 @@
 	var initQueryParams = getUrlVars();
 
 	var initedMapDomain = initQueryParams.domain ? initQueryParams.domain : "iedaw6";
+	var initedSelfDomain = initQueryParams.self || false;
+	var showArcsInit = initQueryParams.arcs || false;
 	var initedWithDashboard = initQueryParams.dashboard && initQueryParams.dashboard != '0' ? true : false;
 
 	var VIEW_MODE_EDIT = 1;
@@ -193,8 +195,50 @@
 			//e.model.updateTargetBindings(o, "text");
 		}
 		
+			/*
+			world.loadSites().add( function(testData, zoneInfo) {
+				var W = zoneInfo.width;
+				var H = zoneInfo.height;
+
+			
+				console.log(testData);
+				console.log(zoneInfo);
 		
-	}
+				
+				
+				var i;
+				var gStrAtr = [];
+				var weightedVoronoi = d3.weightedVoronoi().weight(function(d){ return d.value; }).clip( [[0,0], [0,H], [W, H], [W,0]]);
+				var data = testData.children;
+				var ADJUST_FACTOR = 148;
+				for (i=0; i< data.length; i++) {
+					data[i].value *= ADJUST_FACTOR;  // adjustment 
+				}
+				var cells = weightedVoronoi(data);    
+				for (i=0; i< cells.length; i++) {
+					var p = cells[i];
+					
+					gStrAtr.push( "M"+p[0][0] +" " + p[0][1]);
+					for (b = 0; b < p.length; b++) {
+						gStrAtr.push( "L"+p[b][0] + " "+p[b][1]  + (b==p.length -1? "z" : "") );
+					}
+				}
+				
+					
+					myDiagram.add(
+				  GO(go.Node, { position: new go.Point(zoneInfo.x-zoneInfo.width*.5,zoneInfo.y-zoneInfo.height*.5), selectable:false, pickable:false, movable:false },
+					GO(go.Shape,
+					  { geometryString: "F "+gStrAtr.join(" "), 
+						fill: "transparent" })));
+				
+				
+			});
+			
+			*/
+			
+				
+			
+		}
 
 	// Vuemodel for minimal selected LocationPacket containing LocationDefinition only
 	var vueModelData;
@@ -209,7 +253,7 @@
 				visLabels:false,
 				fullSizes:false,
 				enforceAllLabels:false,
-				showArcs:false
+				showArcs:showArcsInit
 			},
 			goSelectionCount: true,
 			ignoreAutoSync:false,
@@ -1241,7 +1285,7 @@
 
 	}
 	
-	
+
 	myDiagram.commandHandler.copyToClipboard = function(coll) {
 		var toRemove = [];
 		
@@ -1555,6 +1599,7 @@
 	  	//origscale / newscale;
 			
 			var text = node.findObject("TEXT");
+			if (text == null) return;
 			text.scale =  origscale / newscale;//newscale < .5 ? origscale / newscale*.5 : 1;
 			text.visible = newscale >= .1 ? true : false; 
 			text.maxSize.width = TEXTLABEL_BASEWIDTH * origscale / newscale;
@@ -2185,7 +2230,7 @@
 					this.currentMapIndex = -1;
 					this.mapDomainLoading = true;
 					var self = this;
-					$.ajax({url:"https://effuse-church.000webhostapp.com/curlgink.php", dataType:"json", data:{id:this.mapDomain} } ).done( function(e) {
+					$.ajax({url:(initedSelfDomain ? "" : "https://effuse-church.000webhostapp.com")+"/curlgink.php", dataType:"json", data:{id:this.mapDomain} } ).done( function(e) {
 						self.mapLoadingError = false;
 
 						var newMaps = [];
@@ -2204,13 +2249,15 @@
 								alert(i+": Failed to load obj children stream of:!"+obj.content)
 								continue;
 							}
+							
 							var trimedTitle = obj.content.trim();
+							newMaps.push({ name:trimedTitle, credit:(obj.children.length > 1 ? obj.children[1].content : ""), stream:obj.children[0].content });
+							
 							if (trimedTitle == self.queryParams.current) {
-								self.currentMapIndex = i;
-								
+								self.currentMapIndex = newMaps.length-1;
 								
 							}
-							newMaps.push({ name:trimedTitle, credit:(obj.children.length > 1 ? obj.children[1].content : ""), stream:obj.children[0].content });
+							
 						}
 
 						
