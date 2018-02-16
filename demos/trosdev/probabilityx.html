@@ -41,9 +41,9 @@
 	</style>
 </head>
 <body>
-	<div class="tablesection" id="probcalculator">
+	<div class="tablesection" id="probcalculator" style="width:100%;overflow:visible">
 		<h2>Probability Table (TN<input type="number" number style="width:40px"  v-model="TN"></input>):</h2>	
-		<div style="position:fixed;top:0;right:0;width:auto;background-color:white;z-index:1;border:1px solid black;">{{previewTxt}}</div>
+		<div v-on:click="unfocusClear()" style="position:fixed;top:0;left:50vw;transform:translateX(-100%);width:auto;background-color:white;z-index:1;border:1px solid black;">{{previewTxt}}</div>
 		<table>
 			<thead>
 				<tr>
@@ -80,6 +80,10 @@
 			},
 			roundPerc: function(prob) {
 				return Math.round(prob*100);
+			},
+			unfocusClear: function() {
+				this.rowIndex = -1;
+				this.colIndex = -1;
 			},
 		};
 		var vueCalculatorData = {
