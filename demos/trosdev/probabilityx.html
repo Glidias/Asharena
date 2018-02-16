@@ -31,6 +31,7 @@
 		}
 		.tablesection table td.active input {
 			background-color:aqua;
+			font-size:9px;
 		}
 		.tablesection td .line {
 			border:1px solid black;
@@ -40,10 +41,10 @@
 		
 	</style>
 </head>
-<body style="overflow:hidden">
+<body style="overflow:visible;width:100%">
 	<div class="tablesection" id="probcalculator" style="width:100%;height:100%;top:0;left:0;position:absolute;overflow:scroll;">
 		<h2>Probability Table (TN<input type="number" number style="width:40px"  v-model="TN"></input>):</h2>	
-		<div v-on:click="unfocusClear()" style="position:fixed; top:0; right:0;width:auto;background-color:white;z-index:1;border:1px solid black;">{{previewTxt}}</div>
+		
 		<table>
 			<thead>
 				<tr>
@@ -54,7 +55,7 @@
 			<tbody>
 				<tr v-for="rsi in 20">
 					<td>{{rsi+1}}RS</td>
-					<td v-for="pi in 30"><input type="text" v-on:focus="focusRowCol(rsi, pi)" readonly :value="roundPerc(getChanceToSucceed(pi+1, this.TN, rsi+1))"></input></td>
+					<td v-for="pi in 30" :class="{active:rowIndex===rsi && colIndex ===pi}"><input type="text" v-on:blur="focusOutBlur" v-on:focus="focusRowCol(rsi, pi)" readonly :value="(rowIndex===rsi && colIndex ===pi ? '['+(pi+1)+','+(rsi+1)+']: ' : '' ) + roundPerc(getChanceToSucceed(pi+1, this.TN, rsi+1))"></input></td>
 				</tr>
 			</tbody>
 		</table>
@@ -72,8 +73,14 @@
 				return str;
 			},
 			focusRowCol: function(rowIndex, colIndex) {
-				this.rowIndex = rowIndex;
-				this.colIndex = colIndex;
+				var self = this;
+				Vue.nextTick( function() {
+					self.rowIndex = rowIndex;
+					self.colIndex = colIndex;
+				});
+			},
+			focusOutBlur: function() {
+				this.unfocusClear();
 			},
 			clampProb: function(val) {
 				return val < 0 ? 0 : val > 1 ? 1 : val;
