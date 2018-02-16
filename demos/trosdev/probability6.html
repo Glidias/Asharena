@@ -54,7 +54,7 @@
 			<tbody>
 				<tr v-for="rsi in 20">
 					<td>{{rsi+1}}RS</td>
-					<td v-for="pi in 30"><input type="text" v-on:focus="focusRowCol(rsi, pi)" readonly :value="roundPerc(getChanceToSucceed(pi+1, 6, rsi+1))"></input></td>
+					<td v-for="pi in 30"><input type="text" v-on:focus="focusRowCol(rsi, pi)" readonly :value="roundPerc(getChanceToSucceed(pi+1, this.TN, rsi+1))"></input></td>
 				</tr>
 			</tbody>
 		</table>
