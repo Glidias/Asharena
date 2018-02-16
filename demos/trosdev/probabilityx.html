@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<title>TrosHAXE - Probability Calculator</title>
+	<meta name="description" content="" />
+	<script src="jquery-3.0.0.min.js"></script>
+	<script src="vue.js"></script>
+	<script src="TrosHAXE.js"></script>
+	<style>
+		.tablesection {
+			font-family:Arial;
+			font-size:12px;
+		}
+		.tablesection table td {
+			text-align:center;
+			border:1px solid grey;
+			position:relative;
+		}
+		.tablesection table td input {
+			text-align:center;
+			font-family:inherit;
+			font-size:inherit;
+			background-color:white;
+			width:100%;
+			height:100%;
+			padding:0;margin:0;
+			
+			top:0;left:0;display:block;
+			border:0;
+		}
+		.tablesection table td.active input {
+			background-color:aqua;
+		}
+		.tablesection td .line {
+			border:1px solid black;
+			margin-top:3px;
+		}
+		
+		
+	</style>
+</head>
+<body>
+	<div class="tablesection" id="probcalculator">
+		<h2>Probability Table (TN<input type="number" number style="width:40px"  v-model="TN"></input>):</h2>	
+		<table>
+			<thead>
+				<tr>
+					<td>RS/Pool</td>
+					<td v-for="pi in 30">{{pi+1}}</td>
+				</tr>
+			</thead>
+			<tbody>
+				<tr v-for="rsi in 20">
+					<td>{{rsi+1}}RS</td>
+					<td v-for="pi in 30"><input type="text" v-on:focus="focusRowCol(rsi, pi)" readonly :value="roundPerc(getChanceToSucceed(pi+1, 6, rsi+1))"></input></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	
+	<script>
+		var ReflectUtil = troshx.util.ReflectUtil;
+		var TROSAI =  troshx.util.TROSAI;
+		var vueCalculatorMethods = {
+			outputSymbolsByCount: function(symbol, count) {
+				var str = "";
+				while(--count > -1) {
+					str+=symbol;
+				}
+				return str;
+			},
+			focusRowCol: function(rowIndex, colIndex) {
+				this.rowIndex = rowIndex;
+				this.colIndex = colIndex;
+			},
+			clampProb: function(val) {
+				return val < 0 ? 0 : val > 1 ? 1 : val;
+			},
+			roundPerc: function(prob) {
+				return Math.round(prob*100);
+			},
+		};
+		var vueCalculatorData = {
+			rowIndex:-1,
+			colIndex:-1,
+			TN: 8,
+		};
+		var vueCalculatorComputed = {
+			rangeProbValues: function() {
+				
+			},
+		};
+		
+		ReflectUtil.setItemMethodsTo( TROSAI, vueCalculatorMethods, true);
+		
+		var vueCalculatorModel = new Vue({
+			el: "#probcalculator",
+			data: vueCalculatorData,
+			methods: vueCalculatorMethods,
+			computed: vueCalculatorComputed
+		});
+	
+	</script>
+</body>
+</html>
