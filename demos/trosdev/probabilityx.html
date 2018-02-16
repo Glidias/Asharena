@@ -43,6 +43,7 @@
 <body>
 	<div class="tablesection" id="probcalculator">
 		<h2>Probability Table (TN<input type="number" number style="width:40px"  v-model="TN"></input>):</h2>	
+		<div style="position:fixed;top:0;right:0;width:auto;background-color:white;z-index:1;border:1px solid black;">{{previewTxt}}</div>
 		<table>
 			<thead>
 				<tr>
@@ -89,6 +90,15 @@
 		var vueCalculatorComputed = {
 			rangeProbValues: function() {
 				
+			},
+			previewTxt: function() {
+				var rs = this.rowIndex + 1;
+				var pool = this.colIndex + 1;
+				var tn = this.TN;
+				if (pool > 0 && pool > 0) {
+					return pool+" dice @ tn"+tn+" for "+rs+"RS: "+this.roundPerc(this.getChanceToSucceed(pool, tn, rs))+"%"; 
+				}
+				return "";
 			},
 		};
 		
