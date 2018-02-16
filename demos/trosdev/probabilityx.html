@@ -40,10 +40,10 @@
 		
 	</style>
 </head>
-<body>
-	<div class="tablesection" id="probcalculator" style="width:100%;overflow:visible">
+<body style="overflow:hidden">
+	<div class="tablesection" id="probcalculator" style="width:100%;height:100%;top:0;left:0;position:absolute;overflow:scroll;">
 		<h2>Probability Table (TN<input type="number" number style="width:40px"  v-model="TN"></input>):</h2>	
-		<div v-on:click="unfocusClear()" style="position:fixed;top:0;left:50vw;transform:translateX(-100%);width:auto;background-color:white;z-index:1;border:1px solid black;">{{previewTxt}}</div>
+		<div v-on:click="unfocusClear()" style="position:fixed; top:0; right:0;width:auto;background-color:white;z-index:1;border:1px solid black;">{{previewTxt}}</div>
 		<table>
 			<thead>
 				<tr>
