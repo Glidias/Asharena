@@ -32,7 +32,7 @@
 		.tablesection table td.active input {
 			background-color:aqua;
 			font-size:9px;
-			min-width:48px;
+			min-width:54px;
 		}
 		.tablesection td .line {
 			border:1px solid black;
@@ -56,7 +56,7 @@
 			<tbody>
 				<tr v-for="rsi in 20">
 					<td>{{rsi+1}}RS</td>
-					<td v-for="pi in 30" :class="{active:rowIndex===rsi && colIndex ===pi}"><input type="text" v-on:blur="focusOutBlur" v-on:focus="focusRowCol(rsi, pi)" readonly :value="(rowIndex===rsi && colIndex ===pi ? '['+(rsi+1)+','+(pi+1)+']: ' : '' ) + roundPerc(getChanceToSucceed(pi+1, this.TN, rsi+1))"></input></td>
+					<td v-for="pi in 30" :class="{active:rowIndex===rsi && colIndex ===pi}"><input type="text" v-on:blur="focusOutBlur" v-on:focus="focusRowCol(rsi, pi)" readonly :value="(rowIndex===rsi && colIndex ===pi ? '['+(rsi+1)+'^,'+(pi+1)+'>]: ' : '' ) + roundPerc(getChanceToSucceed(pi+1, this.TN, rsi+1))"></input></td>
 				</tr>
 			</tbody>
 		</table>
