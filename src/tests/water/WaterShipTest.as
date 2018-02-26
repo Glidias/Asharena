@@ -17,10 +17,12 @@ package tests.water
 	import flash.desktop.Clipboard;
 	import flash.desktop.ClipboardFormats;
 	import flash.geom.Matrix3D;
+	import spawners.ModelBundle;
+	import spawners.arena.models.VikingShip;
 
 	import flash.geom.Vector3D;
 	import spawners.arena.water.WaterUIAdjust;
-	import util.ModelBundle;
+
 
 	import arena.systems.islands.IslandChannels;
 	import arena.systems.islands.IslandExploreSystem;
@@ -117,7 +119,7 @@ package tests.water
 			
 			bundleLoader = new SpawnerBundleLoader(stage, onSpawnerBundleLoaded, new <SpawnerBundle>[
 				_skybox, _water, new SpawnerBundleA([CarribeanTextures])
-				, _modelBundle = new ModelBundle([])
+				, _modelBundle = new ModelBundle(VikingShip)
 			]);
 			bundleLoader.progressSignal.add( _preloader.setProgress );
 			bundleLoader.loadBeginSignal.add( _preloader.setLabel );
@@ -152,9 +154,7 @@ package tests.water
 			//_template3D.scene.addChild(plane);
 			
 			
-		
-			_modelBundle.processClasse(new ParserA3D(), Assets);
-			_modelBundle.uploadAll();
+
 			
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 		
@@ -207,7 +207,7 @@ package tests.water
 				
 			//shipModel = new Object3D();
 			
-			var child:Object3D = shipModel = _modelBundle.getModel("ship");
+			var child:Object3D = shipModel = _modelBundle.getSubModelPacket("ship").model;
 			//child.rotationY = Math.PI * .5;
 				_template3D.scene.addChild(child);
 				
@@ -344,13 +344,3 @@ package tests.water
 
 }
 
-class Assets {
-	
-	[Embed(source="../../../bin/assets/models/pvk/vikingship/vikingship.a3d", mimeType="application/octet-stream")]
-	public static var MODEL_ship:Class;
-	
-	[Embed(source="../../../bin/assets/models/pvk/vikingship/spritesheet.png")]
-	public static var TEXTURE_ship:Class;
-	
-	
-}
