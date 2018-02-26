@@ -159,7 +159,9 @@ package alternativa.a3d.systems.hud
 				targLook.y = dy * di;
 				targLook.z = dz * di;
 				Vec3.writeCross(UP, targLook, targRight);
-				//targRight.normalize();
+				targRight.normalize();  // any way to avoid normalizing?
+				//targLook.z;
+				
 				Vec3.writeCross(targLook, targRight, targUp);
 				//targUp.normalize();
 		
