@@ -346,7 +346,8 @@ package alternativa.engine3d.spriteset.materials {
 						"nrm t0.xyz, t0",  // look  (no longer needed after cross products)
 						
 						"crs t1.xyz, c1.xyz, t0.xyz",  // right      // cross product vs perp dot product for z case
-								
+						"nrm t1.xyz, t1.xyz",		
+						
 						///* #if !zAxis  // (doesn't work to face camera, it seems only axis locking works)
 						"crs t0.xyz, t0.xyz, t1.xyz",  // get (non-z) up vector based on  look cross with right
 						"mul t0.xyz, t0.xyz, i0.yyy",   // multiple up vector by normalized xyz coodinates
@@ -389,14 +390,15 @@ package alternativa.engine3d.spriteset.materials {
 				"nrm t0.xyz, t0",  // look  (no longer needed after cross products)
 				
 				"crs t1.xyz, c1.xyz, t0.xyz",  // right      // cross product vs perp dot product for z case
+				"nrm t1.xyz, t1.xyz",
 						
-				/* #if !zAxis  // (doesn't work to face camera, it seems only axis locking works)
+				///* #if !zAxis  // (doesn't work to face camera, it seems only axis locking works)
 				"crs t0.xyz, t0.xyz, t1.xyz",  // get (non-z) up vector based on  look cross with right
 				"mul t0.xyz, t0.xyz, i0.yyy",   // multiple up vector by normalized xyz coodinates
 				"mul t0.xyz, t0.xyz, c2.yyy",
-				
+				"mul t0.xyz, t0.xyz, t3.www",   // CHANGED from original SpriteSet class (scale by tileAtlas V height)
 				"add t2.xyz, t2.xyz, t0.xyz",
-				*/
+				//*/
 				
 				"mul t0.xyz, i0.xxx, t1.xyz",   // multiple right vector by normalized xyz coodinates
 				"mul t0.xyz, t0.xyz, c2.xxx",   // scale according to spriteset setting (right vector)

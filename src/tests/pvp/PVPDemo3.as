@@ -13,6 +13,7 @@ package tests.pvp
 	import alternativa.a3d.systems.enemy.A3DEnemyAggroSystem;
 	import alternativa.a3d.systems.enemy.A3DEnemyArcSystem;
 	import alternativa.a3d.systems.hud.EdgeRaycastTester;
+	import alternativa.a3d.systems.hud.TargetBoardTester;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import spawners.ModelBundle;
 	//import alternativa.a3d.systems.hud.DestCalcTester;
@@ -291,7 +292,7 @@ package tests.pvp
 		{
 			return new <SpawnerBundle>[_gladiatorBundle = new GladiatorBundle(arenaSpawner), arenaHUD = new ArenaHUD(stage) ,
 				_modelBundle = new ModelBundle(Projectiles, null, true),
-				_terrainBase = new TerrainBase(TerrainTest,1, .5 ), //.25*.25 
+				_terrainBase = new TerrainBase(TerrainTest,1, 144/256), //.25*.25 // 0.09375
 				_skyboxBase = new SkyboxBase(ClearBlueSkyAssets),
 				_waterBase = new WaterBase(NormalWaterAssets),
 				new GroundBase([CarribeanTextures])
@@ -1952,12 +1953,15 @@ package tests.pvp
 			game.gameStates.thirdPerson.addInstance( new TrajRaycastTester(terrainRaycast, thirdPersonController.thirdPerson.rayOrigin, thirdPersonController.thirdPerson.rayDirection) ).withPriority(SystemPriorities.postRender);
 			*/
 			
-		//	/*
+			/*
 			game.gameStates.thirdPerson.addInstance( new EdgeRaycastTester(terrainRaycast as TerrainRaycastImpl,thirdPersonController) ).withPriority(SystemPriorities.postRender);
-			//*/
+			*/
 			
 		//	game.gameStates.thirdPerson.addInstance( destCalcTester = new DestCalcTester(new Ellipsoid(20, 20, 36), new Vec3(), new Vec3(), game.colliderSystem.collidable, _debugBox  ) );
 			
+		
+			
+		
 			// special PVP movement limited time
 			movementPointSystem;
 			game.gameStates.thirdPerson.addInstance( movementPointSystem= new LimitedPlayerMovementSystem() ).withPriority(SystemPriorities.preMove);
@@ -2206,6 +2210,8 @@ package tests.pvp
 			
 		
 		//	_template3D.scene.addChild( 
+			game.gameStates.thirdPerson.addInstance( new TargetBoardTester(_template3D.scene, null, _template3D.camera) ).withPriority(SystemPriorities.preRender);
+			
 			game.engine.addSystem( new HealthBarRenderSystem( createHPBarSet(), ~HealthFlags.FLAG_PLAYER ), SystemPriorities.render );
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
 

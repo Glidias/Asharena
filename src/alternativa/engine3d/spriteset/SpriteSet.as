@@ -383,28 +383,30 @@ package alternativa.engine3d.spriteset
 				"mov t2, c[a0.x].xyz",  // origin position in local coordinate space
 				
 				"sub t0, c3.xyz, t2.xyz",
-				"mov t0.z, c1.w",  // #if zAxis
+				//"mov t0.z, c1.w",  // #if zAxis
 				"nrm t0.xyz, t0",  // look  (no longer needed after cross products)
 				
 				"crs t1.xyz, c1.xyz, t0.xyz",  // right      // cross product vs perp dot product for z case
+				"nrm t1.xyz, t1.xyz",
 						
-				/* #if !zAxis  // (doesn't work to face camera, it seems only axis locking works)
+				///* #if !zAxis  // (doesn't work to face camera, it seems only axis locking works)
 				"crs t0.xyz, t0.xyz, t1.xyz",  // get (non-z) up vector based on  look cross with right
 				"mul t0.xyz, t0.xyz, i0.yyy",   // multiple up vector by normalized xyz coodinates
-				"mul t0.xyz, t0.xyz, c2.yyy",
+				"mul t0.xyz, t0.xyz, c2.yyy", // scale according to spriteset setting (up vector)
 				
 				"add t2.xyz, t2.xyz, t0.xyz",
-				*/
+				//*/
+				
 				
 				"mul t0.xyz, i0.xxx, t1.xyz",   // multiple right vector by normalized xyz coodinates
 				"mul t0.xyz, t0.xyz, c2.xxx",   // scale according to spriteset setting (right vector)
 				"add t2.xyz, t2.xyz, t0.xyz",
 			
 				
-				///*  // #if zAxis
+				/*  // #if zAxis
 				"mul t0.z, c2.y, i0.y",  // scale according to spriteset setting (fixed axis direction)
 				"add t2.z, t2.z, t0.z",
-				//*/
+				*/
 				
 				"mov t2.w, i0.w",	
 				"mov o0, t2",
@@ -434,7 +436,8 @@ package alternativa.engine3d.spriteset
 				"nrm t0.xyz, t0",  // look  (no longer needed after cross products)
 				
 				"crs t1.xyz, c1.xyz, t0.xyz",  // right      // cross product vs perp dot product for z case
-						
+				"nrm t1.xyz, t1.xyz",
+				 
 				///* #if !zAxis  // (doesn't work to face camera, it seems only axis locking works)
 				"crs t0.xyz, t0.xyz, t1.xyz",  // get (non-z) up vector based on  look cross with right
 				"mul t0.xyz, t0.xyz, i0.yyy",   // multiple up vector by normalized xyz coodinates
