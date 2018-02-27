@@ -217,23 +217,32 @@ package alternativa.a3d.systems.hud
 				dummyVec.normalize();
 				dummyVec.scale(n.size.x);
 				
+				var wh:Number = 42;
+				var sz:Number = n.size.z;
+				sz = wh*.5;
+				targPos.z += sz*.5;
 				
 				// project right vector over horizontal/vertical extents to see which width to use
 				dx = targRight.dotProduct(dummyVec);  
-				dy = targRight.z * n.size.z; 
+				dy = targRight.z * sz; 
 				dx = dx < 0 ? -dx : dx;
 				dy = dy < 0 ? -dy : dy;
 				var w:Number = dx < dy ? dy : dx;
 				
 				// project up vector over horizontal/vertical extents to see which height to use
+				
+				
 				dx = targUp.dotProduct(dummyVec); 
-				dy = targUp.z * n.size.z; 
+				dy = targUp.z * sz; 
 				dx = dx < 0 ? -dx : dx;
 				dy = dy < 0 ? -dy : dy;
 				var h:Number = dx < dy ? dy : dx;
+				
 				h = h >= w ? h : w;  // always enforce square or tall rectangle always for target board
 				
-				p.root.matrix = m = CreateBillboardMatrix(targRight, targUp, targLook, targPos, w*2, h*2);
+				//targPos.z += 27*.5;
+				//h -= 27/n.size.z*2;
+				p.root.matrix = m = CreateBillboardMatrix(targRight, targUp, targLook, targPos, w*2, h*2 );
 			
 				/*
 				var data:Vector.<Number> = m.rawData;
