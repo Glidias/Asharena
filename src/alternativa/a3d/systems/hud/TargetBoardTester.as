@@ -40,7 +40,7 @@ package alternativa.a3d.systems.hud
 		{
 			this.cameraObj = cameraObj;
 			this.position = position;
-			var p:Plane = new Plane(32, 32, 1, 1, false, false);
+			var p:Plane = new Plane(1, 1, 1, 1, false, false);
 			p.rotationX = -Math.PI * .5;  
 
 	
@@ -64,7 +64,7 @@ package alternativa.a3d.systems.hud
 		}
 		
 		
-		private function CreateBillboardMatrix(right:Vec3, up:Vec3, look:Vec3, pos:Vec3):Matrix3D {
+		private function CreateBillboardMatrix(right:Vec3, up:Vec3, look:Vec3, pos:Vec3, width:Number, height:Number):Matrix3D {
 			/*
 			 * 
 			 
@@ -77,9 +77,9 @@ package alternativa.a3d.systems.hud
 			///*
 			var matrix:Matrix3D = new Matrix3D(
 				new <Number>[
-					-right.x, -right.y, -right.z, 0,
+					-right.x*width, -right.y*width, -right.z*width, 0,
 					look.x, look.y, look.z, 0,
-					up.x, up.y, up.z, 0,
+					up.x*height, up.y*height, up.z*height, 0,
 					pos.x, pos.y , pos.z , 1
 				]
 			);
@@ -158,12 +158,22 @@ package alternativa.a3d.systems.hud
 				targLook.x = dx * di;
 				targLook.y = dy * di;
 				targLook.z = dz * di;
-				Vec3.writeCross(UP, targLook, targRight);
-				targRight.normalize();  // any way to avoid normalizing?
+				//Vec3.writeCross(UP, targLook, targRight);
+				//targRight.normalize();  // any way to avoid normalizing?
+				targRight.x = UP.y * targLook.z -  UP.z * targLook.y;
+				targRight.y = UP.z * targLook.x - UP.x * targLook.z;
+				targRight.z = UP.x * targLook.y - UP.y * targLook.x;
+				targRight.normalize();
+				
+
+				
+				var sc:Number = 1 / targLook.z;		
+				
 				//targLook.z;
 				
 				Vec3.writeCross(targLook, targRight, targUp);
 				//targUp.normalize();
+				
 		
 				var p:MeshSetClone = planes.addNewOrAvailableClone();
 				
@@ -198,8 +208,33 @@ package alternativa.a3d.systems.hud
 				*/
 				//*/
 				
-				p.root.matrix = m = CreateBillboardMatrix(targRight, targUp, targLook, targPos);
-				//arr.push(m.rawData);
+				// z-locked right vector multiplied over ellipsoid.x (assumed same as ellipsoid.y), is used for horizontal extent
+				// UP vector is used for vertical extent....
+				
+				// horizontal extent
+				dummyVec.copyFrom(targRight);
+				dummyVec.z = 0;
+				dummyVec.normalize();
+				dummyVec.scale(n.size.x);
+				
+				
+				// project right vector over horizontal/vertical extents to see which width to use
+				dx = targRight.dotProduct(dummyVec);  
+				dy = targRight.z * n.size.z; 
+				dx = dx < 0 ? -dx : dx;
+				dy = dy < 0 ? -dy : dy;
+				var w:Number = dx < dy ? dy : dx;
+				
+				// project up vector over horizontal/vertical extents to see which height to use
+				dx = targUp.dotProduct(dummyVec); 
+				dy = targUp.z * n.size.z; 
+				dx = dx < 0 ? -dx : dx;
+				dy = dy < 0 ? -dy : dy;
+				var h:Number = dx < dy ? dy : dx;
+				h = h >= w ? h : w;  // always enforce square or tall rectangle always for target board
+				
+				p.root.matrix = m = CreateBillboardMatrix(targRight, targUp, targLook, targPos, w*2, h*2);
+			
 				/*
 				var data:Vector.<Number> = m.rawData;
 				targRight.x = -data[0];
@@ -214,14 +249,16 @@ package alternativa.a3d.systems.hud
 				///*
 				
 				p = corners.addNewOrAvailableClone();
-				p.root.x = targRight.x * 16 + targPos.x;
-				p.root.y = targRight.y * 16 + targPos.y;
-				p.root.z = targRight.z * 16 + targPos.z;
+				p.root.x = targRight.x * w + targPos.x;
+				p.root.y = targRight.y * w + targPos.y;
+				p.root.z = targRight.z * w + targPos.z;
 				
 				p = corners.addNewOrAvailableClone();
-				p.root.x = targUp.x * 16 + targPos.x;
-				p.root.y = targUp.y * 16 + targPos.y;
-				p.root.z = targUp.z * 16 + targPos.z;
+				p.root.x = targUp.x * h + targPos.x;
+				p.root.y = targUp.y * h + targPos.y;
+				p.root.z = targUp.z * h + targPos.z;
+				
+				
 				
 				
 				arr.push(m.rawData);
@@ -232,6 +269,7 @@ package alternativa.a3d.systems.hud
 			
 			
 		}
+		private var dummyVec:Vec3 = new Vec3();
 		private var dummyObj:Object3D = new Object3D();
 		private var objectTransform:Vector.<Vector3D>;
 		
