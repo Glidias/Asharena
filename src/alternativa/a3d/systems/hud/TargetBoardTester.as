@@ -3,15 +3,18 @@ package alternativa.a3d.systems.hud
 
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Occluder;
+	import alternativa.engine3d.core.Transform3D;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.objects.MeshSetClone;
 	import alternativa.engine3d.objects.MeshSetClonesContainer;
 	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.utils.GeometryUtil;
+	import alternativa.engine3d.utils.Object3DUtils;
 	import ash.core.Engine;
 	import ash.core.NodeList;
 	import ash.core.System;
+	import flash.geom.Matrix;
 	import flash.geom.Matrix3D;
 	import flash.geom.Vector3D;
 	import haxe.Log;
@@ -66,6 +69,8 @@ package alternativa.a3d.systems.hud
 			
 		}
 		
+		private var billboardMatrix:Matrix3D = new Matrix3D();
+		private var rawData:Vector.<Number> = new Vector.<Number>(16, true);
 		
 		private function CreateBillboardMatrix(right:Vec3, up:Vec3, look:Vec3, pos:Vec3, width:Number, height:Number):Matrix3D {
 			/*
@@ -78,14 +83,14 @@ package alternativa.a3d.systems.hud
 			 
 			 */
 			///*
-			var matrix:Matrix3D = new Matrix3D(
-				new <Number>[
-					-right.x*width, -right.y*width, -right.z*width, 0,
-					look.x, look.y, look.z, 0,
-					up.x*height, up.y*height, up.z*height, 0,
-					pos.x, pos.y , pos.z , 1
-				]
-			);
+			var matrix:Matrix3D = billboardMatrix;
+			var rawData:Vector.<Number> = this.rawData;  
+			rawData[0] = -right.x * width; rawData[1] =  -right.y * width; rawData[2] = -right.z * width; rawData[3] =  0;
+			rawData[4] = look.x; rawData[5] = look.y; rawData[6] =  look.z; rawData[7] =  0;
+			rawData[8] = up.x * height; rawData[9] = up.y * height; rawData[10] =  up.z * height;  rawData[11] =  0;
+			rawData[12] = pos.x; rawData[13] =  pos.y; rawData[14] =  pos.z; rawData[15] = 1;
+			
+			matrix.copyRawDataFrom(rawData);
 			/*
 			-1,-8.742277657347586e-8,0,0,
 			8.628069991800658e-8, -0.9869361519813538,0.16111187636852264,0,
@@ -134,7 +139,7 @@ package alternativa.a3d.systems.hud
 		}
 		
 		
-		override public function update(t:Number):void
+		override public function update(time:Number):void
 		{
 			if (cameraObj != null) {
 				position.x = cameraObj.x;
@@ -260,19 +265,67 @@ package alternativa.a3d.systems.hud
 				//p.root.rotationY = 0;
 				///*
 				
-				p = corners.addNewOrAvailableClone();
-				p.root.x = targRight.x * w + targPos.x;
-				p.root.y = targRight.y * w + targPos.y;
-				p.root.z = targRight.z * w + targPos.z;
+				var t:Transform3D;
+				var vx:Number;
+				var vy:Number;
+				var vz:Number;
+				
+				t = planes.localToCameraTransform;
+			
 				
 				p = corners.addNewOrAvailableClone();
-				p.root.x = targUp.x * h + targPos.x;
-				p.root.y = targUp.y * h + targPos.y;
-				p.root.z = targUp.z * h + targPos.z;
+				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
+				p.root.x += targUp.x * h;
+				p.root.y += targUp.y * h;
+				p.root.z += targUp.z * h;
+				p.root.x -= targRight.x * w;
+				p.root.y -= targRight.y * w;
+				p.root.z -= targRight.z * w;
+				
+				vx = p.root.x; vy = p.root.y; vz = p.root.z;
+				p.root.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+				p.root.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+				p.root.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+				vx = p.root.x; vy = p.root.y; vz = p.root.z;
+				
+				t = planes.cameraToLocalTransform;
+				vx = p.root.x; vy = p.root.y; vz = p.root.z;
+				p.root.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+				p.root.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+				p.root.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+				
+			
+				p = corners.addNewOrAvailableClone();
+				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
+				p.root.x -= targUp.x * h;
+				p.root.y -= targUp.y * h;
+				p.root.z -= targUp.z * h;
+				p.root.x -= targRight.x * w;
+				p.root.y -= targRight.y * w;
+				p.root.z -= targRight.z * w;
+				
+				p = corners.addNewOrAvailableClone();
+				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
+				p.root.x -= targUp.x * h;
+				p.root.y -= targUp.y * h;
+				p.root.z -= targUp.z * h;
+				p.root.x += targRight.x * w;
+				p.root.y += targRight.y * w;
+				p.root.z += targRight.z * w;
+				
+				p = corners.addNewOrAvailableClone();
+				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
+				p.root.x += targUp.x * h;
+				p.root.y += targUp.y * h;
+				p.root.z += targUp.z * h;
+				p.root.x += targRight.x * w;
+				p.root.y += targRight.y * w;
+				p.root.z += targRight.z * w;
 				
 				
 				if (testOccluder != null) {
-					Log.trace( testOccluder.clip( testOccluder.getDisposableTransformedFace(targPos, UP, RIGHT, w, h, planes.localToCameraTransform) ) );
+		
+					Log.trace( testOccluder.clip( testOccluder.getDisposableTransformedFace(targPos, targUp, targRight, w, h, planes.localToCameraTransform)  ) );
 				}
 			
 				break;

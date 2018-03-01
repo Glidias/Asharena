@@ -16,6 +16,7 @@ package tests.pvp
 	import alternativa.a3d.systems.hud.TargetBoardTester;
 	import alternativa.engine3d.core.Occluder;
 	import alternativa.engine3d.materials.TextureMaterial;
+	import alternativa.engine3d.utils.GeometryUtil;
 	import spawners.ModelBundle;
 	//import alternativa.a3d.systems.hud.DestCalcTester;
 	import alternativa.a3d.systems.hud.HealthBarRenderSystem;
@@ -327,21 +328,20 @@ package tests.pvp
 			// example visual scene
 			var box:Mesh = new Box(100, 13, 100 + 64, 1, 1, 1, false, new FillMaterial(0xCCCCCC) );
 			//box.z = 0;
-			//box.visible = false;
+			
 			occluderTest = new Occluder();
 			_targetBoardTester.testOccluder = occluderTest;
 
 		
-			occluderTest.createForm(box.geometry);
 			_template3D.scene.addChild(box);
-			box.addChild(occluderTest);
+			_template3D.scene.addChild(occluderTest);
 			
 			
 			_debugBox = new Box(32, 32, 72, 1, 1, 1, false, new FillMaterial(0xFF0000) );
 			_template3D.scene.addChild(_debugBox);
 			
 				SpawnerBundle.uploadResources(_debugBox.getResources());
-			SpawnerBundle.uploadResources(box.getResources());
+				
 			
 			//var mat:VertexLightTextureMaterial = new VertexLightTextureMaterial(new BitmapTextureResource(new BitmapData(4, 4, false, 0xBBBBBB),
 		//	var planeFloor:Mesh = new Plane(2048, 2048, 8, 8, false, false, null, new Grid2DMaterial(0xBBBBBB, 1) );
@@ -355,7 +355,17 @@ package tests.pvp
 			setupTerrainLighting();
 			setupTerrainAndWater();
 			
-			box.z =  _terrainBase.sample(box.x, box.y);
+			box.z = _terrainBase.sample(box.x, box.y);
+			
+			//GeometryUtil.globalizeMesh(box);
+			occluderTest.x = box.x;
+			occluderTest.y = box.y;
+			occluderTest.z = box.z;
+			
+			occluderTest.createForm(box.geometry);
+			SpawnerBundle.uploadResources(box.getResources());
+			
+			//box.visible = false;
 			
 			collisionScene.addChild(box.clone());
 			
@@ -2219,7 +2229,7 @@ package tests.pvp
 		
 		//	_template3D.scene.addChild( 
 	
-			game.gameStates.thirdPerson.addInstance( _targetBoardTester = new TargetBoardTester(_template3D.scene, null, _template3D.camera) ).withPriority(SystemPriorities.preRender);
+			game.gameStates.thirdPerson.addInstance( _targetBoardTester = new TargetBoardTester(_template3D.scene, null, _template3D.camera) ).withPriority(SystemPriorities.postRender);
 			
 			
 			game.engine.addSystem( new HealthBarRenderSystem( createHPBarSet(), ~HealthFlags.FLAG_PLAYER ), SystemPriorities.render );

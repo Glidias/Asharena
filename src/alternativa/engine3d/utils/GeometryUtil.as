@@ -12,6 +12,7 @@ package alternativa.engine3d.utils
 	import flash.utils.ByteArray;
 	import flash.utils.Endian;
 	import alternativa.engine3d.alternativa3d;
+	import haxe.Log;
 	use namespace alternativa3d;
 	
 	/**
@@ -82,6 +83,7 @@ package alternativa.engine3d.utils
 		}
 		
 		public static function globalizeMesh(mesh:Mesh):void {
+		
 			if (mesh.transformChanged) mesh.composeTransforms();
 			var vertices:Vector.<Number> = mesh.geometry.getAttributeValues(VertexAttributes.POSITION);
 			var len:int = vertices.length;

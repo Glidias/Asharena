@@ -13,6 +13,7 @@ package alternativa.engine3d.core {
 	import alternativa.engine3d.objects.WireFrame;
 	import alternativa.engine3d.resources.Geometry;
 	import flash.geom.Vector3D;
+	import haxe.Log;
 	import util.geom.Vec3;
 
 	import flash.utils.ByteArray;
@@ -138,19 +139,44 @@ package alternativa.engine3d.core {
 		 */
 		override alternativa3d function collectDraws(camera:Camera3D, lights:Vector.<Light3D>, lightsLength:int, useShadow:Boolean):void {
 			// Debug
-			if (camera.debug) {
-				if (camera.checkInDebug(this) & Debug.CONTENT) {
+			//if (camera.debug) {
+				//if (camera.checkInDebug(this) & Debug.CONTENT) {
 					if (debugWire == null) {
 						debugWire = new WireFrame(0xFF00FF, 1, 2);
-						for (var edge:Edge = edgeList; edge != null; edge = edge.next) {
-							debugWire.geometry.addLine(edge.a.x, edge.a.y, edge.a.z, edge.b.x, edge.b.y, edge.b.z);
-						}
-						debugWire.geometry.upload(camera.context3D);
 					}
+					debugWire.geometry.clear();
+					
+						///*
+					var cc:int = 0;
+					for (var edge:Edge = edgeList; edge != null; edge = edge.next) {
+						if (edge.left.visible != edge.right.visible) {
+							debugWire.geometry.addLine(edge.a.x, edge.a.y, edge.a.z, edge.b.x, edge.b.y, edge.b.z);
+							cc++;
+						}
+						
+					}
+					Log.trace("COUNT:"+cc);
+					
+					debugWire.geometry.upload(camera.context3D);
 					debugWire.localToCameraTransform.copy(localToCameraTransform);
 					debugWire.collectDraws(camera, null, 0, false);
-				}
-			}
+					//*/
+					
+					/*
+					if (_disposableFaceCache != null) {
+						var prev:Wrapper = _disposableFaceCache.wrapper;
+						for (var w:Wrapper = prev.next; w != null; w = w.next) {
+							debugWire.geometry.addLine(prev.vertex.x, prev.vertex.y, prev.vertex.z, w.vertex.x, w.vertex.y, w.vertex.z);
+							prev = w;
+						}
+					}
+					debugWire.geometry.upload(camera.context3D);
+					debugWire.localToCameraTransform.identity();
+					debugWire.collectDraws(camera, null, 0, false);
+					*/
+					
+				//}
+			//}
 		}
 		
 		private function calculateEdges():String {
@@ -673,6 +699,7 @@ package alternativa.engine3d.core {
 			var square:Number = 0;
 			var viewSquare:Number = viewSizeX*viewSizeY*4*2;
 			var occludeAll:Boolean = true;
+			var d:Number;
 			for (var edge:Edge = edgeList; edge != null; edge = edge.next) {
 				// If face is into the contour
 				if (edge.left.visible != edge.right.visible) {
@@ -690,6 +717,7 @@ package alternativa.engine3d.core {
 					bx = b.cameraX;
 					by = b.cameraY;
 					bz = b.cameraZ;
+					
 					// Clipping
 					if (culling > 3) {
 						if (!camera.orthographic) {
@@ -817,8 +845,9 @@ package alternativa.engine3d.core {
 					if (!camera.orthographic) {
 						plane.x = (b.cameraZ*a.cameraY - b.cameraY*a.cameraZ)*camera.correctionY;
 						plane.y = (b.cameraX*a.cameraZ - b.cameraZ*a.cameraX)*camera.correctionX;
-						plane.z = (b.cameraY*a.cameraX - b.cameraX*a.cameraY)*camera.correctionX*camera.correctionY;
+						plane.z = (b.cameraY * a.cameraX - b.cameraX * a.cameraY) * camera.correctionX * camera.correctionY;
 						plane.offset = 0;
+						
 						if (minSize > 0 && square/viewSquare < minSize) {
 							ax = ax*viewSizeX/az;
 							ay = ay*viewSizeY/az;
@@ -832,14 +861,24 @@ package alternativa.engine3d.core {
 							plane = plane.create();
 							plane.x = ay - by;
 							plane.y = bx - ax;
+							d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y + plane.z * plane.z ); // normalise
+							plane.x *= d;  // normalise
+							plane.y *= d;  // normalise
+							plane.z *= d; // normalise
 							plane.offset = plane.x*ax + plane.y*ay;
 							plane.next = lineList;
+							
 							lineList = plane;
 						}
 					} else {
+						
 						plane.x = (a.cameraY - b.cameraY)*camera.correctionY;
 						plane.y = (b.cameraX - a.cameraX)*camera.correctionX;
 						plane.z = 0;
+						d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y + plane.z * plane.z ); // normalise
+							plane.x *= d;  // normalise
+							plane.y *= d;  // normalise
+							plane.z *= d; // normalise
 						plane.offset = plane.x*a.cameraX*camera.correctionX + plane.y*a.cameraY*camera.correctionY;
 						if (minSize > 0 && square/viewSquare < minSize) {
 							ax = ax*camera.correctionX;
@@ -854,6 +893,9 @@ package alternativa.engine3d.core {
 							plane = plane.create();
 							plane.x = ay - by;
 							plane.y = bx - ax;
+							d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y ); // normalise
+							plane.x *= d;  // normalise
+							plane.y *= d;  // normalise
 							plane.offset = plane.x*ax + plane.y*ay;
 							plane.next = lineList;
 							lineList = plane;
@@ -883,6 +925,7 @@ package alternativa.engine3d.core {
 				CullingPlane.collector = lineList;
 			}
 			// Create planes by faces.
+			/*
 			for (face = faceList; face != null; face = face.next) {
 				if (!face.visible) continue;
 				if (culling > 3) {
@@ -1033,9 +1076,14 @@ package alternativa.engine3d.core {
 				bz = c.cameraZ - a.cameraZ;
 				plane.x = (bz*ay - by*az)*camera.correctionY;
 				plane.y = (bx*az - bz*ax)*camera.correctionX;
-				plane.z = (by*ax - bx*ay)*camera.correctionX*camera.correctionY;
+				plane.z = (by * ax - bx * ay) * camera.correctionX * camera.correctionY;
+				d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y + plane.z * plane.z ); // normalise
+							plane.x *= d;  // normalise
+							plane.y *= d;  // normalise
+							plane.z *= d; // normalise
 				plane.offset = a.cameraX*plane.x*camera.correctionX + a.cameraY*plane.y*camera.correctionY + a.cameraZ*plane.z;
 			}
+			*/
 		}
 		
 		private function checkSquare(lineList:CullingPlane, ox:Number, oy:Number, square:Number, viewSquare:Number, viewSizeX:Number, viewSizeY:Number):Boolean {
@@ -1264,9 +1312,11 @@ package alternativa.engine3d.core {
 		}
 		
 		
+		private var _disposableFaceCache:Face;
 		
 		public function getDisposableTransformedFace(pos:Vec3,  up:Vec3, right:Vec3, width:Number, height:Number, t:Transform3D):Face {
 			var f:Face = new Face();
+			_disposableFaceCache = f;
 		
 			var v:Vertex;
 			var vx:Number;
@@ -1277,58 +1327,60 @@ package alternativa.engine3d.core {
 		
 			f.wrapper = w = new Wrapper();
 			w.vertex  = v =  new Vertex();
+			vx = pos.x; vy = pos.y; vz = pos.z;
 			vx += up.x*height;
 			vy += up.y*height;
 			vz += up.z*height;
 			vx -= right.x*width;
 			vy -= right.y*width;
 			vz -= right.z * width;
-			v.x = t.a*vx + t.b*vx + t.c*vx + t.d;
-			v.y = t.e*vy + t.f*vy + t.g*vy + t.h;
-			v.z = t.i * vz + t.j * vz + t.k * vz + t.l;
+			v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+			v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+			v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
 			
 			w.next = w = new Wrapper();
-			w.vertex = v.next= v = new Vertex();
+			w.vertex = v.next = v = new Vertex();
+			vx = pos.x; vy = pos.y; vz = pos.z;
 			vx -= up.x*height;
 			vy -= up.y*height;
 			vz -= up.z*height;
 			vx -= right.x*width;
 			vy -= right.y*width;
 			vz -= right.z * width;
-			v.x = t.a*vx + t.b*vx + t.c*vx + t.d;
-			v.y = t.e*vy + t.f*vy + t.g*vy + t.h;
-			v.z = t.i*vz + t.j*vz + t.k*vz + t.l;
+			v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+			v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+			v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
 			
 			w.next = w = new Wrapper();
-			w.vertex =  v.next=v = new Vertex();
+			w.vertex =  v.next = v = new Vertex();
+			vx = pos.x; vy = pos.y; vz = pos.z;
 			vx -= up.x*height;
 			vy -= up.y*height;
 			vz -= up.z*height;
 			vx += right.x*width;
 			vy += right.y*width;
 			vz += right.z * width;
-			v.x = t.a*vx + t.b*vx + t.c*vx + t.d;
-			v.y = t.e*vy + t.f*vy + t.g*vy + t.h;
-			v.z = t.i*vz + t.j*vz + t.k*vz + t.l;
+			v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+			v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+			v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
 			
-			f.calculateBestSequenceAndNormalTest();
+			
 			
 			w.next = w = new Wrapper();
-			w.vertex =  v.next=v = new Vertex();
+			w.vertex =  v.next = v = new Vertex();
+			vx = pos.x; vy = pos.y; vz = pos.z;
 			vx += up.x*height;
 			vy += up.y*height;
 			vz += up.z*height;
 			vx += right.x*width;
 			vy += right.y*width;
 			vz += right.z*width;
-			v.x = t.a*vx + t.b*vx + t.c*vx + t.d;
-			v.y = t.e*vy + t.f*vy + t.g*vy + t.h;
-			v.z = t.i * vz + t.j * vz + t.k * vz + t.l;
+			v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+			v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+			v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
 			
-			
-			// temp for now.
-			
-			
+			f.calculateBestSequenceAndNormal();
+
 			
 
 			
@@ -1338,28 +1390,40 @@ package alternativa.engine3d.core {
 		private var inputNorm:Vector3D = new Vector3D();
 		
 		public function clip(disposableFace:Face):String {
+			var p:CullingPlane;
 			var f:Face = disposableFace;
 			var negativeFace:Face = null;
 			var count:int = 0;
 			var gotExit:Boolean = false;
-			for (var p:CullingPlane = planeList; p != null; p = p.next) {
+			var pCount:int = 0 ;
+			for (p = planeList; p != null; p = p.next) {
+				pCount++;
+				
+			}
+			for (p = planeList; p != null; p = p.next) {
+				
+				inputNorm.x = -p.x;
+				inputNorm.y = -p.y;
+				inputNorm.z = -p.z;
+				inputNorm.w = -p.offset;
+				
+				count++;
+				ClipMacros.computeMeshVerticesOffsets(f, inputNorm);
+				
+				if (negativeFace == null) negativeFace = ClipMacros.newPositiveClipFace(f, inputNorm, inputNorm.w);
+				else ClipMacros.updateClipFace(f, inputNorm, inputNorm.w);
+				
+				f = negativeFace != null && negativeFace.wrapper != null ? negativeFace : null;
 				if (f == null) {
 					// face happens to lie completely on the outside of a plane
 					gotExit = true;
 					break;  
 				}
-				inputNorm.x = -p.x;
-				inputNorm.y = -p.y;
-				inputNorm.z = -p.z;
-				inputNorm.w = -p.offset;
-				count++;
-				ClipMacros.computeMeshVerticesOffsets(disposableFace, inputNorm);
-				negativeFace = ClipMacros.faceNeedsClipping(disposableFace, inputNorm.w) ?  ClipMacros.newPositiveClipFace(f, inputNorm, inputNorm.w) : null;
 			}
 			
 			if (negativeFace != null) {
 			
-				return "Negative:"+count + " : "+gotExit;
+				return "Negative:"+count + " : "+gotExit + ":"+ negativeFace.wrapper + "="+inputNorm.length + "/"+pCount;
 			}
 			
 			return null;
