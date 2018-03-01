@@ -14,6 +14,7 @@ package tests.pvp
 	import alternativa.a3d.systems.enemy.A3DEnemyArcSystem;
 	import alternativa.a3d.systems.hud.EdgeRaycastTester;
 	import alternativa.a3d.systems.hud.TargetBoardTester;
+	import alternativa.engine3d.core.Occluder;
 	import alternativa.engine3d.materials.TextureMaterial;
 	import spawners.ModelBundle;
 	//import alternativa.a3d.systems.hud.DestCalcTester;
@@ -2214,7 +2215,7 @@ package tests.pvp
 			
 			game.engine.addSystem( new HealthBarRenderSystem( createHPBarSet(), ~HealthFlags.FLAG_PLAYER ), SystemPriorities.render );
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
-
+			Occluder;
 			
 			spectatorPerson =new SimpleFlyController( 
 						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
