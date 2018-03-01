@@ -2,6 +2,7 @@ package alternativa.a3d.systems.hud
 {
 
 	import alternativa.engine3d.core.Object3D;
+	import alternativa.engine3d.core.Occluder;
 	import alternativa.engine3d.materials.FillMaterial;
 	import alternativa.engine3d.objects.MeshSetClone;
 	import alternativa.engine3d.objects.MeshSetClonesContainer;
@@ -35,6 +36,8 @@ package alternativa.a3d.systems.hud
 		private var cornerMat:FillMaterial = new FillMaterial(0x0000FF, 1);
 		
 		private var cameraObj:Object3D;
+		
+		public var testOccluder:Occluder;
 		
 		public function TargetBoardTester(scene:Object3D, position:Vec3, cameraObj:Object3D=null) 
 		{
@@ -194,7 +197,7 @@ package alternativa.a3d.systems.hud
 				p.root.matrix = m;
 				*/
 				
-				var arr:Array = [];
+				//var arr:Array = [];
 				/*
 				targRight.x = 1;
 				targRight.y = 0;
@@ -268,12 +271,15 @@ package alternativa.a3d.systems.hud
 				p.root.z = targUp.z * h + targPos.z;
 				
 				
-				
-				
-				arr.push(m.rawData);
-				//logNumbers(arr);
-
+				if (testOccluder != null) {
+					Log.trace( testOccluder.clip( testOccluder.getDisposableTransformedFace(targPos, UP, RIGHT, w, h, planes.localToCameraTransform) ) );
+				}
+			
+				break;
+	
 			}
+			
+			
 
 			
 			

@@ -13,6 +13,7 @@ package alternativa.engine3d.core {
 	import alternativa.engine3d.objects.WireFrame;
 	import alternativa.engine3d.resources.Geometry;
 	import flash.geom.Vector3D;
+	import util.geom.Vec3;
 
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
@@ -1264,20 +1265,105 @@ package alternativa.engine3d.core {
 		
 		
 		
+		public function getDisposableTransformedFace(pos:Vec3,  up:Vec3, right:Vec3, width:Number, height:Number, t:Transform3D):Face {
+			var f:Face = new Face();
 		
-		private static var CLIP_CACHE:Vector.<MeshG> = new Vector.<MeshG>(2);
+			var v:Vertex;
+			var vx:Number;
+			var vy:Number;
+			var vz:Number;
+			var w:Wrapper;
 			
 		
-		public function clip(disposableMesh:MeshG):void {
-			var res:Vector.<MeshG> = CLIP_CACHE;// new Vector.<Face>(2);
-		
-			for (var p:CullingPlane = planeList; p != null; p = p.next) {
-				var vec:Vector.<MeshG> = disposableMesh.split(p, 0.0001);
+			f.wrapper = w = new Wrapper();
+			w.vertex  = v =  new Vertex();
+			vx += up.x*height;
+			vy += up.y*height;
+			vz += up.z*height;
+			vx -= right.x*width;
+			vy -= right.y*width;
+			vz -= right.z * width;
+			v.x = t.a*vx + t.b*vx + t.c*vx + t.d;
+			v.y = t.e*vy + t.f*vy + t.g*vy + t.h;
+			v.z = t.i * vz + t.j * vz + t.k * vz + t.l;
 			
-			}	
-		
+			w.next = w = new Wrapper();
+			w.vertex = v.next= v = new Vertex();
+			vx -= up.x*height;
+			vy -= up.y*height;
+			vz -= up.z*height;
+			vx -= right.x*width;
+			vy -= right.y*width;
+			vz -= right.z * width;
+			v.x = t.a*vx + t.b*vx + t.c*vx + t.d;
+			v.y = t.e*vy + t.f*vy + t.g*vy + t.h;
+			v.z = t.i*vz + t.j*vz + t.k*vz + t.l;
+			
+			w.next = w = new Wrapper();
+			w.vertex =  v.next=v = new Vertex();
+			vx -= up.x*height;
+			vy -= up.y*height;
+			vz -= up.z*height;
+			vx += right.x*width;
+			vy += right.y*width;
+			vz += right.z * width;
+			v.x = t.a*vx + t.b*vx + t.c*vx + t.d;
+			v.y = t.e*vy + t.f*vy + t.g*vy + t.h;
+			v.z = t.i*vz + t.j*vz + t.k*vz + t.l;
+			
+			f.calculateBestSequenceAndNormalTest();
+			
+			w.next = w = new Wrapper();
+			w.vertex =  v.next=v = new Vertex();
+			vx += up.x*height;
+			vy += up.y*height;
+			vz += up.z*height;
+			vx += right.x*width;
+			vy += right.y*width;
+			vz += right.z*width;
+			v.x = t.a*vx + t.b*vx + t.c*vx + t.d;
+			v.y = t.e*vy + t.f*vy + t.g*vy + t.h;
+			v.z = t.i * vz + t.j * vz + t.k * vz + t.l;
+			
+			
+			// temp for now.
+			
+			
+			
+
+			
+			return f;
 		}
 		
+		private var inputNorm:Vector3D = new Vector3D();
+		
+		public function clip(disposableFace:Face):String {
+			var f:Face = disposableFace;
+			var negativeFace:Face = null;
+			var count:int = 0;
+			var gotExit:Boolean = false;
+			for (var p:CullingPlane = planeList; p != null; p = p.next) {
+				if (f == null) {
+					// face happens to lie completely on the outside of a plane
+					gotExit = true;
+					break;  
+				}
+				inputNorm.x = -p.x;
+				inputNorm.y = -p.y;
+				inputNorm.z = -p.z;
+				inputNorm.w = -p.offset;
+				count++;
+				ClipMacros.computeMeshVerticesOffsets(disposableFace, inputNorm);
+				negativeFace = ClipMacros.faceNeedsClipping(disposableFace, inputNorm.w) ?  ClipMacros.newPositiveClipFace(f, inputNorm, inputNorm.w) : null;
+			}
+			
+			if (negativeFace != null) {
+			
+				return "Negative:"+count + " : "+gotExit;
+			}
+			
+			return null;
+		}
 		
 	}
 		
@@ -1451,6 +1537,77 @@ class Face {
 		}
 		offset = a.x*nx + a.y*ny + a.z*nz;
 	}
+	
+	
+		public function calculateBestSequenceAndNormalTest():void {
+		if (wrapper.next.next.next != null) {
+			var max:Number = -1e+22;
+			var s:Wrapper;
+			var sm:Wrapper;
+			var sp:Wrapper;
+			for (w = wrapper; w != null; w = w.next) {
+				var wn:Wrapper = (w.next != null) ? w.next : wrapper;
+				var wm:Wrapper = (wn.next != null) ? wn.next : wrapper;
+				a = w.vertex;
+				b = wn.vertex;
+				c = wm.vertex;
+				abx = b.x - a.x;
+				aby = b.y - a.y;
+				abz = b.z - a.z;
+				acx = c.x - a.x;
+				acy = c.y - a.y;
+				acz = c.z - a.z;
+				nx = acz*aby - acy*abz;
+				ny = acx*abz - acz*abx;
+				nz = acy*abx - acx*aby;
+				nl = nx*nx + ny*ny + nz*nz;
+				if (nl > max) {
+					max = nl;
+					s = w;
+				}
+			}
+			
+			if (s != wrapper) {
+				//for (sm = wrapper.next.next.next; sm.next != null; sm = sm.next);
+				sm = wrapper.next.next.next;
+				while (sm.next != null) sm = sm.next;
+				//for (sp = wrapper; sp.next != s && sp.next != null; sp = sp.next);
+				sp = wrapper;
+				while (sp.next != s && sp.next != null) sp = sp.next;
+				sm.next = wrapper;
+				sp.next = null;
+				wrapper = s;
+			}
+		}
+		var w:Wrapper = wrapper;
+		
+		var a:Vertex = w.vertex;
+		w = w.next;
+		var b:Vertex = w.vertex;
+		w = w.next;
+		
+		var c:Vertex = w.vertex;
+		var abx:Number = b.x - a.x;
+		var aby:Number = b.y - a.y;
+		var abz:Number = b.z - a.z;
+		var acx:Number = c.x - a.x;
+		var acy:Number = c.y - a.y;
+		var acz:Number = c.z - a.z;
+		var nx:Number = acz*aby - acy*abz;
+		var ny:Number = acx*abz - acz*abx;
+		var nz:Number = acy*abx - acx*aby;
+		var nl:Number = nx*nx + ny*ny + nz*nz;
+		if (nl > 0) {
+			nl = 1/Math.sqrt(nl);
+			nx *= nl;
+			ny *= nl;
+			nz *= nl;
+			normalX = nx;
+			normalY = ny;
+			normalZ = nz;
+		}
+		offset = a.x*nx + a.y*ny + a.z*nz;
+	}
 		
 }
 
@@ -1502,18 +1659,20 @@ class Edge {
 }
 
 import alternativa.engine3d.core.CullingPlane;
+import flash.geom.Vector3D;
 
-class MeshG {
+class MeshG {  
 	public var faceList:Face;
 	public var vertexList:Vertex;
-	
 
 	private static var SPLIT_CACHE:Vector.<MeshG> = new Vector.<MeshG>(2);
 	private static var NEGATIVE_MESH_CACHE:MeshG = new MeshG();
 	private static var POSITIVE_MESH_CACHE:MeshG = new MeshG();
 	
+	
 	public var transformId:int = 0;
 	
+	// from alternativa3d  .. may/may not use this..since i'm only cutting faces, not meshes, this isn't too necessary..
 	public function split(plane:CullingPlane, threshold:Number):Vector.<MeshG> {
 		// Расчёт плоскости
 		var res:Vector.<MeshG> = SPLIT_CACHE;// new Vector.<Face>(2);
@@ -1727,4 +1886,334 @@ class MeshG {
 	//*/
 	
 }
+
+import flash.geom.Vector3D;
+
+ class ClipMacros
+	{
+		
+		
+		public static var transformId:int = 0;
+		
+		/**
+		 * Modify vertex.offset values for each faces' vertices relative to a given plane in camera coordinates.
+		 * @param	faceList	The faces to consider
+		 * @param	camNormal	The clip normal plane
+		 * @param   offset		The plane offset in relation to transformed vertices of face
+		 */
+		public static function computeMeshVerticesOffsets(faceList:Face, camNormal:Vector3D):void {
+			transformId++;
+			for (var f:Face = faceList; f != null; f = f.processNext) {
+				for (var wrapper:Wrapper =  f.wrapper; wrapper != null; wrapper = wrapper.next) {
+					var vertex:Vertex = wrapper.vertex;
+					if (vertex.transformId != transformId) {
+						vertex.offset = vertex.cameraX * camNormal.x + vertex.cameraY * camNormal.y + vertex.cameraZ * camNormal.z;
+						vertex.transformId = transformId;
+					}
+				}
+			}
+		}
+		
+		/**
+		 * Clones a wrapper deeply, cloning all chained sibling references too.
+		 * @param	wrapper
+		 * @return  The cloned wrapper list
+		 */
+		private function deepCloneWrapper(wrapper:Wrapper):Wrapper { // inline
+			var wrapperClone:Wrapper = wrapper.create();
+			wrapperClone.vertex = wrapper.vertex;
+
+			var w:Wrapper = wrapper.next;
+			var tailWrapper:Wrapper = wrapperClone;
+			while (w != null) {
+				var wClone:Wrapper = w.create();
+				wClone.vertex = w.vertex;
+				tailWrapper.next = wClone;
+				tailWrapper = wClone;
+				w = w.next;
+			}
+			return wrapperClone;
+		}
+		
+		public static function isValidFaceList(list:Face, throwError:Boolean = false):Boolean {
+			for (var f:Face = list; f != null; f = f.next) {
+				isValidFace(f, throwError);
+			}
+			
+			return true;
+		}
+		
+		public static function calculateBestSequenceAndNormal(list:Face):void {
+			for (var f:Face = list; f != null; f = f.next) {
+				f.calculateBestSequenceAndNormal();
+			}
+
+		}
+		
+		
+		public static function isValidFace(face:Face, throwError:Boolean = false):Boolean {
+			if (face.wrapper == null) {
+				if (throwError) throw new Error("No wrapper found for face:" + face);
+				return false;
+			}
+			var count:int = 0;
+			for (var wrapper:Wrapper =  face.wrapper; wrapper != null; wrapper = wrapper.next) {
+				var vertex:Vertex = wrapper.vertex;		
+				if (vertex == null) {
+					if (throwError) throw new Error("Missing vertex for wrapper at:" + count);
+					return false;
+				}
+				count++;		
+			}
+			if (count < 3)  {
+				if (throwError) throw new Error("Not enough vertices to form valid face! Vertex Count:" + count);
+				return false;
+			}
+			
+			return true;
+		}
+		
+		
+		/**
+		 * Modifies wrapper vertex ordering according to clip plane
+		 * @param	face
+		 * @param	normal	 
+		 * @param	offset				
+		 * @param	tailWrapper		Tail of vertex list to compare from at the beginning of iteration
+		 * @param	wrapperClone	Header of vertex list to start iterating from
+		 * @return  A wrapper list of vertices containing the clipped vertices
+		 */
+		public static function getClippedVerticesForFace(face:Face, normal:Vector3D, offset:Number, tailWrapper:Wrapper, wrapperClone:Wrapper):Wrapper {
+			// continue with clipping (iterate through all vertices)
+			var nextWrapper:Wrapper;
+			var headWrapper:Wrapper; 	// the very first valid vertex wrapper found
+			
+			var w:Wrapper, wClone:Wrapper;
+			
+			var a:Vertex = tailWrapper.vertex;	 
+			var ao:Number = a.offset; 			 
+			var bo:Number;   			 		 
+			var b:Vertex;  						 
+			var ratio:Number;
+			var v:Vertex;						// new created vertex
+			
+			for (w = wrapperClone; w != null; w = nextWrapper) {
+				nextWrapper = w.next;
+				b = w.vertex;
+				bo = b.offset;
+				
+				if (bo > offset && ao <= offset || bo <= offset && ao > offset) { // diff plane sides
+					v = b.create();
+					//this.lastVertex.next = v;
+					//this.lastVertex = v;
+								
+					ratio = (offset - ao)/(bo - ao);
+					v.cameraX = a.cameraX + (b.cameraX - a.cameraX)*ratio;
+					v.cameraY = a.cameraY + (b.cameraY - a.cameraY)*ratio;
+					v.cameraZ = a.cameraZ + (b.cameraZ - a.cameraZ)*ratio; 
+					v.x = a.x + (b.x - a.x)*ratio;
+					v.y = a.y + (b.y - a.y)*ratio;
+					v.z = a.z + (b.z - a.z)*ratio;
+					//v.u = a.u + (b.u - a.u)*ratio;
+					//v.v = a.v + (b.v - a.v) * ratio;
+					
+					//v.offset = a.offset + (b.offset - a.offset) * ratio;  // why was this commented away?
+								
+					wClone = w.create();
+					wClone.vertex = v;
+					if (headWrapper != null) tailWrapper.next = wClone; 
+					else headWrapper = wClone;
+					tailWrapper = wClone;
+				}
+				
+				if (bo > offset) { // current beta w should be appended as well as it's going from back to front
+					if (headWrapper != null) tailWrapper.next = w; 
+					else headWrapper = w;
+					tailWrapper = w;
+					w.next = null;
+				} 
+				else {		// current beta w should be culled as it's going from front to back.
+					w.vertex = null;	
+					w.next = Wrapper.collector;
+					Wrapper.collector = w;
+				}
+				
+				a = b;		// set tail alpha to current beta before continuing
+				ao = bo;
+			}
+			
+			return headWrapper;
+		}
+		
+		/**
+		 * Updates an existing cloned face to be clipped against a plane. 
+		 * @param	face
+		 * @param	normal	Plane normal
+		 * @param	offset	Plane offset
+		 */
+		public static function updateClipFace(face:Face, normal:Vector3D, offset:Number):void {
+			// Since face isn't a circular linked list with length property, need to find tail vertex
+			// again by iteration
+			var w:Wrapper = face.wrapper;
+			var tailWrapper:Wrapper = w;
+			while (w != null) {
+				tailWrapper = w;
+				w = w.next;
+			}
+			face.wrapper = getClippedVerticesForFace(face, normal, offset, tailWrapper, face.wrapper);
+		}
+		
+		/**
+		 * Creates a new clip face at the positive side of a given clip plane.
+		 * @param	face	An existing face
+		 * @param	normal	The clip plane normal
+		 * @param	offset	The clip plane offset to test against
+		 * @return	A new positive clip face
+		 */
+		public static function newPositiveClipFace(face:Face, normal:Vector3D, offset:Number):Face  
+		{
+			// Prepare cloned face
+			var clipFace:Face = face.create();
+			//clipFace.material = face.material;
+			clipFace.offset = face.offset;
+			clipFace.normalX = face.normalX;
+			clipFace.normalY = face.normalY;
+			clipFace.normalZ = face.normalZ;
+
+			
+			// deepCloneWrapper() inline
+			var wrapper:Wrapper = face.wrapper;
+			var wrapperClone:Wrapper = wrapper.create();
+			wrapperClone.vertex = wrapper.vertex;
+
+			var w:Wrapper = wrapper.next;
+			var tailWrapper:Wrapper = wrapperClone;
+			var wClone:Wrapper;
+			while (w != null) {
+				wClone = w.create();
+				wClone.vertex = w.vertex;
+				tailWrapper.next = wClone;
+				tailWrapper = wClone;
+				w = w.next;
+			}
+			
+			// get new wrapper of clipped vertices
+			clipFace.wrapper =  getClippedVerticesForFace(face, normal, offset, tailWrapper, wrapperClone);
+		
+			return clipFace;
+		}
+		
+		public static function faceNeedsClipping(face:Face, offset:Number):Boolean {
+					// First 3 vertices quick-check with their precomputed plane offset values
+					var r:Wrapper = face.wrapper;
+					var result:Boolean = false;
+					var w:Wrapper;
+					var a:Vertex = r.vertex; r = r.next;  
+					var b:Vertex = r.vertex; r = r.next; 
+					var c:Vertex = r.vertex; r = r.next;
+					var ao:Number = a.offset;
+					var bo:Number = b.offset;
+					var co:Number = c.offset;
+					w = null;
+					
+					if (ao <= offset && bo <= offset && co <= offset) { 	  // possible all out..
+						for (w = r; w != null; w = w.next) {  // any remaining vertices?
+							if (w.vertex.offset > offset) { 
+								// still need to clip.
+								result = true;
+								break;
+							}
+						}
+						if (w == null) { 	
+							//  remove off from process list since it's completely hidden in negative space
+							result = false;
+						}	
+					}
+					
+					else if (ao > offset && bo > offset && co > offset  ) {	// possible all in...
+						
+						for (w = r; w != null; w = w.next) {    // any remaining vertices?
+							if (w.vertex.offset <= offset) { 
+								// still need to clip.
+								result = true;
+								break;
+							}
+						}
+						// no clipping required for this plane
+						if ( w==null) {
+						
+							result = false;
+								
+						}
+					}
+					else result = true;
+					
+					return result;
+		}
+		
+	}
 	
+
+
+/*
+ * 
+ * 
+srcFace = CURRENT single face to clip
+faceArea = getTotalAreaOfFace(srcFace);
+
+faceList = srcFace;
+
+
+// If many occluders:
+
+for each occluder {
+	
+	nextFaceList = null;
+	
+	for each face in faceList {
+		faceList = null;
+		
+		For each culling plane in occluder
+		{
+		  
+			if (face == null) break;
+			
+			posFace = clip face by current culling plane to get positive face
+			negFace = clip face by current culling plane to get negative face
+		 
+			if (posFace != null) {
+				posFace.next = nextFaceList;
+				nextFaceList = posFace;
+			}
+
+		  face = negFace;
+		}
+		
+		if (negFace != null) {
+			faceArea -= getTotalAreaOfFace(negFace);
+		}
+	}
+	
+	
+	faceList = nextFaceList;
+	
+	p = posFaceHead;
+}
+
+
+
+// If only 1 occluder:
+
+For each culling plane in occluder
+{
+  
+	if (face == null) break;
+   negFace = clip face by current culling plane to get negative face;
+  face = negFace;
+}
+
+if (negFace != null) {
+	faceArea -= getTotalAreaOfFace(negFace);
+}
+	
+*/

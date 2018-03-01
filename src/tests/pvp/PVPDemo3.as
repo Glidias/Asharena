@@ -325,9 +325,16 @@ package tests.pvp
 			_template3D.stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextCreated);
 			
 			// example visual scene
-			var box:Object3D = new Box(100, 13, 100 + 64, 1, 1, 1, false, new FillMaterial(0xCCCCCC) );
-			box.z = 0;
+			var box:Mesh = new Box(100, 13, 100 + 64, 1, 1, 1, false, new FillMaterial(0xCCCCCC) );
+			//box.z = 0;
+			//box.visible = false;
+			occluderTest = new Occluder();
+			_targetBoardTester.testOccluder = occluderTest;
+
+		
+			occluderTest.createForm(box.geometry);
 			_template3D.scene.addChild(box);
+			box.addChild(occluderTest);
 			
 			
 			_debugBox = new Box(32, 32, 72, 1, 1, 1, false, new FillMaterial(0xFF0000) );
@@ -2211,11 +2218,13 @@ package tests.pvp
 			
 		
 		//	_template3D.scene.addChild( 
-			game.gameStates.thirdPerson.addInstance( new TargetBoardTester(_template3D.scene, null, _template3D.camera) ).withPriority(SystemPriorities.preRender);
+	
+			game.gameStates.thirdPerson.addInstance( _targetBoardTester = new TargetBoardTester(_template3D.scene, null, _template3D.camera) ).withPriority(SystemPriorities.preRender);
+			
 			
 			game.engine.addSystem( new HealthBarRenderSystem( createHPBarSet(), ~HealthFlags.FLAG_PLAYER ), SystemPriorities.render );
 			game.engine.addSystem( new RenderingSystem(_template3D.scene), SystemPriorities.render );
-			Occluder;
+			
 			
 			spectatorPerson =new SimpleFlyController( 
 						new EllipsoidCollider(GameSettings.SPECTATOR_RADIUS.x, GameSettings.SPECTATOR_RADIUS.y, GameSettings.SPECTATOR_RADIUS.z), 
@@ -2255,6 +2264,8 @@ package tests.pvp
 		private var targetingSystem:ThirdPersonTargetingSystem;
 		private var movementPointSystem:LimitedPlayerMovementSystem;
 		private var _debugBox:Box;
+		private var occluderTest:Occluder;
+		private var _targetBoardTester:TargetBoardTester;
 		//private var destCalcTester:DestCalcTester;
 		
 		private function setupInterface():void 
