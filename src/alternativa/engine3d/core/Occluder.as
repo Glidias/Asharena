@@ -848,7 +848,7 @@ package alternativa.engine3d.core {
 						plane.z = (b.cameraY * a.cameraX - b.cameraX * a.cameraY) * camera.correctionX * camera.correctionY;
 						plane.offset = 0;
 						
-						if (minSize > 0 && square/viewSquare < minSize) {
+						if (minSize > 0 && square / viewSquare < minSize) {
 							ax = ax*viewSizeX/az;
 							ay = ay*viewSizeY/az;
 							bx = bx*viewSizeX/bz;
@@ -861,10 +861,10 @@ package alternativa.engine3d.core {
 							plane = plane.create();
 							plane.x = ay - by;
 							plane.y = bx - ax;
-							d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y + plane.z * plane.z ); // normalise
-							plane.x *= d;  // normalise
-							plane.y *= d;  // normalise
-							plane.z *= d; // normalise
+							//d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y + plane.z * plane.z ); // normalise
+							//plane.x *= d;  // normalise
+							//plane.y *= d;  // normalise
+							//plane.z *= d; // normalise
 							plane.offset = plane.x*ax + plane.y*ay;
 							plane.next = lineList;
 							
@@ -875,10 +875,10 @@ package alternativa.engine3d.core {
 						plane.x = (a.cameraY - b.cameraY)*camera.correctionY;
 						plane.y = (b.cameraX - a.cameraX)*camera.correctionX;
 						plane.z = 0;
-						d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y + plane.z * plane.z ); // normalise
-							plane.x *= d;  // normalise
-							plane.y *= d;  // normalise
-							plane.z *= d; // normalise
+						//d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y + plane.z * plane.z ); // normalise
+							//plane.x *= d;  // normalise
+							//plane.y *= d;  // normalise
+							//plane.z *= d; // normalise
 						plane.offset = plane.x*a.cameraX*camera.correctionX + plane.y*a.cameraY*camera.correctionY;
 						if (minSize > 0 && square/viewSquare < minSize) {
 							ax = ax*camera.correctionX;
@@ -893,9 +893,9 @@ package alternativa.engine3d.core {
 							plane = plane.create();
 							plane.x = ay - by;
 							plane.y = bx - ax;
-							d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y ); // normalise
-							plane.x *= d;  // normalise
-							plane.y *= d;  // normalise
+							//d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y ); // normalise
+							//plane.x *= d;  // normalise
+							//plane.y *= d;  // normalise
 							plane.offset = plane.x*ax + plane.y*ay;
 							plane.next = lineList;
 							lineList = plane;
@@ -1077,10 +1077,10 @@ package alternativa.engine3d.core {
 				plane.x = (bz*ay - by*az)*camera.correctionY;
 				plane.y = (bx*az - bz*ax)*camera.correctionX;
 				plane.z = (by * ax - bx * ay) * camera.correctionX * camera.correctionY;
-				d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y + plane.z * plane.z ); // normalise
-							plane.x *= d;  // normalise
-							plane.y *= d;  // normalise
-							plane.z *= d; // normalise
+				//d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y + plane.z * plane.z ); // normalise
+							//plane.x *= d;  // normalise
+							//plane.y *= d;  // normalise
+							//plane.z *= d; // normalise
 				plane.offset = a.cameraX*plane.x*camera.correctionX + a.cameraY*plane.y*camera.correctionY + a.cameraZ*plane.z;
 			}
 			*/
