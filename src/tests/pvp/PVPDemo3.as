@@ -326,7 +326,7 @@ package tests.pvp
 			_template3D.stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextCreated);
 			
 			// example visual scene
-			var box:Mesh = new Box(100, 13, 100 + 64, 1, 1, 1, false, new FillMaterial(0xCCCCCC) );
+			var box:Mesh = new Box(100, 13, 100 + 64, 1, 1, 1, false, new FillMaterial(0xCCCCCC, .85) );
 			//box.z = 0;
 			
 			occluderTest = new Occluder();

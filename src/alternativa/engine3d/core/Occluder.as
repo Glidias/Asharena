@@ -142,11 +142,12 @@ package alternativa.engine3d.core {
 			//if (camera.debug) {
 				//if (camera.checkInDebug(this) & Debug.CONTENT) {
 					if (debugWire == null) {
-						debugWire = new WireFrame(0xFF00FF, 1, 2);
+						//0xFF00FF
+						debugWire = new WireFrame(0xFFFF00, 1, 2);
 					}
 					debugWire.geometry.clear();
 					
-						///*
+						/*
 					var cc:int = 0;
 					for (var edge:Edge = edgeList; edge != null; edge = edge.next) {
 						if (edge.left.visible != edge.right.visible) {
@@ -159,6 +160,29 @@ package alternativa.engine3d.core {
 					
 					debugWire.geometry.upload(camera.context3D);
 					debugWire.localToCameraTransform.copy(localToCameraTransform);
+					debugWire.collectDraws(camera, null, 0, false);
+					//*/
+					
+					
+					///*
+					if (_negativeFaceCache != null) {
+						var prev:Wrapper = _negativeFaceCache.wrapper;
+						for (var w:Wrapper = prev.next; w != null; w = w.next) {
+							debugWire.geometry.addLine(prev.vertex.x, prev.vertex.y, prev.vertex.z, w.vertex.x, w.vertex.y, w.vertex.z);
+							prev = w;
+						}
+					}
+					else {
+						if (_disposableFaceCache != null) {
+						   prev = _disposableFaceCache.wrapper;
+							for (w = prev.next; w != null; w = w.next) {
+								debugWire.geometry.addLine(prev.vertex.x, prev.vertex.y, prev.vertex.z, w.vertex.x, w.vertex.y, w.vertex.z);
+								prev = w;
+							}
+						}
+					}
+					debugWire.geometry.upload(camera.context3D);
+					debugWire.localToCameraTransform.identity();
 					debugWire.collectDraws(camera, null, 0, false);
 					//*/
 					
@@ -903,6 +927,8 @@ package alternativa.engine3d.core {
 					}
 				}
 			}
+			
+			
 			if (planeList == null && !occludeAll) return;
 			// Checking size on the display
 			if (planeList != null && minSize > 0 && square/viewSquare < minSize && (culling <= 3 || !checkSquare(lineList, ox, oy, square, viewSquare, viewSizeX, viewSizeY))) {
@@ -925,7 +951,7 @@ package alternativa.engine3d.core {
 				CullingPlane.collector = lineList;
 			}
 			// Create planes by faces.
-			/*
+			///*
 			for (face = faceList; face != null; face = face.next) {
 				if (!face.visible) continue;
 				if (culling > 3) {
@@ -1078,12 +1104,12 @@ package alternativa.engine3d.core {
 				plane.y = (bx*az - bz*ax)*camera.correctionX;
 				plane.z = (by * ax - bx * ay) * camera.correctionX * camera.correctionY;
 				//d = 1 / Math.sqrt( plane.x * plane.x + plane.y * plane.y + plane.z * plane.z ); // normalise
-							//plane.x *= d;  // normalise
-							//plane.y *= d;  // normalise
-							//plane.z *= d; // normalise
+				//plane.x *= d;  // normalise
+				//plane.y *= d;  // normalise
+				//plane.z *= d; // normalise
 				plane.offset = a.cameraX*plane.x*camera.correctionX + a.cameraY*plane.y*camera.correctionY + a.cameraZ*plane.z;
 			}
-			*/
+			//*/
 		}
 		
 		private function checkSquare(lineList:CullingPlane, ox:Number, oy:Number, square:Number, viewSquare:Number, viewSizeX:Number, viewSizeY:Number):Boolean {
@@ -1388,8 +1414,9 @@ package alternativa.engine3d.core {
 		}
 		
 		private var inputNorm:Vector3D = new Vector3D();
+		private var _negativeFaceCache:Face;
 		
-		public function clip(disposableFace:Face):String {
+		public function clip(disposableFace:Face):Number {
 			var p:CullingPlane;
 			var f:Face = disposableFace;
 			var negativeFace:Face = null;
@@ -1408,12 +1435,12 @@ package alternativa.engine3d.core {
 				inputNorm.w = -p.offset;
 				
 				count++;
-				ClipMacros.computeMeshVerticesOffsets(f, inputNorm);
+				ClipMacros.computeMeshVerticesLocalOffsets(f, inputNorm);
 				
 				if (negativeFace == null) negativeFace = ClipMacros.newPositiveClipFace(f, inputNorm, inputNorm.w);
 				else ClipMacros.updateClipFace(f, inputNorm, inputNorm.w);
-				
-				f = negativeFace != null && negativeFace.wrapper != null ? negativeFace : null;
+				if (negativeFace.wrapper == null) negativeFace = null;
+				f = negativeFace;
 				if (f == null) {
 					// face happens to lie completely on the outside of a plane
 					gotExit = true;
@@ -1422,11 +1449,15 @@ package alternativa.engine3d.core {
 			}
 			
 			if (negativeFace != null) {
-			
-				return "Negative:"+count + " : "+gotExit + ":"+ negativeFace.wrapper + "="+inputNorm.length + "/"+pCount;
+				_negativeFaceCache = negativeFace;
+				return negativeFace.getArea();
+				//return "Negative: "+gotExit + ":"+ negativeFace.wrapper + "="+count + "/"+pCount;
+			}
+			else {
+				_negativeFaceCache = null;
 			}
 			
-			return null;
+			return -1;
 		}
 		
 	}
@@ -1501,39 +1532,69 @@ class Face {
 	public static var collector:Face;
 	
 
-		static public function create():Face {
-			if (collector != null) {
-				var res:Face = collector;
-				collector = res.next;
-				res.next = null;
-				/*if (res.processNext != null) trace("!!!processNext!!!");
-				if (res.geometry != null) trace("!!!geometry!!!");
-				if (res.negative != null) trace("!!!negative!!!");
-				if (res.positive != null) trace("!!!positive!!!");*/
-				return res;
-			} else {
-				//trace("new Face");
-				return new Face();
-			}
+	static public function create():Face {
+		if (collector != null) {
+			var res:Face = collector;
+			collector = res.next;
+			res.next = null;
+			/*if (res.processNext != null) trace("!!!processNext!!!");
+			if (res.geometry != null) trace("!!!geometry!!!");
+			if (res.negative != null) trace("!!!negative!!!");
+			if (res.positive != null) trace("!!!positive!!!");*/
+			return res;
+		} else {
+			//trace("new Face");
+			return new Face();
 		}
+	}
 	
 	
-		public function create():Face {
-			if (collector != null) {
-				var res:Face = collector;
-				collector = res.next;
-				res.next = null;
-				/*if (res.processNext != null) trace("!!!processNext!!!");
-				if (res.geometry != null) trace("!!!geometry!!!");
-				if (res.negative != null) trace("!!!negative!!!");
-				if (res.positive != null) trace("!!!positive!!!");*/
-				return res;
-			} else {
-				//trace("new Face");
-				return new Face();
-			}
+	public function create():Face {
+		if (collector != null) {
+			var res:Face = collector;
+			collector = res.next;
+			res.next = null;
+			/*if (res.processNext != null) trace("!!!processNext!!!");
+			if (res.geometry != null) trace("!!!geometry!!!");
+			if (res.negative != null) trace("!!!negative!!!");
+			if (res.positive != null) trace("!!!positive!!!");*/
+			return res;
+		} else {
+			//trace("new Face");
+			return new Face();
 		}
+	}
 	
+	public function getArea():Number {
+		var w:Wrapper;
+		var a:Vertex = wrapper.vertex;
+		
+		var areaAccum:Number = 0;
+		var area:Number;
+		w = wrapper.next;
+		var wn:Wrapper = w.next;
+		while (wn != null) {
+			var b:Vertex = w.vertex;
+			var c:Vertex = wn.vertex;
+			var xAB:Number = b.x - a.x;
+			var yAB:Number = b.y - a.y;
+			var zAB:Number = b.z - a.z;
+			
+			var xAC:Number = c.x - a.x;
+			var yAC:Number = c.y - a.y;
+			var zAC:Number = c.z - a.z;
+			
+			var cx:Number = yAB*zAC - zAB*yAC;
+			var cy:Number = zAB*xAC - xAB*zAC;
+			var cz:Number = xAB*yAC - yAB*xAC;
+			areaAccum += Math.sqrt( cx * cx + cy * cy + cz * cz) * 0.5;
+			
+			w = w.next;
+			wn = wn.next;
+		}
+		
+		return areaAccum;
+	}
 	
 	public function calculateBestSequenceAndNormal():void {
 		if (wrapper.next.next.next != null) {
@@ -1722,8 +1783,10 @@ class Edge {
 
 }
 
+
 import alternativa.engine3d.core.CullingPlane;
 import flash.geom.Vector3D;
+
 
 class MeshG {  
 	public var faceList:Face;
@@ -1965,13 +2028,32 @@ import flash.geom.Vector3D;
 		 * @param	camNormal	The clip normal plane
 		 * @param   offset		The plane offset in relation to transformed vertices of face
 		 */
-		public static function computeMeshVerticesOffsets(faceList:Face, camNormal:Vector3D):void {
+		public static function computeMeshVerticesCamOffsets(faceList:Face, camNormal:Vector3D):void {
 			transformId++;
 			for (var f:Face = faceList; f != null; f = f.processNext) {
 				for (var wrapper:Wrapper =  f.wrapper; wrapper != null; wrapper = wrapper.next) {
 					var vertex:Vertex = wrapper.vertex;
 					if (vertex.transformId != transformId) {
 						vertex.offset = vertex.cameraX * camNormal.x + vertex.cameraY * camNormal.y + vertex.cameraZ * camNormal.z;
+						vertex.transformId = transformId;
+					}
+				}
+			}
+		}
+		
+		/**
+		 * Modify vertex.offset values for each faces' vertices relative to a given plane in camera coordinates.
+		 * @param	faceList	The faces to consider
+		 * @param	camNormal	The clip normal plane
+		 * @param   offset		The plane offset in relation to transformed vertices of face
+		 */
+		public static function computeMeshVerticesLocalOffsets(faceList:Face, camNormal:Vector3D):void {
+			transformId++;
+			for (var f:Face = faceList; f != null; f = f.processNext) {
+				for (var wrapper:Wrapper =  f.wrapper; wrapper != null; wrapper = wrapper.next) {
+					var vertex:Vertex = wrapper.vertex;
+					if (vertex.transformId != transformId) {
+						vertex.offset = vertex.x * camNormal.x + vertex.y * camNormal.y + vertex.z * camNormal.z;
 						vertex.transformId = transformId;
 					}
 				}

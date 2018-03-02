@@ -182,11 +182,21 @@ package alternativa.a3d.systems.hud
 				Vec3.writeCross(targLook, targRight, targUp);
 				//targUp.normalize();
 				
+				var sx:Number = n.size.x - 4;
+				var sz:Number = n.size.z;
+				/*  // center of mass size modifications
+				var wh:Number = 42;
+				sz = wh*.5;
+				targPos.z += sz*.5;
+				*/
 		
 				var p:MeshSetClone = planes.addNewOrAvailableClone();
 				
 				
 				var m:Matrix3D;
+				
+				
+
 				
 				/*
 				objectTransform = dummyObj.matrix.decompose();
@@ -223,12 +233,11 @@ package alternativa.a3d.systems.hud
 				dummyVec.copyFrom(targRight);
 				dummyVec.z = 0;
 				dummyVec.normalize();
-				dummyVec.scale(n.size.x);
+				dummyVec.scale(sx);
 				
-				var wh:Number = 42;
-				var sz:Number = n.size.z;
-				sz = wh*.5;
-				targPos.z += sz*.5;
+				
+				
+			
 				
 				// project right vector over horizontal/vertical extents to see which width to use
 				dx = targRight.dotProduct(dummyVec);  
@@ -324,8 +333,15 @@ package alternativa.a3d.systems.hud
 				
 				
 				if (testOccluder != null) {
-		
-					Log.trace( testOccluder.clip( testOccluder.getDisposableTransformedFace(targPos, targUp, targRight, w, h, planes.localToCameraTransform)  ) );
+					var areaSubtracted:Number =  testOccluder.clip( testOccluder.getDisposableTransformedFace(targPos, targUp, targRight, w, h, planes.localToCameraTransform)  );
+					var area:Number = w * h * 4;
+					if (areaSubtracted > 0) {
+						Log.trace( int(areaSubtracted/area*100)+"% cover" );
+					}
+					else {
+						Log.trace("Fully exposed");
+					}
+					
 				}
 			
 				break;
