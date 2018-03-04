@@ -362,6 +362,11 @@ package tests.pvp
 			occluderTest.y = box.y;
 			occluderTest.z = box.z;
 			
+			//var anotherOccluder:Occluder = new Occluder();
+			//var plTest:Plane = new Plane(100, 100, 1, 1, true, false);
+			
+			//anotherOccluder.createForm(plTest.geometry);
+			
 			occluderTest.createForm(box.geometry);
 			SpawnerBundle.uploadResources(box.getResources());
 			

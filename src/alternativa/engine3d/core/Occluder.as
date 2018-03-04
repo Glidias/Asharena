@@ -1420,13 +1420,13 @@ package alternativa.engine3d.core {
 			var p:CullingPlane;
 			var f:Face = disposableFace;
 			var negativeFace:Face = null;
-			var count:int = 0;
-			var gotExit:Boolean = false;
-			var pCount:int = 0 ;
-			for (p = planeList; p != null; p = p.next) {
-				pCount++;
+			//var count:int = 0;
+			//var gotExit:Boolean = false;
+			//var pCount:int = 0 ;
+			//for (p = planeList; p != null; p = p.next) {
+			//	pCount++;
 				
-			}
+			//}
 			for (p = planeList; p != null; p = p.next) {
 				
 				inputNorm.x = -p.x;
@@ -1434,7 +1434,7 @@ package alternativa.engine3d.core {
 				inputNorm.z = -p.z;
 				inputNorm.w = -p.offset;
 				
-				count++;
+				//count++;
 				ClipMacros.computeMeshVerticesLocalOffsets(f, inputNorm);
 				
 				if (negativeFace == null) negativeFace = ClipMacros.newPositiveClipFace(f, inputNorm, inputNorm.w);
@@ -1443,7 +1443,7 @@ package alternativa.engine3d.core {
 				f = negativeFace;
 				if (f == null) {
 					// face happens to lie completely on the outside of a plane
-					gotExit = true;
+					//gotExit = true;
 					break;  
 				}
 			}
