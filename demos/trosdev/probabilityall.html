@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<title>TrosHAXE - Probability Calculator</title>
+	<meta name="description" content="" />
+	<script src="jquery-3.0.0.min.js"></script>
+	<script src="vue.js"></script>
+	<script src="TrosHAXE.js"></script>
+	<style>
+		.tablesection {
+			font-family:Arial;
+			font-size:12px;
+		}
+		.tablesection table td {
+			text-align:center;
+			border:1px solid grey;
+			position:relative;
+		}
+		.tablesection table td input {
+			text-align:center;
+			font-family:inherit;
+			font-size:inherit;
+			background-color:white;
+			width:100%;
+			height:100%;
+			padding:0;margin:0;
+			
+			top:0;left:0;display:block;
+			border:0;
+		}
+		.tablesection table td.active input {
+			background-color:aqua;
+			font-size:9px;
+			min-width:54px;
+		}
+		.tablesection td .line {
+			border:1px solid black;
+			margin-top:3px;
+		}
+		
+		
+	</style>
+</head>
+<body>
+	<div class="tablesection" id="probcalculator">
+		<div  v-for="(tni,tn) in 11" v-if="tn>1">
+			<h3>Probability Table (TN{{tn}}):</h3>	
+			<table>
+				<thead>
+					<tr>
+						<td>RS/Pool</td>
+						<td v-for="pi in 30">{{pi+1}}</td>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="rsi in 20">
+						<td>{{rsi+1}}RS</td>
+						<td v-for="pi in 30" :class="{active:rowIndex===rsi && colIndex ===pi}"><input type="text" readonly :value="(rowIndex===rsi && colIndex ===pi ? '['+(rsi+1)+'^,'+(pi+1)+'>]: ' : '' ) + roundPerc(getChanceToSucceed(pi+1, tn, rsi+1))"></input></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+	
+	<script>
+		var ReflectUtil = troshx.util.ReflectUtil;
+		var TROSAI =  troshx.util.TROSAI;
+		var vueCalculatorMethods = {
+			outputSymbolsByCount: function(symbol, count) {
+				var str = "";
+				while(--count > -1) {
+					str+=symbol;
+				}
+				return str;
+			},
+			focusRowCol: function(rowIndex, colIndex) {
+				var self = this;
+				Vue.nextTick( function() {
+					self.rowIndex = rowIndex;
+					self.colIndex = colIndex;
+				});
+			},
+			focusOutBlur: function() {
+				this.unfocusClear();
+			},
+			clampProb: function(val) {
+				return val < 0 ? 0 : val > 1 ? 1 : val;
+			},
+			roundPerc: function(prob) {
+				return Math.round(prob*100);
+			},
+			unfocusClear: function() {
+				this.rowIndex = -1;
+				this.colIndex = -1;
+			},
+		};
+		var vueCalculatorData = {
+			rowIndex:-1,
+			colIndex:-1,
+			TN: 7,
+		};
+		var vueCalculatorComputed = {
+			rangeProbValues: function() {
+				
+			},
+			previewTxt: function() {
+				var rs = this.rowIndex + 1;
+				var pool = this.colIndex + 1;
+				var tn = this.TN;
+				if (pool > 0 && pool > 0) {
+					return pool+" dice @ tn"+tn+" for "+rs+"RS: "+this.roundPerc(this.getChanceToSucceed(pool, tn, rs))+"%"; 
+				}
+				return "";
+			},
+		};
+		
+		ReflectUtil.setItemMethodsTo( TROSAI, vueCalculatorMethods, true);
+		
+		var vueCalculatorModel = new Vue({
+			el: "#probcalculator",
+			data: vueCalculatorData,
+			methods: vueCalculatorMethods,
+			computed: vueCalculatorComputed
+		});
+	
+	</script>
+</body>
+</html>
