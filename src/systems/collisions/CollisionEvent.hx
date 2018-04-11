@@ -5,8 +5,7 @@
  */
 
 package systems.collisions;
-import ash.core.Entity;
-import flash.geom.Vector3D;
+
 import util.geom.Vec3;
 import util.geom.Vec3Utils;
 import util.geom.Vec3;
@@ -37,7 +36,7 @@ class CollisionEvent
 	public static var COLLECTOR:CollisionEvent = new CollisionEvent();
 	public var next:CollisionEvent;
 	
-	public var thing:Entity;
+	//public var thing:Entity;  // this doesn't fit here. YAGNI
 	
 	public function new() 
 	{

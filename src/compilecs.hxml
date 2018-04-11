@@ -1,0 +1,6 @@
+-cs ../src_cs
+-main MainJS
+-D triOnly
+-D real-position
+#-D erase-generics
+-dce no

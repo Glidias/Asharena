@@ -1,468 +1,390 @@
 ﻿/*
- *                            _/                                                    _/
- *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
- *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *     _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *    _/_/_/      _/_/    _/    _/_/_/    _/_/_/    _/_/    _/    _/    _/_/_/  _/
- *   _/                            _/        _/
- *  _/                        _/_/      _/_/
- *
- * POLYGONAL - A HAXE LIBRARY FOR GAME DEVELOPERS
- * Copyright (c) 2009 Michael Baczynski, http://www.polygonal.de
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+Copyright (c) 2008-2018 Michael Baczynski, http://www.polygonal.de
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 package de.polygonal.ds;
 
-import de.polygonal.ds.error.Assert.assert;
-
-private typedef LinkedDequeFriend<T> =
-{
-	private var _head:LinkedDequeNode<T>;
-	private function _removeNode(x:LinkedDequeNode<T>):Void;
-}
+import de.polygonal.ds.tools.ArrayTools;
+import de.polygonal.ds.tools.Assert.assert;
+import de.polygonal.ds.tools.MathTools;
 
 /**
- * <p>A deque ("double-ended queue") is a linear list for which all insertions and deletions (and usually all accesses) are made at the ends of the list.</p>
- * <p><o>Worst-case running time in Big O notation</o></p>
- */
+	A deque is a "double-ended queue"
+	
+	This is a linear list for which all insertions and deletions (and usually all accesses) are made at ends of the list.
+	
+	Example:
+		var o = new de.polygonal.ds.LinkedDeque<Int>();
+		for (i in 0...4) o.pushFront(i);
+		trace(o); //outputs:
+		
+		[ LinkedDeque size=4
+		  front
+		  0 -> 3
+		  1 -> 2
+		  2 -> 1
+		  3 -> 0
+		]
+**/
 #if generic
 @:generic
 #end
 class LinkedDeque<T> implements Deque<T>
 {
 	/**
-	 * A unique identifier for this object.<br/>
-	 * A hash table transforms this key into an index of an array element by using a hash function.<br/>
-	 * <warn>This value should never be changed by the user.</warn>
-	 */
-	public var key:Int;
+		A unique identifier for this object.
+		
+		A hash table transforms this key into an index of an array element by using a hash function.
+	**/
+	public var key(default, null):Int = HashKey.next();
 	
 	/**
-	 * The maximum allowed size of this deque.<br/>
-	 * Once the maximum size is reached, adding an element will fail with an error (debug only).
-	 * A value of -1 indicates that the size is unbound.<br/>
-	 * <warn>Always equals -1 in release mode.</warn>
-	 */
-	public var maxSize:Int;
+		If true, reuses the iterator object instead of allocating a new one when calling `this.iterator()`.
+		
+		The default is false.
+		
+		_If this value is true, nested iterations will fail as only one iteration is allowed at a time._
+	**/
+	public var reuseIterator:Bool = false;
+	
+	var mHead:LinkedDequeNode<T> = null;
+	var mTail:LinkedDequeNode<T> = null;
+	
+	var mHeadPool:LinkedDequeNode<T>;
+	var mTailPool:LinkedDequeNode<T>;
+	
+	var mSize:Int = 0;
+	var mReservedSize:Int;
+	var mPoolSize:Int = 0;
+	var mIterator:LinkedDequeIterator<T> = null;
 	
 	/**
-	 * If true, reuses the iterator object instead of allocating a new one when calling <code>iterator()</code>.<br/>
-	 * The default is false.<br/>
-	 * <warn>If true, nested iterations are likely to fail as only one iteration is allowed at a time.</warn>
-	 */
-	public var reuseIterator:Bool;
-	
-	var _head:LinkedDequeNode<T>;
-	var _tail:LinkedDequeNode<T>;
-	
-	var _headPool:LinkedDequeNode<T>;
-	var _tailPool:LinkedDequeNode<T>;
-	
-	var _size:Int;
-	var _reservedSize:Int;
-	var _poolSize:Int;
-	var _iterator:LinkedDequeIterator<T>;
-	
-	/**
-	 * @param reservedSize if &gt; 0, this queue maintains an object pool of node objects.<br/>
-	 * Prevents frequent node allocation and thus increases performance at the cost of using more memory.
-	 * @param maxSize the maximum allowed size of this queue.<br/>
-	 * The default value of -1 indicates that there is no upper limit.
-	 * @throws de.polygonal.ds.error.AssertError reserved size is greater than allowed size (debug only).
-	 */
-	public function new(reservedSize = 0, maxSize = -1) 
+		@param reservedSize if > 0, this queue maintains an object pool of node objects.
+		Prevents frequent node allocation and thus increases performance at the cost of using more memory.
+	**/
+	public function new(reservedSize:Null<Int> = 0, ?source:Array<T>)
 	{
-		#if debug
-		if (reservedSize > 0)
+		mReservedSize = reservedSize;
+		mHeadPool = mTailPool = new LinkedDequeNode<T>(cast null);
+		
+		if (source != null)
 		{
-			if (maxSize != -1)
-				assert(reservedSize <= maxSize, "reserved size is greater than allowed size");
+			if (source.length == 0) return;
+			
+			mSize = source.length;
+			
+			var node = getNode(source[0]);
+			mHead = mTail = node;
+			for (i in 1...mSize)
+			{
+				node = getNode(source[i]);
+				node.next = mHead;
+				mHead.prev = node;
+				mHead = node;
+			}
 		}
-		this.maxSize = (maxSize == -1) ? M.INT32_MAX : maxSize;
-		#else
-		this.maxSize = -1;
-		#end
-		
-		_poolSize     = 0;
-		_reservedSize = reservedSize;
-		_size         = 0;
-		_head         = null;
-		_tail         = null;
-		_iterator     = null;
-		_headPool = _tailPool = new LinkedDequeNode<T>(cast null);
-		reuseIterator = false;
 	}
 	
 	/**
-	 * Returns the first element of this deque.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError deque is empty (debug only).
-	 */
-	inline public function front():T
+		Returns the first element of this deque.
+	**/
+	public inline function front():T
 	{
-		#if debug
-		assert(size() > 0, "deque is empty");
-		#end
+		assert(size > 0, "deque is empty");
 		
-		return _head.val;
+		return mHead.val;
 	}
 	
 	/**
-	 * Inserts the element <code>x</code> at the front of this deque.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	inline public function pushFront(x:T)
+		Inserts `val` at the front of this deque.
+	**/
+	public inline function pushFront(val:T)
 	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		#end
+		var node = getNode(val);
+		node.next = mHead;
+		if (mHead != null) mHead.prev = node;
+		mHead = node;
 		
-		var node = _getNode(x);
-		node.next = _head;
-		if (_head != null) _head.prev = node;
-		_head = node;
-		
-		if (_size++ == 0) _tail = _head;
+		if (mSize++ == 0) mTail = mHead;
 	}
 	
 	/**
-	 * Removes and returns the element at the beginning of this deque.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError deque is empty (debug only).
-	 */
-	inline public function popFront():T
+		Removes and returns the element at the beginning of this deque.
+	**/
+	public inline function popFront():T
 	{
-		#if debug
-		assert(size() > 0, "deque is empty");
-		#end
+		assert(size > 0, "deque is empty");
 		
-		var node = _head;
-		_head = _head.next;
-		if (_head != null) _head.prev = null;
+		var node = mHead;
+		mHead = mHead.next;
+		if (mHead != null) mHead.prev = null;
 		node.next = null;
-		if (--_size == 0) _tail = null;
-		
-		return _putNode(node, true);
+		if (--mSize == 0) mTail = null;
+		return putNode(node, true);
 	}
 	
 	/**
-	 * Returns the last element of the deque.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError deque is empty (debug only).
-	 */
-	inline public function back():T
+		Returns the last element of the deque.
+	**/
+	public inline function back():T
 	{
-		#if debug
-		assert(size() > 0, "deque is empty");
-		#end
+		assert(size > 0, "deque is empty");
 		
-		return _tail.val;
+		return mTail.val;
 	}
 	
 	/**
-	 * Inserts the element <code>x</code> at the back of the deque.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	inline public function pushBack(x:T)
+		Inserts `val` at the back of the deque.
+	**/
+	public inline function pushBack(val:T)
 	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		#end
+		var node = getNode(val);
+		node.prev = mTail;
+		if (mTail != null) mTail.next = node;
+		mTail = node;
 		
-		var node = _getNode(x);
-		node.prev = _tail;
-		if (_tail != null) _tail.next = node;
-		_tail = node;
-		
-		if (_size++ == 0) _head = _tail;
+		if (mSize++ == 0) mHead = mTail;
 	}
 	
 	/**
-	 * Deletes the element at the end of the deque.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError deque is empty (debug only).
-	 */
-	inline public function popBack():T
+		Deletes the element at the end of the deque.
+	**/
+	public inline function popBack():T
 	{
-		#if debug
-		assert(size() > 0, "deque is empty");
-		#end
+		assert(size > 0, "deque is empty");
 		
-		var node = _tail;
-		_tail = _tail.prev;
+		var node = mTail;
+		mTail = mTail.prev;
 		node.prev = null;
-		if (_tail != null) _tail.next = null;
-		if (--_size == 0) _head = null;
-		
-		return _putNode(node, true);
+		if (mTail != null) mTail.next = null;
+		if (--mSize == 0) mHead = null;
+		return putNode(node, true);
 	}
 	
 	/**
-	 * Returns the element at index <code>i</code> relative to the front of this deque.<br/>
-	 * The front element is at index [0], the back element is at index <b>&#091;<em>size()</em> - 1&#093;</b>.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError deque is empty (debug only).
-	 * @throws de.polygonal.ds.error.AssertError index out of range (debug only).
-	 */
+		Returns the element at index `i` relative to the front of this deque.
+		
+		The front element is at index [0], the back element is at index [`this.size` - 1].
+	**/
 	public function getFront(i:Int):T
 	{
-		#if debug
-		assert(i < size(), 'index out of range ($i)');
-		#end
+		assert(i < size, 'index out of range ($i)');
 		
-		var node = _head;
+		var node = mHead;
 		for (j in 0...i) node = node.next;
 		return node.val;
 	}
 	
 	/**
-	 * Returns the index of the first occurence of the element <code>x</code> or -1 if <code>x</code> does not exist.
-	 * The front element is at index [0], the back element is at index &#091;<em>size()</em> - 1&#093;.
-	 * <o>n</o>
-	 */
-	public function indexOfFront(x:T):Int
+		Returns the index of the first occurrence of `val` or -1 if `val` does not exist.
+		
+		The front element is at index [0], the back element is at index [`this.size` - 1].
+	**/
+	public function indexOfFront(val:T):Int
 	{
-		var node = _head;
-		for (i in 0..._size)
+		var node = mHead;
+		for (i in 0...size)
 		{
-			if (node.val == x) return i;
+			if (node.val == val) return i;
 			node = node.next;
 		}
 		return -1;
 	}
 	
 	/**
-	 * Returns the element at index <code>i</code> relative to the back of this deque.<br/>
-	 * The back element is at index [0], the front element is at index &#091;<em>size()</em> - 1&#093;.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError deque is empty (debug only).
-	 * @throws de.polygonal.ds.error.AssertError index out of range (debug only).
-	 */
+		Returns the element at index `i` relative to the back of this deque.
+		
+		The back element is at index [0], the front element is at index [`this.size` - 1].
+	**/
 	public function getBack(i:Int):T
 	{
-		#if debug
-		assert(i < size(), 'index out of range ($i)');
-		#end
+		assert(i < size, 'index out of range ($i)');
 		
-		var node = _tail;
+		var node = mTail;
 		for (j in 0...i) node = node.prev;
 		return node.val;
 	}
 	
 	/**
-	 * Returns the index of the first occurence of the element <code>x</code> or -1 if <code>x</code> does not exist.
-	 * The back element is at index [0], the front element is at index &#091;<em>size()</em> - 1&#093;.
-	 * <o>n</o>
-	 */
-	public function indexOfBack(x:T):Int
+		Returns the index of the first occurrence of `val` or -1 if `val` does not exist.
+		
+		The back element is at index [0], the front element is at index [`this.size` - 1].
+	**/
+	public function indexOfBack(val:T):Int
 	{
-		var node = _tail;
-		for (i in 0..._size)
+		var node = mTail;
+		for (i in 0...size)
 		{
-			if (node.val == x) return i;
+			if (node.val == val) return i;
 			node = node.prev;
 		}
 		return -1;
 	}
 	
 	/**
-	 * Replaces up to <code>n</code> existing elements with objects of type <code>C</code>.
-	 * <o>n</o>
-	 * @param C the class to instantiate for each element.
-	 * @param args passes additional constructor arguments to the class <code>C</code>.
-	 * @param n the number of elements to replace. If 0, <code>n</code> is set to <em>size()</em>.
-	 */
-	public function assign(C:Class<T>, args:Array<Dynamic> = null, n = 0)
-	{
-		if (n == 0) n = size();
-		if (n == 0) return;
+		Calls `f` on all elements.
 		
-		if (args == null) args = [];
-		var k = M.min(_size, n);
-		var node = _head;
-		for (i in 0...k)
+		The function signature is: `f(input, index):output`
+		
+		- input: current element
+		- index: position relative to the front(=0)
+		- output: element to be stored at given index
+	**/
+	public inline function forEach(f:T->Int->T):LinkedDeque<T>
+	{
+		var node = mHead;
+		for (i in 0...size)
 		{
-			node.val = Type.createInstance(C, args);
+			node.val = f(node.val, i);
 			node = node.next;
 		}
-		
-		n -= k;
-		for (i in 0...n)
-		{
-			node = _getNode(Type.createInstance(C, args));
-			node.prev = _tail;
-			if (_tail != null) _tail.next = node;
-			_tail = node;
-			if (_size++ == 0) _head = _tail;
-		}
-	}
-	
-	/**
-	 * Replaces up to <code>n</code> existing elements with the instance of <code>x</code>.<br/>
-	 * If size() &lt; <code>n</code>, additional elements are added to the back of this deque.
-	 * <o>n</o>
-	 * @param n the number of elements to replace. If 0, <code>n</code> is set to <em>size()</em>.
-	 */
-	public function fill(x:T, n = 0):LinkedDeque<T>
-	{
-		if (n == 0) n = size();
-		if (n == 0) return this;
-		
-		var k = M.min(_size, n);
-		var node = _head;
-		for (i in 0...k)
-		{
-			node.val = x;
-			node = node.next;
-		}
-		
-		n -= k;
-		for (i in 0...n)
-		{
-			node = _getNode(x);
-			node.prev = _tail;
-			if (_tail != null) _tail.next = node;
-			_tail = node;
-			if (_size++ == 0) _head = _tail;
-		}
-		
 		return this;
 	}
 	
 	/**
-	 * Returns a string representing the current object.<br/>
-	 * Example:<br/>
-	 * <pre class="prettyprint">
-	 * var deque = new de.polygonal.ds.LinkedDeque&lt;Int&gt;();
-	 * for (i in 0...4) {
-	 *     deque.pushFront(i);
-	 * }
-	 * trace(deque);</pre>
-	 * <pre class="console">
-	 * { LinkedDeque, size: 4 }
-	 * [ front
-	 *   0 -> 3
-	 *   1 -> 2
-	 *   2 -> 1
-	 *   3 -> 0
-	 * ]</pre>
-	 */
-	public function toString():String
+		Calls 'f` on all elements in order.
+	**/
+	public inline function iter(f:T->Void):LinkedDeque<T>
 	{
-		var s = '{ LinkedDeque size: ${size()} }';
-		if (isEmpty()) return s;
-		s += "\n[ front\n";
-		var i = 0;
-		var node = _head;
+		assert(f != null);
+		var node = mHead;
 		while (node != null)
 		{
-			s += Printf.format("  %4d -> %s\n", [i++, Std.string(node.val)]);
+			f(node.val);
 			node = node.next;
 		}
-		s += "]";
-		return s;
+		return this;
 	}
 	
-	/*///////////////////////////////////////////////////////
-	// collection
-	///////////////////////////////////////////////////////*/
+	/**
+		Prints out all elements.
+	**/
+	#if !no_tostring
+	public function toString():String
+	{
+		var b = new StringBuf();
+		b.add('[ LinkedDeque size=$size');
+		if (isEmpty())
+		{
+			b.add(" ]");
+			return b.toString();
+		}
+		b.add("\n  front\n");
+		var node = mHead, i = 0, args = new Array<Dynamic>();
+		var fmt = '  %${MathTools.numDigits(size)}d -> %s\n';
+		while (node != null)
+		{
+			args[0] = i++;
+			args[1] = Std.string(node.val);
+			b.add(Printf.format(fmt, args));
+			node = node.next;
+		}
+		b.add("]");
+		return b.toString();
+	}
+	#end
+	
+	/* INTERFACE Collection */
 	
 	/**
-	 * Destroys this object by explicitly nullifying all elements for GC'ing used resources.<br/>
-	 * Improves GC efficiency/performance (optional).
-	 * <o>n</o>
-	 */
+		The total number of elements.
+	**/
+	public var size(get, never):Int;
+	inline function get_size():Int
+	{
+		return mSize;
+	}
+	
+	/**
+		Destroys this object by explicitly nullifying all elements for GC'ing used resources.
+		
+		Improves GC efficiency/performance (optional).
+	**/
 	public function free()
 	{
-		var node = _head;
+		var node = mHead, next;
 		while (node != null)
 		{
-			var next = node.next;
+			next = node.next;
 			node.next = node.prev = null;
 			node.val = cast null;
 			node = next;
 		}
 		
-		_head = _tail = null;
+		mHead = mTail = null;
 		
-		var node = _headPool;
+		node = mHeadPool;
 		while (node != null)
 		{
-			var next = node.next;
+			next = node.next;
 			node.next = node.prev = null;
 			node.val = cast null;
 			node = next;
 		}
 		
-		_headPool = _tailPool = null;
-		_iterator = null;
+		mHeadPool = mTailPool = null;
+		if (mIterator != null)
+		{
+			mIterator.free();
+			mIterator = null;
+		}
 	}
 	
 	/**
-	 * Returns true if this deque contains the element <code>x</code>.
-	 * <o>n</o>
-	 */
-	public function contains(x:T):Bool
+		Returns true if this deque contains `val`.
+	**/
+	public function contains(val:T):Bool
 	{
 		var found = false;
-		var node = _head;
+		var node = mHead;
 		while (node != null)
 		{
-			if (node.val == x)
+			if (node.val == val)
 			{
 				found = true;
 				break;
 			}
 			node = node.next;
 		}
-		
 		return found;
 	}
 	
 	/**
-	 * Removes and nullifies all occurrences of the element <code>x</code>.
-	 * <o>n</o>
-	 * @return true if at least one occurrence of <code>x</code> was removed.
-	 */
-	public function remove(x:T):Bool
+		Removes and nullifies all occurrences of `val`.
+		@return true if at least one occurrence of `val` was removed.
+	**/
+	public function remove(val:T):Bool
 	{
 		var found = false;
-		var node = _head;
+		var node = mHead;
 		while (node != null)
 		{
-			if (node.val == x)
+			if (node.val == val)
 			{
 				found = true;
 				
-				var next = node.next;
 				if (node.prev != null) node.prev.next = node.next;
 				if (node.next != null) node.next.prev = node.prev;
-				if (node == _head) _head = _head.next;
-				if (node == _tail) _tail = _tail.prev;
-				_putNode(node, true);
+				if (node == mHead) mHead = mHead.next;
+				if (node == mTail) mTail = mTail.prev;
+				putNode(node, true);
 				
-				_size--;
-				node = _head;
+				mSize--;
+				node = mHead;
 			}
 			else
 				node = node.next;
@@ -471,28 +393,27 @@ class LinkedDeque<T> implements Deque<T>
 	}
 	
 	/**
-	 * Removes all elements.
-	 * <o>n</o>
-	 * @param purge if true, elements are nullified upon removal and the node pool is cleared.
-	 */
-	public function clear(purge = false)
+		Removes all elements.
+		@param gc if true, elements are nullified upon removal so the garbage collector can reclaim used memory.
+	**/
+	public function clear(gc:Bool = false)
 	{
-		if (purge)
+		if (gc)
 		{
-			var node = _head;
+			var node = mHead, next;
 			while (node != null)
 			{
-				var next = node.next;
-				_putNode(node, true);
+				next = node.next;
+				putNode(node, true);
 				node = next;
 			}
 			
-			if (_reservedSize > 0)
+			if (mReservedSize > 0)
 			{
-				var node = _headPool;
+				node = mHeadPool;
 				while (node != null)
 				{
-					var next = node.next;
+					next = node.next;
 					node.next = node.prev = null;
 					node.val = cast null;
 					node = next;
@@ -500,115 +421,89 @@ class LinkedDeque<T> implements Deque<T>
 			}
 		}
 		
-		_head = _tail = null;
-		_size = 0;
+		mHead = mTail = null;
+		mSize = 0;
 	}
 	
 	/**
-	 * Returns a new <em>LinkedDequeIterator</em> object to iterate over all elements contained in this deque.<br/>
-	 * Preserves the natural order of a deque.
-	 * @see <a href="http://haxe.org/ref/iterators" target="_blank">http://haxe.org/ref/iterators</a>
-	 */
+		Returns a new *LinkedDequeIterator* object to iterate over all elements contained in this deque.
+		
+		Preserves the natural order of a deque.
+		
+		@see http://haxe.org/ref/iterators
+	**/
 	public function iterator():Itr<T>
 	{
 		if (reuseIterator)
 		{
-			if (_iterator == null)
+			if (mIterator == null)
 				return new LinkedDequeIterator<T>(this);
 			else
-				_iterator.reset();
-			return _iterator;
+				mIterator.reset();
+			return mIterator;
 		}
 		else
 			return new LinkedDequeIterator<T>(this);
 	}
 	
 	/**
-	 * Returns true if this deque is empty.
-	 * <o>1</o>
-	 */
-	inline public function isEmpty():Bool
+		Returns true only if `this.size` is 0.
+	**/
+	public inline function isEmpty():Bool
 	{
-		return _size == 0;
+		return size == 0;
 	}
 	
 	/**
-	 * The total number of elements.
-	 * <o>1</o>
-	 */
-	inline public function size():Int
-	{
-		return _size;
-	}
-	
-	/**
-	 * Returns an array containing all elements in this deque in the natural order.
-	 */
+		Returns an array containing all elements in this deque in the natural order.
+	**/
 	public function toArray():Array<T>
 	{
-		var a = ArrayUtil.alloc(size());
+		if (isEmpty()) return [];
+		
+		var out = ArrayTools.alloc(size);
 		var i = 0;
-		var node = _head;
+		var node = mHead;
 		while (node != null)
 		{
-			a[i++] = node.val;
+			out[i++] = node.val;
 			node = node.next;
 		}
-		return a;
+		return out;
 	}
 	
-	#if flash10
 	/**
-	 * Returns a Vector.&lt;T&gt; object containing all elements in this deque in the natural order.
-	 */
-	public function toVector():flash.Vector<Dynamic>
-	{
-		var a = new flash.Vector<Dynamic>(size());
-		var i = 0;
-		var node = _head;
-		while (node != null)
-		{
-			a[i++] = node.val;
-			node = node.next;
-		}
-		return a;
-	}
-	#end
-	
-	/**
-	 * Duplicates this deque. Supports shallow (structure only) and deep copies (structure & elements).
-	 * @param assign if true, the <code>copier</code> parameter is ignored and primitive elements are copied by value whereas objects are copied by reference.<br/>
-	 * If false, the <em>clone()</em> method is called on each element. <warn>In this case all elements have to implement <em>Cloneable</em>.</warn>
-	 * @param copier a custom function for copying elements. Replaces element.<em>clone()</em> if <code>assign</code> is false.
-	 * @throws de.polygonal.ds.error.AssertError element is not of type <em>Cloneable</em> (debug only).
-	 */
-	public function clone(assign = true, copier:T->T = null):Collection<T>
-	{
-		if (_size == 0) return new LinkedDeque<T>(_reservedSize, maxSize);
+		Creates and returns a shallow copy (structure only - default) or deep copy (structure & elements) of this deque.
 		
-		var copy           = new LinkedDeque<T>(_reservedSize, maxSize);
-		copy.key           = HashKey.next();
-		copy.maxSize       = maxSize;
-		copy._size         = _size;
-		copy._reservedSize = _reservedSize;
-		copy._poolSize     = _poolSize;
-		copy._headPool     = new LinkedDequeNode<T>(cast null);
-		copy._tailPool     = new LinkedDequeNode<T>(cast null);
+		If `byRef` is true, primitive elements are copied by value whereas objects are copied by reference.
 		
-		if (assign)
+		If `byRef` is false, the `copier` function is used for copying elements. If omitted, `clone()` is called on each element assuming all elements implement `Cloneable`.
+	**/
+	public function clone(byRef:Bool = true, copier:T->T = null):Collection<T>
+	{
+		if (size == 0) return new LinkedDeque<T>(mReservedSize);
+		
+		var copy = new LinkedDeque<T>(mReservedSize);
+		copy.mSize = size;
+		copy.mReservedSize = mReservedSize;
+		copy.mPoolSize = mPoolSize;
+		copy.mHeadPool = new LinkedDequeNode<T>(cast null);
+		copy.mTailPool = new LinkedDequeNode<T>(cast null);
+		
+		if (byRef)
 		{
-			var srcNode = _head;
-			var dstNode = copy._head = new LinkedDequeNode<T>(_head.val);
+			var srcNode = mHead;
+			var dstNode = copy.mHead = new LinkedDequeNode<T>(mHead.val);
 			
-			if (_size == 1)
+			if (size == 1)
 			{
-				copy._tail = copy._head;
+				copy.mTail = copy.mHead;
 				return copy;
 			}
 			
 			var dstNode0, srcNode0;
 			srcNode = srcNode.next;
-			for (i in 1..._size - 1)
+			for (i in 1...size - 1)
 			{
 				dstNode0 = dstNode;
 				srcNode0 = srcNode;
@@ -621,67 +516,60 @@ class LinkedDeque<T> implements Deque<T>
 			}
 			
 			dstNode0 = dstNode;
-			copy._tail = dstNode.next = new LinkedDequeNode<T>(srcNode.val);
-			copy._tail.prev = dstNode0;
+			copy.mTail = dstNode.next = new LinkedDequeNode<T>(srcNode.val);
+			copy.mTail.prev = dstNode0;
 		}
 		else
 		if (copier == null)
 		{
-			var srcNode = _head;
+			var srcNode = mHead;
 			
-			#if debug
-			assert(Std.is(_head.val, Cloneable), 'element is not of type Cloneable (${_head.val})');
-			#end
+			assert(Std.is(mHead.val, Cloneable), "element is not of type Cloneable");
 			
-			var c:Cloneable<T> = untyped _head.val;
-			var dstNode = copy._head = new LinkedDequeNode<T>(c.clone());
+			var dstNode = copy.mHead = new LinkedDequeNode<T>(cast(mHead.val, Cloneable<Dynamic>).clone());
 			
-			if (_size == 1)
+			if (size == 1)
 			{
-				copy._tail = copy._head;
+				copy.mTail = copy.mHead;
 				return copy;
 			}
 			
 			var dstNode0;
 			srcNode = srcNode.next;
-			for (i in 1..._size - 1)
+			for (i in 1...size - 1)
 			{
 				dstNode0 = dstNode;
 				var srcNode0 = srcNode;
 				
-				#if debug
-				assert(Std.is(srcNode.val, Cloneable), 'element is not of type Cloneable (${srcNode.val})');
-				#end
-				c = untyped srcNode.val;
-				dstNode = dstNode.next = new LinkedDequeNode<T>(c.clone());
+				assert(Std.is(srcNode.val, Cloneable), "element is not of type Cloneable");
+				
+				dstNode = dstNode.next = new LinkedDequeNode<T>(cast(srcNode.val, Cloneable<Dynamic>).clone());
 				dstNode.prev = dstNode0;
 				
 				srcNode0 = srcNode;
 				srcNode = srcNode0.next;
 			}
 			
-			#if debug
-			assert(Std.is(srcNode.val, Cloneable), 'element is not of type Cloneable (${srcNode.val})');
-			#end
-			c = untyped srcNode.val;
+			assert(Std.is(srcNode.val, Cloneable), "element is not of type Cloneable");
+			
 			dstNode0 = dstNode;
-			copy._tail = dstNode.next = new LinkedDequeNode<T>(c.clone());
-			copy._tail.prev = dstNode0;
+			copy.mTail = dstNode.next = new LinkedDequeNode<T>(cast(srcNode.val, Cloneable<Dynamic>).clone());
+			copy.mTail.prev = dstNode0;
 		}
 		else
 		{
-			var srcNode = _head;
-			var dstNode = copy._head = new LinkedDequeNode<T>(copier(_head.val));
+			var srcNode = mHead;
+			var dstNode = copy.mHead = new LinkedDequeNode<T>(copier(mHead.val));
 			
-			if (_size == 1)
+			if (size == 1)
 			{
-				copy._tail = copy._head;
+				copy.mTail = copy.mHead;
 				return copy;
 			}
 			
 			var dstNode0;
 			srcNode = srcNode.next;
-			for (i in 1..._size - 1)
+			for (i in 1...size - 1)
 			{
 				dstNode0 = dstNode;
 				var srcNode0 = srcNode;
@@ -694,36 +582,35 @@ class LinkedDeque<T> implements Deque<T>
 			}
 			
 			dstNode0 = dstNode;
-			copy._tail = dstNode.next = new LinkedDequeNode<T>(copier(srcNode.val));
-			copy._tail.prev = dstNode0;
+			copy.mTail = dstNode.next = new LinkedDequeNode<T>(copier(srcNode.val));
+			copy.mTail.prev = dstNode0;
 		}
-		
 		return copy;
 	}
 	
-	inline function _getNode(x:T)
+	inline function getNode(x:T)
 	{
-		if (_reservedSize == 0 || _poolSize == 0)
+		if (mReservedSize == 0 || mPoolSize == 0)
 			return new LinkedDequeNode<T>(x);
 		else
 		{
-			var node = _headPool;
-			_headPool = _headPool.next;
-			_poolSize--;
+			var node = mHeadPool;
+			mHeadPool = mHeadPool.next;
+			mPoolSize--;
 			node.val = x;
 			return node;
 		}
 	}
 	
-	inline function _putNode(x:LinkedDequeNode<T>, nullify:Bool):T
+	inline function putNode(x:LinkedDequeNode<T>, nullify:Bool):T
 	{
 		var val = x.val;
-		if (_reservedSize > 0)
+		if (mReservedSize > 0)
 		{
-			if (_poolSize < _reservedSize)
+			if (mPoolSize < mReservedSize)
 			{
-				_tailPool = _tailPool.next = x;
-				_poolSize++;
+				mTailPool = mTailPool.next = x;
+				mPoolSize++;
 				if (nullify)
 				{
 					x.prev = x.next = null;
@@ -734,24 +621,21 @@ class LinkedDeque<T> implements Deque<T>
 		return val;
 	}
 	
-	inline function _removeNode(x:LinkedDequeNode<T>)
+	inline function removeNode(x:LinkedDequeNode<T>)
 	{
-		var next = x.next;
 		if (x.prev != null) x.prev.next = x.next;
 		if (x.next != null) x.next.prev = x.prev;
-		if (x == _head) _head = _head.next;
-		if (x == _tail) _tail = _tail.prev;
-		_putNode(x, true);
-		_size--;
+		if (x == mHead) mHead = mHead.next;
+		if (x == mTail) mTail = mTail.prev;
+		putNode(x, true);
+		mSize--;
 	}
 }
 
 #if generic
 @:generic
 #end
-#if doc
-private
-#end
+@:dox(hide)
 class LinkedDequeNode<T>
 {
 	public var val:T;
@@ -760,7 +644,7 @@ class LinkedDequeNode<T>
 	
 	public function new(x:T)
 	{
-		val  = x;
+		val = x;
 		next = null;
 		prev = null;
 	}
@@ -774,56 +658,51 @@ class LinkedDequeNode<T>
 #if generic
 @:generic
 #end
-#if doc
-private
-#end
+@:access(de.polygonal.ds.LinkedDeque)
+@:dox(hide)
 class LinkedDequeIterator<T> implements de.polygonal.ds.Itr<T>
 {
-	var _f:LinkedDeque<T>;
-	var _walker:LinkedDequeNode<T>;
-	var _hook:LinkedDequeNode<T>;
+	var mObject:LinkedDeque<T>;
+	var mWalker:LinkedDequeNode<T>;
+	var mHook:LinkedDequeNode<T>;
 	
-	public function new(f:LinkedDeque<T>)
+	public function new(x:LinkedDeque<T>)
 	{
-		_f = f;
+		mObject = x;
 		reset();
 	}
 	
-	inline public function reset():Itr<T>
+	public function free()
 	{
-		_walker = __head(_f);
-		_hook = null;
+		mObject = null;
+		mWalker = null;
+		mHook = null;
+	}
+	
+	public inline function reset():Itr<T>
+	{
+		mWalker = mObject.mHead;
+		mHook = null;
 		return this;
 	}
 	
-	inline public function hasNext():Bool
+	public inline function hasNext():Bool
 	{
-		return _walker != null;
+		return mWalker != null;
 	}
 	
-	inline public function next():T
+	public inline function next():T
 	{
-		var x:T = _walker.val;
-		_hook = _walker;
-		_walker = _walker.next;
+		var x:T = mWalker.val;
+		mHook = mWalker;
+		mWalker = mWalker.next;
 		return x;
 	}
 	
-	inline public function remove()
+	public function remove()
 	{
-		#if debug
-		assert(_hook != null, "call next() before removing an element");
-		#end
+		assert(mHook != null, "call next() before removing an element");
 		
-		__removeNode(_f, _hook);
-	}
-	
-	inline function __head(f:LinkedDequeFriend<T>)
-	{
-		return f._head;
-	}
-	inline function __removeNode(f:LinkedDequeFriend<T>, x:LinkedDequeNode<T>)
-	{
-		f._removeNode(x);
+		mObject.removeNode(mHook);
 	}
 }

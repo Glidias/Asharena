@@ -150,14 +150,14 @@ class Vec3
 	}
 		
 	
-	inline public function transform4(m:IMat4):Void {
+	inline public function transform4(m:Mat4):Void {
 		x = m.a*x + m.b*y + m.c*z + m.d;
 		y = m.e*x + m.f*y + m.g*z + m.h;
 		z = m.i*x + m.j*y + m.k*z + m.l;
 	}
 		
 
-	inline public function transformTransposed4(m:IMat4):Void {
+	inline public function transformTransposed4(m:Mat4):Void {
 		var xx:Float = x - m.d;
 		var yy:Float = y - m.h;
 		var zz:Float = z - m.l;
@@ -167,7 +167,7 @@ class Vec3
 	}
 		
 
-	inline public function transformVector4(m:IMat4):Void {
+	inline public function transformVector4(m:Mat4):Void {
 		x = m.a*x + m.b*y + m.c*z;
 		y = m.e*x + m.f*y + m.g*z;
 		z = m.i*x + m.j*y + m.k*z;

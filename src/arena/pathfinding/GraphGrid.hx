@@ -56,7 +56,7 @@ class GraphGrid
 	
 	public function search(x:Int = 0, y:Int = 0, maxCost:Float=PMath.FLOAT_MAX):Void {
 	
-		visitCells.clrAll();	
+		visitCells.clearAll();	
 		_x = x;
 		_y = y;
 		
@@ -124,7 +124,7 @@ class GraphGrid
 		OUT = xor(A(2:r+1,2:c+1), IN);
 		*/
 		
-		outlineBitVector.clrAll();
+		outlineBitVector.clearAll();
 		
 		var yi:Int;
 		var xi:Int;

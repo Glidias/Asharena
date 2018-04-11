@@ -1,125 +1,137 @@
 /*
- *                            _/                                                    _/
- *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
- *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *     _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *    _/_/_/      _/_/    _/    _/_/_/    _/_/_/    _/_/    _/    _/    _/_/_/  _/
- *   _/                            _/        _/
- *  _/                        _/_/      _/_/
- *
- * POLYGONAL - A HAXE LIBRARY FOR GAME DEVELOPERS
- * Copyright (c) 2009 Michael Baczynski, http://www.polygonal.de
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+Copyright (c) 2008-2018 Michael Baczynski, http://www.polygonal.de
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 package de.polygonal.ds;
 
-import de.polygonal.ds.error.Assert.assert;
+import de.polygonal.ds.tools.ArrayTools;
+import de.polygonal.ds.tools.Assert.assert;
 
 /**
- * <p>A binary search tree (BST).</p>
- * <p>A BST automatically arranges <em>BinaryTreeNode</em> objects so the resulting tree is a valid BST.</p>
- * <p><o>Worst-case running time in Big O notation</o></p>
- */
+	A binary search tree (BST)
+	
+	A BST automatically arranges `BinaryTreeNode` objects so the resulting tree is a valid BST.
+	
+	Example:
+		class Element implements de.polygonal.ds.Comparable<Element> {
+		    var i:Int;
+		    public function new(i:Int) {
+		        this.i = i;
+		    }
+		    public function compare(other:Element):Int {
+		        return other.i - i;
+		    }
+		    public function toString():String {
+		        return Std.string(i);
+		    }
+		}
+		
+		...
+		
+		var o = new de.polygonal.ds.Bst<Element>();
+		o.insert(new Element(1));
+		o.insert(new Element(0));
+		o.insert(new Element(2));
+		o.insert(new Element(7));
+		trace(o); //outputs:
+		
+		[ Bst size=4
+		  7
+		  2
+		  1
+		  0
+		]
+**/
 #if generic
 @:generic
 #end
-class BST<T:Comparable<T>> implements Collection<T>
+class Bst<T:Comparable<T>> implements Collection<T>
 {
 	/**
-	 * A unique identifier for this object.<br/>
-	 * A hash table transforms this key into an index of an array element by using a hash function.<br/>
-	 * <warn>This value should never be changed by the user.</warn>
-	 */
-	public var key:Int;
+		A unique identifier for this object.
+		
+		A hash table transforms this key into an index of an array element by using a hash function.
+	**/
+	public var key(default, null):Int = HashKey.next();
 	
 	/**
-	 * If true, reuses the iterator object instead of allocating a new one when calling <code>iterator()</code>.<br/>
-	 * The default is false.<br/>
-	 * <warn>If true, nested iterations are likely to fail as only one iteration is allowed at a time.</warn>
-	 */
-	public var reuseIterator:Bool;
+		If true, reuses the iterator object instead of allocating a new one when calling `this.iterator()`.
+		
+		The default is false.
+		
+		_If this value is true, nested iterations will fail as only one iteration is allowed at a time._
+	**/
+	public var reuseIterator:Bool = false;
 	
-	var _size:Int;
-	var _root:BinaryTreeNode<T>;
-	var _iterator:BSTIterator<T>;
+	var mSize:Int = 0;
+	var mRoot:BinaryTreeNode<T> = null;
+	var mIterator:BstIterator<T> = null;
 	
 	public function new()
 	{
-		_root         = null;
-		_iterator     = null;
-		_size         = 0;
-		key           = HashKey.next();
-		reuseIterator = false;
 	}
 	
 	/**
-	 * The root node or null if no root exists.
-	 * <o>1</o>
-	 */
+		The root node or null if no root exists.
+	**/
 	public function root():BinaryTreeNode<T>
 	{
-		return _root;
+		return mRoot;
 	}
 	
 	/**
-	 * Inserts the element <code>x</code> into the binary search tree.
-	 * <o>n</o>
-	 * @return the inserted node storing the element <code>x</code>.
-	 * @throws de.polygonal.ds.error.AssertError <code>x</code> is null (debug only).
-	 */
-	public function insert(x:T):BinaryTreeNode<T>
+		Inserts `val` into the binary search tree.
+		@return the inserted node storing `val`.
+	**/
+	public function insert(val:T):BinaryTreeNode<T>
 	{
-		#if debug
-		assert(x != null, "element is null");
-		#end
+		assert(val != null, "element is null");
 		
-		_size++;
-		if (_root == null)
+		mSize++;
+		if (mRoot == null)
 		{
-			_root = new BinaryTreeNode<T>(x);
-			return _root;
+			mRoot = new BinaryTreeNode<T>(val);
+			return mRoot;
 		}
 		else
 		{
 			var t:BinaryTreeNode<T> = null;
-			var node = _root;
+			var node = mRoot;
 			while (node != null)
 			{
-				if (x.compare(node.val) < 0)
+				if (val.compare(node.val) < 0)
 				{
-					if (node.l != null)
-						node = node.l;
+					if (node.left != null)
+						node = node.left;
 					else
 					{
-						node.setL(x);
-						t = node.l;
+						node.setLeft(val);
+						t = node.left;
 						break;
 					}
 				}
 				else
 				{
-					if (node.r != null)
-						node = node.r;
+					if (node.right != null)
+						node = node.right;
 					else
 					{
-						node.setR(x);
-						t = node.r;
+						node.setRight(val);
+						t = node.right;
 						break;
 					}
 				}
@@ -129,203 +141,168 @@ class BST<T:Comparable<T>> implements Collection<T>
 	}
 	
 	/**
-	 * Finds the node that stores the element <code>x</code>.
-	 * <o>n</o>
-	 * @return the node storing <code>x</code> or null if <code>x</code> does not exist.
-	 * @throws de.polygonal.ds.error.AssertError tree is empty (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <code>x</code> is null (debug only).
-	 */
-	public function find(x:T):BinaryTreeNode<T>
+		Finds the node that stores `val`.
+		@return the node storing `val` or null if `val` does not exist.
+	**/
+	public function find(val:T):BinaryTreeNode<T>
 	{
-		#if debug
-		assert(_root != null, "tree is empty");
-		assert(x != null, "element is null");
-		#end
+		assert(mRoot != null, "tree is empty");
+		assert(val != null, "element is null");
 		
-		var node = _root;
+		var node = mRoot;
 		while (node != null)
 		{
-			var i = x.compare(node.val);
+			var i = val.compare(node.val);
 			if (i == 0) break;
-			node = i < 0 ? node.l : node.r;
+			node = i < 0 ? node.left : node.right;
 		}
 		return node;
 	}
 	
 	/**
-	 * Removes the node storing the element <code>x</code>.
-	 * <o>n</o>
-	 * @return true if <code>x</code> was successfully removed.
-	 * @throws de.polygonal.ds.error.AssertError <code>x</code> is invalid (debug only).
-	 */
-	public function removeNode(x:BinaryTreeNode<T>):Bool
+		Removes `node`.
+		@return true if `node` was successfully removed.
+	**/
+	public function removeNode(node:BinaryTreeNode<T>):Bool
 	{
-		#if debug
-		assert(x != null, "element is null");
-		#end
+		assert(node != null, "element is null");
 		
-		if (x.l == null || x.r == null)
+		if (node.left == null || node.right == null)
 		{
 			var child:BinaryTreeNode<T> = null;
-			if (x.l != null) child = x.l;
-			if (x.r != null) child = x.r;
-			if (x.p == null)
-				_root = child;
+			if (node.left != null) child = node.left;
+			if (node.right != null) child = node.right;
+			if (node.parent == null)
+				mRoot = child;
 			else
 			{
-				if (x == x.p.l)
-					x.p.l = child;
+				if (node == node.parent.left)
+					node.parent.left = child;
 				else
-					x.p.r = child;
+					node.parent.right = child;
 			}
 			
-			if (child != null) child.p = x.p;
-			x.l = null;
-			x.r = null;
-			x = null;
+			if (child != null) child.parent = node.parent;
+			node.left = null;
+			node.right = null;
+			node = null;
 		}
 		else
 		{
-			var l = x.l;
-			while (l.r != null) l = l.r;
+			var l = node.left;
+			while (l.right != null) l = l.right;
 			
-			if (x.l == l)
+			if (node.left == l)
 			{
-				l.r = x.r;
-				l.r.p = l;
+				l.right = node.right;
+				l.right.parent = l;
 			}
 			else
 			{
-				l.p.r = l.l;
-				if (l.l != null) l.l.p = l.p;
-				l.l = x.l;
-				l.l.p = l;
-				l.r = x.r;
-				l.r.p = l;
+				l.parent.right = l.left;
+				if (l.left != null) l.left.parent = l.parent;
+				l.left = node.left;
+				l.left.parent = l;
+				l.right = node.right;
+				l.right.parent = l;
 			}
 			
-			if (x.p == null)
-				_root = l;
+			if (node.parent == null)
+				mRoot = l;
 			else
 			{
-				if (x == x.p.l)
-					x.p.l = l;
+				if (node == node.parent.left)
+					node.parent.left = l;
 				else
-					x.p.r = l;
+					node.parent.right = l;
 			}
 			
-			l.p = x.p;
-			x.l = null;
-			x.r = null;
-			x = null;
+			l.parent = node.parent;
+			node.left = null;
+			node.right = null;
+			node = null;
 		}
 		
-		if (--_size == 0) _root = null;
-		
+		if (--mSize == 0) mRoot = null;
 		return true;
 	}
 	
 	/**
-	 * Returns a string representing the current object.<br/>
-	 * Example:<br/>
-	 * <pre class="prettyprint">
-	 * class Foo implements de.polygonal.ds.Comparable&lt;Foo&gt;
-	 * {
-	 *     var i:Int;
-	 *     
-	 *     public function new(i:Int) {
-	 *         this.i = i;
-	 *     }
-	 *     
-	 *     public function compare(other:Foo):Int {
-	 *         return other.i - i;
-	 *     }
-	 *     
-	 *     public function toString():String {
-	 *         return "{Foo " + i + "}";
-	 *     }
-	 * }
-	 * 
-	 * class Main
-	 * {
-	 *     static function main() {
-	 *         var BST = new de.polygonal.ds.BST&lt;Foo&gt;();
-	 *         BST.insert(new Foo(1));
-	 *         BST.insert(new Foo(0));
-	 *         BST.insert(new Foo(2));
-	 *         BST.insert(new Foo(7));
-	 *         trace(BST);
-	 *     }
-	 * }</pre>
-	 * <pre class="console">
-	 * { BST size: 4 }
-	 * [
-	 *   {Foo 7}
-	 *   {Foo 2}
-	 *   {Foo 1}
-	 *   {Foo 0}
-	 * ]</pre>
-	 */
+		Prints out all elements.
+	**/
+	#if !no_tostring
 	public function toString():String
 	{
-		var s = '{ BST size: ${size()} }';
-		if (isEmpty()) return s;
-		s += "\n[\n";
-		var dumpNode = function(node:BinaryTreeNode<T>, userData:Dynamic):Bool
+		var b = new StringBuf();
+		b.add('[ Bst size=$size');
+		if (isEmpty())
 		{
-			s += '  ${Std.string(node.val)}\n';
+			b.add(" ]");
+			return b.toString();
+		}
+		b.add("\n");
+		mRoot.inorder(function(node:BinaryTreeNode<T>, _):Bool
+		{
+			b.add("  ");
+			b.add(Std.string(node.val));
+			b.add("\n");
 			return true;
-		};
-		
-		_root.inorder(dumpNode);
-		s += "]";
-		return s;
+		});
+		b.add("]");
+		return b.toString();
 	}
+	#end
 	
-	/*///////////////////////////////////////////////////////
-	// collection
-	///////////////////////////////////////////////////////*/
+	/* INTERFACE Collection */
 	
 	/**
-	 * Destroys this object by explicitly nullifying all nodes, pointers and elements for GC'ing used resources.<br/>
-	 * Improves GC efficiency/performance (optional).
-	 * <o>n</o>
-	 */
+		The total number of nodes.
+	**/
+	public var size(get, never):Int;
+	inline function get_size():Int
+	{
+		return mSize;
+	}
+	
+	/**
+		Destroys this object by explicitly nullifying all nodes, pointers and elements for GC'ing used resources.
+		
+		Improves GC efficiency/performance (optional).
+	**/
 	public function free()
 	{
-		_root.free();
-		_root = null;
-		_iterator = null;
+		mRoot.free();
+		mRoot = null;
+		if (mIterator != null)
+		{
+			mIterator.free();
+			mIterator = null;
+		}
 	}
 	
 	/**
-	 * Returns true if this BST contains the element <code>x</code>.
-	 * <o>n</o>
-	 */
-	inline public function contains(x:T):Bool
+		Returns true if this BST contains `val`.
+	**/
+	public inline function contains(val:T):Bool
 	{
-		return _size > 0 && (find(x) != null);
+		return size > 0 && (find(val) != null);
 	}
 	
 	/**
-	 * Removes all nodes containing the element <code>x</code>.
-	 * <o>n</o>
-	 * @return true if at least one occurrence of <code>x</code> is nullified.
-	 * @throws de.polygonal.ds.error.AssertError <code>x</code> is invalid (debug only).
-	 */
-	public function remove(x:T):Bool
+		Removes all nodes containing `val`.
+		@return true if at least one occurrence of `val` is nullified.
+	**/
+	public function remove(val:T):Bool
 	{
-		#if debug
-		assert(x != null, "element is null");
-		#end
+		assert(val != null, "element is null");
 		
-		if (size() == 0) return false;
+		if (size == 0) return false;
 		
-		var s = _root.size();
+		var s = mRoot.size;
 		var found = false;
 		while (s > 0)
 		{
-			var node = find(x);
+			var node = find(val);
 			if (node == null) break;
 			if (!removeNode(node)) break;
 			found = true;
@@ -335,97 +312,78 @@ class BST<T:Comparable<T>> implements Collection<T>
 	}
 	
 	/**
-	 * Removes all elements.
-	 * <o>1 or n if <code>purge</code> is true</o>
-	 * @param purge if true, elements are nullified upon removal.
-	 */
-	public function clear(purge = false)
+		Removes all elements.
+		
+		@param gc if true, elements are nullified upon removal so the garbage collector can reclaim used memory.
+	**/
+	public function clear(gc:Bool = false)
 	{
-		if (purge)
+		if (gc)
 		{
-			if (_root != null)
-				_root.clear(purge);
+			if (mRoot != null)
+				mRoot.clear(gc);
 		}
 		
-		_root = null;
-		_size = 0;
+		mRoot = null;
+		mSize = 0;
 	}
 	
 	/**
-	 * Returns a new <em>BSTIterator</em> object to iterate over all elements contained in this BST.<br/>
-	 * The elements are visited by using a preorder traversal.
-	 * @see <a href="http://haxe.org/ref/iterators" target="_blank">http://haxe.org/ref/iterators</a>
-	 */
+		Returns a new *BstIterator* object to iterate over all elements contained in this BST.
+		
+		The elements are visited by using a preorder traversal.
+		
+		@see http://haxe.org/ref/iterators
+	**/
 	public function iterator():Itr<T>
 	{
 		if (reuseIterator)
 		{
-			if (_iterator == null)
-				_iterator = new BSTIterator<T>(_root);
+			if (mIterator == null)
+				mIterator = new BstIterator<T>(mRoot);
 			else
-				_iterator.reset();
-			return _iterator;
+				mIterator.reset();
+			return mIterator;
 		}
 		else
-			return new BSTIterator<T>(_root);
+			return new BstIterator<T>(mRoot);
 	}
 	
 	/**
-	 * The total number of elements.
-	 * <o>n</o>
-	 */
-	public function size():Int
-	{
-		return _size;
-	}
-	
-	/**
-	 * Returns true if this BST is empty.
-	 * <o>1</o>
-	 */
+		Returns true only if `this.size` is 0.
+	**/
 	public function isEmpty():Bool
 	{
-		return _size == 0;
+		return size == 0;
 	}
 	
 	/**
-	 * Returns an array containing all elements in this BST.<br/>
-	 * The elements are added by applying a preorder traversal.
-	 */
+		Returns an array containing all elements in this BST.
+		
+		The elements are added by applying a preorder traversal.
+	**/
 	public function toArray():Array<T>
 	{
-		var a:Array<T> = ArrayUtil.alloc(size());
+		if (isEmpty()) return [];
+		
+		var out = ArrayTools.alloc(size);
 		var i = 0;
-		_root.preorder(function(node:BinaryTreeNode<T>, userData:Dynamic):Bool { a[i++] = node.val; return true; });
-		return a;
+		mRoot.preorder(function(node:BinaryTreeNode<T>, _):Bool { out[i++] = node.val; return true; });
+		return out;
 	}
 	
-	#if flash10
 	/**
-	 * Returns a Vector.&lt;T&gt; object containing all elements in this BST.<br/>
-	 * The elements are added by applying a preorder traversal.
-	 */
-	public function toVector():flash.Vector<Dynamic>
+		Creates and returns a shallow copy (structure only - default) or deep copy (structure & elements) of this binary search tree.
+		
+		If `byRef` is true, primitive elements are copied by value whereas objects are copied by reference.
+		
+		If `byRef` is false, the `copier` function is used for copying elements. If omitted, `clone()` is called on each element assuming all elements implement `Cloneable`.
+	**/
+	public function clone(byRef:Bool = true, copier:T->T = null):Collection<T>
 	{
-		var a = new flash.Vector<Dynamic>(size());
-		var i = 0;
-		_root.preorder(function(node:BinaryTreeNode<T>, userData:Dynamic):Bool { a[i++] = node.val; return true; });
-		return a;
-	}
-	#end
-	
-	/**
-	 * Duplicates this subtree. Supports shallow (structure only) and deep copies (structure & elements).
-	 * @param assign if true, the <code>copier</code> parameter is ignored and primitive elements are copied by value whereas objects are copied by reference.<br/>
-	 * If false, the <em>clone()</em> method is called on each element. <warn>In this case all elements have to implement <em>Cloneable</em>.</warn>
-	 * @param copier a custom function for copying elements. Replaces element.<em>clone()</em> if <code>assign</code> is false.
-	 * @throws de.polygonal.ds.error.AssertError element is not of type <em>Cloneable</em> (debug only).
-	 */
-	public function clone(assign = true, copier:T->T = null):Collection<T>
-	{
-		var copy = new BST<T>();
-		copy._root = cast _root.clone(assign, copier);
-		copy._size = _size;
+		var copy = new Bst<T>();
+		copy.mRoot = cast mRoot.clone(byRef, copier);
+		copy.mSize = size;
 		return copy;
 	}
 }
@@ -433,54 +391,58 @@ class BST<T:Comparable<T>> implements Collection<T>
 #if generic
 @:generic
 #end
-#if doc
-private
-#end
-class BSTIterator<T> implements de.polygonal.ds.Itr<T>
+@:dox(hide)
+class BstIterator<T> implements de.polygonal.ds.Itr<T>
 {
-	var _node:BinaryTreeNode<T>;
-	var _stack:Array<BinaryTreeNode<T>>;
-	var _top:Int;
-	var _c:Int;
+	var mObject:BinaryTreeNode<T>;
+	var mStack:Array<BinaryTreeNode<T>>;
+	var mTop:Int;
+	var mC:Int;
 	
-	public function new(node:BinaryTreeNode<T>)
+	public function new(x:BinaryTreeNode<T>)
 	{
-		_node = node;
-		_stack = new Array<BinaryTreeNode<T>>();
+		mObject = x;
+		mStack = new Array<BinaryTreeNode<T>>();
 		reset();
 	}
 	
-	inline public function reset():Itr<T>
+	public function free()
 	{
-		_stack[0] = _node;
-		_top = 1;
-		_c = 0;
+		mObject = null;
+		mStack = null;
+	}
+	
+	public inline function reset():Itr<T>
+	{
+		mStack[0] = mObject;
+		mTop = 1;
+		mC = 0;
 		return this;
 	}
 	
-	inline public function hasNext():Bool
+	public inline function hasNext():Bool
 	{
-		return _top > 0;
+		return mTop > 0;
 	}
 	
-	inline public function next():T
+	public inline function next():T
 	{
-		var node = _stack[--_top];
-		if (node.hasL())
+		var node = mStack[--mTop];
+		if (node.hasLeft())
 		{
-			_c++;
-			_stack[_top++] = node.l;
+			mC++;
+			mStack[mTop++] = node.left;
 		}
-		if (node.hasR())
+		if (node.hasRight())
 		{
-			_c++;
-			_stack[_top++] = node.r;
+			mC++;
+			mStack[mTop++] = node.right;
 		}
 		return node.val;
 	}
 	
-	inline public function remove()
+	public function remove()
 	{
-		_top -= _c;
+		mTop -= mC;
 	}
 }

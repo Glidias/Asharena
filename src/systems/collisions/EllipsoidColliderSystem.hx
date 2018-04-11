@@ -10,18 +10,12 @@ import components.ImmovableCollidable;
 import components.MovableCollidable;
 import components.MoveResult;
 import components.Pos;
-import components.Transform3D;
 import components.Vel;
-import flash.errors.Error;
-import flash.geom.Vector3D;
-import haxe.Log;
-import input.KeyPoll;
 import systems.collisions.CollisionEvent;
 import systems.collisions.EllipsoidColliderSystem.EllipsoidImmovableNode;
 import systems.collisions.EllipsoidColliderSystem.EllipsoidMovableNode;
 import util.geom.PMath;
 import util.geom.Vec3;
-import util.geom.Vec3Utils;
 import util.TypeDefs;
 
 /**
@@ -120,7 +114,7 @@ class EllipsoidColliderSystem extends System
 	}
 	
 	private inline function mytrace(val:String):Void {
-		Log.trace(val);
+		haxe.Log.trace(val);
 	}
 	
 	override public function update(time:Float):Void
@@ -269,7 +263,7 @@ class EllipsoidColliderSystem extends System
 		collPos.z = activeCircle.movable.pos.z - collNorm.z * radius * radius / activeCircle.ellipsoid.z;
 		collOffset = collPos.dotProduct(collNorm);
 		var e:CollisionEvent= CollisionEvent.Get(collPos, collNorm, collOffset, t, activeCircle.movable.pos, CollisionEvent.GEOMTYPE_THING);
-		e.thing = thing;
+		//e.thing = thing;
 		activeCircle.result.addCollisionEvent(e);
 	}
 	

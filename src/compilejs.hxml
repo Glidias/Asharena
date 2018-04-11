@@ -1,0 +1,4 @@
+-js bin/ArenaHaxeJS.js
+-main MainJS
+-D triOnly
+-dce no

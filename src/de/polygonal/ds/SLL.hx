@@ -1,346 +1,286 @@
 ﻿/*
- *                            _/                                                    _/
- *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
- *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *     _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *    _/_/_/      _/_/    _/    _/_/_/    _/_/_/    _/_/    _/    _/    _/_/_/  _/
- *   _/                            _/        _/
- *  _/                        _/_/      _/_/
- *
- * POLYGONAL - A HAXE LIBRARY FOR GAME DEVELOPERS
- * Copyright (c) 2009 Michael Baczynski, http://www.polygonal.de
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+Copyright (c) 2008-2018 Michael Baczynski, http://www.polygonal.de
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 package de.polygonal.ds;
 
-import de.polygonal.ds.error.Assert.assert;
-
-private typedef SLLNodeFriend<T> =
-{
-	private function _insertAfter(node:SLLNode<T>):Void;
-	private var _list:SLL<T>;
-}
+import de.polygonal.ds.tools.ArrayTools;
+import de.polygonal.ds.tools.Assert.assert;
+import de.polygonal.ds.tools.MathTools;
+import de.polygonal.ds.tools.Shuffle;
 
 /**
- * <p>A singly linked list.</p>
- * <p>See <a href="http://lab.polygonal.de/?p=206" target="_blank">http://lab.polygonal.de/?p=206</a></p>
- * <p><o>Worst-case running time in Big O notation</o></p>
- */
+	A singly linked list
+	
+	Example:
+		var o = new de.polygonal.ds.Sll<Int>();
+		for (i in 0...4) o.append(i);
+		trace(o); //outputs:
+		
+		[ Sll size=4
+		  head
+		  0 -> 0
+		  1 -> 1
+		  2 -> 2
+		  3 -> 3
+		]
+**/
 #if generic
 @:generic
 #end
-class SLL<T> implements Collection<T>
+@:access(de.polygonal.ds.SllNode)
+class Sll<T> implements List<T>
 {
 	/**
-	 * A unique identifier for this object.<br/>
-	 * A hash table transforms this key into an index of an array element by using a hash function.<br/>
-	 * <warn>This value should never be changed by the user.</warn>
-	 */
-	public var key:Int;
+		A unique identifier for this object.
+		
+		A hash table transforms this key into an index of an array element by using a hash function.
+	**/
+	public var key(default, null):Int = HashKey.next();
 	
 	/**
-	 * The head of this list or null if this list is empty. 
-	 */
-	public var head:SLLNode<T>;
+		The head of this list or null if this list is empty.
+	**/
+	public var head:SllNode<T>;
 	
 	/**
-	 * The tail of this list or null if this list is empty. 
-	 */
-	public var tail:SLLNode<T>;
+		The tail of this list or null if this list is empty.
+	**/
+	public var tail:SllNode<T>;
 	
 	/**
-	 * The maximum allowed size of this list.<br/>
-	 * Once the maximum size is reached, adding an element will fail with an error (debug only).<br/>
-	 * A value of -1 indicates that the size is unbound.<br/>
-	 * <warn>Always equals -1 in release mode.</warn>
-	 */
-	public var maxSize:Int;
+		If true, reuses the iterator object instead of allocating a new one when calling `this.iterator()`.
+		
+		The default is false.
+		
+		_If this value is true, nested iterations will fail as only one iteration is allowed at a time._
+	**/
+	public var reuseIterator:Bool = false;
 	
 	/**
-	 * If true, reuses the iterator object instead of allocating a new one when calling <code>iterator()</code>.<br/>
-	 * The default is false.<br/>
-	 * <warn>If true, nested iterations are likely to fail as only one iteration is allowed at a time.</warn>
-	 */
-	public var reuseIterator:Bool;
+		Returns true if this list is circular.
+		
+		A list is circular if the tail points to the head.
+	**/
+	public var isCircular(default, null):Bool = false;
 	
-	var _size:Int;
-	var _reservedSize:Int;
-	var _poolSize:Int;
+	var mSize:Int = 0;
+	var mReservedSize:Int;
+	var mPoolSize:Int = 0;
 	
-	var _headPool:SLLNode<T>;
-	var _tailPool:SLLNode<T>;
+	var mHeadPool:SllNode<T>;
+	var mTailPool:SllNode<T>;
 	
-	var _circular:Bool;
-	var _iterator:Itr<T>;
+	var mIterator:SllIterator<T> = null;
 	
 	/**
-	 * @param reservedSize if &gt; 0, this list maintains an object pool of node objects.<br/>
-	 * Prevents frequent node allocation and thus increases performance at the cost of using more memory.
-	 * @param maxSize the maximum allowed size of this list.<br/>
-	 * The default value of -1 indicates that there is no upper limit.
-	 * @throws de.polygonal.ds.error.AssertError reserved size is greater than allowed size (debug only).
-	 */
-	public function new(reservedSize = 0, maxSize = -1)
+		@param reservedSize if > 0, this list maintains an object pool of node objects.
+		Prevents frequent node allocation and thus increases performance at the cost of using more memory.
+	**/
+	public function new(reservedSize:Null<Int> = 0, ?source:Array<T>)
 	{
-		#if debug
-		if (reservedSize > 0)
-		{
-			if (maxSize != -1)
-				assert(reservedSize <= maxSize, "reserved size is greater than allowed size");
-		}
-		this.maxSize = (maxSize == -1) ? M.INT32_MAX : maxSize;
-		#else
-		this.maxSize = -1;
-		#end
-		
-		_reservedSize = reservedSize;
-		_size         = 0;
-		_poolSize     = 0;
-		_circular     = false;
-		_iterator     = null;    
+		mReservedSize = reservedSize;
 		
 		if (reservedSize > 0)
+			mHeadPool = mTailPool = new SllNode<T>(cast null, this);
+		
+		if (source != null && source.length > 0)
 		{
-			_headPool = _tailPool = new SLLNode<T>(cast null, this);
+			mSize = source.length;
+			head = tail = getNode(source[0]);
+			for (i in 1...mSize)
+				tail = tail.next = getNode(source[i]);
 		}
-		
-		head = tail = null;
-		
-		key = HashKey.next();
-		reuseIterator = false;
+		else
+			head = tail = null;
 	}
 	
 	/**
-	 * Returns true if this list is circular.<br/>
-	 * A list is circular if the tail points to the head.
-	 * <o>1</o>
-	 */
-	public function isCircular():Bool
+		Makes this list circular by connecting the tail to the head.
+		
+		Silently fails if this list is already closed.
+	**/
+	public function close():Sll<T>
 	{
-		return _circular;
-	}
-	
-	/**
-	 * Makes this list circular by connecting the tail to the head.<br/>
-	 * Silently fails if this list is already closed.
-	 * <o>1</o>
-	 */
-	public function close()
-	{
-		if (_circular) return;
-		_circular = true;
-		if (_valid(head))
+		if (isCircular) return this;
+		isCircular = true;
+		if (valid(head))
 			tail.next = head;
+		return this;
 	}
 	
 	/**
-	 * Makes this list non-circular by disconnecting the tail from the head and vice versa.<br/>
-	 * Silently fails if this list is already non-circular.
-	 * <o>1</o>
-	 */
-	public function open()
-	{
-		if (!_circular) return;
-		_circular = false;
-		if (_valid(head))
-			tail.next = null;
-	}
-	
-	/**
-	 * Creates and returns a new <code>SLLNode</code> object storing the value <code>x</code> and pointing to this list.
-	 * <o>1</o>
-	 */
-	inline public function createNode(x:T):SLLNode<T>
-	{
-		return new SLLNode<T>(x, this);
-	}
-	
-	/**
-	 * Appends the element <code>x</code> to the tail of this list by creating a <em>SLLNode</em> object storing <code>x</code>.
-	 * <o>1</o>
-	 * @return the appended node storing <code>x</code>.
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	inline public function append(x:T):SLLNode<T>
-	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		#end
+		Makes this list non-circular by disconnecting the tail from the head and vice versa.
 		
-		var node = _getNode(x);
-		if (_valid(tail))
+		Silently fails if this list is already non-circular.
+	**/
+	public function open():Sll<T>
+	{
+		if (!isCircular) return this;
+		isCircular = false;
+		if (valid(head))
+			tail.next = null;
+		return this;
+	}
+	
+	/**
+		Creates and returns a new `SllNode` object storing `val` and pointing to this list.
+	**/
+	public inline function createNode(val:T):SllNode<T>
+	{
+		return new SllNode<T>(val, this);
+	}
+	
+	/**
+		Appends `val` to the tail of this list by creating a `SllNode` object storing `val`.
+		@return the appended node storing `val`.
+	**/
+	public function append(val:T):SllNode<T>
+	{
+		var node = getNode(val);
+		if (valid(tail))
 			tail.next = node;
 		else
 			head = node;
 		tail = node;
 		
-		if (_circular)
+		if (isCircular)
 			tail.next = head;
 		
-		_size++;
+		mSize++;
 		return node;
 	}
 	
 	/**
-	 * Appends the node <code>x</code> to this list.
-	 * <o>1</o>
-	 */
-	inline public function appendNode(x:SLLNode<T>)
+		Appends `node` to this list.
+	**/
+	public inline function appendNode(node:SllNode<T>):Sll<T>
 	{
-		#if debug
-		assert(x.getList() == this, "node is not managed by this list");
-		#end
+		assert(node.getList() == this, "node is not managed by this list");
 		
-		if (_valid(tail))
-			tail.next = x;
+		if (valid(tail))
+			tail.next = node;
 		else
-			head = x;
-		tail = x;
+			head = node;
+		tail = node;
 		
-		if (_circular)
+		if (isCircular)
 			tail.next = head;
 		
-		_size++;
+		mSize++;
+		return this;
 	}
 	
 	/**
-	 * Prepends the element <code>x</code> to the head of this list by creating a <em>SLLNode</em> object storing <code>x</code>.
-	 * <o>1</o>
-	 * @return the prepended node storing <code>x</code>.
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	inline public function prepend(x:T):SLLNode<T>
+		Prepends `val` to the head of this list by creating a `SllNode` object storing `val`.
+		@return the prepended node storing `val`.
+	**/
+	public function prepend(val:T):SllNode<T>
 	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		#end
-		
-		var node = _getNode(x);
-		if (_valid(tail))
+		var node = getNode(val);
+		if (valid(tail))
 			node.next = head;
 		else
 			tail = node;
 		head = node;
 		
-		if (_circular)
+		if (isCircular)
 			tail.next = head;
 		
-		_size++;
+		mSize++;
 		return node;
 	}
 	
 	/**
-	 * Prepends the node <code>x</code> to this list.
-	 * <o>1</o>
-	 */
-	public function prependNode(x:SLLNode<T>)
+		Prepends `node` to this list.
+	**/
+	public function prependNode(node:SllNode<T>):Sll<T>
 	{
-		#if debug
-		assert(x.getList() == this, "node is not managed by this list");
-		#end
+		assert(node.getList() == this, "node is not managed by this list");
 		
-		if (_valid(tail))
-			x.next = head;
+		if (valid(tail))
+			node.next = head;
 		else
-			tail = x;
-		head = x;
+			tail = node;
+		head = node;
 		
-		if (_circular)
+		if (isCircular)
 			tail.next = head;
 		
-		_size++;
+		mSize++;
+		return this;
 	}
 	
 	/**
-	 * Inserts the element <code>x</code> after <code>node</code> by creating a <em>SLLNode</em> object storing <code>x</code>.
-	 * <o>1</o>
-	 * @return the inserted node storing <code>x</code>.
-	 * @throws de.polygonal.ds.error.AssertError <code>node</code> is null or not managed by this list (debug only).
-	 */
-	inline public function insertAfter(node:SLLNode<T>, x:T):SLLNode<T>
+		Inserts `val` after `node` by creating a `SllNode` object storing `val`.
+		@return the inserted node storing `val`.
+	**/
+	public function insertAfter(node:SllNode<T>, val:T):SllNode<T>
 	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		assert(_valid(node), "node is null");
+		assert(valid(node), "node is null");
 		assert(node.getList() == this, "node is not managed by this list");
-		#end
 		
-		var t = _getNode(x);
-		__insertAfter(node, t);
+		var t = getNode(val);
+		node.insertAfter(t);
 		
 		if (node == tail)
 		{
 			tail = t;
-			if (_circular)
+			if (isCircular)
 				tail.next = head;
 		}
-		_size++;
+		mSize++;
 		return t;
 	}
 	
 	/**
-	 * Inserts the element <code>x</code> before <code>node</code> by creating a <em>SLLNode</em> object storing <code>x</code>.
-	 * <o>1</o>
-	 * @return the inserted node storing <code>x</code>.
-	 * @throws de.polygonal.ds.error.AssertError <code>node</code> is null or not managed by this list (debug only).
-	 */
-	inline public function insertBefore(node:SLLNode<T>, x:T):SLLNode<T>
+		Inserts `val` before `node` by creating a `SllNode` object storing `val`.
+		@return the inserted node storing `val`.
+	**/
+	public function insertBefore(node:SllNode<T>, val:T):SllNode<T>
 	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		assert(_valid(node), "node is null");
-		assert(node.getList() == this, "node is not managed by this list");
-		#end
 		
-		var t = _getNode(x);
+		assert(valid(node), "node is null");
+		assert(node.getList() == this, "node is not managed by this list");
+		
+		var t = getNode(val);
 		if (node == head)
 		{
 			t.next = head;
 			head = t;
 			
-			if (_circular)
+			if (isCircular)
 				tail.next = head;
 		}
 		else
-			__insertAfter(_getNodeBefore(node), t);
+			getNodeBefore(node).insertAfter(t);
 		
-		_size++;
+		mSize++;
 		return t;
 	}
 	
 	/**
-	 * Unlinks <code>node</code> from this list and returns <code>node</code>.<em>next</em>;.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <code>node</code> is null or not managed by this list (debug only).
-	 */
-	inline public function unlink(node:SLLNode<T>):SLLNode<T>
+		Unlinks `node` from this list and returns `node.next`.
+	**/
+	public function unlink(node:SllNode<T>):SllNode<T>
 	{
-		#if debug
-		assert(_valid(node), "node is null");
+		assert(valid(node), "node is null");
 		assert(node.getList() == this, "node is not managed by this list");
-		assert(_size > 0, "list is empty");
-		#end
+		assert(size > 0, "list is empty");
 		
 		var hook = node.next;
 		
@@ -348,10 +288,10 @@ class SLL<T> implements Collection<T>
 			removeHead();
 		else
 		{
-			var t = _getNodeBefore(node);
+			var t = getNodeBefore(node);
 			if (t.next == tail)
 			{
-				if (_circular)
+				if (isCircular)
 				{
 					tail = t;
 					t.next = head;
@@ -366,26 +306,21 @@ class SLL<T> implements Collection<T>
 				t.next = hook;
 			
 			node.next = null;
-			_putNode(node);
-			_size--;
+			putNode(node);
+			mSize--;
 		}
-		
 		return hook;
 	}
 	
 	/**
-	 * Returns the node at "index" <code>i</code>.<br/>
-	 * The index is measured relative to the head node (= index 0).
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 * @throws de.polygonal.ds.error.AssertError index out of range (debug only).
-	 */
-	inline public function getNodeAt(i:Int):SLLNode<T>
+		Returns the node at "index" `i`.
+		
+		The index is measured relative to the head node (= index 0).
+	**/
+	public function getNodeAt(i:Int):SllNode<T>
 	{
-		#if debug
-		assert(_size > 0, "list is empty");
-		assert(i >= 0 || i < _size, 'i index out of range ($i)');
-		#end
+		assert(size > 0, "list is empty");
+		assert(i >= 0 || i < size, 'i index out of range ($i)');
 		
 		var node = head;
 		for (j in 0...i) node = node.next;
@@ -393,116 +328,101 @@ class SLL<T> implements Collection<T>
 	}
 	
 	/**
-	 * Removes the head node and returns the element stored in this node.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 */
-	inline public function removeHead():T
+		Removes the head node and returns the element stored in this node.
+	**/
+	public function removeHead():T
 	{
-		#if debug
-		assert(_size > 0, "list is empty");
-		#end
+		assert(size > 0, "list is empty");
 		
 		var node = head;
-		if (_size > 1)
+		if (size > 1)
 		{
 			head = head.next;
 			
-			if (_circular)
+			if (isCircular)
 				tail.next = head;
 		}
 		else
 			head = tail = null;
 		
-		_size--;
+		mSize--;
 		
 		node.next = null;
-		return _putNode(node);
+		return putNode(node);
 	}
 	
 	/**
-	 * Removes the tail node and returns the element stored in this node.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 */
-	inline public function removeTail():T
+		Removes the tail node and returns the element stored in this node.
+	**/
+	public function removeTail():T
 	{
-		#if debug
-		assert(_size > 0, "list is empty");
-		#end
+		assert(size > 0, "list is empty");
 		
 		var node = tail;
-		if (_size > 1)
+		if (size > 1)
 		{
-			var t = _getNodeBefore(tail);
+			var t = getNodeBefore(tail);
 			tail = t;
 			
-			if (_circular)
+			if (isCircular)
 				t.next = head;
 			else
 				t.next = null;
-			_size--;
+			mSize--;
 		}
 		else
 		{
 			head = tail = null;
-			_size = 0;
+			mSize = 0;
 		}
 		
 		node.next = null;
-		return _putNode(node);
+		return putNode(node);
 	}
 	
 	/**
-	 * Unlinks the head node and appends it to the tail.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 */
-	inline public function shiftUp()
+		Unlinks the head node and appends it to the tail.
+	**/
+	public inline function headToTail():Sll<T>
 	{
-		#if debug
-		assert(_size > 0, "list is empty");
-		#end
+		assert(size > 0, "list is empty");
 		
-		if (_size > 1)
+		if (size > 1)
 		{
 			var t = head;
 			if (head.next == tail)
 			{
 				head = tail;
 				tail = t;
-				t.next = _circular ? head : null;
+				t.next = isCircular ? head : null;
 				head.next = tail;
 			}
 			else
 			{
 				head = head.next;
 				tail.next = t;
-				t.next = _circular ? head : null;
+				t.next = isCircular ? head : null;
 				tail = t;
 			}
 		}
+		return this;
 	}
 	
 	/**
-	 * Unlinks the tail node and prepends it to the head.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 */
-	inline public function popDown()
+		Unlinks the tail node and prepends it to the head.
+	**/
+	public inline function tailToHead():Sll<T>
 	{
-		#if debug
-		assert(_size > 0, "list is empty");
-		#end
+		assert(size > 0, "list is empty");
 		
-		if (_size > 1)
+		if (size > 1)
 		{
 			var t = tail;
 			if (head.next == tail)
 			{
 				tail = head;
 				head = t;
-				t.next = _circular ? head : null;
+				t.next = isCircular ? head : null;
 				head.next = tail;
 			}
 			else
@@ -511,272 +431,227 @@ class SLL<T> implements Collection<T>
 				while (node.next != tail)
 					node = node.next;
 				tail = node;
-				tail.next = _circular ? t : null;
+				tail.next = isCircular ? t : null;
 				t.next = head;
 				head = t;
 			}
 		}
+		return this;
 	}
 	
 	/**
-	 * Searches for the element <code>x</code> in this list from head to tail starting at node <code>from</code>.
-	 * <o>n</o>
-	 * @return the node containing <code>x</code> or null if such a node does not exist.<br/>
-	 * If <code>from</code> is null, the search starts at the head of this list.
-	 * @throws de.polygonal.ds.error.AssertError <code>from</code> is not managed by this list (debug only).
-	 */
-	public function nodeOf(x:T, from:SLLNode<T> = null):SLLNode<T>
+		Searches for `val` in this list from head to tail starting at node `from`.
+		@return the node containing `val` or null if such a node does not exist.
+		<br/>If `from` is null, the search starts at the head of this list.
+	**/
+	public function nodeOf(val:T, from:SllNode<T> = null):SllNode<T>
 	{
 		#if debug
-		if (_valid(from))
+		if (valid(from))
 			assert(from.getList() == this, "node is not managed by this list");
 		#end
 		
 		var node = (from == null) ? head : from;
-		while (_valid(node))
+		while (valid(node))
 		{
-			if (node.val == x) break;
+			if (node.val == val) break;
 			node = node.next;
 		}
 		return node;
 	}
 	
 	/**
-	 * Sorts the elements of this list using the merge sort algorithm.
-	 * <o>n log n for merge sort and n&sup2; for insertion sort</o>
-	 * @param compare a comparison function.<br/>
-	 * If null, the elements are compared using element.<em>compare()</em>.<br/>
-	 * <warn>In this case all elements have to implement <em>Comparable</em>.</warn>
-	 * @param useInsertionSort if true, the linked list is sorted using the insertion sort algorithm.
-	 * This is faster for nearly sorted lists.
-	 * @throws de.polygonal.ds.error.AssertError element does not implement <em>Comparable</em> (debug only).
-	 */
-	public function sort(compare:T->T->Int, useInsertionSort = false)
+		Sorts the elements of this list using the merge sort algorithm.
+		@param cmp a comparison function.
+		If null, the elements are compared using `element.compare()`.
+		<br/>_In this case all elements have to implement `Comparable`._
+		@param useInsertionSort if true, the linked list is sorted using the insertion sort algorithm.
+		This is faster for nearly sorted lists.
+	**/
+	public function sort(?cmp:T->T->Int, useInsertionSort:Bool = false):Sll<T>
 	{
-		if (_size > 1)
+		if (size > 1)
 		{
-			if (_circular) tail.next = null;
+			if (isCircular) tail.next = null;
 			
-			if (compare == null)
+			if (cmp == null)
 			{
-				head = useInsertionSort ? _insertionSortComparable(head) : _mergeSortComparable(head);
+				head = useInsertionSort ? insertionSortComparable(head) : mergeSortComparable(head);
 			}
 			else
 			{
-				head = useInsertionSort ? _insertionSort(head, compare) : _mergeSort(head, compare);
+				head = useInsertionSort ? insertionSort(head, cmp) : mergeSort(head, cmp);
 			}
 			
-			if (_circular) tail.next = head;
+			if (isCircular) tail.next = head;
 		}
-	}
-	
-	/**
-	 * Merges this list with the list <code>x</code> by linking both lists together.<br/>
-	 * <warn>The merge operation destroys x so it should be discarded.</warn>
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError <code>x</code> is null or this list equals <code>x</code> (debug only).
-	 */
-	public function merge(x:SLL<T>)
-	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() + x.size() <= maxSize, 'size equals max size ($maxSize)');
-		assert(x != this, "x equals this list");
-		assert(x != null, "x is null");
-		#end
-		
-		if (_valid(x.head))
-		{
-			var node = x.head;
-			for (i in 0...x.size())
-			{
-				__list(node, this);
-				node = node.next;
-			}
-			
-			if (_valid(head))
-			{
-				tail.next = x.head;
-				tail = x.tail;
-			}
-			else
-			{
-				head = x.head;
-				tail = x.tail;
-			}
-			
-			_size += x.size();
-			
-			if (_circular)
-				tail.next = head;
-		}
-	}
-	
-	/**
-	 * Concatenates this list with the list <code>x</code> by appending all elements of <code>x</code> to this list.<br/>
-	 * This list and <code>x</code> are untouched.
-	 * <o>n</o>
-	 * @return a new list containing the elements of both lists.
-	 * @throws de.polygonal.ds.error.AssertError <code>x</code> is null or this equals <code>x</code> (debug only).
-	 */
-	public function concat(x:SLL<T>):SLL<T>
-	{
-		#if debug
-		assert(x != null, "x is null");
-		assert(x != this, "x equals this list");
-		#end
-		
-		var c = new SLL<T>();
-		var node = head;
-		for (i in 0..._size)
-		{
-			c.append(node.val);
-			node = node.next;
-		}
-		node = x.head;
-		for (i in 0...x._size)
-		{
-			c.append(node.val);
-			node = node.next;
-		}
-		
-		return c;
-	}
-	
-	/**
-	 * Reverses the linked list in place.
-	 * <o>n</o>
-	 */
-	public function reverse()
-	{
-		if (_size > 1)
-		{
-			var v = new Array<T>();
-			var node = head;
-			for (i in 0..._size)
-			{
-				v[i] = node.val;
-				node = node.next;
-			}
-			
-			v.reverse();
-			
-			var node = head;
-			for (i in 0..._size)
-			{
-				node.val = v[i];
-				node = node.next;
-			}
-		}
-	}
-	
-	/**
-	 * Converts the data in the linked list to strings, inserts <code>x</code> between the elements, concatenates them, and returns the resulting string.
-	 * <o>n</o>
-	 */
-	public function join(x:String):String
-	{
-		var s = "";
-		if (_size > 0)
-		{
-			var node = head;
-			for (i in 0..._size - 1)
-			{
-				s += Std.string(node.val) + x;
-				node = node.next;
-			}
-			s += Std.string(node.val);
-		}
-		return s;
-	}
-	
-	/**
-	 * Replaces up to <code>n</code> existing elements with objects of type <code>C</code>.
-	 * <o>n</o>
-	 * @param C the class to instantiate for each element.
-	 * @param args passes additional constructor arguments to <code>C</code>.
-	 * @param n the number of elements to replace. If 0, <code>n</code> is set to <em>size()</em>.
-	 * @throws de.polygonal.ds.error.AssertError <code>n</code> out of range (debug only).
-	 */
-	public function assign(C:Class<T>, args:Array<Dynamic> = null, n = 0)
-	{
-		#if debug
-		assert(n >= 0, "n >= 0");
-		#end
-		
-		if (n > 0)
-		{
-			#if debug
-			if (maxSize != -1)
-				assert(n <= size(), 'n out of range ($n)');
-			#end
-		}
-		else
-			n = size();
-		
-		if (args == null) args = [];
-		var node = head;
-		for (i in 0...n)
-		{
-			node.val = Type.createInstance(C, args);
-			node = node.next;
-		}
-	}
-	
-	/**
-	 * Replaces up to <code>n</code> existing elements with the instance of <code>x</code>.
-	 * <o>n</o>
-	 * @param n the number of elements to replace. If 0, <code>n</code> is set to <em>size()</em>.
-	 * @throws de.polygonal.ds.error.AssertError <code>n</code> out of range (debug only).
-	 */
-	public function fill(x:T, args:Array<Dynamic> = null, n = 0):SLL<T>
-	{
-		#if debug
-		assert(n >= 0, "n >= 0");
-		#end
-		
-		if (n > 0)
-		{
-			#if debug
-			if (maxSize != -1)
-				assert(n <= size(), 'n out of range ($n)');
-			#end
-		}
-		else
-			n = size();
-		
-		var node = head;
-		for (i in 0...n)
-		{
-			node.val = x;
-			node = node.next;
-		}
-		
 		return this;
 	}
 	
 	/**
-	 * Shuffles the elements of this collection by using the Fisher-Yates algorithm.<br/>
-	 * <o>n</o>
-	 * @param rval a list of random double values in the range between 0 (inclusive) to 1 (exclusive) defining the new positions of the elements.
-	 * If omitted, random values are generated on-the-fly by calling <em>Math.random()</em>.
-	 * @throws de.polygonal.ds.error.AssertError insufficient random values (debug only).
-	 */
-	public function shuffle(rval:DA<Float> = null)
+		Merges this list with `list` by linking both lists together.
+		
+		_The merge operation destroys `list` so it should be discarded._
+	**/
+	public function merge(list:Sll<T>):Sll<T>
 	{
-		var s = _size;
+		assert(list != this, "list equals this list");
+		assert(list != null, "list is null");
 		
-		if (s == 1) return;
-		
-		if (_circular) tail.next = null;
-		
-		if (rval == null)
+		if (valid(list.head))
 		{
-			var m = Math;
+			var node = list.head;
+			for (i in 0...list.size)
+			{
+				node.mList = this;
+				node = node.next;
+			}
+			
+			if (valid(head))
+			{
+				tail.next = list.head;
+				tail = list.tail;
+			}
+			else
+			{
+				head = list.head;
+				tail = list.tail;
+			}
+			
+			mSize += list.size;
+			
+			if (isCircular)
+				tail.next = head;
+		}
+		return this;
+	}
+	
+	/**
+		Concatenates this list with `list` by appending all elements of `list` to this list.
+		
+		This list and `list` are left untouched.
+		@return a new list containing the elements of both lists.
+	**/
+	public function concat(list:Sll<T>):Sll<T>
+	{
+		assert(list != null, "list is null");
+		assert(list != this, "list equals this list");
+		
+		var c = new Sll<T>();
+		var node = head;
+		for (i in 0...size)
+		{
+			c.append(node.val);
+			node = node.next;
+		}
+		node = list.head;
+		for (i in 0...list.size)
+		{
+			c.append(node.val);
+			node = node.next;
+		}
+		return c;
+	}
+	
+	/**
+		Reverses the linked list in place.
+	**/
+	public function reverse():Sll<T>
+	{
+		if (size > 1)
+		{
+			var t = new Array<T>();
+			var node = head;
+			for (i in 0...size)
+			{
+				t[i] = node.val;
+				node = node.next;
+			}
+			
+			t.reverse();
+			
+			node = head;
+			for (i in 0...size)
+			{
+				node.val = t[i];
+				node = node.next;
+			}
+		}
+		return this;
+	}
+	
+	/**
+		Converts the data in the linked list to strings, inserts `sep` between the elements, concatenates them, and returns the resulting string.
+	**/
+	public function join(sep:String):String
+	{
+		if (isEmpty()) return "";
+		
+		var b = new StringBuf();
+		var node = head;
+		for (i in 0...size - 1)
+		{
+			b.add(Std.string(node.val) + sep);
+			node = node.next;
+		}
+		b.add(Std.string(node.val));
+		return b.toString();
+	}
+
+	/**
+		Calls `f` on all elements.
+		
+		The function signature is: `f(input, index):output`
+		
+		- input: current element
+		- index: the index number of the given element (0=head)
+		- output: element to be stored at given index
+	**/
+	public inline function forEach(f:T->Int->T):Sll<T>
+	{
+		var node = head;
+		for (i in 0...size)
+		{
+			node.val = f(node.val, i);
+			node = node.next;
+		}
+		return this;
+	}
+	
+	/**
+		Calls 'f` on all elements in order.
+	**/
+	public inline function iter(f:T->Void):Sll<T>
+	{
+		assert(f != null);
+		var node = head;
+		while (node != null)
+		{
+			f(node.val);
+			node = node.next;
+		}
+		return this;
+	}
+	
+	/**
+		Shuffles the elements of this collection by using the Fisher-Yates algorithm.
+		@param rvals a list of random double values in the interval [0, 1) defining the new positions of the elements.
+		If omitted, random values are generated on-the-fly by calling `Shuffle.frand()`.
+	**/
+	public function shuffle(rvals:Array<Float> = null):Sll<T>
+	{
+		var s = size;
+		
+		if (s == 1) return this;
+		
+		if (isCircular) tail.next = null;
+		
+		if (rvals == null)
+		{
 			while (s > 1)
 			{
 				s--;
-				var i = Std.int(m.random() * s);
+				var i = Std.int(Shuffle.frand() * s);
 				var node1 = head;
 				for (j in 0...s) node1 = node1.next;
 				
@@ -791,138 +666,252 @@ class SLL<T> implements Collection<T>
 		}
 		else
 		{
-			#if debug
-			assert(rval.size() >= size(), "insufficient random values");
-			#end
+			assert(rvals.length >= size, "insufficient random values");
 			
 			var j = 0;
 			while (s > 1)
 			{
 				s--;
-				var i = Std.int(rval.get(j++) * s);
+				var i = Std.int(rvals[j++] * s);
 				var node1 = head;
-				for (j in 0...s) node1 = node1.next;
+				for (k in 0...s) node1 = node1.next;
 				
 				var t = node1.val;
 				
 				var node2 = head;
-				for (j in 0...i) node2 = node2.next;
+				for (l in 0...i) node2 = node2.next;
 				
 				node1.val = node2.val;
 				node2.val = t;
 			}
 		}
 		
-		if (_circular) tail.next = head;
+		if (isCircular) tail.next = head;
+		return this;
 	}
 	
 	/**
-	 * Returns a string representing the current object.<br/>
-	 * Example:<br/>
-	 * <pre class="prettyprint">
-	 * var list = new de.polygonal.ds.SLL&lt;Int&gt;();
-	 * for (i in 0...4) {
-	 *     list.append(i);
-	 * }
-	 * trace(list);</pre>
-	 * <pre class="console">
-	 * { SLL size: 4 }
- 	 * [ head 
-	 *   0
-	 *   1
-	 *   2
-	 *   3
-	 * tail ]</pre>
-	 */
+		Prints out all elements.
+	**/
+	#if !no_tostring
 	public function toString():String
 	{
-		var s = '{ SLL size: ${size()}, circular: ${isCircular()} }';
-		if (isEmpty()) return s;
-		s += "\n[ head \n";
-		var node = head;
-		for (i in 0..._size)
+		var b = new StringBuf();
+		b.add('[ Sll size=$size' + (isCircular ? " circular" : ""));
+		if (isEmpty())
 		{
-			s += '  ${Std.string(node.val)}\n';
+			b.add(" ]");
+			return b.toString();
+		}
+		b.add("\n  head\n");
+		var node = head;
+		var args = new Array<Dynamic>();
+		var fmt = '  %${MathTools.numDigits(size)}d -> %s\n';
+		for (i in 0...size)
+		{
+			args[0] = i;
+			args[1] = Std.string(node.val);
+			b.add(Printf.format(fmt, args));
 			node = node.next;
 		}
-		s += "] tail";
-		return s;
+		b.add("]");
+		return b.toString();
 	}
+	#end
 	
-	/*///////////////////////////////////////////////////////
-	// collection
-	///////////////////////////////////////////////////////*/
+	/* INTERFACE List */
 	
 	/**
-	 * Destroys this object by explicitly nullifying all nodes, pointers and data for GC'ing used resources.<br/>
-	 * Improves GC efficiency/performance (optional).
-	 * <o>n</o>
-	 */
+		Same as `this.append()`.
+	**/
+	public function add(val:T)
+	{
+		append(val);
+	}
+	
+	/**
+		Returns the value at the given `index` (0=head).
+	**/
+	public function get(index:Int):T
+	{
+		assert(index >= 0 && index < size, "index out of range");
+		
+		return getNodeAt(index).val;
+	}
+	
+	/**
+		Overwrites the value at the given `index` with `val` (0=head).
+	**/
+	public function set(index:Int, val:T)
+	{
+		assert(index >= 0 && index < size, "index out of range");
+		
+		getNodeAt(index).val = val;
+	}
+	
+	/**
+		Inserts `val` before the element at `index` (0=head).
+		
+		If `index` equals `this.size`, `val` gets appended to the end of the list.
+	**/
+	public function insert(index:Int, val:T)
+	{
+		assert(index >= 0 && index <= size, "index out of range");
+		
+		if (size == 0 || index == size)
+		{
+			append(val);
+			return;
+		}
+		
+		insertBefore(getNodeAt(index), val);
+	}
+	
+	/**
+		Returns the index of `val` (0=head).
+	**/
+	public function indexOf(val:T)
+	{
+		var i = 0;
+		var node = head;
+		while (valid(node))
+		{
+			if (node.val == val) return i;
+			i++;
+			node = node.next;
+		}
+		return -1;
+	}
+	
+	/**
+		Removes and returns the element at `index` (0=head).
+	**/
+	public function removeAt(index:Int):T
+	{
+		var node = getNodeAt(index);
+		node.unlink();
+		return node.val;
+	}
+	
+	/**
+		Returns a `Sll` object storing elements in the range [`fromIndex`, `toIndex`).
+		If `toIndex` is negative, the value represents the number of elements.
+	**/
+	public function getRange(fromIndex:Int, toIndex:Int):List<T>
+	{
+		assert(fromIndex >= 0 && fromIndex < size, "fromIndex out of range");
+		#if debug
+		if (toIndex >= 0)
+		{
+			assert(toIndex >= 0 && toIndex < size, "toIndex out of range");
+			assert(fromIndex <= toIndex);
+		}
+		else
+			assert(fromIndex - toIndex <= size, "toIndex out of range");
+		#end
+		
+		var n = toIndex > 0 ? (toIndex - fromIndex) : ((fromIndex - toIndex) - fromIndex);
+		
+		var out = new Sll<T>();
+		if (n == 0) return out;
+		out.mSize = n;
+		
+		var src = getNodeAt(fromIndex), t;
+		out.head = out.tail = out.getNode(src.val);
+		src = src.next;
+		for (i in 0...n - 1)
+		{
+			t = out.getNode(src.val);
+			out.tail = out.tail.next = t;
+			src = src.next;
+		}
+		
+		return out;
+	}
+	
+	/* INTERFACE Collection */
+	
+	/**
+		The total number of elements.
+	**/
+	public var size(get, never):Int;
+	inline function get_size():Int
+	{
+		return mSize;
+	}
+	
+	/**
+		Destroys this object by explicitly nullifying all nodes, pointers and data for GC'ing used resources.
+		
+		Improves GC efficiency/performance (optional).
+	**/
 	public function free()
 	{
-		var node = head;
-		for (i in 0..._size)
+		var node = head, next;
+		for (i in 0...size)
 		{
-			var next = node.next;
+			next = node.next;
 			node.free();
 			node = next;
 		}
 		head = tail = null;
 		
-		var node = _headPool;
-		while (_valid(node))
+		node = mHeadPool;
+		while (valid(node))
 		{
-			var next = node.next;
+			next = node.next;
 			node.free();
 			node = next;
 		}
 		
-		_headPool = _tailPool = null;
-		_iterator = null;
+		mHeadPool = mTailPool = null;
+		if (mIterator != null)
+		{
+			mIterator.free();
+			mIterator = null;
+		}
 	}
 	
 	/**
-	 * Returns true if this list contains a node storing the element <code>x</code>.
-	 * <o>n</o>
-	 */
-	public function contains(x:T):Bool
+		Returns true if this list contains a node storing `val`.
+	**/
+	public function contains(val:T):Bool
 	{
 		var node = head;
-		for (i in 0..._size)
+		for (i in 0...size)
 		{
-			if (node.val == x) return true;
+			if (node.val == val) return true;
 			node = node.next;
 		}
 		return false;
 	}
 	
 	/**
-	 * Removes all nodes storing the element <code>x</code>.
-	 * <o>n</o>
-	 * @return true if at least one occurrence of <code>x</code> was removed.
-	 */
-	public function remove(x:T):Bool
+		Removes all nodes storing `val`.
+		@return true if at least one occurrence of `val` was removed.
+	**/
+	public function remove(val:T):Bool
 	{
-		var s = size();
+		var s = size;
 		if (s == 0) return false;
 		
 		var node0 = head;
 		var node1 = head.next;
 		
-		for (i in 1..._size)
+		for (i in 1...size)
 		{
-			if (node1.val == x)
+			if (node1.val == val)
 			{
 				if (node1 == tail)
 				{
 					tail = node0;
-					if (_circular) tail.next = head;
+					if (isCircular) tail.next = head;
 				}
 				var node2 = node1.next;
 				node0.next = node2;
-				_putNode(node1);
+				putNode(node1);
 				node1 = node2;
-				_size--;
+				mSize--;
 			}
 			else
 			{
@@ -931,250 +920,213 @@ class SLL<T> implements Collection<T>
 			}
 		}
 		
-		if (head.val == x)
+		if (head.val == val)
 		{
 			var head1 = head.next;
-			_putNode(head);
+			putNode(head);
 			head = head1;
 			if (head == null)
 				tail = null;
 			else
 			{
-				if (_circular)
+				if (isCircular)
 					tail.next = head;
 			}
 			
-			_size--;
+			mSize--;
 		}
-		
-		return size() < s;
+		return size < s;
 	}
 	
 	/**
-	 * Removes all elements.
-	 * <o>1 or n if <code>purge</code> is true</o>
-	 * @param purge if true, nodes, pointers and elements are nullified upon removal.
-	 */
-	inline public function clear(purge = false)
+		Removes all elements.
+		@param gc if true, nodes, pointers and elements are nullified upon removal so the garbage collector can reclaim used memory.
+	**/
+	public function clear(gc:Bool = false)
 	{
-		if (purge || _reservedSize > 0)
+		if (gc || mReservedSize > 0)
 		{
 			var node = head;
-			for (i in 0..._size)
+			for (i in 0...size)
 			{
 				var next = node.next;
 				node.next = null;
-				_putNode(node);
+				putNode(node);
 				node = next;
 			}
 		}
 		
 		head = tail = null;
-		_size = 0;
+		mSize = 0;
 	}
 	
 	/**
-	 * Returns a new <em>SLLIterator</em> object to iterate over all elements contained in this singly linked list.<br/>
-	 * The elements are visited from head to tail.<br/>
-	 * If performance is crucial, use the following loop instead:<br/>
-	 * <pre class="prettyprint">
-	 * var node = mySLL.head;
-	 * while (node != null)
-	 * {
-	 *     var element = node.val;
-	 *     node = node.next;
-	 * }
-	 * </pre>
-	 * @see <a href="http://haxe.org/ref/iterators" target="_blank">http://haxe.org/ref/iterators</a>
-	 * 
-	 */
+		Returns a new `SllIterator` object to iterate over all elements contained in this singly linked list.
+		
+		The elements are visited from head to tail.
+		
+		If performance is crucial, use the following loop instead:
+		
+			var node = mySll.head;
+			while (node != null)
+			{
+			    var element = node.val;
+			    node = node.next;
+			}
+		@see http://haxe.org/ref/iterators
+	**/
 	public function iterator():Itr<T>
 	{
 		if (reuseIterator)
 		{
-			if (_iterator == null)
+			if (mIterator == null)
 			{
-				if (_circular)
-					return new CircularSLLIterator<T>(this);
+				if (isCircular)
+					return new CircularSllIterator<T>(this);
 				else
-					return new SLLIterator<T>(this);
+					return new SllIterator<T>(this);
 			}
 			else
-				_iterator.reset();
-			return _iterator;
+				mIterator.reset();
+			return mIterator;
 		}
 		else
 		{
-			if (_circular)
-				return new CircularSLLIterator<T>(this);
+			if (isCircular)
+				return new CircularSllIterator<T>(this);
 			else
-				return new SLLIterator<T>(this);
+				return new SllIterator<T>(this);
 		}
 	}
 	
 	/**
-	 * The total number of elements.
-	 * <o>1</o>
-	 */
-	inline public function size():Int
+		Returns true only if `this.size` is 0.
+	**/
+	public inline function isEmpty():Bool
 	{
-		return _size;
+		return size == 0;
 	}
 	
 	/**
-	 * Returns true if this list is empty.
-	 * <o>1</o>
-	 */
-	inline public function isEmpty():Bool
-	{
-		return _size == 0;
-	}
-	
-	/**
-	 * Returns an array containing all elements in this singly linked list.<br/>
-	 * The elements are ordered head-to-tail.
-	 */
+		Returns an array containing all elements in this singly linked list.
+		
+		The elements are ordered head-to-tail.
+	**/
 	public function toArray():Array<T>
 	{
-		var a:Array<T> = ArrayUtil.alloc(size());
+		if (isEmpty()) return [];
+		
+		var out = ArrayTools.alloc(size);
 		var node = head;
-		for (i in 0..._size)
+		for (i in 0...size)
 		{
-			a[i] = node.val;
+			out[i] = node.val;
 			node = node.next;
 		}
-		return a;
+		return out;
 	}
 	
-	#if flash10
 	/**
-	 * Returns a vector.&lt;T&gt; objec containing all elements in this singly linked list.<br/>
-	 * The elements are ordered head-to-tail.
-	 */
-	public function toVector():flash.Vector<Dynamic>
+		Creates and returns a shallow copy (structure only - default) or deep copy (structure & elements) of this list.
+		
+		If `byRef` is true, primitive elements are copied by value whereas objects are copied by reference.
+		
+		If `byRef` is false, the `copier` function is used for copying elements. If omitted, `clone()` is called on each element assuming all elements implement `Cloneable`.
+	**/
+	public function clone(byRef:Bool = true, copier:T->T = null):Collection<T>
 	{
-		var a = new flash.Vector<Dynamic>(size());
-		var node = head;
-		for (i in 0..._size)
+		if (size == 0)
 		{
-			a[i] = node.val;
-			node = node.next;
-		}
-		return a;
-	}
-	#end
-	
-	/**
-	 * Duplicates this linked list. Supports shallow (structure only) and deep copies (structure & elements).
-	 * @param assign if true, the <code>copier</code> parameter is ignored and primitive elements are copied by value whereas objects are copied by reference.<br/>
-	 * If false, the <em>clone()</em> method is called on each element. <warn>In this case all elements have to implement <em>Cloneable</em>.</warn>
-	 * @param copier a custom function for copying elements. Replaces element.<em>clone()</em> if <code>assign</code> is false.
-	 * @throws de.polygonal.ds.error.AssertError element is not of type <em>Cloneable</em> (debug only).
-	 */
-	public function clone(assign = true, copier:T->T = null):Collection<T>
-	{
-		if (_size == 0)
-		{
-			var copy = new SLL<T>(_reservedSize, maxSize);
-			if (_circular) copy._circular = true;
+			var copy = new Sll<T>(mReservedSize);
+			if (isCircular) copy.isCircular = true;
 			return copy;
 		}
 		
-		var copy = new SLL<T>();
-		if (_circular) copy._circular = true;
-		copy._size = _size;
+		var copy = new Sll<T>();
+		if (isCircular) copy.isCircular = true;
+		copy.mSize = size;
 		
-		if (assign)
+		if (byRef)
 		{
 			var srcNode = head;
-			var dstNode = copy.head = new SLLNode<T>(head.val, copy);
-			if (_size == 1)
+			var dstNode = copy.head = new SllNode<T>(head.val, copy);
+			if (size == 1)
 			{
 				copy.tail = copy.head;
-				if (_circular) copy.tail.next = copy.head;
+				if (isCircular) copy.tail.next = copy.head;
 				return copy;
 			}
 			srcNode = srcNode.next;
-			for (i in 1..._size - 1)
+			for (i in 1...size - 1)
 			{
-				dstNode = dstNode.next = new SLLNode<T>(srcNode.val, copy);
+				dstNode = dstNode.next = new SllNode<T>(srcNode.val, copy);
 				srcNode = srcNode.next;
 			}
-			copy.tail = dstNode.next = new SLLNode<T>(srcNode.val, copy);
+			copy.tail = dstNode.next = new SllNode<T>(srcNode.val, copy);
 		}
 		else
 		if (copier == null)
 		{
 			var srcNode = head;
 			
-			#if debug
-			assert(Std.is(head.val, Cloneable), 'element is not of type Cloneable (${head.val})');
-			#end
-			
-			var c = cast(head.val, Cloneable<Dynamic>);
-			var dstNode = copy.head = new SLLNode<T>(c.clone(), copy);
-			if (_size == 1)
+			assert(Std.is(head.val, Cloneable), "element is not of type Cloneable");
+			var e = cast(head.val, Cloneable<Dynamic>);
+			var dstNode = copy.head = new SllNode<T>(e.clone(), copy);
+			if (size == 1)
 			{
 				copy.tail = copy.head;
-				if (_circular) copy.tail.next = copy.head;
+				if (isCircular) copy.tail.next = copy.head;
 				return copy;
 			}
 			srcNode = srcNode.next;
-			for (i in 1..._size - 1)
+			for (i in 1...size - 1)
 			{
-				#if debug
-				assert(Std.is(srcNode.val, Cloneable), 'element is not of type Cloneable (${srcNode.val})');
-				#end
-				
-				c = cast(srcNode.val, Cloneable<Dynamic>);
-				
-				dstNode = dstNode.next = new SLLNode<T>(c.clone(), copy);
+				assert(Std.is(srcNode.val, Cloneable), "element is not of type Cloneable");
+				e = cast(srcNode.val, Cloneable<Dynamic>);
+				dstNode = dstNode.next = new SllNode<T>(e.clone(), copy);
 				srcNode = srcNode.next;
 			}
 			
-			#if debug
-			assert(Std.is(srcNode.val, Cloneable), 'element is not of type Cloneable (${srcNode.val})');
-			#end
-			
-			c = cast(srcNode.val, Cloneable<Dynamic>);
-			copy.tail = dstNode.next = new SLLNode<T>(c.clone(), copy);
+			assert(Std.is(srcNode.val, Cloneable), "element is not of type Cloneable");
+			e = cast(srcNode.val, Cloneable<Dynamic>);
+			copy.tail = dstNode.next = new SllNode<T>(e.clone(), copy);
 		}
 		else
 		{
 			var srcNode = head;
-			var dstNode = copy.head = new SLLNode<T>(copier(head.val), copy);
-			if (_size == 1)
+			var dstNode = copy.head = new SllNode<T>(copier(head.val), copy);
+			if (size == 1)
 			{
-				if (_circular) copy.tail.next = copy.head;
+				if (isCircular) copy.tail.next = copy.head;
 				copy.tail = copy.head;
 				return copy;
 			}
 			srcNode = srcNode.next;
-			for (i in 1..._size - 1)
+			for (i in 1...size - 1)
 			{
-				dstNode = dstNode.next = new SLLNode<T>(copier(srcNode.val), copy);
+				dstNode = dstNode.next = new SllNode<T>(copier(srcNode.val), copy);
 				srcNode = srcNode.next;
 			}
-			copy.tail = dstNode.next = new SLLNode<T>(copier(srcNode.val), copy);
+			copy.tail = dstNode.next = new SllNode<T>(copier(srcNode.val), copy);
 		}
 		
-		if (_circular) copy.tail.next = copy.head;
+		if (isCircular) copy.tail.next = copy.head;
 		return copy;
 	}
 	
-	function _mergeSortComparable(node:SLLNode<T>):SLLNode<T>
+	function mergeSortComparable(node:SllNode<T>):SllNode<T>
 	{
 		var h = node;
 		var p, q, e, tail = null;
 		var insize = 1;
-		var nmerges, psize, qsize, i;
+		var nmerges, psize, qsize;
 		while (true)
 		{
 			p = h;
 			h = tail = null;
 			nmerges = 0;
 			
-			while (_valid(p))
+			while (valid(p))
 			{
 				nmerges++;
 				
@@ -1188,7 +1140,7 @@ class SLL<T> implements Collection<T>
 				
 				qsize = insize;
 				
-				while (psize > 0 || (qsize > 0 && _valid(q)))
+				while (psize > 0 || (qsize > 0 && valid(q)))
 				{
 					if (psize == 0)
 					{
@@ -1201,9 +1153,7 @@ class SLL<T> implements Collection<T>
 					}
 					else
 					{
-						#if debug
-						assert(Std.is(p.val, Comparable), 'element is not of type Comparable (${p.val})');
-						#end
+						assert(Std.is(p.val, Comparable), "element is not of type Comparable");
 						
 						if (cast(p.val, Comparable<Dynamic>).compare(q.val) >= 0)
 						{
@@ -1215,7 +1165,7 @@ class SLL<T> implements Collection<T>
 						}
 					}
 					
-					if (_valid(tail))
+					if (valid(tail))
 						tail.next = e;
 					else
 						h = e;
@@ -1234,12 +1184,12 @@ class SLL<T> implements Collection<T>
 		return h;
 	}
 	
-	function _mergeSort(node:SLLNode<T>, cmp:T->T->Int):SLLNode<T>
+	function mergeSort(node:SllNode<T>, cmp:T->T->Int):SllNode<T>
 	{
 		var h = node;
 		var p, q, e, tail = null;
 		var insize = 1;
-		var nmerges, psize, qsize, i;
+		var nmerges, psize, qsize;
 		
 		while (true)
 		{
@@ -1247,7 +1197,7 @@ class SLL<T> implements Collection<T>
 			h = tail = null;
 			nmerges = 0;
 			
-			while (_valid(p))
+			while (valid(p))
 			{
 				nmerges++;
 				
@@ -1261,7 +1211,7 @@ class SLL<T> implements Collection<T>
 				
 				qsize = insize;
 				
-				while (psize > 0 || (qsize > 0 && _valid(q)))
+				while (psize > 0 || (qsize > 0 && valid(q)))
 				{
 					if (psize == 0)
 					{
@@ -1282,7 +1232,7 @@ class SLL<T> implements Collection<T>
 						e = q; q = q.next; qsize--;
 					}
 					
-					if (_valid(tail))
+					if (valid(tail))
 						tail.next = e;
 					else
 						h = e;
@@ -1301,12 +1251,12 @@ class SLL<T> implements Collection<T>
 		return h;
 	}
 	
-	function _insertionSortComparable(node:SLLNode<T>):SLLNode<T>
+	function insertionSortComparable(node:SllNode<T>):SllNode<T>
 	{
 		var v = new Array<T>();
 		var i = 0;
 		var t = node;
-		while (_valid(t))
+		while (valid(t))
 		{
 			v[i++] = t.val;
 			t = t.next;
@@ -1315,14 +1265,14 @@ class SLL<T> implements Collection<T>
 		var h = node;
 		var j;
 		var val;
-		for (i in 1..._size)
+		
+		i = 1;
+		while (i < size)
 		{
 			val = v[i];
 			j = i;
 			
-			#if debug
-			assert(Std.is(v[j - 1], Comparable), 'element is not of type Comparable (${v[j - 1]})');
-			#end
+			assert(Std.is(v[j - 1], Comparable), "element is not of type Comparable");
 			
 			while ((j > 0) && cast(v[j - 1], Comparable<Dynamic>).compare(val) < 0)
 			{
@@ -1331,16 +1281,17 @@ class SLL<T> implements Collection<T>
 				
 				#if debug
 				if (j > 0)
-					assert(Std.is(v[j - 1], Comparable), 'element is not of type Comparable (${v[j - 1]})');
+					assert(Std.is(v[j - 1], Comparable), "element is not of type Comparable");
 				#end
 				
 			}
 			v[j] = val;
+			i++;
 		}
 		
 		t = h;
 		i = 0;
-		while (_valid(t))
+		while (valid(t))
 		{
 			t.val = v[i++];
 			t = t.next;
@@ -1348,12 +1299,12 @@ class SLL<T> implements Collection<T>
 		return h;
 	}
 	
-	function _insertionSort(node:SLLNode<T>, cmp:T->T->Int):SLLNode<T>
+	function insertionSort(node:SllNode<T>, cmp:T->T->Int):SllNode<T>
 	{
 		var v = new Array<T>();
 		var i = 0;
 		var t = node;
-		while (_valid(t))
+		while (valid(t))
 		{
 			v[i++] = t.val;
 			t = t.next;
@@ -1362,7 +1313,8 @@ class SLL<T> implements Collection<T>
 		var h = node;
 		var j;
 		var val;
-		for (i in 1..._size)
+		i = 1;
+		while (i < size)
 		{
 			val = v[i];
 			j = i;
@@ -1372,11 +1324,12 @@ class SLL<T> implements Collection<T>
 				j--;
 			}
 			v[j] = val;
+			i++;
 		}
 		
 		t = h;
 		i = 0;
-		while (_valid(t))
+		while (valid(t))
 		{
 			t.val = v[i++];
 			t = t.next;
@@ -1384,12 +1337,12 @@ class SLL<T> implements Collection<T>
 		return h;
 	}
 	
-	inline function _valid(node:SLLNode<T>):Bool
+	inline function valid(node:SllNode<T>):Bool
 	{
 		return node != null;
 	}
 	
-	inline function _getNodeBefore(x:SLLNode<T>):SLLNode<T>
+	inline function getNodeBefore(x:SllNode<T>):SllNode<T>
 	{
 		var node = head;
 		while (node.next != x)
@@ -1397,155 +1350,140 @@ class SLL<T> implements Collection<T>
 		return node;
 	}
 	
-	inline function _getNode(x:T)
+	inline function getNode(x:T)
 	{
-		if (_reservedSize == 0 || _poolSize == 0)
-			return new SLLNode<T>(x, this);
+		if (mReservedSize == 0 || mPoolSize == 0)
+			return new SllNode<T>(x, this);
 		else
 		{
-			#if debug
-			assert(_valid(_headPool.next), "_headPool.next != null");
-			#end
+			assert(valid(mHeadPool.next), "mHeadPool.next != null");
 			
-			var t = _headPool;
-			_headPool = _headPool.next;
-			_poolSize--;
+			var t = mHeadPool;
+			mHeadPool = mHeadPool.next;
+			mPoolSize--;
 			t.val = x;
 			t.next = null;
 			return t;
 		}
 	}
 	
-	inline function _putNode(x:SLLNode<T>):T
+	inline function putNode(x:SllNode<T>):T
 	{
 		var val = x.val;
 		
-		if (_reservedSize > 0 && _poolSize < _reservedSize)
+		if (mReservedSize > 0 && mPoolSize < mReservedSize)
 		{
-			#if debug
-			assert(x.next == null, "x.next == null");
-			#end
+			assert(x.next == null);
 			
-			_tailPool = _tailPool.next = x;
+			mTailPool = mTailPool.next = x;
 			x.val = cast null;
 			x.next = null;
-			_poolSize++;
+			mPoolSize++;
 		}
 		else
-			__list(x, null);
-		
+			x.mList = null;
 		return val;
 	}
+}
+
+#if generic
+@:generic
+#end
+@:dox(hide)
+class SllIterator<T> implements de.polygonal.ds.Itr<T>
+{
+	var mObject:Sll<T>;
+	var mWalker:SllNode<T>;
+	var mHook:SllNode<T>;
 	
-	inline function __insertAfter(f:SLLNodeFriend<T>, x:SLLNode<T>)
+	public function new(x:Sll<T>)
 	{
-		f._insertAfter(x);
+		mObject = x;
+		reset();
 	}
-	inline function __list(f:SLLNodeFriend<T>, x:SLL<T>)
+	
+	public function free()
 	{
-		f._list = x;
+		mObject = null;
+		mWalker = null;
+		mHook = null;
+	}
+	
+	public inline function reset():Itr<T>
+	{
+		mWalker = mObject.head;
+		mHook = null;
+		return this;
+	}
+	
+	public inline function hasNext():Bool
+	{
+		return mWalker != null;
+	}
+	
+	public inline function next():T
+	{
+		var x = mWalker.val;
+		mHook = mWalker;
+		mWalker = mWalker.next;
+		return x;
+	}
+	
+	public function remove()
+	{
+		assert(mHook != null, "call next() before removing an element");
+		
+		mObject.unlink(mHook);
 	}
 }
 
 #if generic
 @:generic
 #end
-#if doc
-private
-#end
-class SLLIterator<T> implements de.polygonal.ds.Itr<T>
+@:dox(hide)
+class CircularSllIterator<T> implements de.polygonal.ds.Itr<T>
 {
-	var _f:SLL<T>;
-	var _walker:SLLNode<T>;
-	var _hook:SLLNode<T>;
+	var mObject:Sll<T>;
+	var mWalker:SllNode<T>;
+	var mI:Int;
+	var mS:Int;
+	var mHook:SllNode<T>;
 	
-	public function new(f:SLL<T>)
+	public function new(x:Sll<T>)
 	{
-		_f = f;
+		mObject = x;
 		reset();
 	}
 	
-	inline public function reset():Itr<T>
+	public inline function reset():Itr<T>
 	{
-		_walker = _f.head;
-		_hook = null;
+		mWalker = mObject.head;
+		mS = mObject.size;
+		mHook = null;
+		mI = 0;
 		return this;
 	}
 	
-	inline public function hasNext():Bool
+	public inline function hasNext():Bool
 	{
-		return _walker != null;
+		return mI < mS;
 	}
 	
-	inline public function next():T
+	public inline function next():T
 	{
-		var x = _walker.val;
-		_hook = _walker;
-		_walker = _walker.next;
+		var x = mWalker.val;
+		mHook = mWalker;
+		mWalker = mWalker.next;
+		mI++;
 		return x;
 	}
 	
-	inline public function remove()
+	public function remove()
 	{
-		#if debug
-		assert(_hook != null, "call next() before removing an element");
-		#end
+		assert(mI > 0, "call next() before removing an element");
 		
-		_f.unlink(_hook);
-	}
-}
-
-#if generic
-@:generic
-#end
-#if doc
-private
-#end
-class CircularSLLIterator<T> implements de.polygonal.ds.Itr<T>
-{
-	var _f:SLL<T>;
-	var _walker:SLLNode<T>;
-	var _i:Int;
-	var _s:Int;
-	var _hook:SLLNode<T>;
-	
-	public function new(f:SLL<T>)
-	{
-		_f = f;
-		reset();
-	}
-	
-	inline public function reset():Itr<T>
-	{
-		_walker = _f.head;
-		_s = _f.size();
-		_i = 0;
-		_hook = null;
-		return this;
-	}
-	
-	inline public function hasNext():Bool
-	{
-		return _i < _s;
-	}
-	
-	inline public function next():T
-	{
-		var x = _walker.val;
-		_hook = _walker;
-		_walker = _walker.next;
-		_i++;
-		return x;
-	}
-	
-	inline public function remove()
-	{
-		#if debug
-		assert(_i > 0, "call next() before removing an element");
-		#end
-		
-		_f.unlink(_hook);
-		_i--;
-		_s--;
+		mObject.unlink(mHook);
+		mI--;
+		mS--;
 	}
 }

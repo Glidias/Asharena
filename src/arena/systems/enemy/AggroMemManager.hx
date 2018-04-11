@@ -218,7 +218,7 @@ class AggroMemManager
 		var am:AggroMemNode = memList.head;
 		while (am != null) {
 			am.mem.bits.resize(32);
-			am.mem.bits.clrAll();
+			am.mem.bits.clearAll();
 			
 			if (am.mem.side != side) {
 				am.mem.index = numAggro;
@@ -242,7 +242,7 @@ class AggroMemManager
 		var ac:AggroMemNode;
 		while (--i > -1) {
 			am = aggroArray[i];
-			if (am.mem.bits.capacity() < numActive) am.mem.bits.resize(numActive);
+			if (am.mem.bits.numBits < numActive) am.mem.bits.resize(numActive);
 			updateAggroMem(am.entity, am.mem, am.pos, am.rot);
 		}
 	}

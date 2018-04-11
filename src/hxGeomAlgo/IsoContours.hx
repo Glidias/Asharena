@@ -162,12 +162,7 @@ class IsoContours
 	inline
 	function march( addBorders:Bool = true, recalcValues:Bool = true) {
 		
-		
-		
-		
-		
-		
-		
+
 		
 		// adjust loop variables
 		var offset = -.5;

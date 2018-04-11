@@ -1,285 +1,216 @@
 /*
- *                            _/                                                    _/
- *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
- *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *     _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *    _/_/_/      _/_/    _/    _/_/_/    _/_/_/    _/_/    _/    _/    _/_/_/  _/
- *   _/                            _/        _/
- *  _/                        _/_/      _/_/
- *
- * POLYGONAL - A HAXE LIBRARY FOR GAME DEVELOPERS
- * Copyright (c) 2009 Michael Baczynski, http://www.polygonal.de
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+Copyright (c) 2008-2018 Michael Baczynski, http://www.polygonal.de
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 package de.polygonal.ds;
 
-import de.polygonal.ds.error.Assert.assert;
+import de.polygonal.ds.tools.ArrayTools;
+import de.polygonal.ds.tools.Assert.assert;
+import de.polygonal.ds.tools.GrowthRate;
+import de.polygonal.ds.tools.MathTools;
 
-#if flash10
-#if alchemy
-import de.polygonal.ds.mem.IntMemory;
+using de.polygonal.ds.tools.NativeArrayTools;
+
+#if (flash && alchemy)
+import de.polygonal.ds.tools.mem.IntMemory;
 import flash.Memory;
-#else
-import flash.Vector;
 #end
-#else
-using de.polygonal.ds.ArrayUtil;
-#end
-
-private typedef IntIntHashTableFriend =
-{
-	#if flash10
-	#if alchemy
-	private var _hash:IntMemory;
-	private var _data:IntMemory;
-	#else
-	private var _hash:Vector<Int>;
-	private var _data:Vector<Int>;
-	#end
-	#else
-	private var _hash:Array<Int>;
-	private var _data:Array<Int>;
-	#end
-	
-	private var _mask:Int;
-	private var _capacity:Int;
-}
 
 /**
- * <p>An array hash table for storing integer key/value pairs.</p>
- * <ul>
- * <li>The hash table can store duplicate keys, and multiple keys can map the same value. If duplicate keys exist, the order is FIFO.</li>
- * <li>The hash table is open: in the case of a "hash collision", a single slot stores multiple entries, which are searched sequentially.</li>
- * <li>The hash table is dynamic: the <em>capacity</em> is automatically increased and decreased.</li>
- * <li>The hash table is never rehashed automatically, because this operation is time-consuming. Instead the user can decide if rehashing is necessary by checking the load factor.
- * It's recommended to initialize big hash tables upfront with a large slot count which allows the entries to be inserted more efficiently.</li>
- * <li>The value 0x80000000 is reserved and cannot be associated with a key.</li>
- * </ul>
- * <p><o>Amortized running time in Big O notation</o></p>
- */
+	An array hash table for storing integer key/value pairs
+	
+	- The hash table can store duplicate keys, and multiple keys can map the same value. If duplicate keys exist, the order is FIFO.
+	- The hash table is open: in the case of a "hash collision", a single slot stores multiple entries, which are searched sequentially.
+	- The hash table is dynamic: the capacity is automatically increased and decreased.
+	- The hash table is never rehashed automatically, because this operation is time-consuming. Instead the user can decide if rehashing is necessary by checking the load factor.
+	- The value 0x80000000 is reserved and cannot be associated with a key.
+	
+	Example:
+		var o = new de.polygonal.ds.IntIntHashTable(16);
+		for (i in 0...4) o.set(i, i);
+		trace(o); //outputs:
+		
+		[ IntIntHashTable size=4 capacity=16 load=0.25
+		   0 -> 0
+		   1 -> 1
+		   2 -> 2
+		   3 -> 3
+		]
+**/
 class IntIntHashTable implements Map<Int, Int>
 {
 	/**
-	 * Return code for a non-existing key. 
-	 */
-	inline public static var KEY_ABSENT = M.INT32_MIN;
+		Return code for a non-existing key.
+	**/
+	public static inline var KEY_ABSENT = MathTools.INT32_MIN;
 	
 	/**
-	 * Return code for a non-existing value. 
-	 */
-	inline public static var VAL_ABSENT = M.INT32_MIN;
+		Return code for a non-existing value.
+	**/
+	public static inline var VAL_ABSENT = MathTools.INT32_MIN;
 	
 	/**
-	 * Used internally. 
-	 */
-	inline public static var EMPTY_SLOT = -1;
+		Used internally.
+	**/
+	public static inline var EMPTY_SLOT = -1;
 	
 	/**
-	 * Used internally. 
-	 */
-	inline public static var NULL_POINTER = -1;
+		Used internally.
+	**/
+	public static inline var NULL_POINTER = -1;
 	
 	/**
-	 * A unique identifier for this object.<br/>
-	 * A hash table transforms this key into an index of an array element by using a hash function.<br/>
-	 * <warn>This value should never be changed by the user.</warn>
-	 */
-	public var key:Int;
-	
-	/**
-	 * The maximum allowed size of this hash table.<br/>
-	 * Once the maximum size is reached, adding an element will fail with an error (debug only).<br/>
-	 * A value of -1 indicates that the size is unbound.<br/>
-	 * <warn>Always equals -1 in release mode.</warn>
-	 */
-	public var maxSize:Int;
-	
-	/**
-	 * If true, reuses the iterator object instead of allocating a new one when calling <code>iterator()</code>.<br/>
-	 * The default is false.<br/>
-	 * <warn>If true, nested iterations are likely to fail as only one iteration is allowed at a time.</warn>
-	 */
-	public var reuseIterator:Bool;
-	
-	var _isResizable:Bool;
-	
-	#if flash10
-	#if alchemy
-	var _hash:IntMemory;
-	var _data:IntMemory;
-	var _next:IntMemory;
-	#else
-	var _hash:Vector<Int>;
-	var _data:Vector<Int>;
-	var _next:Vector<Int>;
-	#end
-	#else
-	var _hash:Array<Int>;
-	var _data:Array<Int>;
-	var _next:Array<Int>;
-	#end
-	
-	var _mask:Int;
-	var _free:Int;
-	
-	var _capacity:Int;
-	var _size:Int;
-	var _sizeLevel:Int;
-	var _iterator:IntIntHashTableValIterator;
-	
-	/**
-	 * @param slotCount the total number of slots into which the hashed keys are distributed.
-	 * This defines the space-time trade off of the hash table.
-	 * Increasing the <code>slotCount</code> reduces the computation time (read/write/access) of the hash table at the cost of increased memory use.
-	 * This value is fixed and can only be changed by calling <em>rehash()</em>, which rebuilds the hash table (expensive).
-	 * 
-	 * @param capacity the initial physical space for storing the key/value pairs at the time the hash table is created.
-	 * This is also the minimum allowed size of the hash table and cannot be changed in the future. If omitted, the initial <em>capacity</em> equals <code>slotCount</code>.
-	 * The <em>capacity</em> is automatically adjusted according to the storage requirements based on two rules:
-	 * <ol>
-	 * <li>If the hash table runs out of space, the <em>capacity</em> is doubled (if <code>isResizable</code> is true).</li>
-	 * <li>If the size falls below a quarter of the current <em>capacity</em>, the <em>capacity</em> is cut in half while the minimum <em>capacity</em> can't fall below <code>capacity</code>.</li>
-	 * </ol>
-	 * 
-	 * @param isResizable if false, the hash table is treated as fixed size table.
-	 * Thus adding a value when <em>size()</em> equals <em>capacity</em> throws an error.
-	 * Otherwise the <em>capacity</em> is automatically adjusted.
-	 * Default is true.
-	 * 
-	 * @param maxSize the maximum allowed size of the stack.
-	 * The default value of -1 indicates that there is no upper limit.
-	 * 
-	 * @throws de.polygonal.ds.error.AssertError <code>slotCount</code> is not a power of two (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <code>capacity</code> is not a power of two (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <code>capacity</code> is &lt; 2 (debug only).
-	 */
-	public function new(slotCount:Int, capacity = -1, isResizable = true, maxSize = -1)
-	{
-		#if debug
-		assert(M.isPow2(slotCount), "slotCount is not a power of 2");
-		#end
+		A unique identifier for this object.
 		
-		if (capacity == -1)
-			capacity = slotCount;
+		A hash table transforms this key into an index of an array element by using a hash function.
+	**/
+	public var key(default, null):Int = HashKey.next();
+	
+	/**
+		The size of the allocated storage space for the elements.
+		If more space is required to accommodate new elements, `capacity` grows according to `this.growthRate`.
+		The capacity never falls below the initial size defined in the constructor and is usually a bit larger than `this.size` (_mild overallocation_).
+	**/
+	public var capacity(default, null):Int;
+	
+	/**
+		The growth rate of the container.
+		@see `GrowthRate`
+	**/
+	public var growthRate:Int = GrowthRate.DOUBLE;
+	
+	/**
+		If true, reuses the iterator object instead of allocating a new one when calling `this.iterator()`.
+		
+		The default is false.
+		
+		_If this value is true, nested iterations will fail as only one iteration is allowed at a time._
+	**/
+	public var reuseIterator:Bool = false;
+	
+	/**
+		The load factor measure the "denseness" of a hash table and is proportional to the time cost to look up an entry.
+		
+		E.g. assuming that the keys are perfectly distributed, a load factor of 4.0 indicates that each slot stores 4 keys, which have to be sequentially searched in order to find a value.
+		
+		A high load factor thus indicates poor performance.
+		
+		If the load factor gets too high, additional slots can be allocated by calling `this.rehash()`.
+	**/
+	public var loadFactor(get, never):Float;
+	function get_loadFactor():Float
+	{
+		return size / slotCount;
+	}
+	
+	/**
+		The total number of allocated slots.
+	**/
+	public var slotCount(default, null):Int;
+	
+	#if (flash && alchemy)
+	var mHash:IntMemory;
+	var mData:IntMemory;
+	var mNext:IntMemory;
+	#else
+	var mHash:NativeArray<Int>;
+	var mData:NativeArray<Int>;
+	var mNext:NativeArray<Int>;
+	#end
+	
+	var mMask:Int;
+	var mFree:Int = 0;
+	var mSize:Int = 0;
+	var mMinCapacity:Int;
+	var mIterator:IntIntHashTableValIterator;
+	var mTmpBuffer:NativeArray<Int>;
+	var mTmpBufferSize:Int = 16;
+	
+	/**
+		@param slotCount the total number of slots into which the hashed keys are distributed.
+		This defines the space-time trade off of this hash table.
+		A high `slotCount` value leads to better performance but requires more memory.
+		This value can only be changed later on by calling `this.rehash()`, which in turn rebuilds the entire hash table (expensive).
+		
+		@param capacity the initial physical space for storing the elements at the time this hash table is initialized.
+		This also defines the minimum allowed size.
+		If omitted, the initial `capacity` is set to `slotCount`.
+		If more space is required to accommodate new elements, `capacity` grows according to `this.growthRate`.
+	**/
+	public function new(slotCount:Int, initialCapacity:Int = -1)
+	{
+		assert(slotCount > 0);
+		assert(MathTools.isPow2(slotCount), "slotCount is not a power of 2");
+		
+		if (initialCapacity == -1)
+			initialCapacity = slotCount;
 		else
 		{
-			#if debug
-			assert(capacity >= 2, "minimum capacity is 2");
-			assert(M.isPow2(slotCount), "capacity is not a power of 2");
-			#end
+			assert(initialCapacity >= 2, "minimum capacity is 2");
+			assert(MathTools.isPow2(slotCount), "capacity is not a power of 2");
 		}
 		
-		_isResizable = isResizable;
-		_free        = 0;
-		_capacity    = capacity;
-		_size        = 0;
-		_mask        = slotCount - 1;
-		_sizeLevel   = 0;
-		_iterator    = null;
+		capacity = initialCapacity;
+		mMinCapacity = initialCapacity;
+		this.slotCount = slotCount;
+		mMask = slotCount - 1;
 		
-		#if debug
-		this.maxSize = (maxSize == -1) ? M.INT32_MAX : maxSize;
+		#if (flash && alchemy)
+		mHash = new IntMemory(slotCount, "IntIntHashTable.mHash");
+		mHash.setAll(EMPTY_SLOT);
+		mData = new IntMemory(capacity * 3, "IntIntHashTable.mData");
+		mNext = new IntMemory(capacity, "IntIntHashTable.mNext");
 		#else
-		this.maxSize = -1;
+		mHash = NativeArrayTools.alloc(slotCount).init(EMPTY_SLOT);
+		mData = NativeArrayTools.alloc(capacity * 3);
+		mNext = NativeArrayTools.alloc(capacity);
 		#end
 		
-		#if flash10
-		#if alchemy
-		_hash = new IntMemory(slotCount, "IntIntHashTable._hash");
-		_hash.fill(EMPTY_SLOT);
-		_data = new IntMemory(_capacity * 3, "IntIntHashTable._data");
-		_next = new IntMemory(_capacity, "IntIntHashTable._next");
-		#else
-		_hash = new Vector<Int>(slotCount);
-		for (i in 0...slotCount) _hash[i] = EMPTY_SLOT;
-		_data = new Vector<Int>(_capacity * 3);
-		_next = new Vector<Int>(_capacity);
-		#end
-		#else
-		_hash = ArrayUtil.alloc(slotCount);
-		_hash.fill(EMPTY_SLOT, slotCount);
-		_data = ArrayUtil.alloc(_capacity * 3);
-		_data.fill(0, _capacity * 3);
-		_next = ArrayUtil.alloc(_capacity);
-		_next.fill(0, _capacity);
-		#end
-		
-		var j = 2;
+		var j = 2, t = mData;
 		for (i in 0...capacity)
 		{
-			__setData(j - 1, VAL_ABSENT);
-			__setData(j, NULL_POINTER);
+			t.set(j - 1, VAL_ABSENT);
+			t.set(j, NULL_POINTER);
 			j += 3;
 		}
 		
-		for (i in 0..._capacity - 1) __setNext(i, i + 1);
-		__setNext(_capacity - 1, NULL_POINTER);
+		t = mNext;
+		for (i in 0...capacity - 1) t.set(i, i + 1);
+		t.set(capacity - 1, NULL_POINTER);
 		
-		key = HashKey.next();
-		reuseIterator = false;
+		mTmpBuffer = NativeArrayTools.alloc(mTmpBufferSize);
 	}
 	
 	/**
-	 * The load factor measure the "denseness" of a hash table and is proportional to the time cost to look up an entry.<br/>
-	 * E.g. assuming that the keys are perfectly distributed, a load factor of 4.0 indicates that each slot stores 4 keys, which have to be sequentially searched in order to find a value.<br/>
-	 * A high load factor thus indicates poor performance.
-	 * If the load factor gets too high, additional slots can be allocated by calling <em>rehash()</em>.
-	 */
-	inline public function getLoadFactor():Float
-	{
-		return size() / getSlotCount();
-	}
-	
-	/**
-	 * The total number of allocated slots. 
-	 */
-	inline public function getSlotCount():Int
-	{
-		return _mask + 1;
-	}
-	
-	/**
-	 * The size of the allocated storage space for the key/value pairs.<br/>
-	 * If more space is required to accomodate new elements, the <em>capacity</em> is doubled every time <em>size()</em> grows beyond <em>capacity</em>, and split in half when <em>size()</em> is a quarter of <em>capacity</em>.
-	 * The <em>capacity</em> never falls below the initial size defined in the constructor.
-	 */
-	inline public function getCapacity():Int
-	{
-		return _capacity;
-	}
-	
-	/**
-	 * Counts the total number of collisions.<br/>
-	 * A collision occurs when two distinct keys are hashed into the same slot.
-	 * <o>n</o>
-	 */
+		Counts the total number of collisions.
+		
+		A collision occurs when two distinct keys are hashed into the same slot.
+	**/
 	public function getCollisionCount():Int
 	{
-		var c = 0, j;
-		for (i in 0...getSlotCount())
+		var c = 0, j, d = mData, h = mHash;
+		for (i in 0...slotCount)
 		{
-			j = __getHash(i);
+			j = h.get(i);
 			if (j == EMPTY_SLOT) continue;
-			j = __getData(j + 2);
+			j = d.get(j + 2);
 			while (j != NULL_POINTER)
 			{
-				j = __getData(j + 2);
+				j = d.get(j + 2);
 				c++;
 			}
 		}
@@ -287,64 +218,64 @@ class IntIntHashTable implements Map<Int, Int>
 	}
 	
 	/**
-	 * Returns the value that is mapped to <code>key</code> or <em>IntIntHashTable.KEY_ABSENT</em> if <code>key</code> does not exist.<br/>
-	 * Uses move-to-front-on-access which reduces access time when similar keys are frequently queried.
-	 * <o>1</o>
-	 */
-	inline public function getFront(key:Int):Int
+		Returns the value that is mapped to `key` or `IntIntHashTable.KEY_ABSENT` if `key` does not exist.
+		
+		Uses move-to-front-on-access which reduces access time when similar keys are frequently queried.
+	**/
+	public inline function getFront(key:Int):Int
 	{
-		var b = _hashCode(key);
-		var i = __getHash(b);
+		var b = hashCode(key);
+		var i = mHash.get(b);
 		if (i == EMPTY_SLOT)
 			return KEY_ABSENT;
 		else
 		{
-			#if (flash10 && alchemy)
-			var o = _data.getAddr(i);
+			var d = mData;
+			
+			#if (flash && alchemy)
+			var o = mData.getAddr(i);
 			if (Memory.getI32(o) == key)
 				return Memory.getI32(o + 4);
 			#else
-			if (__getData(i) == key)
-				return __getData(i + 1);
+			if (d.get(i) == key)
+				return d.get(i + 1);
 			#end
 			else
 			{
 				var v = KEY_ABSENT;
-				
 				var first = i, i0 = first;
 				
-				#if (flash10 && alchemy)
+				#if (flash && alchemy)
 				i = Memory.getI32(o + 8);
 				#else
-				i = __getData(i + 2);
+				i = d.get(i + 2);
 				#end
 				
 				while (i != NULL_POINTER)
 				{
-					#if (flash10 && alchemy)
-					o = _data.getAddr(i);
+					#if (flash && alchemy)
+					o = mData.getAddr(i);
 					if (Memory.getI32(o) == key)
 					#else
-					if (__getData(i) == key)
+					if (d.get(i) == key)
 					#end
 					{
-						#if (flash10 && alchemy)
+						#if (flash && alchemy)
 						v = Memory.getI32(o + 4);
 						
-						var o1 = _data.getAddr(i0 + 2);
+						var o1 = mData.getAddr(i0 + 2);
 						Memory.setI32(o1, Memory.getI32(o + 8));
 						Memory.setI32(o + 8, first);
-						
-						__setHash(b, i);
+						mHash.set(b, i);
 						#else
-						v = __getData(i + 1);
-						__setData(i0 + 2, __getData(i + 2));
-						__setData(i + 2, first);
-						__setHash(b, i);
+						v = d.get(i + 1);
+						d.set(i0 + 2, d.get(i + 2));
+						d.set(i + 2, first);
+						mHash.set(b, i);
 						#end
 						break;
 					}
-					i = __getData((i0 = i) + 2);
+					i = d.get((i0 = i) + 2);
 				}
 				return v;
 			}
@@ -352,76 +283,62 @@ class IntIntHashTable implements Map<Int, Int>
 	}
 	
 	/**
-	 * Maps <code>val</code> to <code>key</code> in this map, but only if <code>key</code> does not exist yet.<br/>
-	 * <o>1</o>
-	 * @return true if <code>key</code> was mapped to <code>val</code> for the first time.
-	 * @throws de.polygonal.ds.error.AssertError out of space - hash table is full but not resizable.
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	inline public function setIfAbsent(key:Int, val:Int):Bool
+		Maps `val` to `key` in this map, but only if `key` does not exist yet.
+		@return true if `key` was mapped to `val` for the first time.
+	**/
+	public inline function setIfAbsent(key:Int, val:Int):Bool
 	{
-		#if debug
 		assert(val != KEY_ABSENT, "val 0x80000000 is reserved");
-		#end
 		
-		var b = _hashCode(key);
+		var b = hashCode(key), d = mData;
 		
-		#if (flash10 && alchemy)
-		var	o = _hash.getAddr(b);
+		#if (flash && alchemy)
+		var	o = mHash.getAddr(b);
 		var j = Memory.getI32(o);
 		#else
-		var j = __getHash(b);
+		var j = mHash.get(b);
 		#end
 		if (j == EMPTY_SLOT)
 		{
-			#if debug
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-			#end
-			
-			if (_size == _capacity)
+			if (size == capacity)
 			{
-				#if debug
-				if (!_isResizable)
-					assert(false, 'out of space (${getCapacity()})');
-				#end
-				
-				if (_isResizable)
-					_expand();
+				grow();
+				d = mData;
 			}
 			
-			var i = _free * 3;
-			_free = __getNext(_free);
+			var i = mFree * 3;
+			mFree = mNext.get(mFree);
 			
-			#if (flash10 && alchemy)
+			#if (flash && alchemy)
 			Memory.setI32(o, i);
-			o = _data.getAddr(i);
+			o = mData.getAddr(i);
 			Memory.setI32(o    , key);
 			Memory.setI32(o + 4, val);
 			#else
-			__setHash(b, i);
-			__setData(i    , key);
-			__setData(i + 1, val);
+			mHash.set(b, i);
+			d.set(i    , key);
+			d.set(i + 1, val);
 			#end
 			
-			_size++;
+			mSize++;
 			return true;
 		}
 		else
 		{
-			#if (flash10 && alchemy)
-			o = _data.getAddr(j);
+			#if (flash && alchemy)
+			o = mData.getAddr(j);
 			if (Memory.getI32(o) == key)
 			#else
-			if (__getData(j) == key)
+			if (d.get(j) == key)
 			#end
 				return false;
 			else
 			{
-				#if (flash10 && alchemy)
+				#if (flash && alchemy)
 				var t = Memory.getI32(o + 8);
 				while (t != NULL_POINTER)
 				{
-					o = _data.getAddr(t);
+					o = mData.getAddr(t);
 					if (Memory.getI32(o) == key)
 					{
 						j = -1;
@@ -432,16 +349,16 @@ class IntIntHashTable implements Map<Int, Int>
 					t = Memory.getI32(o + 8);
 				}
 				#else
-				var t = __getData(j + 2);
+				var t = d.get(j + 2);
 				while (t != NULL_POINTER)
 				{
-					if (__getData(t) == key)
+					if (d.get(t) == key)
 					{
 						j = -1;
 						break;
 					}
 					
-					t = __getData((j = t) + 2);
+					t = d.get((j = t) + 2);
 				}
 				#end
 				
@@ -449,32 +366,27 @@ class IntIntHashTable implements Map<Int, Int>
 					return false;
 				else
 				{
-					if (_size == _capacity)
+					if (size == capacity)
 					{
-						#if debug
-						if (!_isResizable)
-							assert(false, 'out of space (${getCapacity()})');
-						#end
-						
-						if (_isResizable)
-							_expand();
+						grow();
+						d = mData;
 					}
 					
-					var i = _free * 3;
-					_free = __getNext(_free);
+					var i = mFree * 3;
+					mFree = mNext.get(mFree);
 					
-					__setData(j + 2, i);
+					d.set(j + 2, i);
 					
-					#if (flash10 && alchemy)
-					o = _data.getAddr(i);
+					#if (flash && alchemy)
+					o = mData.getAddr(i);
 					Memory.setI32(o    , key);
 					Memory.setI32(o + 4, val);
 					#else
-					__setData(i    , key);
-					__setData(i + 1, val);
+					d.set(i    , key);
+					d.set(i + 1, val);
 					#end
 					
-					_size++;
+					mSize++;
 					return true;
 				}
 			}
@@ -482,84 +394,84 @@ class IntIntHashTable implements Map<Int, Int>
 	}
 	
 	/**
-	 * Redistributes all keys over <code>slotCount</code>.<br/>
-	 * This is an expensive operations as the hash table is rebuild from scratch.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError <code>slotCount</code> is not a power of two (debug only).
-	 */
-	public function rehash(slotCount:Int)
+		Redistributes all keys over `slotCount`.
+		
+		This is an expensive operations as the hash table is rebuild from scratch.
+	**/
+	public function rehash(slotCount:Int):IntIntHashTable
 	{
-		#if debug
-		assert(M.isPow2(slotCount), "slotCount is not a power of 2");
-		#end
+		assert(MathTools.isPow2(slotCount), "slotCount is not a power of 2");
 		
-		if (slotCount == getSlotCount()) return;
+		if (this.slotCount == slotCount) return this;
 		
-		var tmp = new IntIntHashTable(slotCount, _capacity);
+		var t = new IntIntHashTable(slotCount, capacity);
 		
-		#if (flash10 && alchemy)
-		var o = _data.getAddr(0);
-		for (i in 0..._capacity)
+		#if (flash && alchemy)
+		var o = mData.getAddr(0);
+		for (i in 0...capacity)
 		{
 			var v = Memory.getI32(o + 4);
-			if (v != VAL_ABSENT) tmp.set(Memory.getI32(o), v);
+			if (v != VAL_ABSENT) t.set(Memory.getI32(o), v);
 			o += 12;
 		}
 		#else
-		for (i in 0..._capacity)
+		var d = mData;
+		for (i in 0...capacity)
 		{
-			var v = __getData((i * 3) + 1);
-			if (v != VAL_ABSENT) tmp.set(__getData(i * 3), v);
+			var v = d.get((i * 3) + 1);
+			if (v != VAL_ABSENT) t.set(d.get(i * 3), v);
 		}
 		#end
 		
-		#if (flash10 && alchemy)
-		_hash.free();
-		_data.free();
-		_next.free();
+		#if (flash && alchemy)
+		mHash.free();
+		mData.free();
+		mNext.free();
 		#end
-		_hash = tmp._hash;
-		_data = tmp._data;
-		_next = tmp._next;
+		mHash = t.mHash;
+		mData = t.mData;
+		mNext = t.mNext;
 		
-		_mask = tmp._mask;
-		_free = tmp._free;
-		_sizeLevel = tmp._sizeLevel;
+		this.slotCount = slotCount;
+		mMask = t.mMask;
+		mFree = t.mFree;
+		return this;
 	}
 	
 	/**
-	 * Remaps the first occurrence of <code>key</code> to a new value <code>val</code>.
-	 * <o>1</o>
-	 * @return true if <code>val</code> was successfully remapped to <code>key</code>.
-	 */
-	inline public function remap(key:Int, val:Int):Bool
+		Remaps the first occurrence of `key` to a new value `val`.
+		@return true if `val` was successfully remapped to `key`.
+	**/
+	public inline function remap(key:Int, val:Int):Bool
 	{
-		var i = __getHash(_hashCode(key));
+		var i = mHash.get(hashCode(key));
 		if (i == EMPTY_SLOT)
 			return false;
 		else
 		{
-			#if (flash10 && alchemy)
-			var o = _data.getAddr(i);
+			var d = mData;
+			
+			#if (flash && alchemy)
+			var o = d.getAddr(i);
 			if (Memory.getI32(o) == key)
 			{
 				Memory.setI32(o + 4, val);
 				return true;
 			}
 			#else
-			if (__getData(i) == key)
+			if (d.get(i) == key)
 			{
-				__setData(i + 1, val);
+				d.set(i + 1, val);
 				return true;
 			}
 			#end
 			else
 			{
-				#if (flash10 && alchemy)
+				#if (flash && alchemy)
 				i = Memory.getI32(o + 8);
 				while (i != NULL_POINTER)
 				{
-					o = _data.getAddr(i);
+					o = d.getAddr(i);
 					if (Memory.getI32(o) == key)
 					{
 						Memory.setI32(o + 4, val);
@@ -568,15 +480,15 @@ class IntIntHashTable implements Map<Int, Int>
 					i = Memory.getI32(o + 8);
 				}
 				#else
-				i = __getData(i + 2);
+				i = d.get(i + 2);
 				while (i != NULL_POINTER)
 				{
-					if (__getData(i) == key)
+					if (d.get(i) == key)
 					{
-						__setData(i + 1, val);
+						d.set(i + 1, val);
 						break;
 					}
-					i = __getData(i + 2);
+					i = d.get(i + 2);
 				}
 				#end
 				return i != NULL_POINTER;
@@ -585,73 +497,67 @@ class IntIntHashTable implements Map<Int, Int>
 	}
 	
 	/**
-	 * Removes the first occurrence of <code>key</code> and returns the value mapped to it.
-	 * <o>1</o>
-	 * @return the value mapped to key or <em>IntIntHashTable.KEY_ABSENT</em> if <code>key</code> does not exist.
-	 */
-	inline public function extract(key:Int):Int
+		Removes the first occurrence of `key` and returns the value mapped to it.
+		@return the value mapped to key or `IntIntHashTable.KEY_ABSENT` if `key` does not exist.
+	**/
+	public inline function extract(key:Int):Int
 	{
-		var b = _hashCode(key);
-		var i = __getHash(b);
+		var b = hashCode(key), h = mHash;
+		var i = h.get(b);
 		if (i == EMPTY_SLOT)
 			return IntIntHashTable.KEY_ABSENT;
 		else
 		{
-			#if (flash10 && alchemy)
-			var o = _data.getAddr(i);
+			var d = mData;
+			#if (flash && alchemy)
+			var o = d.getAddr(i);
 			if (key == Memory.getI32(o))
 			{
 				var val = Memory.getI32(o + 4);
 			#else
-			if (key == __getData(i))
+			if (key == d.get(i))
 			{
-				var val = __getData(i + 1);
+				var val = d.get(i + 1);
 			#end
-				#if (flash10 && alchemy)
+				#if (flash && alchemy)
 				if (Memory.getI32(o + 8) == NULL_POINTER)
 				#else
-				if (__getData(i + 2) == NULL_POINTER)
+				if (d.get(i + 2) == NULL_POINTER)
 				#end
-					__setHash(b, EMPTY_SLOT);
+					h.set(b, EMPTY_SLOT);
 				else
-					__setHash(b, __getData(i + 2));
+					h.set(b, d.get(i + 2));
 				
 				var j = Std.int(i / 3);
-				__setNext(j, _free);
-				_free = j;
+				mNext.set(j, mFree);
+				mFree = j;
 				
-				#if (flash10 && alchemy)
+				#if (flash && alchemy)
 				Memory.setI32(o + 4, VAL_ABSENT);
 				Memory.setI32(o + 8, NULL_POINTER);
 				#else
-				__setData(i + 1, VAL_ABSENT);
-				__setData(i + 2, NULL_POINTER);
+				d.set(i + 1, VAL_ABSENT);
+				d.set(i + 2, NULL_POINTER);
 				#end
 				
-				_size--;
-				
-				if (_sizeLevel > 0)
-					if (_size == (_capacity >> 2))
-						if (_isResizable)
-							_shrink();
-				
+				mSize--;
 				return val;
 			}
 			else
 			{
 				var i0 = i;
-				#if (flash10 && alchemy)
+				#if (flash && alchemy)
 				i = Memory.getI32(o + 8);
 				#else
-				i = __getData(i + 2);
+				i = d.get(i + 2);
 				#end
 				
 				var val = IntIntHashTable.KEY_ABSENT;
 				
 				while (i != NULL_POINTER)
 				{
-					#if (flash10 && alchemy)
-					o = _data.getAddr(i);
+					#if (flash && alchemy)
+					o = mData.getAddr(i);
 					if (Memory.getI32(o) == key)
 					{
 						val = Memory.getI32(o + 4);
@@ -660,39 +566,33 @@ class IntIntHashTable implements Map<Int, Int>
 					i0 = i;
 					i = Memory.getI32(o + 8);
 					#else
-					if (__getData(i) == key)
+					if (d.get(i) == key)
 					{
-						val = __getData(i + 1);
+						val = d.get(i + 1);
 						break;
 					}
-					i = __getData((i0 = i) + 2);
+					i = d.get((i0 = i) + 2);
 					#end
 				}
 				
 				if (val != IntIntHashTable.KEY_ABSENT)
 				{
-					__setData(i0 + 2, __getData(i + 2));
+					d.set(i0 + 2, d.get(i + 2));
 					
 					var j = Std.int(i / 3);
-					__setNext(j, _free);
-					_free = j;
+					mNext.set(j, mFree);
+					mFree = j;
 					
-					#if (flash10 && alchemy)
-					o = _data.getAddr(i + 1);
+					#if (flash && alchemy)
+					o = mData.getAddr(i + 1);
 					Memory.setI32(o    , VAL_ABSENT);
 					Memory.setI32(o + 4, NULL_POINTER);
 					#else
-					__setData(i + 1, VAL_ABSENT);
-					__setData(i + 2, NULL_POINTER);
+					d.set(i + 1, VAL_ABSENT);
+					d.set(i + 2, NULL_POINTER);
 					#end
 					
-					--_size;
-					
-					if (_sizeLevel > 0)
-						if (_size == (_capacity >> 2))
-							if (_isResizable)
-								_shrink();
-					
+					mSize--;
 					return val;
 				}
 				else
@@ -701,79 +601,43 @@ class IntIntHashTable implements Map<Int, Int>
 		}
 	}
 	
-	public function removePair(key:Int, val:Int):Bool
-	{
-		//TODO implement removePair()
-		return false;
-	}
-	
 	/**
-	 * Creates and returns an unordered array of all keys. 
-	 */
+		Creates and returns an unordered array of all keys.
+	**/
 	public function toKeyArray():Array<Int>
 	{
-		if (size() == 0) return new Array<Int>();
+		if (isEmpty()) return [];
 		
-		var a:Array<Int> = ArrayUtil.alloc(size());
-		var j = 0;
-		for (i in 0..._capacity)
+		var out = ArrayTools.alloc(size);
+		var j = 0, d = mData;
+		for (i in 0...capacity)
 		{
-			#if (flash10 && alchemy)
-			var o = _data.getAddr(i * 3);
+			#if (flash && alchemy)
+			var o = d.getAddr(i * 3);
 			if (Memory.getI32(o + 4) != VAL_ABSENT)
-				a[j++] = Memory.getI32(o);
+				out[j++] = Memory.getI32(o);
 			#else
-			if (__getData((i * 3) + 1) != VAL_ABSENT)
-				a[j++] = __getData(i * 3);
+			if (d.get((i * 3) + 1) != VAL_ABSENT)
+				out[j++] = d.get(i * 3);
 			#end
 		}
-		return a;
+		return out;
 	}
 	
 	/**
-	 * Creates and returns an unordered dense array of all keys. 
-	 */
-	public function toKeyDA():DA<Int>
-	{
-		var a = new DA<Int>(size());
-		for (i in 0..._capacity)
-		{
-			#if (flash10 && alchemy)
-			var o = _data.getAddr(i * 3);
-			if (Memory.getI32(o + 4) != VAL_ABSENT)
-				a.pushBack(Memory.getI32(o));
-			#else
-			if (__getData((i * 3) + 1) != VAL_ABSENT)
-				a.pushBack(__getData(i * 3));
-			#end
-		}
-		return a;
-	}
-	
-	/**
-	 * Returns a string representing the current object.<br/>
-	 * Example:<br/>
-	 * <pre class="prettyprint">
-	 * var hash = new de.polygonal.ds.IntIntHashTable(16);
-	 * for (i in 0...4) {
-	 *     hash.set(i, i);
-	 * }
-	 * trace(hash);</pre>
-	 * <pre class="console">
-	 * { IntIntHashTable size: 4, load factor: 0.25 }
-	 * [
-	 *   0 -> 0
-	 *   1 -> 1
-	 *   2 -> 2
-	 *   3 -> 3
-	 * ]</pre>
-	 */
+		Prints out all elements.
+	**/
+	#if !no_tostring
 	public function toString():String
 	{
-		var s = Printf.format("[ IntIntHashTable size/capacity: %d/%d, load factor: %.2f }", [size(), getCapacity(), getLoadFactor()]);
-		if (isEmpty()) return s;
-		s += "\n[\n";
-		
+		var b = new StringBuf();
+		b.add(Printf.format('[ IntIntHashTable size=$size capacity=$capacity load=%.2f', [loadFactor]));
+		if (isEmpty())
+		{
+			b.add(" ]");
+			return b.toString();
+		}
+		b.add("\n");
 		var max = 0.;
 		for (key in keys()) max = Math.max(max, key);
 		var i = 1;
@@ -782,32 +646,60 @@ class IntIntHashTable implements Map<Int, Int>
 			i++;
 			max = Std.int(max / 10);
 		}
+		var args = new Array<Dynamic>();
+		var fmt = '  %- ${i}d -> %s\n';
 		
-		for (key in keys())
-			s += Printf.format("  %- " + i + "d -> %d\n", [key, get(key)]);
+		var keys = [for (key in keys()) key];
+		keys.sort(function(u, v) return u - v);
+		i = 1;
+		var k = keys.length;
+		var j = 0;
+		var c = 1;
+		inline function print(key:Int)
+		{
+			args[0] = key;
+			if (c > 1)
+			{
+				var tmp = [];
+				getAll(key, tmp);
+				args[1] = tmp.join(",");
+			}
+			else
+				args[1] = get(key);
+			b.add(Printf.format(fmt, args));
+		}
+		while (i < k)
+		{
+			if (keys[j] == keys[i])
+				c++;
+			else
+			{
+				print(keys[j]);
+				j = i;
+				c = 1;
+			}
+			i++;
+		}
+		print(keys[j]);
 		
-		s += "]";
-		return s;
+		b.add("]");
+		return b.toString();
 	}
+	#end
 	
-	/*///////////////////////////////////////////////////////
-	// map
-	///////////////////////////////////////////////////////*/
+	/* INTERFACE Map */
 	
 	/**
-	 * Returns true if this map contains a mapping for the value <code>val</code>.
-	 * @throws de.polygonal.ds.error.AssertError value 0x80000000 is reserved (debug only).
-	 */
-	inline public function has(val:Int):Bool
+		Returns true if this map contains a mapping for the value `val`.
+	**/
+	public function has(val:Int):Bool
 	{
-		#if debug
 		assert(val != VAL_ABSENT, "val 0x80000000 is reserved");
-		#end
 		
-		var exists = false;
-		for (i in 0...getCapacity())
+		var exists = false, d = mData;
+		for (i in 0...capacity)
 		{
-			var v = __getData((i * 3) + 1);
+			var v = d.get((i * 3) + 1);
 			if (v == val)
 			{
 				exists = true;
@@ -818,31 +710,33 @@ class IntIntHashTable implements Map<Int, Int>
 	}
 	
 	/**
-	 * Returns true if this map contains <code>key</code>.
-	 */
-	inline public function hasKey(key:Int):Bool
+		Returns true if this map contains `key`.
+	**/
+	public inline function hasKey(key:Int):Bool
 	{
-		var i = __getHash(_hashCode(key));
+		var i = mHash.get(hashCode(key));
 		if (i == EMPTY_SLOT)
 			return false;
 		else
 		{
-			#if (flash10 && alchemy)
-			var o = _data.getAddr(i);
+			var d = mData;
+			
+			#if (flash && alchemy)
+			var o = d.getAddr(i);
 			if (Memory.getI32(o) == key)
 				return true;
 			#else
-			if (__getData(i) == key)
+			if (d.get(i) == key)
 				return true;
 			#end
 			else
 			{
 				var exists = false;
-				#if (flash10 && alchemy)
+				#if (flash && alchemy)
 				i = Memory.getI32(o + 8);
 				while (i != NULL_POINTER)
 				{
-					o = _data.getAddr(i);
+					o = mData.getAddr(i);
 					if (Memory.getI32(o) == key)
 					{
 						exists = true;
@@ -851,15 +745,15 @@ class IntIntHashTable implements Map<Int, Int>
 					i = Memory.getI32(o + 8);
 				}
 				#else
-				i = __getData(i + 2);
+				i = d.get(i + 2);
 				while (i != NULL_POINTER)
 				{
-					if (__getData(i) == key)
+					if (d.get(i) == key)
 					{
 						exists = true;
 						break;
 					}
-					i = __getData(i + 2);
+					i = d.get(i + 2);
 				}
 				#end
 				return exists;
@@ -868,28 +762,30 @@ class IntIntHashTable implements Map<Int, Int>
 	}
 	
 	/**
-	 * Counts the number of mappings for <code>key</code>.
-	 */
-	inline public function count(key:Int):Int
+		Counts the number of mappings for `key`.
+	**/
+	public function count(key:Int):Int
 	{
 		var c = 0;
-		var i = __getHash(_hashCode(key));
+		var i = mHash.get(hashCode(key));
 		if (i == EMPTY_SLOT)
 			return c;
 		else
 		{
-			#if (flash10 && alchemy)
+			var d = mData;
+			
+			#if (flash && alchemy)
 			while (i != NULL_POINTER)
 			{
-				var o = _data.getAddr(i);
+				var o = d.getAddr(i);
 				if (Memory.getI32(o) == key) c++;
 				i = Memory.getI32(o + 8);
 			}
 			#else
 			while (i != NULL_POINTER)
 			{
-				if (__getData(i) == key) c++;
-				i = __getData(i + 2);
+				if (d.get(i) == key) c++;
+				i = d.get(i + 2);
 			}
 			#end
 			return c;
@@ -897,31 +793,32 @@ class IntIntHashTable implements Map<Int, Int>
 	}
 	
 	/**
-	 * Returns the first value that is mapped to <code>key</code> or <em>IntIntHashTable.KEY_ABSENT</em> if <code>key</code> does not exist.
-	 */
-	inline public function get(key:Int):Int
+		Returns the first value that is mapped to `key` or `IntIntHashTable.KEY_ABSENT` if `key` does not exist.
+	**/
+	public inline function get(key:Int):Int
 	{
-		var i = __getHash(_hashCode(key));
+		var i = mHash.get(hashCode(key));
 		if (i == EMPTY_SLOT)
 			return KEY_ABSENT;
 		else
 		{
-			#if (flash10 && alchemy)
-			var o = _data.getAddr(i);
+			var d = mData;
+			#if (flash && alchemy)
+			var o = d.getAddr(i);
 			if (Memory.getI32(o) == key)
 				return Memory.getI32(o + 4);
 			#else
-			if (__getData(i) == key)
-				return __getData(i + 1);
+			if (d.get(i) == key)
+				return d.get(i + 1);
 			#end
 			else
 			{
 				var v = KEY_ABSENT;
-				#if (flash10 && alchemy)
+				#if (flash && alchemy)
 				i = Memory.getI32(o + 8);
 				while (i != NULL_POINTER)
 				{
-					o = _data.getAddr(i);
+					o = d.getAddr(i);
 					if (Memory.getI32(o) == key)
 					{
 						v = Memory.getI32(o + 4);
@@ -930,15 +827,15 @@ class IntIntHashTable implements Map<Int, Int>
 					i = Memory.getI32(o + 8);
 				}
 				#else
-				i = __getData(i + 2);
+				i = d.get(i + 2);
 				while (i != NULL_POINTER)
 				{
-					if (__getData(i) == key)
+					if (d.get(i) == key)
 					{
-						v = __getData(i + 1);
+						v = d.get(i + 1);
 						break;
 					}
-					i = __getData(i + 2);
+					i = d.get(i + 2);
 				}
 				#end
 				return v;
@@ -947,38 +844,39 @@ class IntIntHashTable implements Map<Int, Int>
 	}
 	
 	/**
-	 * Stores all values that are mapped to <code>key</code> in <code>values</code> or returns 0 if <code>key</code> does not exist.
-	 * @return the total number of values mapped to <code>key</code>.
-	 */
-	public function getAll(key:Int, values:Array<Int>):Int
+		Stores all values that are mapped to `key` in `out` or returns 0 if `key` does not exist.
+		@return the total number of values mapped to `key`.
+	**/
+	public function getAll(key:Int, out:Array<Int>):Int
 	{
-		var i = __getHash(_hashCode(key));
+		var i = mHash.get(hashCode(key));
 		if (i == EMPTY_SLOT)
 			return 0;
 		else
 		{
 			var c = 0;
-			#if (flash10 && alchemy)
-			var o = _data.getAddr(i);
+			var d = mData;
+			#if (flash && alchemy)
+			var o = d.getAddr(i);
 			if (Memory.getI32(o) == key)
-				values[c++] = Memory.getI32(o + 4);
+				out[c++] = Memory.getI32(o + 4);
 			i = Memory.getI32(o + 8);
 			while (i != NULL_POINTER)
 			{
-				o = _data.getAddr(i);
+				o = d.getAddr(i);
 				if (Memory.getI32(o) == key)
-					values[c++] = Memory.getI32(o + 4);
+					out[c++] = Memory.getI32(o + 4);
 				i = Memory.getI32(o + 8);
 			}
 			#else
-			if (__getData(i) == key)
-				values[c++] = __getData(i + 1);
-			i = __getData(i + 2);
+			if (d.get(i) == key)
+				out[c++] = d.get(i + 1);
+			i = d.get(i + 2);
 			while (i != NULL_POINTER)
 			{
-				if (__getData(i) == key)
-					values[c++] = __getData(i + 1);
-				i = __getData(i + 2);
+				if (d.get(i) == key)
+					out[c++] = d.get(i + 1);
+				i = d.get(i + 2);
 			}
 			#end
 			return c;
@@ -986,148 +884,96 @@ class IntIntHashTable implements Map<Int, Int>
 	}
 	
 	/**
-	 * Maps the value <code>val</code> to <code>key</code>.<br/>
-	 * The method allows duplicate keys.<br/>
-	 * <warn>To ensure unique keys either use <em>hasKey()</em> before <em>set()</em> or <em>setIfAbsent()</em></warn>
-	 * @return true if <code>key</code> was added for the first time, false if another instance of <code>key</code> was inserted.
-	 * @throws de.polygonal.ds.error.AssertError out of space - hash table is full but not resizable.
-	 * @throws de.polygonal.ds.error.AssertError key/value 0x80000000 is reserved (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	inline public function set(key:Int, val:Int):Bool
+		Returns true if this map contains a mapping from `key` to `val`.
+	**/
+	public function hasPair(key:Int, val:Int):Bool
 	{
-		#if debug
 		assert(val != KEY_ABSENT, "val 0x80000000 is reserved");
-		assert(size() < maxSize, 'size equals max size ($maxSize)');
-		#end
 		
-		if (_size == _capacity)
-		{
-			#if debug
-			if (!_isResizable)
-				assert(false, 'out of space (${getCapacity()})');
-			#end
-			
-			if (_isResizable)
-				_expand();
-		}
-		
-		var i = _free * 3;
-		_free = __getNext(_free);
-		
-		#if (flash10 && alchemy)
-		var o = _data.getAddr(i);
-		Memory.setI32(o    , key);
-		Memory.setI32(o + 4, val);
-		#else
-		__setData(i    , key);
-		__setData(i + 1, val);
-		#end
-		
-		var b = _hashCode(key);
-		
-		#if (flash10 && alchemy)
-		o = _hash.getAddr(b);
-		var j = Memory.getI32(o);
-		if (j == EMPTY_SLOT)
-		{
-			Memory.setI32(o, i);
-			_size++;
-			return true;
-		}
-		#else
-		var j = __getHash(b);
-		if (j == EMPTY_SLOT)
-		{
-			__setHash(b, i);
-			_size++;
-			return true;
-		}
-		#end
-		else
-		{
-			#if (flash10 && alchemy)
-			o = _data.getAddr(j);
-			var first = flash.Memory.getI32(o) != key;
-			var t = flash.Memory.getI32(o + 8);
-			#else
-			var first = __getData(j) != key;
-			var t = __getData(j + 2);
-			#end
-			
-			while (t != NULL_POINTER)
-			{
-				#if (flash10 && alchemy)
-				o = _data.getAddr(t);
-				if (flash.Memory.getI32(o) == key) first = false;
-				j = t;
-				t = flash.Memory.getI32(o + 8);
-				#else
-				if (__getData(t) == key) first = false;
-				j = t;
-				t = __getData(t + 2);
-				#end
-			}
-			
-			#if (flash10 && alchemy)
-			flash.Memory.setI32(o + 8, i);
-			#else
-			__setData(j + 2, i);
-			#end
-			
-			_size++;
-			return first;
-		}
-	}
-	
-	/**
-	 * Removes the first occurrence of <code>key</code> and 
-	 * @return true if <code>key</code> is successfully removed.
-	 */
-	inline public function clr(key:Int):Bool
-	{
-		//TODO make sure all values are removed from key
-		var b = _hashCode(key);
-		var i = __getHash(b);
+		var i = mHash.get(hashCode(key));
 		if (i == EMPTY_SLOT)
 			return false;
 		else
 		{
-			#if (flash10 && alchemy)
-			var o = _data.getAddr(i);
-			if (key == Memory.getI32(o))
+			var d = mData;
+			
+			#if (flash && alchemy)
+			var o = d.getAddr(i);
+			if (Memory.getI32(o) == key)
+				if (Memory.getI32(o + 4) == val)
+					return true;
+			
+			i = Memory.getI32(o + 8);
+			while (i != NULL_POINTER)
+			{
+				o = d.getAddr(i);
+				if (Memory.getI32(o) == key)
+					if (Memory.getI32(o + 4) == val)
+						return true;
+				i = Memory.getI32(o + 8);
+			}
 			#else
-			if (key == __getData(i))
+			if (d.get(i) == key)
+				if (d.get(i + 1) == val)
+					return true;
+			
+			i = d.get(i + 2);
+			while (i != NULL_POINTER)
+			{
+				if (d.get(i) == key)
+					if (d.get(i + 1) == val)
+						return true;
+				i = d.get(i + 2);
+			}
+			#end
+			return false;
+		}
+	}
+	
+	/**
+		Removes the first mapping from `key` to `val`.
+		@return true if `key` is successfully removed.
+	**/
+	public function unsetPair(key:Int, val:Int):Bool
+	{
+		assert(val != KEY_ABSENT, "val 0x80000000 is reserved");
+		
+		var b = hashCode(key), h = mHash;
+		var i = h.get(b);
+		if (i == EMPTY_SLOT)
+			return false;
+		else
+		{
+			var d = mData;
+			#if (flash && alchemy)
+			var o = mData.getAddr(i);
+			if (key == Memory.getI32(o) && val == Memory.getI32(o + 4))
+			#else
+			if (key == d.get(i) && val == d.get(i + 1))
 			#end
 			{
-				#if (flash10 && alchemy)
+				#if (flash && alchemy)
 				if (Memory.getI32(o + 8) == NULL_POINTER)
 				#else
-				if (__getData(i + 2) == NULL_POINTER)
+				if (d.get(i + 2) == NULL_POINTER)
 				#end
-					__setHash(b, EMPTY_SLOT);
+					h.set(b, EMPTY_SLOT);
 				else
-					__setHash(b, __getData(i + 2));
+					h.set(b, d.get(i + 2));
 				
 				var j = Std.int(i / 3);
-				__setNext(j, _free);
-				_free = j;
+				mNext.set(j, mFree);
+				mFree = j;
 				
-				#if (flash10 && alchemy)
+				#if (flash && alchemy)
 				Memory.setI32(o + 4, VAL_ABSENT);
 				Memory.setI32(o + 8, NULL_POINTER);
 				#else
-				__setData(i + 1, VAL_ABSENT);
-				__setData(i + 2, NULL_POINTER);
+				d.set(i + 1, VAL_ABSENT);
+				d.set(i + 2, NULL_POINTER);
 				#end
 				
-				_size--;
-				
-				if (_sizeLevel > 0)
-					if (_size == (_capacity >> 2))
-						if (_isResizable)
-							_shrink();
-				
+				mSize--;
 				return true;
 			}
 			else
@@ -1135,17 +981,17 @@ class IntIntHashTable implements Map<Int, Int>
 				var exists = false;
 				
 				var i0 = i;
-				#if (flash10 && alchemy)
+				#if (flash && alchemy)
 				i = Memory.getI32(o + 8);
 				#else
-				i = __getData(i + 2);
+				i = d.get(i + 2);
 				#end
 				
 				while (i != NULL_POINTER)
 				{
-					#if (flash10 && alchemy)
-					o = _data.getAddr(i);
-					if (Memory.getI32(o) == key)
+					#if (flash && alchemy)
+					o = mData.getAddr(i);
+					if (Memory.getI32(o) == key && Memory.getI32(o + 4) == val)
 					{
 						exists = true;
 						break;
@@ -1153,39 +999,33 @@ class IntIntHashTable implements Map<Int, Int>
 					i0 = i;
 					i = Memory.getI32(o + 8);
 					#else
-					if (__getData(i) == key)
+					if (d.get(i) == key && d.get(i + 1) == val)
 					{
 						exists = true;
 						break;
 					}
-					i = __getData((i0 = i) + 2);
+					i = d.get((i0 = i) + 2);
 					#end
 				}
 				
 				if (exists)
 				{
-					__setData(i0 + 2, __getData(i + 2));
+					d.set(i0 + 2, d.get(i + 2));
 					
 					var j = Std.int(i / 3);
-					__setNext(j, _free);
-					_free = j;
+					mNext.set(j, mFree);
+					mFree = j;
 					
-					#if (flash10 && alchemy)
-					o = _data.getAddr(i + 1);
+					#if (flash && alchemy)
+					o = mData.getAddr(i + 1);
 					Memory.setI32(o    , VAL_ABSENT);
 					Memory.setI32(o + 4, NULL_POINTER);
 					#else
-					__setData(i + 1, VAL_ABSENT);
-					__setData(i + 2, NULL_POINTER);
+					d.set(i + 1, VAL_ABSENT);
+					d.set(i + 2, NULL_POINTER);
 					#end
 					
-					--_size;
-					
-					if (_sizeLevel > 0)
-						if (_size == (_capacity >> 2))
-							if (_isResizable)
-								_shrink();
-					
+					--mSize;
 					return true;
 				}
 				else
@@ -1195,645 +1035,702 @@ class IntIntHashTable implements Map<Int, Int>
 	}
 	
 	/**
-	 * Creates an <em>IntHashSet</em> object of the values in this map. 
-	 */
-	public function toValSet():Set<Int>
-	{
-		var s = new IntHashSet(getCapacity());
-		for (i in 0..._capacity)
-		{
-			var v = __getData((i * 3) + 1);
-			if (v != VAL_ABSENT) s.set(v);
-		}
+		Maps the value `val` to `key`.
 		
-		return s;
+		The method allows duplicate keys.
+		<br/>To ensure unique keys either use `this.hasKey()` before `this.set()` or `this.setIfAbsent()`.
+		@return true if `key` was added for the first time, false if another instance of `key` was inserted.
+	**/
+	public inline function set(key:Int, val:Int):Bool
+	{
+		assert(val != KEY_ABSENT, "val 0x80000000 is reserved");
+		
+		if (size == capacity) grow();
+		
+		var d = mData, h = mHash;
+		var i = mFree * 3;
+		mFree = mNext.get(mFree);
+		
+		#if (flash && alchemy)
+		var o = d.getAddr(i);
+		Memory.setI32(o    , key);
+		Memory.setI32(o + 4, val);
+		#else
+		d.set(i    , key);
+		d.set(i + 1, val);
+		#end
+		
+		var b = hashCode(key);
+		
+		#if (flash && alchemy)
+		o = h.getAddr(b);
+		var j = Memory.getI32(o);
+		if (j == EMPTY_SLOT)
+		{
+			Memory.setI32(o, i);
+			mSize++;
+			return true;
+		}
+		#else
+		var j = h.get(b);
+		if (j == EMPTY_SLOT)
+		{
+			h.set(b, i);
+			mSize++;
+			return true;
+		}
+		#end
+		else
+		{
+			#if (flash && alchemy)
+			o = mData.getAddr(j);
+			var first = flash.Memory.getI32(o) != key;
+			var t = flash.Memory.getI32(o + 8);
+			#else
+			var first = d.get(j) != key;
+			var t = d.get(j + 2);
+			#end
+			
+			while (t != NULL_POINTER)
+			{
+				#if (flash && alchemy)
+				o = mData.getAddr(t);
+				if (flash.Memory.getI32(o) == key) first = false;
+				j = t;
+				t = flash.Memory.getI32(o + 8);
+				#else
+				if (d.get(t) == key) first = false;
+				j = t;
+				t = d.get(t + 2);
+				#end
+			}
+			
+			#if (flash && alchemy)
+			flash.Memory.setI32(o + 8, i);
+			#else
+			d.set(j + 2, i);
+			#end
+			
+			mSize++;
+			return first;
+		}
 	}
 	
 	/**
-	 * Creates an <em>IntHashSet</em> object of the keys in this map. 
-	 */
-	public function toKeySet():Set<Int>
+		Removes the first occurrence of `key`.
+		@return true if `key` is successfully removed.
+	**/
+	public inline function unset(key:Int):Bool
 	{
-		var s = new IntHashSet(getCapacity());
-		for (i in 0..._capacity)
+		var b = hashCode(key), h = mHash;
+		var i = h.get(b);
+		if (i == EMPTY_SLOT)
+			return false;
+		else
 		{
-			var v = __getData((i * 3) + 1);
-			if (v != VAL_ABSENT)
+			var d = mData;
+			
+			#if (flash && alchemy)
+			var o = d.getAddr(i);
+			if (key == Memory.getI32(o))
+			#else
+			if (key == d.get(i))
+			#end
 			{
-				s.set(__getData(i * 3));
+				#if (flash && alchemy)
+				if (Memory.getI32(o + 8) == NULL_POINTER)
+				#else
+				if (d.get(i + 2) == NULL_POINTER)
+				#end
+					h.set(b, EMPTY_SLOT);
+				else
+					h.set(b, d.get(i + 2));
+				
+				var j = Std.int(i / 3);
+				mNext.set(j, mFree);
+				mFree = j;
+				
+				#if (flash && alchemy)
+				Memory.setI32(o + 4, VAL_ABSENT);
+				Memory.setI32(o + 8, NULL_POINTER);
+				#else
+				d.set(i + 1, VAL_ABSENT);
+				d.set(i + 2, NULL_POINTER);
+				#end
+				
+				mSize--;
+				return true;
+			}
+			else
+			{
+				var exists = false;
+				
+				var i0 = i;
+				#if (flash && alchemy)
+				i = Memory.getI32(o + 8);
+				#else
+				i = d.get(i + 2);
+				#end
+				
+				while (i != NULL_POINTER)
+				{
+					#if (flash && alchemy)
+					o = d.getAddr(i);
+					if (Memory.getI32(o) == key)
+					{
+						exists = true;
+						break;
+					}
+					i0 = i;
+					i = Memory.getI32(o + 8);
+					#else
+					if (d.get(i) == key)
+					{
+						exists = true;
+						break;
+					}
+					i = d.get((i0 = i) + 2);
+					#end
+				}
+				
+				if (exists)
+				{
+					d.set(i0 + 2, d.get(i + 2));
+					
+					var j = Std.int(i / 3);
+					mNext.set(j, mFree);
+					mFree = j;
+					
+					#if (flash && alchemy)
+					o = d.getAddr(i + 1);
+					Memory.setI32(o    , VAL_ABSENT);
+					Memory.setI32(o + 4, NULL_POINTER);
+					#else
+					d.set(i + 1, VAL_ABSENT);
+					d.set(i + 2, NULL_POINTER);
+					#end
+					
+					mSize--;
+					return true;
+				}
+				else
+					return false;
 			}
 		}
-		
+	}
+	
+	/**
+		Creates an `IntHashSet` object of the values in this map.
+	**/
+	public function toValSet():Set<Int>
+	{
+		var s = new IntHashSet(capacity), d = mData;
+		for (i in 0...capacity)
+		{
+			var v = d.get((i * 3) + 1);
+			if (v != VAL_ABSENT) s.set(v);
+		}
 		return s;
 	}
 	
 	/**
-	 * Returns a new <em>IntIntHashTableKeyIterator</em> object to iterate over all keys stored in this map.
-	 * The keys are visited in a random order.
-	 * @see <a href="http://haxe.org/ref/iterators" target="_blank">http://haxe.org/ref/iterators</a>
-	 */
+		Creates an `IntHashSet` object of the keys in this map.
+	**/
+	public function toKeySet():Set<Int>
+	{
+		var s = new IntHashSet(capacity), d = mData;
+		for (i in 0...capacity)
+		{
+			var v = d.get((i * 3) + 1);
+			if (v != VAL_ABSENT)
+			{
+				s.set(d.get(i * 3));
+			}
+		}
+		return s;
+	}
+	
+	/**
+		Returns a new *IntIntHashTableKeyIterator* object to iterate over all keys stored in this map.
+		
+		The keys are visited in a random order.
+		
+		@see http://haxe.org/ref/iterators
+	**/
 	public function keys():Itr<Int>
 	{
 		return new IntIntHashTableKeyIterator(this);
 	}
 	
-	/*///////////////////////////////////////////////////////
-	// collection
-	///////////////////////////////////////////////////////*/
-	
 	/**
-	 * Destroys this object by explicitly nullifying all key/values.<br/>
-	 * <warn>If "alchemy memory" is used, always call this method when the life cycle of this object ends to prevent a memory leak.</warn>
-	 */
-	public function free()
+		Free up resources by reducing the capacity of the internal container to the initial capacity.
+	**/
+	public function pack():IntIntHashTable
 	{
-		#if (flash10 && alchemy)
-		_hash.free();
-		_data.free();
-		_next.free();
+		if (capacity == mMinCapacity) return this;
+		
+		capacity = MathTools.max(size, mMinCapacity);
+		
+		var src = mData, dst;
+		var e = 0, t = mHash;
+		
+		#if (flash && alchemy)
+		dst = new IntMemory(capacity * 3, "IntIntHashTable.mData");
+		#else
+		dst = NativeArrayTools.alloc(capacity * 3);
 		#end
 		
-		_hash = null;
-		_data = null;
-		_next = null;
-		_iterator = null;
+		var j = 2;
+		for (i in 0...capacity)
+		{
+			dst.set(j - 1, VAL_ABSENT);
+			dst.set(j, NULL_POINTER);
+			j += 3;
+		}
+		
+		#if (flash && alchemy)
+		var addr = dst.getAddr(e);
+		for (i in 0...slotCount)
+		{
+			j = t.get(i);
+			if (j == EMPTY_SLOT) continue;
+			
+			t.set(i, e);
+			
+			flash.Memory.setI32(addr    , src.get(j));
+			flash.Memory.setI32(addr + 4, src.get(j + 1));
+			flash.Memory.setI32(addr + 8, NULL_POINTER);
+			addr += 12;
+			e += 3;
+			
+			j = src.get(j + 2);
+			while (j != NULL_POINTER)
+			{
+				flash.Memory.setI32(addr - 4, e);
+				flash.Memory.setI32(addr    , src.get(j));
+				flash.Memory.setI32(addr + 4, src.get(j + 1));
+				flash.Memory.setI32(addr + 8, NULL_POINTER);
+				addr += 12;
+				e += 3;
+				j = src.get(j + 2);
+			}
+		}
+		mData.free();
+		mData = dst;
+		mNext.resize(capacity);
+		#else
+		for (i in 0...slotCount)
+		{
+			j = t.get(i);
+			if (j == EMPTY_SLOT) continue;
+			
+			t.set(i, e);
+			dst.set(e    , src.get(j));
+			dst.set(e + 1, src.get(j + 1));
+			dst.set(e + 2, NULL_POINTER);
+			
+			e += 3;
+			j = src.get(j + 2);
+			while (j != NULL_POINTER)
+			{
+				dst.set(e - 1, e);
+				dst.set(e    , src.get(j));
+				dst.set(e + 1, src.get(j + 1));
+				dst.set(e + 2, NULL_POINTER);
+				e += 3;
+				j = src.get(j + 2);
+			}
+		}
+		mData = dst;
+		mNext = NativeArrayTools.alloc(capacity);
+		#end
+		
+		var n = mNext;
+		for (i in 0...capacity - 1) n.set(i, i + 1);
+		n.set(capacity - 1, NULL_POINTER);
+		mFree = -1;
+		return this;
 	}
 	
 	/**
-	 * Same as <em>has()</em>. 
-	 */
-	inline public function contains(val:Int):Bool
+		Calls `f` on all {Int,Int} pairs in random order.
+	**/
+	public inline function iter(f:Int->Int->Void):IntIntHashTable
+	{
+		assert(f != null);
+		var d = mData, j, v;
+		for (i in 0...capacity)
+		{
+			j = i * 3;
+			v = d.get(j + 1);
+			if (v != VAL_ABSENT) f(d.get(j), v);
+		}
+		return this;
+	}
+	
+	inline function hashCode(x:Int):Int
+	{
+		return (x * 73856093) & mMask;
+	}
+	
+	function grow()
+	{
+		var oldCapacity = capacity;
+		capacity = GrowthRate.compute(growthRate, capacity);
+		
+		var t;
+		
+		#if alchemy
+		mNext.resize(capacity);
+		mData.resize(capacity * 3);
+		#else
+		t = NativeArrayTools.alloc(capacity);
+		mNext.blit(0, t, 0, oldCapacity);
+		mNext = t;
+		t = NativeArrayTools.alloc(capacity * 3);
+		mData.blit(0, t, 0, oldCapacity * 3);
+		mData = t;
+		#end
+		
+		t = mNext;
+		for (i in oldCapacity - 1...capacity - 1) t.set(i, i + 1);
+		t.set(capacity - 1, NULL_POINTER);
+		mFree = oldCapacity;
+		
+		var j = oldCapacity * 3 + 2;
+		t = mData;
+		for (i in 0...capacity - oldCapacity)
+		{
+			#if (flash && alchemy)
+			var o = t.getAddr(j - 1);
+			Memory.setI32(o    , VAL_ABSENT);
+			Memory.setI32(o + 4, NULL_POINTER);
+			#else
+			t.set(j - 1, VAL_ABSENT);
+			t.set(j    , NULL_POINTER);
+			#end
+			j += 3;
+		}
+	}
+	
+	/* INTERFACE Collection */
+	
+	/**
+		The total number of key/value pairs.
+	**/
+	public var size(get, never):Int;
+	inline function get_size():Int
+	{
+		return mSize;
+	}
+	
+	/**
+		Destroys this object by explicitly nullifying all key/values.
+		
+		_If compiled with -D alchemy , always call this method when the life cycle of this object ends to prevent a memory leak._
+	**/
+	public function free()
+	{
+		#if (flash && alchemy)
+		mHash.free();
+		mData.free();
+		mNext.free();
+		#end
+		
+		mHash = null;
+		mData = null;
+		mNext = null;
+		if (mIterator != null)
+		{
+			mIterator.free();
+			mIterator = null;
+		}
+		mTmpBuffer = null;
+	}
+	
+	/**
+		Same as `this.has()`.
+	**/
+	public inline function contains(val:Int):Bool
 	{
 		return has(val);
 	}
 	
 	/**
-	 * Removes all occurrences of the value <code>val</code>.
-	 * @return true if <code>val</code> was removed, false if <code>val</code> does not exist.
-	 * @throws de.polygonal.ds.error.AssertError value 0x80000000 is reserved (debug only).
-	 */
-	inline public function remove(val:Int):Bool
+		Removes all occurrences of the value `val`.
+		@return true if `val` was removed, false if `val` does not exist.
+	**/
+	public function remove(val:Int):Bool
 	{
-		#if debug
 		assert(val != KEY_ABSENT, "val 0x80000000 is reserved");
-		#end
 		
 		var c = 0;
-		var keys = new Array<Int>();
-		for (i in 0..._capacity)
-		{
-			#if (flash10 && alchemy)
-			var o = _data.getAddr(i * 3);
-			if (Memory.getI32(o + 4) == val)
-				keys[c++] = Memory.getI32(o);
-			#else
-			var j = i * 3;
-			if (__getData(j + 1) == val)
-				keys[c++] = __getData(j);
-			#end
-		}
+		var keys = mTmpBuffer;
+		var max = mTmpBufferSize;
+		var d = mData, j;
 		
-		if (c > 0)
+		#if (flash && alchemy)
+		j = d.getAddr(1);
+		for (i in 0...capacity)
 		{
-			for (key in keys) clr(key);
-			return true;
+			if (Memory.getI32(j) == val)
+			{
+				if (c == max)
+				{
+					max <<= 1;
+					mTmpBufferSize = max;
+					var t = NativeArrayTools.alloc(max);
+					mTmpBuffer.blit(0, t, 0, c);
+					mTmpBuffer = keys = t;
+				}
+				
+				keys.set(c++, Memory.getI32(j - 4));
+			}
+			j += 12;
 		}
-		else
-			return false;
+		#else
+		for (i in 0...capacity)
+		{
+			j = i * 3;
+			if (d.get(j + 1) == val)
+			{
+				if (c == max)
+				{
+					max <<= 1;
+					mTmpBufferSize = max;
+					var t = NativeArrayTools.alloc(max);
+					mTmpBuffer.blit(0, t, 0, c);
+					mTmpBuffer = keys = t;
+				}
+				
+				keys.set(c++, d.get(j));
+			}
+		}
+		#end
+		
+		for (i in 0...c) unset(keys.get(i));
+		return c > 0;
 	}
 	
 	/**
-	 * The total number of key/value pairs. 
-	 */
-	inline public function size():Int
-	{
-		return _size;
-	}
-	
-	/**
-	 * Removes all key/value pairs.<br/>
-	 * @param purge If true, the hash table shrinks to the initial capacity defined in the constructor.
-	 */
-	public function clear(purge = false)
-	{
-		if (purge && _sizeLevel > 0)
-		{
-			_capacity >>= _sizeLevel;
-			_sizeLevel = 0;
-			
-			#if flash10
-			#if alchemy
-			_data.resize(_capacity * 3);
-			_next.resize(_capacity);
-			#else
-			_data = new Vector<Int>(_capacity * 3);
-			_next = new Vector<Int>(_capacity);
-			#end
-			#else
-			_data = ArrayUtil.alloc(_capacity * 3);
-			_next = ArrayUtil.alloc(_capacity);
-			#end
-		}
+		Removes all key/value pairs.
 		
-		#if flash10
-		#if alchemy
-		_hash.fill(EMPTY_SLOT);
+		The `gc` parameter has no effect.
+	**/
+	public function clear(gc:Bool = false)
+	{
+		#if (flash && alchemy)
+		mHash.setAll(EMPTY_SLOT);
 		#else
-		for (i in 0...getSlotCount()) _hash[i] = EMPTY_SLOT;
-		#end
-		#else
-		_hash.fill(EMPTY_SLOT, getSlotCount());
+		var h = mHash;
+		for (i in 0...slotCount) h.set(i, EMPTY_SLOT);
 		#end
 		
-		var j = 2;
-		for (i in 0..._capacity)
+		var j = 2, t = mData;
+		for (i in 0...capacity)
 		{
-			__setData(j - 1, VAL_ABSENT);
-			__setData(j, NULL_POINTER);
+			t.set(j - 1, VAL_ABSENT);
+			t.set(j    , NULL_POINTER);
 			j += 3;
 		}
-		for (i in 0..._capacity - 1) __setNext(i, i + 1);
-		__setNext(_capacity - 1, NULL_POINTER);
 		
-		_free = 0;
-		_size = 0;
+		t = mNext;
+		for (i in 0...capacity - 1) t.set(i, i + 1);
+		t.set(capacity - 1, NULL_POINTER);
+		
+		mFree = 0;
+		mSize = 0;
 	}
 	
 	/**
-	 * Returns a new <em>IntIntHashTableValIterator</em> object to iterate over all values contained in this hash table.<br/>
-	 * The values are visited in a random order.
-	 * @see <a href="http://haxe.org/ref/iterators" target="_blank">http://haxe.org/ref/iterators</a>
-	 */
+		Returns a new *IntIntHashTableValIterator* object to iterate over all values contained in this hash table.
+		
+		The values are visited in a random order.
+		
+		@see http://haxe.org/ref/iterators
+	**/
 	public function iterator():Itr<Int>
 	{
 		if (reuseIterator)
 		{
-			if (_iterator == null)
-				_iterator = new IntIntHashTableValIterator(this);
+			if (mIterator == null)
+				mIterator = new IntIntHashTableValIterator(this);
 			else
-				_iterator.reset();
-			return _iterator;
+				mIterator.reset();
+			return mIterator;
 		}
 		else
 			return new IntIntHashTableValIterator(this);
 	}
 	
 	/**
-	 * Returns true if this hash table is empty. 
-	 */
-	inline public function isEmpty():Bool
+		Returns true only if `this.size` is 0.
+	**/
+	public inline function isEmpty():Bool
 	{
-		return _size == 0;
+		return size == 0;
 	}
 	
 	/**
-	 * Returns an unordered array containing all values in this hash table. 
-	 */
+		Returns an unordered array containing all values in this hash table.
+	**/
 	public function toArray():Array<Int>
 	{
-		var a:Array<Int> = ArrayUtil.alloc(size());
-		var j = 0;
-		for (i in 0..._capacity)
+		if (isEmpty()) return [];
+		
+		var out = ArrayTools.alloc(size);
+		var j = 0, v, d = mData;
+		for (i in 0...capacity)
 		{
-			var v = __getData((i * 3) + 1);
-				if (v != VAL_ABSENT) a[j++] = v;
+			v = d.get((i * 3) + 1);
+			if (v != VAL_ABSENT) out[j++] = v;
 		}
-		return a;
+		return out;
 	}
 	
-	#if flash10
 	/**
-	 * Returns an unordered Vector.&lt;T&gt; object containing all values in this hash table.
-	 */
-	public function toVector():flash.Vector<Dynamic>
+		Duplicates this hash set by creating a deep copy (`byRef` and `copier` are ignored).
+	**/
+	public function clone(byRef:Bool = true, copier:Int->Int = null):Collection<Int>
 	{
-		var a = new flash.Vector<Dynamic>(size());
-		var j = 0;
-		for (i in 0..._capacity)
-		{
-			var v = __getData((i * 3) + 1);
-				if (v != VAL_ABSENT) a[j++] = v;
-		}
-		return a;
-	}
-	#end
-	
-	/**
-	 * Duplicates this hash table by creating a deep copy.<br/>
-	 * The <code>assign</code> and <code>copier</code> parameters are ignored.
-	 */
-	public function clone(assign:Bool = true, copier:Int->Int = null):Collection<Int>
-	{
-		var c:IntIntHashTable = Type.createEmptyInstance(IntIntHashTable);
-		c.key = HashKey.next();
-		c.maxSize = maxSize;
+		var c = new IntIntHashTable(slotCount, capacity);
 		
-		#if flash10
-		#if alchemy
-		c._hash = _hash.clone();
-		c._data = _data.clone();
-		c._next = _next.clone();
+		#if (flash && alchemy)
+		IntMemory.blit(mHash, 0, c.mHash, 0, slotCount);
+		IntMemory.blit(mData, 0, c.mData, 0, capacity * 3);
+		IntMemory.blit(mNext, 0, c.mNext, 0, capacity);
 		#else
-		c._hash = new Vector<Int>(_hash.length);
-		c._data = new Vector<Int>(_data.length);
-		c._next = new Vector<Int>(_next.length);
-		for (i in 0...Std.int(_hash.length)) c._hash[i] = _hash[i];
-		for (i in 0...Std.int(_data.length)) c._data[i] = _data[i];
-		for (i in 0...Std.int(_next.length)) c._next[i] = _next[i];
-		#end
-		#else
-		c._hash = new Array<Int>();
-		ArrayUtil.copy(_hash, c._hash);
-		c._data = new Array<Int>();
-		ArrayUtil.copy(_data, c._data);
-		c._next = new Array<Int>();
-		ArrayUtil.copy(_next, c._next);
-		
+		mHash.blit(0, c.mHash, 0, slotCount);
+		mData.blit(0, c.mData, 0, capacity * 3);
+		mNext.blit(0, c.mNext, 0, capacity);
 		#end
 		
-		c._mask      = _mask;
-		c._capacity   = _capacity;
-		c._free      = _free;
-		c._size      = _size;
-		c._sizeLevel = _sizeLevel;
-		
+		c.mMask = mMask;
+		c.slotCount = slotCount;
+		c.capacity = capacity;
+		c.mFree = mFree;
+		c.mSize = size;
 		return c;
-	}
-	
-	inline function _hashCode(x:Int):Int
-	{
-		return (x * 73856093) & _mask;
-	}
-	
-	function _expand()
-	{
-		_sizeLevel++;
-		
-		var oldSize = _capacity;
-		var newSize = oldSize << 1;
-		_capacity = newSize;
-		
-		#if flash10
-		#if alchemy
-		_next.resize(newSize);
-		_data.resize(newSize * 3);
-		#else
-		var copy = new Vector<Int>(newSize);
-		for (i in 0...oldSize) copy[i] = _next[i];
-		_next = copy;
-		var copy = new Vector<Int>(newSize  * 3);
-		for (i in 0...oldSize * 3) copy[i] = _data[i];
-		_data = copy;
-		#end
-		#else
-		var copy:Array<Int> = ArrayUtil.alloc(newSize);
-		ArrayUtil.copy(_next, copy, 0, oldSize);
-		_next = copy;
-		var copy:Array<Int> = ArrayUtil.alloc(newSize  * 3);
-		ArrayUtil.copy(_data, copy, 0, oldSize * 3);
-		_data = copy;
-		#end
-		
-		for (i in oldSize - 1...newSize - 1) __setNext(i, i + 1);
-		__setNext(newSize - 1, NULL_POINTER);
-		_free = oldSize;
-		
-		var j = (oldSize * 3) + 2;
-		for (i in 0...oldSize)
-		{
-			#if (flash10 && alchemy)
-			var o = _data.getAddr(j - 1);
-			Memory.setI32(o    , VAL_ABSENT);
-			Memory.setI32(o + 4, NULL_POINTER);
-			#else
-			__setData(j - 1, VAL_ABSENT);
-			__setData(j    , NULL_POINTER);
-			#end
-			
-			j += 3;
-		}
-	}
-	
-	function _shrink()
-	{
-		_sizeLevel--;
-		
-		var oldSize = _capacity;
-		var newSize = oldSize >> 1; 
-		_capacity = newSize;
-		
-		#if (flash10 && alchemy)
-		_data.resize((oldSize + (newSize >> 1)) * 3);
-		var offset = oldSize * 3;
-		var e = offset;
-		
-		var dst, src;
-		dst = _data.getAddr(e);
-		
-		for (i in 0...getSlotCount())
-		{
-			var j = __getHash(i);
-			if (j == EMPTY_SLOT) continue;
-			
-			__setHash(i, e - offset);
-			
-			src = _data.getAddr(j);
-			flash.Memory.setI32(dst    , flash.Memory.getI32(src    ));
-			flash.Memory.setI32(dst + 4, flash.Memory.getI32(src + 4));
-			flash.Memory.setI32(dst + 8, NULL_POINTER);
-			dst += 12;
-			
-			e += 3;
-			j = __getData(j + 2);
-			while (j != NULL_POINTER)
-			{
-				src = _data.getAddr(j);
-				flash.Memory.setI32(dst - 4, e - offset);
-				flash.Memory.setI32(dst    , flash.Memory.getI32(src));
-				flash.Memory.setI32(dst + 4, flash.Memory.getI32(src + 4));
-				flash.Memory.setI32(dst + 8, NULL_POINTER);
-				dst += 12;
-				
-				e += 3;
-				j = __getData(j + 2);
-			}
-		}
-		
-		var k = (newSize >> 1) * 3;
-		
-		dst = _data.getAddr(0);
-		src = _data.getAddr(offset);
-		var i = 0;
-		var j = k << 2;
-		while (i < j)
-		{
-			flash.Memory.setI32(dst + i, flash.Memory.getI32(src + i));
-			i += 4;
-		}
-		
-		dst = _data.getAddr(k);
-		k = _data.getAddr(newSize * 3);
-		while (dst < k)
-		{
-			flash.Memory.setI32(dst + 4, VAL_ABSENT);
-			flash.Memory.setI32(dst + 8, NULL_POINTER);
-			dst += 12;
-		}
-		
-		_data.resize(newSize * 3);
-		_next.resize(newSize);
-		#else
-		var k = newSize * 3;
-		#if flash10
-		var tmp = new Vector<Int>(k);
-		_next = new Vector<Int>(newSize);
-		#else
-		var tmp:Array<Int> = ArrayUtil.alloc(k);
-		_next = ArrayUtil.alloc(newSize);
-		#end
-		
-		var e = 0;
-		for (i in 0...getSlotCount())
-		{
-			var j = __getHash(i);
-			if (j == EMPTY_SLOT) continue;
-			
-			__setHash(i, e);
-			
-			tmp[e    ] = __getData(j    );
-			tmp[e + 1] = __getData(j + 1);
-			tmp[e + 2] = NULL_POINTER;
-			
-			e += 3;
-			j = __getData(j + 2);
-			while (j != NULL_POINTER)
-			{
-				tmp[e - 1] = e;
-				tmp[e    ] = __getData(j    );
-				tmp[e + 1] = __getData(j + 1);
-				tmp[e + 2] = NULL_POINTER;
-				
-				e += 3;
-				j = __getData(j + 2);
-			}
-		}
-		var i = k >> 1;
-		while (i < k)
-		{
-			tmp[i + 1] = VAL_ABSENT;
-			tmp[i + 2] = NULL_POINTER;
-			i += 3;
-		}
-		_data = tmp;
-		#end
-		
-		for (i in 0...newSize - 1) __setNext(i, i + 1);
-		__setNext(newSize - 1, NULL_POINTER);
-		_free = newSize >> 1;
-	}
-	
-	inline function __getHash(i:Int)
-	{
-		#if (flash10 && alchemy)
-		return _hash.get(i);
-		//#elseif cpp
-		//return untyped _hash.__unsafe_get(i);
-		#else
-		return _hash[i];
-		#end
-	}
-	inline function __setHash(i:Int, x:Int)
-	{
-		#if (flash10 && alchemy)
-		_hash.set(i, x);
-		//#elseif cpp
-		//untyped _hash.__unsafe_set(i, x);
-		#else
-		_hash[i] = x;
-		#end
-	}
-	
-	inline function __getNext(i:Int)
-	{
-		#if (flash10 && alchemy)
-		return _next.get(i);
-		//#elseif cpp
-		//return untyped _next.__unsafe_get(i);
-		#else
-		return _next[i];
-		#end
-	}
-	inline function __setNext(i:Int, x:Int)
-	{
-		#if (flash10 && alchemy)
-		_next.set(i, x);
-		//#elseif cpp
-		//untyped _next.__unsafe_set(i, x);
-		#else
-		_next[i] = x;
-		#end
-	}
-	
-	inline function __getData(i:Int)
-	{
-		#if (flash10 && alchemy)
-		return _data.get(i);
-		//#elseif cpp
-		//return untyped _data.__unsafe_get(i);
-		#else
-		return _data[i];
-		#end
-	}
-	inline function __setData(i:Int, x:Int)
-	{
-		#if (flash10 && alchemy)
-		_data.set(i, x);
-		//#elseif cpp
-		//untyped _data.__unsafe_set(i, x);
-		#else
-		_data[i] = x;
-		#end
 	}
 }
 
-#if doc
-private
-#end
+@:access(de.polygonal.ds.IntIntHashTable)
+@:dox(hide)
 class IntIntHashTableValIterator implements de.polygonal.ds.Itr<Int>
 {
-	var _f:IntIntHashTableFriend;
-	var _i:Int;
-	var _s:Int;
-	
-	#if flash10
-	#if alchemy
-	var _data:IntMemory;
+	var mObject:IntIntHashTable;
+	var mI:Int;
+	var mS:Int;
+	#if (flash && alchemy)
+	var mData:IntMemory;
 	#else
-	var _data:Vector<Int>;
-	#end
-	#else
-	var _data:Array<Int>;
+	var mData:NativeArray<Int>;
 	#end
 	
-	public function new(hash:IntIntHashTableFriend)
+	public function new(x:IntIntHashTable)
 	{
-		_f = hash;
-		_data = _f._data;
-		_i = 0;
-		_s = _f._capacity;
-		_scan();
+		mObject = x;
+		mData = x.mData;
+		mI = 0;
+		mS = x.capacity;
+		scan();
 	}
 	
-	inline public function reset():Itr<Int>
+	public function free()
 	{
-		_data = _f._data;
-		_i = 0;
-		_s = _f._capacity;
-		_scan();
+		mObject = null;
+		mData = null;
+	}
+	
+	public function reset():Itr<Int>
+	{
+		mData = mObject.mData;
+		mI = 0;
+		mS = mObject.capacity;
+		scan();
 		return this;
 	}
 	
-	inline public function hasNext():Bool
+	public inline function hasNext():Bool
 	{
-		return _i < _s;
+		return mI < mS;
 	}
 	
-	inline public function next():Int
+	public inline function next():Int
 	{
-		var val = __getData((_i++ * 3) + 1);
-		_scan();
+		var val = mData.get((mI++ * 3) + 1);
+		scan();
 		return val;
 	}
 	
-	inline public function remove()
+	public function remove()
 	{
 		throw "unsupported operation";
 	}
 	
-	inline function _scan()
+	function scan()
 	{
-		while ((_i < _s) && (__getData((_i * 3) + 1) == IntIntHashTable.VAL_ABSENT)) _i++;
-	}
-	
-	inline function __getData(i:Int)
-	{
-		#if (flash10 && alchemy)
-		return _data.get(i);
-		//#elseif cpp
-		//return untyped _data.__unsafe_get(i);
-		#else
-		return _data[i];
-		#end
+		while ((mI < mS) && (mData.get((mI * 3) + 1) == IntIntHashTable.VAL_ABSENT)) mI++;
 	}
 }
 
-#if doc
-private
-#end
+@:access(de.polygonal.ds.IntIntHashTable)
+@:dox(hide)
 class IntIntHashTableKeyIterator implements de.polygonal.ds.Itr<Int>
 {
-	var _f:IntIntHashTableFriend;
-	var _i:Int;
-	var _s:Int;
+	var mObject:IntIntHashTable;
+	var mI:Int;
+	var mS:Int;
 	
-	#if flash10
-	#if alchemy
-	var _data:IntMemory;
+	#if (flash && alchemy)
+	var mData:IntMemory;
 	#else
-	var _data:Vector<Int>;
-	#end
-	#else
-	var _data:Array<Int>;
+	var mData:NativeArray<Int>;
 	#end
 	
-	public function new(hash:IntIntHashTableFriend)
+	public function new(x:IntIntHashTable)
 	{
-		_f = hash;
-		_data = _f._data;
-		_i = 0;
-		_s = _f._capacity;
-		_scan();
+		mObject = x;
+		mData = x.mData;
+		mI = 0;
+		mS = x.capacity;
+		scan();
 	}
 	
-	inline public function reset():Itr<Int>
+	public function free()
 	{
-		_data = _f._data;
-		_i = 0;
-		_s = _f._capacity;
-		_scan();
+		mObject = null;
+		mData = null;
+	}
+	
+	public function reset():Itr<Int>
+	{
+		mData = mObject.mData;
+		mI = 0;
+		mS = mObject.capacity;
+		scan();
 		return this;
 	}
 	
-	inline public function hasNext():Bool
+	public inline function hasNext():Bool
 	{
-		return _i < _s;
+		return mI < mS;
 	}
 	
-	inline public function next():Int
+	public inline function next():Int
 	{
-		var key = __getData((_i++ * 3));
-		_scan();
+		var key = mData.get((mI++ * 3));
+		scan();
 		return key;
 	}
 	
-	inline public function remove()
+	public function remove()
 	{
 		throw "unsupported operation";
 	}
 	
-	inline function _scan()
+	function scan()
 	{
-		while ((_i < _s) && (__getData((_i * 3) + 1) == IntIntHashTable.VAL_ABSENT)) _i++;
-	}
-	
-	inline function __getData(i:Int)
-	{
-		#if (flash10 && alchemy)
-		return _data.get(i);
-		//#elseif cpp
-		//return untyped _data.__unsafe_get(i);
-		#else
-		return _data[i];
-		#end
+		while ((mI < mS) && (mData.get((mI * 3) + 1) == IntIntHashTable.VAL_ABSENT)) mI++;
 	}
 }

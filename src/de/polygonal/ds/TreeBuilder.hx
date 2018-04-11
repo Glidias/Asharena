@@ -1,173 +1,140 @@
 ﻿/*
- *                            _/                                                    _/
- *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
- *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *     _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *    _/_/_/      _/_/    _/    _/_/_/    _/_/_/    _/_/    _/    _/    _/_/_/  _/
- *   _/                            _/        _/
- *  _/                        _/_/      _/_/
- *
- * POLYGONAL - A HAXE LIBRARY FOR GAME DEVELOPERS
- * Copyright (c) 2009 Michael Baczynski, http://www.polygonal.de
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+Copyright (c) 2008-2018 Michael Baczynski, http://www.polygonal.de
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 package de.polygonal.ds;
 
-import de.polygonal.ds.error.Assert.assert;
+import de.polygonal.ds.tools.Assert.assert;
 
 /**
- * <p>A helper class for building tree structures.</p>
- * <p>The class manages two pointers: A "vertical" pointer and a "horizontal" pointer.<br/>
- * The vertical pointer moves up and down the tree using the node's <em>parent</em> field, while the horizontal pointer moves left/right over the children using the <em>prev</em> and <em>next</em> fields.</p>
- * <p><o>Worst-case running time in Big O notation</o></p>
- */
+	A helper class for building tree structures
+	
+	The class manages two pointers: A "vertical" pointer and a "horizontal" pointer.
+	
+	The vertical pointer moves up and down the tree using the node's `TreeNode.parent` field, while the horizontal pointer moves left/right over the children using the `TreeNode.prev` and `TreeNode.next` fields.
+**/
 #if generic
 @:generic
 #end
 class TreeBuilder<T>
 {
-	var _node:TreeNode<T>;
-	var _child:TreeNode<T>;
+	var mNode:TreeNode<T>;
+	var mChild:TreeNode<T>;
 	
 	/**
-	 * Creates a <em>TreeBuilder</em> object pointing to <code>node</code>.
-	 * @throws de.polygonal.ds.error.AssertError node is null (debug only).
-	 */
+		Creates a `TreeBuilder` object pointing to `node`.
+	**/
 	public function new(node:TreeNode<T>)
 	{
-		#if debug
 		assert(node != null, "node is null");
-		#end
 		
-		_node = node;
+		mNode = node;
 		childStart();
 	}
 	
 	/**
-	 * Destroys this object by explicitly nullifying all pointers for GC'ing used resources.<br/>
-	 * Improves GC efficiency/performance (optional).
-	 * <o>1</o>
-	 */
+		Destroys this object by explicitly nullifying all pointers for GC'ing used resources.
+		
+		Improves GC efficiency/performance (optional).
+	**/
 	public function free()
 	{
-		_node = _child = null;
+		mNode = mChild = null;
 	}
 	
 	/**
-	 * Returns the data stored in the node that the tree builder is currently pointing at.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError vertical pointer is null (debug only).
-	 */
-	inline public function getVal():T
+		Returns the data stored in the node that the tree builder is currently pointing at.
+	**/
+	public inline function getVal():T
 	{
-		#if debug
 		assert(valid(), "vertical pointer is null");
-		#end
 		
-		return _node.val;
+		return mNode.val;
 	}
 	
 	/**
-	 * Stores the element <code>x</code> in the node that the tree builder is currently pointing at.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError vertical pointer is null (debug only).
-	 */
-	inline public function setVal(x:T)
+		Stores `val` in the node that the tree builder is currently pointing at.
+	**/
+	public inline function setVal(val:T):TreeBuilder<T>
 	{
-		#if debug
 		assert(valid(), "vertical pointer is null");
-		#end
 		
-		_node.val = x;
+		mNode.val = val;
+		return this;
 	}
 	
 	/**
-	 * Returns the node that the tree builder is currently pointing at or null if invalid.
-	 * <o>1</o>
-	 */
-	inline public function getNode():TreeNode<T>
+		Returns the node that the tree builder is currently pointing at or null if invalid.
+	**/
+	public inline function getNode():TreeNode<T>
 	{
-		return _node;
+		return mNode;
 	}
 	
 	/**
-	 * Returns the child node that the tree builder is currently pointing at or null if invalid.
-	 * <o>1</o>
-	 */
-	inline public function getChildNode():TreeNode<T>
+		Returns the child node that the tree builder is currently pointing at or null if invalid.
+	**/
+	public inline function getChildNode():TreeNode<T>
 	{
-		return _child;
+		return mChild;
 	}
 	
 	/**
-	 * Returns the data of the child pointer.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError invalid child pointer (debug only).
-	 */
-	inline public function getChildVal():T
+		Returns the data of the child pointer.
+	**/
+	public inline function getChildVal():T
 	{
-		#if debug
 		assert(childValid(), "invalid child node");
-		#end
 		
-		return _child.val;
+		return mChild.val;
 	}
 	
 	/**
-	 * Returns true if the vertical pointer is valid.
-	 * <o>1</o>
-	 */
-	inline public function valid():Bool
+		Returns true if the vertical pointer is valid.
+	**/
+	public inline function valid():Bool
 	{
-		return _node != null;
+		return mNode != null;
 	}
 	
 	/**
-	 * Moves the vertical pointer to the root of the tree.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError invalid pointer (debug only).
-	 */
-	inline public function root()
+		Moves the vertical pointer to the root of the tree.
+	**/
+	public function root():TreeBuilder<T>
 	{
-		#if debug
 		assert(valid(), "invalid vertical pointer");
-		#end
 		
-		while (_node.hasParent()) _node = _node.parent;
-		_reset();
+		while (mNode.hasParent()) mNode = mNode.parent;
+		reset();
+		return this;
 	}
 	
 	/**
-	 * Moves the vertical pointer one level up.
-	 * <o>1</o>
-	 * @return true if the vertical pointer was updated or false if the node has no parent.
-	 */
-	inline public function up():Bool
+		Moves the vertical pointer one level up.
+		@return true if the vertical pointer was updated or false if the node has no parent.
+	**/
+	public inline function up():Bool
 	{
-		#if debug
 		assert(valid(), "invalid vertical pointer");
-		#end
 		
-		if (_node.hasParent())
+		if (mNode.hasParent())
 		{
-			_node = _node.parent;
-			_reset();
+			mNode = mNode.parent;
+			reset();
 			return true;
 		}
 		else
@@ -175,20 +142,17 @@ class TreeBuilder<T>
 	}
 	
 	/**
-	 * Moves the vertical pointer one level down, so it points to the first child.
-	 * <o>1</o>
-	 * @return true if the vertical pointer was updated or false if the node has no children.
-	 */
-	inline public function down():Bool
+		Moves the vertical pointer one level down, so it points to the first child.
+		@return true if the vertical pointer was updated or false if the node has no children.
+	**/
+	public inline function down():Bool
 	{
-		#if debug
 		assert(childValid(), "node has no children");
-		#end
 		
-		if (_child != null)
+		if (mChild != null)
 		{
-			_node = _child;
-			_reset();
+			mNode = mChild;
+			reset();
 			return true;
 		}
 		else
@@ -196,33 +160,30 @@ class TreeBuilder<T>
 	}
 	
 	/**
-	 * Returns true if the horizonal pointer has a next child.
-	 * <o>1</o>
-	 */
-	inline public function hasNextChild():Bool
+		Returns true if the horizontal pointer has a next child.
+	**/
+	public inline function hasNextChild():Bool
 	{
-		return childValid() && _child.next != null;
+		return childValid() && mChild.next != null;
 	}
 	
 	/**
-	 * Returns true if the horizonal pointer has a previous child.
-	 * <o>1</o>
-	 */
-	inline public function hasPrevChild():Bool
+		Returns true if the horizontal pointer has a previous child.
+	**/
+	public inline function hasPrevChild():Bool
 	{
-		return childValid() && _child.prev != null;
+		return childValid() && mChild.prev != null;
 	}
 	
 	/**
-	 * Moves the horizontal pointer to the next child.
-	 * <o>1</o>
-	 * @return true if the horizontal pointer was updated or false if there is no next child.
-	 */
-	inline public function nextChild():Bool
+		Moves the horizontal pointer to the next child.
+		@return true if the horizontal pointer was updated or false if there is no next child.
+	**/
+	public inline function nextChild():Bool
 	{
 		if (hasNextChild())
 		{
-			_child = _child.next;
+			mChild = mChild.next;
 			return true;
 		}
 		else
@@ -230,15 +191,14 @@ class TreeBuilder<T>
 	}
 	
 	/**
-	 * Moves the horizontal pointer to the previous child.
-	 * <o>1</o>
-	 * @return true if the horizontal pointer was updated or false if there is no previous child.
-	 */
-	inline public function prevChild():Bool
+		Moves the horizontal pointer to the previous child.
+		@return true if the horizontal pointer was updated or false if there is no previous child.
+	**/
+	public inline function prevChild():Bool
 	{
 		if (hasPrevChild())
 		{
-			_child = _child.prev;
+			mChild = mChild.prev;
 			return true;
 		}
 		else
@@ -246,15 +206,14 @@ class TreeBuilder<T>
 	}
 	
 	/**
-	 * Moves the horizontal pointer to the first child of the node referenced by the vertical pointer.
-	 * <o>1</o>
-	 * @return true if the horizontal pointer was updated or false if there are no children.
-	 */
-	inline public function childStart():Bool
+		Moves the horizontal pointer to the first child of the node referenced by the vertical pointer.
+		@return true if the horizontal pointer was updated or false if there are no children.
+	**/
+	public inline function childStart():Bool
 	{
 		if (valid())
 		{
-			_child = _node.children;
+			mChild = mNode.children;
 			return true;
 		}
 		else
@@ -262,15 +221,14 @@ class TreeBuilder<T>
 	}
 	
 	/**
-	 * Moves the horizontal pointer to the first child of the node referenced by the vertical pointer.
-	 * <o>1</o>
-	 * @return true if the horizontal pointer was updated or false if there are no children.
-	 */
-	inline public function childEnd():Bool
+		Moves the horizontal pointer to the first child of the node referenced by the vertical pointer.
+		@return true if the horizontal pointer was updated or false if there are no children.
+	**/
+	public inline function childEnd():Bool
 	{
 		if (childValid())
 		{
-			_child = _node.getLastChild();
+			mChild = mNode.getLastChild();
 			return true;
 		}
 		else
@@ -278,129 +236,109 @@ class TreeBuilder<T>
 	}
 	
 	/**
-	 * Returns true if the horizontal pointer is valid. 
-	 * <o>1</o>
-	 */
-	inline public function childValid():Bool
+		Returns true if the horizontal pointer is valid.
+	**/
+	public inline function childValid():Bool
 	{
-		return _child != null;
+		return mChild != null;
 	}
 	
 	/**
-	 * Appends a child node storing <code>x</code> to the children of the vertical pointer.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError invalid vertical pointer (debug only).
-	 */
-	inline public function appendChild(x:T):TreeNode<T>
+		Appends a child node storing `val` to the children of the vertical pointer.
+	**/
+	public function appendChild(val:T):TreeNode<T>
 	{
-		#if debug
 		assert(valid(), "invalid vertical pointer");
-		#end
 		
-		_child = _createChildNode(x, true);
-		return _child;
+		mChild = createChildNode(val, true);
+		return mChild;
 	}
 	
 	/**
-	 * Prepends a child node storing <code>x</code> to the children of the vertical pointer.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError invalid vertical pointer (debug only).
-	 */
-	inline public function prependChild(x:T):TreeNode<T>
+		Prepends a child node storing `val` to the children of the vertical pointer.
+	**/
+	public function prependChild(val:T):TreeNode<T>
 	{
-		#if debug
 		assert(valid(), "invalid vertical pointer");
-		#end
 		
-		var childNode = _createChildNode(x, false);
+		var childNode = createChildNode(val, false);
 		if (childValid())
 		{
-			childNode.next = _node.children;
-			_node.children.prev = childNode;
-			_node.children = childNode;
+			childNode.next = mNode.children;
+			mNode.children.prev = childNode;
+			mNode.children = childNode;
 		}
 		else
-			_node.children = childNode;
-		_child = childNode;
+			mNode.children = childNode;
+		mChild = childNode;
 		return childNode;
 	}
 	
 	/**
-	 * Prepends a child node storing <code>x</code> to the child node referenced by the horizontal pointer.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError invalid vertical pointer (debug only).
-	 */
-	inline public function insertBeforeChild(x:T):TreeNode<T>
+		Prepends a child node storing `val` to the child node referenced by the horizontal pointer.
+	**/
+	public function insertBeforeChild(val:T):TreeNode<T>
 	{
-		#if debug
 		assert(valid(), "invalid vertical pointer");
-		#end
 		
 		if (childValid())
 		{
-			var childNode = _createChildNode(x, false);
+			var childNode = createChildNode(val, false);
 			
-			childNode.next = _child;
-			childNode.prev = _child.prev;
+			childNode.next = mChild;
+			childNode.prev = mChild.prev;
 			
-			if (_child.hasPrevSibling())
-				_child.prev.next = childNode;
+			if (mChild.hasPrevSibling())
+				mChild.prev.next = childNode;
 			
-			_child.prev = childNode;
-			_child = childNode;
-			
+			mChild.prev = childNode;
+			mChild = childNode;
 			return childNode;
 		}
 		else
-			return appendChild(x);
+			return appendChild(val);
 	}
 	
 	/**
-	 * Appends a child node storing <code>x</code> to the node referenced by the vertical pointer.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError invalid vertical pointer (debug only).
-	 */
-	inline public function insertAfterChild(x:T):TreeNode<T>
+		Appends a child node storing `val` to the node referenced by the vertical pointer.
+	**/
+	public function insertAfterChild(val:T):TreeNode<T>
 	{
-		#if debug
 		assert(valid(), "invalid vertical pointer");
-		#end
 		
 		if (childValid())
 		{
-			var childNode = _createChildNode(x, false);
+			var childNode = createChildNode(val, false);
 			
-			childNode.prev = _child;
-			childNode.next = _child.next;
+			childNode.prev = mChild;
+			childNode.next = mChild.next;
 			
-			if (_child.hasNextSibling())
-				_child.next.prev = childNode;
+			if (mChild.hasNextSibling())
+				mChild.next.prev = childNode;
 			
-			_child.next = childNode;
-			_child = childNode;
-			
+			mChild.next = childNode;
+			mChild = childNode;
 			return childNode;
 		}
 		else
-			return appendChild(x);
+			return appendChild(val);
 	}
 	
 	/**
-	 * Removes the child node referenced by the horizontal pointer and moves the horizontal pointer to the next child.
-	 * <o>1</o>
-	 * @return true if the child node was successfully removed.
-	 */
-	inline public function removeChild():Bool
+		Removes the child node referenced by the horizontal pointer and moves the horizontal pointer to the next child.
+		@return true if the child node was successfully removed.
+	**/
+	public function removeChild():Bool
 	{
 		if (valid() && childValid())
 		{
-			_child.parent = null;
+			mChild.parent = null;
 			
-			var node = _child;
-			_child = node.next;
+			var node = mChild;
+			mChild = node.next;
 			
-			if (_node.children == node)
-				_node.children = _child;
+			if (mNode.children == node)
+				mNode.children = mChild;
 			
 			if (node.hasPrevSibling()) node.prev.next = node.next;
 			if (node.hasNextSibling()) node.next.prev = node.prev;
@@ -412,31 +350,33 @@ class TreeBuilder<T>
 	}
 	
 	/**
-	 * Returns a string representing the current object. 
-	 */
+		Prints out all elements.
+	**/
+	#if !no_tostring
 	public function toString():String
 	{
-		return "{ TreeBuilder V: " + (valid() ? _node.val : cast null) + ", H: " + (childValid() ? _child.val : cast null) + " }";
+		return "{ TreeBuilder V: " + (valid() ? mNode.val : cast null) + ", H: " + (childValid() ? mChild.val : cast null) + " }";
 	}
+	#end
 	
-	inline function _reset()
+	function reset()
 	{
-		if (valid()) _child = _node.children;
+		if (valid()) mChild = mNode.children;
 	}
 	
-	inline function _createChildNode(x:T, append:Bool)
+	function createChildNode(x:T, append:Bool)
 	{
 		if (append)
-			return new TreeNode<T>(x, _node);
+			return new TreeNode<T>(x, mNode);
 		else
 		{
 			var node = new TreeNode<T>(x);
-			node.parent = _node;
+			node.parent = mNode;
 			return node;
 		}
 	}
 	
-	inline function _getTail(node:TreeNode<T>):TreeNode<T>
+	function getTail(node:TreeNode<T>):TreeNode<T>
 	{
 		var tail = node;
 		while (tail.hasNextSibling()) tail.next;

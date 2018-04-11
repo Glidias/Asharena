@@ -1,212 +1,241 @@
 ﻿/*
- *                            _/                                                    _/
- *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
- *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *     _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *    _/_/_/      _/_/    _/    _/_/_/    _/_/_/    _/_/    _/    _/    _/_/_/  _/
- *   _/                            _/        _/
- *  _/                        _/_/      _/_/
- *
- * POLYGONAL - A HAXE LIBRARY FOR GAME DEVELOPERS
- * Copyright (c) 2009 Michael Baczynski, http://www.polygonal.de
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+Copyright (c) 2008-2018 Michael Baczynski, http://www.polygonal.de
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 package de.polygonal.ds;
 
-import de.polygonal.ds.error.Assert.assert;
+import de.polygonal.ds.tools.ArrayTools;
+import de.polygonal.ds.tools.Assert.assert;
+import de.polygonal.ds.tools.MathTools;
+
+using de.polygonal.ds.tools.NativeArrayTools;
 
 /**
- * <p>A binary tree.</p>
- * <p>A tree data structure in which each node has at most two child nodes.</p>
- * <p><o>Worst-case running time in Big O notation</o></p>
- */
+	A binary tree
+	
+	A tree data structure in which each node has at most two child nodes.
+	
+	Example:
+		var o = new de.polygonal.ds.BinaryTreeNode<Int>(0);
+		o.setLeft(1);
+		o.setRight(2);
+		o.left.setLeft(3);
+		o.left.left.setRight(4);
+		trace(o); //outputs:
+		
+		[ BinaryTree val=0 size=5 depth=0 height=4
+		  0
+		  L---1
+		  |   L---3
+		  |   |   R---4
+		  R---2
+		]
+**/
 #if generic
 @:generic
 #end
 class BinaryTreeNode<T> implements Collection<T>
 {
 	/**
-	 * A unique identifier for this object.<br/>
-	 * A hash table transforms this key into an index of an array element by using a hash function.<br/>
-	 * <warn>This value should never be changed by the user.</warn>
-	 */
-	public var key:Int;
+		A unique identifier for this object.
+		
+		A hash table transforms this key into an index of an array element by using a hash function.
+	**/
+	public var key(default, null):Int = HashKey.next();
 	
 	/**
-	 * The node's data.
-	 */
+		The node's data.
+	**/
 	public var val:T;
 	
 	/**
-	 * The parent node or null if this node has no parent.
-	 */
-	public var p:BinaryTreeNode<T>;
+		The parent node or null if this node has no parent.
+	**/
+	public var parent:BinaryTreeNode<T>;
 	
 	/**
-	 * The left child node or null if this node has no left child.
-	 */
-	public var l:BinaryTreeNode<T>;
+		The left child node or null if this node has no left child.
+	**/
+	public var left:BinaryTreeNode<T>;
 	
 	/**
-	 * The right child node or null if this node has no right child.
-	 */
-	public var r:BinaryTreeNode<T>;
+		The right child node or null if this node has no right child.
+	**/
+	public var right:BinaryTreeNode<T>;
 	
-	var _timestamp:Int;
+	var mTimestamp:Int = 0;
+	var mStack:NativeArray<BinaryTreeNode<T>> = null;
 	
 	#if debug
-	var _busy:Bool;
+	var mBusy:Bool;
 	#end
 	
 	/**
-	 * Creates a new <em>BinaryTreeNode</em> object storing the element <code>x</code>.
-	 */
-	public function new(x:T)
+		Creates a new `BinaryTreeNode` object storing `val`.
+	**/
+	public function new(val:T)
 	{
-		this.val = x;
-		p = l = r = null;
+		this.val = val;
+		parent = left = right = null;
 		
 		#if debug
-		_busy = false;
+		mBusy = false;
 		#end
-		
-		_timestamp = 0;
-		key = HashKey.next();
 	}
 	
 	/**
-	 * Performs a recursive preorder traversal.<br/>
-	 * A preorder traversal performs the following steps:<br/>
-	 * <ul>
-	 * <li>Visit the node.</li>
-	 * <li>Traverse the left subtree of the node.</li>
-	 * <li>Traverse the right subtree of the node.</li>
-	 * </ul>
-	 * <o>n</o>
-	 * @param process a function that is invoked on every traversed node.<br/>
-	 * If omitted, element.<em>visit()</em> is used instead. <warn>In this case all elements have to implement <em>Visitable</em>.</warn><br/>
-	 * The first argument holds a reference to the current node, while the second argument stores custom data specified by the userData parameter (default is null).<br/>
-	 * Once <code>process</code> returns false, the traversal stops immediately and no further nodes are examined.<br/>
-	 * @param iterative if true, an iterative traversal is used (default traversal style is recursive).
-	 * @param userData custom data that is passed to every visited node via <code>process</code> or element.<em>visit()</em>. If omitted, null is used.
-	 */
-	public function preorder(process:BinaryTreeNode<T>->Dynamic->Bool = null, iterative = false, userData:Dynamic = null)
+		Performs a recursive _preorder_ traversal.
+		
+		A preorder traversal performs the following steps:
+		
+		1. Visit the node
+		2. Traverse the left subtree of the node
+		3. Traverse the right subtree of the node
+		
+		@param process a function that is invoked on every traversed node.
+		If omitted, `element.visit()` is used instead.
+		<br/>_In this case all elements have to implement `Visitable`._
+		<br/>The first argument holds a reference to the current node, while the second argument stores custom data specified by the `userData` parameter (default is null).
+		Once `process` returns false, the traversal stops immediately and no further nodes are examined.
+		@param iterative if true, an iterative traversal is used (default traversal style is recursive).
+		@param userData custom data that is passed to every visited node via `process` or `element.visit()`. If omitted, null is used.
+	**/
+	public function preorder(process:BinaryTreeNode<T>->Dynamic->Bool = null, iterative:Bool = false, userData:Dynamic = null)
 	{
 		if (iterative == false)
 		{
 			if (process == null)
 			{
-				var v:Dynamic = val;
+				var v:Visitable = cast val;
 				var run = v.visit(false, userData);
-				if (run && hasL()) run = _preorderRecursiveVisitable(l, userData);
-				if (run && hasR()) _preorderRecursiveVisitable(r, userData);
+				if (run && hasLeft()) run = preorderRecursiveVisitable(left, userData);
+				if (run && hasRight()) preorderRecursiveVisitable(right, userData);
 			}
 			else
 			{
 				var run = process(this, userData);
-				if (run && hasL()) run = _preorderRecursive(l, process, userData);
-				if (run && hasR()) _preorderRecursive(r, process, userData);
+				if (run && hasLeft()) run = preorderRecursive(left, process, userData);
+				if (run && hasRight()) preorderRecursive(right, process, userData);
 			}
 		}
 		else
 		{
-			var stack = new Array<BinaryTreeNode<T>>();
-			
+			var s = getStack();
 			var top = 0;
-			stack[top++] = this;
+			var max = NativeArrayTools.size(s);
+			
+			inline function pop() return s.get(--top);
+			inline function push(x) s.set(top++, x);
+			inline function reserve(n)
+				if (n > max)
+					s = resizeStack(max <<= 1);
+			
+			push(this);
 			
 			if (process == null)
 			{
+				var node, v:Dynamic;
 				while (top != 0)
 				{
-					var node = stack[--top];
-					var v:Dynamic = node.val;
-					if (!v.visit(false, userData))
-						return;
-					if (node.hasR())
-						stack[top++] = node.r;
-					if (node.hasL())
-						stack[top++] = node.l;
+					node = pop();
+					v = node.val;
+					if (!v.visit(false, userData)) return;
+					
+					reserve(top + 2);
+					
+					if (node.hasRight())
+						s.set(top++, node.right);
+					if (node.hasLeft())
+						s.set(top++, node.left);
 				}
 			}
 			else
 			{
+				var node;
 				while (top != 0)
 				{
-					var node = stack[--top];
-					if (!process(node, userData))
-						return;
-					if (node.hasR())
-						stack[top++] = node.r;
-					if (node.hasL())
-						stack[top++] = node.l;
+					node = pop();
+					if (!process(node, userData)) return;
+					
+					reserve(top + 2);
+					
+					if (node.hasRight())
+						push(node.right);
+					if (node.hasLeft())
+						push(node.left);
 				}
 			}
 		}
 	}
 	
 	/**
-	 * Performs a recursive inorder traversal.<br/>
-	 * An inorder traversal performs the following steps:<br/>
-	 * <ul>
-	 * <li>Traverse the left subtree of the node.</li>
-	 * <li>Visit the node.</li>
-	 * <li>Traverse the right subtree of the node.</li>
-	 * </ul>
-	 * <o>n</o>
-	 * @param process a function that is invoked on every traversed node.<br/>
-	 * If omitted, element.<em>visit()</em> is used instead. <warn>In this case all elements have to implement <em>Visitable</em>.</warn><br/>
-	 * The first argument holds a reference to the current node, while the second argument stores custom data specified by the userData parameter (default is null).<br/>
-	 * Once <code>process</code> returns false, the traversal stops immediately and no further nodes are examined.<br/>
-	 * @param iterative if true, an iterative traversal is used (default traversal style is recursive).
-	 * @param userData custom data that is passed to every visited node via <code>process</code> or element.<em>visit()</em>. If omitted, null is used.
-	 */
-	public function inorder(process:BinaryTreeNode<T>->Dynamic->Bool = null, iterative = false, userData:Dynamic = null)
+		Performs a recursive _inorder_ traversal.
+		
+		An inorder traversal performs the following steps:
+		
+		1. Traverse the left subtree of the node
+		2. Visit the node
+		3. Traverse the right subtree of the node
+		
+		@param process a function that is invoked on every traversed node.
+		If omitted, `element.visit()` is used instead.
+		<br/>_In this case all elements have to implement `Visitable`._
+		<br/>The first argument holds a reference to the current node, while the second argument stores custom data specified by the userData parameter (default is null).
+		Once `process` returns false, the traversal stops immediately and no further nodes are examined.
+		@param iterative if true, an iterative traversal is used (default traversal style is recursive).
+		@param userData custom data that is passed to every visited node via `process` or `element.visit()`. If omitted, null is used.
+	**/
+	public function inorder(process:BinaryTreeNode<T>->Dynamic->Bool = null, iterative:Bool = false, userData:Dynamic = null)
 	{
 		if (iterative == false)
 		{
 			if (process == null)
 			{
-				if (hasL())
-					if (!_inorderRecursiveVisitable(l, userData))
+				if (hasLeft())
+					if (!inorderRecursiveVisitable(left, userData))
 						return;
 				
-				var v:Dynamic = val;
+				var v:Visitable = cast val;
 				if (!v.visit(false, userData)) return;
-				if (hasR())
-					_inorderRecursiveVisitable(r, userData);
+				if (hasRight())
+					inorderRecursiveVisitable(right, userData);
 			}
 			else
 			{
-				if (hasL())
-					if (!_inorderRecursive(l, process, userData))
+				if (hasLeft())
+					if (!inorderRecursive(left, process, userData))
 						return;
 				if (!process(this, userData)) return;
-				if (hasR())
-					_inorderRecursive(r, process, userData);
+				if (hasRight())
+					inorderRecursive(right, process, userData);
 			}
 		}
 		else
 		{
-			var stack = new Array<BinaryTreeNode<T>>();
-			
+			var s = getStack();
 			var top = 0;
+			var max = NativeArrayTools.size(s);
+			
+			inline function pop() return s.get(--top);
+			inline function push(x) s.set(top++, x);
+			inline function reserve(n)
+				if (n > max)
+					s = resizeStack(max <<= 1);
+			
 			var node = this;
 			
 			if (process == null)
@@ -215,25 +244,25 @@ class BinaryTreeNode<T> implements Collection<T>
 				{
 					while (node != null)
 					{
-						if (node.r != null)
-							stack[top++] = node.r;
-						stack[top++] = node;
-						node = node.l;
+						reserve(top + 2);
+						if (node.right != null)
+							push(node.right);
+						push(node);
+						node = node.left;
 					}
 					
-					node = stack[--top];
-					while (top != 0 && node.r == null)
+					var v:Dynamic;
+					node = pop();
+					while (top != 0 && node.right == null)
 					{
-						var v:Dynamic = node.val;
-						if (!v.visit(false, userData))
-							return;
-						node = stack[--top];
+						v = node.val;
+						if (!v.visit(false, userData)) return;
+						node = pop();
 					}
 					
-					var v:Dynamic = node.val;
-					if (!v.visit(false, userData))
-						return;
-					node = (top != 0) ? stack[--top] : null;
+					v = node.val;
+					if (!v.visit(false, userData)) return;
+					node = (top != 0) ? pop() : null;
 				}
 			}
 			else
@@ -242,67 +271,67 @@ class BinaryTreeNode<T> implements Collection<T>
 				{
 					while (node != null)
 					{
-						if (node.r != null)
-							stack[top++] = node.r;
-						stack[top++] = node;
-						node = node.l;
+						reserve(top + 2);
+						if (node.right != null)
+							push(node.right);
+						push(node);
+						node = node.left;
 					}
 					
-					node = stack[--top];
-					while (top != 0 && node.r == null)
+					node = pop();
+					while (top != 0 && node.right == null)
 					{
-						if (!process(node, userData))
-							return;
-						node = stack[--top];
+						if (!process(node, userData)) return;
+						node = pop();
 					}
 					
-					if (!process(node, userData))
-						return;
-					node = (top != 0) ? stack[--top] : null;
+					if (!process(node, userData)) return;
+					node = (top != 0) ? pop() : null;
 				}
 			}
 		}
 	}
 	
 	/**
-	 * Performs a recursive postorder traversal.<br/>
-	 * A postorder traversal performs the following steps:<br/>
-	 * <ul>
-	 * <li>Traverse the left subtree of the node.</li>
-	 * <li>Traverse the right subtree of the node.</li>
-	 * <li>Visit the node.</li>
-	 * </ul>
-	 * <o>n</o>
-	 * @param process a function that is invoked on every traversed node.<br/>
-	 * If omitted, element.<em>visit()</em> is used instead. <warn>In this case all elements have to implement <em>Visitable</em>.</warn><br/>
-	 * The first argument holds a reference to the current node, while the second argument stores custom data specified by the userData parameter (default is null).<br/>
-	 * Once <code>process</code> returns false, the traversal stops immediately and no further nodes are examined.<br/>
-	 * @param iterative if true, an iterative traversal is used (default traversal style is recursive).
-	 * @param userData custom data that is passed to every visited node via <code>process</code> or element.<em>visit()</em>. If omitted, null is used.
-	 */
-	public function postorder(process:BinaryTreeNode<T>->Dynamic->Bool = null, iterative = false, userData:Dynamic = null)
+		Performs a recursive _postorder_ traversal.
+		
+		A postorder traversal performs the following steps:
+		
+		1. Traverse the left subtree of the node
+		2. Traverse the right subtree of the node
+		3. Visit the node
+		
+		@param process a function that is invoked on every traversed node.
+		If omitted, `element.visit()` is used instead.
+		<br/>_In this case all elements have to implement `Visitable`._
+		<br/>The first argument holds a reference to the current node, while the second argument stores custom data specified by the userData parameter (default is null).
+		Once `process` returns false, the traversal stops immediately and no further nodes are examined.
+		@param iterative if true, an iterative traversal is used (default traversal style is recursive).
+		@param userData custom data that is passed to every visited node via `process` or `element.visit()`. If omitted, null is used.
+	**/
+	public function postorder(process:BinaryTreeNode<T>->Dynamic->Bool = null, iterative:Bool = false, userData:Dynamic = null)
 	{
 		if (iterative == false)
 		{
 			if (process == null)
 			{
-				if (hasL())
-					if (!_postorderRecursiveVisitable(l, userData))
+				if (hasLeft())
+					if (!postorderRecursiveVisitable(left, userData))
 						return;
-				if (hasR())
-					if (!_postorderRecursiveVisitable(r, userData))
+				if (hasRight())
+					if (!postorderRecursiveVisitable(right, userData))
 						return;
 				
-				var v:Dynamic = val;
+				var v:Visitable = cast val;
 				v.visit(false, userData);
 			}
 			else
 			{
-				if (hasL())
-					if (!_postorderRecursive(l, process, userData))
+				if (hasLeft())
+					if (!postorderRecursive(left, process, userData))
 						return;
-				if (hasR())
-					if (!_postorderRecursive(r, process, userData))
+				if (hasRight())
+					if (!postorderRecursive(right, process, userData))
 						return;
 				process(this, userData);
 			}
@@ -310,39 +339,48 @@ class BinaryTreeNode<T> implements Collection<T>
 		else
 		{
 			#if debug
-			assert(_busy == false, "recursive call to iterative postorder");
-			_busy = true;
+			assert(mBusy == false, "recursive call to iterative postorder");
+			mBusy = true;
 			#end
 			
-			var time = _timestamp + 1;
-			var stack = new Array<BinaryTreeNode<T>>();
-			
+			var s = getStack();
 			var top = 0;
-			stack[top++] = this;
+			var max = NativeArrayTools.size(s);
+			
+			inline function push(x) s.set(top++, x);
+			inline function reserve(n)
+				if (n > max)
+					s = resizeStack(max <<= 1);
+			
+			var time = mTimestamp + 1;
+			
+			push(this);
 			
 			if (process == null)
 			{
-				var v:Dynamic = null;
+				var node, v:Visitable;
 				while (top != 0)
 				{
-					var node = stack[top - 1];
-					if ((node.l != null) && (node.l._timestamp < time))
-						stack[top++] = node.l;
+					reserve(top + 1);
+					
+					node = s.get(top - 1);
+					if ((node.left != null) && (node.left.mTimestamp < time))
+						push(node.left);
 					else
 					{
-						if ((node.r != null) && (node.r._timestamp < time))
-							stack[top++] = node.r;
+						if ((node.right != null) && (node.right.mTimestamp < time))
+							push(node.right);
 						else
 						{
-							v = node.val;
+							v = cast node.val;
 							if (!v.visit(false, userData))
 							{
 								#if debug
-								_busy = false;
+								mBusy = false;
 								#end
 								return;
 							}
-							node._timestamp++;
+							node.mTimestamp++;
 							top--;
 						}
 					}
@@ -350,25 +388,28 @@ class BinaryTreeNode<T> implements Collection<T>
 			}
 			else
 			{
+				var node;
 				while (top != 0)
 				{
-					var node = stack[top - 1];
-					if ((node.l != null) && (node.l._timestamp < time))
-						stack[top++] = node.l;
+					reserve(top + 1);
+					
+					node = s.get(top - 1);
+					if ((node.left != null) && (node.left.mTimestamp < time))
+						push(node.left);
 					else
 					{
-						if ((node.r != null) && (node.r._timestamp < time))
-							stack[top++] = node.r;
+						if ((node.right != null) && (node.right.mTimestamp < time))
+							push(node.right);
 						else
 						{
 							if (!process(node, userData))
 							{
 								#if debug
-								_busy = false;
+								mBusy = false;
 								#end
 								return;
 							}
-							node._timestamp++;
+							node.mTimestamp++;
 							top--;
 						}
 					}
@@ -376,285 +417,314 @@ class BinaryTreeNode<T> implements Collection<T>
 			}
 			
 			#if debug
-			_busy = false;
+			mBusy = false;
 			#end
 		}
 	}
 	
 	/**
-	 * Returns true if this node has a left child node.
-	 * <o>1</o>
-	 */
-	inline public function hasL():Bool
+		Returns true if this node has a left child node.
+	**/
+	@:extern public inline function hasLeft():Bool
 	{
-		return l != null;
+		return left != null;
 	}
 	
 	/**
-	 * Adds a left child node storing the element <code>x</code>.<br/>
-	 * If a left child exists, only the element is updated to <code>x</code>.
-	 * <o>1</o>
-	 */
-	inline public function setL(x:T)
+		Adds a left child node storing `val`.
+		
+		If a left child exists, only the element is updated to `val`.
+	**/
+	public inline function setLeft(val:T):BinaryTreeNode<T>
 	{
-		if (l == null)
+		if (left == null)
 		{
-			l = new BinaryTreeNode<T>(x);
-			l.p = this;
+			left = new BinaryTreeNode<T>(val);
+			left.parent = this;
 		}
 		else
-			l.val = x;
+			left.val = val;
+		return this;
 	}
 	
 	/**
-	 * Returns true if this node has a right child node.
-	 * <o>1</o>
-	 */
-	inline public function hasR():Bool
+		Returns true if this node has a right child node.
+	**/
+	@:extern public inline function hasRight():Bool
 	{
-		return r != null;
+		return right != null;
 	}
 	
 	/**
-	 * Adds a right child node storing the element <code>x</code>.<br/>
-	 * If a right child exists, only the element is updated to <code>x</code>.
-	 * <o>1</o>
-	 */
-	inline public function setR(x:T)
+		Adds a right child node storing `val`.
+		
+		If a right child exists, only the element is updated to `val`.
+	**/
+	public inline function setRight(val:T):BinaryTreeNode<T>
 	{
-		if (r == null)
+		if (right == null)
 		{
-			r = new BinaryTreeNode<T>(x);
-			r.p = this;
+			right = new BinaryTreeNode<T>(val);
+			right.parent = this;
 		}
 		else
-			r.val = x;
+			right.val = val;
+		return this;
 	}
 	
 	/**
-	 * Returns true if this node is a left child as seen from its parent node.
-	 * <o>1</o>
-	 */
-	inline public function isL():Bool
+		Returns true if this node is a left child as seen from its parent node.
+	**/
+	@:extern public inline function isLeft():Bool
 	{
-		if (p == null)
+		if (parent == null)
 			return false;
 		else
-			return p.l == this;
+			return parent.left == this;
 	}
 	
 	/**
-	 * Returns true if this node is a right child as seen from its parent node.
-	 * <o>1</o>
-	 */
-	inline public function isR():Bool
+		Returns true if this node is a right child as seen from its parent node.
+	**/
+	@:extern public inline function isRight():Bool
 	{
-		if (p == null)
+		if (parent == null)
 			return false;
 		else
-			return p.r == this;
+			return parent.right == this;
 	}
 	
 	/**
-	 * Returns true if this node is a root node (<em>p</em> is null).
-	 * <o>1</o>
-	 */
-	inline public function isRoot():Bool
+		Returns true if this node is a leaf node (`this.left` and `this.right` are both null).
+	**/
+	@:extern public inline function isLeaf():Bool
 	{
-		return p == null;
+		return left == null && right == null;
 	}
 	
 	/**
-	 * Calculates the depth of this node.<br/>
-	 * The depth is defined as the length of the path from the root node to this node.<br/>
-	 * The root node is at depth 0.
-	 * <o>n</o>
-	 */
-	inline public function depth():Int
+		Returns true if this node is a root node (`this.parent` is null).
+	**/
+	@:extern public inline function isRoot():Bool
 	{
-		var node = p;
+		return parent == null;
+	}
+	
+	/**
+		Calculates the depth of this node.
+		
+		The depth is defined as the length of the path from the root node to this node.
+		
+		The root node is at depth 0.
+	**/
+	public inline function depth():Int
+	{
+		var node = parent;
 		var c = 0;
 		while (node != null)
 		{
-			node = node.p;
+			node = node.parent;
 			c++;
 		}
 		return c;
 	}
 	
 	/**
-	 * Computes the height of this sub tree.<br/>
-	 * The height is defined as the path from the root node to the deepest node in a tree.<br/>
-	 * A tree with only a root node has a height of one.
-	 * <o>n</o>
-	 */
+		Computes the height of this subtree.
+		
+		The height is defined as the path from the root node to the deepest node in a tree.
+		
+		A tree with only a root node has a height of one.
+	**/
 	public function height():Int
 	{
-		return 1 + M.max((l != null ? l.height() : 0), r != null ? r.height() : 0);
+		return 1 + MathTools.max((left != null ? left.height() : 0), right != null ? right.height() : 0);
 	}
 	
 	/**
-	 * Disconnects this node from this sub tree.
-	 * <o>1</o>
-	 */
-	inline public function unlink()
+		Calls 'f` on all elements in preorder.
+	**/
+	public inline function iter(f:T->Void, ?tmpStack:Array<BinaryTreeNode<T>>):BinaryTreeNode<T>
 	{
-		if (p != null)
+		assert(f != null);
+		
+		var stack = tmpStack;
+		if (stack == null) stack = [];
+		stack[0] = this;
+		
+		var top = 1;
+		while (top > 0)
 		{
-			if (isL()) p.l = null;
-			else
-			if (isR()) p.r = null;
-			p = null;
+			var n = stack[--top];
+			if (n.hasLeft()) stack[top++] = n.left;
+			if (n.hasRight()) stack[top++] = n.right;
+			f(n.val);
 		}
-		l = r = null;
+		return this;
 	}
 	
 	/**
-	 * Returns a string representing the current object.<br/>
-	 * Example:<br/>
-	 * <pre class="prettyprint">
-	 * var root = new de.polygonal.ds.BinaryTreeNode&lt;Int&gt;(0);
-	 * root.setL(1);
-	 * root.setR(2);
-	 * root.l.setL(3);
-	 * root.l.l.setR(4);
-	 * trace(root);</pre>
-	 * <pre class="console">
-	 * { BinaryTreeNode val: 0, size: 4, node depth: 0, tree height: 3 }
-	 * [
-	 *   0
-	 *   L---1
-	 *   |   L---3
-	 *   |   |   R---4
-	 *   R---2
-	 * ]</pre>
-	 */
+		Disconnects this node from this subtree.
+	**/
+	public inline function unlink():BinaryTreeNode<T>
+	{
+		if (parent != null)
+		{
+			if (isLeft()) parent.left = null;
+			else
+			if (isRight()) parent.right = null;
+			parent = null;
+		}
+		left = right = null;
+		return this;
+	}
+	
+	/**
+		Prints out all elements.
+	**/
+	#if !no_tostring
 	public function toString():String
 	{
-		var s = '{ BinaryTreeNode val: ${Std.string(val)}, size: ${size()}, node depth: ${depth()}, tree height: ${height()} }';
-		if (size() == 1) return s;
-		s += "\n\n[\n";
+		var b = new StringBuf();
+		b.add('[ BinaryTree val=${Std.string(val)} size=$size depth=${depth()} height=${height()}');
+		if (size == 1)
+		{
+			b.add(" ]");
+			return b.toString();
+		}
+		b.add("\n");
 		var f = function(node:BinaryTreeNode<T>, userData:Dynamic):Bool
 		{
 			var d = node.depth();
-			var t = '';
+			var t = "";
 			for (i in 0...d)
 			{
 				if (i == d - 1)
-					t += (node.isL() ? "L" : "R") + "---";
+					t += (node.isLeft() ? "L" : "R") + "---";
 				else
 					t += "|   ";
 			}
 			
 			t = "  " + t;
-			s += t + node.val + "\n";
+			b.add(t + node.val + "\n");
 			return true;
 		}
 		preorder(f);
-		s += "]\n";
-		return s;
+		b.add("]");
+		return b.toString();
 	}
+	#end
 	
-	function _preorderRecursive(node:BinaryTreeNode<T>, process:BinaryTreeNode<T>->Dynamic->Bool, userData:Dynamic):Bool
+	function preorderRecursive(node:BinaryTreeNode<T>, process:BinaryTreeNode<T>->Dynamic->Bool, userData:Dynamic):Bool
 	{
 		var run = process(node, userData);
-		if (run && node.hasL()) run = _preorderRecursive(node.l, process, userData);
-		if (run && node.hasR()) run = _preorderRecursive(node.r, process, userData);
+		if (run && node.hasLeft()) run = preorderRecursive(node.left, process, userData);
+		if (run && node.hasRight()) run = preorderRecursive(node.right, process, userData);
 		return run;
 	}
 	
-	function _preorderRecursiveVisitable(node:BinaryTreeNode<T>, userData:Dynamic):Bool
+	function preorderRecursiveVisitable(node:BinaryTreeNode<T>, userData:Dynamic):Bool
 	{
-		var v:Dynamic = node.val;
+		var v:Visitable = cast node.val;
 		var run = v.visit(false, userData);
-		if (run && node.hasL()) run = _preorderRecursiveVisitable(node.l, userData);
-		if (run && node.hasR()) run = _preorderRecursiveVisitable(node.r, userData);
+		if (run && node.hasLeft()) run = preorderRecursiveVisitable(node.left, userData);
+		if (run && node.hasRight()) run = preorderRecursiveVisitable(node.right, userData);
 		return run;
 	}
 	
-	function _inorderRecursive(node:BinaryTreeNode<T>, process:BinaryTreeNode<T>->Dynamic->Bool, userData:Dynamic):Bool
+	function inorderRecursive(node:BinaryTreeNode<T>, process:BinaryTreeNode<T>->Dynamic->Bool, userData:Dynamic):Bool
 	{
-		if (node.hasL())
-			if (!_inorderRecursive(node.l, process, userData))
+		if (node.hasLeft())
+			if (!inorderRecursive(node.left, process, userData))
 				return false;
 		if (!process(node, userData)) return false;
-		if (node.hasR())
-			if (!_inorderRecursive(node.r, process, userData))
+		if (node.hasRight())
+			if (!inorderRecursive(node.right, process, userData))
 				return false;
 		return true;
 	}
 	
-	function _inorderRecursiveVisitable(node:BinaryTreeNode<T>, userData:Dynamic):Bool
+	function inorderRecursiveVisitable(node:BinaryTreeNode<T>, userData:Dynamic):Bool
 	{
-		if (node.hasL())
-			if (!_inorderRecursiveVisitable(node.l, userData))
+		if (node.hasLeft())
+			if (!inorderRecursiveVisitable(node.left, userData))
 				return false;
-		var v:Dynamic = node.val;
+		var v:Visitable = cast node.val;
 		if (!v.visit(false, userData))
 			return false;
-		if (node.hasR())
-			if (!_inorderRecursiveVisitable(node.r, userData))
+		if (node.hasRight())
+			if (!inorderRecursiveVisitable(node.right, userData))
 				return false;
 		return true;
 	}
 	
-	function _postorderRecursive(node:BinaryTreeNode<T>, process:BinaryTreeNode<T>->Dynamic->Bool, userData:Dynamic):Bool
+	function postorderRecursive(node:BinaryTreeNode<T>, process:BinaryTreeNode<T>->Dynamic->Bool, userData:Dynamic):Bool
 	{
-		if (node.hasL())
-			if (!_postorderRecursive(node.l, process, userData))
+		if (node.hasLeft())
+			if (!postorderRecursive(node.left, process, userData))
 				return false;
-		if (node.hasR())
-			if (!_postorderRecursive(node.r, process, userData))
+		if (node.hasRight())
+			if (!postorderRecursive(node.right, process, userData))
 				return false;
 		return process(node, userData);
 	}
 	
-	function _postorderRecursiveVisitable(node:BinaryTreeNode<T>, userData:Dynamic):Bool
+	function postorderRecursiveVisitable(node:BinaryTreeNode<T>, userData:Dynamic):Bool
 	{
-		if (node.hasL())
-			if (!_postorderRecursiveVisitable(node.l, userData))
+		if (node.hasLeft())
+			if (!postorderRecursiveVisitable(node.left, userData))
 				return false;
-		if (node.hasR())
-			if (!_postorderRecursiveVisitable(node.r, userData))
+		if (node.hasRight())
+			if (!postorderRecursiveVisitable(node.right, userData))
 				return false;
-		var v:Dynamic = node.val;
+		var v:Visitable = cast node.val;
 		return v.visit(false, userData);
 	}
 	
-	function _heightRecursive(node:BinaryTreeNode<T>):Int
+	function heightRecursive(node:BinaryTreeNode<T>):Int
 	{
 		var cl = -1;
 		var cr = -1;
-		if (node.hasL())
-			cl = _heightRecursive(node.l);
-		if (node.hasR())
-			cr = _heightRecursive(node.r);
-		return M.max(cl, cr) + 1;
+		if (node.hasLeft())
+			cl = heightRecursive(node.left);
+		if (node.hasRight())
+			cr = heightRecursive(node.right);
+		return MathTools.max(cl, cr) + 1;
 	}
 	
-	/*///////////////////////////////////////////////////////
-	// collection
-	///////////////////////////////////////////////////////*/
+	/* INTERFACE Collection */
 	
 	/**
-	 * Destroys this object by explicitly nullifying all nodes, pointers and elements for GC'ing used resources.<br/>
-	 * Improves GC efficiency/performance (optional).
-	 * <o>n</o>
-	 */
+		Recursively counts the number of nodes in this subtree (including this node).
+	**/
+	public var size(get, never):Int;
+	function get_size():Int
+	{
+		var c = 1;
+		if (hasLeft()) c += left.size;
+		if (hasRight()) c += right.size;
+		return c;
+	}
+	
+	/**
+		Destroys this object by explicitly nullifying all nodes, pointers and elements for GC'ing used resources.
+		
+		Improves GC efficiency/performance (optional).
+	**/
 	public function free()
 	{
-		if (hasL()) l.free();
-		if (hasR()) r.free();
+		if (hasLeft()) left.free();
+		if (hasRight()) right.free();
 		
 		val = cast null;
-		r = l = p = null;
+		right = left = parent = null;
+		mStack = null;
 	}
 	
 	/**
-	 * Returns true if the subtree rooted at this node contains the element <code>x</code>.
-	 * <o>n</o>
-	 */
-	public function contains(x:T):Bool
+		Returns true if the subtree rooted at this node contains `val`.
+	**/
+	public function contains(val:T):Bool
 	{
 		var stack = new Array<BinaryTreeNode<T>>();
 		stack[0] = this;
@@ -668,118 +738,93 @@ class BinaryTreeNode<T> implements Collection<T>
 				found = true;
 				break;
 			}
-			if (node.hasL()) stack[c++] = node.l;
-			if (node.hasR()) stack[c++] = node.r;
+			if (node.hasLeft()) stack[c++] = node.left;
+			if (node.hasRight()) stack[c++] = node.right;
 		}
 		return found;
 	}
 	
 	/**
-	 * Runs a recursive preorder traversal that removes all occurrences of <code>x</code>.<br/>
-	 * Tree nodes are not rearranged, so if a node storing <code>x</code> is removed, the subtree rooted at that node is unlinked and lost.
-	 * <o>n</o>
-	 * @return true if at least one occurrence of <code>x</code> was removed.
-	 */
-	public function remove(x:T):Bool
+		Runs a recursive preorder traversal that removes all occurrences of `val`.
+		
+		Tree nodes are not rearranged, so if a node storing `val` is removed, the subtree rooted at that node is unlinked and lost.
+		@return true if at least one occurrence of `val` was removed.
+	**/
+	public function remove(val:T):Bool
 	{
 		var found = false;
-		if (val == x)
+		if (this.val == val)
 		{
 			unlink();
 			found = true;
 		}
 		
-		if (hasL()) found = found || l.remove(x);
-		if (hasR()) found = found || r.remove(x);
-		
+		if (hasLeft()) found = found || left.remove(val);
+		if (hasRight()) found = found || right.remove(val);
 		return found;
 	}
 	
 	/**
-	 * Removes all child nodes.
-	 * <o>1 or n if <code>purge</code> is true</o>
-	 * @param purge if true, all nodes and elements of this subtree are recursively nullified.
-	 */
-	public function clear(purge = false)
+		Removes all child nodes.
+		
+		@param gc if true, all nodes and elements of this subtree are recursively nullified so the garbage collector can reclaim used memory.
+	**/
+	public function clear(gc:Bool = false)
 	{
-		if (purge)
+		if (gc)
 		{
-			if (hasL()) l.clear(purge);
-			if (hasR()) r.clear(purge);
-			
-			l = r = p = null;
+			if (hasLeft()) left.clear(gc);
+			if (hasRight()) right.clear(gc);
+			left = right = parent = null;
 			val = cast null;
 		}
 		else
-		{
-			l = r = null;
-		}
+			left = right = null;
 	}
 	
 	/**
-	 * Returns a new <em>BinaryTreeNodeIterator</em> object to iterate over all elements contained in the nodes of this subtree (including this node).<br/>
-	 * The elements are visited by using a preorder traversal.
-	 * @see <a href="http://haxe.org/ref/iterators" target="_blank">http://haxe.org/ref/iterators</a>
-	 */
+		Returns a new *BinaryTreeNodeIterator* object to iterate over all elements contained in the nodes of this subtree (including this node).
+		
+		The elements are visited by using a preorder traversal.
+		
+		@see http://haxe.org/ref/iterators
+	**/
 	public function iterator():Itr<T>
 	{
 		return new BinaryTreeNodeIterator<T>(this);
 	}
 	
 	/**
-	 * Recursively counts the number of nodes in this subtree (including this node).
-	 * <o>n</o>
-	 */
-	public function size():Int
-	{
-		var c = 1;
-		if (hasL()) c += l.size();
-		if (hasR()) c += r.size();
-		return c;
-	}
-	
-	/**
-	 * Unsupported operation - always returns false in release mode.
-	 */
-	inline public function isEmpty():Bool
+		Unsupported operation; always returns false.
+	**/
+	public inline function isEmpty():Bool
 	{
 		return false;
 	}
 	
 	/**
-	 * Returns an array containing all elements in this subtree.<br/>
-	 * The elements are added by applying a preorder traversal.
-	 */
+		Returns an array containing all elements in this subtree.
+		
+		The elements are added by applying a preorder traversal.
+	**/
 	public function toArray():Array<T>
 	{
-		var a:Array<T> = ArrayUtil.alloc(size());
+		if (isEmpty()) return [];
+		
+		var out = ArrayTools.alloc(size);
 		var i = 0;
-		preorder(function(node:BinaryTreeNode<T>, userData:Dynamic):Bool { a[i++] = node.val; return true; });
-		return a;
+		preorder(function(node:BinaryTreeNode<T>, userData:Dynamic):Bool { out[i++] = node.val; return true; });
+		return out;
 	}
 	
-	#if flash10
 	/**
-	 * Returns a Vector.&lt;T&gt; object containing all elements in this subtree.<br/>
-	 * The elements are added by applying a preorder traversal.
-	 */
-	public function toVector():flash.Vector<Dynamic>
-	{
-		var a = new flash.Vector<Dynamic>(size());
-		var i = 0;
-		preorder(function(node:BinaryTreeNode<T>, userData:Dynamic):Bool { a[i++] = node.val; return true; });
-		return a;
-	}
-	#end
-	
-	/**
-	 * Duplicates this subtree. Supports shallow (structure only) and deep copies (structure & elements).
-	 * @param assign if true, the <code>copier</code> parameter is ignored and primitive elements are copied by value whereas objects are copied by reference.<br/>
-	 * If false, the <em>clone()</em> method is called on each element. <warn>In this case all elements have to implement <em>Cloneable</em>.</warn>
-	 * @param copier a custom function for copying elements. Replaces element.<em>clone()</em> if <code>assign</code> is false.
-	 * @throws de.polygonal.ds.error.AssertError element is not of type <em>Cloneable</em> (debug only).
-	 */
-	public function clone(assign = true, copier:T->T = null):Collection<T>
+		Creates and returns a shallow copy (structure only - default) or deep copy (structure & elements) of this node and its subtree.
+		
+		If `byRef` is true, primitive elements are copied by value whereas objects are copied by reference.
+		
+		If `byRef` is false, the `copier` function is used for copying elements. If omitted, `clone()` is called on each element assuming all elements implement `Cloneable`.
+	**/
+	public function clone(byRef:Bool = true, copier:T->T = null):Collection<T>
 	{
 		var stack = new Array<BinaryTreeNode<T>>();
 		var copy = new BinaryTreeNode<T>(copier != null ? copier(val) : val);
@@ -787,55 +832,48 @@ class BinaryTreeNode<T> implements Collection<T>
 		stack[1] = copy;
 		var top = 2;
 		
-		if (assign)
+		if (byRef)
 		{
 			while (top > 0)
 			{
 				var c = stack[--top];
 				var n = stack[--top];
-				if (n.hasR())
+				if (n.hasRight())
 				{
-					c.setR(n.r.val);
-					stack[top++] = n.r;
-					stack[top++] = c.r;
+					c.setRight(n.right.val);
+					stack[top++] = n.right;
+					stack[top++] = c.right;
 				}
-				if (n.hasL())
+				if (n.hasLeft())
 				{
-					c.setL(n.l.val);
-					stack[top++] = n.l;
-					stack[top++] = c.l;
+					c.setLeft(n.left.val);
+					stack[top++] = n.left;
+					stack[top++] = c.left;
 				}
 			}
 		}
 		else
 		if (copier == null)
 		{
-			var t:Dynamic = null;
 			while (top > 0)
 			{
 				var c = stack[--top];
 				var n = stack[--top];
-				if (n.hasR())
+				if (n.hasRight())
 				{
-					#if debug
-					assert(Std.is(n.r.val, Cloneable), 'element is not of type Cloneable (${n.r.val})');
-					#end
+					assert(Std.is(n.right.val, Cloneable), "element is not of type Cloneable");
 					
-					t = cast n.r.val;
-					c.setR(t.clone());
-					stack[top++] = n.r;
-					stack[top++] = c.r;
+					c.setRight(cast(n.right.val, Cloneable<Dynamic>).clone());
+					stack[top++] = n.right;
+					stack[top++] = c.right;
 				}
-				if (n.hasL())
+				if (n.hasLeft())
 				{
-					#if debug
-					assert(Std.is(n.l.val, Cloneable), 'element is not of type Cloneable (${n.l.val})');
-					#end
+					assert(Std.is(n.left.val, Cloneable), "element is not of type Cloneable");
 					
-					t = cast n.l.val;
-					c.setL(t.clone());
-					stack[top++] = n.l;
-					stack[top++] = c.l;
+					c.setLeft(cast(n.left.val, Cloneable<Dynamic>).clone());
+					stack[top++] = n.left;
+					stack[top++] = c.left;
 				}
 			}
 		}
@@ -845,76 +883,101 @@ class BinaryTreeNode<T> implements Collection<T>
 			{
 				var c = stack[--top];
 				var n = stack[--top];
-				if (n.hasR())
+				if (n.hasRight())
 				{
-					c.setR(copier(n.r.val));
-					stack[top++] = n.r;
-					stack[top++] = c.r;
+					c.setRight(copier(n.right.val));
+					stack[top++] = n.right;
+					stack[top++] = c.right;
 				}
-				if (n.hasL())
+				if (n.hasLeft())
 				{
-					c.setL(copier(n.l.val));
-					stack[top++] = n.l;
-					stack[top++] = c.l;
+					c.setLeft(copier(n.left.val));
+					stack[top++] = n.left;
+					stack[top++] = c.left;
 				}
 			}
 		}
 		return copy;
+	}
+	
+	function getStack():NativeArray<BinaryTreeNode<T>>
+	{
+		if (mStack == null)
+		{
+			var n = parent;
+			while (n != null)
+			{
+				if (n.mStack != null)
+				{
+					mStack = n.mStack;
+					break;
+				}
+				n = n.parent;
+			}
+			if (mStack == null)
+				mStack = NativeArrayTools.alloc(2);
+		}
+		return mStack;
+	}
+	
+	function resizeStack(newSize:Int):NativeArray<BinaryTreeNode<T>>
+	{
+		var t = NativeArrayTools.alloc(newSize);
+		mStack.blit(0, t, 0, mStack.size());
+		return mStack = t;
 	}
 }
 
 #if generic
 @:generic
 #end
-#if doc
-private
-#end
+@:dox(hide)
 class BinaryTreeNodeIterator<T> implements de.polygonal.ds.Itr<T>
 {
-	var _node:BinaryTreeNode<T>;
-	var _stack:Array<BinaryTreeNode<T>>;
-	var _top:Int;
-	var _c:Int;
+	var mObject:BinaryTreeNode<T>;
+	var mStack:Array<BinaryTreeNode<T>>;
+	var mTop:Int;
+	var mC:Int;
 	
-	public function new(node:BinaryTreeNode<T>)
+	public function new(x:BinaryTreeNode<T>)
 	{
-		_stack = new Array<BinaryTreeNode<T>>();
-		_node = node;
+		mObject = x;
+		mStack = new Array<BinaryTreeNode<T>>();
 		reset();
 	}
 	
-	inline public function reset():Itr<T>
+	public inline function reset():Itr<T>
 	{
-		_stack[0] = _node;
-		_top = 1;
-		_c = 0;
+		mStack[0] = mObject;
+		mTop = 1;
+		mC = 0;
 		return this;
 	}
 	
-	inline public function hasNext():Bool
+	public inline function hasNext():Bool
 	{
-		return _top > 0;
+		return mTop > 0;
 	}
 	
-	inline public function next():T
+	public inline function next():T
 	{
-		var node = _stack[--_top];
-		_c = 0;
-		if (node.hasL())
+		var node = mStack[--mTop];
+		mC = 0;
+		if (node.hasLeft())
 		{
-			_stack[_top++] = node.l;
-			_c++;
+			mStack[mTop++] = node.left;
+			mC++;
 		}
-		if (node.hasR())
+		if (node.hasRight())
 		{
-			_stack[_top++] = node.r;
-			_c++;
+			mStack[mTop++] = node.right;
+			mC++;
 		}
 		return node.val;
 	}
 	
-	inline public function remove()
+	public function remove()
 	{
-		_top -= _c;
+		mTop -= mC;
 	}
 }

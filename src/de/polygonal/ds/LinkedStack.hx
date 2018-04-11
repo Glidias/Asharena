@@ -1,330 +1,279 @@
 ﻿/*
- *                            _/                                                    _/
- *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
- *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *     _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *    _/_/_/      _/_/    _/    _/_/_/    _/_/_/    _/_/    _/    _/    _/_/_/  _/
- *   _/                            _/        _/
- *  _/                        _/_/      _/_/
- *
- * POLYGONAL - A HAXE LIBRARY FOR GAME DEVELOPERS
- * Copyright (c) 2009 Michael Baczynski, http://www.polygonal.de
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+Copyright (c) 2008-2018 Michael Baczynski, http://www.polygonal.de
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 package de.polygonal.ds;
 
-import de.polygonal.ds.error.Assert.assert;
-
-private typedef LinkedStackFriend<T> =
-{
-	private var _head:LinkedStackNode<T>;
-	private function _removeNode(x:LinkedStackNode<T>):Void;
-}
+import de.polygonal.ds.tools.ArrayTools;
+import de.polygonal.ds.tools.Assert.assert;
+import de.polygonal.ds.tools.MathTools;
+import de.polygonal.ds.tools.Shuffle;
 
 /**
- * <p>A stack based on a linked list.</p>
- * <p>A stack is a linear list for which all insertions and deletions (and usually all accesses) are made at one end of the list.</p>
- * <p>This is called a FIFO structure (First In, First Out).</p>
- * <p><o>Worst-case running time in Big O notation</o></p>
- */
+	A stack based on a linked list
+	
+	A stack is a linear list for which all insertions and deletions (and usually all accesses) are made at one end of the list.
+	
+	This is called a FIFO structure (First In, First Out).
+	
+	Example:
+		var o = new de.polygonal.ds.LinkedStack<Int>();
+		for (i in 0...4) o.push(i);
+		trace(o); //outputs:
+		
+		[ LinkedStack size=4
+		  top
+		  3 -> 3
+		  2 -> 2
+		  1 -> 1
+		  0 -> 0
+		]
+**/
 #if generic
 @:generic
 #end
 class LinkedStack<T> implements Stack<T>
 {
 	/**
-	 * A unique identifier for this object.<br/>
-	 * A hash table transforms this key into an index of an array element by using a hash function.<br/>
-	 * <warn>This value should never be changed by the user.</warn>
-	 */
-	public var key:Int;
+		A unique identifier for this object.
+		
+		A hash table transforms this key into an index of an array element by using a hash function.
+	**/
+	public var key(default, null):Int = HashKey.next();
 	
 	/**
-	 * The maximum allowed size of this stack.<br/>
-	 * Once the maximum size is reached, adding an element will fail with an error (debug only).<br/>
-	 * A value of -1 indicates that the size is unbound.<br/>
-	 * <warn>Always equals -1 in release mode.</warn>
-	 */
-	public var maxSize:Int;
+		If true, reuses the iterator object instead of allocating a new one when calling `this.iterator()`.
+		
+		The default is false.
+		
+		_If this value is true, nested iterations will fail as only one iteration is allowed at a time._
+	**/
+	public var reuseIterator:Bool = false;
+	
+	var mHead:LinkedStackNode<T> = null;
+	
+	var mTop:Int = 0;
+	var mReservedSize:Int;
+	var mPoolSize:Int = 0;
+	
+	var mHeadPool:LinkedStackNode<T>;
+	var mTailPool:LinkedStackNode<T>;
+	
+	var mIterator:LinkedStackIterator<T> = null;
 	
 	/**
-	 * If true, reuses the iterator object instead of allocating a new one when calling <code>iterator()</code>.<br/>
-	 * The default is false.<br/>
-	 * <warn>If true, nested iterations are likely to fail as only one iteration is allowed at a time.</warn>
-	 */
-	public var reuseIterator:Bool;
-	
-	var _head:LinkedStackNode<T>;
-	
-	var _top:Int;
-	var _reservedSize:Int;
-	var _poolSize:Int;
-	
-	var _headPool:LinkedStackNode<T>;
-	var _tailPool:LinkedStackNode<T>;
-	
-	var _iterator:LinkedStackIterator<T>;
-	
-	/**
-	 * @param reservedSize if &gt; 0, this stack maintains an object pool of node objects.<br/>
-	 * Prevents frequent node allocation and thus increases performance at the cost of using more memory.
-	 * @param maxSize the maximum allowed size of the stack.<br/>
-	 * The default value of -1 indicates that there is no upper limit.
-	 * @throws de.polygonal.ds.error.AssertError reserved size is greater than allowed size (debug only).
-	 */
-	public function new(reservedSize = 0, maxSize = -1)
+		@param reservedSize if > 0, this stack maintains an object pool of node objects.
+		Prevents frequent node allocation and thus increases performance at the cost of using more memory.
+	**/
+	public function new(reservedSize:Null<Int> = 0, ?source:Array<T>)
 	{
-		#if debug
-		if (reservedSize > 0)
-		{
-			if (maxSize != -1)
-				assert(reservedSize <= maxSize, "reserved size is greater than allowed size");
-		}
-		this.maxSize = (maxSize == -1) ? M.INT32_MAX : maxSize;
-		#else
-		this.maxSize = -1;
-		#end
-		
-		_reservedSize = reservedSize;
-		_top          = 0;
-		_poolSize     = 0;
-		_head         = null;
-		_iterator     = null;
+		mReservedSize = reservedSize;
 		
 		if (reservedSize > 0)
 		{
-			_headPool = _tailPool = new LinkedStackNode<T>(cast null);
+			mHeadPool = mTailPool = new LinkedStackNode<T>(cast null);
 		}
 		else
 		{
-			_headPool = null;
-			_tailPool = null;
+			mHeadPool = null;
+			mTailPool = null;
 		}
 		
-		key = HashKey.next();
-		reuseIterator = false;
+		if (source != null)
+		{
+			var node;
+			mTop = source.length;
+			for (i in 0...mTop)
+			{
+				node = getNode(source[i]);
+				node.next = mHead;
+				mHead = node;
+			}
+		}
 	}
 	
 	/**
-	 * Returns the top element of this stack.<br/>
-	 * This is the "newest" element.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError stack is empty (debug only).
-	 */
-	inline public function top():T
+		Returns the top element of this stack.
+		
+		This is the "newest" element.
+	**/
+	public inline function top():T
 	{
-		#if debug
-		assert(_top > 0, "stack is empty");
-		#end
-		return _head.val;
+		assert(mTop > 0, "stack is empty");
+		
+		return mHead.val;
 	}
 	
 	/**
-	 * Pushes the element <code>x</code> onto the stack.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	inline public function push(x:T)
+		Pushes `val` onto the stack.
+	**/
+	public inline function push(val:T)
 	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		#end
-		
-		var node = _getNode(x);
-		node.next = _head;
-		_head = node;
-		_top++;
+		var node = getNode(val);
+		node.next = mHead;
+		mHead = node;
+		mTop++;
 	}
 	
 	/**
-	 * Pops data off the stack.
-	 * <o>1</o>
-	 * @return the top element.
-	 * @throws de.polygonal.ds.error.AssertError stack is empty (debug only).
-	 */
-	inline public function pop():T
+		Pops data off the stack.
+		@return the top element.
+	**/
+	public inline function pop():T
 	{
-		#if debug
-		assert(_top > 0, "stack is empty");
-		#end
+		assert(mTop > 0, "stack is empty");
 		
-		_top--;
-		var node = _head;
-		_head = _head.next;
-		
-		return _putNode(node);
+		mTop--;
+		var node = mHead;
+		mHead = mHead.next;
+		return putNode(node);
 	}
 	
 	/**
-	 * Pops the top element of the stack, and pushes it back twice, so that an additional copy of the former top item is now on top, with the original below it.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError stack is empty (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	inline public function dup()
+		Pops the top element of the stack, and pushes it back twice, so that an additional copy of the former top item is now on top, with the original below it.
+	**/
+	public inline function dup():LinkedStack<T>
 	{
-		#if debug
-		assert(_top > 0, "stack is empty");
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		#end
+		assert(mTop > 0, "stack is empty");
 		
-		var node = _getNode(_head.val);
-		node.next = _head;
-		_head = node;
-		_top++;
+		var node = getNode(mHead.val);
+		node.next = mHead;
+		mHead = node;
+		mTop++;
+		return this;
 	}
 	
 	/**
-	 * Swaps the two topmost items on the stack.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> < 2 (debug only).
-	 */
-	inline public function exchange()
+		Swaps the two topmost items on the stack.
+	**/
+	public inline function exchange():LinkedStack<T>
 	{
-		#if debug
-		assert(_top > 1, "size() < 2");
-		#end
+		assert(mTop > 1, "size < 2");
 		
-		var tmp = _head.val;
-		_head.val = _head.next.val;
-		_head.next.val = tmp;
+		var t = mHead.val;
+		mHead.val = mHead.next.val;
+		mHead.next.val = t;
+		return this;
 	}
 	
 	/**
-	 * Moves the <code>n</code> topmost elements on the stack in a rotating fashion.<br/>
-	 * Example:
-	 * <pre>
-	 * top
-	 * |3|               |0|
-	 * |2|  rotate right |3|
-	 * |1|      -->      |2|
-	 * |0|               |1|</pre>
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> >= <code>n</code> (debug only).
-	 */
-	inline public function rotRight(n:Int)
-	{
-		#if debug
-		assert(_top >= n, "size() < n");
-		#end
+		Moves the `n` topmost elements on the stack in a rotating fashion.
 		
-		var node = _head;
+		Example:
+			top
+			|3|               |0|
+			|2|  rotate right |3|
+			|1|      -->      |2|
+			|0|               |1|
+	**/
+	public function rotRight(n:Int):LinkedStack<T>
+	{
+		assert(mTop >= n, "size < n");
+		
+		var node = mHead;
 		for (i in 0...n - 2)
 			node = node.next;
 		
 		var bot = node.next;
 		node.next = bot.next;
 		
-		bot.next = _head;
-		_head = bot;
+		bot.next = mHead;
+		mHead = bot;
+		return this;
 	}
 	
 	/**
-	 * Moves the <code>n</code> topmost elements on the stack in a rotating fashion.<br/>
-	 * Example:
-	 * <pre>
-	 * top
-	 * |3|              |2|
-	 * |2|  rotate left |1|
-	 * |1|      -->     |0|
-	 * |0|              |3|</pre>
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> >= <code>n</code> (debug only).
-	 */
-	inline public function rotLeft(n:Int)
+		Moves the `n` topmost elements on the stack in a rotating fashion.
+		
+		Example:
+			top
+			|3|              |2|
+			|2|  rotate left |1|
+			|1|      -->     |0|
+			|0|              |3|
+	**/
+	public function rotLeft(n:Int):LinkedStack<T>
 	{
-		#if debug
-		assert(_top >= n, "size() < n");
-		#end
+		assert(mTop >= n, "size < n");
 		
-		var top = _head;
-		_head = _head.next;
+		var top = mHead;
+		mHead = mHead.next;
 		
-		var node = _head;
+		var node = mHead;
 		for (i in 0...n - 2)
 			node = node.next;
 		
 		top.next = node.next;
 		node.next = top;
+		return this;
 	}
 	
 	/**
-	 * Returns the element stored at index <code>i</code>.<br/>
-	 * An index of 0 indicates the bottommost element.<br/>
-	 * An index of <em>size()</em> - 1 indicates the topmost element.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError stack is empty or index out of range (debug only).
-	 */
-	inline public function get(i:Int):T
-	{
-		#if debug
-		assert(_top > 0, "stack is empty");
-		assert(i >= 0 && i < _top, 'i index out of range ($i)');
-		#end
+		Returns the element stored at index `i`.
 		
-		var node = _head;
-		i = size() - i;
+		An index of 0 indicates the bottommost element.
+		
+		An index of `this.size` - 1 indicates the topmost element.
+	**/
+	public function get(i:Int):T
+	{
+		assert(mTop > 0, "stack is empty");
+		assert(i >= 0 && i < mTop, 'i index out of range ($i)');
+		
+		var node = mHead;
+		i = size - i;
 		while (--i > 0) node = node.next;
 		return node.val;
 	}
 	
 	/**
-	 * Replaces the element at index <code>i</code> with the element <code>x</code>.<br/>
-	 * An index of 0 indicates the bottommost element.<br/>
-	 * An index of <em>size()</em> - 1 indicates the topmost element.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError stack is empty or index out of range (debug only).
-	 */
-	inline public function set(i:Int, x:T)
-	{
-		#if debug
-		assert(_top > 0, "stack is empty");
-		assert(i >= 0 && i < _top, 'i index out of range ($i)');
-		#end
+		Replaces the element at index `i` with `val`.
 		
-		var node = _head;
-		i = size() - i;
+		An index of 0 indicates the bottommost element.
+		
+		An index of `this.size` - 1 indicates the topmost element.
+	**/
+	public function set(i:Int, val:T):LinkedStack<T>
+	{
+		assert(mTop > 0, "stack is empty");
+		assert(i >= 0 && i < mTop, 'i index out of range ($i)');
+		
+		var node = mHead;
+		i = size - i;
 		while (--i > 0) node = node.next;
-		node.val = x;
+		node.val = val;
+		return this;
 	}
 	
 	/**
-	 * Swaps the element stored at <code>i</code> with the element stored at index <code>j</code>.<br/>
-	 * An index of 0 indicates the bottommost element.<br/>
-	 * An index of <em>size()</em> - 1 indicates the topmost element.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError stack is empty. (debug only).
-	 * @throws de.polygonal.ds.error.AssertError index out of range (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <code>i</code> equals <code>j</code> (debug only).
-	 */
-	inline public function swp(i:Int, j:Int)
-	{
-		#if debug
-		assert(_top > 0, "stack is empty");
-		assert(i >= 0 && i < _top, 'i index out of range ($i)');
-		assert(j >= 0 && j < _top, 'j index out of range ($j)');
-		assert(i != j, 'i index equals j index ($i)');
-		#end
+		Swaps the element stored at `i` with the element stored at index `j`.
 		
-		var node = _head;
+		An index of 0 indicates the bottommost element.
+		
+		An index of `this.size` - 1 indicates the topmost element.
+	**/
+	public function swap(i:Int, j:Int):LinkedStack<T>
+	{
+		assert(mTop > 0, "stack is empty");
+		assert(i >= 0 && i < mTop, 'i index out of range ($i)');
+		assert(j >= 0 && j < mTop, 'j index out of range ($j)');
+		assert(i != j, 'i index equals j index ($i)');
+		
+		var node = mHead;
 		
 		if (i < j)
 		{
@@ -333,7 +282,7 @@ class LinkedStack<T> implements Stack<T>
 			i ^= j;
 		}
 		
-		var k = _top - 1;
+		var k = mTop - 1;
 		while (k > i)
 		{
 			node = node.next;
@@ -345,30 +294,27 @@ class LinkedStack<T> implements Stack<T>
 			node = node.next;
 			k--;
 		}
-		var tmp = a.val;
+		var t = a.val;
 		a.val = node.val;
-		node.val = tmp;
+		node.val = t;
+		return this;
 	}
 	
 	/**
-	 * Overwrites the element at index <code>i</code> with the element from index <code>j</code>.<br/>
-	 * An index of 0 indicates the bottommost element.<br/>
-	 * An index of <em>size()</em> - 1 indicates the topmost element.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError stack is empty. (debug only).
-	 * @throws de.polygonal.ds.error.AssertError index out of range (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <code>i</code> equals <code>j</code> (debug only).
-	 */
-	inline public function cpy(i:Int, j:Int)
-	{
-		#if debug
-		assert(_top > 0, "stack is empty");
-		assert(i >= 0 && i < _top, 'i index out of range ($i)');
-		assert(j >= 0 && j < _top, 'j index out of range ($j)');
-		assert(i != j, 'i index equals j index ($i)');
-		#end
+		Overwrites the element at index `i` with the element from index `j`.
 		
-		var node = _head;
+		An index of 0 indicates the bottommost element.
+		
+		An index of `this.size` - 1 indicates the topmost element.
+	**/
+	public function copy(i:Int, j:Int):LinkedStack<T>
+	{
+		assert(mTop > 0, "stack is empty");
+		assert(i >= 0 && i < mTop, 'i index out of range ($i)');
+		assert(j >= 0 && j < mTop, 'j index out of range ($j)');
+		assert(i != j, 'i index equals j index ($i)');
+		
+		var node = mHead;
 		
 		if (i < j)
 		{
@@ -377,7 +323,7 @@ class LinkedStack<T> implements Stack<T>
 			i ^= j;
 		}
 		
-		var k = _top - 1;
+		var k = mTop - 1;
 		while (k > i)
 		{
 			node = node.next;
@@ -390,97 +336,65 @@ class LinkedStack<T> implements Stack<T>
 			k--;
 		}
 		node.val = val;
-	}
-	
-	/**
-	 * Replaces up to <code>n</code> existing elements with objects of type <code>C</code>.
-	 * <o>n</o>
-	 * @param C the class to instantiate for each element.
-	 * @param args passes additional constructor arguments to the class <code>C</code>.
-	 * @param n the number of elements to replace. If 0, <code>n</code> is set to <em>size()</em>.
-	 * @throws de.polygonal.ds.error.AssertError <code>n</code> out of range (debug only).
-	 */
-	public function assign(C:Class<T>, args:Array<Dynamic> = null, n = 0)
-	{
-		#if debug
-		assert(n >= 0, "n >= 0");
-		#end
-		
-		if (n > 0)
-		{
-			#if debug
-			if (maxSize != -1)
-				assert(n <= maxSize, 'n out of range ($n)');
-			#end
-		}
-		else
-			n = size();
-		
-		if (args == null) args = [];
-		var node = _head;
-		for (i in 0...n)
-		{
-			node.val = Type.createInstance(C, args);
-			node = node.next;
-		}
-	}
-	
-	/**
-	 * Replaces up to <code>n</code> existing elements with the instance of <code>x</code>.
-	 * <o>n</o>
-	 * @param n the number of elements to replace. If 0, <code>n</code> is set to <em>size()</em>.
-	 * @throws de.polygonal.ds.error.AssertError <code>n</code> out of range (debug only).
-	 */
-	public function fill(x:T, n = 0):LinkedStack<T>
-	{
-		#if debug
-		assert(n >= 0, "n >= 0");
-		#end
-		
-		if (n > 0)
-		{
-			#if debug
-			if (maxSize != -1)
-				assert(n <= maxSize, 'n out of range ($n)');
-			#end
-		}
-		else
-			n = size();
-		
-		var node = _head;
-		for (i in 0...n)
-		{
-			node.val = x;
-			node = node.next;
-		}
-		
 		return this;
 	}
 	
 	/**
-	 * Shuffles the elements of this collection by using the Fisher-Yates algorithm.
-	 * <o>n</o>
-	 * @param rval a list of random double values in the range between 0 (inclusive) to 1 (exclusive) defining the new positions of the elements.
-	 * If omitted, random values are generated on-the-fly by calling <em>Math.random()</em>.
-	 * @throws de.polygonal.ds.error.AssertError insufficient random values (debug only).
-	 */
-	public function shuffle(rval:DA<Float> = null)
-	{
-		var s = _top;
+		Calls `f` on all elements.
 		
-		if (rval == null)
+		The function signature is: `f(input, index):output`
+		
+		- input: current element
+		- index: position relative to the bottom(=0) of the stack
+		- output: element to be stored at given index
+	**/
+	public inline function forEach(f:T->Int->T):LinkedStack<T>
+	{
+		var node = mHead;
+		var i = size;
+		while (--i > -1)
 		{
-			var m = Math;
+			node.val = f(node.val, i);
+			node = node.next;
+		}
+		return this;
+	}
+	
+	/**
+		Calls 'f` on all elements in order.
+	**/
+	public inline function iter(f:T->Void):LinkedStack<T>
+	{
+		assert(f != null);
+		var node = mHead;
+		while (node != null)
+		{
+			f(node.val);
+			node = node.next;
+		}
+		return this;
+	}
+	
+	/**
+		Shuffles the elements of this collection by using the Fisher-Yates algorithm.
+		@param rvals a list of random double values in the interval [0, 1) defining the new positions of the elements.
+		If omitted, random values are generated on-the-fly by calling `Shuffle.frand()`.
+	**/
+	public function shuffle(rvals:Array<Float> = null):LinkedStack<T>
+	{
+		var s = mTop;
+		if (rvals == null)
+		{
 			while (s > 1)
 			{
 				s--;
-				var i = Std.int(m.random() * s);
-				var node1 = _head;
+				var i = Std.int(Shuffle.frand() * s);
+				var node1 = mHead;
 				for (j in 0...s) node1 = node1.next;
 				
 				var t = node1.val;
 				
-				var node2 = _head;
+				var node2 = mHead;
 				for (j in 0...i) node2 = node2.next;
 				
 				node1.val = node2.val;
@@ -489,108 +403,113 @@ class LinkedStack<T> implements Stack<T>
 		}
 		else
 		{
-			#if debug
-			assert(rval.size() >= size(), "insufficient random values");
-			#end
+			assert(rvals.length >= size, "insufficient random values");
 			
 			var k = 0;
 			while (s > 1)
 			{
 				s--;
-				var i = Std.int(rval.get(k++) * s);
-				var node1 = _head;
+				var i = Std.int(rvals[k++] * s);
+				var node1 = mHead;
 				for (j in 0...s) node1 = node1.next;
 				
 				var t = node1.val;
 				
-				var node2 = _head;
+				var node2 = mHead;
 				for (j in 0...i) node2 = node2.next;
 				
 				node1.val = node2.val;
 				node2.val = t;
 			}
 		}
+		return this;
 	}
 	
 	/**
-	 * Returns a string representing the current object.<br/>
-	 * Example:<br/>
-	 * <pre class="prettyprint">
-	 * var ls = new de.polygonal.ds.LinkedStack&lt;Int&gt;();
-	 * ls.push(0);
-	 * ls.push(1);
-	 * ls.push(2);
-	 * trace(ls);</pre>
-	 * <pre class="console">
-	 * {LinkedStack size: 3}
-	 * [ top
-	 *     0 -> 2
-	 *     1 -> 1
-	 *     2 -> 0
-	 * ]</pre>
-	 */
+		Prints out all elements.
+	**/
+	#if !no_tostring
 	public function toString():String
 	{
-		var s = '{ LinkedStack size: ${size()} }';
-		if (isEmpty()) return s;
-		s += "\n[ top\n";
-		var node = _head;
-		var i = _top - 1;
+		var b = new StringBuf();
+		b.add('[ LinkedStack size=$size');
+		if (isEmpty())
+		{
+			b.add(" ]");
+			return b.toString();
+		}
+		b.add("\n  top\n");
+		var node = mHead, i = mTop - 1;
+		var args = new Array<Dynamic>();
+		var fmt = '  %${MathTools.numDigits(size)}d -> %s\n';
 		while (i >= 0)
 		{
-			s += '  $i -> ${Std.string(node.val)}\n';
+			args[0] = i;
+			args[1] = Std.string(node.val);
+			b.add(Printf.format(fmt, args));
 			i--;
 			node = node.next;
 		}
-		s += "]";
-		return s;
+		b.add("]");
+		return b.toString();
 	}
+	#end
 	
-	/*///////////////////////////////////////////////////////
-	// collection
-	///////////////////////////////////////////////////////*/
+	/* INTERFACE Collection */
 	
 	/**
-	 * Destroys this object by explicitly nullifying all nodes, pointers and elements.<br/>
-	 * Improves GC efficiency/performance (optional).
-	 * <o>n</o>
-	 */
+		The total number of elements.
+	**/
+	public var size(get, never):Int;
+	inline function get_size():Int
+	{
+		return mTop;
+	}
+	
+	/**
+		Destroys this object by explicitly nullifying all nodes, pointers and elements.
+		
+		Improves GC efficiency/performance (optional).
+	**/
 	public function free()
 	{
-		var node = _head;
+		var node = mHead, next;
 		while (node != null)
 		{
-			var next = node.next;
+			next = node.next;
 			node.next = null;
 			node.val = cast null;
 			node = next;
 		}
 		
-		_head = null;
+		mHead = null;
 		
-		var node = _headPool;
+		node = mHeadPool;
 		while (node != null)
 		{
-			var next = node.next;
+			next = node.next;
 			node.next = null;
 			node.val = cast null;
 			node = next;
 		}
 		
-		_headPool = _tailPool = null;
-		_iterator = null;
+		mHeadPool = mTailPool = null;
+		if (mIterator != null)
+		{
+			mIterator.free();
+			mIterator = null;
+		}
 	}
 	
 	/**
-	 * Returns true if this stack contains the element <code>x</code>.
-	 * <o>n</o>
-	 */
-	public function contains(x:T):Bool
+		Returns true if this stack contains `val`.
+	**/
+	public function contains(val:T):Bool
 	{
-		var node = _head;
+		var node = mHead;
 		while (node != null)
 		{
-			if (node.val == x)
+			if (node.val == val)
 				return true;
 			node = node.next;
 		}
@@ -598,28 +517,27 @@ class LinkedStack<T> implements Stack<T>
 	}
 	
 	/**
-	 * Removes and nullifies all occurrences of the element <code>x</code>.
-	 * <o>n</o>
-	 * @return true if at least one occurrence of <code>x</code> was removed.
-	 */
-	public function remove(x:T):Bool
+		Removes and nullifies all occurrences of `val`.
+		@return true if at least one occurrence of `val` was removed.
+	**/
+	public function remove(val:T):Bool
 	{
 		if (isEmpty()) return false;
 		
 		var found = false;
-		var node0 = _head;
-		var node1 = _head.next;
+		var node0 = mHead;
+		var node1 = mHead.next;
 		
 		while (node1 != null)
 		{
-			if (node1.val == x)
+			if (node1.val == val)
 			{
 				found = true;
 				var node2 = node1.next;
 				node0.next = node2;
-				_putNode(node1);
+				putNode(node1);
 				node1 = node2;
-				_top--;
+				mTop--;
 			}
 			else
 			{
@@ -628,134 +546,107 @@ class LinkedStack<T> implements Stack<T>
 			}
 		}
 		
-		if (_head.val == x)
+		if (mHead.val == val)
 		{
 			found = true;
-			var head1 = _head.next;
-			_putNode(_head);
-			_head = head1;
-			_top--;
+			var head1 = mHead.next;
+			putNode(mHead);
+			mHead = head1;
+			mTop--;
 		}
-		
 		return found;
 	}
 	
 	/**
-	 * Removes all elements.
-	 * <o>1 or n if <code>purge</code> is true</o>
-	 * @param purge if true, elements are nullified upon removal.
-	 */
-	public function clear(purge = false)
+		Removes all elements.
+		@param gc if true, elements are nullified upon removal so the garbage collector can reclaim used memory.
+	**/
+	public function clear(gc:Bool = false)
 	{
-		if (_top == 0) return;
+		if (mTop == 0) return;
 		
-		if (purge || _reservedSize > 0)
+		if (gc || mReservedSize > 0)
 		{
-			var node = _head;
+			var node = mHead;
 			while (node != null)
 			{
 				var next = node.next;
-				_putNode(node);
+				putNode(node);
 				node = next;
 			}
 		}
-		
-		_head.next = null;
-		_head.val = cast null;
-		_top = 0;
+		mHead.next = null;
+		mHead.val = cast null;
+		mTop = 0;
 	}
 	
 	/**
-	 * Returns a new <em>LinkedStackIterator</em> object to iterate over all elements contained in this stack.<br/>
-	 * Preserves the natural order of the stack (First-In-Last-Out).
-	 * @see <a href="http://haxe.org/ref/iterators" target="_blank">http://haxe.org/ref/iterators</a>
-	 */
+		Returns a new *LinkedStackIterator* object to iterate over all elements contained in this stack.
+		
+		Preserves the natural order of the stack (First-In-Last-Out).
+		
+		@see http://haxe.org/ref/iterators
+	**/
 	public function iterator():Itr<T>
 	{
 		if (reuseIterator)
 		{
-			if (_iterator == null)
+			if (mIterator == null)
 				return new LinkedStackIterator<T>(this);
 			else
-				_iterator.reset();
-			return _iterator;
+				mIterator.reset();
+			return mIterator;
 		}
 		else
 			return new LinkedStackIterator<T>(this);
 	}
 	
 	/**
-	 * Returns true if this stack is empty.
-	 * <o>1</o>
-	 */
-	inline public function isEmpty():Bool
+		Returns true only if `this.size` is 0.
+	**/
+	public inline function isEmpty():Bool
 	{
-		return _top == 0;
+		return mTop == 0;
 	}
 	
 	/**
-	 * The total number of elements.
-	 * <o>1</o>
-	 */
-	inline public function size():Int
-	{
-		return _top;
-	}
-	
-	/**
-	 * Returns an array containing all elements in this stack.<br/>
-	 * Preserves the natural order of this stack (First-In-Last-Out).
-	 */
+		Returns an array containing all elements in this stack.
+		
+		Preserves the natural order of this stack (First-In-Last-Out).
+	**/
 	public function toArray():Array<T>
 	{
-		var a:Array<T> = ArrayUtil.alloc(size());
-		ArrayUtil.fill(a, cast null, size());
-		var node = _head;
-		for (i in 0..._top)
+		if (isEmpty()) return [];
+		
+		var out = ArrayTools.alloc(size);
+		var node = mHead;
+		for (i in 0...mTop)
 		{
-			a[_top - i - 1] = node.val;
+			out[mTop - i - 1] = node.val;
 			node = node.next;
 		}
-		return a;
+		return out;
 	}
 	
-	#if flash10
 	/**
-	 * Returns a Vector.&lt;T&gt; object containing all elements in this stack.<br/>
-	 * Preserves the natural order of this stack (First-In-Last-Out).
-	 */
-	public function toVector():flash.Vector<Dynamic>
-	{
-		var a = new flash.Vector<Dynamic>(size());
-		var node = _head;
-		for (i in 0..._top)
-		{
-			a[_top - i - 1] = node.val;
-			node = node.next;
-		}
-		return a;
-	}
-	#end
-	
-	/**
-	 * Duplicates this stack. Supports shallow (structure only) and deep copies (structure & elements).
-	 * @param assign if true, the <code>copier</code> parameter is ignored and primitive elements are copied by value whereas objects are copied by reference.<br/>
-	 * If false, the <em>clone()</em> method is called on each element. <warn>In this case all elements have to implement <em>Cloneable</em>.</warn>
-	 * @param copier a custom function for copying elements. Replaces element.<em>clone()</em> if <code>assign</code> is false.
-	 * @throws de.polygonal.ds.error.AssertError element is not of type <em>Cloneable</em> (debug only).
-	 */
-	public function clone(assign = true, copier:T->T = null):Collection<T>
-	{
-		var copy = new LinkedStack<T>(_reservedSize, maxSize);
-		if (_top == 0) return copy;
+		Creates and returns a shallow copy (structure only - default) or deep copy (structure & elements) of this stack.
 		
-		var copy = new LinkedStack<T>(_reservedSize, maxSize);
-		copy._top = _top;
+		If `byRef` is true, primitive elements are copied by value whereas objects are copied by reference.
 		
-		if (assign)
+		If `byRef` is false, the `copier` function is used for copying elements. If omitted, `clone()` is called on each element assuming all elements implement `Cloneable`.
+	**/
+	public function clone(byRef:Bool = true, copier:T->T = null):Collection<T>
+	{
+		var copy = new LinkedStack<T>(mReservedSize);
+		if (mTop == 0) return copy;
+		
+		copy = new LinkedStack<T>(mReservedSize);
+		copy.mTop = mTop;
+		
+		if (byRef)
 		{
-			var srcNode = _head;
-			var dstNode = copy._head = new LinkedStackNode<T>(srcNode.val);
+			var srcNode = mHead;
+			var dstNode = copy.mHead = new LinkedStackNode<T>(srcNode.val);
 			
 			srcNode = srcNode.next;
 			while (srcNode != null)
@@ -767,32 +658,25 @@ class LinkedStack<T> implements Stack<T>
 		else
 		if (copier == null)
 		{
-			var srcNode = _head;
+			var srcNode = mHead;
 			
-			#if debug
-			assert(Std.is(srcNode.val, Cloneable), 'element is not of type Cloneable (${srcNode.val})');
-			#end
+			assert(Std.is(srcNode.val, Cloneable), "element is not of type Cloneable");
 			
-			var c = cast(srcNode.val, Cloneable<Dynamic>);
-			var dstNode = copy._head = new LinkedStackNode<T>(c.clone());
+			var dstNode = copy.mHead = new LinkedStackNode<T>(cast(srcNode.val, Cloneable<Dynamic>).clone());
 			
 			srcNode = srcNode.next;
 			while (srcNode != null)
 			{
-				#if debug
-				assert(Std.is(srcNode.val, Cloneable), 'element is not of type Cloneable (${srcNode.val})');
-				#end
+				assert(Std.is(srcNode.val, Cloneable), "element is not of type Cloneable");
 				
-				c = cast(srcNode.val, Cloneable<Dynamic>);
-				
-				dstNode = dstNode.next = new LinkedStackNode<T>(c.clone());
+				dstNode = dstNode.next = new LinkedStackNode<T>(cast(srcNode.val, Cloneable<Dynamic>).clone());
 				srcNode = srcNode.next;
 			}
 		}
 		else
 		{
-			var srcNode = _head;
-			var dstNode = copy._head = new LinkedStackNode<T>(copier(srcNode.val));
+			var srcNode = mHead;
+			var dstNode = copy.mHead = new LinkedStackNode<T>(copier(srcNode.val));
 			
 			srcNode = srcNode.next;
 			while (srcNode != null)
@@ -801,61 +685,58 @@ class LinkedStack<T> implements Stack<T>
 				srcNode = srcNode.next;
 			}
 		}
-		
 		return copy;
 	}
 	
-	inline function _getNode(x:T)
+	inline function getNode(x:T)
 	{
-		if (_reservedSize == 0 || _poolSize == 0)
+		if (mReservedSize == 0 || mPoolSize == 0)
 			return new LinkedStackNode<T>(x);
 		else
 		{
-			var n = _headPool;
-			_headPool = _headPool.next;
-			_poolSize--;
+			var n = mHeadPool;
+			mHeadPool = mHeadPool.next;
+			mPoolSize--;
 			
 			n.val = x;
 			return n;
 		}
 	}
 	
-	inline function _putNode(x:LinkedStackNode<T>):T
+	inline function putNode(x:LinkedStackNode<T>):T
 	{
 		var val = x.val;
 		
-		if (_reservedSize > 0 && _poolSize < _reservedSize)
+		if (mReservedSize > 0 && mPoolSize < mReservedSize)
 		{
-			_tailPool = _tailPool.next = x;
+			mTailPool = mTailPool.next = x;
 			x.next = null;
 			x.val = cast null;
-			_poolSize++;
+			mPoolSize++;
 		}
 		return val;
 	}
 	
-	inline function _removeNode(x:LinkedStackNode<T>)
+	inline function removeNode(x:LinkedStackNode<T>)
 	{
-		var n = _head;
+		var n = mHead;
 		if (x == n)
-			_head = x.next;
+			mHead = x.next;
 		else
 		{
 			while (n.next != x) n = n.next;
 			n.next = x.next;
 		}
 		
-		_putNode(x);
-		_top--;
+		putNode(x);
+		mTop--;
 	}
 }
 
-#if doc
-private
-#end
 #if generic
 @:generic
 #end
+@:dox(hide)
 class LinkedStackNode<T>
 {
 	public var val:T;
@@ -872,67 +753,54 @@ class LinkedStackNode<T>
 	}
 }
 
-#if doc
-private
-#end
 #if generic
 @:generic
 #end
+@:access(de.polygonal.ds.LinkedStack)
+@:dox(hide)
 class LinkedStackIterator<T> implements de.polygonal.ds.Itr<T>
 {
-	var _f:LinkedStack<T>;
-	var _walker:LinkedStackNode<T>;
-	var _hook:LinkedStackNode<T>;
+	var mObject:LinkedStack<T>;
+	var mWalker:LinkedStackNode<T>;
+	var mHook:LinkedStackNode<T>;
 	
-	public function new(f:LinkedStack<T>)
+	public function new(x:LinkedStack<T>)
 	{
-		_f = f;
+		mObject = x;
 		reset();
 	}
 	
-	inline public function reset():Itr<T>
+	public function free()
 	{
-		_walker = __head(_f);
-		_hook = null;
+		mObject = null;
+		mWalker = null;
+		mHook = null;
+	}
+	
+	public inline function reset():Itr<T>
+	{
+		mWalker = mObject.mHead;
+		mHook = null;
 		return this;
 	}
 	
-	inline public function hasNext():Bool
+	public inline function hasNext():Bool
 	{
-		return _walker != null;
+		return mWalker != null;
 	}
 	
-	inline public function next():T
+	public inline function next():T
 	{
-		var x = _walker.val;
-		_hook = _walker;
-		_walker = _walker.next;
+		var x = mWalker.val;
+		mHook = mWalker;
+		mWalker = mWalker.next;
 		return x;
 	}
 	
-	inline public function remove()
+	public function remove()
 	{
-		#if debug
-		assert(_hook != null, "call next() before removing an element");
-		#end
+		assert(mHook != null, "call next() before removing an element");
 		
-		#if flash
-		__remove(_f, _hook);
-		#else
-		var f:LinkedStackFriend<T> = _f;
-		f._removeNode(_hook);
-		#end
+		mObject.removeNode(mHook);
 	}
-	
-	inline function __head(f:LinkedStackFriend<T>)
-	{
-		return f._head;
-	}
-	
-	#if flash
-	inline function __remove(f:LinkedStackFriend<T>, x:LinkedStackNode<T>)
-	{
-		return f._removeNode(x);
-	}
-	#end
 }

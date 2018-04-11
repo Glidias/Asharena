@@ -299,7 +299,7 @@ package tests.saboteur
 			
 			startNode = gameBuilder.pathGraph.getNode(ge, gs);
 			gameBuilder.pathGraph.graph.clearMarks();
-			traversibleContours.pixels.clrAll();
+			traversibleContours.pixels.clearAll();
 			borderMeshset2.numClones = 0;
 			fillCardinalRadius(MOVEMENT_ALLOWANCE, ge, gs);		
 			//gameBuilder.pathGraph.graph.DLBFS(MOVEMENT_ALLOWANCE, false, startNode, flagBitVector); 
@@ -317,7 +317,7 @@ package tests.saboteur
 			
 			
 			gameBuilder.pathGraph.graph.clearMarks();
-			traversibleContours.pixels.clrAll();
+			traversibleContours.pixels.clearAll();
 			borderMeshset.numClones = 0;
 			fillCardinalRadius(1, ge, gs);		
 			gameBuilder.pathGraph.graph.DLBFS(1, false, startNode, emptyProcess); 
@@ -506,7 +506,7 @@ package tests.saboteur
 			//if (
 			for (var x:int = 0; x < BIT_MULTIPLIER; x++ ) {
 				for (var y:int = 0; y < BIT_MULTIPLIER; y++) {
-					traversibleContours.pixels.clr((baseY+y)* traversibleContours.width +baseX+x);
+					traversibleContours.pixels.clear((baseY+y)* traversibleContours.width +baseX+x);
 				}
 			}
 		}

@@ -4,8 +4,7 @@
  */
 
 package util.geom;
-import flash.Vector;
-import flash.Vector;
+import util.TypeDefs;
 
 class Mat4 implements IMat4
 {

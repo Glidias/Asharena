@@ -1464,6 +1464,8 @@ package alternativa.engine3d.core {
 		
 
 }
+import alternativa.a3d.clippers.IClipCollectable;
+import alternativa.engine3d.objects.Mesh;
 
 class Vertex {
 	
@@ -1508,10 +1510,22 @@ class Vertex {
 			//trace("new Vertex");
 			return new Vertex();
 		}
+		
 	}
 	
+}
+
+class ClippingMesh extends Mesh implements IClipCollectable {
+	public function ClippingMesh() {
+		super();
+	}
 	
+	/* INTERFACE alternativa.a3d.clippers.IClipCollectable */
 	
+	public function collectClipPlanes(collector:Vector.<CullingPlane>, collectorCount:int, frustumPlanes:CullingPlane, frustumPoints:Vector.<Number>):int 
+	{
+		return 0;
+	}
 }
 
 class Face {

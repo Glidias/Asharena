@@ -27,9 +27,10 @@
 // @r587
 
 package jeash.geom;
+import util.geom.XYZW;
 
 
-class Vector3D {
+class Vector3D implements XYZW {
 	public var length(get_length,null):Float;
 	public function get_length():Float {
 		return Math.sqrt(x*x+y*y+z*z);

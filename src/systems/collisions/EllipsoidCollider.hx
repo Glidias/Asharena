@@ -11,10 +11,8 @@
   */
 package systems.collisions;
 
-
-
 	import components.Transform3D;
-	import flash.geom.Vector3D;
+	
 	import haxe.Log;
 	import util.geom.PMath;
 	
@@ -231,7 +229,8 @@ package systems.collisions;
 		
 		#if !triOnly
 		///*
-		private function loopGeometries():Void {   // Consider: If all geometries are NOT provided dynamically, than no need to use matrices!! precalculate normals, indices, and vertices and merely assign!
+		 // Consider: If all geometries are NOT provided dynamically, than no need to use matrices!! precalculate normals, indices, and vertices and merely assign!
+		private function loopGeometries():Void {  // Non-tri version (n-gons) 
 			var rad:Float = this.rad;
 			numFaces = 0;  // changed naming
 			var indicesLength:Int = 0;
@@ -347,6 +346,124 @@ package systems.collisions;
 			numI = indicesLength;
 		
 		}
+		
+		
+		private function loopGeometriesNaive():Void {  // Non-tri version (n-gons)
+			var rad:Float = this.rad;
+			numFaces = 0;  // changed naming
+			var indicesLength:Int = 0;
+			var normalsLength:Int = 0;
+			
+			// Loop geometries
+			var j:Int;
+			var mapOffset:Int = 0;
+			var verticesLength:Int = 0;
+			var geometriesLength:Int = numGeometries;  // changed
+			var nSides:Int;
+			
+			
+			for (i in 0...geometriesLength) {
+				var geometry:Geometry = geometries[i];
+				var transform:Transform3D = transforms[i];
+				var geomNumVertices:Int = geometry.numVertices;  // changed
+				
+				var geometryIndicesLength:Int = geometry.numIndices; // changed
+				var geomVertices:Vector<Float> = geometry.vertices; // new
+				if (geomNumVertices == 0 || geometryIndicesLength == 0) continue;
+				// Transform vertices
+				j = 0;
+				var geomVertLen:Int = geomNumVertices * 3;
+				while (j < geomVertLen) {  // changed
+					var vx:Float = geomVertices[j];
+					var vy:Float = geomVertices[j+1];
+					var vz:Float = geomVertices[j+2];
+					vertices[verticesLength] = transform.a*vx + transform.b*vy + transform.c*vz + transform.d; verticesLength++;
+					vertices[verticesLength] = transform.e*vx + transform.f*vy + transform.g*vz + transform.h; verticesLength++;
+					vertices[verticesLength] = transform.i * vx + transform.j * vy + transform.k * vz + transform.l; verticesLength++;
+					j += 3;
+				}
+					
+					
+				// Loop faces  
+				var geometryIndices:Vector<UInt> = geometry.indices;
+				j = 0;
+				while (j < geometryIndicesLength) {   
+					var k:Int = j;
+				
+					var oa:UInt = geometryIndices[k] + mapOffset; k++;  // get header
+					
+					nSides = (( oa & A3DConst._NMASK_) >> A3DConst._NSHIFT);
+					
+					nSides = nSides != 0 ? nSides : 3;	
+					j += nSides;
+					
+					var a:UInt = oa;
+				
+					a &= A3DConst._FMASK_;
+					
+					var index:Int = a*3;
+					var ax:Float = vertices[index]; index++;
+					var ay:Float = vertices[index]; index++;
+					var az:Float = vertices[index];
+					var b:UInt = geometryIndices[k] + mapOffset; k++;
+					index = b*3;
+					var bx:Float = vertices[index]; index++;
+					var by:Float = vertices[index]; index++;
+					var bz:Float = vertices[index];
+					var c:UInt = geometryIndices[k]+mapOffset; k++;
+					index = c*3;
+					var cx:Float = vertices[index]; index++;
+					var cy:Float = vertices[index]; index++;
+					var cz:Float = vertices[index];
+
+					// Exclusion by bound   // TODO: does n-gons allow for exclusion by bound without looping?  Else remove this test	
+					/*
+					if (nSides == 3) {
+					
+						if (ax > rad && bx > rad && cx > rad || ax < -rad && bx < -rad && cx < -rad) continue;
+						if (ay > rad && by > rad && cy > rad || ay < -rad && by < -rad && cy < -rad) continue;
+						if (az > rad && bz > rad && cz > rad || az < -rad && bz < -rad && cz < -rad) continue;
+					}
+					*/
+					// The normal
+					var abx:Float = bx - ax;
+					var aby:Float = by - ay;
+					var abz:Float = bz - az;
+					var acx:Float = cx - ax;
+					var acy:Float = cy - ay;
+					var acz:Float = cz - az;
+					var normalX:Float = acz*aby - acy*abz;
+					var normalY:Float = acx*abz - acz*abx;
+					var normalZ:Float = acy*abx - acx*aby;
+					var len:Float = normalX*normalX + normalY*normalY + normalZ*normalZ;
+					if (len < 0.001) continue;  
+					len = 1/Math.sqrt(len);
+					normalX *= len;
+					normalY *= len;
+					normalZ *= len;
+					var offset:Float = ax*normalX + ay*normalY + az*normalZ;
+					//if (offset > rad || offset < -rad) continue;
+					indices[indicesLength] = oa; indicesLength++;  
+					indices[indicesLength] = b; indicesLength++;
+					indices[indicesLength] = c; indicesLength++;
+					normals[normalsLength] = normalX; normalsLength++;
+					normals[normalsLength] = normalY; normalsLength++;
+					normals[normalsLength] = normalZ; normalsLength++;
+					normals[normalsLength] = offset; normalsLength++;
+					for (n in 3...nSides) {  // add more indices if required
+						c =  geometryIndices[k]; k++;
+						indices[indicesLength] = c; indicesLength++;
+					}
+					numFaces++;
+				}
+				// Offset by nomber of vertices
+				mapOffset += geomNumVertices;
+			}
+			
+			numGeometries = 0;	
+			numI = indicesLength;
+		}
+		
 		//*/
 		#end
 		
@@ -547,9 +664,8 @@ package systems.collisions;
 			prepare(source, ZERO_VECTOR);
 
 			collidable.collectGeometry(this);
-			
-			loopGeometriesNaive();
 
+			loopGeometriesNaive();  // naive version doesn't take into consideration facing of polygons
 		}
 		
 		public inline function addGeometry(geometry:Geometry, transform:Transform3D):Void {

@@ -1,4 +1,6 @@
 package util.geom;
+import components.BoundBox;
+
 #if nme
 import nme.geom.Rectangle;
 #elseif flash
@@ -6,6 +8,9 @@ import flash.geom.Rectangle;
 #else
 import jeash.geom.Rectangle;
 #end
+
+
+import util.TypeDefs;
 
 /**
  * ...
@@ -17,7 +22,7 @@ class AABBUtils
 	public static inline var MAX_VALUE:Float = 1.7976931348623157e+308;
 	public static inline var THRESHOLD:Float = .1;
 	
-	public static inline function getRect(aabb:IAABB, threshold:Float=THRESHOLD):Rectangle {
+	public static inline function getRect(aabb:BoundBox, threshold:Float=THRESHOLD):Rectangle {
 		return new Rectangle(aabb.minX, aabb.minZ, clampMagnitude(aabb.maxX - aabb.minX, threshold), clampMagnitude(aabb.maxZ - aabb.minZ, threshold) );
 	
 	}
@@ -33,17 +38,17 @@ class AABBUtils
 		return w != 0 ?  w < 0 ? -1 : 1 : 0;
 	}
 	
-	public static inline function getString(aabb:IAABB):String {
+	public static inline function getString(aabb:BoundBox):String {
 		return "AABB: "+[aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ];
 	}
 	
-	public static inline function pointInside(aabb:IAABB, pt:Vec3):Bool {
+	public static inline function pointInside(aabb:BoundBox, pt:Vec3):Bool {
 		return !(pt.x < aabb.minX || pt.y < aabb.minY || pt.z < aabb.minZ || pt.x > aabb.maxX || pt.y > aabb.maxY || pt.z > aabb.maxZ);
 	}
 	
 	
 	
-	public static inline function match(aabb:IAABB, refAABB:IAABB):Void {
+	public static inline function match(aabb:BoundBox, refAABB:BoundBox):Void {
 		aabb.minX = refAABB.minX;
 		aabb.minY = refAABB.minY;
 		aabb.minZ = refAABB.minZ;
@@ -53,7 +58,7 @@ class AABBUtils
 		aabb.maxZ = refAABB.maxZ;
 	}
 	
-	public static inline function reset(aabb:IAABB):Void {
+	public static inline function reset(aabb:BoundBox):Void {
 		aabb.minX = MAX_VALUE;
 		aabb.minY = MAX_VALUE;
 		aabb.minZ = MAX_VALUE;
@@ -62,7 +67,7 @@ class AABBUtils
 		aabb.maxZ = -MAX_VALUE;
 	}
 	
-	public static inline function expand2(aabb:IAABB, refAABB:IAABB):Void {
+	public static inline function expand2(aabb:BoundBox, refAABB:BoundBox):Void {
 		if (refAABB.minX < aabb.minX) aabb.minX = refAABB.minX;
 		if (refAABB.minY < aabb.minY) aabb.minY = refAABB.minY;
 		if (refAABB.minZ < aabb.minZ) aabb.minZ = refAABB.minZ;
@@ -72,7 +77,7 @@ class AABBUtils
 		if (refAABB.maxZ > aabb.maxZ) aabb.maxZ = refAABB.maxZ;
 	}
 
-	public static inline function expand(x:Float, y:Float, z:Float, aabb:IAABB):Void {
+	public static inline function expand(x:Float, y:Float, z:Float, aabb:BoundBox):Void {
 		if (x < aabb.minX) aabb.minX = x;
 		if (y < aabb.minY) aabb.minY = y;
 		if (z < aabb.minZ) aabb.minZ = z;
@@ -80,7 +85,7 @@ class AABBUtils
 		if (y > aabb.maxY) aabb.maxY = y;
 		if (z > aabb.maxZ) aabb.maxZ = z;
 	}
-	public static inline function expandWithPoint(vec:Vec3, aabb:IAABB):Void {
+	public static inline function expandWithPoint(vec:Vec3, aabb:BoundBox):Void {
 		if (vec.x < aabb.minX) aabb.minX = vec.x;
 		if (vec.y < aabb.minY) aabb.minY = vec.y;
 		if (vec.z < aabb.minZ) aabb.minZ = vec.z;
@@ -149,12 +154,12 @@ class AABBUtils
 		}
 		*/
 
-		public static inline function checkSphere(aabb:IAABB, sphere:XYZW):Bool {
+		public static inline function checkSphere(aabb:BoundBox, sphere:Vector3D):Bool {
 			return sphere.x + sphere.w > aabb.minX && sphere.x - sphere.w < aabb.maxX && sphere.y + sphere.w > aabb.minY && sphere.y - sphere.w < aabb.maxY && sphere.z + sphere.w > aabb.minZ && sphere.z - sphere.w < aabb.maxZ;
 		}
 
 		
-		public static inline function intersectRay(aabb:IAABB, origin:Vec3, direction:Vec3):Bool {
+		public static inline function intersectRay(aabb:BoundBox, origin:Vec3, direction:Vec3):Bool {
 			if (origin.x >= aabb.minX && origin.x <= aabb.maxX && origin.y >= aabb.minY && origin.y <= aabb.maxY && origin.z >= aabb.minZ && origin.z <= aabb.maxZ) return true;
 			if (origin.x < aabb.minX && direction.x <= 0) return false;
 			if (origin.x > aabb.maxX && direction.x >= 0) return false;

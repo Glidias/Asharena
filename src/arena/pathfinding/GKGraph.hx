@@ -138,7 +138,7 @@ class GKGraph {
 		
 		var totalNodes:Int = verticesAcross * verticesAcross;
 		cliffVector = cliffVector != null ? cliffVector : new BitVector(totalNodes);
-		cliffVector.clrAll();
+		cliffVector.clearAll();
 			
 		// temporary edge vector to keep track of steep slopes per node
 		var edgeVector:BitVector  = new BitVector(totalNodes * 8); 
@@ -254,7 +254,13 @@ class GKGraph {
 				edge.x = -EDGE_OFFSETS[(edgeIndex << 1)] * tileSize;
 				edge.y = -EDGE_OFFSETS[(edgeIndex << 1) + 1] * tileSize;
 				edge.z =  heightMap[( yo) * verticesAcross + ( xo)] - h;
-				edgeVector.setValue( ((y*verticesAcross+x) << 3) + edgeIndex,  PMath.abs(edge.z)/ (xo == 0 || yo == 0 ? tileSize : GKEdge.DIAGONAL_LENGTH) > gradient );	
+				if ( PMath.abs(edge.z) / (xo == 0 || yo == 0 ? tileSize : GKEdge.DIAGONAL_LENGTH) > gradient ) {
+					edgeVector.set( ((y*verticesAcross+x) << 3) + edgeIndex );	
+				}
+				else {
+					edgeVector.clear(  ((y*verticesAcross+x) << 3) + edgeIndex  );
+				}
+				
 			}
 		}
 		

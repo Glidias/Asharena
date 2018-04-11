@@ -77,7 +77,7 @@ package alternativa.a3d.collisions
 				boundBox.minY -= padd;
 				boundBox.minZ -= padd;
 				
-					boundBox.maxX += padd;
+				boundBox.maxX += padd;
 				boundBox.maxY += padd;
 				boundBox.maxZ += padd;
 			}

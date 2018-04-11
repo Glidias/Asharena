@@ -1,265 +1,223 @@
 /*
- *                            _/                                                    _/
- *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
- *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *     _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *    _/_/_/      _/_/    _/    _/_/_/    _/_/_/    _/_/    _/    _/    _/_/_/  _/
- *   _/                            _/        _/
- *  _/                        _/_/      _/_/
- *
- * POLYGONAL - A HAXE LIBRARY FOR GAME DEVELOPERS
- * Copyright (c) 2009 Michael Baczynski, http://www.polygonal.de
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+Copyright (c) 2008-2018 Michael Baczynski, http://www.polygonal.de
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 package de.polygonal.ds;
 
-#if flash10
-#if alchemy
-import de.polygonal.ds.mem.IntMemory;
-#else
-import flash.Vector;
-#end
+#if (flash && alchemy)
+import de.polygonal.ds.tools.mem.IntMemory;
 #end
 
-import de.polygonal.ds.error.Assert.assert;
+import de.polygonal.ds.tools.ArrayTools;
+import de.polygonal.ds.tools.Assert.assert;
+import de.polygonal.ds.tools.GrowthRate;
+import de.polygonal.ds.tools.MathTools;
 
-private typedef HashTableFriend<K, T> =
-{
-	private var _h:IntIntHashTable;
-	private var _keys:Array<K>;
-	private var _vals:Array<T>;
-}
+using de.polygonal.ds.tools.NativeArrayTools;
 
 /**
- * <p>An array hash table for mapping <em>Hashable</em> keys to generic elements.</p>
- * <p>The implementation is based on <em>IntIntHashTable</em>.</p>
- * <p><o>Worst-case running time in Big O notation</o></p>
- */
+	An array hash table for mapping Hashable keys to generic elements
+	
+	The implementation is based on `IntIntHashTable`.
+	
+	Example:
+		class Element extends de.polygonal.ds.HashableItem {
+		    var i:Int;
+		    public function new(i:Int) {
+		        super();
+		        this.i = i;
+		    }
+		    public function toString():String {
+		        return "Element" + i;
+		    }
+		}
+		
+		...
+		
+		var o = new de.polygonal.ds.HashTable<Element, String>(16);
+		o.set(new Element(1), "a");
+		o.set(new Element(2), "b");
+		o.set(new Element(3), "c");
+		trace(o); //outputs:
+		
+		[ HashTable size=4 capacity=16 load=0.25
+		  Element1 -> a
+		  Element2 -> b
+		  Element3 -> c
+		]
+**/
+#if generic
+@:generic
+#end
 class HashTable<K:Hashable, T> implements Map<K, T>
 {
 	/**
-	 * A unique identifier for this object.<br/>
-	 * A hash table transforms this key into an index of an array element by using a hash function.<br/>
-	 * <warn>This value should never be changed by the user.</warn>
-	 */
-	public var key:Int;
+		A unique identifier for this object.
+		
+		A hash table transforms this key into an index of an array element by using a hash function.
+	**/
+	public var key(default, null):Int = HashKey.next();
 	
 	/**
-	 * If true, reuses the iterator object instead of allocating a new one when calling <code>iterator()</code>.<br/>
-	 * The default is false.<br/>
-	 * <warn>If true, nested iterations are likely to fail as only one iteration is allowed at a time.</warn>
-	 */
-	public var reuseIterator:Bool;
+		The size of the allocated storage space for the elements.
+		If more space is required to accommodate new elements, `capacity` grows according to `this.growthRate`.
+		The capacity never falls below the initial size defined in the constructor and is usually a bit larger than `this.size` (_mild overallocation_).
+	**/
+	public var capacity(default, null):Int;
 	
-	var _h:IntIntHashTable;
+	/**
+		The load factor measure the "denseness" of a hash table and is proportional to the time cost to look up an entry.
+		
+		E.g. assuming that the keys are perfectly distributed, a load factor of 4.0 indicates that each slot stores 4 keys, which have to be sequentially searched in order to find a value.
+		
+		A high load factor thus indicates poor performance.
+		
+		If the load factor gets too high, additional slots can be allocated by calling `this.rehash()`.
+	**/
+	public var loadFactor(get, never):Float;
+	function get_loadFactor():Float
+	{
+		return mH.loadFactor;
+	}
 	
-	var _keys:Array<K>;
-	var _vals:Array<T>;
+	/**
+		The total number of allocated slots.
+	**/
+	public var slotCount(get, never):Int;
+	inline function get_slotCount():Int
+	{
+		return mH.slotCount;
+	}
 	
-	#if flash10
+	/**
+		If true, reuses the iterator object instead of allocating a new one when calling `this.iterator()`.
+		
+		The default is false.
+		
+		_If this value is true, nested iterations will fail as only one iteration is allowed at a time._
+	**/
+	public var reuseIterator:Bool = false;
+	
+	/**
+		The growth rate of the container.
+		@see `GrowthRate`
+	**/
+	public var growthRate(get, set):Int;
+	function get_growthRate():Int
+	{
+		return mH.growthRate;
+	}
+	function set_growthRate(value:Int):Int
+	{
+		return mH.growthRate = value;
+	}
+	
+	var mH:IntIntHashTable;
+	var mKeys:NativeArray<K>;
+	var mVals:NativeArray<T>;
 	#if alchemy
-	var _next:IntMemory;
+	var mNext:IntMemory;
 	#else
-	var _next:Vector<Int>;
-	#end
-	#else
-	var _next:Array<Int>;
+	var mNext:NativeArray<Int>;
 	#end
 	
-	var _free:Int;
-	var _sizeLevel:Int;
-	var _isResizable:Bool;
-	var _iterator:HashTableValIterator<K, T>;
-	
-	var _tmpArr:Array<Int>;
+	var mFree:Int = 0;
+	var mSize:Int = 0;
+	var mMinCapacity:Int;
+	var mIterator:HashTableValIterator<K, T> = null;
+	var mTmpIntBuffer:Array<Int> = [];
+	var mTmpKeyBuffer:Array<K> = [];
 	
 	/**
-	 * @param slotCount the total number of slots into which the hashed keys are distributed.
-	 * This defines the space-time trade off of the hash table.
-	 * Increasing the <code>slotCount</code> reduces the computation time (read/write/access) of the hash table at the cost of increased memory use.
-	 * This value is fixed and can only be changed by calling <em>rehash()</em>, which rebuilds the hash table (expensive).
-	 * 
-	 * @param capacity the initial physical space for storing the key/value pairs at the time the hash table is created.
-	 * This is also the minimum allowed size of the hash table and cannot be changed in the future. If omitted, the initial <em>capacity</em> equals <code>slotCount</code>.
-	 * The <em>capacity</em> is automatically adjusted according to the storage requirements based on two rules:
-	 * <ol>
-	 * <li>If the hash table runs out of space, the <em>capacity</em> is doubled (if <code>isResizable</code> is true).</li>
-	 * <li>If the size falls below a quarter of the current <em>capacity</em>, the <em>capacity</em> is cut in half while the minimum <em>capacity</em> can't fall below <code>capacity</code>.</li>
-	 * </ol>
-	 * 
-	 * @param isResizable if false, the hash table is treated as fixed size table.
-	 * Thus adding a value when <em>size()</em> equals <em>capacity</em> throws an error.
-	 * Otherwise the <em>capacity</em> is automatically adjusted.
-	 * Default is true.
-	 * 
-	 * @param maxSize the maximum allowed size of this hash table.
-	 * The default value of -1 indicates that there is no upper limit.
-	 * 
-	 * @throws de.polygonal.ds.error.AssertError <code>slotCount</code> is not a power of two (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <code>capacity</code> is not a power of two (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <code>capacity</code> is &lt; 2 (debug only).
-	 */
-	public function new(slotCount:Int, capacity = -1, isResizable = true, maxSize = -1)
+		@param slotCount the total number of slots into which the hashed keys are distributed.
+		This defines the space-time trade off of this hash table.
+		A high `slotCount` value leads to better performance but requires more memory.
+		This value can only be changed later on by calling `this.rehash()`, which in turn rebuilds the entire hash table (expensive).
+		
+		@param capacity the initial physical space for storing the elements at the time this hash table is initialized.
+		This also defines the minimum allowed size.
+		If omitted, the initial `capacity` is set to `slotCount`.
+		If more space is required to accommodate new elements, `capacity` grows according to `this.growthRate`.
+	**/
+	public function new(slotCount:Int, initialCapacity:Int = -1)
 	{
-		if (capacity == -1) capacity = slotCount;
+		assert(slotCount > 0);
 		
-		_isResizable = isResizable;
+		if (initialCapacity == -1) initialCapacity = slotCount;
+		initialCapacity = MathTools.max(2, initialCapacity);
 		
-		_h = new IntIntHashTable(slotCount, capacity, isResizable, maxSize);
-		_keys = ArrayUtil.alloc(capacity);
-		_vals = ArrayUtil.alloc(capacity);
+		mMinCapacity = capacity = initialCapacity;
 		
-		#if flash10
+		mH = new IntIntHashTable(slotCount, capacity);
+		mKeys = NativeArrayTools.alloc(capacity);
+		mVals = NativeArrayTools.alloc(capacity);
+		
 		#if alchemy
-		_next = new IntMemory(capacity, "HashTable._next");
+		mNext = new IntMemory(capacity, "HashTable.mNext");
 		#else
-		_next = new Vector<Int>(capacity);
-		#end
-		#else
-		_next = ArrayUtil.alloc(capacity);
+		mNext = NativeArrayTools.alloc(capacity);
 		#end
 		
-		for (i in 0...capacity - 1) __setNext(i, i + 1);
-		__setNext(capacity - 1, IntIntHashTable.NULL_POINTER);
-		_free = 0;
-		_sizeLevel = 0;
-		_iterator = null;
-		_tmpArr = [];
+		var t = mNext;
+		for (i in 0...capacity - 1) t.set(i, i + 1);
+		t.set(capacity - 1, IntIntHashTable.NULL_POINTER);
+	}
+	
+	/**
+		Counts the total number of collisions.
 		
-		key = HashKey.next();
-		reuseIterator = false;
-	}
-	
-	/**
-	 * The load factor measure the "denseness" of a hash table and is proportional to the time cost to look up an entry.<br/>
-	 * E.g. assuming that the keys are perfectly distributed, a load factor of 4.0 indicates that each slot stores 4 keys, which have to be sequentially searched in order to find a value.<br/>
-	 * A high load factor thus indicates poor performance.
-	 * If the load factor gets too high, additional slots can be allocated by calling <em>rehash()</em>.
-	 */
-	inline public function getLoadFactor():Float
-	{
-		return _h.getLoadFactor();
-	}
-	
-	/**
-	 * The total number of allocated slots. 
-	 */
-	inline public function getSlotCount():Int
-	{
-		return _h.getSlotCount();
-	}
-	
-	/**
-	 * The size of the allocated storage space for the key/value pairs.<br/>
-	 * If more space is required to accomodate new elements, the <em>capacity</em> is doubled every time <em>size()</em> grows beyond <em>capacity</em>, and split in half when <em>size()</em> is a quarter of <em>capacity</em>.
-	 * The <em>capacity</em> never falls below the initial size defined in the constructor.
-	 */
-	inline public function getCapacity():Int
-	{
-		return _h.getCapacity();
-	}
-	
-	/**
-	 * Counts the total number of collisions.<br/>
-	 * A collision occurs when two distinct keys are hashed into the same slot.
-	 */
+		A collision occurs when two distinct keys are hashed into the same slot.
+	**/
 	public function getCollisionCount():Int
 	{
-		return _h.getCollisionCount();
+		return mH.getCollisionCount();
 	}
 	
 	/**
-	 * Returns the value that is mapped to <code>key</code> or null if <code>key</code> does not exist.<br/>
-	 * Uses move-to-front-on-access which reduces access time when similar keys are frequently queried.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError <code>key</code> is null (debug only).
-	 */
-	inline public function getFront(key:K):T
+		Returns the value that is mapped to `key` or null if `key` does not exist.
+		
+		Uses move-to-front-on-access which reduces access time when similar keys are frequently queried.
+	**/
+	public inline function getFront(key:K):T
 	{
-		var i = _h.getFront(__key(key));
+		var i = mH.getFront(key.key);
 		if (i == IntIntHashTable.KEY_ABSENT)
 			return null;
 		else
-			return _vals[i];
+			return mVals.get(i);
 	}
 	
 	/**
-	 * Maps <code>val</code> to <code>key</code> in this map, but only if <code>key</code> does not exist yet.<br/>
-	 * <o>n</o>
-	 * @return true if <code>key</code> was mapped to <code>val</code> for the first time.
-	 * @throws de.polygonal.ds.error.AssertError out of space - hash table is full but not resizable.
-	 * @throws de.polygonal.ds.error.AssertError <code>key</code> is null (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	inline public function setIfAbsent(key:K, val:T):Bool
+		Maps `val` to `key` in this map, but only if `key` does not exist yet.
+		@return true if `key` was mapped to `val` for the first time.
+	**/
+	public inline function setIfAbsent(key:K, val:T):Bool
 	{
-		if ((size() == getCapacity()))
+		assert(key != null);
+		
+		if (size == capacity) grow();
+		
+		var i = mFree;
+		if (mH.setIfAbsent(key.key, i))
 		{
-			if (_h.setIfAbsent(__key(key), size()))
-			{
-				_expand(getCapacity() >> 1);
-				
-				_vals[_free] = val;
-				_keys[_free] = key;
-				_free = __getNext(_free);
-				return true;
-			}
-			else
-				return false;
-		}
-		else
-		{
-			if (_h.setIfAbsent(__key(key), _free))
-			{
-				_vals[_free] = val;
-				_keys[_free] = key;
-				_free = __getNext(_free);
-				return true;
-			}
-			else
-				return false;
-		}
-	}
-	
-	/**
-	 * Redistributes all keys over <code>slotCount</code>.<br/>
-	 * This is an expensive operations as the hash table is rebuild from scratch.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError <code>slotCount</code> is not a power of two (debug only).
-	 */
-	public function rehash(slotCount:Int)
-	{
-		_h.rehash(slotCount);
-	}
-	
-	/**
-	 * Remaps the first occurrence of <code>key</code> to a new value <code>val</code>.
-	 * <o>n</o>
-	 * @return true if <code>val</code> was successfully remapped to <code>key</code>.
-	 * @throws de.polygonal.ds.error.AssertError <code>key</code> is null (debug only).
-	 */
-	inline public function remap(key:K, val:T):Bool
-	{
-		var i = _h.get(__key(key));
-		if (i != IntIntHashTable.KEY_ABSENT)
-		{
-			_vals[i] = val;
+			mVals.set(i, val);
+			mKeys.set(i, key);
+			mFree = mNext.get(i);
+			mSize++;
 			return true;
 		}
 		else
@@ -267,711 +225,633 @@ class HashTable<K:Hashable, T> implements Map<K, T>
 	}
 	
 	/**
-	 * Creates and returns an unordered array of all keys.
-	 * <o>n</o>
-	 */
+		Redistributes all keys over `slotCount`.
+		
+		This is an expensive operations as the hash table is rebuild from scratch.
+	**/
+	public function rehash(slotCount:Int):HashTable<K, T>
+	{
+		mH.rehash(slotCount);
+		return this;
+	}
+	
+	/**
+		Remaps the first occurrence of `key` to a new value `val`.
+		@return true if `val` was successfully remapped to `key`.
+	**/
+	public inline function remap(key:K, val:T):Bool
+	{
+		assert(key != null);
+		
+		var i = mH.get(key.key);
+		if (i != IntIntHashTable.KEY_ABSENT)
+		{
+			mVals.set(i, val);
+			return true;
+		}
+		else
+			return false;
+	}
+	
+	/**
+		Creates and returns an unordered array of all keys.
+	**/
 	public function toKeyArray():Array<K>
 	{
-		var a:Array<K> = ArrayUtil.alloc(size());
-		var j = 0;
-		for (i in 0...getCapacity())
-		{
-			if (_keys[i] != null)
-				a[j++] = _keys[i];
-		}
-		return a;
-	}
-	
-	/**
-	 * Creates and returns an unordered dense array of all keys.
-	 * <o>n</o>
-	 */
-	public function toKeyDA():DA<K>
-	{
-		var a = new DA<K>(size());
-		for (i in 0...getCapacity())
-		{
-			if (_keys[i] != null)
-				a.pushBack(_keys[i]);
-		}
-		return a;
-	}
-	
-	/**
-	 * For performance reasons the hash table does nothing to ensure that empty locations contain null.<br/>
-	 * <em>pack()</em> therefore nullifies all obsolete references.
-	 * <o>n</o>
-	 */
-	public function pack()
-	{
-		for (i in 0...getCapacity())
-			if (_keys[i] != null) _vals[i] = cast null;
-	}
-	
-	/**
-	 * Returns a string representing the current object.<br/>
-	 * Example:<br/>
-	 * <pre class="prettyprint">
-	 * class Foo extends de.polygonal.ds.HashableItem
-	 * {
-	 *     var value:Int;
-	 *     
-	 *     public function new(value:Int) {
-	 *         super();
-	 *         this.value = value;
-	 *     }
-	 *     
-	 *     public function toString():String {
-	 *         return "{ Foo value: " + value + " }";
-	 *     }
-	 * }
-	 * 
-	 * class Main
-	 * {
-	 *     static function main() {
-	 *         var hash = new de.polygonal.ds.HashTable&lt;Foo, String&gt;(16);
-	 *         for (i in 0...4) hash.set(new Foo(i), "foo"  + i);
-	 *         trace(hash);
-	 *     }
-	 * }</pre>
-	 * <pre class="console">
-	 * { HashTable size/capacity: 4/16, load factor: 0.25 }
-	 * [
-	 *   {Foo value: 0} -> foo0
-	 *   {Foo value: 1} -> foo1
-	 *   {Foo value: 2} -> foo2
-	 *   {Foo value: 3} -> foo3
-	 * ]</pre>
-	 */
-	public function toString():String
-	{
-		var s = Printf.format("{ HashTable size/capacity: %d/%d, load factor: %.2f }", [size(), getCapacity(), getLoadFactor()]);
-		if (isEmpty()) return s;
-		s += "\n[\n";
+		if (isEmpty()) return [];
 		
-		var max = 0;
-		for (key in keys()) max = M.max(max, Std.string(key).length);
-		
-		for (key in keys())
-			s += Printf.format("  %- " + max + "s -> %s\n", [key, Std.string(get(key))]);
-		
-		s += "]";
-		return s;
-	}
-	
-	/*///////////////////////////////////////////////////////
-	// map
-	///////////////////////////////////////////////////////*/
-	
-	/**
-	 * Returns true if this map contains a mapping for the value <code>val</code>.
-	 * <o>n</o>
-	 */
-	inline public function has(val:T):Bool
-	{
-		var exists = false;
-		for (i in 0...getCapacity())
+		var out = ArrayTools.alloc(size);
+		var j = 0, keys = mKeys, k;
+		for (i in 0...capacity)
 		{
-			if (_keys[i] != null)
-			{
-				if (_vals[i] == val)
-				{
-					exists = true;
-					break;
-				}
-			}
+			k = keys.get(i);
+			if (k != null) out[j++] = k;
 		}
-		return exists;
+		return out;
 	}
 	
 	/**
-	 * Returns true if this map contains <code>key</code>.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError <code>key</code> is null (debug only).
-	 */
-	inline public function hasKey(key:K):Bool
+		Free up resources by reducing the capacity of the internal container to the initial capacity.
+	**/
+	public function pack():HashTable<K, T>
 	{
-		return _h.hasKey(__key(key));
-	}
-	
-	/**
-	 * Returns the value that is mapped to <code>key</code> or null if <code>key</code> does not exist.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError <code>key</code> is null (debug only).
-	 */
-	inline public function get(key:K):T
-	{
-		#if debug
-		assert(key != null, "key != null");
+		mH.pack();
+		
+		if (mH.capacity == capacity) return this;
+		
+		capacity = mH.capacity;
+		
+		#if alchemy
+		mNext.resize(capacity);
+		#else
+		mNext = NativeArrayTools.alloc(capacity);
 		#end
 		
-		var i = _h.get(__key(key));
-		if (i == IntIntHashTable.KEY_ABSENT)
-			return null;
-		else
-			return _vals[i];
+		var t = mNext;
+		for (i in 0...capacity - 1) t.set(i, i + 1);
+		t.set(capacity - 1, IntIntHashTable.NULL_POINTER);
+		mFree = 0;
+		
+		var srcKeys = mKeys;
+		var dstKeys = NativeArrayTools.alloc(capacity);
+		
+		var srcVals = mVals;
+		var dstVals = NativeArrayTools.alloc(capacity);
+		
+		var j = mFree;
+		for (i in mH)
+		{
+			dstKeys.set(j, srcKeys.get(i));
+			dstVals.set(j, srcVals.get(i));
+			j = mNext.get(j);
+		}
+		mFree = j;
+		
+		mKeys = dstKeys;
+		mVals = dstVals;
+		for (i in 0...size) mH.remap(dstKeys.get(i).key, i);
+		return this;
 	}
 	
 	/**
-	 * Stores all values that are mapped to <code>key</code> in <code>values</code> or returns 0 if <code>key</code> does not exist.
-	 * @return the total number of values mapped to <code>key</code>.
-	 */
-	public function getAll(key:K, values:Array<T>):Int
+		Calls `f` on all {K,T} pairs in random order.
+	**/
+	@:access(de.polygonal.ds.IntIntHashTable)
+	public inline function iter(f:K->T->Void):HashTable<K, T>
 	{
-		var i = _h.get(__key(key));
+		assert(f != null);
+		var d = mH.mData, vals = mVals, keys = mKeys, v;
+		for (i in 0...mH.capacity)
+		{
+			v = d.get(i * 3 + 1);
+			if (v != IntIntHashTable.VAL_ABSENT) f(keys.get(v), vals.get(v));
+		}
+		return this;
+	}
+	
+	/**
+		Prints out all elements.
+	**/
+	#if !no_tostring
+	public function toString():String
+	{
+		var b = new StringBuf();
+		b.add(Printf.format('[ HashTable size=$size capacity=$capacity load=%.2f', [loadFactor]));
+		if (isEmpty())
+		{
+			b.add(" ]");
+			return b.toString();
+		}
+		b.add("\n");
+		var l = 0;
+		for (key in keys()) l = MathTools.max(l, Std.string(key).length);
+		var args = new Array<Dynamic>();
+		var fmt = '  %- ${l}s -> %s\n';
+		
+		var keys = [for (key in keys()) key];
+		keys.sort(function(u, v) return u.key - v.key);
+		var i = 1;
+		var k = keys.length;
+		var j = 0;
+		var c = 1;
+		inline function print(key:K)
+		{
+			args[0] = key;
+			if (c > 1)
+			{
+				var tmp = [];
+				getAll(key, tmp);
+				args[1] = tmp.join(",");
+			}
+			else
+				args[1] = Std.string(get(key));
+			b.add(Printf.format(fmt, args));
+		}
+		while (i < k)
+		{
+			if (keys[j] == keys[i])
+				c++;
+			else
+			{
+				print(keys[j]);
+				j = i;
+				c = 1;
+			}
+			i++;
+		}
+		print(keys[j]);
+		
+		b.add("]");
+		return b.toString();
+	}
+	#end
+	
+	function grow()
+	{
+		var oldCapacity = capacity;
+		capacity = GrowthRate.compute(growthRate, capacity);
+		
+		var t;
+		
+		#if alchemy
+		mNext.resize(capacity);
+		#else
+		t = NativeArrayTools.alloc(capacity);
+		mNext.blit(0, t, 0, oldCapacity);
+		mNext = t;
+		#end
+		
+		t = mNext;
+		for (i in oldCapacity - 1...capacity - 1) t.set(i, i + 1);
+		t.set(capacity - 1, IntIntHashTable.NULL_POINTER);
+		mFree = oldCapacity;
+		
+		var v = NativeArrayTools.alloc(capacity);
+		mVals.blit(0, v, 0, oldCapacity);
+		mVals = v;
+		
+		var k = NativeArrayTools.alloc(capacity);
+		mKeys.blit(0, k, 0, oldCapacity);
+		mKeys = k;
+	}
+	
+	/* INTERFACE Map */
+	
+	/**
+		Returns true if this map contains a mapping for the value `val`.
+	**/
+	public function has(val:T):Bool
+	{
+		var k = mKeys, v = mVals;
+		for (i in 0...capacity)
+		{
+			if (k.get(i) == null) continue;
+			if (v.get(i) == val) return true;
+		}
+		return false;
+	}
+	
+	/**
+		Returns true if this map contains `key`.
+	**/
+	public inline function hasKey(key:K):Bool
+	{
+		assert(key != null);
+		
+		return mH.hasKey(key.key);
+	}
+	
+	/**
+		Returns the value that is mapped to `key` or null if `key` does not exist.
+	**/
+	public inline function get(key:K):T
+	{
+		assert(key != null);
+		
+		var i = mH.get(key.key);
+		return i == IntIntHashTable.KEY_ABSENT ? null : mVals.get(i);
+	}
+	
+	/**
+		Stores all values that are mapped to `key` in `out` or returns 0 if `key` does not exist.
+		@return the total number of values mapped to `key`.
+	**/
+	public function getAll(key:K, out:Array<T>):Int
+	{
+		var i = mH.get(key.key);
 		if (i == IntIntHashTable.KEY_ABSENT)
 			return 0;
 		else
 		{
-			var c = _h.getAll(__key(key), _tmpArr);
-			for (i in 0...c) values[i] = _vals[_tmpArr[i]];
+			var b = mTmpIntBuffer;
+			var c = mH.getAll(key.key, b);
+			var v = mVals;
+			for (j in 0...c) out[j] = v.get(b[j]);
 			return c;
 		}
 	}
 	
 	/**
-	 * Maps the value <code>val</code> to <code>key</code>.<br/>
-	 * The method allows duplicate keys.<br/>
-	 * <warn>To ensure unique keys either use <em>hasKey()</em> before <em>set()</em> or <em>setIfAbsent()</em></warn>
-	 * <o>n</o>
-	 * @return true if <code>key</code> was added for the first time, false if another instance of <code>key</code> was inserted.
-	 * @throws de.polygonal.ds.error.AssertError out of space - hash table is full but not resizable.
-	 * @throws de.polygonal.ds.error.AssertError <code>key</code> is null (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	inline public function set(key:K, val:T):Bool
+		Maps the value `val` to `key`.
+		
+		The method allows duplicate keys.
+		<br/>To ensure unique keys either use `this.hasKey()` before `this.set()` or `this.setIfAbsent()`.
+		@return true if `key` was added for the first time, false if another instance of `key` was inserted.
+	**/
+	public function set(key:K, val:T):Bool
 	{
-		if (size() == getCapacity())
-		{
-			_expand(getCapacity());
-		}
+		assert(key != null);
 		
-		var first = _h.set(__key(key), _free);
-		_vals[_free] = val;
-		_keys[_free] = key;
+		if (size == capacity) grow();
 		
-		_free = __getNext(_free);
+		var i = mFree;
+		var first = mH.set(key.key, i);
+		mVals.set(i, val);
+		mKeys.set(i, key);
+		mFree = mNext.get(i);
+		mSize++;
 		return first;
 	}
 	
 	/**
-	 * Removes and nullifies the first occurrence of <code>key</code>.</br>
-	 * Only the key is nullified, to nullifiy the value call <em>pack()</em>.
-	 * <o>n</o>
-	 * @return true if <code>key</code> is successfully removed.
-	 * @throws de.polygonal.ds.error.AssertError <code>key</code> is null (debug only).
-	 */
-	inline public function clr(key:K):Bool
+		Removes and nullifies the first occurrence of `key`.
+		
+		Only the key is nullified, to nullify the value call `this.pack()`.
+		@return true if `key` is successfully removed.
+	**/
+	public function unset(key:K):Bool
 	{
-		var i = _h.get(__key(key));
-		if (i == IntIntHashTable.KEY_ABSENT)
-			return false;
-		else
-		{
-			_keys[i] = null;
-			__setNext(i, _free);
-			_free = i;
-			
-			var shrink = false;
-			
-			if (_sizeLevel > 0)
-				if (size() - 1 == (getCapacity() >> 2))
-					if (_isResizable)
-						shrink = true;
-			
-			_h.clr(__key(key));
-			
-			if (shrink) _shrink();
-			
-			return true;
-		}
+		var i = mH.get(key.key);
+		if (i == IntIntHashTable.KEY_ABSENT) return false;
+		mKeys.set(i, null);
+		mNext.set(i, mFree);
+		mFree = i;
+		mH.unset(key.key);
+		mSize--;
+		return true;
 	}
 	
 	/**
-	 * Creates a <em>ListSet</em> object of the values in this map.
-	 * <o>n</o>
-	 */
+		Creates a `ListSet` object of the values in this map.
+	**/
 	public function toValSet():Set<T>
 	{
-		var s = new ListSet<T>();
-		for (i in 0...getCapacity())
-		{
-			if (_keys[i] != null)
-				s.set(_vals[i]);
-		}
-		
+		var s = new ListSet<T>(), k = mKeys, v = mVals;
+		for (i in 0...capacity)
+			if (k.get(i) != null)
+				s.set(v.get(i));
 		return s;
 	}
 	
 	/**
-	 * Creates a <em>ListSet</em> object of the keys in this map.
-	 * <o>n</o>
-	 */
+		Creates a `ListSet` object of the keys in this map.
+	**/
 	public function toKeySet():Set<K>
 	{
-		var s = new ListSet<K>();
-		for (i in 0...getCapacity())
+		var s = new ListSet<K>(), t = mKeys, k;
+		for (i in 0...capacity)
 		{
-			if (_keys[i] != null)
-				s.set(_keys[i]);
+			k = t.get(i);
+			if (k != null) s.set(k);
 		}
-		
 		return s;
 	}
 	
 	/**
-	 * Returns a new <em>HashTableKeyIterator</em> object to iterate over all keys stored in this map.
-	 * The keys are visited in a random order.
-	 * <o>n</o>
-	 * @see <a href="http://haxe.org/ref/iterators" target="_blank">http://haxe.org/ref/iterators</a>
-	 */
+		Returns a new *HashTableKeyIterator* object to iterate over all keys stored in this map.
+		
+		The keys are visited in a random order.
+		
+		@see http://haxe.org/ref/iterators
+	**/
 	public function keys():Itr<K>
 	{
 		return new HashTableKeyIterator(this);
 	}
 	
-	/*///////////////////////////////////////////////////////
-	// collection
-	///////////////////////////////////////////////////////*/
+	/* INTERFACE Collection */
 	
 	/**
-	 * Destroys this object by explicitly nullifying all key/values.<br/>
-	 * <warn>If "alchemy memory" is used, always call this method when the life cycle of this object ends to prevent a memory leak.</warn>
-	 * <o>n</o>
-	 */
-	public function free()
+		The total number of key/value pairs.
+	**/
+	public var size(get, never):Int;
+	inline function get_size():Int
 	{
-		for (i in 0...size())
-		{
-			_vals[i] = cast null;
-			_keys[i] = null;
-		}
-		_vals = null;
-		_keys = null;
-		
-		#if (flash10 && alchemy)
-		_next.free();
-		#end
-		_next = null;
-		
-		_h.free();
-		_h = null;
-		_iterator = null;
-		_tmpArr = null;
+		return mSize;
 	}
 	
 	/**
-	 * Same as <em>has()</em>.
-	 * <o>n</o>
-	 */
+		Destroys this object by explicitly nullifying all key/values.
+		
+		_If compiled with -D alchemy , always call this method when the life cycle of this object ends to prevent a memory leak._
+	**/
+	public function free()
+	{
+		mVals.nullify();
+		mVals = null;
+		
+		mKeys.nullify();
+		mKeys = null;
+		
+		#if alchemy
+		mNext.free();
+		#end
+		mNext = null;
+		
+		mH.free();
+		mH = null;
+		if (mIterator != null)
+		{
+			mIterator.free();
+			mIterator = null;
+		}
+		mTmpIntBuffer = null;
+		mTmpKeyBuffer = null;
+	}
+	
+	/**
+		Same as `this.has()`.
+	**/
 	public function contains(val:T):Bool
 	{
 		return has(val);
 	}
 	
 	/**
-	 * Removes all occurrences of the value <code>val</code>.
-	 * <o>n</o>
-	 * @return true if <code>val</code> was removed, false if <code>val</code> does not exist.
-	 */
+		Removes all occurrences of the value `val`.
+		@return true if `val` was removed, false if `val` does not exist.
+	**/
 	public function remove(val:T):Bool
 	{
 		var found = false;
-		var tmp = new Array<K>();
-		for (i in 0...getCapacity())
+		var b = mTmpKeyBuffer;
+		var k = mKeys, v = mVals, j;
+		var c = 0;
+		
+		for (i in 0...capacity)
 		{
-			if (_keys[i] != null)
+			j = k.get(i);
+			if (j == null) continue;
+			if (v.get(i) == val)
 			{
-				if (_vals[i] == val)
-				{
-					tmp.push(_keys[i]);
-					found = true;
-				}
+				b[c++] = j;
+				found = true;
 			}
 		}
 		
-		if (found)
+		for (i in 0...c)
 		{
-			for (key in tmp) clr(key);
-			return true;
+			unset(b[i]);
+			b[i] = null;
 		}
-		else
-			return false;
+		return c > 0;
 	}
 	
 	/**
-	 * Removes all key/value pairs.<br/>
-	 * <o>n</o>
-	 * @param purge if true, nullifies all keys and values and shrinks the hash table to the initial capacity defined in the constructor.
-	 */
-	public function clear(purge = false)
+		Removes all key/value pairs.
+		
+		The `gc` parameter has no effect.
+	**/
+	public function clear(gc:Bool = false)
 	{
-		_h.clear(purge);
-		for (i in 0...getCapacity()) _keys[i] = null;
+		mH.clear(gc);
 		
-		if (purge)
-		{
-			for (i in 0...getCapacity())
-			{
-				_vals[i] = cast null;
-				_keys[i] = null;
-			}
-			
-			while (_sizeLevel > 0) _shrink();
-		}
+		mKeys.init(null, 0, capacity);
+		mVals.init(null, 0, capacity);
 		
-		for (i in 0...getCapacity() - 1) __setNext(i, i + 1);
-		__setNext(getCapacity() - 1, IntIntHashTable.NULL_POINTER);
-		_free = 0;
+		var t = mNext;
+		for (i in 0...capacity - 1) t.set(i, i + 1);
+		t.set(capacity - 1, IntIntHashTable.NULL_POINTER);
+		mFree = 0;
+		mSize = 0;
 	}
 	
 	/**
-	 * Returns a new <em>HashTableValIterator</em> object to iterate over all values contained in this hash table.<br/>
-	 * The values are visited in a random order.
-	 * @see <a href="http://haxe.org/ref/iterators" target="_blank">http://haxe.org/ref/iterators</a>
-	 */
+		Returns a new *HashTableValIterator* object to iterate over all values contained in this hash table.
+		
+		The values are visited in a random order.
+		
+		@see http://haxe.org/ref/iterators
+	**/
 	public function iterator():Itr<T>
 	{
 		if (reuseIterator)
 		{
-			if (_iterator == null)
-				_iterator = new HashTableValIterator<K, T>(this);
+			if (mIterator == null)
+				mIterator = new HashTableValIterator<K, T>(this);
 			else
-				_iterator.reset();
-			return _iterator;
+				mIterator.reset();
+			return mIterator;
 		}
 		else
 			return new HashTableValIterator<K, T>(this);
 	}
 	
 	/**
-	 * Returns true if this hash table is empty.
-	 * <o>1</o>
-	 */
-	inline public function isEmpty():Bool
+		Returns true only if `this.size` is 0.
+	**/
+	public inline function isEmpty():Bool
 	{
-		return _h.isEmpty();
+		return mSize == 0;
 	}
 	
 	/**
-	 * The total number of key/value pairs.
-	 * <o>1</o>
-	 */
-	inline public function size():Int
-	{
-		return _h.size();
-	}
-	
-	/**
-	 * Returns an unordered array containing all values in this hash table. 
-	 */
+		Returns an unordered array containing all values in this hash table.
+	**/
 	public function toArray():Array<T>
 	{
-		var a:Array<T> = ArrayUtil.alloc(size());
-		var j = 0;
-		for (i in 0...getCapacity())
-		{
-			if (_keys[i] != null)
-				a[j++] = _vals[i];
-		}
-		return a;
+		if (isEmpty()) return [];
+		
+		var out = ArrayTools.alloc(size);
+		var j = 0, keys = mKeys, vals = mVals;
+		for (i in 0...capacity)
+			if (keys.get(i) != null)
+				out[j++] = vals.get(i);
+		return out;
 	}
 	
-	#if flash10
 	/**
-	 * Returns a Vector.&lt;T&gt; object containing all values in this hash table.
-	 */
-	public function toVector():flash.Vector<Dynamic>
-	{
-		var a = new flash.Vector<Dynamic>(size());
-		var j = 0;
-		for (i in 0...getCapacity())
-		{
-			if (_keys[i] != null)
-				a[j++] = _vals[i];
-		}
-		return a;
-	}
-	#end
-	
-	/**
-	 * Duplicates this hash table. Supports shallow (structure only) and deep copies (structure & elements).
-	 * @param assign if true, the <code>copier</code> parameter is ignored and primitive elements are copied by value whereas objects are copied by reference.<br/>
-	 * If false, the <em>clone()</em> method is called on each element. <warn>In this case all elements have to implement <em>Cloneable</em>.</warn>
-	 * @param copier a custom function for copying elements. Replaces element.<em>clone()</em> if <code>assign</code> is false.
-	 * @throws de.polygonal.ds.error.AssertError element is not of type <em>Cloneable</em> (debug only).
-	 */
-	public function clone(assign = true, copier:T->T = null):Collection<T>
-	{
-		var c:HashTable<K, T> = Type.createEmptyInstance(HashTable);
+		Creates and returns a shallow copy (structure only - default) or deep copy (structure & elements) of this hash table.
 		
-		c.key = HashKey.next();
-		c._h = cast _h.clone(false);
+		If `byRef` is true, primitive elements are copied by value whereas objects are copied by reference.
 		
-		if (assign)
-		{
-			c._vals = new Array<T>();
-			ArrayUtil.copy(_vals, c._vals);
-		}
+		If `byRef` is false, the `copier` function is used for copying elements. If omitted, `clone()` is called on each element assuming all elements implement `Cloneable`.
+	**/
+	public function clone(byRef:Bool = true, copier:T->T = null):Collection<T>
+	{
+		var c = new HashTable<K, T>(slotCount, size);
+		c.mH = cast mH.clone();
+		c.mSize = size;
+		c.mFree = mFree;
+		
+		var srcVals = mVals;
+		var dstVals = c.mVals;
+		
+		var srcKeys = mKeys;
+		var dstKeys = c.mKeys;
+		
+		srcKeys.blit(0, dstKeys, 0, size);
+		
+		if (byRef)
+			srcVals.blit(0, dstVals, 0, size);
 		else
 		{
-			var tmp:Array<T> = ArrayUtil.alloc(getCapacity());
 			if (copier != null)
 			{
-				for (i in 0...getCapacity())
+				for (i in 0...size)
 				{
-					if (_keys[i] != null)
-						tmp[i] = copier(_vals[i]);
+					if (srcKeys.get(i) != null)
+						dstVals.set(i, copier(srcVals.get(i)));
+					else
+						dstVals.set(i, null);
 				}
 			}
 			else
 			{
-				var c:Cloneable<T> = null;
-				for (i in 0...getCapacity())
+				for (i in 0...size)
 				{
-					if (_keys[i] != null)
+					if (srcKeys.get(i) != null)
 					{
-						#if debug
-						assert(Std.is(_vals[i], Cloneable), 'element is not of type Cloneable (${_vals[i]})');
-						#end
+						assert(Std.is(srcVals.get(i), Cloneable), "element is not of type Cloneable");
 						
-						c = untyped _vals[i];
-						tmp[i] = c.clone();
+						dstVals.set(i, cast(srcVals.get(i), Cloneable<Dynamic>).clone());
 					}
+					else
+						dstVals.set(i, null);
 				}
 			}
-			c._vals = tmp;
 		}
 		
-		c._sizeLevel = _sizeLevel;
-		c._free = _free;
-		
-		#if flash10
 		#if alchemy
-		c._next = _next.clone();
+		IntMemory.blit(mNext, 0, c.mNext, 0, size);
 		#else
-		c._next = new Vector<Int>(_next.length);
-		for (i in 0...Std.int(_next.length)) c._next[i] = _next[i];
+		mNext.blit(0, c.mNext, 0, size);
 		#end
-		#else
-		c._next = new Array<Int>();
-		ArrayUtil.copy(_next, c._next);
-		#end
-		
-		c._keys = new Array<K>();
-		ArrayUtil.copy(_keys, c._keys);
-		
 		return c;
 	}
-	
-	inline function _expand(oldSize:Int)
-	{
-		var newSize = oldSize << 1;
-		
-		#if flash10
-		#if alchemy
-		_next.resize(newSize);
-		#else
-		var tmp = new Vector<Int>(newSize);
-		for (i in 0...oldSize) tmp[i] = _next[i];
-		_next = tmp;
-		#end
-		#else
-		var tmp:Array<Int> = ArrayUtil.alloc(newSize);
-		ArrayUtil.copy(_next, tmp, 0, oldSize);
-		_next = tmp;
-		#end
-		
-		var tmp:Array<K> = ArrayUtil.alloc(newSize);
-		ArrayUtil.copy(_keys, tmp, 0, oldSize);
-		_keys = tmp;
-		
-		for (i in oldSize - 1...newSize - 1) __setNext(i, i + 1);
-		__setNext(newSize - 1, IntIntHashTable.NULL_POINTER);
-		_free = oldSize;
-		
-		var tmp:Array<T> = ArrayUtil.alloc(newSize);
-		ArrayUtil.copy(_vals, tmp, 0, oldSize);
-		_vals = tmp;
-		
-		_sizeLevel++;
-	}
-	
-	inline function _shrink()
-	{
-		_sizeLevel--;
-		
-		var oldSize = getCapacity() << 1;
-		var newSize = getCapacity();
-		
-		#if flash10
-		#if alchemy
-		_next.resize(newSize);
-		#else
-		_next = new Vector<Int>(newSize);
-		#end
-		#else
-		_next = ArrayUtil.alloc(newSize);
-		#end
-		
-		for (i in 0...newSize - 1) __setNext(i, i + 1);
-		__setNext(newSize - 1, IntIntHashTable.NULL_POINTER);
-		_free = 0;
-		
-		var tmpKeys:Array<K> = ArrayUtil.alloc(newSize);
-		var tmpVals:Array<T> = ArrayUtil.alloc(newSize);
-		
-		for (i in _h)
-		{
-			tmpKeys[_free] = _keys[i];
-			tmpVals[_free] = _vals[i];
-			_free = __getNext(_free);
-		}
-		
-		_keys = tmpKeys;
-		_vals = tmpVals;
-		
-		for (i in 0..._free)
-			_h.remap(__key(_keys[i]), i);
-	}
-	
-	inline function __getNext(i:Int)
-	{
-		#if (flash10 && alchemy)
-		return _next.get(i);
-		#else
-		return _next[i];
-		#end
-	}
-	inline function __setNext(i:Int, x:Int)
-	{
-		#if (flash10 && alchemy)
-		_next.set(i, x);
-		#else
-		_next[i] = x;
-		#end
-	}
-	
-	inline function __key(x:Hashable)
-	{
-		#if debug
-		assert(x != null, "key is null");
-		#end
-		
-		return x.key;
-	}
 }
 
-#if doc
-private
+#if generic
+@:generic
 #end
-class HashTableKeyIterator<K, T> implements de.polygonal.ds.Itr<K>
+@:access(de.polygonal.ds.HashTable)
+@:dox(hide)
+class HashTableKeyIterator<K:Hashable, T> implements de.polygonal.ds.Itr<K>
 {
-	var _f:HashTableFriend<K, T>;
+	var mObject:HashTable<K, T>;
+	var mKeys:NativeArray<K>;
+	var mI:Int;
+	var mS:Int;
 	
-	var _keys:Array<K>;
-	
-	var _i:Int;
-	var _s:Int;
-	
-	public function new(f:HashTableFriend<K, T>)
+	public function new(x:HashTable<K, T>)
 	{
-		_f = f;
+		mObject = x;
 		reset();
 	}
 	
-	inline public function reset():Itr<K>
+	public function free()
 	{
-		_keys = __keys(_f);
-		_i = -1;
-		_s = _f._h.getCapacity();
+		mObject = null;
+		mKeys = null;
+	}
+	
+	public function reset():Itr<K>
+	{
+		mKeys = mObject.mKeys;
+		mS = mObject.mH.capacity;
+		mI = 0;
+		while (mI < mS && mKeys.get(mI) == null) mI++;
 		return this;
 	}
 	
-	inline public function hasNext():Bool
+	public inline function hasNext():Bool
 	{
-		while (++_i < _s)
-		{
-			if (_keys[_i] != null)
-				return true;
-		}
-		return false;
+		return mI < mS;
 	}
 
-	inline public function next():K
+	public inline function next():K
 	{
-		return _keys[_i];
+		var v = mKeys.get(mI);
+		while (++mI < mS && mKeys.get(mI) == null) {}
+		return v;
 	}
 	
-	inline public function remove()
+	public function remove()
 	{
 		throw "unsupported operation";
-	}
-	
-	inline function __vals(f:HashTableFriend<K, T>)
-	{
-		return f._vals;
-	}
-	inline function __keys(f:HashTableFriend<K, T>)
-	{
-		return f._keys;
 	}
 }
 
-#if doc
-private
+#if generic
+@:generic
 #end
-class HashTableValIterator<K, T> implements de.polygonal.ds.Itr<T>
+@:access(de.polygonal.ds.HashTable)
+@:dox(hide)
+class HashTableValIterator<K:Hashable, T> implements de.polygonal.ds.Itr<T>
 {
-	var _f:HashTableFriend<K, T>;
+	var mObject:HashTable<K, T>;
+	var mKeys:NativeArray<K>;
+	var mVals:NativeArray<T>;
+	var mI:Int;
+	var mS:Int;
 	
-	var _keys:Array<K>;
-	var _vals:Array<T>;
-	
-	var _i:Int;
-	var _s:Int;
-	
-	public function new(f:HashTableFriend<K, T>)
+	public function new(x:HashTable<K, T>)
 	{
-		_f = f;
+		mObject = x;
 		reset();
 	}
 	
-	inline public function reset():Itr<T>
+	public function free()
 	{
-		_vals = __vals(_f);
-		_keys = __keys(_f);
-		_i = -1;
-		_s = _f._h.getCapacity();
+		mObject = null;
+		mKeys = null;
+		mVals = null;
+	}
+	
+	public function reset():Itr<T>
+	{
+		mVals = mObject.mVals;
+		mKeys = mObject.mKeys;
+		mS = mObject.mH.capacity;
+		mI = 0;
+		while (mI < mS && mKeys.get(mI) == null) mI++;
 		return this;
 	}
 	
-	inline public function hasNext():Bool
+	public inline function hasNext():Bool
 	{
-		while (++_i < _s)
-		{
-			if (_keys[_i] != null)
-				return true;
-		}
-		return false;
+		return mI < mS;
 	}
 	
-	inline public function next():T
+	public inline function next():T
 	{
-		return _vals[_i];
+		var v = mVals.get(mI);
+		while (++mI < mS && mKeys.get(mI) == null) {}
+		return v;
 	}
 	
-	inline public function remove()
+	public function remove()
 	{
 		throw "unsupported operation";
-	}
-	
-	inline function __vals(f:HashTableFriend<K, T>)
-	{
-		return f._vals;
-	}
-	inline function __keys(f:HashTableFriend<K, T>)
-	{
-		return f._keys;
 	}
 }

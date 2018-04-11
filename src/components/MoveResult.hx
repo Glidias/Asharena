@@ -288,7 +288,7 @@ class MoveResult extends Vec3
 				break;
 			}
 			tailCollisionEvent = c; 
-			c.thing = null;
+			//c.thing = null;
 			c = c.next;
 		}
 		

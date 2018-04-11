@@ -1,377 +1,318 @@
 ﻿/*
- *                            _/                                                    _/
- *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
- *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *     _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
- *    _/_/_/      _/_/    _/    _/_/_/    _/_/_/    _/_/    _/    _/    _/_/_/  _/
- *   _/                            _/        _/
- *  _/                        _/_/      _/_/
- *
- * POLYGONAL - A HAXE LIBRARY FOR GAME DEVELOPERS
- * Copyright (c) 2009 Michael Baczynski, http://www.polygonal.de
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+Copyright (c) 2008-2018 Michael Baczynski, http://www.polygonal.de
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 package de.polygonal.ds;
 
-import de.polygonal.ds.error.Assert.assert;
-
-private typedef DLLNodeFriend<T> =
-{
-	public var next:DLLNode<T>;
-	private function _insertAfter(node:DLLNode<T>):Void;
-	private function _insertBefore(node:DLLNode<T>):Void;
-	private function _unlink():DLLNode<T>;
-	private var _list:DLL<T>;
-}
+import de.polygonal.ds.tools.ArrayTools;
+import de.polygonal.ds.tools.Assert.assert;
+import de.polygonal.ds.tools.MathTools;
+import de.polygonal.ds.tools.Shuffle;
 
 /**
- * <p>A doubly linked list.</p>
- * <p>See <a href="http://lab.polygonal.de/?p=206" target="_blank">http://lab.polygonal.de/?p=206</a></p>
- * <p><o>Worst-case running time in Big O notation</o></p>
- */
+	A doubly linked list
+	
+	Example:
+		var o = new de.polygonal.ds.Dll<Int>();
+		for (i in 0...4) o.append(i);
+		trace(o); //outputs:
+		
+		[ Dll size=4
+		  head
+		  0 -> 0
+		  1 -> 1
+		  2 -> 2
+		  3 -> 3
+		]
+**/
 #if generic
 @:generic
 #end
-class DLL<T> implements Collection<T>
+@:access(de.polygonal.ds.DllNode)
+class Dll<T> implements List<T>
 {
 	/**
-	 * A unique identifier for this object.<br/>
-	 * A hash table transforms this key into an index of an array element by using a hash function.<br/>
-	 * <warn>This value should never be changed by the user.</warn>
-	 */
-	public var key:Int;
+		A unique identifier for this object.
+		
+		A hash table transforms this key into an index of an array element by using a hash function.
+	**/
+	public var key(default, null):Int = HashKey.next();
 	
 	/**
-	 * The head of this list or null if this list is empty. 
-	 */
-	public var head(default, null):DLLNode<T>;
+		The head of this list or null if this list is empty.
+	**/
+	public var head(default, null):DllNode<T>;
 	
 	/**
-	 * The tail of this list or null if this list is empty. 
-	 */
-	public var tail(default, null):DLLNode<T>;
+		The tail of this list or null if this list is empty.
+	**/
+	public var tail(default, null):DllNode<T>;
 	
 	/**
-	 * The maximum allowed size of this list.<br/>
-	 * Once the maximum size is reached, adding an element will fail with an error (debug only).<br/>
-	 * A value of -1 indicates that the size is unbound.<br/>
-	 * <warn>Always equals -1 in release mode.</warn>
-	 */
-	public var maxSize:Int;
+		If true, reuses the iterator object instead of allocating a new one when calling `this.iterator()`.
+		
+		The default is false.
+		
+		_If this value is true, nested iterations will fail as only one iteration is allowed at a time._
+	**/
+	public var reuseIterator:Bool = false;
 	
 	/**
-	 * If true, reuses the iterator object instead of allocating a new one when calling <code>iterator()</code>.<br/>
-	 * The default is false.<br/>
-	 * <warn>If true, nested iterations are likely to fail as only one iteration is allowed at a time.</warn>
-	 */
-	public var reuseIterator:Bool;
+		True if this list is circular.
+		
+		A list is circular if the tail points to the head and vice versa.
+	**/
+	public var isCircular(default, null):Bool = false;
 	
-	var _size:Int;
-	var _reservedSize:Int;
-	var _poolSize:Int;
+	var mSize:Int = 0;
+	var mReservedSize:Int;
+	var mPoolSize:Int = 0;
 	
-	var _headPool:DLLNode<T>;
-	var _tailPool:DLLNode<T>;
+	var mHeadPool:DllNode<T>;
+	var mTailPool:DllNode<T>;
 	
-	var _circular:Bool;
-	var _iterator:Itr<T>;
+	var mIterator:DllIterator<T> = null;
 	
 	/**
-	 * @param reservedSize if &gt; 0, this list maintains an object pool of node objects.<br/>
-	 * Prevents frequent node allocation and thus increases performance at the cost of using more memory.
-	 * @param maxSize the maximum allowed size of this list.<br/>
-	 * The default value of -1 indicates that there is no upper limit.
-	 * @throws de.polygonal.ds.error.AssertError reserved size is greater than allowed size (debug only).
-	 */
-	public function new(reservedSize = 0, maxSize = -1)
+		@param reservedSize if > 0, this list maintains an object pool of node objects.
+		Prevents frequent node allocation and thus increases performance at the cost of using more memory.
+	**/
+	public function new(reservedSize:Null<Int> = 0, ?source:Array<T>)
 	{
-		#if debug
-		if (reservedSize > 0)
-		{
-			if (maxSize != -1)
-				assert(reservedSize <= maxSize, "reserved size is greater than allowed size");
-		}
-		this.maxSize = (maxSize == -1) ? M.INT32_MAX : maxSize;
-		#else
-		this.maxSize = -1;
-		#end
-		
-		_reservedSize = reservedSize;
-		_size         = 0;
-		_poolSize     = 0;
-		_circular     = false;
-		_iterator     = null;
+		mReservedSize = reservedSize;
 		
 		if (reservedSize > 0)
-		{
-			_headPool = _tailPool = new DLLNode<T>(cast null, this);
-		}
+			mHeadPool = mTailPool = new DllNode<T>(cast null, this);
 		
-		head = tail = null;
-		key = HashKey.next();
-		reuseIterator = false;
+		if (source != null && source.length > 0)
+		{
+			mSize = source.length;
+			head = tail = getNode(source[0]);
+			var node;
+			for (i in 1...mSize)
+			{
+				node = getNode(source[i]);
+				tail.next = node;
+				node.prev = tail;
+				tail = node;
+			}
+		}
+		else
+			head = tail = null;
 	}
 	
 	/**
-	 * Returns true if this list is circular.<br/>
-	 * A list is circular if the tail points to the head and vice versa.
-	 * <o>1</o>
-	 */
-	public function isCircular():Bool
+		Makes this list circular by connecting the tail to the head and vice versa.
+		
+		Silently fails if this list is already closed.
+	**/
+	public function close():Dll<T>
 	{
-		return _circular;
-	}
-	
-	/**
-	 * Makes this list circular by connecting the tail to the head and vice versa.<br/>
-	 * Silently fails if this list is already closed.
-	 * <o>1</o>
-	 */
-	public function close()
-	{
-		if (_circular) return;
-		_circular = true;
-		if (_valid(head))
+		if (isCircular) return this;
+		isCircular = true;
+		if (valid(head))
 		{
 			tail.next = head;
 			head.prev = tail;
 		}
+		return this;
 	}
 	
 	/**
-	 * Makes this list non-circular by disconnecting the tail from the head and vice versa.<br/>
-	 * Silently fails if this list is already non-circular.
-	 * <o>1</o>
-	 */
-	public function open()
+		Makes this list non-circular by disconnecting the tail from the head and vice versa.
+		
+		Silently fails if this list is already non-circular.
+	**/
+	public function open():Dll<T>
 	{
-		if (!_circular) return;
-		_circular = false;
-		if (_valid(head))
+		if (!isCircular) return this;
+		isCircular = false;
+		if (valid(head))
 		{
 			tail.next = null;
 			head.prev = null;
 		}
+		return this;
 	}
 	
 	/**
-	 * Creates and returns a new <code>DLLNode</code> object storing the value <code>x</code> and pointing to this list.
-	 * <o>1</o>
-	 */
-	public function createNode(x:T):DLLNode<T>
+		Creates and returns a new `DllNode` object storing the value `val` and pointing to this list.
+	**/
+	public function createNode(val:T):DllNode<T>
 	{
-		return new DLLNode<T>(x, this);
+		return new DllNode<T>(val, this);
 	}
 	
 	/**
-	 * Appends the element <code>x</code> to the tail of this list by creating a <em>DLLNode</em> object storing <code>x</code>.
-	 * <o>1</o>
-	 * @return the appended node storing <code>x</code>.
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	public function append(x:T):DLLNode<T>
+		Appends `val` to the tail of this list by creating a `DllNode` object storing `val`.
+		@return the appended node storing `val`.
+	**/
+	public function append(val:T):DllNode<T>
 	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		#end
-		
-		var node = _getNode(x);
-		if (_valid(tail))
+		var node = getNode(val);
+		if (valid(tail))
 		{
 			tail.next = node;
 			node.prev = tail;
-		}	
+		}
 		else
 			head = node;
 		tail = node;
 		
-		if (_circular)
+		if (isCircular)
 		{
 			tail.next = head;
 			head.prev = tail;
 		}
 		
-		_size++;
+		mSize++;
 		return node;
 	}
 	
 	/**
-	 * Appends the node <code>x</code> to this list.
-	 * <o>1</o>
-	 */
-	public function appendNode(x:DLLNode<T>)
+		Appends `node` to this list.
+	**/
+	public function appendNode(node:DllNode<T>)
 	{
-		#if debug
-		assert(x.getList() == this, "node is not managed by this list");
-		#end
+		assert(node.getList() == this, "node is not managed by this list");
 		
-		if (_valid(tail))
+		if (valid(tail))
 		{
-			tail.next = x;
-			x.prev = tail;
-		}	
+			tail.next = node;
+			node.prev = tail;
+		}
 		else
-			head = x;
-		tail = x;
+			head = node;
+		tail = node;
 		
-		if (_circular)
+		if (isCircular)
 		{
 			tail.next = head;
 			head.prev = tail;
 		}
 		
-		_size++;
+		mSize++;
 	}
 	
 	/**
-	 * Prepends the element <code>x</code> to the head of this list by creating a <em>DLLNode</em> object storing <code>x</code>.
-	 * <o>1</o>
-	 * @return the prepended node storing <code>x</code>.
-	 * @throws de.polygonal.ds.error.AssertError <em>size()</em> equals <em>maxSize</em> (debug only).
-	 */
-	public function prepend(x:T):DLLNode<T>
+		Prepends `val` to the head of this list by creating a `DllNode` object storing `val`.
+		@return the prepended node storing `val`.
+	**/
+	public function prepend(val:T):DllNode<T>
 	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		#end
-		
-		var node = _getNode(x);
+		var node = getNode(val);
 		node.next = head;
-		if (_valid(head))
+		if (valid(head))
 			head.prev = node;
 		else
 			tail = node;
 		head = node;
 		
-		if (_circular)
+		if (isCircular)
 		{
 			tail.next = head;
 			head.prev = tail;
 		}
 		
-		_size++;
+		mSize++;
 		return node;
 	}
 	
 	/**
-	 * Prepends the node <code>x</code> to this list.
-	 * <o>1</o>
-	 */
-	public function prependNode(x:DLLNode<T>)
+		Prepends `node` to this list.
+	**/
+	public function prependNode(node:DllNode<T>)
 	{
-		#if debug
-		assert(x.getList() == this, "node is not managed by this list");
-		#end
+		assert(node.getList() == this, "node is not managed by this list");
 		
-		x.next = head;
-		if (_valid(head))
-			head.prev = x;
+		node.next = head;
+		if (valid(head))
+			head.prev = node;
 		else
-			tail = x;
-		head = x;
+			tail = node;
+		head = node;
 		
-		if (_circular)
+		if (isCircular)
 		{
 			tail.next = head;
 			head.prev = tail;
 		}
 		
-		_size++;
+		mSize++;
 	}
 	
 	/**
-	 * Inserts the element <code>x</code> after <code>node</code> by creating a <em>DLLNode</em> object storing <code>x</code>.
-	 * <o>1</o>
-	 * @return the inserted node storing <code>x</code>.
-	 * @throws de.polygonal.ds.error.AssertError <code>node</code> is null or not managed by this list (debug only).
-	 */
-	public function insertAfter(node:DLLNode<T>, x:T):DLLNode<T>
+		Inserts `val` after `node` by creating a `DllNode` object storing `val`.
+		@return the inserted node storing `val`.
+	**/
+	public function insertAfter(node:DllNode<T>, val:T):DllNode<T>
 	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		assert(_valid(node), "node is null");
+		assert(valid(node), "node is null");
 		assert(node.getList() == this, "node is not managed by this list");
-		#end
 		
-		var t = _getNode(x);
-		__insertAfter(node, t);
+		var t = getNode(val);
+		node.insertAfter(t);
 		if (node == tail)
 		{
 			tail = t;
-			if (_circular)
+			if (isCircular)
 				tail.next = head;
 		}
 		
-		_size++;
+		mSize++;
 		return t;
 	}
 	
 	/**
-	 * Inserts the element <code>x</code> before <code>node</code> by creating a <em>DLLNode</em> object storing <code>x</code>.
-	 * <o>1</o>
-	 * @return the inserted node storing <code>x</code>.
-	 * @throws de.polygonal.ds.error.AssertError <code>node</code> is null or not managed by this list (debug only).
-	 */
-	public function insertBefore(node:DLLNode<T>, x:T):DLLNode<T>
+		Inserts `val` before `node` by creating a `DllNode` object storing `val`.
+		@return the inserted node storing `val`.
+	**/
+	public function insertBefore(node:DllNode<T>, val:T):DllNode<T>
 	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() < maxSize, 'size equals max size ($maxSize)');
-		assert(_valid(node), "node is null");
+		assert(valid(node), "node is null");
 		assert(node.getList() == this, "node is not managed by this list");
-		#end
 		
-		var t = _getNode(x);
-		__insertBefore(node, t);
+		var t = getNode(val);
+		node.insertBefore(t);
 		if (node == head)
 		{
 			head = t;
-			if (_circular)
+			if (isCircular)
 				head.prev = tail;
 		}
 		
-		_size++;
+		mSize++;
 		return t;
 	}
 	
 	/**
-	 * Unlinks <code>node</code> from this list and returns <code>node</code>.<em>next</em>;
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 * @throws de.polygonal.ds.error.AssertError <code>node</code> is null or not managed by this list (debug only).
-	 */
-	public function unlink(node:DLLNode<T>):DLLNode<T>
+		Unlinks `node` from this list and returns `node.next`.
+	**/
+	public function unlink(node:DllNode<T>):DllNode<T>
 	{
-		#if debug
-		assert(_valid(node), "node is null");
+		assert(valid(node), "node is null");
 		assert(node.getList() == this, "node is not managed by this list");
-		assert(_size > 0, "list is empty");
-		#end
+		assert(size > 0, "list is empty");
 		
 		var hook = node.next;
 		if (node == head)
 		{
 			head = head.next;
-			if (_circular)
+			if (isCircular)
 			{
 				if (head == tail)
 					head = null;
@@ -385,32 +326,27 @@ class DLL<T> implements Collection<T>
 		if (node == tail)
 		{
 			tail = tail.prev;
-			if (_circular)
+			if (isCircular)
 				head.prev = tail;
 				
 			if (tail == null) head = null;
 		}
 		
-		__unlink(node);
-		_putNode(node);
-		_size--;
-		
+		unlinkNode(node);
+		putNode(node);
+		mSize--;
 		return hook;
 	}
 	
 	/**
-	 * Returns the node at "index" <code>i</code>.<br/>
-	 * The index is measured relative to the head node (= index 0).
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 * @throws de.polygonal.ds.error.AssertError index out of range (debug only).
-	 */
-	public function getNodeAt(i:Int):DLLNode<T>
+		Returns the node at "index" `i`.
+		
+		The index is measured relative to the head node (0=head).
+	**/
+	public function getNodeAt(i:Int):DllNode<T>
 	{
-		#if debug
-		assert(_size > 0, "list is empty");
-		assert(i >= 0 || i < _size, 'i index out of range ($i)');
-		#end
+		assert(size > 0, "list is empty");
+		assert(i >= 0 || i < size, 'i index out of range ($i)');
 		
 		var node = head;
 		for (j in 0...i) node = node.next;
@@ -418,15 +354,11 @@ class DLL<T> implements Collection<T>
 	}
 	
 	/**
-	 * Removes the head node and returns the element stored in this node.
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 */
+		Removes the head node and returns the element stored in this node.
+	**/
 	public function removeHead():T
 	{
-		#if debug
-		assert(_size > 0, "list is empty");
-		#end
+		assert(size > 0, "list is empty");
 		
 		var node = head;
 		if (head == tail)
@@ -436,7 +368,7 @@ class DLL<T> implements Collection<T>
 			head = head.next;
 			node.next = null;
 			
-			if (_circular)
+			if (isCircular)
 			{
 				head.prev = tail;
 				tail.next = head;
@@ -444,21 +376,16 @@ class DLL<T> implements Collection<T>
 			else
 				head.prev = null;
 		}
-		_size--;
-		
-		return _putNode(node);
+		mSize--;
+		return putNode(node);
 	}
 	
 	/**
-	 * Removes the tail node and returns the element stored in this node.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 */
+		Removes the tail node and returns the element stored in this node.
+	**/
 	public function removeTail():T
 	{
-		#if debug
-		assert(_size > 0, "list is empty");
-		#end
+		assert(size > 0, "list is empty");
 		
 		var node = tail;
 		if (head == tail)
@@ -468,7 +395,7 @@ class DLL<T> implements Collection<T>
 			tail = tail.prev;
 			node.prev = null;
 			
-			if (_circular)
+			if (isCircular)
 			{
 				tail.next = head;
 				head.prev = tail;
@@ -477,23 +404,18 @@ class DLL<T> implements Collection<T>
 				tail.next = null;
 		}
 		
-		_size--;
-		
-		return _putNode(node);
+		mSize--;
+		return putNode(node);
 	}
 	
 	/**
-	 * Unlinks the head node and appends it to the tail.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 */
-	public function shiftUp()
+		Unlinks the head node and appends it to the tail.
+	**/
+	public function headToTail():Dll<T>
 	{
-		#if debug
-		assert(_size > 0, "list is empty");
-		#end
+		assert(size > 0, "list is empty");
 		
-		if (_size > 1)
+		if (size > 1)
 		{
 			var t = head;
 			if (head.next == tail)
@@ -520,26 +442,23 @@ class DLL<T> implements Collection<T>
 				tail = t;
 			}
 			
-			if (_circular)
+			if (isCircular)
 			{
 				tail.next = head;
 				head.prev = tail;
 			}
 		}
+		return this;
 	}
 	
 	/**
-	 * Unlinks the tail node and prepends it to the head.
-	 * <o>1</o>
-	 * @throws de.polygonal.ds.error.AssertError list is empty (debug only).
-	 */
-	public function popDown()
+		Unlinks the tail node and prepends it to the head.
+	**/
+	public function tailToHead():Dll<T>
 	{
-		#if debug
-		assert(_size > 0, "list is empty");
-		#end
+		assert(size > 0, "list is empty");
 		
-		if (_size > 1)
+		if (size > 1)
 		{
 			var t = tail;
 			if (tail.prev == head)
@@ -566,43 +485,43 @@ class DLL<T> implements Collection<T>
 				head = t;
 			}
 			
-			if (_circular)
+			if (isCircular)
 			{
 				tail.next = head;
 				head.prev = tail;
 			}
 		}
+		return this;
 	}
 	
 	/**
-	 * Searches for the element <code>x</code> in this list from head to tail starting at node <code>from</code>.
-	 * <o>n</o>
-	 * @return the node containing <code>x</code> or null if such a node does not exist.<br/>
-	 * If <code>from</code> is null, the search starts at the head of this list.
-	 * @throws de.polygonal.ds.error.AssertError <code>from</code> is not managed by this list (debug only).
-	 */
-	public function nodeOf(x:T, from:DLLNode<T> = null):DLLNode<T>
+		Searches for `val` in this list from head to tail starting at node `from`.
+		
+		If `from` is null, the search starts at the head of this list.
+		@return the node containing `val` or null if such a node does not exist.
+	**/
+	public function nodeOf(val:T, from:DllNode<T> = null):DllNode<T>
 	{
 		#if debug
-		if (_valid(from))
+		if (valid(from))
 			assert(from.getList() == this, "node is not managed by this list");
 		#end
 		
 		var node = (from == null) ? head : from;
-		if (_circular)
+		if (isCircular)
 		{
 			while (node != tail)
 			{
-				if (node.val == x) return node;
+				if (node.val == val) return node;
 				node = node.next;
 			}
-			if (node.val == x) return node;
+			if (node.val == val) return node;
 		}
 		else
 		{
-			while (_valid(node))
+			while (valid(node))
 			{
-				if (node.val == x) return node;
+				if (node.val == val) return node;
 				node = node.next;
 			}
 		}
@@ -610,34 +529,33 @@ class DLL<T> implements Collection<T>
 	}
 	
 	/**
-	 * Searches for the element <code>x</code> in this list from tail to head starting at node <code>from</code>.
-	 * <o>n</o>
-	 * @return the node containing <code>x</code> or null if such a node does not exist.<br/>
-	 * If <code>from</code> is null, the search starts at the tail of this list.
-	 * @throws de.polygonal.ds.error.AssertError <code>from</code> is not managed by this list (debug only).
-	 */
-	public function lastNodeOf(x:T, from:DLLNode<T> = null):DLLNode<T>
+		Searches for `val` in this list from tail to head starting at node `from`.
+		
+		If `from` is null, the search starts at the tail of this list.
+		@return the node containing `val` or null if such a node does not exist.
+	**/
+	public function lastNodeOf(val:T, from:DllNode<T> = null):DllNode<T>
 	{
 		#if debug
-		if (_valid(from))
+		if (valid(from))
 			assert(from.getList() == this, "node is not managed by this list");
 		#end
 		
 		var node = (from == null) ? tail : from;
-		if (_circular)
+		if (isCircular)
 		{
 			while (node != head)
 			{
-				if (node.val == x) return node;
+				if (node.val == val) return node;
 				node = node.prev;
 			}
-			if (node.val == x) return node;
+			if (node.val == val) return node;
 		}
 		else
 		{
-			while (_valid(node))
+			while (valid(node))
 			{
-				if (node.val == x) return node;
+				if (node.val == val) return node;
 				node = node.prev;
 			}
 		}
@@ -645,113 +563,101 @@ class DLL<T> implements Collection<T>
 	}
 	
 	/**
-	 * Sorts the elements of this list using the merge sort algorithm.
-	 * <o>n log n for merge sort and n&sup2; for insertion sort</o>
-	 * @param compare a comparison function.<br/>
-	 * If null, the elements are compared using element.<em>compare()</em>.<br/>
-	 * <warn>In this case all elements have to implement <em>Comparable</em>.</warn>
-	 * @param useInsertionSort if true, the linked list is sorted using the insertion sort algorithm.
-	 * This is faster for nearly sorted lists.
-	 * @throws de.polygonal.ds.error.AssertError element does not implement <em>Comparable</em> (debug only).
-	 */
-	public function sort(compare:T->T->Int, useInsertionSort = false)
+		Sorts the elements of this list using the merge sort algorithm.
+		@param cmp a comparison function.
+		<br/>If null, the elements are compared using `element.compare()`.
+		<br/>_In this case all elements have to implement `Comparable`._
+		@param useInsertionSort if true, the linked list is sorted using the insertion sort algorithm.
+		This is faster for nearly sorted lists.
+	**/
+	public function sort(?cmp:T->T->Int, useInsertionSort:Bool = false):Dll<T>
 	{
-		if (_size > 1)
+		if (size > 1)
 		{
-			if (_circular)
+			if (isCircular)
 			{
 				tail.next = null;
 				head.prev = null;
 			}
 			
-			if (compare == null)
-			{
-				head = useInsertionSort ? _insertionSortComparable(head) : _mergeSortComparable(head);
-			}
+			if (cmp == null)
+				head = useInsertionSort ? insertionSortComparable(head) : mergeSortComparable(head);
 			else
-			{
-				head = useInsertionSort ? _insertionSort(head, compare) : _mergeSort(head, compare);
-			}
+				head = useInsertionSort ? insertionSort(head, cmp) : mergeSort(head, cmp);
 			
-			if (_circular)
+			if (isCircular)
 			{
 				tail.next = head;
 				head.prev = tail;
 			}
 		}
+		return this;
 	}
 	
 	/**
-	 * Merges this list with the list <code>x</code> by linking both lists together.<br/>
-	 * <warn>The merge operation destroys x so it should be discarded.</warn>
-	 * <o>n</o>
-	 * @throws de.polygonal.ds.error.AssertError <code>x</code> is null or this list equals <code>x</code> (debug only).
-	 */
-	public function merge(x:DLL<T>)
-	{
-		#if debug
-		if (maxSize != -1)
-			assert(size() + x.size() <= maxSize, 'size equals max size ($maxSize)');
-		assert(x != this, "x equals this list");
-		assert(x != null, "x is null");
-		#end
+		Merges this list with `list` by linking both lists together.
 		
-		if (_valid(x.head))
+		_The merge operation destroys `list` so it should be discarded._
+	**/
+	public function merge(list:Dll<T>):Dll<T>
+	{
+		assert(list != this, "list equals this list");
+		assert(list != null, "list is null");
+		
+		if (valid(list.head))
 		{
-			var node = x.head;
-			for (i in 0...x.size())
+			var node = list.head;
+			for (i in 0...list.size)
 			{
-				__list(node, this);
+				node.mList = this;
 				node = node.next;
 			}
 				
-			if (_valid(head))
+			if (valid(head))
 			{
-				tail.next = x.head;
-				x.head.prev = tail;
-				tail = x.tail;
+				tail.next = list.head;
+				list.head.prev = tail;
+				tail = list.tail;
 			}
 			else
 			{
-				head = x.head;
-				tail = x.tail;
+				head = list.head;
+				tail = list.tail;
 			}
 			
-			_size += x.size();
+			mSize += list.size;
 			
-			if (_circular)
+			if (isCircular)
 			{
 				tail.next = head;
 				head.prev = tail;
 			}
 		}
+		return this;
 	}
 	
 	/**
-	 * Concatenates this list with the list <code>x</code> by appending all elements of <code>x</code> to this list.<br/>
-	 * This list and <code>x</code> are untouched.
-	 * <o>n</o>
-	 * @return a new list containing the elements of both lists.
-	 * @throws de.polygonal.ds.error.AssertError <code>x</code> is null or this equals <code>x</code> (debug only).
-	 */
-	public function concat(x:DLL<T>):DLL<T>
-	{
-		#if debug
-		assert(x != null, "x is null");
-		assert(x != this, "x equals this list");
-		#end
+		Concatenates this list with `list` by appending all elements of `list` to this list.
 		
-		var c = new DLL<T>();
-		var k = x.size();
+		This list and `list` are left untouched.
+		@return a new list containing the elements of both lists.
+	**/
+	public function concat(list:Dll<T>):Dll<T>
+	{
+		assert(list != null, "list is null");
+		assert(list != this, "list equals this list");
+		
+		var c = new Dll<T>();
+		var k = list.size;
 		if (k > 0)
 		{
-			var node = x.tail;
-			var t = c.tail = new DLLNode<T>(node.val, c);
+			var node = list.tail;
+			var t = c.tail = new DllNode<T>(node.val, c);
 			node = node.prev;
 			var i = k - 1;
 			while (i-- > 0)
 			{
-				var copy = new DLLNode<T>(node.val, c);
+				var copy = new DllNode<T>(node.val, c);
 				copy.next = t;
 				t.prev = copy;
 				t = copy;
@@ -759,34 +665,34 @@ class DLL<T> implements Collection<T>
 			}
 			
 			c.head = t;
-			c._size = k;
+			c.mSize = k;
 			
-			if (_size > 0)
+			if (size > 0)
 			{
-				var node = tail;
-				var i = _size;
+				node = tail;
+				i = size;
 				while (i-- > 0)
 				{
-					var copy = new DLLNode<T>(node.val, c);
+					var copy = new DllNode<T>(node.val, c);
 					copy.next = t;
 					t.prev = copy;
 					t = copy;
 					node = node.prev;
 				}
 				c.head = t;
-				c._size += _size;
+				c.mSize += size;
 			}
 		}
 		else
-		if (_size > 0)
+		if (size > 0)
 		{
 			var node = tail;
-			var t = c.tail = new DLLNode<T>(node.val, this);
+			var t = c.tail = new DllNode<T>(node.val, this);
 			node = node.prev;
-			var i = _size - 1;
+			var i = size - 1;
 			while (i-- > 0)
 			{
-				var copy = new DLLNode<T>(node.val, this);
+				var copy = new DllNode<T>(node.val, this);
 				copy.next = t;
 				t.prev = copy;
 				t = copy;
@@ -794,22 +700,20 @@ class DLL<T> implements Collection<T>
 			}
 			
 			c.head = t;
-			c._size = _size;
+			c.mSize = size;
 		}
-		
 		return c;
 	}
 	
 	/**
-	 * Reverses the linked list in place.
-	 * <o>n</o>
-	 */
-	public function reverse()
+		Reverses the linked list in place.
+	**/
+	public function reverse():Dll<T>
 	{
-		if (_size <= 1)
-			return;
+		if (size <= 1)
+			return this;
 		else
-		if (_size <= 3)
+		if (size <= 3)
 		{
 			var t = head.val;
 			head.val = tail.val;
@@ -819,7 +723,7 @@ class DLL<T> implements Collection<T>
 		{
 			var head = head;
 			var tail = tail;
-			for (i in 0..._size >> 1)
+			for (i in 0...size >> 1)
 			{
 				var t = head.val;
 				head.val = tail.val;
@@ -829,110 +733,76 @@ class DLL<T> implements Collection<T>
 				tail = tail.prev;
 			}
 		}
-	}
-	
-	/**
-	 * Converts the data in the linked list to strings, inserts <code>x</code> between the elements, concatenates them, and returns the resulting string.
-	 * <o>n</o>
-	 */
-	public function join(x:String):String
-	{
-		var s = "";
-		if (_size > 0)
-		{
-			var node = head;
-			for (i in 0..._size - 1)
-			{
-				s += Std.string(node.val) + x;
-				node = node.next;
-			}
-			s += Std.string(node.val);
-		}
-		return s;
-	}
-	
-	/**
-	 * Replaces up to <code>n</code> existing elements with objects of type <code>C</code>.
-	 * <o>n</o>
-	 * @param C the class to instantiate for each element.
-	 * @param args passes additional constructor arguments to <code>C</code>.
-	 * @param n the number of elements to replace. If 0, <code>n</code> is set to <em>size()</em>.
-	 * @throws de.polygonal.ds.error.AssertError <code>n</code> out of range (debug only).
-	 */
-	public function assign(C:Class<T>, args:Array<Dynamic> = null, n = 0)
-	{
-		#if debug
-		assert(n >= 0, "n >= 0");
-		#end
-		
-		if (n > 0)
-		{
-			#if debug
-			if (maxSize != -1)
-				assert(n <= size(), 'n out of range ($n)');
-			#end
-		}
-		else
-			n = size();
-		
-		if (args == null) args = [];
-		var node = head;
-		for (i in 0...n)
-		{
-			node.val = Type.createInstance(C, args);
-			node = node.next;
-		}
-	}
-	
-	/**
-	 * Replaces up to <code>n</code> existing elements with the instance of <code>x</code>.
-	 * <o>n</o>
-	 * @param n the number of elements to replace. If 0, <code>n</code> is set to <em>size()</em>.
-	 * @throws de.polygonal.ds.error.AssertError <code>n</code> out of range (debug only).
-	 */
-	public function fill(x:T, args:Array<Dynamic> = null, n = 0):DLL<T>
-	{
-		#if debug
-		assert(n >= 0, "n >= 0");
-		#end
-		
-		if (n > 0)
-		{
-			#if debug
-			if (maxSize != -1)
-				assert(n <= size(), 'n out of range ($n)');
-			#end
-		}
-		else
-			n = size();
-		
-		var node = head;
-		for (i in 0...n)
-		{
-			node.val = x;
-			node = node.next;
-		}
-		
 		return this;
 	}
 	
 	/**
-	 * Shuffles the elements of this collection by using the Fisher-Yates algorithm.<br/>
-	 * <o>n</o>
-	 * @param rval a list of random double values in the range between 0 (inclusive) to 1 (exclusive) defining the new positions of the elements.
-	 * If omitted, random values are generated on-the-fly by calling <em>Math.random()</em>.
-	 * @throws de.polygonal.ds.error.AssertError insufficient random values (debug only).
-	 */
-	public function shuffle(rval:DA<Float> = null)
+		Converts the data in the linked list to strings, inserts `sep` between the elements, concatenates them, and returns the resulting string.
+	**/
+	public function join(sep:String):String
 	{
-		var s = _size;
-		if (rval == null)
+		if (isEmpty()) return "";
+		
+		var b = new StringBuf();
+		var node = head;
+		for (i in 0...size - 1)
 		{
-			var m = Math;
+			b.add(Std.string(node.val) + sep);
+			node = node.next;
+		}
+		b.add(Std.string(node.val));
+		return b.toString();
+	}
+	
+	/**
+		Calls `f` on all elements.
+		
+		The function signature is: `f(input, index):output`
+		
+		- input: current element
+		- index: the index number of the given element (0=head)
+		- output: element to be stored at given index
+	**/
+	public inline function forEach(f:T->Int->T):Dll<T>
+	{
+		var node = head;
+		for (i in 0...size)
+		{
+			node.val = f(node.val, i);
+			node = node.next;
+		}
+		return this;
+	}
+	
+	/**
+		Calls 'f` on all elements in order.
+	**/
+	public inline function iter(f:T->Void):Dll<T>
+	{
+		assert(f != null);
+		var node = head;
+		while (node != null)
+		{
+			f(node.val);
+			node = node.next;
+		}
+		return this;
+	}
+	
+	/**
+		Shuffles the elements of this collection by using the Fisher-Yates algorithm.
+		@param rvals a list of random double values in the interval [0, 1) defining the new positions of the elements.
+		If omitted, random values are generated on-the-fly by calling `Shuffle.frand()`.
+	**/
+	public function shuffle(rvals:Array<Float> = null):Dll<T>
+	{
+		var s = size;
+		if (rvals == null)
+		{
 			while (s > 1)
 			{
 				s--;
-				var i = Std.int(m.random() * s);
+				var i = Std.int(Shuffle.frand() * s);
 				var node1 = head;
 				for (j in 0...s) node1 = node1.next;
 				
@@ -947,110 +817,227 @@ class DLL<T> implements Collection<T>
 		}
 		else
 		{
-			#if debug
-			assert(rval.size() >= size(), "insufficient random values");
-			#end
+			assert(rvals.length >= size, "insufficient random values");
 			
 			var j = 0;
 			while (s > 1)
 			{
 				s--;
-				var i = Std.int(rval.get(j++) * s);
+				var i = Std.int(rvals[j++] * s);
 				var node1 = head;
-				for (j in 0...s) node1 = node1.next;
+				for (k in 0...s) node1 = node1.next;
 				
 				var t = node1.val;
 				
 				var node2 = head;
-				for (j in 0...i) node2 = node2.next;
+				for (l in 0...i) node2 = node2.next;
 				
 				node1.val = node2.val;
 				node2.val = t;
 			}
 		}
 		
-		if (_circular)
+		if (isCircular)
 		{
 			tail.next = head;
 			head.prev = tail;
 		}
+		return this;
 	}
 	
 	/**
-	 * Returns a string representing the current object.<br/>
-	 * Example:<br/>
-	 * <pre class="prettyprint">
-	 * var dll = new de.polygonal.ds.DLL&lt;Int&gt;();
-	 * for (i in 0...4) {
-	 *     dll.append(i);
-	 * }
-	 * trace(dll);</pre>
-	 * <pre class="console">
-	 * { DLL size: 4, circular: false }
- 	 * [ head 
-	 *   0
-	 *   1
-	 *   2
-	 *   3
-	 * ] tail</pre>
-	 */
+		Prints out all elements.
+	**/
+	#if !no_tostring
 	public function toString():String
 	{
-		var s = '{ DLL size: ${size()}, circular: ${isCircular()} }';
-		if (isEmpty()) return s;
-		s += "\n[ head \n";
-		var node = head;
-		for (i in 0..._size)
+		var b = new StringBuf();
+		b.add('[ Dll size=$size' + (isCircular ? " circular" : ""));
+		if (isEmpty())
 		{
-			s += '  ${Std.string(node.val)}\n';
+			b.add(" ]");
+			return b.toString();
+		}
+		b.add("\n  head\n");
+		var node = head;
+		var args = new Array<Dynamic>();
+		var fmt = '  %${MathTools.numDigits(size)}d -> %s\n';
+		for (i in 0...size)
+		{
+			args[0] = i;
+			args[1] = Std.string(node.val);
+			b.add(Printf.format(fmt, args));
 			node = node.next;
 		}
-		s += "] tail";
-		return s;
+		b.add("]");
+		return b.toString();
 	}
+	#end
 	
-	/*///////////////////////////////////////////////////////
-	// collection
-	///////////////////////////////////////////////////////*/
+	/* INTERFACE List */
 	
 	/**
-	 * Destroys this object by explicitly nullifying all nodes, pointers and data for GC'ing used resources.<br/>
-	 * Improves GC efficiency/performance (optional).
-	 * <o>n</o>
-	 */
+		Same as `this.append()`.
+	**/
+	public function add(val:T)
+	{
+		append(val);
+	}
+	
+	/**
+		Returns the value at the given `index` (0=head).
+	**/
+	public function get(index:Int):T
+	{
+		assert(index >= 0 && index < size, "index out of range");
+		
+		return getNodeAt(index).val;
+	}
+	
+	/**
+		Overwrites the value at the given `index` with `val` (0=head).
+	**/
+	public function set(index:Int, val:T)
+	{
+		assert(index >= 0 && index < size, "index out of range");
+		
+		getNodeAt(index).val = val;
+	}
+	
+	/**
+		Inserts `val` before the element at `index` (0=head).
+		
+		If `index` equals `this.size`, `val` gets appended to the end of the list.
+	**/
+	public function insert(index:Int, val:T)
+	{
+		assert(index >= 0 && index <= size, "index out of range");
+		
+		if (size == 0 || index == size)
+		{
+			append(val);
+			return;
+		}
+		
+		insertBefore(getNodeAt(index), val);
+	}
+	
+	/**
+		Returns the index of `val` (0=head).
+	**/
+	public function indexOf(val:T):Int
+	{
+		var i = 0;
+		var node = head;
+		while (valid(node))
+		{
+			if (node.val == val) return i;
+			i++;
+			node = node.next;
+		}
+		return -1;
+	}
+	
+	/**
+		Removes and returns the element at `index` (0=head).
+	**/
+	public function removeAt(index:Int):T
+	{
+		var node = getNodeAt(index);
+		node.unlink();
+		return node.val;
+	}
+	
+	/**
+		Returns a `Dll` object storing elements in the range [`fromIndex`, `toIndex`).
+		If `toIndex` is negative, the value represents the number of elements.
+	**/
+	public function getRange(fromIndex:Int, toIndex:Int):List<T>
+	{
+		assert(fromIndex >= 0 && fromIndex < size, "fromIndex out of range");
+		#if debug
+		if (toIndex >= 0)
+		{
+			assert(toIndex >= 0 && toIndex < size, "toIndex out of range");
+			assert(fromIndex <= toIndex);
+		}
+		else
+			assert(fromIndex - toIndex <= size, "toIndex out of range");
+		#end
+		
+		var n = toIndex > 0 ? (toIndex - fromIndex) : ((fromIndex - toIndex) - fromIndex);
+		
+		var out = new Dll<T>();
+		if (n == 0) return out;
+		out.mSize = n;
+		
+		var src = getNodeAt(fromIndex), t;
+		out.head = out.tail = out.getNode(src.val);
+		src = src.next;
+		for (i in 0...n - 1)
+		{
+			t = out.getNode(src.val);
+			out.tail.next = t;
+			t.prev = out.tail;
+			out.tail = t;
+			src = src.next;
+		}
+		
+		return out;
+	}
+	
+	/* INTERFACE Collection */
+	
+	/**
+		The total number of elements.
+	**/
+	public var size(get, never):Int;
+	inline function get_size():Int
+	{
+		return mSize;
+	}
+	
+	/**
+		Destroys this object by explicitly nullifying all nodes, pointers and data for GC'ing used resources.
+		
+		Improves GC efficiency/performance (optional).
+	**/
 	public function free()
 	{
-		var node = head;
-		for (i in 0..._size)
+		var node = head, next;
+		for (i in 0...size)
 		{
-			var next = node.next;
+			next = node.next;
 			node.free();
 			node = next;
 		}
 		head = tail = null;
 		
-		var node = _headPool;
-		while (_valid(node))
+		node = mHeadPool;
+		while (valid(node))
 		{
-			var next = node.next;
+			next = node.next;
 			node.free();
 			node = next;
 		}
 		
-		_headPool = _tailPool = null;
-		_iterator = null;
+		mHeadPool = mTailPool = null;
+		if (mIterator != null)
+		{
+			mIterator.free();
+			mIterator = null;
+		}
 	}
 	
 	/**
-	 * Returns true if this list contains a node storing the element <code>x</code>.
-	 * <o>n</o>
-	 */
-	public function contains(x:T):Bool
+		Returns true if this list contains a node storing `val`.
+	**/
+	public function contains(val:T):Bool
 	{
 		var node = head;
-		for (i in 0..._size)
+		for (i in 0...size)
 		{
-			if (node.val == x)
+			if (node.val == val)
 				return true;
 			node = node.next;
 		}
@@ -1058,191 +1045,163 @@ class DLL<T> implements Collection<T>
 	}
 	
 	/**
-	 * Removes all nodes storing the element <code>x</code>.
-	 * <o>n</o>
-	 * @return true if at least one occurrence of <code>x</code> was removed.
-	 */
-	public function remove(x:T):Bool
+		Removes all nodes storing `val`.
+		@return true if at least one occurrence of `val` was removed.
+	**/
+	public function remove(val:T):Bool
 	{
-		var s = size();
+		var s = size;
 		if (s == 0) return false;
 		
 		var node = head;
-		while (_valid(node))
+		while (valid(node))
 		{
-			if (node.val == x)
+			if (node.val == val)
 				node = unlink(node);
 			else
 				node = node.next;
 		}
-		
-		return size() < s;
+		return size < s;
 	}
 	
 	/**
-	 * Removes all elements.
-	 * <o>1 or n if <code>purge</code> is true</o>
-	 * @param purge if true, nodes, pointers and elements are nullified upon removal.
-	 */
-	public function clear(purge = false)
+		Removes all elements.
+		
+		@param gc if true, nodes, pointers and elements are nullified upon removal so the garbage collector can reclaim used memory.
+	**/
+	public function clear(gc:Bool = false)
 	{
-		if (purge || _reservedSize > 0)
+		if (gc || mReservedSize > 0)
 		{
 			var node = head;
-			for (i in 0..._size)
+			for (i in 0...size)
 			{
 				var next = node.next;
 				node.prev = null;
 				node.next = null;
-				_putNode(node);
+				putNode(node);
 				node = next;
 			}
 		}
 		
 		head = tail = null;
-		_size = 0;
+		mSize = 0;
 	}
 	
 	/**
-	 * Returns a new <em>DLLIterator</em> object to iterate over all elements contained in this doubly linked list.<br/>
-	 * Uses a <em>CircularDLLIterator</em> iterator object if <em>circular</em> is true. 
-	 * The elements are visited from head to tail.<br/>
-	 * If performance is crucial, use the following loop instead:<br/><br/>
-	 * <pre class="prettyprint">
-	 * //open list:
-	 * var node = myDLL.head;
-	 * while (node != null)
-	 * {
-	 *     var element = node.val;
-	 *     node = node.next;
-	 * }
-	 * 
-	 * //circular list:
-	 * var node = myDLL.head;
-	 * for (i in 0...list.size())
-	 * {
-	 *     var element = node.val;
-	 *     node = node.next;
-	 * }
-	 * </pre>
-	 * @see <a href="http://haxe.org/ref/iterators" target="_blank">http://haxe.org/ref/iterators</a>
-	 * 
-	 */
+		Returns a new *DllIterator* object to iterate over all elements contained in this doubly linked list.
+		
+		Returns a *CircularDllIterator* iterator object if `circular` is true.
+		
+		The elements are visited from head to tail.
+		
+		If performance is crucial, use the following loop instead:
+			//open list:
+			var node = myDll.head;
+			while (node != null)
+			{
+			    var element = node.val;
+			    node = node.next;
+			}
+			//circular list:
+			var node = myDll.head;
+			for (i in 0...list.size)
+			{
+			    var element = node.val;
+			    node = node.next;
+			}
+		@see http://haxe.org/ref/iterators
+	**/
 	public function iterator():Itr<T>
 	{
 		if (reuseIterator)
 		{
-			if (_iterator == null)
+			if (mIterator == null)
 			{
-				if (_circular)
-					return new CircularDLLIterator<T>(this);
+				if (isCircular)
+					return new CircularDllIterator<T>(this);
 				else
-					return new DLLIterator<T>(this);
+					return new DllIterator<T>(this);
 			}
 			else
-				_iterator.reset();
-			return _iterator;
+				mIterator.reset();
+			return mIterator;
 		}
 		else
 		{
-			if (_circular)
-				return new CircularDLLIterator<T>(this);
+			if (isCircular)
+				return new CircularDllIterator<T>(this);
 			else
-				return new DLLIterator<T>(this);
+				return new DllIterator<T>(this);
 		}
 	}
 	
 	/**
-	 * The total number of elements.
-	 * <o>1</o>
-	 */
-	inline public function size():Int
+		Returns true only if `this.size` is 0.
+	**/
+	public inline function isEmpty():Bool
 	{
-		return _size;
+		return size == 0;
 	}
 	
 	/**
-	 * Returns true if this list is empty.
-	 * <o>1</o>
-	 */
-	inline public function isEmpty():Bool
-	{
-		return _size == 0;
-	}
-	
-	/**
-	 * Returns an array containing all elements in this doubly linked list.<br/>
-	 * Preserves the natural order of this linked list.
-	 */
+		Returns an array containing all elements in this doubly linked list.
+		
+		Preserves the natural order of this linked list.
+	**/
 	public function toArray():Array<T>
 	{
-		var a:Array<T> = ArrayUtil.alloc(size());
+		if (isEmpty()) return [];
+		
+		var out = ArrayTools.alloc(size);
 		var node = head;
-		for (i in 0..._size)
+		for (i in 0...size)
 		{
-			a[i] = node.val;
+			out[i] = node.val;
 			node = node.next;
 		}
-		return a;
+		return out;
 	}
 	
-	#if flash10
 	/**
-	 * Returns a vector.&lt;T&gt; objec containing all elements in this doubly linked list.<br/>
-	 * Preserves the natural order of this linked list.
-	 */
-	public function toVector():flash.Vector<Dynamic>
+		Creates and returns a shallow copy (structure only - default) or deep copy (structure & elements) of this list.
+		
+		If `byRef` is true, primitive elements are copied by value whereas objects are copied by reference.
+		
+		If `byRef` is false, the `copier` function is used for copying elements. If omitted, `clone()` is called on each element assuming all elements implement `Cloneable`.
+	**/
+	public function clone(byRef:Bool = true, copier:T->T = null):Collection<T>
 	{
-		var a = new flash.Vector<Dynamic>(size());
-		var node = head;
-		for (i in 0..._size)
+		if (size == 0)
 		{
-			a[i] = node.val;
-			node = node.next;
-		}
-		return a;
-	}
-	#end
-	
-	/**
-	 * Duplicates this linked list. Supports shallow (structure only) and deep copies (structure & elements).
-	 * @param assign if true, the <code>copier</code> parameter is ignored and primitive elements are copied by value whereas objects are copied by reference.<br/>
-	 * If false, the <em>clone()</em> method is called on each element. <warn>In this case all elements have to implement <em>Cloneable</em>.</warn>
-	 * @param copier a custom function for copying elements. Replaces element.<em>clone()</em> if <code>assign</code> is false.
-	 * @throws de.polygonal.ds.error.AssertError element is not of type <em>Cloneable</em> (debug only).
-	 */
-	public function clone(assign = true, copier:T->T = null):Collection<T>
-	{
-		if (_size == 0)
-		{
-			var copy = new DLL<T>(_reservedSize, maxSize);
-			if (_circular) copy._circular = true;
+			var copy = new Dll<T>(mReservedSize);
+			if (isCircular) copy.isCircular = true;
 			return copy;
 		}
 		
-		var copy = new DLL<T>();
-		copy._size = _size;
+		var copy = new Dll<T>();
+		copy.mSize = size;
 		
-		if (assign)
+		if (byRef)
 		{
 			var srcNode = head;
-			var dstNode = copy.head = new DLLNode<T>(head.val, copy);
+			var dstNode = copy.head = new DllNode<T>(head.val, copy);
 			
-			if (_size == 1)
+			if (size == 1)
 			{
 				copy.tail = copy.head;
-				if (_circular) copy.tail.next = copy.head;
+				if (isCircular) copy.tail.next = copy.head;
 				return copy;
 			}
 			
 			var dstNode0;
 			srcNode = srcNode.next;
-			for (i in 1..._size - 1)
+			for (i in 1...size - 1)
 			{
 				dstNode0 = dstNode;
 				var srcNode0 = srcNode;
 				
-				dstNode = dstNode.next = new DLLNode<T>(srcNode.val, copy);
+				dstNode = dstNode.next = new DllNode<T>(srcNode.val, copy);
 				dstNode.prev = dstNode0;
 				
 				srcNode0 = srcNode;
@@ -1250,7 +1209,7 @@ class DLL<T> implements Collection<T>
 			}
 			
 			dstNode0 = dstNode;
-			copy.tail = dstNode.next = new DLLNode<T>(srcNode.val, copy);
+			copy.tail = dstNode.next = new DllNode<T>(srcNode.val, copy);
 			copy.tail.prev = dstNode0;
 		}
 		else
@@ -1258,68 +1217,62 @@ class DLL<T> implements Collection<T>
 		{
 			var srcNode = head;
 			
-			#if debug
-			assert(Std.is(head.val, Cloneable), 'element is not of type Cloneable (${head.val})');
-			#end
+			assert(Std.is(head.val, Cloneable), "element is not of type Cloneable");
 			
-			var c = cast(head.val, Cloneable<Dynamic>);
-			var dstNode = copy.head = new DLLNode<T>(c.clone(), copy);
-			if (_size == 1)
+			var e = cast(head.val, Cloneable<Dynamic>);
+			var dstNode = copy.head = new DllNode<T>(e.clone(), copy);
+			if (size == 1)
 			{
 				copy.tail = copy.head;
-				if (_circular) copy.tail.next = copy.head;
+				if (isCircular) copy.tail.next = copy.head;
 				return copy;
 			}
 			
 			var dstNode0;
 			srcNode = srcNode.next;
-			for (i in 1..._size - 1)
+			for (i in 1...size - 1)
 			{
 				dstNode0 = dstNode;
 				var srcNode0 = srcNode;
 				
-				#if debug
-				assert(Std.is(srcNode.val, Cloneable), 'element is not of type Cloneable (${srcNode.val})');
-				#end
+				assert(Std.is(srcNode.val, Cloneable), "element is not of type Cloneable");
 				
-				c = cast(srcNode.val, Cloneable<Dynamic>);
-				
-				dstNode = dstNode.next = new DLLNode<T>(c.clone(), copy);
+				e = cast(srcNode.val, Cloneable<Dynamic>);
+				dstNode = dstNode.next = new DllNode<T>(e.clone(), copy);
 				dstNode.prev = dstNode0;
 				
 				srcNode0 = srcNode;
 				srcNode = srcNode0.next;
 			}
 			
-			#if debug
-			assert(Std.is(srcNode.val, Cloneable), 'element is not of type Cloneable (${srcNode.val})');
-			#end
-			
-			c = cast(srcNode.val, Cloneable<Dynamic>);
 			dstNode0 = dstNode;
-			copy.tail = dstNode.next = new DLLNode<T>(c.clone(), copy);
+			
+			assert(Std.is(srcNode.val, Cloneable), "element is not of type Cloneable");
+			
+			e = cast(srcNode.val, Cloneable<Dynamic>);
+			copy.tail = dstNode.next = new DllNode<T>(e.clone(), copy);
 			copy.tail.prev = dstNode0;
 		}
 		else
 		{
 			var srcNode = head;
-			var dstNode = copy.head = new DLLNode<T>(copier(head.val), copy);
+			var dstNode = copy.head = new DllNode<T>(copier(head.val), copy);
 			
-			if (_size == 1)
+			if (size == 1)
 			{
 				copy.tail = copy.head;
-				if (_circular) copy.tail.next = copy.head;
+				if (isCircular) copy.tail.next = copy.head;
 				return copy;
 			}
 			
 			var dstNode0;
 			srcNode = srcNode.next;
-			for (i in 1..._size - 1)
+			for (i in 1...size - 1)
 			{
 				dstNode0 = dstNode;
 				var srcNode0 = srcNode;
 				
-				dstNode = dstNode.next = new DLLNode<T>(copier(srcNode.val), copy);
+				dstNode = dstNode.next = new DllNode<T>(copier(srcNode.val), copy);
 				dstNode.prev = dstNode0;
 				
 				srcNode0 = srcNode;
@@ -1327,20 +1280,20 @@ class DLL<T> implements Collection<T>
 			}
 			
 			dstNode0 = dstNode;
-			copy.tail = dstNode.next = new DLLNode<T>(copier(srcNode.val), copy);
+			copy.tail = dstNode.next = new DllNode<T>(copier(srcNode.val), copy);
 			copy.tail.prev = dstNode0;
 		}
 		
-		if (_circular) copy.tail.next = copy.head;
+		if (isCircular) copy.tail.next = copy.head;
 		return copy;
 	}
 	
-	function _mergeSortComparable(node:DLLNode<T>):DLLNode<T>
+	function mergeSortComparable(node:DllNode<T>):DllNode<T>
 	{
 		var h = node;
 		var p, q, e, tail = null;
 		var insize = 1;
-		var nmerges, psize, qsize, i;
+		var nmerges, psize, qsize;
 		
 		while (true)
 		{
@@ -1348,7 +1301,7 @@ class DLL<T> implements Collection<T>
 			h = tail = null;
 			nmerges = 0;
 			
-			while (_valid(p))
+			while (valid(p))
 			{
 				nmerges++;
 				
@@ -1362,7 +1315,7 @@ class DLL<T> implements Collection<T>
 				
 				qsize = insize;
 				
-				while (psize > 0 || (qsize > 0 && _valid(q)))
+				while (psize > 0 || (qsize > 0 && valid(q)))
 				{
 					if (psize == 0)
 					{
@@ -1375,9 +1328,7 @@ class DLL<T> implements Collection<T>
 					}
 					else
 					{
-						#if debug
-						assert(Std.is(p.val, Comparable), 'element is not of type Comparable (${p.val})');
-						#end
+						assert(Std.is(p.val, Comparable), "element is not of type Comparable");
 						
 						if (cast(p.val, Comparable<Dynamic>).compare(q.val) >= 0)
 						{
@@ -1389,7 +1340,7 @@ class DLL<T> implements Collection<T>
 						}
 					}
 					
-					if (_valid(tail))
+					if (valid(tail))
 						tail.next = e;
 					else
 						h = e;
@@ -1407,16 +1358,15 @@ class DLL<T> implements Collection<T>
 		
 		h.prev = null;
 		this.tail = tail;
-		
 		return h;
 	}
 	
-	function _mergeSort(node:DLLNode<T>, cmp:T->T->Int):DLLNode<T>
+	function mergeSort(node:DllNode<T>, cmp:T->T->Int):DllNode<T>
 	{
 		var h = node;
 		var p, q, e, tail = null;
 		var insize = 1;
-		var nmerges, psize, qsize, i;
+		var nmerges, psize, qsize;
 		
 		while (true)
 		{
@@ -1424,7 +1374,7 @@ class DLL<T> implements Collection<T>
 			h = tail = null;
 			nmerges = 0;
 			
-			while (_valid(p))
+			while (valid(p))
 			{
 				nmerges++;
 				
@@ -1438,7 +1388,7 @@ class DLL<T> implements Collection<T>
 				
 				qsize = insize;
 				
-				while (psize > 0 || (qsize > 0 && _valid(q)))
+				while (psize > 0 || (qsize > 0 && valid(q)))
 				{
 					if (psize == 0)
 					{
@@ -1459,7 +1409,7 @@ class DLL<T> implements Collection<T>
 						e = q; q = q.next; qsize--;
 					}
 					
-					if (_valid(tail))
+					if (valid(tail))
 						tail.next = e;
 					else
 						h = e;
@@ -1477,23 +1427,20 @@ class DLL<T> implements Collection<T>
 		
 		h.prev = null;
 		this.tail = tail;
-		
 		return h;
 	}
 	
-	function _insertionSortComparable(node:DLLNode<T>):DLLNode<T>
+	function insertionSortComparable(node:DllNode<T>):DllNode<T>
 	{
 		var h = node;
 		var n = h.next;
-		while (_valid(n))
+		while (valid(n))
 		{
 			var m = n.next;
 			var p = n.prev;
 			var v = n.val;
 			
-			#if debug
-			assert(Std.is(p.val, Comparable), 'element is not of type Comparable (${p.val})');
-			#end
+			assert(Std.is(p.val, Comparable), "element is not of type Comparable");
 			
 			if (cast(p.val, Comparable<Dynamic>).compare(v) < 0)
 			{
@@ -1501,16 +1448,14 @@ class DLL<T> implements Collection<T>
 				
 				while (i.hasPrev())
 				{
-					#if debug
-					assert(Std.is(i.prev.val, Comparable), 'element is not of type Comparable (${i.prev.val})');
-					#end
+					assert(Std.is(i.prev.val, Comparable), "element is not of type Comparable");
 					
 					if (cast(i.prev.val, Comparable<Dynamic>).compare(v) < 0)
 						i = i.prev;
 					else
 						break;
 				}
-				if (_valid(m))
+				if (valid(m))
 				{
 					p.next = m;
 					m.prev = p;
@@ -1540,15 +1485,14 @@ class DLL<T> implements Collection<T>
 			}
 			n = m;
 		}
-		
 		return h;
 	}
 	
-	function _insertionSort(node:DLLNode<T>, cmp:T->T->Int):DLLNode<T>
+	function insertionSort(node:DllNode<T>, cmp:T->T->Int):DllNode<T>
 	{
 		var h = node;
 		var n = h.next;
-		while (_valid(n))
+		while (valid(n))
 		{
 			var m = n.next;
 			var p = n.prev;
@@ -1565,7 +1509,7 @@ class DLL<T> implements Collection<T>
 					else
 						break;
 				}
-				if (_valid(m))
+				if (valid(m))
 				{
 					p.next = m;
 					m.prev = p;
@@ -1595,30 +1539,27 @@ class DLL<T> implements Collection<T>
 			}
 			n = m;
 		}
-		
 		return h;
 	}
 	
-	inline function _valid(node:DLLNode<T>):Bool
+	inline function valid(node:DllNode<T>):Bool
 	{
 		return node != null;
 	}
 	
-	inline function _getNode(x:T)
+	inline function getNode(x:T)
 	{
-		if (_reservedSize == 0 || _poolSize == 0)
-			return new DLLNode<T>(x, this);
+		if (mReservedSize == 0 || mPoolSize == 0)
+			return new DllNode<T>(x, this);
 		else
 		{
-			var n = _headPool;
+			var n = mHeadPool;
 			
-			#if debug
 			assert(n.prev == null, "node.prev == null");
-			assert(_valid(n.next), "node.next != null");
-			#end
+			assert(valid(n.next), "node.next != null");
 			
-			_headPool = _headPool.next;
-			_poolSize--;
+			mHeadPool = mHeadPool.next;
+			mPoolSize--;
 			
 			n.next = null;
 			n.val = x;
@@ -1626,143 +1567,132 @@ class DLL<T> implements Collection<T>
 		}
 	}
 	
-	inline function _putNode(x:DLLNode<T>):T
+	inline function putNode(x:DllNode<T>):T
 	{
 		var val = x.val;
-		if (_reservedSize > 0 && _poolSize < _reservedSize)
+		if (mReservedSize > 0 && mPoolSize < mReservedSize)
 		{
-			_tailPool = _tailPool.next = x;
+			mTailPool = mTailPool.next = x;
 			x.val = cast null;
 			
-			#if debug
-			assert(x.next == null, "x.next == null");
-			assert(x.prev == null, "x.prev == null");
-			#end
+			assert(x.next == null);
+			assert(x.prev == null);
 			
-			_poolSize++;
+			mPoolSize++;
 		}
 		else
-			__list(x, null);
-		
+			x.mList = null;
 		return val;
 	}
 	
-	inline function __insertAfter(f:DLLNodeFriend<T>, x:DLLNode<T>)
+	inline function unlinkNode(x:DllNode<T>):DllNode<T>
 	{
-		f._insertAfter(x);
-	}
-	inline function __insertBefore(f:DLLNodeFriend<T>, x:DLLNode<T>)
-	{
-		f._insertBefore(x);
-	}
-	inline function __unlink(f:DLLNodeFriend<T>)
-	{
-		f._unlink();
-	}
-	inline function __list(f:DLLNodeFriend<T>, x:DLL<T>)
-	{
-		f._list = x;
+		var t = x.next;
+		if (x.hasPrev()) x.prev.next = x.next;
+		if (x.hasNext()) x.next.prev = x.prev;
+		x.next = x.prev = null;
+		return t;
 	}
 }
 
 #if generic
 @:generic
 #end
-#if doc
-private
-#end
-class DLLIterator<T> implements de.polygonal.ds.Itr<T>
+@:dox(hide)
+class DllIterator<T> implements de.polygonal.ds.Itr<T>
 {
-	var _f:DLL<T>;
-	var _walker:DLLNode<T>;
-	var _hook:DLLNode<T>;
+	var mObject:Dll<T>;
+	var mWalker:DllNode<T>;
+	var mHook:DllNode<T>;
 	
-	public function new(f:DLL<T>)
+	public function new(x:Dll<T>)
 	{
-		_f = f;
+		mObject = x;
 		reset();
 	}
 	
-	inline public function reset():Itr<T>
+	public function free()
 	{
-		_walker = _f.head;
-		_hook = null;
+		mObject = null;
+		mWalker = null;
+		mHook = null;
+	}
+	
+	public inline function reset():Itr<T>
+	{
+		mWalker = mObject.head;
+		mHook = null;
 		return this;
 	}
 	
-	inline public function hasNext():Bool
+	public inline function hasNext():Bool
 	{
-		return _walker != null;
+		return mWalker != null;
 	}
 
-	inline public function next():T
+	public inline function next():T
 	{
-		var x = _walker.val;
-		_hook = _walker;
-		_walker = _walker.next;
+		var x = mWalker.val;
+		mHook = mWalker;
+		mWalker = mWalker.next;
 		return x;
 	}
 	
-	inline public function remove()
+	public function remove()
 	{
-		#if debug
-		assert(_hook != null, "call next() before removing an element");
-		#end
+		assert(mHook != null, "call next() before removing an element");
 		
-		_f.unlink(_hook);
+		mObject.unlink(mHook);
 	}
 }
 
 #if generic
 @:generic
 #end
-#if doc
-private
-#end
-class CircularDLLIterator<T> implements de.polygonal.ds.Itr<T>
+@:dox(hide)
+class CircularDllIterator<T> implements de.polygonal.ds.Itr<T>
 {
-	var _f:DLL<T>;
-	var _walker:DLLNode<T>;
-	var _i:Int;
-	var _s:Int;
-	var _hook:DLLNode<T>;
+	var mObject:Dll<T>;
+	var mWalker:DllNode<T>;
+	var mHook:DllNode<T>;
+	var mI:Int;
+	var mS:Int;
 	
-	public function new(f:DLL<T>)
+	public function new(x:Dll<T>)
 	{
-		_f = f;
+		mObject = x;
 		reset();
 	}
 	
-	inline public function reset():Itr<T>
+	public inline function reset():Itr<T>
 	{
-		_walker = _f.head;
-		_s = _f.size();
-		_i = 0;
-		_hook = null;
+		mWalker = mObject.head;
+		mS = mObject.size;
+		mI = 0;
+		mHook = null;
 		return this;
 	}
 	
-	inline public function hasNext():Bool
+	public inline function hasNext():Bool
 	{
-		return _i < _s;
+		return mI < mS;
 	}
 
-	inline public function next():T
+	public inline function next():T
 	{
-		var x = _walker.val;
-		_hook = _walker;
-		_walker = _walker.next;
-		_i++;
+		var x = mWalker.val;
+		mHook = mWalker;
+		mWalker = mWalker.next;
+		mI++;
 		return x;
 	}
 	
-	inline public function remove()
+	public function remove()
 	{
-		#if debug
-		assert(_i > 0, "call next() before removing an element");
-		#end
-		_f.unlink(_hook);
-		_i--;
-		_s--;
+		assert(mI > 0, "call next() before removing an element");
+		
+		mObject.unlink(mHook);
+		mI--;
+		mS--;
 	}
 }
