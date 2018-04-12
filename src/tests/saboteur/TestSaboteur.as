@@ -1,5 +1,7 @@
 package tests.saboteur
 {
+	import altern.ray.IRaycastImpl;
+	import altern.ray.Raycaster;
 	import alternativa.a3d.collisions.CollisionBoundNode;
 	import alternativa.a3d.collisions.CollisionUtil;
 	import alternativa.a3d.controller.SimpleFlyController;
@@ -244,6 +246,8 @@ package tests.saboteur
 				
 				addToCont(createPlanesWithEdgePoints(planeTest, outliner, total, tileX, tileY), contPlaneTest);
 				builder3D.startScene.addChild(contPlaneTest  );
+				
+				thirdPerson.thirdPerson.raycaster = new Raycaster(builder3D.collisionGraph as IRaycastImpl);
 				contPlaneTest.visible = false;
 				 contPlaneGraph = CollisionUtil.getCollisionGraph(contPlaneTest) ;
 				//gameBuilder.collisionGraph.addChild(contPlaneGraph);
@@ -812,6 +816,8 @@ package tests.saboteur
 		
 	
 			thirdPerson = new ThirdPersonController(stage, _template3D.camera, new Object3D(), arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity);
+		
+			
 			//game.engine.addSystem( thirdPerson, SystemPriorities.postRender ) ;
 			game.gameStates.thirdPerson.addInstance(thirdPerson).withPriority(SystemPriorities.postRender);
 			

@@ -7,6 +7,7 @@ package alternativa.a3d.collisions
 	import components.Transform3D;
 	import flash.geom.Vector3D;
 	import flash.utils.Dictionary;
+	import haxe.Log;
 //	import haxe.Log;
 	import systems.collisions.EllipsoidCollider;
 	import systems.collisions.IECollidable;
@@ -117,7 +118,6 @@ package alternativa.a3d.collisions
 			//inverseTransform.calculateInversion(transform);
 			this.collidable = collidable;
 			this.raycastable = collidable as IRaycastImpl;
-			
 			return this;
 			
 		}
