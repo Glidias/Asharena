@@ -6,7 +6,7 @@ package alternativa.a3d.rayorcollide
 	import alternterrain.objects.TerrainLOD;
 	import flash.geom.Vector3D;
 	import util.geom.Vec3;
-use namespace alternativa3d;
+	use namespace alternativa3d;
 	
 public class TerrainRaycastImpl extends Object3D implements ITrajRaycastImpl {
 	

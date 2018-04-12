@@ -1,5 +1,6 @@
 package alternativa.engine3d.controllers 
 {
+  import altern.ray.Raycaster;
   import alternativa.engine3d.core.Object3D;
   import alternativa.engine3d.core.RayIntersectionData;
   import alternativa.engine3d.core.Camera3D;
@@ -71,6 +72,8 @@ package alternativa.engine3d.controllers
 		public var offsetX:Number = 0;
 		public var offsetY:Number = 0;
 		public var offsetZ:Number = 0;
+		
+		public var raycaster:Raycaster;
         
         public function OrbitCameraMan(camera:Camera3D,  cameraTarget:Object3D, stager:InteractiveObject, scene:Object3D, followTarget:Object3D=null, rot:Rot=null, useMouseWheel:Boolean=false) 
         {
@@ -155,15 +158,27 @@ package alternativa.engine3d.controllers
             cameraReverse.z = -cameraForward.z;
 			cameraReverse.w = _preferedZoom;
             
-            var data:RayIntersectionData = getBackRayIntersectionData( new Vector3D(camLookAtTarget.x + cameraForward.x*-threshold, camLookAtTarget.y + cameraForward.y*-threshold, camLookAtTarget.z + cameraForward.z*-threshold) );
+			var dataPoint:Vector3D = null;
+			if (raycaster == null) {
+				var rayData:RayIntersectionData = getBackRayIntersectionData( new Vector3D(camLookAtTarget.x + cameraForward.x *-threshold, camLookAtTarget.y + cameraForward.y *-threshold, camLookAtTarget.z + cameraForward.z *-threshold) );
+				if (rayData != null) {
+					//dataPoint = rayData.point;
+					dataPoint = rayData.object.localToGlobal(rayData.point);
+				}
+			}
+			else {
+				//raycaster.setIgnoreDistance(_preferedZoom);
+				dataPoint = raycaster.positionAndDirection(camLookAtTarget.x + cameraForward.x *-threshold, camLookAtTarget.y + cameraForward.y *-threshold, camLookAtTarget.z + cameraForward.z *-threshold, cameraReverse.x, cameraReverse.y, cameraReverse.z ).gotHit();
+				
+			}
 			
                 _followTarget.visible = true;
             var tarDist:Number = _preferedZoom;
-            if (data != null) {
+            if (dataPoint != null) {
                 
                 //cameraReverse.normalize();
-                data.point = data.object.localToGlobal(data.point);
-                tarDist = data.point.subtract( new Vector3D(camLookAtTarget.x, camLookAtTarget.y, camLookAtTarget.z) ).length - collideOffset;
+               
+                tarDist = dataPoint.subtract( new Vector3D(camLookAtTarget.x, camLookAtTarget.y, camLookAtTarget.z) ).length - collideOffset;
             
                 if (tarDist > _preferedZoom) tarDist = _preferedZoom;
                 if (tarDist < controller.minDistance) tarDist =  controller.minDistance;

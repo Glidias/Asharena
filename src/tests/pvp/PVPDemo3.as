@@ -1,5 +1,7 @@
 package tests.pvp 
 {
+	import altern.ray.IRaycastImpl;
+	import altern.ray.Raycaster;
 	import alternativa.a3d.collisions.CollisionBoundNode;
 	import alternativa.a3d.collisions.CollisionUtil;
 	import alternativa.a3d.controller.SimpleFlyController;
@@ -157,7 +159,7 @@ package tests.pvp
 		private var _template3D:MainView3D;
 		private var deadScene:Object3D = new Object3D();
 		private var game:TheGame;
-		private var ticker:FrameTickProvider;
+		private var ticker:FrameTickProvider;	
 		private var _preloader:PreloaderBar = new PreloaderBar()
 		private var bundleLoader:SpawnerBundleLoader;
 		private var _modelBundle:ModelBundle;
@@ -1992,6 +1994,7 @@ package tests.pvp
 			
 			
 			commanderCameraController =  new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, true );
+			commanderCameraController.thirdPerson.raycaster = new Raycaster(game.colliderSystem.collidable as IRaycastImpl);
 			//commanderCameraController.thirdPerson.preferedMinDistance = CMD_DIST;
 			commanderCameraController.thirdPerson.instantZoom = CMD_DIST; 
 		////	commanderCameraController.thirdPerson.controller.maxDistance = CMD_DIST;

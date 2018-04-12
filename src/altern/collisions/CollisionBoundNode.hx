@@ -7,7 +7,8 @@ import systems.collisions.ITCollidable;
 import util.geom.AABBUtils;
 
 /**
- * ...
+ * A CollisionBoundNode can be formed as part of a hierachial transformed (optional)OOBB tree of nodes, and can contain
+ * optional collidable/raycasting implementations within each node. Useful to set up any collision/raycastable scene graph accordingly.
  * @author Glidias
  */
 class CollisionBoundNode implements IECollidable
@@ -20,21 +21,51 @@ class CollisionBoundNode implements IECollidable
 	public var inverseTransform:Transform3D;
 	public var localToGlobalTransform:Transform3D;
 	public var globalToLocalTransform:Transform3D;
-	public var collidable:ITCollidable;
 	
+	// optional assignables
+	public var collidable:ITCollidable;
 	public var boundBox:BoundBox;  
 		
-	public function new() 
+	function new() 
 	{
-		transform = new Transform3D();
-		inverseTransform = new Transform3D();
-		localToGlobalTransform = new Transform3D();
-		globalToLocalTransform = new Transform3D();
+		
 	}
 	
-
+	/**
+	 * Creates a brand new minimal CollisionBoundNode instance with an already (assumed usually precalculated) transform instance and an optional (assumed already precalculated)  inverseTransform instance.
+	 * @param	transform	The  (usually precalculated) transform to assign
+	 * @param	inverseTransform	(optoinal) The precalculated inverseTransform to assign
+	 * @return
+	 */
+	public static inline function create(transform:Transform3D, inverseTransform:Transform3D=null):CollisionBoundNode {
+		var n:CollisionBoundNode = new CollisionBoundNode();
+		n.transform = transform;
+		if (inverseTransform == null) {
+			n.inverseTransform =  new Transform3D();
+			n.inverseTransform.calculateInversion(n.transform);
+		}
+		else {
+			n.inverseTransform = inverseTransform;
+		}
+		
+		// boilerplate instantaite
+		n.localToGlobalTransform = new Transform3D();
+		n.globalToLocalTransform = new Transform3D();
+		return n;
+	}
+	
+	/**
+	 * Updates current transform with a reference transform
+	 * @param	refTransform	The reference transform to match
+	 */
+	public function updateTransform(refTransform:Transform3D):Void {
+		transform.copy(refTransform);
+		inverseTransform.calculateInversion(transform);
+	}
+	
 		
 	/* INTERFACE systems.collisions.IECollidable */	
+	
 	public function collectGeometry(collider:EllipsoidCollider):Void 
 	{
 		//if (!object.visible) return;

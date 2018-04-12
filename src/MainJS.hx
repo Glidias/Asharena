@@ -24,6 +24,10 @@ import systems.collisions.EllipsoidCollider;
 import altern.collisions.CollisionBoundNode;
 //*/
 
+///* 
+import altern.ray.Raycaster;
+//*/
+
 
 /* Ash-framework integration
 import systems.collisions.EllipsoidColliderSystem;

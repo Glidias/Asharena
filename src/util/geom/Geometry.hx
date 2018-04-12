@@ -4,17 +4,20 @@ package util.geom;
  * Basic geometry class to support collision detection/raycasting/etc., or some basic 3D
  * @author Glenn Ko
  */
+ import altern.ray.IRaycastImpl;
  import components.Transform3D;
- import systems.collisions.A3DConst;
+ import jeash.geom.Vector3D;
  import systems.collisions.EllipsoidCollider;
  import systems.collisions.IECollidable;
  import systems.collisions.ITCollidable;
  import util.TypeDefs;
  
-class Geometry implements ITECollidable
+class Geometry implements ITECollidable implements IRaycastImpl
 {
 	public var vertices:Vector<Float>;
+	
 	public var indices:Vector<UInt>;
+	
 	//public var normals:Vector<Float>;
 	public var numVertices:Int;
 	public var numIndices:Int;
@@ -29,6 +32,7 @@ class Geometry implements ITECollidable
 		numIndices = 0;
 	}
 	
+	/*
 	public inline function addVertex(x:Float, y:Float, z:Float):Int {
 		
 		var b:Int = numVertices * 3;
@@ -39,7 +43,6 @@ class Geometry implements ITECollidable
 		numVertices++;
 		return b;
 	}
-	
 	
 	public function pushVertices(values:Vector<Float>):Void {
 		var len:Int= values.length;
@@ -56,7 +59,8 @@ class Geometry implements ITECollidable
 			
 		}
 	}
-	
+	*/
+
 	public inline function setVertices(val:Vector<Float>):Void {
 		vertices = val;
 		numVertices = Std.int( val.length / 3);
@@ -67,6 +71,7 @@ class Geometry implements ITECollidable
 		numIndices = val.length;
 	}
 	
+	/*
 	public inline function addTriFaces(indices:Vector<UInt>, d:Int=-1):Void {
 		var i:Int = 0;
 		var addFaceBuffer:Vector<UInt> = TypeDefs.createUIntVector(3, true);
@@ -97,6 +102,7 @@ class Geometry implements ITECollidable
 		numIndices = d;
 		
 	}
+	*/
 	
 	/* INTERFACE systems.collisions.IECollidable */
 	
@@ -113,6 +119,158 @@ class Geometry implements ITECollidable
 	}
 	
 	
+	/* INTERFACE altern.ray.IRaycastImpl */
+	
+	static var sampleRayPoint:Vector3D = new Vector3D();
+	#if triOnly
+	public function intersectRay(origin:Vector3D, direction:Vector3D, res:Vector3D):Vector3D 
+	{
+		var ox:Float = origin.x;
+		var oy:Float = origin.y;
+		var oz:Float = origin.z;
+		var dx:Float = direction.x;
+		var dy:Float = direction.y;
+		var dz:Float = direction.z;
+
+		var nax:Float;
+		var nay:Float;
+		var naz:Float;
+
+		var nbx:Float;
+		var nby:Float;
+		var nbz:Float;
+
+		var ncx:Float;
+		var ncy:Float;
+		var ncz:Float;
+
+		var nrmX:Float;
+		var nrmY:Float;
+		var nrmZ:Float;
+
+		var point:Vector3D = null;
+		var minTime:Float = res.w != 0 ? res.w : direction.w != 0 ? direction.w : 1e+22;
+		var numTriangles:Int = Math.floor(numVertices / 3);
+		var count:Int =  numTriangles * 3;
+		var pIndex:Int = 0;
+		var i:Int = 0;
+		while ( i < count) {
+			var indexA:UInt = indices[i];
+			var indexB:UInt = indices[(i + 1)];
+			var indexC:UInt = indices[(i + 2)];
+		
+			pIndex = indexA*3;
+			var ax:Float = vertices[pIndex++];
+			var ay:Float = vertices[pIndex++];
+			var az:Float = vertices[pIndex];
+			
+			pIndex = indexB*3;
+			var bx:Float = vertices[pIndex++];
+			var by:Float = vertices[pIndex++];
+			var bz:Float = vertices[pIndex];
+
+			pIndex = indexC*3;
+			var cx:Float = vertices[pIndex++];
+			var cy:Float = vertices[pIndex++];
+			var cz:Float = vertices[pIndex];
+
+			var abx:Float = bx - ax;
+			var aby:Float = by - ay;
+			var abz:Float = bz - az;
+			var acx:Float = cx - ax;
+			var acy:Float = cy - ay;
+			var acz:Float = cz - az;
+			var normalX:Float = acz*aby - acy*abz;
+			var normalY:Float = acx*abz - acz*abx;
+			var normalZ:Float = acy*abx - acx*aby;
+			var len:Float = normalX*normalX + normalY*normalY + normalZ*normalZ;
+			if (len > 0.001) {
+				len = 1/Math.sqrt(len);
+				normalX *= len;
+				normalY *= len;
+				normalZ *= len;
+			}
+			var dot:Float = dx*normalX + dy*normalY + dz*normalZ;
+			if (dot < 0) {
+				var offset:Float = ox*normalX + oy*normalY + oz*normalZ - (ax*normalX + ay*normalY + az*normalZ);
+				if (offset > 0) {
+					var time:Float = -offset/dot;
+					if (point == null || time < minTime) {
+						var rx:Float = ox + dx*time;
+						var ry:Float = oy + dy*time;
+						var rz:Float = oz + dz*time;
+						abx = bx - ax;
+						aby = by - ay;
+						abz = bz - az;
+						acx = rx - ax;
+						acy = ry - ay;
+						acz = rz - az;
+						if ((acz*aby - acy*abz)*normalX + (acx*abz - acz*abx)*normalY + (acy*abx - acx*aby)*normalZ >= 0) {
+							abx = cx - bx;
+							aby = cy - by;
+							abz = cz - bz;
+							acx = rx - bx;
+							acy = ry - by;
+							acz = rz - bz;
+							if ((acz*aby - acy*abz)*normalX + (acx*abz - acz*abx)*normalY + (acy*abx - acx*aby)*normalZ >= 0) {
+								abx = ax - cx;
+								aby = ay - cy;
+								abz = az - cz;
+								acx = rx - cx;
+								acy = ry - cy;
+								acz = rz - cz;
+								if ((acz*aby - acy*abz)*normalX + (acx*abz - acz*abx)*normalY + (acy*abx - acx*aby)*normalZ >= 0) {
+									if (time < minTime) {
+										minTime = time;
+										if (point == null) point = sampleRayPoint;
+										point.x = rx;
+										point.y = ry;
+										point.z = rz;
+										nax = ax;
+										nay = ay;
+										naz = az;
+										
+										nrmX = normalX;
+										nbx = bx;
+										nby = by;
+										nbz = bz;
+								
+										nrmY = normalY;
+										ncx = cx;
+										ncy = cy;
+										ncz = cz;
+										
+										nrmZ = normalZ;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			i += 3;
+		}
+		if (point != null) {
+			res.x = point.x;
+			res.y = point.y;
+			res.z = point.z; 
+			res.w = minTime;
+			return res;
+		} else {
+			return null;
+		}
+	}
+	#else
+	public function intersectRay(origin:Vector3D, direction:Vector3D, res:Vector3D):Vector3D 
+	{
+		throw "Sorry, not implemented yet for n-gon (non-tri) interesctRay! Compile haxe build with triOnly.";
+		return null;
+	}
+	#end
+	
+	
+
 	/*
 	public inline function pushNFaces(indices:Vector<Int>, nSides:Int):Void {
 		

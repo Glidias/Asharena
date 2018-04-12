@@ -1,9 +1,11 @@
 package alternativa.a3d.collisions 
 {
+	import altern.ray.IRaycastImpl;
 	import alternativa.engine3d.core.BoundBox;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.objects.Mesh;
 	import components.Transform3D;
+	import flash.geom.Vector3D;
 	import flash.utils.Dictionary;
 //	import haxe.Log;
 	import systems.collisions.EllipsoidCollider;
@@ -16,7 +18,7 @@ package alternativa.a3d.collisions
 	 * A 3d collision graph node, to support hierachical bounding volumes of arbituary ITCollidable instances!
 	 * @author Glenn Ko
 	 */
-	public class CollisionBoundNode implements IECollidable
+	public class CollisionBoundNode implements IECollidable, IRaycastImpl
 	{
 
 		alternativa3d var childrenList:CollisionBoundNode;
@@ -28,6 +30,7 @@ package alternativa.a3d.collisions
 		alternativa3d var localToGlobalTransform:Transform3D;
 		alternativa3d var globalToLocalTransform:Transform3D;
 		alternativa3d var collidable:ITCollidable;
+		alternativa3d var raycastable:IRaycastImpl;
 		
 		alternativa3d var boundBox:BoundBox;  
 		//alternativa3d var object:Object3D; //Alternativa3d debugging
@@ -65,7 +68,7 @@ package alternativa.a3d.collisions
 		
 
 		
-		alternativa3d function setup(object:Object3D, collidable:ITCollidable):CollisionBoundNode {
+		alternativa3d function setup(object:Object3D, collidable:ITCollidable, raycastable:IRaycastImpl=null):CollisionBoundNode {
 			//this.object = object; // Alternativa3d debugging
 
 			boundBox =  object.boundBox;
@@ -113,10 +116,45 @@ package alternativa.a3d.collisions
 			//transform.compose(object._x, object._y, object._z, object._rotationX, object._rotationY, object._rotationZ, object._scaleX, object._scaleY, object._scaleZ);
 			//inverseTransform.calculateInversion(transform);
 			this.collidable = collidable;
+			this.raycastable = collidable as IRaycastImpl;
 			
 			return this;
 			
 		}
+		
+				
+		/* INTERFACE altern.ray.IRaycastImpl */
+		
+		public function intersectRay(origin:Vector3D, direction:Vector3D, output:Vector3D):Vector3D 
+		{
+			
+			var minData:Vector3D = raycastable != null ? raycastable.intersectRay(origin, direction, output) : null;
+			var minTime:Number = minData != null ? minData.w  : output.w != 0 ? output.w : direction.w != 0 ? direction.w : 1e22; 
+			
+			var childOrigin:Vector3D;
+			var childDirection:Vector3D;
+			for (var child:CollisionBoundNode = childrenList; child != null; child = child.next) {
+				if (childOrigin == null) {
+					childOrigin = new Vector3D();
+					childDirection = new Vector3D();
+				}
+				childOrigin.x = child.inverseTransform.a*origin.x + child.inverseTransform.b*origin.y + child.inverseTransform.c*origin.z + child.inverseTransform.d;
+				childOrigin.y = child.inverseTransform.e*origin.x + child.inverseTransform.f*origin.y + child.inverseTransform.g*origin.z + child.inverseTransform.h;
+				childOrigin.z = child.inverseTransform.i*origin.x + child.inverseTransform.j*origin.y + child.inverseTransform.k*origin.z + child.inverseTransform.l;
+				childDirection.x = child.inverseTransform.a*direction.x + child.inverseTransform.b*direction.y + child.inverseTransform.c*direction.z;
+				childDirection.y = child.inverseTransform.e*direction.x + child.inverseTransform.f*direction.y + child.inverseTransform.g*direction.z;
+				childDirection.z = child.inverseTransform.i * direction.x + child.inverseTransform.j * direction.y + child.inverseTransform.k * direction.z;
+				childDirection.w = minTime;
+				var data:Vector3D = child.intersectRay(childOrigin, childDirection, output);
+				if (data != null && data.w < minTime) {
+					minTime = data.w;
+					minData = data;
+				}
+			}
+			return minData;
+		}
+		
+		
 		
 		alternativa3d function setupChildren(obj:Object3D, factoryMethodHash:Dictionary):void {
 			
@@ -251,6 +289,7 @@ package alternativa.a3d.collisions
 			return child;
 			}
 			
+
 
 			
 				private function addToList(child:CollisionBoundNode, item:CollisionBoundNode = null):void {
