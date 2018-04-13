@@ -20,6 +20,7 @@ package alternterrain.core
 		public static var BI:int = 0;
 		public static var BLEN:int = 0;
 		
+		/*
 		public static function createFromCornerData(qd:QuadCornerData, square:QuadSquareChunk, parent:QuadChunkCornerData=null):QuadChunkCornerData {
 			var me:QuadChunkCornerData = new QuadChunkCornerData();
 			me.Parent = parent;
@@ -30,6 +31,7 @@ package alternterrain.core
 			me.Level = qd.Level;
 			return me;
 		}
+		*/
 	
 		public static function create():QuadChunkCornerData {
 			//return new QuadChunkCornerData();

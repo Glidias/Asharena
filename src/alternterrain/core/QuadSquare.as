@@ -4,7 +4,7 @@ package alternterrain.core
 	 * ...
 	 * @author Glenn Ko
 	 */
-import alternativa.engine3d.core.Camera3D;
+	import alternativa.engine3d.core.Camera3D;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.alternativa3d;
 	import flash.geom.Vector3D;
@@ -22,7 +22,7 @@ import alternativa.engine3d.core.Camera3D;
 	
 	 public class QuadSquare
 	{
-		public var Child:Vector.<QuadSquare>;
+		public var Child:Vector.<QuadSquare>  = new Vector.<QuadSquare>(4, true);
 		
 		// center, e, n, w, s [5]  , vertex heights   
 		public	var Vertex:Vector.<int> = new Vector.<int>(5, true);	
@@ -48,11 +48,7 @@ import alternativa.engine3d.core.Camera3D;
 	
 			var	i:int;
 			
-			/*
-			for (i = 0; i < 4; i++) {
-				Child[i] = NULL;
-			}*/
-			Child = new Vector.<QuadSquare>(4, true);
+			
 
 		
 			

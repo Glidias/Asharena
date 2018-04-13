@@ -26,6 +26,13 @@ import altern.collisions.CollisionBoundNode;
 import altern.ray.Raycaster;
 //*/
 
+///*
+import altern.terrain.QuadTreePage;
+import altern.terrain.QuadSquareChunk;
+import altern.terrain.QuadChunkCornerData;
+import altern.terrain.TerrainChunkState;
+//*/
+
 
 /* Ash-framework integration
 import systems.collisions.EllipsoidColliderSystem;

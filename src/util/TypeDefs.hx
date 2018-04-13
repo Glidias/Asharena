@@ -44,6 +44,17 @@ class TypeDefs {
 		#end
 	}
 	
+	public static inline function createVector<T>(size:UInt, fixed:Bool):Vector<T> {
+		#if (flash9 || flash9doc)
+			return new Vector<T>(size, fixed);
+		#else
+			var arr:Vector<T> = new Vector<T>();
+			setVectorLen(arr, size, fixed ? 1 : 0);
+			return arr;
+		
+		#end
+	}
+	
 	public static inline function setVectorLen(vec:Dynamic,len:Int, setFixed:Int=-1):Void {
 		#if (cpp||php)
 			for (i in 0...6)) {
