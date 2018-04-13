@@ -2,7 +2,7 @@ package altern.ray;
 import util.TypeDefs.Vector3D;
 
 /**
- * Utility helper class for more "meaningful" raycasting for end-user.
+ * Utility helper class instance to handle "meaningful"/straightforward raycasting for end-user.
  * syntax eg. 
  * var myRaycaster = new Raycaster();
  * var hitTest = myRaycaster.positionAndDirection(x, y, z, dx, dy, dz).gotHit();
@@ -14,8 +14,7 @@ import util.TypeDefs.Vector3D;
 class Raycaster
 {
 	/**
-	 *
-	 * @param	source   Assign a starting target source for the given Raycaster.
+	 * @param	source   Assign a starting target source for the given Raycaster implementing IRaycastImpl.
 	 */
 	public function new(source:IRaycastImpl) 
 	{
@@ -56,7 +55,7 @@ class Raycaster
 	
 	/**
 	 * 
-	 * @param	dist	Set to zero to not have any distance clamp consideration. Otherwise, any distance greater or equal to this parameter is 
+	 * @param	dist	Set to zero to not have any distance clamp consideration. Otherwise, any distance greater or equal to this parameter will not be raycasted/recorded as a hit!
 	 */
 	public inline function setIgnoreDistance(dist:Float):Void {
 		_direction.w = dist;
@@ -69,7 +68,9 @@ class Raycaster
 		_output.w = 0;
 		var result:Vector3D =  source.intersectRay(_origin, _direction, _output);
 		if (result != null) {
-			trace(result);
+			result.x = _origin.x + result.w * _direction.x;
+			result.y = _origin.y + result.w * _direction.y;
+			result.z = _origin.z + result.w * _direction.z;
 		}
 		return result;
 	}

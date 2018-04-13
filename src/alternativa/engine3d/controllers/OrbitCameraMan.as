@@ -164,13 +164,15 @@ package alternativa.engine3d.controllers
 				if (rayData != null) {
 					//dataPoint = rayData.point;
 					dataPoint = rayData.object.localToGlobal(rayData.point);
-				}
+				}	
+		
 			}
 			else {
-				//raycaster.setIgnoreDistance(_preferedZoom);
+				raycaster.setIgnoreDistance(_preferedZoom);
 				dataPoint = raycaster.positionAndDirection(camLookAtTarget.x + cameraForward.x *-threshold, camLookAtTarget.y + cameraForward.y *-threshold, camLookAtTarget.z + cameraForward.z *-threshold, cameraReverse.x, cameraReverse.y, cameraReverse.z ).gotHit();
 				
-			}
+
+			}	
 			
                 _followTarget.visible = true;
             var tarDist:Number = _preferedZoom;

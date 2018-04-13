@@ -1934,7 +1934,7 @@ package tests.pvp
 			
 			
 		
-			
+			var raycasterCameraBackRay:Raycaster =  new Raycaster(game.gameStates.colliderSystem.collidable as IRaycastImpl);
 			
 			// Third person
 			///*
@@ -1956,7 +1956,8 @@ package tests.pvp
 		thirdPersonController.thirdPerson.preferedMinDistance = 0.1;// 100;
 		thirdPersonController.thirdPerson.controller.minDistance = 0;
 		thirdPersonController.thirdPerson.controller.maxDistance = 2240;
-		thirdPersonController.thirdPerson.offsetZ = 22;// CHASE_Z_OFFSET;
+		thirdPersonController.thirdPerson.offsetZ = 22;// CHASE_Z_OFFSET
+		thirdPersonController.thirdPerson.raycaster = raycasterCameraBackRay;
 		//thirdPersonController.thirdPerson.offsetX = 22;
 			game.gameStates.thirdPerson.addInstance( thirdPersonAiming = new ThirdPersonAiming() ).withPriority(SystemPriorities.preRender);
 			game.gameStates.thirdPerson.addInstance(thirdPersonController).withPriority(SystemPriorities.postRender);
@@ -1966,6 +1967,8 @@ package tests.pvp
 			//arenaHUD.arcContainer = arcSystem.arcs;
 			game.gameStates.thirdPerson.addInstance(arcSystem ).withPriority(SystemPriorities.postRender);
 			_waterBase.hideFromReflection.push(arcSystem.arcs);
+			
+			
 			
 			// setup targeting system
 			var myTargetingSystem:ThirdPersonTargetingSystem = new ThirdPersonTargetingSystem(thirdPersonController.thirdPerson);
@@ -1994,7 +1997,7 @@ package tests.pvp
 			
 			
 			commanderCameraController =  new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, true );
-			commanderCameraController.thirdPerson.raycaster = new Raycaster(game.colliderSystem.collidable as IRaycastImpl);
+			commanderCameraController.thirdPerson.raycaster = raycasterCameraBackRay;
 			//commanderCameraController.thirdPerson.preferedMinDistance = CMD_DIST;
 			commanderCameraController.thirdPerson.instantZoom = CMD_DIST; 
 		////	commanderCameraController.thirdPerson.controller.maxDistance = CMD_DIST;
@@ -2006,7 +2009,8 @@ package tests.pvp
 			game.gameStates.engineState.addState("commander", engineStateCommander);
 		
 			
-			transitionCamera =new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, false);
+			transitionCamera = new ThirdPersonController(stage, _template3D.camera, collisionScene, _commandLookTarget, _commandLookTarget, null, null, null, false);
+			transitionCamera.thirdPerson.raycaster = raycasterCameraBackRay;
 			transitionCamera.thirdPerson.controller.disablePermanently();
 			transitionCamera.thirdPerson.controller.stopMouseLook ();
 			transitionCamera.thirdPerson.mouseWheelSensitivity  = 0;

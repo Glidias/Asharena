@@ -32,6 +32,35 @@ class CollisionBoundNode implements IECollidable
 	}
 	
 	/**
+	 * Creates a mirror clone of the current collision bound node and all it's descendents 
+	 * (ie. cloning the entire hierachy). Bounding boxes/local transforms/addons are shared between mirror clones except for the
+	 * hierachy itself and localToGlobalTransform/globalToLocalTransform caches.
+	 * @return
+	 */
+	public function mirrorClone():CollisionBoundNode {
+		var c:CollisionBoundNode = CollisionBoundNode.create(transform, inverseTransform);
+		c.collidable = collidable;
+		c.boundBox = boundBox;
+		//c.raycastable = raycastable;
+		
+		var child:CollisionBoundNode = childrenList;
+		var lastChild:CollisionBoundNode = null;
+		while ( child != null) {
+			var newChild:CollisionBoundNode = child.mirrorClone();
+			if (c.childrenList != null) {
+				lastChild.next = newChild;
+			} else {
+				c.childrenList = newChild;
+			}
+			lastChild = newChild;
+			newChild._parent = c;
+			child = child.next;
+			
+		}
+		return c;
+	}
+	
+	/**
 	 * Creates a brand new minimal CollisionBoundNode instance with an already (assumed usually precalculated) transform instance and an optional (assumed already precalculated)  inverseTransform instance.
 	 * @param	transform	The  (usually precalculated) transform to assign
 	 * @param	inverseTransform	(optoinal) The precalculated inverseTransform to assign

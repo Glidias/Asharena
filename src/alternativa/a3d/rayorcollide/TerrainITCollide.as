@@ -1,8 +1,11 @@
 package alternativa.a3d.rayorcollide 
 {
+	import altern.ray.IRaycastImpl;
 	import alternativa.a3d.collisions.CollisionBoundNode;
+	import alternativa.engine3d.core.RayIntersectionData;
 	import alternterrain.objects.TerrainLOD;
 	import components.Transform3D;
+	import flash.geom.Vector3D;
 	import systems.collisions.EllipsoidCollider;
 	import systems.collisions.ITCollidable;
 	import alternativa.engine3d.alternativa3d;
@@ -12,7 +15,7 @@ package alternativa.a3d.rayorcollide
 	 * ...
 	 * @author Glenn Ko
 	 */
-	public class TerrainITCollide implements ITCollidable
+	public class TerrainITCollide implements ITCollidable, IRaycastImpl
 	{
 		public var terrain:TerrainLOD;
 		private var terrainGeom:Geometry;
@@ -46,6 +49,24 @@ package alternativa.a3d.rayorcollide
 			node.setup(terrain,  new TerrainITCollide(terrain));
 			return node;
 			
+		}
+		
+		
+		/* INTERFACE altern.ray.IRaycastImpl */
+		
+		public function intersectRay(origin:Vector3D, direction:Vector3D, output:Vector3D):Vector3D 
+		{
+			// lazy shortcut atm. Consider using IRaycastImpl be handled by QuadTreePage itself
+			var pt:RayIntersectionData = terrain.intersectRay(origin, direction);
+			var minTime:Number = output.w != 0 ? output.w : direction.w != 0 ? direction.w : 1e22;
+			if (pt != null && pt.time < minTime) {
+				output.x = pt.point.x;
+				output.y = pt.point.y;
+				output.z = pt.point.z;
+				output.w = pt.time;
+				return output;
+			}
+			return null;
 		}
 		
 	}

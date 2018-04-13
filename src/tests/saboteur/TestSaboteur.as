@@ -247,7 +247,7 @@ package tests.saboteur
 				addToCont(createPlanesWithEdgePoints(planeTest, outliner, total, tileX, tileY), contPlaneTest);
 				builder3D.startScene.addChild(contPlaneTest  );
 				
-				thirdPerson.thirdPerson.raycaster = new Raycaster(builder3D.collisionGraph as IRaycastImpl);
+				
 				contPlaneTest.visible = false;
 				 contPlaneGraph = CollisionUtil.getCollisionGraph(contPlaneTest) ;
 				//gameBuilder.collisionGraph.addChild(contPlaneGraph);
@@ -816,7 +816,7 @@ package tests.saboteur
 		
 	
 			thirdPerson = new ThirdPersonController(stage, _template3D.camera, new Object3D(), arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity);
-		
+			
 			
 			//game.engine.addSystem( thirdPerson, SystemPriorities.postRender ) ;
 			game.gameStates.thirdPerson.addInstance(thirdPerson).withPriority(SystemPriorities.postRender);
@@ -862,7 +862,8 @@ package tests.saboteur
 			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, gameBuilder, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
 
 			builder3D = ent.get(Builder3D) as Builder3D;
-			
+			//thirdPerson.thirdPerson.raycaster = new Raycaster(builder3D.collisionGraph as IRaycastImpl);
+			thirdPerson.thirdPerson.scene = builder3D.collisionScene;
 				var bitmapData:BitmapData = jettySpawner.createBlueprintSheet(_template3D.camera, _template3D.stage3D, hud);
 			//	addChild( new Bitmap(bitmapData));
 		
