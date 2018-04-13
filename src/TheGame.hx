@@ -43,6 +43,7 @@ import systems.sensors.RadialSensorSystem;
 import systems.SystemPriorities;
 import systems.tweening.TweenSystem;
 import util.geom.Geometry;
+import util.geom.AABBUtils;
 
 import systems.collisions.EllipsoidCollider;
 import systems.movement.GravitySystem;

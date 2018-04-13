@@ -150,7 +150,7 @@ class Geometry implements ITECollidable implements IRaycastImpl
 
 		var point:Vector3D = null;
 		var minTime:Float = res.w != 0 ? res.w : direction.w != 0 ? direction.w : 1e+22;
-		var numTriangles:Int = Math.floor(numVertices / 3);
+		var numTriangles:Int = Math.floor(numIndices / 3);
 		var count:Int =  numTriangles * 3;
 		var pIndex:Int = 0;
 		var i:Int = 0;

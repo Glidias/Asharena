@@ -256,6 +256,7 @@ package saboteur.systems
 					origin.x = fromPos.x - builder.startScene._x;
 					origin.y = fromPos.y - builder.startScene._y;
 					origin.z = fromPos.z - builder.startScene._z;
+					
 					origin.x /= builder.startScene._scaleX;
 					origin.y /= builder.startScene._scaleY;
 					origin.z /= builder.startScene._scaleZ;

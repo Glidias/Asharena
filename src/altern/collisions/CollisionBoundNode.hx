@@ -1,10 +1,12 @@
 package altern.collisions;
+import altern.ray.IRaycastImpl;
 import components.BoundBox;
 import components.Transform3D;
 import systems.collisions.EllipsoidCollider;
 import systems.collisions.IECollidable;
 import systems.collisions.ITCollidable;
 import util.geom.AABBUtils;
+import util.TypeDefs;
 
 /**
  * A CollisionBoundNode can be formed as part of a hierachial transformed (optional)OOBB tree of nodes, and can contain
@@ -24,7 +26,8 @@ class CollisionBoundNode implements IECollidable
 	
 	// optional assignables
 	public var collidable:ITCollidable;
-	public var boundBox:BoundBox;  
+	public var raycastable:IRaycastImpl;
+	public var boundBox:BoundBox;  // sized to match all union of all descendents as well
 		
 	function new() 
 	{
@@ -41,7 +44,7 @@ class CollisionBoundNode implements IECollidable
 		var c:CollisionBoundNode = CollisionBoundNode.create(transform, inverseTransform);
 		c.collidable = collidable;
 		c.boundBox = boundBox;
-		//c.raycastable = raycastable;
+		c.raycastable = raycastable;
 		
 		var child:CollisionBoundNode = childrenList;
 		var lastChild:CollisionBoundNode = null;
@@ -55,7 +58,6 @@ class CollisionBoundNode implements IECollidable
 			lastChild = newChild;
 			newChild._parent = c;
 			child = child.next;
-			
 		}
 		return c;
 	}
@@ -99,14 +101,14 @@ class CollisionBoundNode implements IECollidable
 	{
 		//if (!object.visible) return;
 		
-		var intersects:Bool = true;
+		//var intersects:Bool = true;
 		globalToLocalTransform.combine(inverseTransform, collider.matrix);
-		if (boundBox != null) {
+		//if (boundBox != null) {
 			
-			collider.calculateSphere(globalToLocalTransform);
-			intersects = AABBUtils.checkSphere(boundBox, collider.sphere);// boundBox.checkSphere(collider.sphere);  
-		}
-		if (!intersects) return;
+		//	collider.calculateSphere(globalToLocalTransform);
+		//	intersects = AABBUtils.checkSphere(boundBox, collider.sphere);// boundBox.checkSphere(collider.sphere);  
+		//}
+		//if (!intersects) return;
 		
 
 		// parent's localToGlobalTransofrm, child.transform
@@ -114,6 +116,43 @@ class CollisionBoundNode implements IECollidable
 			
 		if (collidable != null) collidable.collectGeometryAndTransforms(collider, localToGlobalTransform);
 		if (childrenList != null) visitChildren(collider);
+	}
+	
+	
+	/* INTERFACE altern.ray.IRaycastImpl */
+	public function intersectRay(origin:Vector3D, direction:Vector3D, output:Vector3D):Vector3D 
+	{
+		
+		var minData:Vector3D = raycastable.intersectRay(origin, direction, output);
+		var minTime:Float = minData != null ? minData.w  : output.w != 0 ? output.w : direction.w != 0 ? direction.w : 1e22; 
+		
+		var childOrigin:Vector3D = null;
+		var childDirection:Vector3D = null;
+		var child:CollisionBoundNode = childrenList;
+		while (child != null) {
+			if (childOrigin == null) {
+				childOrigin = new Vector3D();
+				childDirection = new Vector3D();
+			}
+			childOrigin.x = child.inverseTransform.a*origin.x + child.inverseTransform.b*origin.y + child.inverseTransform.c*origin.z + child.inverseTransform.d;
+			childOrigin.y = child.inverseTransform.e*origin.x + child.inverseTransform.f*origin.y + child.inverseTransform.g*origin.z + child.inverseTransform.h;
+			childOrigin.z = child.inverseTransform.i*origin.x + child.inverseTransform.j*origin.y + child.inverseTransform.k*origin.z + child.inverseTransform.l;
+			childDirection.x = child.inverseTransform.a*direction.x + child.inverseTransform.b*direction.y + child.inverseTransform.c*direction.z;
+			childDirection.y = child.inverseTransform.e*direction.x + child.inverseTransform.f*direction.y + child.inverseTransform.g*direction.z;
+			childDirection.z = child.inverseTransform.i * direction.x + child.inverseTransform.j * direction.y + child.inverseTransform.k * direction.z;
+			childDirection.w = minTime;
+			if (child.boundBox != null && !AABBUtils.intersectRay(child.boundBox, childOrigin, childDirection) ) {
+				continue;
+			}
+			var data:Vector3D =  child.intersectRay(childOrigin, childDirection, output);
+			if (data != null && data.w < minTime) {
+				minTime = data.w;
+				minData = data;
+			}
+			
+			child = child.next;
+		}
+		return minData;
 	}
 		
 	

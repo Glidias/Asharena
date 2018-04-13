@@ -158,8 +158,8 @@ class AABBUtils
 			return sphere.x + sphere.w > aabb.minX && sphere.x - sphere.w < aabb.maxX && sphere.y + sphere.w > aabb.minY && sphere.y - sphere.w < aabb.maxY && sphere.z + sphere.w > aabb.minZ && sphere.z - sphere.w < aabb.maxZ;
 		}
 
-		
-		public static inline function intersectRay(aabb:BoundBox, origin:Vec3, direction:Vec3):Bool {
+		static inline var THRESHOLD_RAY:Float =  0.000001;
+		public static function intersectRay(aabb:BoundBox, origin:Vector3D, direction:Vector3D):Bool {
 			if (origin.x >= aabb.minX && origin.x <= aabb.maxX && origin.y >= aabb.minY && origin.y <= aabb.maxY && origin.z >= aabb.minZ && origin.z <= aabb.maxZ) return true;
 			if (origin.x < aabb.minX && direction.x <= 0) return false;
 			if (origin.x > aabb.maxX && direction.x >= 0) return false;
@@ -171,22 +171,22 @@ class AABBUtils
 			var b:Float;
 			var c:Float;
 			var d:Float;
-			var threshold:Float = 0.000001;
+			
 			// Intersection of X and Y projection
-			if (direction.x > threshold) {
+			if (direction.x > THRESHOLD_RAY ) {
 				a = (aabb.minX - origin.x) / direction.x;
 				b = (aabb.maxX - origin.x) / direction.x;
-			} else if (direction.x < -threshold) {
+			} else if (direction.x < -THRESHOLD_RAY) {
 				a = (aabb.maxX - origin.x) / direction.x;
 				b = (aabb.minX - origin.x) / direction.x;
 			} else {
 				a = -1e+22;
 				b = 1e+22;
 			}
-			if (direction.y > threshold) {
+			if (direction.y > THRESHOLD_RAY) {
 				c = (aabb.minY - origin.y) / direction.y;
 				d = (aabb.maxY - origin.y) / direction.y;
-			} else if (direction.y < -threshold) {
+			} else if (direction.y < -THRESHOLD_RAY) {
 				c = (aabb.maxY - origin.y) / direction.y;
 				d = (aabb.minY - origin.y) / direction.y;
 			} else {
@@ -201,10 +201,10 @@ class AABBUtils
 				if (d < b) b = d;
 			}
 			// Intersection of XY and Z projections
-			if (direction.z > threshold) {
+			if (direction.z > THRESHOLD_RAY) {
 				c = (aabb.minZ - origin.z) / direction.z;
 				d = (aabb.maxZ - origin.z) / direction.z;
-			} else if (direction.z < -threshold) {
+			} else if (direction.z < -THRESHOLD_RAY) {
 				c = (aabb.maxZ - origin.z) / direction.z;
 				d = (aabb.minZ - origin.z) / direction.z;
 			} else {

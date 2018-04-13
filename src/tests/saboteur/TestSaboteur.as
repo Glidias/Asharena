@@ -823,6 +823,9 @@ package tests.saboteur
 			
 		
 			game.engine.addSystem(new TextMessageSystem(), SystemPriorities.render );
+			
+			//-150
+			//102
 			game.gameStates.thirdPerson.addInstance( new GroundPlaneCollisionSystem(102, true) ).withPriority(SystemPriorities.resolveCollisions);
 			
 			BVHCuller;
@@ -862,8 +865,8 @@ package tests.saboteur
 			var ent:Entity = jettySpawner.spawn(game.engine,_template3D.scene, gameBuilder, arenaSpawner.currentPlayerEntity.get(Pos) as Pos);
 
 			builder3D = ent.get(Builder3D) as Builder3D;
-			//thirdPerson.thirdPerson.raycaster = new Raycaster(builder3D.collisionGraph as IRaycastImpl);
-			thirdPerson.thirdPerson.scene = builder3D.collisionScene;
+			thirdPerson.thirdPerson.raycaster = new Raycaster(builder3D.collisionRoot as IRaycastImpl);
+
 				var bitmapData:BitmapData = jettySpawner.createBlueprintSheet(_template3D.camera, _template3D.stage3D, hud);
 			//	addChild( new Bitmap(bitmapData));
 		

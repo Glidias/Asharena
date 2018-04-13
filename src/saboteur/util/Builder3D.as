@@ -107,6 +107,7 @@ package saboteur.util
 		private var _boundGridBoxConvex3D:CollisionBoundNode;
 		public var minSquareBuildDistance:Number;
 		
+		public var collisionRoot:CollisionBoundNode;
 		public var collisionGraph:CollisionBoundNode;
 		public var showOccupied:Boolean = false;
 		
@@ -118,6 +119,9 @@ package saboteur.util
 			this.gameBuilder = gameBuilder;
 			gameBuilder.onBuildMade.add(onBuildMade);
 			gameBuilder.onRemoved.add(onRemovedPath);
+			
+			collisionRoot = new CollisionBoundNode();
+			
 			
 			var startSceneMatrix:Matrix3D = startScene.matrix;
 			/*
@@ -157,7 +161,7 @@ package saboteur.util
 			this.startScene = startScene;
 			this.blueprint = blueprint;
 			
-			collisionScene = new Object3D();
+			var collisionScene:Object3D = new Object3D();
 			//collisionScene.matrix = startSceneMatrix;
 			collisionScene._x = startScene._x;
 			collisionScene._y = startScene._y;
@@ -175,7 +179,7 @@ package saboteur.util
 			collisionScene.boundBox = null;
 			
 			collisionGraph = CollisionUtil.getCollisionGraph(collisionScene);
-			
+			collisionRoot.addChild(collisionGraph);
 
 			blueprint.visible = false;
 				_floor = floor;
@@ -208,7 +212,7 @@ package saboteur.util
 				_gridSquareBound.minZ -= Z_BOUND_PADDING;
 				
 				_boundGridBoxConvex3D = CollisionUtil.getCollisionGraph(new Box((_gridSquareBound.maxX - _gridSquareBound.minX), (_gridSquareBound.maxY - _gridSquareBound.minY), (_gridSquareBound.maxZ - _gridSquareBound.minZ) ) );
-				
+				_boundGridBoxConvex3D.raycastable = null;
 				collisionGraph._prepend(_boundGridBoxConvex3D);
 				
 			

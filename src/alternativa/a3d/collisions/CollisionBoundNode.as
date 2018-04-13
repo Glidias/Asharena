@@ -30,8 +30,8 @@ package alternativa.a3d.collisions
 		alternativa3d var inverseTransform:Transform3D;
 		alternativa3d var localToGlobalTransform:Transform3D;
 		alternativa3d var globalToLocalTransform:Transform3D;
-		alternativa3d var collidable:ITCollidable;
-		alternativa3d var raycastable:IRaycastImpl;
+		public var collidable:ITCollidable;
+		public var raycastable:IRaycastImpl;
 		
 		alternativa3d var boundBox:BoundBox;  
 		//alternativa3d var object:Object3D; //Alternativa3d debugging
@@ -138,6 +138,7 @@ package alternativa.a3d.collisions
 					childOrigin = new Vector3D();
 					childDirection = new Vector3D();
 				}
+				
 				childOrigin.x = child.inverseTransform.a*origin.x + child.inverseTransform.b*origin.y + child.inverseTransform.c*origin.z + child.inverseTransform.d;
 				childOrigin.y = child.inverseTransform.e*origin.x + child.inverseTransform.f*origin.y + child.inverseTransform.g*origin.z + child.inverseTransform.h;
 				childOrigin.z = child.inverseTransform.i*origin.x + child.inverseTransform.j*origin.y + child.inverseTransform.k*origin.z + child.inverseTransform.l;
@@ -145,10 +146,14 @@ package alternativa.a3d.collisions
 				childDirection.y = child.inverseTransform.e*direction.x + child.inverseTransform.f*direction.y + child.inverseTransform.g*direction.z;
 				childDirection.z = child.inverseTransform.i * direction.x + child.inverseTransform.j * direction.y + child.inverseTransform.k * direction.z;
 				childDirection.w = minTime;
-				var data:Vector3D = child.intersectRay(childOrigin, childDirection, output);
+				if (child.boundBox != null && !child.boundBox.intersectRay( childOrigin, childDirection) ) {
+					continue;
+				}
+				var data:Vector3D =  child.intersectRay(childOrigin, childDirection, output);
 				if (data != null && data.w < minTime) {
 					minTime = data.w;
 					minData = data;
+					
 				}
 			}
 			return minData;
@@ -199,14 +204,14 @@ package alternativa.a3d.collisions
 		{
 			//if (!object.visible) return;
 			
-			var intersects:Boolean = true;
+			//var intersects:Boolean = true;
 			globalToLocalTransform.combine(inverseTransform, collider.matrix);
-			if (boundBox != null) {
+			//if (boundBox != null) {
 				
-				collider.calculateSphere(globalToLocalTransform);
-				intersects = boundBox.checkSphere(collider.sphere);  
-			}
-			if (!intersects) return;
+				//collider.calculateSphere(globalToLocalTransform);
+				//intersects = boundBox.checkSphere(collider.sphere);  
+			//}
+			//if (!intersects) return;
 			
 
 			// parent's localToGlobalTransofrm, child.transform
