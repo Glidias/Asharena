@@ -91,6 +91,10 @@ class PMath
 	inline public static var RAD_DEG = 180 / PI;
 	/** Multiply value by this to convert from degrees to radians. */
 	inline public static var DEG_RAD = PI / 180;
+	/**
+	 *  base 2 logarithm of e
+	 */
+	inline public static var LOG2E = 1.4426950408889634;
 	/** The natural logarithm of 2. */
 	inline public static var LN2 = 0.6931471805599453;
 	/** Math.PI/2 constant. */

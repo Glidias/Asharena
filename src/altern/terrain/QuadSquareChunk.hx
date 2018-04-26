@@ -1,4 +1,6 @@
 package altern.terrain;
+import de.polygonal.ds.NativeInt32Array;
+import de.polygonal.ds.tools.NativeInt32ArrayTools;
 import util.TypeDefs;
 
 
@@ -32,7 +34,7 @@ class QuadSquareChunk
 		public static var QUADTREE_GRID:GridQuadChunkCornerData;
 		
 		public var 	EnabledFlags:Int;	// bit-30, culled,   bits 8-13: culling mask of frustum planes,   bits 0-7: e, n, w, s, ne, nw, sw, se
-		public var	SubEnabledCount:Vector<Int>;	// e, s enabled reference counts. [2]
+		public var	SubEnabledCount:NativeInt32Array;	// e, s enabled reference counts. [2]
 		
 		//public var normals:NormMapInfo;   // e,n,w,s - inner and outer edge normals as a result of stitch blending
 		
@@ -42,7 +44,7 @@ class QuadSquareChunk
 
 		
 		
-		public function QuadSquareChunk() 
+		public function new() 
 		{
 			MinY =  2147483647; //1.79e+308;
 			MaxY =  -2147483647; //-1.79e+308;
@@ -52,7 +54,7 @@ class QuadSquareChunk
 
 			EnabledFlags = 0;
 
-			SubEnabledCount = TypeDefs.createVector(2, true);// new Vector<Int>(2, true);
+			SubEnabledCount = NativeInt32ArrayTools.alloc(2);// TypeDefs.createVector(2, true);// new Vector<Int>(2, true);
 			SubEnabledCount[0] = 0;
 			SubEnabledCount[1] = 0;
 		}
@@ -249,10 +251,7 @@ private function EnableEdgeVertex( index:Int,  IncrementCount:Bool, cd:QuadChunk
 		var	ci:Int = pcd.ChildIndex;
 
 		if (pcd.Parent == null || pcd.Parent.Square == null) {
-
-			
-		
-			
+	
 			pcd = QUADTREE_GRID!=null ? getNeighborCornerData(pcd, index) : pcd;
 			//if (pcd == null)  return;
 			

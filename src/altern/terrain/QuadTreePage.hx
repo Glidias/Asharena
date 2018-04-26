@@ -9,7 +9,8 @@ class QuadTreePage  extends QuadChunkCornerData // implements IExternalizable
 	//public var material:Material;
 	
 	public var requirements:Int;
-	public var heightMap:HeightMapInfo;  // highest detail heights
+	//public var heightMap:HeightMapInfo;  // highest detail heights
+	
 	//alternativa3d var _uvTileShift:int = 0;
 	public var uvTileSize:Int = 0;
 	//public var normals:NormMapInfo;   // todo: depeciate!

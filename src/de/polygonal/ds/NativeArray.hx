@@ -31,9 +31,9 @@ typedef NativeArray<T> =
 #elseif neko
 neko.NativeArray<T>;
 #elseif cs
-Array<T>;
+cs.NativeArray<T>;
 #elseif java
-Array<T>;
+java.NativeArray<T>;
 #else
 Array<T>;
 #end

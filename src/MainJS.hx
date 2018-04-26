@@ -4,15 +4,16 @@ package;
 import js.Lib;
 #end
 
-///*
+/*
 import arena.pathfinding.GKDijkstra;
 import arena.pathfinding.GKGraph;
 import arena.pathfinding.GKGrapher;
 import arena.pathfinding.GKNode;
-//*/
-/*
-import de.polygonal.ds.Graph;
 */
+
+///*
+import de.polygonal.ds.Graph;
+//*/
 
 ///* 
 import systems.collisions.EllipsoidCollider;
@@ -31,13 +32,14 @@ import altern.terrain.QuadTreePage;
 import altern.terrain.QuadSquareChunk;
 import altern.terrain.QuadChunkCornerData;
 import altern.terrain.TerrainChunkState;
+import altern.terrain.TerrainChunkStateList;
+import altern.terrain.HeightMapInfo;
 //*/
 
 
-/* Ash-framework integration
+/* Ash-framework integration (problems with C-sharp atm)
 import systems.collisions.EllipsoidColliderSystem;
 */
-
 
 
 /**
@@ -49,6 +51,7 @@ class MainJS
 	
 	static function main() 
 	{
+		
 		
 		#if js
 		// generate macro to expose to global via altern package based on class imports

@@ -21,7 +21,7 @@ package de.polygonal.ds;
 import de.polygonal.ds.tools.Assert.assert;
 import de.polygonal.ds.tools.MathTools;
 
-using de.polygonal.ds.tools.NativeArrayTools;
+using de.polygonal.ds.tools.NativeInt32ArrayTools;
 
 using de.polygonal.ds.tools.Bits;
 
@@ -32,7 +32,7 @@ using de.polygonal.ds.tools.Bits;
 		var o = new de.polygonal.ds.BitVector(40);
 		for (i in 0...40) {
 		    if (i & 1 == 0) {
-		        o.set(i);
+		        o.setD(i);
 		    }
 		}
 		trace(o); //outputs:
@@ -61,7 +61,7 @@ class BitVector implements Hashable
 	**/
 	public var arrSize(default, null):Int = 0;
 	
-	var mData:NativeArray<Int>;
+	var mData:NativeInt32Array;
 	
 	/**
 		Creates a bit-vector capable of storing a total of `numBits` bits.
@@ -110,7 +110,7 @@ class BitVector implements Hashable
 		assert(i < numBits, 'i index out of range ($i)');
 		
 		var p = i >> 5, d = mData;
-		d.set(p, d.get(p) | (1 << (i & (32 - 1))));
+		d.setD(p, d.get(p) | (1 << (i & (32 - 1))));
 		return this;
 	}
 	
@@ -123,7 +123,7 @@ class BitVector implements Hashable
 		assert(i < numBits, 'i index out of range ($i)');
 		
 		var p = i >> 5, d = mData;
-		d.set(p, d.get(p) & (~(1 << (i & (32 - 1)))));
+		d.setD(p, d.get(p) & (~(1 << (i & (32 - 1)))));
 	}
 	
 	public inline function setFlagAt(i:Int, val:Int):BitVector
@@ -131,7 +131,7 @@ class BitVector implements Hashable
 		assert(i < numBits, 'i index out of range ($i)');
 		
 		var p = i >> 5, d = mData;
-		d.set(p, val!=0 ? ( d.get(p) | (1 << (i & (32 - 1))) ) : (d.get(p) & (~(1 << (i & (32 - 1)))))  );
+		d.setD(p, val!=0 ? ( d.get(p) | (1 << (i & (32 - 1))) ) : (d.get(p) & (~(1 << (i & (32 - 1)))))  );
 		return this;
 	}
 	
@@ -149,10 +149,10 @@ class BitVector implements Hashable
 	public inline function clearAll():BitVector
 	{
 		#if cpp
-		cpp.NativeArray.zero(mData, 0, arrSize);
+		cpp.NativeInt32Array.zero(mData, 0, arrSize);
 		#else
 		var d = mData;
-		for (i in 0...arrSize) d.set(i, 0);
+		for (i in 0...arrSize) d.setD(i, 0);
 		#end
 		return this;
 	}
@@ -163,7 +163,7 @@ class BitVector implements Hashable
 	public inline function setAll():BitVector
 	{
 		var d = mData;
-		for (i in 0...arrSize) d.set(i, -1);
+		for (i in 0...arrSize) d.setD(i, -1);
 		return this;
 	}
 	
@@ -183,7 +183,7 @@ class BitVector implements Hashable
 			nextBound = (binIndex + 1) << 5;
 			mask = -1 << (32 - nextBound + current);
 			mask &= (max < nextBound) ? -1 >>> (nextBound - max) : -1;
-			d.set(binIndex, d.get(binIndex) & ~mask);
+			d.setD(binIndex, d.get(binIndex) & ~mask);
 			current = nextBound;
 		}
 		return this;
@@ -192,7 +192,7 @@ class BitVector implements Hashable
 	/**
 		Sets all bits in the range [`min`, `max`).
 		
-		This is faster than setting individual bits by using `this.set()`.
+		This is faster than setting individual bits by using `this.setD()`.
 	**/
 	public function setRange(min:Int, max:Int):BitVector
 	{
@@ -205,7 +205,7 @@ class BitVector implements Hashable
 			var nextBound = (binIndex + 1) << 5;
 			var mask = -1 << (32 - nextBound + current);
 			mask &= (max < nextBound) ? -1 >>> (nextBound - max) : -1;
-			mData.set(binIndex, mData.get(binIndex) | mask);
+			mData.setD(binIndex, mData.get(binIndex) | mask);
 			current = nextBound;
 		}
 		return this;
@@ -259,13 +259,13 @@ class BitVector implements Hashable
 		
 		if (mData == null || newArrSize < arrSize)
 		{
-			mData = NativeArrayTools.alloc(newArrSize);
+			mData = NativeInt32ArrayTools.alloc(newArrSize);
 			mData.zero(0, newArrSize);
 		}
 		else
 		if (newArrSize > arrSize)
 		{
-			var t = NativeArrayTools.alloc(newArrSize);
+			var t = NativeInt32ArrayTools.alloc(newArrSize);
 			t.zero(0, newArrSize);
 			mData.blit(0, t, 0, arrSize);
 			mData = t;
@@ -332,16 +332,16 @@ class BitVector implements Hashable
 		var numIntegers = (k - numBytes) >> 2;
 		arrSize = numIntegers + (numBytes > 0 ? 1 : 0);
 		numBits = arrSize << 5;
-		mData = NativeArrayTools.alloc(arrSize);
-		for (i in 0...arrSize) mData.set(i, 0);
+		mData = NativeInt32ArrayTools.alloc(arrSize);
+		for (i in 0...arrSize) mData.setD(i, 0);
 		for (i in 0...numIntegers)
 		{
 			#if flash
-			mData.set(i, input.readInt());
+			mData.setD(i, input.readInt());
 			#elseif cpp
-			mData.set(i, (cast input.readInt32()) & 0xFFFFFFFF);
+			mData.setD(i, (cast input.readInt32()) & 0xFFFFFFFF);
 			#else
-			mData.set(i, cast input.readInt32());
+			mData.setD(i, cast input.readInt32());
 			#end
 		}
 		var index:Int = numIntegers << 5;

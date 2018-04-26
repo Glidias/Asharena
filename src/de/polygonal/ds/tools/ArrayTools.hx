@@ -65,6 +65,8 @@ class ArrayTools
 		#end
 	}
 	
+
+	
 	/**
 		Shrinks `a` to length `len` and returns `a`.
 	**/

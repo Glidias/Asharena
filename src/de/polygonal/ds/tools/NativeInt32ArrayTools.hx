@@ -23,55 +23,49 @@ import de.polygonal.ds.tools.ArrayTools;
 import de.polygonal.ds.tools.Assert.assert;
 
 /**
-	Utility class for modifying `NativeArray` objects
+	Utility class for modifying `NativeInt32Array` objects
 **/
-class NativeArrayTools
+class NativeInt32ArrayTools
 {
 	/**
 		Allocates an array with length `len`.
 	**/
-	public static inline function alloc<T>(len:Int):NativeArray<T>
+	public static inline function alloc<T>(len:Int):NativeInt32Array
 	{
 		#if flash10
-			#if (generic && !no_inline)
-			return new flash.Vector<T>(len, true);
-			#else
-			var a = new Array<T>();
-			untyped a.length = len;
-			return a;
-			#end
+			//#if (generic && !no_inline)
+			return new flash.Vector<Int>(len, true);
+			//#else
+			//var a = new Array<Int>();
+			//untyped a.length = len;
+			//return a;
+			//#end
 		#elseif neko
 		return untyped __dollar__amake(len);
-		#elseif js
-			#if (haxe_ver >= 4.000)
-				return js.Syntax.construct(Array, len);
-			#else
-				return untyped __new__(Array, len);
-			#end
+			
 		#elseif cs
-		return new cs.NativeArray<T>(len); // cs.Lib.arrayAlloc(len);
+		return new cs.NativeArray<Int>(len); // cs.Lib.arrayAlloc(len);
 		#elseif java
-		return new java.NativeArray<T>(len);
+		return new java.NativeArray<Int>(len);
 		#elseif cpp
-		var a = new Array<T>();
+		var a = new Array<Int>();
 		cpp.NativeArray.setSize(a, len);
 		return a;
 		#elseif python
 		return python.Syntax.pythonCode("[{0}]*{1}", null, len);
 		#else
-		var a = [];
-		untyped a.length = len;
-		return a;
+			return new NativeInt32Array(len);
 		#end
 	}
-
+	
+	
 	/**
 		Returns the value in `src` at `index`.
 	**/
 	#if !(assert == "extra")
 	inline
 	#end
-	public static function get<T>(src:NativeArray<T>, index:Int):T
+	public static function get<T>(src:NativeInt32Array, index:Int):Int
 	{
 		#if (assert == "extra")
 		assert(index >= 0 && index < size(src), 'index $index out of range ${size(src)}');
@@ -79,7 +73,7 @@ class NativeArrayTools
 		
 		return
 		#if (cpp && generic)
-		cpp.NativeArray.unsafeGet(src, index);
+		cpp.NativeInt32Array.unsafeGet(src, index);
 		#elseif python
 		python.internal.ArrayImpl.unsafeGet(src, index);
 		#else
@@ -93,16 +87,16 @@ class NativeArrayTools
 	#if !(assert == "extra")
 	inline
 	#end
-	public static function set<T>(dst:NativeArray<T>, index:Int, val:T)
+	public static function setD<T>(dst:NativeInt32Array, index:Int, val:Int)
 	{
 		#if (assert == "extra")
 		assert(index >= 0 && index < size(dst), 'index $index out of range ${size(dst)}');
 		#end
 		
 		#if (cpp && generic)
-		cpp.NativeArray.unsafeSet(dst, index, val);
+		cpp.NativeInt32Array.unsafesetD(dst, index, val);
 		#elseif python
-		python.internal.ArrayImpl.unsafeSet(dst, index, val);
+		python.internal.ArrayImpl.unsafesetD(dst, index, val);
 		#else
 		dst[index] = val;
 		#end
@@ -111,7 +105,7 @@ class NativeArrayTools
 	/**
 		Returns the number of values in `a`.
 	**/
-	public static inline function size<T>(a:NativeArray<T>):Int
+	public static inline function size<T>(a:NativeInt32Array):Int
 	{
 		return
 		#if neko
@@ -132,7 +126,7 @@ class NativeArrayTools
 	/**
 		Copies `n` elements from `src` beginning at `first` to `dst` and returns `dst`.
 	**/
-	public static function toArray<T>(src:NativeArray<T>, first:Int, len:Int, dst:Array<T>):Array<T>
+	public static function toArray<T>(src:NativeInt32Array, first:Int, len:Int, dst:Array<Int>):Array<Int>
 	{
 		assert(first >= 0 && first < size(src), "first index out of range");
 		assert(len >= 0 && first + len <= size(src), "len out of range");
@@ -155,9 +149,9 @@ class NativeArrayTools
 	}
 	
 	/**
-		Returns a `NativeArray` object from the values stored in `src`.
+		Returns a `NativeInt32Array` object from the values stored in `src`.
 	**/
-	public static inline function ofArray<T>(src:Array<T>):NativeArray<T>
+	public static inline function ofArray<T>(src:Array<Int>):NativeInt32Array
 	{
 		#if (python || cs)
 		return cast src.copy();
@@ -168,11 +162,13 @@ class NativeArrayTools
 			#else
 			src.copy();
 			#end
+		/*
 		#elseif js
 		return src.slice(0, src.length);
+		*/
 		#else
 		var out = alloc(src.length);
-		for (i in 0...src.length) set(out, i, src[i]);
+		for (i in 0...src.length) setD(out, i, src[i]);
 		return out;
 		#end
 	}
@@ -185,7 +181,7 @@ class NativeArrayTools
 	#if (cs || java || neko || cpp)
 	inline
 	#end
-	public static function blit<T>(src:NativeArray<T>, srcPos:Int, dst:NativeArray<T>, dstPos:Int, n:Int)
+	public static function blit<T>(src:NativeInt32Array, srcPos:Int, dst:NativeInt32Array, dstPos:Int, n:Int)
 	{
 		if (n > 0)
 		{
@@ -196,7 +192,7 @@ class NativeArrayTools
 			#if neko
 			untyped __dollar__ablit(dst, dstPos, src, srcPos, n);
 			#elseif cpp
-			cpp.NativeArray.blit(dst, dstPos, src, srcPos, n);
+			cpp.NativeInt32Array.blit(dst, dstPos, src, srcPos, n);
 			#else
 			if (src == dst)
 			{
@@ -208,7 +204,7 @@ class NativeArrayTools
 					{
 						i--;
 						j--;
-						set(src, j, get(src, i));
+						setD(src, j, get(src, i));
 					}
 				}
 				else
@@ -218,7 +214,7 @@ class NativeArrayTools
 					var j = dstPos;
 					for (k in 0...n)
 					{
-						set(src, j, get(src, i));
+						setD(src, j, get(src, i));
 						i++;
 						j++;
 					}
@@ -252,7 +248,7 @@ class NativeArrayTools
 	/**
 		Returns a shallow copy of `src`.
 	**/
-	inline public static function copy<T>(src:NativeArray<T>):NativeArray<T>
+	inline public static function copy<T>(src:NativeInt32Array):NativeInt32Array
 	{
 		#if (neko || cpp)
 		var len = size(src);
@@ -261,14 +257,16 @@ class NativeArrayTools
 		return out;
 		#elseif flash
 		return src.slice(0);
+		/*
 		#elseif js
 		return src.slice(0);
+		*/
 		#elseif python
 		return src.copy();
 		#else
 		var len = size(src);
 		var dst = alloc(len);
-		for (i in 0...len) set(dst, i, get(src, i));
+		for (i in 0...len) setD(dst, i, get(src, i));
 		return dst;
 		#end
 	}
@@ -280,7 +278,7 @@ class NativeArrayTools
 	#if (flash || java)
 	inline
 	#end
-	public static function zero<T>(dst:NativeArray<T>, first:Int = 0, n:Int = 0):NativeArray<T>
+	public static function zero<T>(dst:NativeInt32Array, first:Int = 0, n:Int = 0):NativeInt32Array
 	{
 		var min = first;
 		var max = n <= 0 ? size(dst) : min + n;
@@ -289,10 +287,10 @@ class NativeArrayTools
 		assert(max <= size(dst));
 		
 		#if cpp
-		cpp.NativeArray.zero(dst, min, max - min);
+		cpp.NativeInt32Array.zero(dst, min, max - min);
 		#else
 		var val:Int = 0;
-		while (min < max) set(dst, min++, cast val);
+		while (min < max) setD(dst, min++, cast val);
 		#end
 		
 		return dst;
@@ -302,7 +300,7 @@ class NativeArrayTools
 		Sets `n` elements in `a` to `val` starting at index `first` and returns `a`.
 		If `n` is 0, `n` is set to the length of `a`.
 	**/
-	public static function init<T>(a:NativeArray<T>, val:T, first:Int = 0, n:Int = 0):NativeArray<T>
+	public static function init<T>(a:NativeInt32Array, val:Int, first:Int = 0, n:Int = 0):NativeInt32Array
 	{
 		var min = first;
 		var max = n <= 0 ? size(a) : min + n;
@@ -310,7 +308,7 @@ class NativeArrayTools
 		assert(min >= 0 && min < size(a));
 		assert(max <= size(a));
 		
-		while (min < max) set(a, min++, val);
+		while (min < max) setD(a, min++, val);
 		return a;
 	}
 	
@@ -318,7 +316,7 @@ class NativeArrayTools
 		Nullifies `n` elements in `a` starting at index `first` and returns `a`.
 		If `n` is 0, `n` is set to the length of `a`.
 	**/
-	public static function nullify<T>(a:NativeArray<T>, first:Int = 0, n:Int = 0):NativeArray<T>
+	public static function nullify<T>(a:NativeInt32Array, first:Int = 0, n:Int = 0):NativeInt32Array
 	{
 		var min = first;
 		var max = n <= 0 ? size(a) : min + n;
@@ -327,9 +325,9 @@ class NativeArrayTools
 		assert(max <= size(a));
 		
 		#if cpp
-		cpp.NativeArray.zero(a, min, max - min);
+		cpp.NativeInt32Array.zero(a, min, max - min);
 		#else
-		while (min < max) set(a, min++, cast null);
+		while (min < max) setD(a, min++, cast null);
 		#end
 		
 		return a;
@@ -341,7 +339,7 @@ class NativeArrayTools
 		@return the array index storing `val` or the bitwise complement (~) of the index where `val` would be inserted (guaranteed to be a negative number).
 		<br/>The insertion point is only valid for `min` = 0 and `max` = `a.length` - 1.
 	**/
-	public static function binarySearchCmp<T>(a:NativeArray<T>, val:T, min:Int, max:Int, cmp:T->T->Int):Int
+	public static function binarySearchCmp<T>(a:NativeInt32Array, val:Int, min:Int, max:Int, cmp:Int->Int->Int):Int
 	{
 		assert(a != null);
 		assert(cmp != null);
@@ -364,39 +362,14 @@ class NativeArrayTools
 			return ~l;
 	}
 	
-	/**
-		Searches the sorted array `a` for `val` in the range [`min`, `max`] using the binary search algorithm.
-		@return the array index storing `val` or the bitwise complement (~) of the index where `val` would be inserted (guaranteed to be a negative number).
-		<br/>The insertion point is only valid for `min` = 0 and `max` = `a.length` - 1.
-	**/
-	public static function binarySearchf(a:NativeArray<Float>, val:Float, min:Int, max:Int):Int
-	{
-		assert(a != null);
-		assert(min >= 0 && min < size(a));
-		assert(max < size(a));
-		
-		var l = min, m, h = max + 1;
-		while (l < h)
-		{
-			m = l + ((h - l) >> 1);
-			if (get(a, m) < val)
-				l = m + 1;
-			else
-				h = m;
-		}
-		
-		if ((l <= max) && (get(a, l) == val))
-			return l;
-		else
-			return ~l;
-	}
+
 	
 	/**
 		Searches the sorted array `a` for `val` in the range [`min`, `max`] using the binary search algorithm.
 		@return the array index storing `val` or the bitwise complement (~) of the index where `val` would be inserted (guaranteed to be a negative number).
 		<br/>The insertion point is only valid for `min` = 0 and `max` = `a.length` - 1.
 	**/
-	public static function binarySearchi(a:NativeArray<Int>, val:Int, min:Int, max:Int):Int
+	public static function binarySearchi(a:NativeInt32Array, val:Int, min:Int, max:Int):Int
 	{
 		assert(a != null);
 		assert(min >= 0 && min < size(a));

@@ -31,7 +31,7 @@ package alternterrain.core
 		
 		// Bounds for frustum culling and error testing.
 		public var MinY:int;
-		public var MaxY:int;	
+		public var MaxY:int;
 
 		
 		public function QuadSquare(pcd:QuadCornerData) 

@@ -75,7 +75,12 @@ class Mathematics
 	 * Multiply value by this constant to convert from degrees to radians (PI / 180).
 	 */
 	inline public static var DEG_RAD = 0.017453292519943295;
-	
+
+	/**
+	 *  base 2 logarithm of e
+	 */
+	inline public static var LOG2E = 1.4426950408889634;
+
 	/**
 	 * The natural logarithm of 2.
 	 */
