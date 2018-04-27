@@ -84,4 +84,77 @@ class TerrainChunkStateList
 		
 	}
 	
+	
+	public function getAvailable():TerrainChunkState { // dequeue from head (FIFO queue)
+				var entity:TerrainChunkState = head;
+
+				if (entity == null) {
+					
+					return null;
+				}
+
+				
+				head = head.next;
+				if (head!=null) {
+					head.prev = null;
+			
+				}
+				
+				if ( tail	== entity) tail = null;
+				
+			
+				
+				//if (entity.next) entity.next.prev =  null;
+				entity.next = null;
+				entity.parent = null;
+			//	validate("");
+				
+				return entity;
+			}
+
+			public function remove( entity : TerrainChunkState ) : Void
+			{
+				
+
+				
+				if ( head == entity)
+				{
+				head = head.next;
+				}
+				if ( tail == entity)
+				{
+				tail = tail.prev;
+				}
+
+				if (entity.prev!=null)
+				{
+				entity.prev.next = entity.next;
+				}
+
+				if (entity.next!=null)
+				{
+				entity.next.prev = entity.prev;
+				}
+				entity.parent = null;
+				entity.next = null;
+				entity.prev = null;
+				
+		
+				//validate("")
+				// N.B. Don't set node.next and node.prev to null because that will break the list iteration if node is the current node in the iteration.
+			}
+
+			public function removeAll() : Void
+			{
+				while( head!=null )
+				{
+					var entity : TerrainChunkState = head;
+					head = head.next;
+					entity.prev = null;
+					entity.next = null;
+					entity.parent = null;
+				}
+				tail = null;
+			}
+	
 }
