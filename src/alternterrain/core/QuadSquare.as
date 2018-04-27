@@ -78,6 +78,7 @@ package alternterrain.core
 			
 		}
 		
+		/*
 		public function calculateYBounds(pcd:QuadCornerData):void {
 			MinY = 1.79e+308;
 			MaxY = -1.79e+308;
@@ -108,6 +109,7 @@ package alternterrain.core
 			errorList = null;
 		}
 	
+		*/
 	
 		
 	
@@ -186,6 +188,7 @@ package alternterrain.core
 		
 
 
+		/*
 		public function CountNodes():int
 		// Debugging function.  Counts the number of nodes in this subtree.
 		{
@@ -205,10 +208,10 @@ package alternterrain.core
 		}
 		
 
-
+*/
 	
 
-
+/*
 private function GetNeighbor(dir:int,  cd:QuadCornerData):QuadSquare
 // Traverses the tree in search of the QuadSquare neighboring this square to the
 // specified direction.  0-3 -. { E, N, W, S }.
@@ -236,6 +239,7 @@ private function GetNeighbor(dir:int,  cd:QuadCornerData):QuadSquare
 	
 	return p.Child[index];
 }
+*/
 
 
 public function SampleFromHeightMap(cd:QuadCornerData, hm:HeightMapInfo):void {
@@ -287,6 +291,7 @@ public function SampleFromHeightMap(cd:QuadCornerData, hm:HeightMapInfo):void {
 }
 
 //public static var DEBUG_ADDCOUNT:int = 0;
+
 
 public function	AddHeightMap(cd:QuadCornerData,  hm:HeightMapInfo ):void
 // Sets the height of all samples within the specified rectangular
@@ -358,6 +363,7 @@ public function	AddHeightMap(cd:QuadCornerData,  hm:HeightMapInfo ):void
 
 
 // Mainly for AS3 worker or optimized cases where everything is already pre-allocated and unnecessary code-considerations are removed.
+
 public function	AddHeightMapInlineFast(cd:QuadCornerData,  hm:HeightMapInfo ):void
 // Faster version compared to above
 {
@@ -405,6 +411,7 @@ private static const STACK:Vector.<int> = new Vector.<int>(32, true);
 
 // Use RecomputerErrorAndLighting()  to get error value to pass into 2nd parameter for this QuadSquare, recurse down to till (not including)
 // targetChunkLevel 2^13 = 8192 ...(32*256=8192)  and for each recursion visit, form up a simpler tree of QuadSquareChunks.
+
 public function GetQuadSquareChunk(cd:QuadCornerData, error:int, targetChunkLevel:int=12):QuadSquareChunk {
 	if (cd.Level < targetChunkLevel) throw new Error("LOD of current quad square is too fine for target chunk LOD level!");
 	
@@ -429,6 +436,7 @@ public function GetQuadSquareChunk(cd:QuadCornerData, error:int, targetChunkLeve
 	return chunk;
 }
 
+/*
 public function WriteQuadSquareChunkInline(chunk:QuadSquareChunk, cd:QuadCornerData, error:int, targetChunkLevel:int=12):void {
 	
 
@@ -454,8 +462,9 @@ public function WriteQuadSquareChunkInline(chunk:QuadSquareChunk, cd:QuadCornerD
 	
 
 }
+*/
 
-
+/*
 public	function StaticCullAux(cd:QuadCornerData,  ThresholdDetail:Number,  TargetLevel:int):void
 // Check this node and its descendents, and remove nodes which don't contain
 // necessary detail.
@@ -541,7 +550,9 @@ public	function StaticCullAux(cd:QuadCornerData,  ThresholdDetail:Number,  Targe
 		}
 	}
 }
+*/
 
+/*
 public function getHighestError(cd:QuadCornerData):Number {
 	var	maxerror:Number = 0;
 	var	i:int;
@@ -588,7 +599,7 @@ public function getHighestError(cd:QuadCornerData):Number {
 	return maxerror;
 
 }
-
+*/
 
 ///*
  public function RecomputeErrorAndLighting(cd:QuadCornerData):Number 
@@ -670,6 +681,7 @@ public function getHighestError(cd:QuadCornerData):Number {
 }
 //*/
 
+/*
  public function RecomputeErrorAndLightingInline(cd:QuadCornerData):Number 
 // Recomputes the error values for this tree.  Returns the
 // max error.
@@ -745,7 +757,7 @@ public function getHighestError(cd:QuadCornerData):Number {
 	
 	return maxerror;
 }
-
+*/
 		
 
 

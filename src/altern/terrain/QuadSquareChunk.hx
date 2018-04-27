@@ -1,6 +1,7 @@
 package altern.terrain;
 import de.polygonal.ds.NativeInt32Array;
 import de.polygonal.ds.tools.NativeInt32ArrayTools;
+import hxbit.Serializable;
 import util.TypeDefs;
 
 
@@ -8,7 +9,7 @@ import util.TypeDefs;
  * ...
  * @author Glidias
  */
-class QuadSquareChunk 
+class QuadSquareChunk implements Serializable
 {
 /**
 	 * @author Thatcher Ulrich (tu@tulrich.com)
@@ -19,16 +20,16 @@ class QuadSquareChunk
 	 */
 	
 
-		public var Child:Vector<QuadSquareChunk>;
+		@:s public var Child:Array<QuadSquareChunk>;
 		
 		public static var BlockUpdateCount:Int = 0;	//xxxxx
 		private static var DetailThreshold:Float = 100;
 
-		public var error:Int;
+		@:s public var error:Int;
 		
 		// Bounds for frustum culling and error testing.
-		public var MinY:Int;
-		public var MaxY:Int;	
+		@:s public var MinY:Int;
+		@:s public var MaxY:Int;	
 		
 		// important, please set this up to ensure you can get neighboring entries
 		public static var QUADTREE_GRID:GridQuadChunkCornerData;
@@ -42,7 +43,23 @@ class QuadSquareChunk
 		
 		public static var LOD_LVL_MIN:Int = 12;
 
-		
+		/*
+		public function writeExternal(output:IDataOutput):void 
+	{
+		output.writeInt(MinY);
+		output.writeInt(MaxY);
+		output.writeUnsignedInt(error);
+		//if (normals != null) output.writeObject(normals);
+		if (Child[0] != null) {
+			output.writeBoolean(true);
+			output.writeObject(Child[0]);
+			output.writeObject(Child[1]);
+			output.writeObject(Child[2]);
+			output.writeObject(Child[3]);
+		}
+		else output.writeBoolean(false);
+	}
+	*/
 		
 		public function new() 
 		{

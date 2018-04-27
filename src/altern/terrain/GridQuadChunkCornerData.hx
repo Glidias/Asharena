@@ -8,7 +8,7 @@ import util.TypeDefs;
 class GridQuadChunkCornerData 
 {
 
-	public var vec:Vector<QuadChunkCornerData>;
+	public var vec:Array<QuadChunkCornerData>;
 	public var cols:Int;
 
 	public var originX:Int = 0;

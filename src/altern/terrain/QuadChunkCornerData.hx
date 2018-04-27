@@ -1,11 +1,12 @@
 package altern.terrain;
+import hxbit.Serializable;
 import util.TypeDefs;
 
 /**
  * ...
  * @author Glidias
  */
-class QuadChunkCornerData 
+class QuadChunkCornerData implements Serializable
 {
 
 	function new() 
@@ -14,14 +15,14 @@ class QuadChunkCornerData
 	}
 	
 	public var Parent:QuadChunkCornerData;
-	public var Square:QuadSquareChunk; //	Square;
+	@:s public var Square:QuadSquareChunk; //	Square;
 	public	var ChildIndex:Int;
-	public var	Level:Int;
+	@:s public var	Level:Int;
 	
-	public	var xorg:Int;
-	public var zorg:Int;
+	@:s public	var xorg:Int;
+	@:s public var zorg:Int;
 
-	public static var BUFFER:Vector<QuadChunkCornerData> = new Vector<QuadChunkCornerData>();
+	public static var BUFFER:Array<QuadChunkCornerData> = new Array<QuadChunkCornerData>();
 	public static var BI:Int = 0;
 	public static var BLEN:Int = 0;
 	

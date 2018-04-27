@@ -1,22 +1,24 @@
 package altern.terrain;
+import hxbit.Serializable;
 
 /**
  * ...
  * @author Glidias
  */
-class QuadTreePage  extends QuadChunkCornerData // implements IExternalizable
+class QuadTreePage  extends QuadChunkCornerData
 {
 	//public var material:Material;
 	
-	public var requirements:Int;
-	//public var heightMap:HeightMapInfo;  // highest detail heights
+	@:s public var requirements:Int;
+	@:s public var heightMap:HeightMapInfo;  // highest detail heights
 	
 	//alternativa3d var _uvTileShift:int = 0;
 	public var uvTileSize:Int = 0;
 	//public var normals:NormMapInfo;   // todo: depeciate!
-		
-	public var index:Int = -1;
 	
+	
+
+		
 	function new() 
 	{
 		super();

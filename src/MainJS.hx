@@ -34,6 +34,9 @@ import altern.terrain.QuadChunkCornerData;
 import altern.terrain.TerrainChunkState;
 import altern.terrain.TerrainChunkStateList;
 import altern.terrain.HeightMapInfo;
+
+import altern.terrain.QuadCornerData;
+
 //*/
 
 

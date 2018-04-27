@@ -2,6 +2,7 @@ package altern.terrain;
 
 import de.polygonal.ds.NativeInt32Array;
 import de.polygonal.ds.tools.NativeInt32ArrayTools;
+import hxbit.Serializable;
 import util.TypeDefs;
 import util.geom.PMath;
 
@@ -10,7 +11,7 @@ import util.geom.PMath;
  * @author Thatcher Ulrich (tu@tulrich.com)
  * @author Glenn Ko
  */
-class HeightMapInfo //implements IExternalizable
+class HeightMapInfo implements Serializable
 {
 	
 	public function new() 
@@ -20,13 +21,34 @@ class HeightMapInfo //implements IExternalizable
 	
 	//int16*	
 	public var Data:NativeInt32Array;
-	public var XOrigin:Int;
-	public var ZOrigin:Int;
-	public var XSize:Int;
-	public var ZSize:Int;
-	public var RowWidth:Int;
-	public var Scale:Int = 8;
+	@:s public var XOrigin:Int;
+	@:s public var ZOrigin:Int;
+	@:s public var XSize:Int;
+	@:s public var ZSize:Int;
+	@:s public var RowWidth:Int;
+	@:s public var Scale:Int = 8;
 	
+	@:keep
+    public function customSerialize(ctx : hxbit.Serializer) {
+		var len:Int = Data.length;
+		ctx.addInt32(len );
+		var i:Int = 0;
+		while( i < len) {
+			ctx.addInt32(Data[i]);
+			i++;
+		}
+    }
+
+    @:keep
+    public function customUnserialize(ctx : hxbit.Serializer) {
+		Data = NativeInt32ArrayTools.alloc(ctx.getInt32());
+		var len:UInt = Data.length;
+		var i:Int = 0;
+		while (i < len) {
+			Data[i] = ctx.getInt32();
+			i++;
+		}
+    }
 	
 	// Retreieve height data directly for writing into bytearray buffer!
 	public function getData(ix:Int, iz:Int):Int {
@@ -171,7 +193,7 @@ while ( z < heightClamp)
 Data = result;
 }
 
-	public function	Sample(x:Int,  z:Int):Float 
+	public function	Sample(x:Int,  z:Int):Int 
 
 	// Returns the height (y-value) of a point in this heightmap.  The given (x,z) are in
 	// world coordinates.  Heights outside this heightmap are considered to be 0.  Heights
@@ -211,7 +233,7 @@ Data = result;
 		var	s10:Float = Data[ix + (iz+zSizeAdd) * RowWidth];
 		var	s11:Float = Data[(ix+ xSizeAdd) + (iz+zSizeAdd) * RowWidth];
 
-		return ( (s00 * (1-fx) + s01 * fx) * (1-fz) +
+		return Std.int( (s00 * (1-fx) + s01 * fx) * (1-fz) +
 			(s10 * (1-fx) + s11 * fx) * fz );
 	}
 	

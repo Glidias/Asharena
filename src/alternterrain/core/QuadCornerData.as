@@ -18,10 +18,10 @@ package alternterrain.core
 	
 		public var Parent:QuadCornerData;
 		public var Square:QuadSquare; //	Square;
-		public	var ChildIndex:int;
-		public var	Level:int
+		public var ChildIndex:int;
+		public var Level:int
 		
-		public	var xorg:int;
+		public var xorg:int;
 		public var zorg:int;
 		
 		public var Verts:Vector.<int> = new Vector.<int>(4);	//se,sw,nw,ne
