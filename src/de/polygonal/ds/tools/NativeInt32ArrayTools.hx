@@ -18,6 +18,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 */
 package de.polygonal.ds.tools;
 
+//import de.polygonal.ds.NativeFloat32Array;
 import de.polygonal.ds.NativeInt32Array;
 import de.polygonal.ds.tools.ArrayTools;
 import de.polygonal.ds.tools.Assert.assert;
@@ -30,7 +31,7 @@ class NativeInt32ArrayTools
 	/**
 		Allocates an array with length `len`.
 	**/
-	public static inline function alloc<T>(len:Int):NativeInt32Array
+	public static inline function alloc(len:Int):NativeInt32Array
 	{
 		#if flash10
 			//#if (generic && !no_inline)
@@ -57,6 +58,37 @@ class NativeInt32ArrayTools
 			return new NativeInt32Array(len);
 		#end
 	}
+	
+	
+	/*
+	public static inline function allocFloat(len:Int):NativeFloat32Array
+	{
+		#if flash10
+			//#if (generic && !no_inline)
+			return new flash.Vector<Float>(len, true);
+			//#else
+			//var a = new Array<Int>();
+			//untyped a.length = len;
+			//return a;
+			//#end
+		#elseif neko
+		return untyped __dollar__amake(len);
+			
+		#elseif cs
+		return new cs.NativeArray<Int>(len); // cs.Lib.arrayAlloc(len);
+		#elseif java
+		return new java.NativeArray<Int>(len);
+		#elseif cpp
+		var a = new Array<Int>();
+		cpp.NativeArray.setSize(a, len);
+		return a;
+		#elseif python
+		return python.Syntax.pythonCode("[{0}]*{1}", null, len);
+		#else
+			return new NativeFloat32Array(len);
+		#end
+	}
+	*/
 	
 	
 	/**

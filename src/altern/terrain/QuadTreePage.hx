@@ -19,7 +19,7 @@ class QuadTreePage  extends QuadChunkCornerData
 	
 
 		
-	function new() 
+	public function new() 
 	{
 		super();
 	}

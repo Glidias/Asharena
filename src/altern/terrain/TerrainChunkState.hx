@@ -14,6 +14,7 @@ class TerrainChunkState
 	
 	//	public var vertexBuffer:VertexBuffer3D;
 
+	public var index:Int; 
 	public var enabledFlags:Int;
 	public var square:QuadSquareChunk;
 	public var next:TerrainChunkState;

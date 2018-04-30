@@ -8,7 +8,7 @@ class TerrainChunkStateList
 {
 	
 	public var head : TerrainChunkState;
-		public var tail : TerrainChunkState;
+	public var tail : TerrainChunkState;
 			
 	public function append( entity : TerrainChunkState ) : Void  // enqueue
 	{
