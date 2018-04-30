@@ -34,7 +34,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 	public static inline var UV_NORMALIZED:Int = -1;
 	
 	
-	//public static var PROTO_32:GeometryResult;
+	public static var PROTO_32:GeometryResult;
 	
 	// pooled chunk state buffers
 	private var chunkPool:TerrainChunkStateList = new TerrainChunkStateList();  // BENCHMARK: changed to non/static. 
@@ -125,15 +125,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			_squaredDistUpdate = a * a + b * b;
 		}
 		
-		public static inline var NORTH_EAST:Int = 0;
-		public static inline var NORTH_WEST:Int = 1;
-		public static inline var SOUTH_WEST:Int = 2;
-		public static inline var SOUTH_EAST:Int = 3;
-		
-		public static inline var MASK_EAST:Int = 1;
-		public static inline var MASK_NORTH:Int = 2;
-		public static inline var MASK_WEST:Int = 4;
-		public static inline var MASK_SOUTH:Int = 8;
+	
 		
 		private var _patchHeights:NativeInt32Array = NativeInt32ArrayTools.alloc(4*3);
 		private static var TRI_ORDER_TRUE:NativeInt32Array =  createTriOrderIndiceTable(true); // forward slash diagonal tri-patch
@@ -207,103 +199,104 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		//mySurface.object = this;
 		//mySurface.indexBegin = 0;
 		cornerMask = NativeInt32ArrayTools.alloc(4);
-		cornerMask[0] = ~(MASK_NORTH | MASK_EAST) & 0xF;
-		cornerMask[1] = ~(MASK_NORTH | MASK_WEST) & 0xF;
-		cornerMask[2] = ~(MASK_SOUTH | MASK_WEST) & 0xF;
-		cornerMask[3] = ~(MASK_SOUTH | MASK_EAST) & 0xF;
+		cornerMask[0] = ~(TerrainGeomTools.MASK_NORTH | TerrainGeomTools.MASK_EAST) & 0xF;
+		cornerMask[1] = ~(TerrainGeomTools.MASK_NORTH | TerrainGeomTools.MASK_WEST) & 0xF;
+		cornerMask[2] = ~(TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_WEST) & 0xF;
+		cornerMask[3] = ~(TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_EAST) & 0xF;
 		//mySurface.numTriangles = PATCHES_ACROSS * 2;
 	}
 	
-	function setupIndexReferences():Void {
+	function setupIndexReferences( indexLookup:NativeInt32Array, patchesAcross:Int):Void {
 		//indexBuffers = new Vector.<IndexBuffer3D>(9, true);
 		numTrianglesLookup = NativeInt32ArrayTools.alloc(9); // new Vector.<int>(9, true);
 		indexSideLookup = NativeInt32ArrayTools.alloc(16);
 		//var buffer:IndexBuffer3D;
 		
 		var count:Int = 0;
+		var indices:Vector<UInt> = new Vector<UInt>();
 		//var byteArray:ByteArray = new ByteArray();
 		//byteArray.endian = Endian.LITTLE_ENDIAN;
-		//TerrainGeomTools.writeInnerIndicesToByteArray(patchesAcross, indexLookup, byteArray);
-		//var startEdgesPosition:int = byteArray.position;
+		TerrainGeomTools.writeInnerIndicesToByteArray(patchesAcross, indexLookup, indices);
+		var startEdgesPosition:Int = indices.length;
 		
-		//TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, byteArray, 0);   
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, 0);   
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
-	//numTrianglesLookup[count] = (byteArray.length >> 1) / 3; 
-		//buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1); 
+		numTrianglesLookup[count] = Std.int(indices.length / 3);
+		setupIndexBuffer(indices, count); //buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1); 
 		indexSideLookup[0xF] = count;
 		count++;
 		
-		//byteArray.position = byteArray.length = startEdgesPosition;
-		//TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, byteArray, TerrainGeomTools.MASK_EAST );
+		TypeDefs.setVectorLen(indices, startEdgesPosition); //byteArray.position = byteArray.length = startEdgesPosition;
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_EAST );
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
-	//numTrianglesLookup[count] = (byteArray.length >> 1) / 3;
-		//buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
-		indexSideLookup[(~MASK_EAST) & 0xF] = count;
+		numTrianglesLookup[count] = Std.int(indices.length / 3);
+		setupIndexBuffer(indices, count); //buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
+		indexSideLookup[(~TerrainGeomTools.MASK_EAST) & 0xF] = count;
 		count++;
 		
-		//byteArray.position = byteArray.length = startEdgesPosition;
-		//TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, byteArray, TerrainGeomTools.MASK_NORTH );
+		TypeDefs.setVectorLen(indices, startEdgesPosition); //byteArray.position = byteArray.length = startEdgesPosition;
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_NORTH );
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
-	//numTrianglesLookup[count] = (byteArray.length >> 1) / 3;
-		//buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
-		indexSideLookup[(~MASK_NORTH)&0xF] = count;
+		numTrianglesLookup[count] = Std.int(indices.length / 3);
+		setupIndexBuffer(indices, count); //buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
+		indexSideLookup[(~TerrainGeomTools.MASK_NORTH)&0xF] = count;
 		count++;
 		
-		//byteArray.position = byteArray.length = startEdgesPosition;
-		//TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, byteArray, TerrainGeomTools.MASK_WEST );
+		TypeDefs.setVectorLen(indices, startEdgesPosition); //byteArray.position = byteArray.length = startEdgesPosition;
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.TerrainGeomTools.MASK_WEST );
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
-	//numTrianglesLookup[count] = (byteArray.length >> 1) / 3;
-		//buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
-		indexSideLookup[(~MASK_WEST)&0xF] = count;
+		numTrianglesLookup[count] = Std.int(indices.length / 3);
+		setupIndexBuffer(indices, count); //buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
+		indexSideLookup[(~TerrainGeomTools.MASK_WEST)&0xF] = count;
 		count++;
 		
-		//byteArray.position = byteArray.length = startEdgesPosition;
-		//TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, byteArray, TerrainGeomTools.MASK_SOUTH );
+		TypeDefs.setVectorLen(indices, startEdgesPosition); //byteArray.position = byteArray.length = startEdgesPosition;
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_SOUTH );
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
-	//numTrianglesLookup[count] = (byteArray.length >> 1) / 3;
-		//buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
-		indexSideLookup[(~MASK_SOUTH)&0xF] = count;
+		numTrianglesLookup[count] = Std.int(indices.length / 3);
+		setupIndexBuffer(indices, count); //buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
+		indexSideLookup[(~TerrainGeomTools.MASK_SOUTH)&0xF] = count;
 		count++;
 		
-		//byteArray.position = byteArray.length = startEdgesPosition;
-		//TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, byteArray, TerrainGeomTools.MASK_NORTH | TerrainGeomTools.MASK_EAST );
+		TypeDefs.setVectorLen(indices, startEdgesPosition); //byteArray.position = byteArray.length = startEdgesPosition;
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_NORTH | TerrainGeomTools.MASK_EAST );
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
-	//numTrianglesLookup[count] = (byteArray.length >> 1) / 3;
-		//buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
-		indexSideLookup[~(MASK_NORTH | MASK_EAST)&0xF] = count;
+		numTrianglesLookup[count] = Std.int(indices.length / 3);
+		setupIndexBuffer(indices, count); //buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
+		indexSideLookup[~(TerrainGeomTools.MASK_NORTH | TerrainGeomTools.MASK_EAST)&0xF] = count;
 		count++;
 		
-		//byteArray.position = byteArray.length = startEdgesPosition;
-		//TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, byteArray, TerrainGeomTools.MASK_NORTH | TerrainGeomTools.MASK_WEST );
+		TypeDefs.setVectorLen(indices, startEdgesPosition); //byteArray.position = byteArray.length = startEdgesPosition;
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_NORTH | TerrainGeomTools.TerrainGeomTools.MASK_WEST );
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
-	//numTrianglesLookup[count] = (byteArray.length >> 1) / 3;
-		//buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
-		indexSideLookup[~(MASK_NORTH | MASK_WEST)&0xF] = count;
+		numTrianglesLookup[count] = Std.int(indices.length / 3);
+		setupIndexBuffer(indices, count); //buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
+		indexSideLookup[~(TerrainGeomTools.MASK_NORTH | TerrainGeomTools.MASK_WEST)&0xF] = count;
 		count++;
 		
-		//byteArray.position = byteArray.length = startEdgesPosition;
-		//TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, byteArray, TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_WEST );
+		TypeDefs.setVectorLen(indices, startEdgesPosition); //byteArray.position = byteArray.length = startEdgesPosition;
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.TerrainGeomTools.MASK_WEST );
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
-	//numTrianglesLookup[count] = (byteArray.length >> 1) / 3;
-		//buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
-		indexSideLookup[ ~(MASK_SOUTH | MASK_WEST)&0xF ] = count;
+		numTrianglesLookup[count] = Std.int(indices.length / 3);
+		setupIndexBuffer(indices, count); //buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
+		indexSideLookup[ ~(TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_WEST)&0xF ] = count;
 		count++;
 		
-		//byteArray.position = byteArray.length = startEdgesPosition;
-		//TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, byteArray, TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_EAST );
+		TypeDefs.setVectorLen(indices, startEdgesPosition); //byteArray.position = byteArray.length = startEdgesPosition;
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_EAST );
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
-	//numTrianglesLookup[count] = (byteArray.length >> 1) / 3;
-		//buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
-		indexSideLookup[ ~(MASK_SOUTH | MASK_EAST)&0xF ] = count;
+		numTrianglesLookup[count] = Std.int(indices.length / 3);
+		setupIndexBuffer(indices, count); //buffer.uploadFromByteArray(byteArray, 0, 0, byteArray.length >> 1);
+		indexSideLookup[ ~(TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_EAST)&0xF ] = count;
 		count++;
 	}
 	
@@ -313,13 +306,12 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		
 		lodLvlMin = Math.round(Math.log(tileSize * PATCHES_ACROSS) * PMath.LOG2E) - 1;
 
-		//if (PROTO_32 == null) {
-			//setupPrototypes(context3D, tileSize);
+		
 			
-			if (indexSideLookup == null) {
-				setupIndexReferences();
-			}
-		//}
+		if (PROTO_32 == null) PROTO_32 = TerrainGeomTools.createLODTerrainChunkForMesh(PATCHES_ACROSS, tileSize);
+		if (indexSideLookup == null) setupIndexReferences(PROTO_32.indexLookup, PATCHES_ACROSS);
+		
+		
 		
 
 		this.tileSize = tileSize;
@@ -372,6 +364,8 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 				_defaultUVStream.attributes = [VertexAttributes.TEXCOORDS[0], VertexAttributes.TEXCOORDS[0]];
 		}
 		*/
+		
+		setupVertexUpload(requirements, tileSize);
 	}
 	
 	
@@ -437,6 +431,114 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 	function calculateFrustum(camera:Vec3):Void {
 		
 	}
+	function setupIndexBuffer(indices:Vector<UInt>, id:Int):Void {
+		
+	}
+	function setupVertexChunkState(state:TerrainChunkState, vertices:NativeFloat32Array):Void {
+		
+	}
+	function drawChunkState(state:TerrainChunkState, indexBufferId:Int):Void {
+		
+	}
+	
+	
+	function sampleHeights(requirements:Int, heightMap:HeightMapInfo, square:QuadChunkCornerData ):Void {
+		
+		var len:Int;
+		var i:Int;
+		
+		var offset:Int;
+		var stride:Int = _data32PerVertex;
+		// based on requirements, could access a different vertex upload
+		var heightData:NativeInt32Array = heightMap.Data;
+
+		var xorg:Int = square.xorg;
+		var zorg:Int =  square.zorg;
+		var hXOrigin:Int = heightMap.XOrigin;
+		var hZOrigin:Int = heightMap.ZOrigin;
+		xorg -= hXOrigin;  // need to check if this is correct
+		zorg -= hZOrigin;
+		xorg = Std.int(xorg/tileSize);
+		zorg = Std.int(zorg/tileSize);
+	
+		
+		var limit:Int = (((1 << square.Level) << 1) >> tileShift);  // numbr of tiles
+		
+		var vAcross:Int = PATCHES_ACROSS + 1;
+		var tStride:Int = (limit >> PATCHES_SHIFT);  // divide by 32
+		var yLimit:Int = zorg + limit + 1;
+		var xLimit:Int = xorg + limit + 1;
+		var RowWidth:Int = heightMap.RowWidth;
+		
+		var indexLookup:NativeInt32Array = PROTO_32.indexLookup;
+		var pos:Int;
+		
+		// NOTE: If all pages are using the same requirements, it's actually possible to hardcode all these below as an inline operation
+		// within a single loop. 
+		///*
+		var xi:Int;
+		var yi:Int;
+		var y:Int;
+		var x:Int;
+
+		// We assume position offset is always zero and always made available!
+		// TODO: consider Only Z case...
+		yi = 0;
+		y = zorg;
+		while ( y < yLimit) {
+			xi = 0;
+			x = xorg; 
+			while (x < xLimit) {
+				pos = indexLookup[yi * vAcross + xi] * stride;
+				_vertexUpload[pos] = x * tileSize + hXOrigin;
+				_vertexUpload[pos + 1] = y * -tileSize - hZOrigin;
+				_vertexUpload[pos + 2] = heightData[y * RowWidth + x];
+				xi++;
+				x += tStride;
+			}
+			yi++;
+			y += tStride;
+		}
+		
+		//var vStream:VertexStream;
+	
+		var attribId:Int;
+		
+		var divisor:Float;
+
+		
+		
+		/*	// TODO: see how to incldue UVs
+		if ( (requirements & VERTEX_INCLUDE_UVS) != 0) {  
+	
+			divisor = 1 / _currentPage.uvTileSize;
+			attribId = VertexAttributes.TEXCOORDS[0];
+			//vStream =  myGeometry._attributesStreams[attribId];
+			offset =  3;// _defaultUVStream._attributesOffsets[attribId];
+			
+			yi = 0;
+			y = zorg;
+			while ( y < yLimit) {
+				xi = 0;
+				x = xorg;
+				while ( x < xLimit) {
+					pos = indexLookup[yi * vAcross + xi] * stride + offset;
+					_vertexUpload[pos] = x * tileSize*divisor;
+					_vertexUpload[pos + 1] = y * tileSize*divisor;
+					xi++;
+					x += tStride;
+				}
+				yi++;
+				y+=tStride
+			}
+		}
+		*/
+		
+	
+		//*/
+	}
+	
+	
 	function drawLeaf(cd:QuadChunkCornerData, s:QuadSquareChunk, camera:Vec3):Void
 	{
 		var state:TerrainChunkState;   
@@ -457,9 +559,8 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			 s.state = state;
 			state.enabledFlags = s.EnabledFlags;
 			
-			//sampleHeights(_currentPage.requirements, _currentPage.heightMap, cd);
-			//state.vertexBuffer.uploadFromVector(_vertexUpload, 0, NUM_VERTICES);
-			
+			sampleHeights(_currentPage.requirements, _currentPage.heightMap, cd);
+			setupVertexChunkState(state, _vertexUpload); //state.vertexBuffer.uploadFromVector(_vertexUpload, 0, NUM_VERTICES);	
 		}
 		else {
 			cached_retrieved += chunkPool.head != null ? 1 : 0; // tracking
@@ -477,6 +578,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		
 		//mySurface.numTriangles = numTrianglesLookup[id]; 
 		//myGeometry._indexBuffer = indexBuffers[id];
+		drawChunkState(state, id);
 		
 		
 		//myGeometry._attributesStreams[1].buffer = s.state.vertexBuffer;  

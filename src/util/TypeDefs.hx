@@ -60,6 +60,8 @@ class TypeDefs {
 			for (i in 0...6)) {
 				vec[i] = 0;
 			}
+		//#elseif (cs)	// TODO: need to do this to allow C-sharp
+			//cs.system.Array.Resize(vec.__a, len);
 		#else
 			untyped vec.length = len;
 		#end

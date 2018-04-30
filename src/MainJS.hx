@@ -38,6 +38,8 @@ import altern.terrain.TerrainLOD;
 
 import altern.terrain.QuadCornerData;
 
+import altern.terrain.GeometryResult;
+
 //*/
 
 
