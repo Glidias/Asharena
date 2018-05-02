@@ -85,7 +85,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		
 	
 		private var _vertexUpload:NativeFloat32Array; 
-		private var _data32PerVertex:Int;
+		private var _data32PerVertex:Int = 3;
 		//private var _debugMaterial:CheckboardFillMaterial = new CheckboardFillMaterial();
 		
 		
