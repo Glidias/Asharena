@@ -261,7 +261,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		count++;
 		
 		TypeDefs.setVectorLen(indices, startEdgesPosition); //byteArray.position = byteArray.length = startEdgesPosition;
-		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.TerrainGeomTools.MASK_WEST );
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_WEST );
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
 		numTrianglesLookup[count] = Std.int(indices.length / 3);
@@ -288,7 +288,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		count++;
 		
 		TypeDefs.setVectorLen(indices, startEdgesPosition); //byteArray.position = byteArray.length = startEdgesPosition;
-		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_NORTH | TerrainGeomTools.TerrainGeomTools.MASK_WEST );
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_NORTH | TerrainGeomTools.MASK_WEST );
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
 		numTrianglesLookup[count] = Std.int(indices.length / 3);
@@ -297,7 +297,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		count++;
 		
 		TypeDefs.setVectorLen(indices, startEdgesPosition); //byteArray.position = byteArray.length = startEdgesPosition;
-		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.TerrainGeomTools.MASK_WEST );
+		TerrainGeomTools.writeEdgeVerticesToByteArray(patchesAcross, indexLookup, indices, TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_WEST );
 		//buffer = context3D.createIndexBuffer( byteArray.length >> 1 );
 		//indexBuffers[count] = buffer;
 		numTrianglesLookup[count] = Std.int(indices.length / 3);

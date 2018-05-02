@@ -27,8 +27,8 @@ implements Serializable
 	
 	//int16*	
 	public var Data:NativeInt32Array;
-	@:s public var XOrigin:Int;
-	@:s public var ZOrigin:Int;
+	@:s public var XOrigin:Int = 0;
+	@:s public var ZOrigin:Int = 0;
 	@:s public var XSize:Int;
 	@:s public var ZSize:Int;
 	@:s public var RowWidth:Int;

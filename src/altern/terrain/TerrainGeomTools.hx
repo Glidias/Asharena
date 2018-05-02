@@ -120,9 +120,9 @@ class TerrainGeomTools
 			}
 			
 			//   odd-indexed outerEdge vertices (outside) aka. Outer diamond vertices.
-			y = vAcross-2;
-			while ( y >= 1) {
-			x = vAcross -1;  // east outer diamond
+			y = vAcross - 2;
+			x = vAcross -1; 
+			while ( y >= 1) {  // east outer diamond
 				writeVertices(vertices, x, y, patchSize, segUVSize,offsetAdditionalData); // if (vIndexLookup[y * vAcross + x] != -1) throw new Error("Vertex already found 4!");
 				vIndexLookup[y * vAcross + x] = count++;
 				y -= 2;
@@ -260,8 +260,8 @@ class TerrainGeomTools
 		
 	static function writeVertices(vertices:Vector<Float>, x:Int, y:Int, patchSize:Int, segUVSize:Float, offsetAdditionalData:Int):Void {
 			vertices.push(x*patchSize);
-			vertices.push(-y*patchSize);
 			vertices.push(0);
+			vertices.push(y*patchSize);
 			
 			// TODO: how to write uvs and the rest..
 			//vertices.push(x*segUVSize);
