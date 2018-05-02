@@ -511,8 +511,8 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			while (x < xLimit) {
 				pos = indexLookup[yi * vAcross + xi] * stride;
 				_vertexUpload[pos] = x * tileSize + hXOrigin;
-				_vertexUpload[pos + 1] = y * -tileSize - hZOrigin;
-				_vertexUpload[pos + 2] = heightData[y * RowWidth + x];
+				_vertexUpload[pos + 1] = heightData[y * RowWidth + x];
+				_vertexUpload[pos + 2] = y * tileSize+hZOrigin; // y * -tileSize - hZOrigin;
 				xi++;
 				x += tStride;
 			}
@@ -544,7 +544,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 				while ( x < xLimit) {
 					pos = indexLookup[yi * vAcross + xi] * stride + offset;
 					_vertexUpload[pos] = x * tileSize*divisor;
-					_vertexUpload[pos + 1] = y * tileSize*divisor;
+					_vertexUpload[pos + 2] = y * tileSize*divisor;
 					xi++;
 					x += tStride;
 				}
