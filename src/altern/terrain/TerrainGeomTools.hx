@@ -78,7 +78,7 @@ class TerrainGeomTools
 				}
 				y++;
 			}
-			
+		
 			
 			
 			// diamond vertex normals don't change when LOD edges stitch, cross vertex normals do.
@@ -110,6 +110,7 @@ class TerrainGeomTools
 				vIndexLookup[y * vAcross + x] = count++;
 				y += 2;
 			}
+			
 			y = vAcross - 2;  // south  inner diamond
 			x = 2;
 			while ( x <= vAcross-3) {
@@ -140,9 +141,9 @@ class TerrainGeomTools
 				vIndexLookup[y * vAcross + x] = count++;
 				y += 2;
 			}
+			x = 1; 
 			y = vAcross - 1;  // south outer diamond
 			while (x <= vAcross - 2) {
-				x = 1; 
 				writeVertices(vertices, x, y, patchSize, segUVSize, offsetAdditionalData); // if (vIndexLookup[y * vAcross + x] != -1) throw new Error("Vertex already found 7!");
 				vIndexLookup[y * vAcross + x] = count++;
 				x += 2;

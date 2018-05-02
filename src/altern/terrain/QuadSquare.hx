@@ -389,7 +389,7 @@ public function GetQuadSquareChunk(cd:QuadCornerData, error:Int, targetChunkLeve
 
 
 ///*
- public function RecomputeErrorAndLighting(cd:QuadCornerData):Float 
+ public function RecomputeErrorAndLighting(cd:QuadCornerData):Int 
 // Recomputes the error values for this tree.  Returns the
 // max error.
 // Also updates MinY & MaxY.
@@ -398,7 +398,7 @@ public function GetQuadSquareChunk(cd:QuadCornerData, error:Int, targetChunkLeve
 	var	i:Int;
 	var	y:Int;  // float
 	// Measure error of center and edge vertices.
-	var	maxerror:Float = 0;
+	var	maxerror:Int = 0;
 
 	// Compute error of center vert.
 	var	e:Int;

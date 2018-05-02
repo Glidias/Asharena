@@ -137,7 +137,7 @@ class NativeInt32ArrayTools
 	/**
 		Returns the number of values in `a`.
 	**/
-	public static inline function size<T>(a:NativeInt32Array):Int
+	public static inline function size(a:NativeInt32Array):Int
 	{
 		return
 		#if neko

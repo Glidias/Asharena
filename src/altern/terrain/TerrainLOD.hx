@@ -4,6 +4,7 @@ import altern.terrain.QuadChunkCornerData;
 import altern.terrain.QuadSquareChunk;
 import de.polygonal.ds.NativeFloat32Array;
 import de.polygonal.ds.NativeInt32Array;
+import de.polygonal.ds.tools.NativeArrayTools;
 import de.polygonal.ds.tools.NativeInt32ArrayTools;
 import util.TypeDefs;
 import util.geom.PMath;
@@ -204,6 +205,20 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		cornerMask[2] = ~(TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_WEST) & 0xF;
 		cornerMask[3] = ~(TerrainGeomTools.MASK_SOUTH | TerrainGeomTools.MASK_EAST) & 0xF;
 		//mySurface.numTriangles = PATCHES_ACROSS * 2;
+	
+	}
+		
+	public static function installQuadTreePageHeightmap(heightMap:HeightMapInfo, offsetX:Int=0, offsetY:Int=0, tileSize:Int=256, sampleSize:Int=0):QuadTreePage {
+		var rootData:QuadCornerData = QuadCornerData.createRoot(offsetX, offsetY, sampleSize == 0 ? (tileSize * (heightMap.XSize-1)) : sampleSize); 
+		rootData.Square.AddHeightMap(rootData, heightMap);
+
+		var cd:QuadTreePage = new QuadTreePage();
+		cd.Level = rootData.Level;
+		cd.xorg = rootData.xorg;
+		cd.zorg = rootData.zorg;
+		cd.Square =  rootData.Square.GetQuadSquareChunk( rootData, rootData.Square.RecomputeErrorAndLighting(rootData)  ); 
+		cd.heightMap = heightMap;
+		return cd; 
 	}
 	
 	function setupIndexReferences( indexLookup:NativeInt32Array, patchesAcross:Int):Void {
@@ -308,7 +323,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 
 		
 			
-		if (PROTO_32 == null) PROTO_32 = TerrainGeomTools.createLODTerrainChunkForMesh(PATCHES_ACROSS, tileSize);
+		if (PROTO_32 == null) PROTO_32 = TerrainGeomTools.createLODTerrainChunkForMesh(PATCHES_ACROSS, tileSize);	
 		if (indexSideLookup == null) setupIndexReferences(PROTO_32.indexLookup, PATCHES_ACROSS);
 		
 		
@@ -375,7 +390,11 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		var len:Int;
 		var i:Int;
 		var vAcross:Int = PATCHES_ACROSS + 1;
+		#if !neko
 		_vertexUpload = new NativeFloat32Array(  vAcross * vAcross * _data32PerVertex);
+		#else
+		_vertexUpload = NativeArrayTools.alloc(  vAcross * vAcross * _data32PerVertex);
+		#end
 
 	
 		/*
@@ -408,6 +427,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 	}
 	
 	public function runSinglePage(heightMap:HeightMapInfo, quadCornerChunk:QuadTreePage,  requirements:Int, uvTileSize:Int = 0, tileSize:Int = 256):Void {
+		
 		setupPreliminaries(quadCornerChunk, requirements, tileSize, uvTileSize);
 			
 		var chunk:QuadSquareChunk  = quadCornerChunk.Square;

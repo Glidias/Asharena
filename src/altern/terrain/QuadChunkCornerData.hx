@@ -1,12 +1,17 @@
 package altern.terrain;
+#if !macro 
 import hxbit.Serializable;
+#end
 import util.TypeDefs;
 
 /**
  * ...
  * @author Glidias
  */
-class QuadChunkCornerData implements Serializable
+class QuadChunkCornerData
+#if !macro 
+implements Serializable 
+#end
 {
 
 	function new() 

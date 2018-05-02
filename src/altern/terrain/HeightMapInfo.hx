@@ -2,16 +2,22 @@ package altern.terrain;
 
 import de.polygonal.ds.NativeInt32Array;
 import de.polygonal.ds.tools.NativeInt32ArrayTools;
+
 import hxbit.Serializable;
+
 import util.TypeDefs;
 import util.geom.PMath;
 
+//using de.polygonal.ds.tools.NativeInt32ArrayTools;
 
 /**
  * @author Thatcher Ulrich (tu@tulrich.com)
  * @author Glenn Ko
  */
-class HeightMapInfo implements Serializable
+class HeightMapInfo 
+#if !macro 
+implements Serializable 
+#end
 {
 	
 	public function new() 
@@ -28,9 +34,10 @@ class HeightMapInfo implements Serializable
 	@:s public var RowWidth:Int;
 	@:s public var Scale:Int = 8;
 	
+	#if !macro
 	@:keep
     public function customSerialize(ctx : hxbit.Serializer) {
-		var len:Int = Data.length;
+		var len:Int = NativeInt32ArrayTools.size(Data);
 		ctx.addInt32(len );
 		var i:Int = 0;
 		while( i < len) {
@@ -49,16 +56,14 @@ class HeightMapInfo implements Serializable
 			i++;
 		}
     }
+	#end
 	
 	// Retreieve height data directly for writing into bytearray buffer!
 	public function getData(ix:Int, iz:Int):Int {
 		return Data[ix + iz * RowWidth]; 
 	}
 	
-	public function fillDataWithValue(val:Int):Void {
-		var i:Int = Data.length;
-		while (--i > -1) Data[i] = val;
-	}
+	
 	
 	/*
 	public function getShortData(ix:int, iz:int):int { 
@@ -66,9 +71,16 @@ class HeightMapInfo implements Serializable
 		return ((ShortData[i] << 8) | ShortData[i + 1]);   
 	}
 	*/
+	
+
+	
+	public function fillDataWithValue(val:Int):Void {
+		var i:Int = NativeInt32ArrayTools.size(Data);// Data.size;
+		while (--i > -1) Data[i] = val;
+	}
 
 	public function setFixed(val:Bool):Void {
-		TypeDefs.setVectorLen(Data, Data.length, val ? 1 : 0);
+		TypeDefs.setVectorLen(Data, NativeInt32ArrayTools.size(Data), val ? 1 : 0);
 	}
 	
 
@@ -96,7 +108,7 @@ var bounds:Int = widthClamp * heightClamp;
 
 
 // TODO: pre-Allocate the result for optimized cases
-var result:NativeInt32Array = NativeInt32ArrayTools.alloc(Data.length);  // this should be a float
+var result:NativeInt32Array = NativeInt32ArrayTools.alloc(NativeInt32ArrayTools.size(Data));  // this should be a float
 
 var heightMap:NativeInt32Array = Data;
 
@@ -251,7 +263,7 @@ Data = result;
 	}
 	
 	public function flatten(val:Int = 0):Void {
-		var len:Int = Data.length;
+		var len:Int = NativeInt32ArrayTools.size(Data);
 		var i:Int = 0;
 		while (i < len) {
 			Data[i] = val;
@@ -261,7 +273,7 @@ Data = result;
 	
 	public function slopeAlongY(val:Int):Void {
 		
-		var len:Int = Data.length;
+		var len:Int = NativeInt32ArrayTools.size(Data);
 		var y:Int = 0;
 		while ( y < ZSize) {
 			
@@ -277,7 +289,7 @@ Data = result;
 	
 	public function slopeAltAlongY(val:Int):Void {
 		
-		var len:Int = Data.length;
+		var len:Int = NativeInt32ArrayTools.size(Data);
 		var y:Int = 0;
 		while ( y < ZSize) {
 			var x:Int = 0;
@@ -289,7 +301,7 @@ Data = result;
 	
 	public function randomise(val:Int):Void {
 		val *= Std.int(.5);
-		var len:Int = Data.length;
+		var len:Int = NativeInt32ArrayTools.size(Data);
 		var i:Int = 0;
 		while ( i < len) {
 			Data[i] += Std.int( -Math.random() * val + val * 2 );

@@ -1,7 +1,9 @@
 package altern.terrain;
 import de.polygonal.ds.NativeInt32Array;
 import de.polygonal.ds.tools.NativeInt32ArrayTools;
+#if !macro
 import hxbit.Serializable;
+#end
 import util.TypeDefs;
 
 
@@ -9,7 +11,10 @@ import util.TypeDefs;
  * ...
  * @author Glidias
  */
-class QuadSquareChunk implements Serializable
+class QuadSquareChunk 
+#if !macro
+implements Serializable
+#end
 {
 /**
 	 * @author Thatcher Ulrich (tu@tulrich.com)
