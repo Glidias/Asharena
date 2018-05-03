@@ -454,10 +454,10 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 	function setupIndexBuffer(indices:Vector<UInt>, id:Int):Void {
 		
 	}
-	function setupVertexChunkState(state:TerrainChunkState, vertices:NativeFloat32Array):Void {
+	function setupVertexChunkState(state:TerrainChunkState, vertices:NativeFloat32Array, cd:QuadChunkCornerData):Void {
 		
 	}
-	function drawChunkState(state:TerrainChunkState, indexBufferId:Int):Void {
+	function drawChunkState(state:TerrainChunkState, indexBufferId:Int, cd:QuadChunkCornerData):Void {
 		
 	}
 	
@@ -580,7 +580,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			state.enabledFlags = s.EnabledFlags;
 			
 			sampleHeights(_currentPage.requirements, _currentPage.heightMap, cd);
-			setupVertexChunkState(state, _vertexUpload); //state.vertexBuffer.uploadFromVector(_vertexUpload, 0, NUM_VERTICES);	
+			setupVertexChunkState(state, _vertexUpload, cd); //state.vertexBuffer.uploadFromVector(_vertexUpload, 0, NUM_VERTICES);	
 		}
 		else {
 			cached_retrieved += chunkPool.head != null ? 1 : 0; // tracking
@@ -598,7 +598,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		
 		//mySurface.numTriangles = numTrianglesLookup[id]; 
 		//myGeometry._indexBuffer = indexBuffers[id];
-		drawChunkState(state, id);
+		drawChunkState(state, id, cd);
 		
 		
 		//myGeometry._attributesStreams[1].buffer = s.state.vertexBuffer;  

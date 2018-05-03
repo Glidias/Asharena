@@ -225,7 +225,7 @@ Data = result;
 		
 
 		if (ix < 0 || ix > XSize-1 || iz < 0 || iz > ZSize-1) {
-			throw ("OUTSIDE!" + ix + "," + iz + ", " + XSize);
+			//throw ("OUTSIDE!" + ix + "," + iz + ", " + XSize);
 			if (ix < 0) ix  = 0;
 			if (iz < 0 ) iz = 0;
 			if (ix >= XSize ) ix = XSize - 1;
