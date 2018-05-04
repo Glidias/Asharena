@@ -96,7 +96,6 @@ class TerrainGeomTools
 				y -= 2;
 			}
 			y =  1;  // north  inner diamond
-			
 			x = vAcross -3;
 			while ( x >=2) {  
 				writeVertices(vertices, x, y, patchSize, segUVSize,offsetAdditionalData);  //if (vIndexLookup[y * vAcross + x] != -1) throw new Error("Vertex already found 1!");
