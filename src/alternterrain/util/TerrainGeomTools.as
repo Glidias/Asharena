@@ -3,7 +3,6 @@ package alternterrain.util
 	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.alternativa3d;
-	import alternativa.protocol.codec.complex.ByteArrayCodec;
 	import alternterrain.resources.GeometryFixed;
 	import flash.display.BitmapData;
 	import flash.display.Sprite;

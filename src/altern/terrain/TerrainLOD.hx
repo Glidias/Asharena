@@ -1,4 +1,5 @@
 package altern.terrain;
+import altern.culling.CullingPlane;
 import altern.ray.IRaycastImpl;
 import altern.terrain.QuadChunkCornerData;
 import altern.terrain.QuadSquareChunk;
@@ -63,6 +64,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 	private var tileSize:Int;
 	private var tileSizeInv:Float;
 	
+	private var frustum:CullingPlane;
 	
 		
 		/*
@@ -641,7 +643,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			var halfY:Int = cd.zorg + half;
 			index = 0;
 			index |= _cameraPos.x < halfX ? 1 : 0; 
-			index |= _cameraPos.y < halfY ? 2 : 0; 
+			index |= -_cameraPos.z < halfY ? 2 : 0; 
 			orderedIndices = quadOrderTable[index]; 
 			var o:Int;
 			
@@ -772,7 +774,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 				tree.Square.Update(tree, _cameraPos, detail, culler , culling);  
 				QuadChunkCornerData.BI = 0;
 			}
-			drawQuad(tree, camera, culling);
+			if (culling >= 0) drawQuad(tree, camera, culling);
 			QuadChunkCornerData.BI = 0;
 		}
 		
@@ -786,18 +788,16 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			i = gridPagesVector.length;
 		
 			while ( --i > -1) {
-				
-				
 				_currentPage = cd = gridPagesVector[i];
 				
 				c = cd.Square;
 				var curCulling:Int;
-				if  ( (curCulling=cullingInFrustum(culling, cd.xorg , c.MinY, cd.zorg, cd.xorg + full, c.MaxY, cd.zorg + full )) >=0 ) {
+				if  ( (curCulling=cullingInFrustum(63, cd.xorg , c.MinY, cd.zorg, cd.xorg + full, c.MaxY, cd.zorg + full )) >=0 ) {
 			
 					QuadChunkCornerData.BI = 0;
 					c.Update(cd, _cameraPos, detail, culler , curCulling); 
 					QuadChunkCornerData.BI = 0;
-					drawQuad(cd, camera, curCulling);
+					if (curCulling >= 0) drawQuad(cd, camera, curCulling);
 				}
 			}
 			//*/
@@ -820,22 +820,21 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 	
 	/* INTERFACE altern.terrain.ICuller */
 	
-	public function cullingInFrustum(culling:Int, boundMinX:Float, boundMinY:Float, boundMinZ:Float, boundMaxX:Float, boundMaxY:Float, boundMaxZ:Float):Int 
+	public function cullingInFrustum(culling:Int, minX:Float, minY:Float, minZ:Float, maxX:Float, maxY:Float, maxZ:Float):Int 
 	{
-		/*
+		///*
 		if (maxY < waterLevel) return -1;		
-				
-
-			var frustum:CullingPlane = _frustum;
-			
-			//var temp:Number = minY;
-			//minY = -maxY;
-			//maxY = -temp;
 		
+			var frustum:CullingPlane = this.frustum;
 			
-			var side:int = 1;
-			for (var plane:CullingPlane = frustum; plane != null; plane = plane.next) {
-			if (culling & side) {
+			//var temp:Float = minZ;
+			//minZ = -maxZ;
+			//maxZ = -temp;
+			
+			var side:Int = 1;
+			var plane:CullingPlane = frustum;
+			while ( plane != null ) {
+			if ( (culling & side)!=0 ) {
 			if (plane.x >= 0)
 			if (plane.y >= 0)
 			if (plane.z >= 0) {
@@ -870,12 +869,13 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			}
 			}
 			side <<= 1;
+			plane = plane.next;
 			}
 			return culling;
 			
-			*/
 			
-			return 0;
+			
+		
 	}
 	
 	
@@ -887,6 +887,306 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		return null;
 	}
 	
+	
+	
+	// misc private methods
+	function collectTrisForTree2D(tree:QuadTreePage, sphere:Vector3D, vertices:Vector<Float>, indices:Vector<UInt>, vi:Int, ii:Int):Void {
+		var hm:HeightMapInfo = tree.heightMap;
+		var radius:Float = sphere.w;
+		var hxorg:Float = hm.XOrigin;
+		var hzorg:Float = hm.ZOrigin;
+
+			
+		radius = radius < (tileSize>>1) ? (tileSize>>1) : radius;
+		var startX:Int = Std.int((sphere.x - hxorg - radius )  * tileSizeInv - 1);
+		var startY:Int = Std.int(( -sphere.y  - hzorg - radius) * tileSizeInv - 1);
+		startX = startX < 0 ? 0 : startX >= hm.XSize ? startX -1 : startX;
+		startY = startY < 0 ? 0 : startY  >= hm.ZSize ? startY - 1 : startY;
+		
+	
+		var data:NativeInt32Array = hm.Data;
+		var len:Int = Std.int(radius * 2 * tileSizeInv + 2);
+		var xtmax:Int = startX + len;
+		var ytmax:Int = startY + len;
+		var yi:Int;
+		var xi:Int;
+		var whichFan:NativeInt32Array;
+		var RowWidth:Int = hm.RowWidth;
+
+		
+		var ax:Float; 
+		var ay:Float; 
+		var az:Float; 
+		
+		var bx:Float; 
+		var by:Float; 
+		var bz:Float;
+		
+		var cx:Float; 
+		var cy:Float; 
+		var cz:Float;
+		
+		var vMult:Float = 1 / 3;
+		
+		yi = startY;
+		while (yi < ytmax) {
+			xi=startX;
+			while ( xi < xtmax) {
+
+				_patchHeights[2] = data[xi + yi * RowWidth];   // nw
+				_patchHeights[5] =  data[(xi + 1) + (yi) * RowWidth];  // ne
+				_patchHeights[8] =  data[xi + (yi+1) * RowWidth]; //sw
+				_patchHeights[11] =  data[(xi + 1) + (yi + 1) * RowWidth];  // se
+				
+				whichFan = (xi & 1) != (yi & 1) ? TRI_ORDER_TRUE : TRI_ORDER_FALSE;
+				
+				ax = (_patchHeights[whichFan[0] * 3] + xi) * tileSize + hxorg;
+				ay = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + hzorg; 
+				ay *= -1;
+				az = _patchHeights[whichFan[0] * 3 + 2];
+				
+				 
+				bx=  (_patchHeights[whichFan[1] * 3] + xi) * tileSize+hxorg;
+				by = (_patchHeights[whichFan[1] * 3 + 1] + yi) * tileSize+ hzorg;   
+				by *= -1;
+				bz=_patchHeights[whichFan[1] * 3 + 2];
+				   
+				cx= (_patchHeights[whichFan[2] * 3] + xi) *tileSize + hxorg;
+				cy =	(_patchHeights[whichFan[2] * 3 + 1] + yi) * tileSize+ hzorg; 
+				cy *= -1;
+				cz = _patchHeights[whichFan[2] * 3 + 2];
+				
+				indices[ii++] = Std.int(vi * vMult);
+				vertices[vi++] = ax;
+				vertices[vi++] = ay;
+				vertices[vi++] = az;
+				
+				indices[ii++] =  Std.int(vi * vMult);
+				vertices[vi++] = bx;
+				vertices[vi++] = by;
+				vertices[vi++] = bz;
+				
+				indices[ii++] =  Std.int(vi * vMult);
+				vertices[vi++] = cx;
+				vertices[vi++] = cy;
+				vertices[vi++] = cz;
+					
+				numCollisionTriangles++;
+				
+				
+				ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + hxorg;
+				ay = (_patchHeights[whichFan[3] * 3 + 1] + yi) * tileSize + hzorg; 
+				ay *= -1;
+				az= _patchHeights[whichFan[3] * 3 + 2];
+				 
+				bx=  (_patchHeights[whichFan[4] * 3] + xi) * tileSize + hxorg;
+				by = (_patchHeights[whichFan[4] * 3 + 1] + yi) * tileSize+ hzorg; 
+				by *= -1;
+				bz=_patchHeights[whichFan[4] * 3 + 2];
+				   
+				cx= (_patchHeights[whichFan[5] * 3] + xi) *tileSize + hxorg;
+				cy =	(_patchHeights[whichFan[5] * 3 + 1] + yi) * tileSize+ hzorg;  
+				cy *= -1;
+				cz = _patchHeights[whichFan[5] * 3 + 2];
+				
+				indices[ii++] = Std.int(vi * vMult);
+				vertices[vi++] = ax;
+				vertices[vi++] = ay;
+				vertices[vi++] = az;
+				
+				indices[ii++] = Std.int(vi * vMult);
+				vertices[vi++] = bx;
+				vertices[vi++] = by;
+				vertices[vi++] = bz;
+				
+				indices[ii++] = Std.int(vi * vMult);
+				vertices[vi++] = cx;
+				vertices[vi++] = cy;
+				vertices[vi++] = cz;
+				
+				numCollisionTriangles++;
+				
+				xi++;
+			}
+			
+			yi++;
+		}
+	}
+	
+	
+	public var numCollisionTriangles:Int = 0;
+	
+	public function setupCollisionGeometry(sphere:Vector3D, vertices:Vector<Float>, indices:Vector<UInt>, vi:Int = 0, ii:Int = 0):Void {
+		numCollisionTriangles = 0;
+
+		if (tree != null ) {
+				_currentPage = tree;
+				collectTrisForTree2D(tree, sphere, vertices, indices, vi, ii);		
+		//	if (numCollisionTriangles > 0) throw new Error("A")
+			//else throw new Error("B");
+		}
+		
+				
+		if ( gridPagesVector != null) {
+	
+			for (i in 0...gridPagesVector.length) {
+				_currentPage = gridPagesVector[i];
+				collectTrisForTree2D(_currentPage, sphere, vertices, indices, vi, ii);	
+			}
+		}
+				
+		
+	}
+	
+	function boundIntersectSphere(sphere:Vector3D, minX:Float, minY:Float, minZ:Float, maxX:Float, maxY:Float, maxZ:Float):Bool {
+		return sphere.x + sphere.w > minX && sphere.x - sphere.w < maxX && sphere.y + sphere.w > minY && sphere.y - sphere.w < maxY && sphere.z + sphere.w > minZ && sphere.z - sphere.w < maxZ;
+	}
+	
+	function boundIntersectRay(origin:Vector3D, direction:Vector3D, minX:Float, minY:Float, minZ:Float, maxX:Float, maxY:Float, maxZ:Float):Bool {
+				
+		/*
+		var temp:Float = minZ;
+		minZ = -maxZ;
+		maxZ = -temp;
+		*/
+		
+		if (origin.x >= minX && origin.x <= maxX && origin.y >= minY && origin.y <= maxY && origin.z >= minZ && origin.z <= maxZ) return true;
+		if (origin.x < minX && direction.x <= 0) return false;
+		if (origin.x > maxX && direction.x >= 0) return false;
+		if (origin.y < minY && direction.y <= 0) return false;
+		if (origin.y > maxY && direction.y >= 0) return false;
+		if (origin.z < minZ && direction.z <= 0) return false;
+		if (origin.z > maxZ && direction.z >= 0) return false;
+		var a:Float;
+		var b:Float;
+		var c:Float;
+		var d:Float;
+		var threshold:Float = 0.000001;
+		// Intersection of X and Y projection
+		if (direction.x > threshold) {
+			a = (minX - origin.x) / direction.x;
+			b = (maxX - origin.x) / direction.x;
+		} else if (direction.x < -threshold) {
+			a = (maxX - origin.x) / direction.x;
+			b = (minX - origin.x) / direction.x;
+		} else {
+			a = -1e+22;
+			b = 1e+22;
+		}
+		if (direction.y > threshold) {
+			c = (minY - origin.y) / direction.y;
+			d = (maxY - origin.y) / direction.y;
+		} else if (direction.y < -threshold) {
+			c = (maxY - origin.y) / direction.y;
+			d = (minY - origin.y) / direction.y;
+		} else {
+			c = -1e+22;
+			d = 1e+22;
+		}
+		if (c >= b || d <= a) return false;
+		if (c < a) {
+			if (d < b) b = d;
+		} else {
+			a = c;
+			if (d < b) b = d;
+		}
+		// Intersection of XY and Z projections
+		if (direction.z > threshold) {
+			c = (minZ - origin.z) / direction.z;
+			d = (maxZ - origin.z) / direction.z;
+		} else if (direction.z < -threshold) {
+			c = (maxZ - origin.z) / direction.z;
+			d = (minZ - origin.z) / direction.z;
+		} else {
+			c = -1e+22;
+			d = 1e+22;
+		}
+		
+		c = c > a ? c : a;  // added to ensure reference is correct!
+		d = d < b ? d : b;
+		//if (c === Infinity) throw new Error("LOWER ZERO C!");
+
+		if (direction.w > 0 && c >= direction.w) return false;
+		
+		if (c >= b || d <= a) return false;
+		return true;
+	}
+	
+	
+	public function calcBoundIntersection(point:Vector3D, origin:Vector3D, direction:Vector3D, minX:Float, minY:Float, minZ:Float, maxX:Float, maxY:Float, maxZ:Float):Float {
+		
+
+		/*
+		var temp:Float = minZ;
+		minZ = -maxZ;
+		maxZ = -temp;
+		*/
+		if (origin.x >= minX && origin.x <= maxX && origin.y >= minY && origin.y <= maxY && origin.z >= minZ && origin.z <= maxZ) return 0;  // true
+		
+		if (origin.x < minX && direction.x <= 0) return -1;
+		if (origin.x > maxX && direction.x >= 0) return -1;
+		if (origin.y < minY && direction.y <= 0) return -1;
+		if (origin.y > maxY && direction.y >= 0) return -1;
+		if (origin.z < minZ && direction.z <= 0) return -1;
+		if (origin.z > maxZ && direction.z >= 0) return -1;
+		var a:Float;
+		var b:Float;
+		var c:Float;
+		var d:Float;
+		var threshold:Float = 0.000001;
+		// Intersection of X and Y projection
+		if (direction.x > threshold) {
+			a = (minX - origin.x) / direction.x;
+			b = (maxX - origin.x) / direction.x;
+		} else if (direction.x < -threshold) {
+			a = (maxX - origin.x) / direction.x;
+			b = (minX - origin.x) / direction.x;
+		} else {
+			a = -1e+22;
+			b = 1e+22;
+		}
+		if (direction.y > threshold) {
+			c = (minY - origin.y) / direction.y;
+			d = (maxY - origin.y) / direction.y;
+		} else if (direction.y < -threshold) {
+			c = (maxY - origin.y) / direction.y;
+			d = (minY - origin.y) / direction.y;
+		} else {
+			c = -1e+22;
+			d = 1e+22;
+		}
+		if (c >= b || d <= a) return -1;
+		if (c < a) {
+			if (d < b) b = d;
+		} else {
+			a = c;
+			if (d < b) b = d;
+		}
+		// Intersection of XY and Z projections
+		if (direction.z > threshold) {
+			c = (minZ - origin.z) / direction.z;
+			d = (maxZ - origin.z) / direction.z;
+		} else if (direction.z < -threshold) {
+			c = (maxZ - origin.z) / direction.z;
+			d = (minZ - origin.z)  / direction.z;
+		} else {
+			c = -1e+22;
+			d = 1e+22;
+		}
+		
+		c = c > a ? c : a;  // added to ensure reference is correct!
+		d = d < b ? d : b;
+
+		if (c >= b || d <= a) return -1;
+
+		point.x = origin.x + direction.x * c;
+		point.y = origin.y + direction.y * c;
+		point.z = origin.z + direction.z * c;
+		
+		//if (c < 0) throw new Error("WRONG DIRECTION!");
+		
+		return c;
+	}
 }
 
 

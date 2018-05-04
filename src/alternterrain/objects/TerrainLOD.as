@@ -3274,7 +3274,7 @@ package alternterrain.objects
 				var halfY:int = cd.zorg + half;
 				index = 0;
 				index |= _cameraPos.x < halfX ? 1 : 0; 
-				index |= _cameraPos.y < halfY ? 2 : 0; 
+				index |= -_cameraPos.y < halfY ? 2 : 0; 
 				orderedIndices = quadOrderTable[index]; 
 				var o:int;
 				
