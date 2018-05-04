@@ -7,6 +7,7 @@ import de.polygonal.ds.NativeFloat32Array;
 import de.polygonal.ds.NativeInt32Array;
 import de.polygonal.ds.tools.NativeArrayTools;
 import de.polygonal.ds.tools.NativeInt32ArrayTools;
+import jeash.geom.Vector3D;
 import util.TypeDefs;
 import util.geom.PMath;
 import util.geom.Vec3;
@@ -882,14 +883,560 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 	/* INTERFACE altern.ray.IRaycastImpl */
 	// TODO: all raycast implementations from AS3 version
 	
-	public function intersectRay(origin:Vector3D, direction:Vector3D, output:Vector3D):Vector3D 
+	public function intersectRay(origin:Vector3D, direction:Vector3D, result:Vector3D):Vector3D 
 	{
-		return null;
+		if ( (tree == null && gridPagesVector == null) ) return null;  //|| (boundBox != null && !boundBox.intersectRay(origin, direction)) 
+				var data:Vector3D = null;  //RayIntersectionData
+				//var result:RayIntersectionData = null;
+				//var minTime:Number = 1e22;
+				//rayData.time = 1e22;
+				_boundRayTime = 0;
+				//tracedTiles.length = 0;
+				
+				///*
+				
+				//*/
+				//var test:RayIntersectionData = new RayIntersectionData();
+				
+				
+				if (tree != null && boundIntersectRay(origin, direction, tree.xorg, tree.zorg, tree.Square.MinY, tree.xorg + ((1 << tree.Level) << 1), tree.zorg + ((1 << tree.Level) << 1), tree.Square.MaxY, result )) {
+					_currentPage = tree;
+		//	throw new Error("A");
+					data = intersectRayQuad(result, tree, origin, direction);
+					
+					if (data != null) {
+						//minTime = data.time;
+						result = data;
+					}
+				}
+				
+				if ( gridPagesVector != null) {
+					// TODO: perform DDA for grid of pages!
+					throw "Not yet done gridPagesVector for intersectRay!";
+				}
+				
+				return result;
 	}
 	
 	
+	// misc private vars
 	
+	static var QD_STACK:Vector<QuadChunkCornerData> = new Vector<QuadChunkCornerData>();
+	var _boundRayTime:Float;
+	var _gravity:Float;
+	var _strength:Float;
+				
 	// misc private methods
+	
+	private function intersectRayQuad(result:Vector3D, cd:QuadChunkCornerData, origin:Vector3D, direction:Vector3D):Vector3D  // determine nearest ray hit from front-to-back
+	{
+		var sq:QuadSquareChunk;
+		//var result:RayIntersectionData = rayData;
+		//result.uv = null;
+		//result.surface = null;
+		//result.w = 1e22;  // result.time
+		//result.object  = this;
+		
+		var stackStart:Int =  QuadChunkCornerData.BI;
+		var index:Int;
+		
+		var buffer:Vector<QuadChunkCornerData> =  QD_STACK;
+		sq = cd.Square;
+		var childList:Vector<QuadSquareChunk> = sq.Child;
+		var c:QuadSquareChunk;
+		var half:Int = 1 << cd.Level;
+		var full:Int = half << 1;
+		var newCD:QuadChunkCornerData;
+		var orderedIndices:NativeInt32Array;
+		var quadOrderTable:Vector<NativeInt32Array> = QUAD_ORDER2;
+		var quadOffsets:NativeInt32Array = QUAD_OFFSETS;
+		var o:Int;
+		
+	
+		var bi:Int = 1;
+		buffer[0] = cd;
+			
+		while (bi > 0) {
+			cd = buffer[--bi];
+
+			sq = cd.Square;
+			childList = sq.Child;
+			half =  1 << cd.Level;
+			full = half << 1;
+
+			
+			if (childList[0] == null) {  // start tracing out through tile-based DDA
+			//	throw new Error("current chunk coordinate:"+ int(cd.xorg / ((1<<cd.Level)*2) ) + ', ' + int(cd.zorg/ ((1<<cd.Level)*2)) );
+				if (  calculateDDAIntersect(result, _currentPage.heightMap, cd, origin, direction) ) { 
+					return result;
+				};
+				
+				continue;
+			}
+			
+			var halfX:Int = cd.xorg + half;
+			var halfY:Int = cd.zorg + half;
+			index = 0;
+			index |= origin.x < halfX ? 1 : 0; 
+			index |= -origin.z < halfY ? 2 : 0; 
+			orderedIndices = quadOrderTable[index]; 
+			
+			index = orderedIndices[0];
+			c = childList[index]; 
+			o =  quadOffsets[index];
+			if ( boundIntersectRay(origin, direction,  cd.xorg + ((o & 1)!=0 ? half : 0), c.MinY, cd.zorg + ((o & 2)!=0 ? half : 0), cd.xorg + ((o & 1)!=0 ? full : half), c.MaxY, cd.zorg + ((o & 2)!=0 ? full : half), result)) {	
+				
+				sq.SetupCornerData( newCD = QuadChunkCornerData.create(), cd, index);
+				buffer[bi++] = newCD;
+			}
+			index = orderedIndices[1];
+			c = childList[index]; 
+			o =  quadOffsets[index];
+			if (boundIntersectRay(origin, direction, cd.xorg + ((o & 1)!=0 ? half : 0), c.MinY, cd.zorg + ((o & 2)!=0 ? half : 0), cd.xorg + ((o & 1)!=0 ? full : half), c.MaxY,  cd.zorg + ((o & 2)!=0 ? full : half), result) ) {
+				sq.SetupCornerData( newCD = QuadChunkCornerData.create(), cd, index);
+				buffer[bi++] = newCD;
+			}
+			index = orderedIndices[2];
+			c = childList[index]; 
+			o =  quadOffsets[index];
+			if (boundIntersectRay(origin, direction, cd.xorg + ((o & 1)!=0 ? half : 0), c.MinY, cd.zorg + ((o & 2)!=0 ? half : 0), cd.xorg + ((o & 1)!=0 ? full : half), c.MaxY, cd.zorg + ((o & 2)!=0 ? full : half), result)) {
+					
+				sq.SetupCornerData( newCD = QuadChunkCornerData.create(), cd, index);
+				buffer[bi++] = newCD;
+			}
+			index = orderedIndices[3];
+			c = childList[index]; 
+			o =  quadOffsets[index];
+			if (boundIntersectRay(origin, direction, cd.xorg + ((o & 1)!=0 ? half : 0), c.MinY, cd.zorg + ((o & 2)!=0 ? half : 0), cd.xorg + ((o & 1)!=0 ? full : half), c.MaxY, cd.zorg + ((o & 2)!=0 ? full : half), result)) {
+		
+				sq.SetupCornerData( newCD = QuadChunkCornerData.create(), cd, index);
+				buffer[bi++] = newCD;
+			}
+		}
+	
+		QuadChunkCornerData.BI = stackStart;		
+
+		return null;
+	}
+	
+	// Step-wise DDA raycasting for a chunk  
+	function calculateDDAIntersect(result:Vector3D, hm:HeightMapInfo, cd:QuadChunkCornerData, origin:Vector3D, direction:Vector3D):Bool {
+		var dx:Float = direction.x;
+		var dy:Float = -direction.z;
+		
+		
+		var xt:Float; // time until the next x-intersection
+		var dxt:Float; // time between x-intersections
+		var yt:Float; // time until the next y-intersection
+		var dyt:Float; // time between y-intersections
+		var dxi:Int; // direction of the x-intersection
+		var dyi:Int; // direction of the y-intersection
+		var t:Float;
+		
+		var xorg:Int = _currentPage.xorg;
+		var zorg:Int = _currentPage.zorg;
+
+		var fullC:Int = (1 << cd.Level) << 1;
+		var P_ACROSS:Int = fullC >> tileShift;
+	
+		
+		// If point isn't inside chunk, find starting intersection point of ray against bound of QuadChunkCornerData square
+		var px:Float = origin.x;
+		var py:Float = -origin.z;
+		var zValStart:Float = origin.y;
+		var xi:Int;
+		var yi:Int;
+		if (px < cd.xorg || px >= cd.xorg + fullC || py < cd.zorg || py >= cd.zorg + fullC) {
+			if ( (t = calcBoundIntersection( result, origin, direction, cd.xorg, cd.zorg, cd.Square.MinY, cd.xorg + fullC, cd.zorg + fullC, cd.Square.MaxY  )) > 0 ) {
+				if (t >= (direction.w > 0 ? direction.w : 1e22) || t >= (result.w > 0 ? result.w : 1e22) ) return false;
+				px = result.x;
+				py = -result.z;
+				
+				py -= dy <0 ? 1 : -1;
+				px -= dx < 0 ? 1 : -1;
+				zValStart = result.y;
+				_boundRayTime = t;
+				
+				
+				//result.time = 0;
+	
+				xi = Std.int(px - xorg) >> tileShift;	
+				yi = Std.int(py - zorg) >> tileShift;
+				//if (dx < 0) xi -= 1;
+				//if (dy < 0 ) yi -= 1; 
+			}
+			else {
+			
+				
+			//Log.trace("Should always have a positive intersection t:" + t);
+				t = PMath.FLOAT_MAX;
+				return false;
+				//throw new Error("Should always have a positive intersection t:"+t)
+			}
+		}
+		else {
+			xi = Std.int(px - xorg) >> tileShift;	
+			yi = Std.int(py - zorg) >> tileShift;	
+		}
+		
+		// with starting point, check if there's a hit, otherwise continue with DDA process!
+		
+		var minxi:Int = (cd.xorg-xorg) >> tileShift;
+		var minyi:Int = (cd.zorg-zorg) >> tileShift;
+		var maxxi:Int = minxi +  P_ACROSS ;
+		var maxyi:Int = minyi + P_ACROSS ;
+
+
+		var xoff:Float = px / tileSize;  // integer modulus + floating point
+		xoff -= Std.int(xoff);
+		var yoff:Float = py / tileSize;  // integer modulus + floating point
+		yoff -= Std.int(yoff);
+		
+
+		
+		var maxt:Float = direction.w > 0 ? (direction.w - _boundRayTime ) * tileSizeInv : 1e22;  
+		
+		 t = 0;
+		//if (t > maxt) throw new Error("SHould not be! maxt should be positive:!"+maxt + ", "+_boundRayTime);
+		 
+		if (dx < 0) {
+			xt = -xoff / dx;
+			dxt = -1 / dx;
+			dxi = -1;
+		} else {
+			xt = (1 - xoff) / dx;
+			dxt = 1 / dx;
+			dxi = 1;
+		}
+		if (dy < 0) {
+			yt = -yoff / dy;
+			dyt = -1 / dy;
+			dyi = -1;
+		} else {
+			yt = (1 - yoff) / dy;
+			dyt = 1 / dy;
+			dyi = 1;
+		}
+	
+		
+			/*
+		offsetOriginX = px;
+		offsetOriginY = -py;
+		offsetOriginZ = zValStart;
+		*/
+
+		if ( xi < minxi || xi >= maxxi || yi < minyi || yi >= maxyi) {
+			return false;
+			throw ("Should not be:" + minxi + "/"+ xi + "/" + maxxi + ", "+ minyi+"/"+ yi + "/" + maxyi);
+		}
+		
+		
+		if ( checkHitPatch(result, hm, xi, yi, direction.y < 0 ? xt < yt ? zValStart+xt*direction.y*tileSize : zValStart+yt*direction.y*tileSize : zValStart+t*direction.y*tileSize, origin, direction) ) return true;
+
+	
+		while (true) {
+			if (xt < yt) {
+				xi += dxi;
+				t = xt;  
+				xt += dxt;
+				
+				
+			} else {
+				yi += dyi;
+				t = yt; 
+				yt += dyt;
+			}
+			
+			//if (t < 0) throw new Error("Negative t! Should not be!");
+			
+					if ( t >= maxt || xi < minxi || xi >= maxxi || yi < minyi || yi >= maxyi) return false;
+				if (  checkHitPatch(result, hm, xi, yi, direction.y < 0 ? xt < yt ? zValStart+xt*direction.y*tileSize : zValStart+yt*direction.y*tileSize : zValStart+t*direction.y*tileSize, origin, direction) ) return true;   
+
+		}
+		
+		return false;
+	}
+	
+	/*  // todo later, for traj raycasting
+	private function calculateDDAIntersectEdges(result:Vector3D, hm:HeightMapInfo, cd:QuadChunkCornerData, origin:Vector3D, direction:Vector3D):Bool {
+		var dx:Float = direction.x;
+		var dy:Float = -direction.z;
+		
+		
+		
+		var xt:Float; // time until the next x-intersection
+		var dxt:Float; // time between x-intersections
+		var yt:Float; // time until the next y-intersection
+		var dyt:Float; // time between y-intersections
+		var dxi:Int; // direction of the x-intersection
+		var dyi:Int; // direction of the y-intersection
+		var t:Float;
+		
+		var xorg:Int = _currentPage.xorg;
+		var zorg:Int = _currentPage.zorg;
+
+		var fullC:Int = (1 << cd.Level) << 1;
+		var P_ACROSS:Int = fullC >> tileShift;
+	
+		
+		// If point isn't inside chunk, find starting intersection point of ray against bound of QuadChunkCornerData square
+		var px:Float = origin.x;
+		var py:Float = -origin.z;
+		var zValStart:Float = origin.y;
+		var xi:Int;
+		var yi:Int;
+		if (px < cd.xorg || px >= cd.xorg + fullC || py < cd.zorg || py >= cd.zorg + fullC) {
+			if ( (t = calcBoundIntersection( result, origin, direction, cd.xorg, cd.zorg, -1e22, cd.xorg + fullC, cd.zorg + fullC, 1e22 )) > 0 ) {
+				if (t >= (direction.w > 0 ? direction.w : 1e22) || t >= (result.w > 0 ? result.w : 1e22) ) return false;
+				px = result.x;
+				py = -result.z;
+				
+				py -= dy<0 ? 1 : -1;
+				px -= dx < 0 ? 1 : -1;
+				zValStart = result.z;
+				_boundRayTime = t;
+				
+				
+				//result.time = 0;
+	
+				xi = Std.int(px - xorg) >> tileShift;	
+				yi = Std.int(py - zorg) >> tileShift;
+				//if (dx < 0) xi -= 1;
+				//if (dy < 0 ) yi -= 1; 
+			}
+			else {
+			
+				
+				//Log.trace("Should always have a positive intersection t:" + t);
+				t = PMath.FLOAT_MAX;
+				//throw new Error("Should always have a positive intersection t:"+t)
+			}
+		}
+		else {
+			xi = Std.int(px - xorg) >> tileShift;	
+			yi =  Std.int(py - zorg) >> tileShift;	
+		}
+		
+		// with starting point, check if there's a hit, otherwise continue with DDA process!
+		
+		var minxi:Int = (cd.xorg-xorg) >> tileShift;
+		var minyi:Int = (cd.zorg-zorg) >> tileShift;
+		var maxxi:Int = minxi +  P_ACROSS ;
+		var maxyi:Int = minyi + P_ACROSS ;
+
+
+		var xoff:Float = px / tileSize;  // integer modulus + floating point
+		xoff -= Std.int(xoff);
+		var yoff:Float = py / tileSize;  // integer modulus + floating point
+		yoff -= Std.int(yoff);
+		
+
+		
+		//var maxt:Number = 1e22;// direction.w > 0 ? (direction.w - _boundRayTime ) * tileSizeInv : 1e22;  
+		
+		 t = 0;
+		//if (t > maxt) throw new Error("SHould not be! maxt should be positive:!"+maxt + ", "+_boundRayTime);
+		 
+		if (dx < 0) {
+			xt = -xoff / dx;
+			dxt = -1 / dx;
+			dxi = -1;
+		} else {
+			xt = (1 - xoff) / dx;
+			dxt = 1 / dx;
+			dxi = 1;
+		}
+		if (dy < 0) {
+			yt = -yoff / dy;
+			dyt = -1 / dy;
+			dyi = -1;
+		} else {
+			yt = (1 - yoff) / dy;
+			dyt = 1 / dy;
+			dyi = 1;
+		}
+	
+		
+
+		if ( xi < minxi || xi >= maxxi || yi < minyi || yi >= maxyi) {
+			throw ("Should not be:" + minxi + "/"+ xi + "/" + maxxi + ", "+ minyi+"/"+ yi + "/" + maxyi);
+			return false;
+			
+		}
+		
+		
+		if ( checkHitPatchEdges(result, hm, xi, yi, origin, direction) ) return true;
+	
+	
+		while (true) {
+			if (xt < yt) {
+				xi += dxi;
+				t = xt;  
+				xt += dxt;
+				
+				
+			} else {
+				yi += dyi;
+				t = yt; 
+				yt += dyt;
+			}
+			
+			//if (t < 0) throw new Error("Negative t! Should not be!");
+			// t >= maxt ||
+					if ( xi < minxi || xi >= maxxi || yi < minyi || yi >= maxyi) return false;
+				if (  checkHitPatchEdges(result, hm, xi, yi, origin, direction) ) return true;   
+
+		}
+		
+		return false;
+	}
+	*/
+	
+	function intersectRayTri(result:Vector3D, ox:Float, oy:Float, oz:Float, dx:Float, dy:Float, dz:Float, ax:Float, ay:Float, az:Float, bx:Float, by:Float, bz:Float, cx:Float, cy:Float, cz:Float):Bool {
+		
+		var abx:Float = bx - ax;
+		var aby:Float = by - ay;
+		var abz:Float = bz - az;
+		var acx:Float = cx - ax;
+		var acy:Float = cy - ay;
+		var acz:Float = cz - az;
+		var normalX:Float = acz*aby - acy*abz;
+		var normalY:Float = acx*abz - acz*abx;
+		var normalZ:Float = acy * abx - acx * aby;
+		
+		var len:Float = normalX*normalX + normalY*normalY + normalZ*normalZ;
+		if (len > 0.001) {
+			len = 1/Math.sqrt(len);
+			normalX *= len;
+			normalY *= len;
+			normalZ *= len;
+		}
+		var dot:Float = dx*normalX + dy*normalY + dz*normalZ;
+		if (dot < 0) {
+			var offset:Float = ox*normalX + oy*normalY + oz*normalZ - (ax*normalX + ay*normalY + az*normalZ);
+			if (offset > 0) {
+				var time:Float = -offset/dot;
+				
+				var rx:Float = ox + dx*time;
+				var ry:Float = oy + dy*time;
+				var rz:Float = oz + dz*time;
+				abx = bx - ax;
+				aby = by - ay;
+				abz = bz - az;
+				acx = rx - ax;
+				acy = ry - ay;
+				acz = rz - az;
+				if ((acz*aby - acy*abz)*normalX + (acx*abz - acz*abx)*normalY + (acy*abx - acx*aby)*normalZ >= 0) {
+					abx = cx - bx;
+					aby = cy - by;
+					abz = cz - bz;
+					acx = rx - bx;
+					acy = ry - by;
+					acz = rz - bz;
+					if ((acz*aby - acy*abz)*normalX + (acx*abz - acz*abx)*normalY + (acy*abx - acx*aby)*normalZ >= 0) {
+						abx = ax - cx;
+						aby = ay - cy;
+						abz = az - cz;
+						acx = rx - cx;
+						acy = ry - cy;
+						acz = rz - cz;
+						if ((acz*aby - acy*abz)*normalX + (acx*abz - acz*abx)*normalY + (acy*abx - acx*aby)*normalZ >= 0) {
+								//if (time < minTime) {
+								result.w = time + _boundRayTime;
+								result.x = rx;
+								result.y = ry;
+								result.z = rz;
+								return true;
+								
+								//	}
+						}
+					}
+				}
+			}
+					
+					
+		}
+				
+		return false;
+	}
+	
+	private function checkHitPatch(result:Vector3D, hm:HeightMapInfo, xi:Int, yi:Int, zVal:Float, origin:Vector3D, direction:Vector3D):Bool {
+	
+		// highestPoint bound early reject
+		var highestPoint:Int = hm.Data[xi + yi * hm.RowWidth]; // nw
+	
+		var cxorg:Float = _currentPage.heightMap.XOrigin;
+		var czorg:Float = _currentPage.heightMap.ZOrigin;
+		
+		var hp:Int;
+		_patchHeights[2] = highestPoint;   // 0*3+2
+		hp =   hm.Data[(xi + 1) + (yi) * hm.RowWidth];  // ne
+		if (hp > highestPoint) highestPoint = hp;
+		_patchHeights[5] = hp;  // 1*3+2
+		hp = hm.Data[xi + (yi+1) * hm.RowWidth]; //sw
+		if (hp > highestPoint) highestPoint = hp;
+		_patchHeights[8] = hp;  // 2*3+2
+		hp = hm.Data[(xi+1) + (yi + 1) * hm.RowWidth];  // se
+		if (hp > highestPoint) highestPoint = hp;
+		_patchHeights[11] = hp; // 3*3+2
+		
+		if (zVal > highestPoint) return false;
+		
+		// test for hit on 2 triangles
+		var whichFan:NativeInt32Array  = (xi & 1) != (yi & 1) ? TRI_ORDER_TRUE : TRI_ORDER_FALSE;
+		
+		var ax:Float; 
+		var ay:Float; 
+		var az:Float; 
+		
+		var bx:Float; 
+		var by:Float; 
+		var bz:Float;
+		
+		var cx:Float; 
+		var cy:Float; 
+		var cz:Float;
+	
+		
+		ax = (_patchHeights[whichFan[0] * 3] + xi) *tileSize + cxorg;
+		az = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + czorg; 
+		az *= -1;
+		ay = _patchHeights[whichFan[0] * 3 + 2];
+		
+		 
+		bx=  (_patchHeights[whichFan[1] * 3] + xi) * tileSize+ cxorg; 
+		bz = (_patchHeights[whichFan[1] * 3 + 1] + yi) * tileSize+ czorg;  
+		bz *= -1;
+		by=_patchHeights[whichFan[1] * 3 + 2];
+		   
+		cx= (_patchHeights[whichFan[2] * 3] + xi) *tileSize + cxorg;
+		cz =	(_patchHeights[whichFan[2] * 3 + 1] + yi) * tileSize+ czorg;  
+		cz *= -1;
+		cy = _patchHeights[whichFan[2] * 3 + 2];
+		
+		if (intersectRayTri(result, origin.x, origin.y, origin.z, direction.x, direction.y, direction.z, ax, ay, az, bx, by, bz, cx, cy, cz) ) return true;
+		
+		ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + cxorg;
+		az = (_patchHeights[whichFan[3] * 3 + 1] + yi) * tileSize + czorg; 
+		az *= -1;
+		ay= _patchHeights[whichFan[3] * 3 + 2];
+		 
+		bx=  (_patchHeights[whichFan[4] * 3] + xi) * tileSize + cxorg;
+		bz = (_patchHeights[whichFan[4] * 3 + 1] + yi) * tileSize+ czorg; 
+		bz *= -1;
+		by=_patchHeights[whichFan[4] * 3 + 2];
+		   
+		cx= (_patchHeights[whichFan[5] * 3] + xi) *tileSize + cxorg;
+		cz =	(_patchHeights[whichFan[5] * 3 + 1] + yi) * tileSize+ czorg;  
+		cz *= -1;
+		cy = _patchHeights[whichFan[5] * 3 + 2];
+
+		if (intersectRayTri(result, origin.x, origin.y, origin.z, direction.x, direction.y, direction.z, ax, ay, az, bx, by, bz, cx, cy, cz) ) return true;
+		
+		return false;
+	}
+				
+				
 	function collectTrisForTree2D(tree:QuadTreePage, sphere:Vector3D, vertices:Vector<Float>, indices:Vector<UInt>, vi:Int, ii:Int):Void {
 		var hm:HeightMapInfo = tree.heightMap;
 		var radius:Float = sphere.w;
@@ -941,20 +1488,20 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 				whichFan = (xi & 1) != (yi & 1) ? TRI_ORDER_TRUE : TRI_ORDER_FALSE;
 				
 				ax = (_patchHeights[whichFan[0] * 3] + xi) * tileSize + hxorg;
-				ay = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + hzorg; 
-				ay *= -1;
-				az = _patchHeights[whichFan[0] * 3 + 2];
+				az = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + hzorg; 
+				az *= -1;
+				ay = _patchHeights[whichFan[0] * 3 + 2];
 				
 				 
 				bx=  (_patchHeights[whichFan[1] * 3] + xi) * tileSize+hxorg;
-				by = (_patchHeights[whichFan[1] * 3 + 1] + yi) * tileSize+ hzorg;   
-				by *= -1;
-				bz=_patchHeights[whichFan[1] * 3 + 2];
+				bz = (_patchHeights[whichFan[1] * 3 + 1] + yi) * tileSize+ hzorg;   
+				bz *= -1;
+				by=_patchHeights[whichFan[1] * 3 + 2];
 				   
 				cx= (_patchHeights[whichFan[2] * 3] + xi) *tileSize + hxorg;
-				cy =	(_patchHeights[whichFan[2] * 3 + 1] + yi) * tileSize+ hzorg; 
-				cy *= -1;
-				cz = _patchHeights[whichFan[2] * 3 + 2];
+				cz =	(_patchHeights[whichFan[2] * 3 + 1] + yi) * tileSize+ hzorg; 
+				cz *= -1;
+				cy = _patchHeights[whichFan[2] * 3 + 2];
 				
 				indices[ii++] = Std.int(vi * vMult);
 				vertices[vi++] = ax;
@@ -975,19 +1522,19 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 				
 				
 				ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + hxorg;
-				ay = (_patchHeights[whichFan[3] * 3 + 1] + yi) * tileSize + hzorg; 
-				ay *= -1;
-				az= _patchHeights[whichFan[3] * 3 + 2];
+				az = (_patchHeights[whichFan[3] * 3 + 1] + yi) * tileSize + hzorg; 
+				az *= -1;
+				ay= _patchHeights[whichFan[3] * 3 + 2];
 				 
 				bx=  (_patchHeights[whichFan[4] * 3] + xi) * tileSize + hxorg;
-				by = (_patchHeights[whichFan[4] * 3 + 1] + yi) * tileSize+ hzorg; 
-				by *= -1;
-				bz=_patchHeights[whichFan[4] * 3 + 2];
+				bz = (_patchHeights[whichFan[4] * 3 + 1] + yi) * tileSize+ hzorg; 
+				bz *= -1;
+				by=_patchHeights[whichFan[4] * 3 + 2];
 				   
 				cx= (_patchHeights[whichFan[5] * 3] + xi) *tileSize + hxorg;
-				cy =	(_patchHeights[whichFan[5] * 3 + 1] + yi) * tileSize+ hzorg;  
-				cy *= -1;
-				cz = _patchHeights[whichFan[5] * 3 + 2];
+				cz =	(_patchHeights[whichFan[5] * 3 + 1] + yi) * tileSize+ hzorg;  
+				cz *= -1;
+				cy = _patchHeights[whichFan[5] * 3 + 2];
 				
 				indices[ii++] = Std.int(vi * vMult);
 				vertices[vi++] = ax;
@@ -1042,7 +1589,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		return sphere.x + sphere.w > minX && sphere.x - sphere.w < maxX && sphere.y + sphere.w > minY && sphere.y - sphere.w < maxY && sphere.z + sphere.w > minZ && sphere.z - sphere.w < maxZ;
 	}
 	
-	function boundIntersectRay(origin:Vector3D, direction:Vector3D, minX:Float, minY:Float, minZ:Float, maxX:Float, maxY:Float, maxZ:Float):Bool {
+	function boundIntersectRay(origin:Vector3D, direction:Vector3D, minX:Float, minY:Float, minZ:Float, maxX:Float, maxY:Float, maxZ:Float, result:Vector3D):Bool {
 				
 		/*
 		var temp:Float = minZ;
@@ -1106,7 +1653,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		d = d < b ? d : b;
 		//if (c === Infinity) throw new Error("LOWER ZERO C!");
 
-		if (direction.w > 0 && c >= direction.w) return false;
+		if ( (direction.w > 0 && c >= direction.w) || (result.w > 0 && c>=result.w) ) return false;
 		
 		if (c >= b || d <= a) return false;
 		return true;
