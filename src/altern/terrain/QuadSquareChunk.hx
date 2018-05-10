@@ -462,8 +462,8 @@ public function	BoxTest(x:Float, z:Float, size:Float, miny:Float, maxy:Float, er
 	// Got to check orientation for this...
 	var	half:Float = size * 0.5;
 	var	dx:Float = Math.abs(x + half - camera.x) - half;
-	var	dy:Float =  Math.abs((miny + maxy) * 0.5 - camera.z) - (maxy - miny) * 0.5;  
-	var	dz:Float =  Math.abs(z + half - camera.y) - half;
+	var	dy:Float =  Math.abs((miny + maxy) * 0.5 - camera.y) - (maxy - miny) * 0.5;  
+	var	dz:Float =  Math.abs(z + half - camera.z) - half;
 	var	d:Float = dx;
 	if (dy > d) d = dy;
 	if (dz > d) d = dz;

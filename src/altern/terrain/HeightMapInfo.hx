@@ -271,6 +271,22 @@ Data = result;
 		}
 	}
 	
+	public function slopeAlongXY(val:Int, multiplier:Float=1):Void {
+		
+		var len:Int = NativeInt32ArrayTools.size(Data);
+		var y:Int = 0;
+		while ( y < ZSize) {
+			
+			var x:Int = 0;
+			while( x < XSize ) {
+				Data[y * XSize+x] += Std.int( (val * x  + val * y ) * multiplier );
+				x++;
+			}
+			y++;
+		}
+		
+	}
+	
 	public function slopeAlongY(val:Int):Void {
 		
 		var len:Int = NativeInt32ArrayTools.size(Data);
