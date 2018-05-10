@@ -539,23 +539,23 @@ public	function UpdateAux(cd:QuadChunkCornerData, camera:Vector3D, CenterError:F
 		if ((EnabledFlags & 32)!=0) {
 			SetupCornerData(q = QuadChunkCornerData.create(), cd, 1);
 			s = Child[1]; 
-			s.UpdateAux(q, camera, s.error, culler, culling != 0 ? culler.cullingInFrustum(culling, q.xorg, q.zorg, q.Square.MinY, q.xorg + half, q.zorg + half, q.Square.MaxY) : 0);
+			s.UpdateAux(q, camera, s.error, culler, culling != 0 ? culler.cullingInFrustum(culling, q.xorg, q.Square.MinY, q.zorg, q.xorg + half, q.Square.MaxY, q.zorg + half) : 0);
 		}
 		if ((EnabledFlags & 16)!=0) {
 			SetupCornerData(q = QuadChunkCornerData.create(), cd, 0);
 			s = Child[0]; 
-			s.UpdateAux(q, camera, s.error, culler, culling != 0 ?culler.cullingInFrustum(culling, q.xorg, q.zorg, q.Square.MinY, q.xorg + half, q.zorg + half, q.Square.MaxY) : 0 );		
+			s.UpdateAux(q, camera, s.error, culler, culling != 0 ?culler.cullingInFrustum(culling, q.xorg, q.Square.MinY, q.zorg, q.xorg + half, q.Square.MaxY, q.zorg + half) : 0 );		
 		}
 		if ((EnabledFlags & 64)!=0) {
 			SetupCornerData(q = QuadChunkCornerData.create(), cd, 2);
 			s = Child[2]; 
-			s.UpdateAux(q, camera, s.error, culler, culling != 0 ?culler.cullingInFrustum(culling, q.xorg, q.zorg, q.Square.MinY, q.xorg + half, q.zorg + half, q.Square.MaxY) : 0 );		
+			s.UpdateAux(q, camera, s.error, culler, culling != 0 ?culler.cullingInFrustum(culling, q.xorg, q.Square.MinY, q.zorg, q.xorg + half, q.Square.MaxY, q.zorg + half) : 0 );		
 		}
 		if ((EnabledFlags & 128)!=0) {
 			SetupCornerData(q = QuadChunkCornerData.create(), cd, 3);
 			
 			s = Child[3]; 
-			s.UpdateAux(q, camera, s.error, culler, culling != 0 ?culler.cullingInFrustum(culling, q.xorg, q.zorg, q.Square.MinY, q.xorg + half, q.zorg + half, q.Square.MaxY) : 0);
+			s.UpdateAux(q, camera, s.error, culler, culling != 0 ?culler.cullingInFrustum(culling, q.xorg, q.Square.MinY, q.zorg, q.xorg + half, q.Square.MaxY, q.zorg + half) : 0);
 		}
 		
 		

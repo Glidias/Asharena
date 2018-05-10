@@ -644,7 +644,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			var halfY:Int = cd.zorg + half;
 			index = 0;
 			index |= _cameraPos.x < halfX ? 1 : 0; 
-			index |= -_cameraPos.z < halfY ? 2 : 0; 
+			index |= _cameraPos.z < halfY ? 2 : 0; 
 			orderedIndices = quadOrderTable[index]; 
 			var o:Int;
 			
@@ -978,7 +978,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			var halfY:Int = cd.zorg + half;
 			index = 0;
 			index |= origin.x < halfX ? 1 : 0; 
-			index |= -origin.z < halfY ? 2 : 0; 
+			index |= origin.z < halfY ? 2 : 0; 
 			orderedIndices = quadOrderTable[index]; 
 			
 			index = orderedIndices[0];
