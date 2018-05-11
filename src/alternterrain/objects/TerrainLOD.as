@@ -552,12 +552,14 @@ package alternterrain.objects
 			//*/
 		}
 		
+		/*
 		private function updateEdges(requirements:int, cd:QuadChunkCornerData, oldEdgeState:int, newEdgeState:int):void {
 			var attribId:int;
 			var offset:int;
 			
 			
 		}
+		*/
 		
 		
 		private function setupPrototypes(context3D:Context3D, patchSize:int ):void 
@@ -3174,7 +3176,7 @@ package alternterrain.objects
 								chunkPool.append( sq.state);
 							}
 							
-							sq.state.square = null;  // hoepfully this works
+							//sq.state.square = null;  // hoepfully this works
 							sq.state = null;
 						}
 						
@@ -3214,9 +3216,9 @@ package alternterrain.objects
 						
 						// if (state.square != null)  state.square.state = null;  // this means that the square is from pool!
 						
-						 state.square = s;
+						// state.square = s;
 						 s.state = state;
-						state.enabledFlags = s.EnabledFlags;
+						//state.enabledFlags = s.EnabledFlags;
 						sampleHeights(_currentPage.requirements, _currentPage.heightMap, cd);
 						state.vertexBuffer.uploadFromVector(_vertexUpload, 0, NUM_VERTICES);
 					}
@@ -3232,7 +3234,8 @@ package alternterrain.objects
 						state.enabledFlags = s.EnabledFlags;
 					}
 					*/
-					state.enabledFlags = s.EnabledFlags;
+					
+					//state.enabledFlags = s.EnabledFlags;
 					mySurface.numTriangles = numTrianglesLookup[id]; 
 					//myGeometry._indexBuffer = indexBuffers[0];
 					myGeometry._indexBuffer = indexBuffers[id];

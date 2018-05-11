@@ -57,13 +57,13 @@ package systems.collisions;
 		private var numGeometries:Int;
 		private var transforms:Vector<Transform3D>;
 		
-		private var vertices:Vector<Float>;
+		public var vertices:Vector<Float>;
 		
 		
-		private var normals:Vector<Float>;
-		private var indices:Vector<Int>;
-		private var numFaces:Int;
-		private var numI:Int;
+		public var normals:Vector<Float>;
+		public var indices:Vector<Int>;
+		public var numFaces(default,null):Int;
+		public var numI(default,null):Int;
 		
 		private var radius:Float;
 		private var rad:Float;

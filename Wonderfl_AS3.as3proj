@@ -12,7 +12,7 @@
     <movie minorVersion="7" />
     <movie platform="Flash Player" />
     <movie background="#FFFFFF" />
-    <movie preferredSDK="Flex 4.6.0, AIR 3.1;4.6.0, 3.1;" />
+    <movie preferredSDK="Flex 4.6.0, AIR 3.7;4.6.0, 3.7;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
@@ -25,6 +25,7 @@
     <option allowSourcePathOverlap="False" />
     <option benchmark="False" />
     <option es="False" />
+    <option inline="False" />
     <option locale="" />
     <option loadConfig="" />
     <option optimize="True" />
@@ -53,14 +54,8 @@
   <!-- SWC Libraries -->
   <libraryPaths>
     <element path="lib\Alternativa3D.swc" />
-    <element path="lib\asharena.swc" />
-    <element path="lib\marchingsquares.swc" />
     <element path="lib\Progression4.swc" />
-    <element path="lib\ds.swc" />
-    <element path="lib\dsai.swc" />
-    <element path="lib\fonts.swc" />
     <element path="lib\greensock.swc" />
-    <element path="lib\FCSS-v1.1.0.swc" />
     <element path="wonderfl_lib\ktween.swc" />
     <element path="wonderfl_lib\sion065.swc" />
     <element path="wonderfl_lib\Stats.swc" />
@@ -85,11 +80,11 @@
   </library>
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
-    <compile path="src\wonderfl\Game.as" />
+    <compile path="src\wonderfl\SpriteSetTest.as" />
   </compileTargets>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>
-    <!-- example: <hidden path="..." /> -->
+    <hidden path="obj" />
   </hiddenPaths>
   <!-- Executed before build -->
   <preBuildCommand />
@@ -99,6 +94,7 @@
   <options>
     <option showHiddenPaths="False" />
     <option testMovie="Default" />
+    <option testMovieCommand="" />
   </options>
   <!-- Plugin storage -->
   <storage />

@@ -16,7 +16,7 @@
     </define>
     <define append="true">
       <name>CONFIG::timeStamp</name>
-      <value>'5/2/2016'</value>
+      <value>'11/5/2018'</value>
     </define>
     <define append="true">
       <name>CONFIG::air</name>
@@ -47,7 +47,7 @@
     <verbose-stacktraces>false</verbose-stacktraces>
     <source-path append="true">
       <path-element>C:\glenn\_dev\Git\Asharena\src</path-element>
-      <path-element>C:\Program Files (x86)\FlashDevelop\Library\AS3\classes</path-element>
+      <path-element>D:\program files (x86)\HaxeDevelop\Library\AS3\classes</path-element>
     </source-path>
     <library-path append="true">
       <path-element>C:\glenn\_dev\Git\Asharena\lib\Alternativa3D.swc</path-element>
@@ -62,7 +62,7 @@
     </library-path>
   </compiler>
   <file-specs>
-    <path-element>C:\glenn\_dev\Git\Asharena\src\tests\pvp\TestTrajectoryDrawer.as</path-element>
+    <path-element>C:\glenn\_dev\Git\Asharena\src\tests\pvp\PVPDemo3.as</path-element>
   </file-specs>
   <default-background-color>#FFFFFF</default-background-color>
   <default-frame-rate>60</default-frame-rate>

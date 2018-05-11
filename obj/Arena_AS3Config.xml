@@ -16,7 +16,7 @@
     </define>
     <define append="true">
       <name>CONFIG::timeStamp</name>
-      <value>'2/3/2018'</value>
+      <value>'11/5/2018'</value>
     </define>
     <define append="true">
       <name>CONFIG::air</name>
@@ -46,23 +46,23 @@
     <omit-trace-statements>true</omit-trace-statements>
     <verbose-stacktraces>false</verbose-stacktraces>
     <source-path append="true">
-      <path-element>D:\Git\Asharena\src</path-element>
-      <path-element>D:\Program Files (x86)\HaxeDevelop\Library\AS3\classes</path-element>
+      <path-element>C:\glenn\_dev\Git\Asharena\src</path-element>
+      <path-element>D:\program files (x86)\HaxeDevelop\Library\AS3\classes</path-element>
     </source-path>
     <library-path append="true">
-      <path-element>D:\Git\Asharena\lib\Alternativa3D.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\asharena.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\marchingsquares.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\Progression4.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\ds.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\dsai.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\fonts.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\greensock.swc</path-element>
-      <path-element>D:\Git\Asharena\lib\FCSS-v1.1.0.swc</path-element>
+      <path-element>C:\glenn\_dev\Git\Asharena\lib\Alternativa3D.swc</path-element>
+      <path-element>C:\glenn\_dev\Git\Asharena\lib\asharena.swc</path-element>
+      <path-element>C:\glenn\_dev\Git\Asharena\lib\marchingsquares.swc</path-element>
+      <path-element>C:\glenn\_dev\Git\Asharena\lib\Progression4.swc</path-element>
+      <path-element>C:\glenn\_dev\Git\Asharena\lib\ds.swc</path-element>
+      <path-element>C:\glenn\_dev\Git\Asharena\lib\dsai.swc</path-element>
+      <path-element>C:\glenn\_dev\Git\Asharena\lib\fonts.swc</path-element>
+      <path-element>C:\glenn\_dev\Git\Asharena\lib\greensock.swc</path-element>
+      <path-element>C:\glenn\_dev\Git\Asharena\lib\FCSS-v1.1.0.swc</path-element>
     </library-path>
   </compiler>
   <file-specs>
-    <path-element>D:\Git\Asharena\src\tests\pvp\PVPDemo3.as</path-element>
+    <path-element>C:\glenn\_dev\Git\Asharena\src\tests\pvp\PVPDemo3.as</path-element>
   </file-specs>
   <default-background-color>#FFFFFF</default-background-color>
   <default-frame-rate>60</default-frame-rate>
