@@ -65,6 +65,8 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 	private var tileSize:Int;
 	private var tileSizeInv:Float;
 	
+	public var handedness:Int = 1;
+	
 	private var frustum:CullingPlane;
 	
 		
@@ -902,15 +904,15 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 				//var test:RayIntersectionData = new RayIntersectionData();
 				
 				
-				if (tree != null && boundIntersectRay(origin, direction, tree.xorg, tree.zorg, tree.Square.MinY, tree.xorg + ((1 << tree.Level) << 1), tree.zorg + ((1 << tree.Level) << 1), tree.Square.MaxY, result )) {
+				if (tree != null && boundIntersectRay(origin, direction, tree.xorg, tree.Square.MinY, tree.zorg, tree.xorg + ((1 << tree.Level) << 1), tree.Square.MaxY, tree.zorg + ((1 << tree.Level) << 1), result )) {
 					_currentPage = tree;
 		//	throw new Error("A");
 					data = intersectRayQuad(result, tree, origin, direction);
 					
-					if (data != null) {
+					//if (data != null) {
 						//minTime = data.time;
-						result = data;
-					}
+						//result = data;
+					//}
 				}
 				
 				if ( gridPagesVector != null) {
@@ -918,7 +920,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 					throw "Not yet done gridPagesVector for intersectRay!";
 				}
 				
-				return result;
+				return data;
 	}
 	
 	
@@ -1025,7 +1027,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 	// Step-wise DDA raycasting for a chunk  
 	function calculateDDAIntersect(result:Vector3D, hm:HeightMapInfo, cd:QuadChunkCornerData, origin:Vector3D, direction:Vector3D):Bool {
 		var dx:Float = direction.x;
-		var dy:Float = -direction.z;
+		var dy:Float = direction.z*handedness;
 		
 		
 		var xt:Float; // time until the next x-intersection
@@ -1045,15 +1047,15 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		
 		// If point isn't inside chunk, find starting intersection point of ray against bound of QuadChunkCornerData square
 		var px:Float = origin.x;
-		var py:Float = -origin.z;
+		var py:Float = origin.z*handedness;
 		var zValStart:Float = origin.y;
 		var xi:Int;
 		var yi:Int;
 		if (px < cd.xorg || px >= cd.xorg + fullC || py < cd.zorg || py >= cd.zorg + fullC) {
-			if ( (t = calcBoundIntersection( result, origin, direction, cd.xorg, cd.zorg, cd.Square.MinY, cd.xorg + fullC, cd.zorg + fullC, cd.Square.MaxY  )) > 0 ) {
+			if ( (t = calcBoundIntersection( result, origin, direction, cd.xorg, cd.Square.MinY,  cd.zorg, cd.xorg + fullC, cd.Square.MaxY, cd.zorg + fullC )) > 0 ) {
 				if (t >= (direction.w > 0 ? direction.w : 1e22) || t >= (result.w > 0 ? result.w : 1e22) ) return false;
 				px = result.x;
-				py = -result.z;
+				py = result.z * handedness;
 				
 				py -= dy <0 ? 1 : -1;
 				px -= dx < 0 ? 1 : -1;
@@ -1163,7 +1165,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 	/*  // todo later, for traj raycasting
 	private function calculateDDAIntersectEdges(result:Vector3D, hm:HeightMapInfo, cd:QuadChunkCornerData, origin:Vector3D, direction:Vector3D):Bool {
 		var dx:Float = direction.x;
-		var dy:Float = -direction.z;
+		var dy:Float = direction.z*handedness;
 		
 		
 		
@@ -1189,7 +1191,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		var xi:Int;
 		var yi:Int;
 		if (px < cd.xorg || px >= cd.xorg + fullC || py < cd.zorg || py >= cd.zorg + fullC) {
-			if ( (t = calcBoundIntersection( result, origin, direction, cd.xorg, cd.zorg, -1e22, cd.xorg + fullC, cd.zorg + fullC, 1e22 )) > 0 ) {
+			if ( (t = calcBoundIntersection( result, origin, direction, cd.xorg, -1e22, cd.zorg, cd.xorg + fullC, 1e22, cd.zorg + fullC )) > 0 ) {
 				if (t >= (direction.w > 0 ? direction.w : 1e22) || t >= (result.w > 0 ? result.w : 1e22) ) return false;
 				px = result.x;
 				py = -result.z;
@@ -1403,35 +1405,35 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		
 		ax = (_patchHeights[whichFan[0] * 3] + xi) *tileSize + cxorg;
 		az = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + czorg; 
-		az *= -1;
+		az *= handedness;
 		ay = _patchHeights[whichFan[0] * 3 + 2];
 		
 		 
 		bx=  (_patchHeights[whichFan[1] * 3] + xi) * tileSize+ cxorg; 
 		bz = (_patchHeights[whichFan[1] * 3 + 1] + yi) * tileSize+ czorg;  
-		bz *= -1;
+		bz *= handedness;
 		by=_patchHeights[whichFan[1] * 3 + 2];
 		   
 		cx= (_patchHeights[whichFan[2] * 3] + xi) *tileSize + cxorg;
 		cz =	(_patchHeights[whichFan[2] * 3 + 1] + yi) * tileSize+ czorg;  
-		cz *= -1;
+		cz *= handedness;
 		cy = _patchHeights[whichFan[2] * 3 + 2];
 		
 		if (intersectRayTri(result, origin.x, origin.y, origin.z, direction.x, direction.y, direction.z, ax, ay, az, bx, by, bz, cx, cy, cz) ) return true;
 		
 		ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + cxorg;
 		az = (_patchHeights[whichFan[3] * 3 + 1] + yi) * tileSize + czorg; 
-		az *= -1;
+		az *= handedness;
 		ay= _patchHeights[whichFan[3] * 3 + 2];
 		 
 		bx=  (_patchHeights[whichFan[4] * 3] + xi) * tileSize + cxorg;
 		bz = (_patchHeights[whichFan[4] * 3 + 1] + yi) * tileSize+ czorg; 
-		bz *= -1;
+		bz *= handedness;
 		by=_patchHeights[whichFan[4] * 3 + 2];
 		   
 		cx= (_patchHeights[whichFan[5] * 3] + xi) *tileSize + cxorg;
 		cz =	(_patchHeights[whichFan[5] * 3 + 1] + yi) * tileSize+ czorg;  
-		cz *= -1;
+		cz *= handedness;
 		cy = _patchHeights[whichFan[5] * 3 + 2];
 
 		if (intersectRayTri(result, origin.x, origin.y, origin.z, direction.x, direction.y, direction.z, ax, ay, az, bx, by, bz, cx, cy, cz) ) return true;
@@ -1492,18 +1494,18 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 				
 				ax = (_patchHeights[whichFan[0] * 3] + xi) * tileSize + hxorg;
 				az = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + hzorg; 
-				az *= -1;
+				az *= handedness;
 				ay = _patchHeights[whichFan[0] * 3 + 2];
 				
 				 
 				bx=  (_patchHeights[whichFan[1] * 3] + xi) * tileSize+hxorg;
 				bz = (_patchHeights[whichFan[1] * 3 + 1] + yi) * tileSize+ hzorg;   
-				bz *= -1;
+				bz *= handedness;
 				by=_patchHeights[whichFan[1] * 3 + 2];
 				   
 				cx= (_patchHeights[whichFan[2] * 3] + xi) *tileSize + hxorg;
 				cz =	(_patchHeights[whichFan[2] * 3 + 1] + yi) * tileSize+ hzorg; 
-				cz *= -1;
+				cz *= handedness;
 				cy = _patchHeights[whichFan[2] * 3 + 2];
 				
 				indices[ii++] = Std.int(vi * vMult);
@@ -1526,17 +1528,17 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 				
 				ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + hxorg;
 				az = (_patchHeights[whichFan[3] * 3 + 1] + yi) * tileSize + hzorg; 
-				az *= -1;
+				az *= handedness;
 				ay= _patchHeights[whichFan[3] * 3 + 2];
 				 
 				bx=  (_patchHeights[whichFan[4] * 3] + xi) * tileSize + hxorg;
 				bz = (_patchHeights[whichFan[4] * 3 + 1] + yi) * tileSize+ hzorg; 
-				bz *= -1;
+				bz *= handedness;
 				by=_patchHeights[whichFan[4] * 3 + 2];
 				   
 				cx= (_patchHeights[whichFan[5] * 3] + xi) *tileSize + hxorg;
 				cz =	(_patchHeights[whichFan[5] * 3 + 1] + yi) * tileSize+ hzorg;  
-				cz *= -1;
+				cz *= handedness;
 				cy = _patchHeights[whichFan[5] * 3 + 2];
 				
 				indices[ii++] = Std.int(vi * vMult);
