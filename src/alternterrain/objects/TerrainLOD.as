@@ -3206,11 +3206,14 @@ package alternterrain.objects
 					var id:int = cd.Parent != null ? indexSideLookup[((cd.Parent.Square.EnabledFlags & 0xF) | cornerMask[cd.ChildIndex])]  : 0;
 						state = s.state;   
 					if (state == null) {
-						pool_retrieved += chunkPool.head != null ? 1 : 0;  // tracking
-						newly_instantiated += chunkPool.head != null ? 0 : 1;  // tracking
-						 state =  chunkPool.getAvailable() || getNewChunkState(camera.context3D);
+						//pool_retrieved += chunkPool.head != null ? 1 : 0;  // tracking
+						//newly_instantiated += chunkPool.head != null ? 0 : 1;  // tracking
 						
-						 if (state.square != null)  state.square.state = null;  // this means that the square is from pool!
+						newly_instantiated++;
+						 state =  getNewChunkState(camera.context3D); //chunkPool.getAvailable() || 
+						
+						// if (state.square != null)  state.square.state = null;  // this means that the square is from pool!
+						
 						 state.square = s;
 						 s.state = state;
 						state.enabledFlags = s.EnabledFlags;
@@ -3218,7 +3221,8 @@ package alternterrain.objects
 						state.vertexBuffer.uploadFromVector(_vertexUpload, 0, NUM_VERTICES);
 					}
 					else {
-						cached_retrieved += chunkPool.head != null ? 1 : 0; // tracking
+						cached_retrieved++;
+						//cached_retrieved += chunkPool.head != null ? 1 : 0; // tracking
 						//if (state.parent != chunkPool) throw new Error("SHULD NOT BE!");  
 					}
 					

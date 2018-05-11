@@ -415,7 +415,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		*/
 	}
 	
-	function getNewChunkState():TerrainChunkState {
+	inline function getNewChunkState():TerrainChunkState {
 		
 		var state:TerrainChunkState = new TerrainChunkState();
 		//state.index = ;
@@ -572,8 +572,10 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		state = s.state;   
 		if (state == null) { // lazy instantaatiate state ??
 			
-			pool_retrieved += chunkPool.head != null ? 1 : 0;  // tracking
-			newly_instantiated += chunkPool.head != null ? 0 : 1;  // tracking
+			//pool_retrieved += chunkPool.head != null ? 1 : 0;  // tracking
+			//newly_instantiated += chunkPool.head != null ? 0 : 1;  // tracking
+			
+			newly_instantiated++;
 			state = chunkPool.getAvailable();
 			state =  state!= null ? state : getNewChunkState();
 			
@@ -586,7 +588,8 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			setupVertexChunkState(state, _vertexUpload, cd); //state.vertexBuffer.uploadFromVector(_vertexUpload, 0, NUM_VERTICES);	
 		}
 		else {
-			cached_retrieved += chunkPool.head != null ? 1 : 0; // tracking
+			cached_retrieved++;
+			//cached_retrieved += chunkPool.head != null ? 1 : 0; // tracking
 			//if (state.parent != chunkPool) throw new Error("SHULD NOT BE!");  
 		}
 		/*
