@@ -146,9 +146,13 @@ package alternterrain.objects
 		private var _squaredDistUpdate:Number = 0;
 		
 		public function setUpdateRadius(val:Number):void {
+			/*
 			var a:Number = Math.sin(Math.PI * .125) * val;
 			var b:Number = Math.cos(Math.PI * .125) * val;
 			_squaredDistUpdate = a * a + b * b;
+		
+			*/
+			_squaredDistUpdate = val * val;
 		}
 		
 		private static const SLOPE_UTIL:IntersectSlopeUtil = new IntersectSlopeUtil();

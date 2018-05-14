@@ -126,9 +126,13 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		private var _squaredDistUpdate:Float = 0;
 		
 		public function setUpdateRadius(val:Float):Void {
+			/*
 			var a:Float = Math.sin(Math.PI * .125) * val;
 			var b:Float = Math.cos(Math.PI * .125) * val;
 			_squaredDistUpdate = a * a + b * b;
+		
+			*/
+			_squaredDistUpdate = val * val;
 		}
 		
 	
@@ -1673,6 +1677,8 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		minZ = -maxZ;
 		maxZ = -temp;
 		*/
+		
+		
 		if (origin.x >= minX && origin.x <= maxX && origin.y >= minY && origin.y <= maxY && origin.z >= minZ && origin.z <= maxZ) return 0;  // true
 		
 		if (origin.x < minX && direction.x <= 0) return -1;
