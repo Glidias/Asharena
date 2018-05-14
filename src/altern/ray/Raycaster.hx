@@ -67,6 +67,7 @@ class Raycaster
 	{
 		_output.w = 0;
 		var result:Vector3D =  source.intersectRay(_origin, _direction, _output);
+		
 		if (result != null) {
 			result.x = _origin.x + result.w * _direction.x;
 			result.y = _origin.y + result.w * _direction.y;

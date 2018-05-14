@@ -1351,7 +1351,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 						acz = rz - cz;
 						if ((acz*aby - acy*abz)*normalX + (acx*abz - acz*abx)*normalY + (acy*abx - acx*aby)*normalZ >= 0) {
 								//if (time < minTime) {
-								result.w = time + _boundRayTime;
+								result.w = time;// + _boundRayTime;
 								result.x = rx;
 								result.y = ry;
 								result.z = rz;

@@ -2203,7 +2203,7 @@ package alternterrain.objects
 									acz = rz - cz;
 									if ((acz*aby - acy*abz)*normalX + (acx*abz - acz*abx)*normalY + (acy*abx - acx*aby)*normalZ >= 0) {
 										//if (time < minTime) {
-											result.time = time + _boundRayTime;
+											result.time = time; // + _boundRayTime;
 											point.x = rx;
 											point.y = ry;
 											point.z = rz;

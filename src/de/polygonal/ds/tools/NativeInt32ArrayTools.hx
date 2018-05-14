@@ -34,13 +34,13 @@ class NativeInt32ArrayTools
 	public static inline function alloc(len:Int):NativeInt32Array
 	{
 		#if flash10
-			//#if (generic && !no_inline)
+			#if (generic && !no_inline)
 			return new flash.Vector<Int>(len, true);
-			//#else
-			//var a = new Array<Int>();
-			//untyped a.length = len;
-			//return a;
-			//#end
+			#else
+			var a = new Array<Int>();
+			untyped a.length = len;
+			return a;
+			#end
 		#elseif neko
 		return untyped __dollar__amake(len);
 			
