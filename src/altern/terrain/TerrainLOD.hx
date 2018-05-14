@@ -582,13 +582,14 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			//newly_instantiated += chunkPool.head != null ? 0 : 1;  // tracking
 			
 			newly_instantiated++;
-			state = chunkPool.getAvailable();
-			state =  state!= null ? state : getNewChunkState();
+			state = getNewChunkState(); 
 			
-			 if (state.square != null)  state.square.state = null;  // this means that the square is from pool!
-			 state.square = s;
+			
+			 //if (state.square != null)  state.square.state = null;  // this means that the square is from pool!
+			// state.square = s;
+			
 			 s.state = state;
-			state.enabledFlags = s.EnabledFlags;
+			//state.enabledFlags = s.EnabledFlags;
 			
 			sampleHeights(_currentPage.requirements, _currentPage.heightMap, cd);
 			setupVertexChunkState(state, _vertexUpload, cd); //state.vertexBuffer.uploadFromVector(_vertexUpload, 0, NUM_VERTICES);	
@@ -606,7 +607,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		*/
 		
 		
-		state.enabledFlags = s.EnabledFlags;
+		//state.enabledFlags = s.EnabledFlags;
 		
 		//mySurface.numTriangles = numTrianglesLookup[id]; 
 		//myGeometry._indexBuffer = indexBuffers[id];
