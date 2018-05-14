@@ -418,6 +418,7 @@ public function GetQuadSquareChunk(cd:QuadCornerData, error:int, targetChunkLeve
 	var chunk:QuadSquareChunk = new QuadSquareChunk();
 	chunk.MinY = MinY;
 	chunk.MaxY = MaxY;
+	if (MaxY == MinY) chunk.MaxY += 1;
 	chunk.error = error;
 	if (cd.Level == targetChunkLevel)  return chunk;
 	
