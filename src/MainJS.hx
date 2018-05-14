@@ -36,7 +36,7 @@ import altern.ray.Raycaster;
 
 import altern.culling.CullingPlane;
 
-///*
+///*  Terrain core
 import altern.terrain.QuadTreePage;
 import altern.terrain.QuadSquareChunk;
 import altern.terrain.QuadChunkCornerData;
@@ -48,8 +48,13 @@ import altern.terrain.TerrainLOD;
 import altern.terrain.TerrainGeomTools;
 import altern.terrain.QuadCornerData;
 import altern.terrain.GeometryResult;
-
 //*/
+
+///* Terrain collision
+import altern.terrain.TerrainCollidable;
+//*/
+
+
 
 
 /* Ash-framework integration (problems with C-sharp atm)
