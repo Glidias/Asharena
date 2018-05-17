@@ -111,6 +111,12 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 		
 		
 		public var detail:Float = 5;
+		public function setDetail(val:Float):Void {
+			detail = val;
+			_lastUpdateCameraPos.x = -1e22;
+			_lastUpdateCameraPos.y = -1e22;
+			_lastUpdateCameraPos.z = -1e22;
+		}
 
 		private var culler:ICuller;
 		public static inline var CULL_NONE:Int = 0;
@@ -1456,7 +1462,7 @@ class TerrainLOD implements ICuller implements IRaycastImpl
 			
 		radius = radius < (tileSize>>1) ? (tileSize>>1) : radius;
 		var startX:Int = Std.int((sphere.x - hxorg - radius )  * tileSizeInv - 1);
-		var startY:Int = Std.int(( -sphere.y  - hzorg - radius) * tileSizeInv - 1);
+		var startY:Int = Std.int((sphere.z*handedness  - hzorg - radius) * tileSizeInv - 1);
 		startX = startX < 0 ? 0 : startX >= hm.XSize ? startX -1 : startX;
 		startY = startY < 0 ? 0 : startY  >= hm.ZSize ? startY - 1 : startY;
 		

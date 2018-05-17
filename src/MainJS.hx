@@ -24,10 +24,15 @@ import de.polygonal.ds.Graph;
 
 ///* 
 import systems.collisions.EllipsoidCollider;
+#if !flash9
+import jeash.geom.Vector3D;
+#end
 //*/
+
 
 ///* 
 import altern.collisions.CollisionBoundNode;
+import components.Transform3D;
 //*/
 
 ///* 

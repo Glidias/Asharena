@@ -28,7 +28,7 @@ class Transform3D
 		identity();
 	}
 	
-		public inline function identity():Void {
+		public function identity():Void {
 			a = 1;
 			b = 0;
 			c = 0;
@@ -43,7 +43,7 @@ class Transform3D
 			l = 0;
 		}
 
-public inline function compose(x:Float, y:Float, z:Float, rotationX:Float, rotationY:Float, rotationZ:Float, scaleX:Float, scaleY:Float, scaleZ:Float):Void {
+public function compose(x:Float, y:Float, z:Float, rotationX:Float, rotationY:Float, rotationZ:Float, scaleX:Float, scaleY:Float, scaleZ:Float):Void {
 var cosX:Float = Math.cos(rotationX);
 var sinX:Float = Math.sin(rotationX);
 var cosY:Float = Math.cos(rotationY);
@@ -71,7 +71,7 @@ k = cosY*cosXscaleZ;
 l = z;
 }
 
-public inline function composeInverse(x:Float, y:Float, z:Float, rotationX:Float, rotationY:Float, rotationZ:Float, scaleX:Float, scaleY:Float, scaleZ:Float):Void {
+public function composeInverse(x:Float, y:Float, z:Float, rotationX:Float, rotationY:Float, rotationZ:Float, scaleX:Float, scaleY:Float, scaleZ:Float):Void {
 var cosX:Float = Math.cos(rotationX);
 var sinX:Float = Math.sin(-rotationX);
 var cosY:Float = Math.cos(rotationY);
@@ -97,7 +97,7 @@ k = cosY*cosXscaleZ;
 l = -i*x - j*y - k*z;
 }
 
-public inline function invert():Void {
+public function invert():Void {
 var ta:Float = a;
 var tb:Float = b;
 var tc:Float = c;
@@ -125,7 +125,7 @@ k = (-tb*te + ta*tf)*det;
 l = (td*tf*ti - tb*th*ti - td*te*tj + ta*th*tj + tb*te*tl - ta*tf*tl)*det;
 }
 
-public inline function initFromVector( vector:Array<Float>):Void {
+public function initFromVector( vector:Array<Float>):Void {
 a = vector[0];
 b = vector[1];
 c = vector[2];
@@ -140,7 +140,7 @@ k = vector[10];
 l = vector[11];
 }
 
-public inline function append(transform:Transform3D):Void {
+public function append(transform:Transform3D):Void {
 var ta:Float = a;
 var tb:Float = b;
 var tc:Float = c;
@@ -167,7 +167,7 @@ k = transform.i*tc + transform.j*tg + transform.k*tk;
 l = transform.i*td + transform.j*th + transform.k*tl + transform.l;
 }
 
-public inline function prepend(transform:Transform3D):Void {
+public function prepend(transform:Transform3D):Void {
 var ta:Float = a;
 var tb:Float = b;
 var tc:Float = c;
@@ -195,7 +195,7 @@ l = ti*transform.d + tj*transform.h + tk*transform.l + tl;
 
 }
 
-public inline function combine( transformA:Transform3D, transformB:Transform3D):Void {
+public function combine( transformA:Transform3D, transformB:Transform3D):Void {
 a = transformA.a*transformB.a + transformA.b*transformB.e + transformA.c*transformB.i;
 b = transformA.a*transformB.b + transformA.b*transformB.f + transformA.c*transformB.j;
 c = transformA.a*transformB.c + transformA.b*transformB.g + transformA.c*transformB.k;
@@ -210,7 +210,7 @@ k = transformA.i*transformB.c + transformA.j*transformB.g + transformA.k*transfo
 l = transformA.i*transformB.d + transformA.j*transformB.h + transformA.k*transformB.l + transformA.l;
 }
 
-public inline function calculateInversion( source:Transform3D):Void {
+public function calculateInversion( source:Transform3D):Void {
 var ta = source.a;
 var tb = source.b;
 var tc = source.c;
@@ -238,7 +238,7 @@ k = (-tb*te + ta*tf)*det;
 l = (td*tf*ti - tb*th*ti - td*te*tj + ta*th*tj + tb*te*tl - ta*tf*tl)*det;
 }
 
-public inline function copy( source:Transform3D):Void {
+public function copy( source:Transform3D):Void {
 a = source.a;
 b = source.b;
 c = source.c;

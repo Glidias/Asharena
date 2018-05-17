@@ -206,9 +206,10 @@ package alternativa.a3d.collisions
 			
 			//var intersects:Boolean = true;
 			globalToLocalTransform.combine(inverseTransform, collider.matrix);
+			collider.calculateSphere(globalToLocalTransform);
 			//if (boundBox != null) {
 				
-				//collider.calculateSphere(globalToLocalTransform);
+				
 				//intersects = boundBox.checkSphere(collider.sphere);  
 			//}
 			//if (!intersects) return;
@@ -233,8 +234,9 @@ package alternativa.a3d.collisions
 				child.globalToLocalTransform.combine(child.inverseTransform, globalToLocalTransform);
 				// Check boundbox intersecting
 				var intersects:Boolean = true;
+				collider.calculateSphere(child.globalToLocalTransform);
 				if (child.boundBox != null) {
-					collider.calculateSphere(child.globalToLocalTransform);
+					
 					intersects = child.boundBox.checkSphere(collider.sphere);
 				}
 				

@@ -13,7 +13,6 @@ import util.geom.Geometry;
 class TerrainCollidable implements ITCollidable implements IRaycastImpl
 {
 	public var terrain:TerrainLOD;
-	public var transform:Transform3D = new Transform3D();
 	public var terrainGeom(default, null):Geometry = new Geometry();
 
 	public function new(terrain:TerrainLOD) 
@@ -27,9 +26,9 @@ class TerrainCollidable implements ITCollidable implements IRaycastImpl
 	
 	public function collectGeometryAndTransforms(collider:EllipsoidCollider, baseTransform:Transform3D):Void 
 	{
-		this.terrain.setupCollisionGeometry(collider.sphere, collider.vertices, collider.indices, 0, 0);
+		this.terrain.setupCollisionGeometry(collider.sphere, terrainGeom.vertices, terrainGeom.indices, 0, 0);
 		terrainGeom.numVertices = terrainGeom.numIndices = terrain.numCollisionTriangles * 3;
-		collider.addGeometry(terrainGeom, transform);
+		collider.addGeometry(terrainGeom, baseTransform);
 	}
 	
 	

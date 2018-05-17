@@ -68,7 +68,7 @@ class CollisionBoundNode implements IECollidable
 	 * @param	inverseTransform	(optoinal) The precalculated inverseTransform to assign
 	 * @return
 	 */
-	public static inline function create(transform:Transform3D, inverseTransform:Transform3D=null):CollisionBoundNode {
+	public static function create(transform:Transform3D, inverseTransform:Transform3D=null):CollisionBoundNode {
 		var n:CollisionBoundNode = new CollisionBoundNode();
 		n.transform = transform;
 		if (inverseTransform == null) {
@@ -82,6 +82,13 @@ class CollisionBoundNode implements IECollidable
 		// boilerplate instantaite
 		n.localToGlobalTransform = new Transform3D();
 		n.globalToLocalTransform = new Transform3D();
+		return n;
+	}
+	
+	public static function createNew(transform:Transform3D = null, inverseTransform:Transform3D = null, collidable:ITCollidable = null, raycastable:IRaycastImpl = null):CollisionBoundNode {
+		var n = CollisionBoundNode.create(transform != null ? transform : new Transform3D(), inverseTransform);
+		n.collidable = collidable;
+		n.raycastable = raycastable != null ? raycastable : Std.is(collidable, IRaycastImpl) ? cast collidable : null;
 		return n;
 	}
 	
@@ -103,9 +110,10 @@ class CollisionBoundNode implements IECollidable
 		
 		//var intersects:Bool = true;
 		globalToLocalTransform.combine(inverseTransform, collider.matrix);
+		collider.calculateSphere(globalToLocalTransform);
 		//if (boundBox != null) {
 			
-		//	collider.calculateSphere(globalToLocalTransform);
+		
 		//	intersects = AABBUtils.checkSphere(boundBox, collider.sphere);// boundBox.checkSphere(collider.sphere);  
 		//}
 		//if (!intersects) return;
@@ -168,8 +176,9 @@ class CollisionBoundNode implements IECollidable
 			child.globalToLocalTransform.combine(child.inverseTransform, globalToLocalTransform);
 			// Check boundbox intersecting
 			var intersects:Bool = true;
+			collider.calculateSphere(child.globalToLocalTransform);
 			if (child.boundBox != null) {
-				collider.calculateSphere(child.globalToLocalTransform);
+				
 				intersects = AABBUtils.checkSphere(boundBox, collider.sphere); // child.boundBox.checkSphere(collider.sphere);
 			}
 			
