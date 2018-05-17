@@ -22,26 +22,29 @@ import arena.pathfinding.GKNode;
 import de.polygonal.ds.Graph;
 */
 
-///* 
+///*  Ellipsoid collider for collision scene package
 import systems.collisions.EllipsoidCollider;
 #if !flash9
 import jeash.geom.Vector3D;
 #end
 //*/
 
-
-///* 
+///*  Collision scene package
 import altern.collisions.CollisionBoundNode;
 import components.Transform3D;
+import util.geom.Geometry;
 //*/
 
-///* 
+///*  Raycasting package
 import altern.ray.Raycaster;
 //*/
 
+///* Culling/clipping package
 import altern.culling.CullingPlane;
+//*/
 
-///*  Terrain core
+
+///*  Terrain core requirements
 import altern.terrain.QuadTreePage;
 import altern.terrain.QuadSquareChunk;
 import altern.terrain.QuadChunkCornerData;
@@ -53,16 +56,17 @@ import altern.terrain.TerrainLOD;
 import altern.terrain.TerrainGeomTools;
 import altern.terrain.QuadCornerData;
 import altern.terrain.GeometryResult;
+
+import altern.culling.CullingPlane;
 //*/
 
-///* Terrain collision
+
+///* Terrain collision requirements
 import altern.terrain.TerrainCollidable;
 //*/
 
 
-
-
-/* Ash-framework integration (problems with C-sharp atm)
+/* Ash-framework integration (problem compiling to C-sharp code atm)
 import systems.collisions.EllipsoidColliderSystem;
 */
 
