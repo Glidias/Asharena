@@ -131,7 +131,7 @@ class CollisionBoundNode implements IECollidable
 	public function intersectRay(origin:Vector3D, direction:Vector3D, output:Vector3D):Vector3D 
 	{
 		
-		var minData:Vector3D = raycastable.intersectRay(origin, direction, output);
+		var minData:Vector3D = raycastable!= null ? raycastable.intersectRay(origin, direction, output) : null;
 		var minTime:Float = minData != null ? minData.w  : output.w != 0 ? output.w : direction.w != 0 ? direction.w : 1e22; 
 		
 		var childOrigin:Vector3D = null;
