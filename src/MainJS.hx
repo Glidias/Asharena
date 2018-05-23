@@ -43,6 +43,10 @@ import altern.ray.Raycaster;
 import altern.culling.CullingPlane;
 //*/
 
+///*  Serialization package
+import hxbit.Serializer;
+//*/
+
 
 ///*  Terrain core requirements
 import altern.terrain.QuadTreePage;
