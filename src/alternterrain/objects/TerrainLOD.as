@@ -23,7 +23,6 @@ package alternterrain.objects
 	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.utils.IntersectSlopeUtil;
-	import alternativa.types.Float;
 	import alternterrain.materials.CheckboardFillMaterial;
 	import alternterrain.materials.ILODTerrainMaterial;
 	import alternterrain.util.GeometryResult;
@@ -873,6 +872,73 @@ package alternterrain.objects
 				return culling;
 		}
 		
+		public function triInFrustum(frustum:CullingPlane, ax:Number, ay:Number , az:Number, bx:Number , by:Number, bz:Number, cx:Number, cy:Number, cz:Number):Boolean {
+			
+			for (var plane:CullingPlane = frustum; plane != null; plane = plane.next) {
+				
+				if (ax * plane.x + ay * plane.y * az * plane.z < plane.offset && 
+				bx * plane.x + by * plane.y * bz * plane.z < plane.offset && 
+				cx * plane.x + cy * plane.y * cz * plane.z < plane.offset  ) {
+					return false;
+				}
+			}
+			return true;
+		}
+		
+		
+		public function cullingInFrustum2(frustum:CullingPlane, culling:int, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number):int 
+		{
+			
+	
+
+				if (maxZ < waterLevel) return -1;		
+				
+				var temp:Number = minY;
+				minY = -maxY;
+				maxY = -temp;
+				
+				
+				var side:int = 1;
+				for (var plane:CullingPlane = frustum; plane != null; plane = plane.next) {
+				if (culling & side) {
+				if (plane.x >= 0)
+				if (plane.y >= 0)
+				if (plane.z >= 0) {
+				if (maxX*plane.x + maxY*plane.y + maxZ*plane.z <= plane.offset) return -1;
+				if (minX*plane.x + minY*plane.y + minZ*plane.z > plane.offset) culling &= (63 & ~side);
+				} else {
+				if (maxX*plane.x + maxY*plane.y + minZ*plane.z <= plane.offset) return -1;
+				if (minX*plane.x + minY*plane.y + maxZ*plane.z > plane.offset) culling &= (63 & ~side);
+				}
+				else
+				if (plane.z >= 0) {
+				if (maxX*plane.x + minY*plane.y + maxZ*plane.z <= plane.offset) return -1;
+				if (minX*plane.x + maxY*plane.y + minZ*plane.z > plane.offset) culling &= (63 & ~side);
+				} else {
+				if (maxX*plane.x + minY*plane.y + minZ*plane.z <= plane.offset) return -1;
+				if (minX*plane.x + maxY*plane.y + maxZ*plane.z > plane.offset) culling &= (63 & ~side);
+				}
+				else if (plane.y >= 0)
+				if (plane.z >= 0) {
+				if (minX*plane.x + maxY*plane.y + maxZ*plane.z <= plane.offset) return -1;
+				if (maxX*plane.x + minY*plane.y + minZ*plane.z > plane.offset) culling &= (63 & ~side);
+				} else {
+				if (minX*plane.x + maxY*plane.y + minZ*plane.z <= plane.offset) return -1;
+				if (maxX*plane.x + minY*plane.y + maxZ*plane.z > plane.offset) culling &= (63 & ~side);
+				}
+				else if (plane.z >= 0) {
+				if (minX*plane.x + minY*plane.y + maxZ*plane.z <= plane.offset) return -1;
+				if (maxX*plane.x + maxY*plane.y + minZ*plane.z > plane.offset) culling &= (63 & ~side);
+				} else {
+				if (minX*plane.x + minY*plane.y + minZ*plane.z <= plane.offset) return -1;
+				if (maxX*plane.x + maxY*plane.y + maxZ*plane.z > plane.offset) culling &= (63 & ~side);
+				}
+				}
+				side <<= 1;
+				}
+				return culling;
+		}
+		
 		override alternativa3d function get useLights():Boolean {
 			return useLighting;
 		}
@@ -1562,6 +1628,258 @@ package alternterrain.objects
 					
 				
 				return null;
+			}
+			
+			public function collectTrisForFrustum(frustum:CullingPlane, frustumCorners:Vector.<Vector3D>, vertices:Vector.<Number>, indices:Vector.<uint>):void {
+				numCollisionTriangles = 0;
+				
+				if (tree != null ) {
+					QuadChunkCornerData.BI = 0;
+					collectTrisForFrustumOfNode(tree, frustum, frustumCorners, vertices, indices, 63);		
+				//	if (numCollisionTriangles > 0) throw new Error("A")
+					//else throw new Error("B");
+				}
+				
+					
+				if ( gridPagesVector != null) {
+					// TODO: for multiple pages case
+				}
+			}
+			
+			private function collectTrisForFrustumOfNode(cd:QuadChunkCornerData, frustum:CullingPlane,  frustumCorners:Vector.<Vector3D>, vertices:Vector.<Number>, indices:Vector.<uint>, culling:int):void {
+				
+				var q:QuadChunkCornerData;
+				var s:QuadSquareChunk = cd.Square;
+				var c:QuadSquareChunk;
+				var index:int;
+				var half:int;
+				var full:int;
+				var cCulling:int;
+				var state:TerrainChunkState;
+				
+				if ( cd.Level <= lodLvlMin) {  
+					// draw single chunk!
+					collectTrisForFrustumOfLeaf(cd, frustum, frustumCorners, vertices, indices, culling);
+					return;
+				}
+		
+				
+				half = (1 << cd.Level);
+				full = (half << 1);
+				var halfX:int = cd.xorg + half;
+				var halfY:int = cd.zorg + half;
+				
+				for (index = 0; index < 4; index++) {
+					var o:int;
+					o =  QUAD_OFFSETS[index];
+					c = s.Child[index];  
+					var minX:Number = cd.xorg + ((o & 1) ? half : 0);
+					var minY:Number = cd.zorg + ((o & 2) ? half : 0);
+					var maxX:Number = cd.xorg + ((o & 1) ? full : half);
+					var maxY:Number =  cd.zorg + ((o & 2) ? full : half);
+					var temp:Number = minY;
+					minY = -maxY;
+					maxY = -temp;
+					cCulling =  frustumCorners[1].x < minX || frustumCorners[1].x > maxX || frustumCorners[1].y < minY || frustumCorners[1].y > maxY ? -1 : 0; //cullingInFrustum2(frustum, culling, cd.xorg + ((o & 1) ? half : 0), cd.zorg + ((o & 2) ? half : 0), c.MinY, cd.xorg + ((o & 1) ? full : half), cd.zorg + ((o & 2) ? full : half), c.MaxY);		
+					if (cCulling >= 0) {
+						q = QuadChunkCornerData.create();  
+						s.SetupCornerData(q, cd, index);
+						collectTrisForFrustumOfNode(q, frustum, frustumCorners, vertices, indices, cCulling);
+					}
+				}
+			}
+			
+			private function collectTrisForFrustumOfLeaf(cd:QuadChunkCornerData, frustum:CullingPlane, frustumCorners:Vector.<Vector3D>, vertices:Vector.<Number>, indices:Vector.<uint>, culling:int):void {
+				var acz:Number;
+				var normalX:Number;
+				var normalY:Number;
+				var acx:Number;
+				var acy:Number;
+				var abz:Number;
+				var normalZ:Number;
+				var aby:Number;
+				var abx:Number;
+				var hm:HeightMapInfo = tree.heightMap;
+			
+				var hxorg:Number = hm.XOrigin;
+				var hzorg:Number = hm.ZOrigin;
+					
+				var startX:int = cd.xorg * tileSizeInv;
+				var startY:int = cd.zorg * tileSizeInv;
+				startX = startX < 0 ? 0 : startX >= hm.XSize ? startX -1 : startX;
+				startY = startY < 0 ? 0 : startY  >= hm.ZSize ? startY - 1 : startY;
+				
+				var ii:int = indices.length;
+				var vi:int = vertices.length;
+				var i:int;
+				var cLen:int = frustumCorners.length;
+				var c:Vector3D;
+			
+				var data:Vector.<int> = hm.Data;
+				var xtmax:int = startX + 32;
+				var ytmax:int = startY + 32;
+				var yi:int;
+				var xi:int;
+					var whichFan:Vector.<int>;
+					var RowWidth:int = hm.RowWidth;
+			
+					
+					var ax:Number; 
+					var ay:Number; 
+					var az:Number; 
+					
+					var bx:Number; 
+					var by:Number; 
+					var bz:Number;
+					
+					var cx:Number; 
+					var cy:Number; 
+					var cz:Number;
+					
+					var offset:Number;
+					var outside:Boolean;
+					var inside:Boolean;
+					var different:Boolean;
+					var vMult:Number = 1 / 3;
+					
+				for (yi=startY; yi < ytmax; yi++) {
+					for (xi=startX; xi < xtmax; xi++) {
+
+					_patchHeights[2] = data[xi + yi * RowWidth];   // nw
+					_patchHeights[5] =  data[(xi + 1) + (yi) * RowWidth];  // ne
+					_patchHeights[8] =  data[xi + (yi+1) * RowWidth]; //sw
+					_patchHeights[11] =  data[(xi + 1) + (yi + 1) * RowWidth];  // se
+					
+					whichFan = (xi & 1) != (yi & 1) ? TRI_ORDER_TRUE : TRI_ORDER_FALSE;
+					
+					ax = (_patchHeights[whichFan[0] * 3] + xi) * tileSize + hxorg;
+					ay = (_patchHeights[whichFan[0] * 3 + 1] + yi) * tileSize + hzorg; 
+					ay *= -1;
+					az = _patchHeights[whichFan[0] * 3 + 2];
+					
+					 
+					bx=  (_patchHeights[whichFan[1] * 3] + xi) * tileSize+hxorg;
+					by = (_patchHeights[whichFan[1] * 3 + 1] + yi) * tileSize+ hzorg;   
+					by *= -1;
+					bz=_patchHeights[whichFan[1] * 3 + 2];
+					   
+					cx= (_patchHeights[whichFan[2] * 3] + xi) *tileSize + hxorg;
+					cy =	(_patchHeights[whichFan[2] * 3 + 1] + yi) * tileSize+ hzorg; 
+					cy *= -1;
+					cz = _patchHeights[whichFan[2] * 3 + 2];
+					
+					abx = bx - ax;
+					aby = by - ay;
+					abz = bz - az;
+					acx = cx - ax;
+					acy = cy - ay;
+					acz = cz - az;
+					normalX = acz*aby - acy*abz;
+					normalY = acx*abz - acz*abx;
+					normalZ = acy * abx - acx * aby;
+					offset = ax*normalX + ay*normalY + az*normalZ;
+					
+					outside = false;
+					inside = false;
+					different = false;
+					for (i = 0; i < cLen; i++) {
+						c = frustumCorners[i];
+						if ( normalX * c.x + normalY * c.y + normalZ * c.z >= offset) {
+							inside = true;
+						}
+						else {
+							outside = true;
+						}
+						if (inside && outside) {
+							different = true;
+							break;
+						}
+					}
+					
+					if ( triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz) ) {
+						indices[ii++] = vi * vMult;
+						vertices[vi++] = ax;
+						vertices[vi++] = ay;
+						vertices[vi++] = az;
+						
+						indices[ii++] = vi * vMult;
+						vertices[vi++] = bx;
+						vertices[vi++] = by;
+						vertices[vi++] = bz;
+						
+						indices[ii++] = vi * vMult;
+						vertices[vi++] = cx;
+						vertices[vi++] = cy;
+						vertices[vi++] = cz;
+							
+						numCollisionTriangles++;
+					}
+					
+					
+					ax = (_patchHeights[whichFan[3] * 3] + xi) *tileSize + hxorg;
+					ay = (_patchHeights[whichFan[3] * 3 + 1] + yi) * tileSize + hzorg; 
+					ay *= -1;
+					az= _patchHeights[whichFan[3] * 3 + 2];
+					 
+					bx=  (_patchHeights[whichFan[4] * 3] + xi) * tileSize + hxorg;
+					by = (_patchHeights[whichFan[4] * 3 + 1] + yi) * tileSize+ hzorg; 
+					by *= -1;
+					bz=_patchHeights[whichFan[4] * 3 + 2];
+					   
+					cx= (_patchHeights[whichFan[5] * 3] + xi) *tileSize + hxorg;
+					cy =	(_patchHeights[whichFan[5] * 3 + 1] + yi) * tileSize+ hzorg;  
+					cy *= -1;
+					cz = _patchHeights[whichFan[5] * 3 + 2];
+					
+					abx = bx - ax;
+					aby = by - ay;
+					abz = bz - az;
+					acx = cx - ax;
+					acy = cy - ay;
+					acz = cz - az;
+					normalX = acz*aby - acy*abz;
+					normalY = acx*abz - acz*abx;
+					normalZ = acy * abx - acx * aby;
+					offset = ax*normalX + ay*normalY + az*normalZ;
+					
+					outside = false;
+					inside = false;
+					different = false;
+					for (i = 0; i < cLen; i++) {
+						c = frustumCorners[i];
+						if ( normalX * c.x + normalY * c.y + normalZ * c.z >= offset) {
+							inside = true;
+						}
+						else {
+							outside = true;
+						}
+						if (inside && outside) {
+							different = true;
+							break;
+						}
+					}
+					
+					if ( triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)) {
+						indices[ii++] = vi * vMult;
+						vertices[vi++] = ax;
+						vertices[vi++] = ay;
+						vertices[vi++] = az;
+						
+						indices[ii++] = vi * vMult;
+						vertices[vi++] = bx;
+						vertices[vi++] = by;
+						vertices[vi++] = bz;
+						
+						indices[ii++] = vi * vMult;
+						vertices[vi++] = cx;
+						vertices[vi++] = cy;
+						vertices[vi++] = cz;
+						
+						numCollisionTriangles++;
+					}
+						
+					}
+				}
 			}
 			
 			public function intersectRayTrajectoryDDA(origin:Vector3D, direction:Vector3D, strength:Number, gravity:Number):RayIntersectionData {

@@ -104,6 +104,7 @@ package
 			_view.inject(arenaSpawner.currentPlayer, arenaSpawner.currentPlayer, arenaSpawner.currentPlayerEntity.get(Pos) as Pos,  arenaSpawner.currentPlayerEntity.get(Rot) as Rot, arenaSpawner.currentPlayerSkin,spawnerBundle.textureMat);
 			
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			
 			startGame();
 		}
 		
@@ -154,8 +155,8 @@ package
 			dummyMesh.geometry.setAttributeValues(VertexAttributes.POSITION, testChunkEllipsoid.vertices);
 			
 			
-		//	dummyMesh.geometry.indices = extractUnsignedVector(testChunkEllipsoid.indices, testChunkEllipsoid.numFaces * 3);
-			dummyMesh.geometry.indices = extractSteepPolygons(0.57357643635104609610803191282616);
+			dummyMesh.geometry.indices = extractUnsignedVector(testChunkEllipsoid.indices, testChunkEllipsoid.numFaces * 3);
+			//dummyMesh.geometry.indices = extractSteepPolygons(0.57357643635104609610803191282616);
 
 			//dummyMesh = new Box(300, 300, 300);
 		

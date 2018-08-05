@@ -1,23 +1,31 @@
 package alternativa.a3d.systems.hud 
 {
 
+	import alternativa.engine3d.core.CullingPlane;
 	import alternativa.engine3d.core.Object3D;
 	import alternativa.engine3d.core.Occluder;
 	import alternativa.engine3d.core.Transform3D;
+	import alternativa.engine3d.core.VertexAttributes;
 	import alternativa.engine3d.materials.FillMaterial;
+	import alternativa.engine3d.objects.Mesh;
 	import alternativa.engine3d.objects.MeshSetClone;
 	import alternativa.engine3d.objects.MeshSetClonesContainer;
+	import alternativa.engine3d.objects.WireFrame;
 	import alternativa.engine3d.primitives.Box;
 	import alternativa.engine3d.primitives.Plane;
+	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.utils.GeometryUtil;
 	import alternativa.engine3d.utils.Object3DUtils;
+	import alternterrain.objects.TerrainLOD;
 	import ash.core.Engine;
 	import ash.core.NodeList;
 	import ash.core.System;
 	import flash.geom.Matrix;
 	import flash.geom.Matrix3D;
 	import flash.geom.Vector3D;
+	import flash.ui.Keyboard;
 	import haxe.Log;
+	import input.KeyPoll;
 	import util.SpawnerBundle;
 	import util.geom.Vec3;
 	import alternativa.engine3d.alternativa3d;
@@ -42,8 +50,10 @@ package alternativa.a3d.systems.hud
 		
 		public var testOccluder:Occluder;
 		
-		public function TargetBoardTester(scene:Object3D, position:Vec3, cameraObj:Object3D=null) 
+		public function TargetBoardTester(scene:Object3D, position:Vec3, cameraObj:Object3D=null, keyPoll:KeyPoll=null, terrainLOD:TerrainLOD=null) 
 		{
+			this.terrainLOD = terrainLOD;
+			this.keyPoll = keyPoll;
 			this.cameraObj = cameraObj;
 			this.position = position;
 			var p:Plane = new Plane(1, 1, 1, 1, false, false);
@@ -62,6 +72,12 @@ package alternativa.a3d.systems.hud
 			
 			SpawnerBundle.uploadResourcesOf(planes);
 			SpawnerBundle.uploadResourcesOf(corners);
+			
+			testFrustumPoints[0] = new Vector3D();
+			testFrustumPoints[1] = new Vector3D();
+			testFrustumPoints[2] = new Vector3D();
+			testFrustumPoints[3] = new Vector3D();
+			testFrustumPoints[4] = new Vector3D();
 		}
 		
 		override public function addToEngine (engine:Engine) : void {
@@ -135,7 +151,7 @@ package alternativa.a3d.systems.hud
 	
 				str += arr2.join("|")+"___";
 			}
-			Log.trace(str);
+			//Log.trace(str);
 		}
 		
 		
@@ -280,8 +296,15 @@ package alternativa.a3d.systems.hud
 				var vz:Number;
 				
 				t = planes.localToCameraTransform;
-			
 				
+				var f:int = 0;
+				
+				testFrustumPoints[f].x = cameraObj.x;
+				testFrustumPoints[f].y = cameraObj.y;
+				testFrustumPoints[f].z = cameraObj.z;
+				
+				
+				f++;
 				p = corners.addNewOrAvailableClone();
 				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
 				p.root.x += targUp.x * h;
@@ -302,8 +325,11 @@ package alternativa.a3d.systems.hud
 				p.root.x = t.a*vx + t.b*vy + t.c*vz + t.d;
 				p.root.y = t.e*vx + t.f*vy + t.g*vz + t.h;
 				p.root.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+				testFrustumPoints[f].x = p.root.x;
+				testFrustumPoints[f].y = p.root.y;
+				testFrustumPoints[f].z = p.root.z;
 				
-			
+				f++;
 				p = corners.addNewOrAvailableClone();
 				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
 				p.root.x -= targUp.x * h;
@@ -312,7 +338,11 @@ package alternativa.a3d.systems.hud
 				p.root.x -= targRight.x * w;
 				p.root.y -= targRight.y * w;
 				p.root.z -= targRight.z * w;
+				testFrustumPoints[f].x = p.root.x;
+				testFrustumPoints[f].y = p.root.y;
+				testFrustumPoints[f].z = p.root.z;
 				
+				f++;
 				p = corners.addNewOrAvailableClone();
 				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
 				p.root.x -= targUp.x * h;
@@ -321,7 +351,11 @@ package alternativa.a3d.systems.hud
 				p.root.x += targRight.x * w;
 				p.root.y += targRight.y * w;
 				p.root.z += targRight.z * w;
+				testFrustumPoints[f].x = p.root.x;
+				testFrustumPoints[f].y = p.root.y;
+				testFrustumPoints[f].z = p.root.z;
 				
+				f++;
 				p = corners.addNewOrAvailableClone();
 				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
 				p.root.x += targUp.x * h;
@@ -330,18 +364,47 @@ package alternativa.a3d.systems.hud
 				p.root.x += targRight.x * w;
 				p.root.y += targRight.y * w;
 				p.root.z += targRight.z * w;
+				testFrustumPoints[f].x = p.root.x;
+				testFrustumPoints[f].y = p.root.y;
+				testFrustumPoints[f].z = p.root.z;
+				
+				
 				
 				
 				if (testOccluder != null) {
 					var areaSubtracted:Number =  testOccluder.clip( testOccluder.getDisposableTransformedFace(targPos, targUp, targRight, w, h, planes.localToCameraTransform)  );
 					var area:Number = w * h * 4;
 					if (areaSubtracted > 0) {
-						Log.trace( int(areaSubtracted/area*100)+"% cover" );
+						//Log.trace( int(areaSubtracted/area*100)+"% cover" );
 					}
 					else {
-						Log.trace("Fully exposed");
+						//Log.trace("Fully exposed");
 					}
 					
+				}
+				
+				
+				
+				
+				if (keyPoll != null && keyPoll.isDown(Keyboard.SLASH) && terrainLOD != null ) {
+					
+					for (var i:int = 0; i < testFrustumPoints.length; i++) {
+						testFrustumPoints[i] = terrainLOD.globalToLocal(testFrustumPoints[i]);
+					}
+				
+					testIndices.length = 0;
+					testVertices.length = 0;
+					testFrustum = createFrustumFromPoints(testFrustumPoints, terrainLOD.globalToLocal(new Vector3D(targPos.x, targPos.y, targPos.z) ));
+					//var pp:Vector3D = terrainLOD.globalToLocal(new Vector3D(targPos.x, targPos.y, targPos.z));
+					//throw new Error(terrainLOD.scaleX + ", "+terrainLOD.scaleZ + ", "+new Vector3D(terrainLOD.x, terrainLOD.y, terrainLOD.z) );
+					//terrainLOD.setupCollisionGeometry( new Vector3D( pp.x, pp.y, pp.z, 1000), testVertices, testIndices);
+					//throw new Error(targPos + ", " + (testVertices.length / 3));
+					
+					var usePoints:Vector.<Vector3D> = testFrustumPoints;// testFrustumPoints.slice(1, testFrustumPoints.length);
+					terrainLOD.collectTrisForFrustum(testFrustum, usePoints, testVertices, testIndices);
+					createWireframeCollisionPreview( );
+					
+					//throw new Error(testVertices.length / 3);
 				}
 			
 				break;
@@ -349,12 +412,136 @@ package alternativa.a3d.systems.hud
 			}
 			
 			
-
-			
-			
 		}
+		
+		private function extractUnsignedVector(vec:Vector.<uint>, sliceAmt:int):Vector.<uint> {
+			var vect:Vector.<uint> = new Vector.<uint>(sliceAmt, true);
+			for (var i:int = 0; i < sliceAmt; i++) {
+				vect[i] = vec[i];
+			}
+			return vect;
+		}
+		
+		public function createWireframeCollisionPreview(pos:Vector3D=null):WireFrame {
+			var wireframe:WireFrame;
+			var dummyMesh:Mesh = new Mesh();
+			if (pos == null) pos = new Vector3D();
+			
+			if (testWireframe!=null) {
+				testWireframe.parent.removeChild(testWireframe);
+				testWireframe.geometry.dispose();
+			}
+			
+			dummyMesh.geometry = new alternativa.engine3d.resources.Geometry(testVertices.length/3);
+			dummyMesh.geometry.addVertexStream( [VertexAttributes.POSITION, VertexAttributes.POSITION, VertexAttributes.POSITION]);
+			//throw new Error(testChunkEllipsoid.numFaces + ", " + (testChunkEllipsoid.indices.length/3));
+//throw new Error( ( testChunkEllipsoid.vertices.length / 3 ) + ", "+ testChunkEllipsoid.vertices.length + ", "+(3*dummyMesh.geometry.numVertices) );
+			dummyMesh.geometry.setAttributeValues(VertexAttributes.POSITION, testVertices);
+			
+			
+			dummyMesh.geometry.indices = testIndices;// extractUnsignedVector(testIndices,  testVertices.length / 3);
+			//dummyMesh.geometry.indices = extractSteepPolygons(0.57357643635104609610803191282616);
+
+			//dummyMesh = new Box(300, 300, 300);
+		
+			
+			wireframe =  WireFrame.createEdges(dummyMesh, 0xFFFFFF, 1, 1);
+			testWireframe = wireframe;
+			//wireframe = WireFrame.createLinesList(extractSteepEdges(0.57357643635104609610803191282616), 0xFFFFFF, 1, 2);
+				
+			var mat:Matrix3D = terrainLOD.matrix;// mat.invert();
+			wireframe.matrix = mat;
+			
+			
+			// wireframe.geometry.upload( _view.stage3D.context3D);
+			SpawnerBundle.uploadResourcesOf(wireframe);
+			terrainLOD.parent.addChild(wireframe);
+		
+			wireframe.boundBox = null;
+			return wireframe;	
+		}
+		
+		public static function createFrustumFromPoints(pts:Vector.<Vector3D>, targPos:Vector3D):CullingPlane {
+			var cullingPlane:CullingPlane = new CullingPlane();
+			var c:CullingPlane = cullingPlane;
+			var v:Vector3D;
+			
+			v = pts[2].subtract(pts[0]).crossProduct(pts[1].subtract(pts[0]));
+			v.normalize();
+			c.x = v.x;
+			c.y = v.y;
+			c.z = v.z;
+			c.offset = v.dotProduct(pts[0]);
+			///*
+			c = c.next = new CullingPlane();
+			v = pts[3].subtract(pts[0]).crossProduct(pts[2].subtract(pts[0]));
+			v.normalize();
+			c.x = v.x;
+			c.y = v.y;
+			c.z = v.z;
+			c.offset = v.dotProduct(pts[0]);
+			
+			c = c.next = new CullingPlane();
+			v = pts[4].subtract(pts[0]).crossProduct(pts[3].subtract(pts[0]));
+			v.normalize();
+			c.x = v.x;
+			c.y = v.y;
+			c.z = v.z;
+			c.offset = v.dotProduct(pts[0]);
+			
+			
+			c = c.next = new CullingPlane();
+			v = pts[1].subtract(pts[0]).crossProduct(pts[4].subtract(pts[0]));
+			v.normalize();
+			c.x = v.x;
+			c.y = v.y;
+			c.z = v.z;
+			c.offset = v.dotProduct(pts[0]);
+			//*/
+			///*
+			c = c.next = new CullingPlane();
+			v = pts[0].subtract(targPos);
+			v.normalize();
+			c.x = v.x;
+			c.y = v.y;
+			c.z = v.z;
+			c.offset = v.dotProduct(targPos);
+			
+			
+			c = c.next = new CullingPlane();
+			v = targPos.subtract(pts[0]);
+			v.normalize();
+			c.x = v.x;
+			c.y = v.y;
+			c.z = v.z;
+			c.offset = v.dotProduct(pts[0]);
+			//*/
+			
+			v = targPos.subtract(pts[0]);
+			v.normalize();
+			v.scaleBy( targPos.subtract(pts[0]).length*.5 );
+			var testPt:Vector3D = pts[0].add(v);
+			for (c = cullingPlane; c != null; c = c.next) {
+				var dp:Number = testPt.x * c.x + testPt.y * c.y + testPt.z * c.z;
+				if (dp < c.offset) {
+					throw new Error( "Invalid frustum, not enclosed!" + Math.abs(c.offset - dp) );
+				}
+			}
+			
+			return cullingPlane;
+		}
+		
+		private var testGeometry:Geometry;
+		private var testIndices:Vector.<uint> = new Vector.<uint>();
+		private var testVertices:Vector.<Number> = new Vector.<Number>();
+		private var testFrustum:CullingPlane;
+		private var testWireframe:WireFrame;
+		private var testFrustumPoints:Vector.<Vector3D> = new Vector.<Vector3D>(5, true);
+		
 		private var dummyVec:Vec3 = new Vec3();
 		private var dummyObj:Object3D = new Object3D();
+		public var keyPoll:KeyPoll;
+		public var terrainLOD:TerrainLOD;
 		private var objectTransform:Vector.<Vector3D>;
 		
 	}

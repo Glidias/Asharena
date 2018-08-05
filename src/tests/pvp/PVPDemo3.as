@@ -384,7 +384,7 @@ package tests.pvp
 			var rootCollisionNode:CollisionBoundNode;
 			game.colliderSystem.collidable = rootCollisionNode =  new CollisionBoundNode();
 			rootCollisionNode.addChild(  _terrainBase.getTerrainCollisionNode() );
-			rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
+			//rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(box) );
 		//	rootCollisionNode.addChild( CollisionUtil.getCollisionGraph(_waterBase.plane)  );
 			game.colliderSystem._collider.threshold = 0.00001;
 			// (Optional) Enforced ground plane collision
@@ -2240,8 +2240,8 @@ package tests.pvp
 			
 		
 		//	_template3D.scene.addChild( 
-	
-			game.gameStates.thirdPerson.addInstance( _targetBoardTester = new TargetBoardTester(_template3D.scene, null, _template3D.camera) ).withPriority(SystemPriorities.postRender);
+		
+			game.gameStates.thirdPerson.addInstance( _targetBoardTester = new TargetBoardTester(_template3D.scene, null, _template3D.camera, game.keyPoll, _terrainBase.terrain) ).withPriority(SystemPriorities.postRender);
 			
 			
 			game.engine.addSystem( new HealthBarRenderSystem( createHPBarSet(), ~HealthFlags.FLAG_PLAYER ), SystemPriorities.render );
@@ -2265,6 +2265,7 @@ package tests.pvp
 			HealthTrackingSystem.SIGNAL_MURDER.add(onMurdered);
 			
 			setupEnvironment();
+			_targetBoardTester.terrainLOD = _terrainBase.terrain;
 			setupInterface();
 			setupStartingEntites();
 			setupGameplay();

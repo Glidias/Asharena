@@ -35,6 +35,7 @@ package examples
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
 	import flash.events.KeyboardEvent;
+	import flash.geom.Matrix3D;
 	import flash.geom.Vector3D;
 	import flash.ui.Keyboard;
 	import flash.utils.ByteArray;
@@ -379,6 +380,8 @@ package examples
 			terrainLOD.detail = START_LOD;
 			terrainLOD.waterLevel = waterLevel ;
 			raycastImpl = new RaycastImpl(terrainLOD);
+			
+			
 			
 			standardMaterial = new StandardTerrainMaterial2(groundTextureResource , new BitmapTextureResource( _normalMapData), null, null  );
 			standardMaterial.uvMultiplier2 =MAP_SCALE;
