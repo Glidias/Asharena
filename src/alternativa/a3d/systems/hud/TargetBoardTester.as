@@ -211,7 +211,6 @@ package alternativa.a3d.systems.hud
 				
 				var m:Matrix3D;
 				
-				
 
 				
 				/*
@@ -275,8 +274,9 @@ package alternativa.a3d.systems.hud
 				
 				//targPos.z += 27*.5;
 				//h -= 27/n.size.z*2;
+				
 				p.root.matrix = m = CreateBillboardMatrix(targRight, targUp, targLook, targPos, w*2, h*2 );
-			
+		
 				/*
 				var data:Vector.<Number> = m.rawData;
 				targRight.x = -data[0];
@@ -449,6 +449,9 @@ package alternativa.a3d.systems.hud
 			testWireframe = wireframe;
 			//wireframe = WireFrame.createLinesList(extractSteepEdges(0.57357643635104609610803191282616), 0xFFFFFF, 1, 2);
 				
+			
+			
+			
 			var mat:Matrix3D = terrainLOD.matrix;// mat.invert();
 			wireframe.matrix = mat;
 			
@@ -457,64 +460,90 @@ package alternativa.a3d.systems.hud
 			SpawnerBundle.uploadResourcesOf(wireframe);
 			terrainLOD.parent.addChild(wireframe);
 		
+			SpawnerBundle.uploadResourcesOf(coneWireframe);
+			terrainLOD.addChild(coneWireframe);
+			
+			coneWireframe.boundBox = null;
 			wireframe.boundBox = null;
 			return wireframe;	
 		}
 		
-		public static function createFrustumFromPoints(pts:Vector.<Vector3D>, targPos:Vector3D):CullingPlane {
+		public  function createFrustumFromPoints(pts:Vector.<Vector3D>, targPos:Vector3D):CullingPlane {
 			var cullingPlane:CullingPlane = new CullingPlane();
 			var c:CullingPlane = cullingPlane;
 			var v:Vector3D;
 			
+			if (coneWireframe != null) {
+				coneWireframe.parent.removeChild(coneWireframe);
+				coneWireframe.geometry.dispose();
+			}
+			
+			var mesh:Mesh = new Mesh();
+			
+			var lineList:Vector.<Vector3D> = new Vector.<Vector3D>();
+			
+
 			v = pts[2].subtract(pts[0]).crossProduct(pts[1].subtract(pts[0]));
-			v.normalize();
+			//v.normalize();
 			c.x = v.x;
 			c.y = v.y;
 			c.z = v.z;
 			c.offset = v.dotProduct(pts[0]);
+			lineList.push(pts[0], pts[2], pts[0], pts[1], pts[1], pts[2]);
+		
+			
 			///*
 			c = c.next = new CullingPlane();
 			v = pts[3].subtract(pts[0]).crossProduct(pts[2].subtract(pts[0]));
-			v.normalize();
+			//v.normalize();
 			c.x = v.x;
 			c.y = v.y;
 			c.z = v.z;
 			c.offset = v.dotProduct(pts[0]);
+			lineList.push(pts[0], pts[3], pts[2], pts[0], pts[2], pts[3]);
+				
 			
 			c = c.next = new CullingPlane();
 			v = pts[4].subtract(pts[0]).crossProduct(pts[3].subtract(pts[0]));
-			v.normalize();
+			//v.normalize();
 			c.x = v.x;
 			c.y = v.y;
 			c.z = v.z;
 			c.offset = v.dotProduct(pts[0]);
+			lineList.push(pts[0], pts[4], pts[0], pts[3], pts[3], pts[4]);
 			
 			
 			c = c.next = new CullingPlane();
 			v = pts[1].subtract(pts[0]).crossProduct(pts[4].subtract(pts[0]));
-			v.normalize();
+			//v.normalize();
 			c.x = v.x;
 			c.y = v.y;
 			c.z = v.z;
 			c.offset = v.dotProduct(pts[0]);
+			lineList.push(pts[0], pts[1], pts[4], pts[0], pts[4], pts[1]);
+			
 			//*/
+			///*
+			
 			///*
 			c = c.next = new CullingPlane();
 			v = pts[0].subtract(targPos);
-			v.normalize();
+			//v.normalize();
 			c.x = v.x;
 			c.y = v.y;
 			c.z = v.z;
 			c.offset = v.dotProduct(targPos);
 			
+			//*/
 			
 			c = c.next = new CullingPlane();
 			v = targPos.subtract(pts[0]);
-			v.normalize();
+			//v.normalize();
 			c.x = v.x;
 			c.y = v.y;
 			c.z = v.z;
 			c.offset = v.dotProduct(pts[0]);
+			
 			//*/
 			
 			v = targPos.subtract(pts[0]);
@@ -528,6 +557,8 @@ package alternativa.a3d.systems.hud
 				}
 			}
 			
+			coneWireframe =  WireFrame.createLinesList(lineList, 0x0000FF, 1, 2);
+			
 			return cullingPlane;
 		}
 		
@@ -536,6 +567,7 @@ package alternativa.a3d.systems.hud
 		private var testVertices:Vector.<Number> = new Vector.<Number>();
 		private var testFrustum:CullingPlane;
 		private var testWireframe:WireFrame;
+		private var coneWireframe:WireFrame;
 		private var testFrustumPoints:Vector.<Vector3D> = new Vector.<Vector3D>(5, true);
 		
 		private var dummyVec:Vec3 = new Vec3();

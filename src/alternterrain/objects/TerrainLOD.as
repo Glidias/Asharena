@@ -875,7 +875,6 @@ package alternterrain.objects
 		public function triInFrustum(frustum:CullingPlane, ax:Number, ay:Number , az:Number, bx:Number , by:Number, bz:Number, cx:Number, cy:Number, cz:Number):Boolean {
 			
 			for (var plane:CullingPlane = frustum; plane != null; plane = plane.next) {
-				
 				if (ax * plane.x + ay * plane.y * az * plane.z < plane.offset && 
 				bx * plane.x + by * plane.y * bz * plane.z < plane.offset && 
 				cx * plane.x + cy * plane.y * cz * plane.z < plane.offset  ) {
@@ -1680,7 +1679,8 @@ package alternterrain.objects
 					var temp:Number = minY;
 					minY = -maxY;
 					maxY = -temp;
-					cCulling =  frustumCorners[1].x < minX || frustumCorners[1].x > maxX || frustumCorners[1].y < minY || frustumCorners[1].y > maxY ? -1 : 0; //cullingInFrustum2(frustum, culling, cd.xorg + ((o & 1) ? half : 0), cd.zorg + ((o & 2) ? half : 0), c.MinY, cd.xorg + ((o & 1) ? full : half), cd.zorg + ((o & 2) ? full : half), c.MaxY);		
+					cCulling = cullingInFrustum2(frustum, culling, cd.xorg + ((o & 1) ? half : 0), cd.zorg + ((o & 2) ? half : 0), c.MinY, cd.xorg + ((o & 1) ? full : half), cd.zorg + ((o & 2) ? full : half), c.MaxY);	
+					//frustumCorners[1].x < minX || frustumCorners[1].x > maxX || frustumCorners[1].y < minY || frustumCorners[1].y > maxY ? -1 : 0; 
 					if (cCulling >= 0) {
 						q = QuadChunkCornerData.create();  
 						s.SetupCornerData(q, cd, index);
@@ -1744,11 +1744,29 @@ package alternterrain.objects
 					
 				for (yi=startY; yi < ytmax; yi++) {
 					for (xi=startX; xi < xtmax; xi++) {
-
-					_patchHeights[2] = data[xi + yi * RowWidth];   // nw
-					_patchHeights[5] =  data[(xi + 1) + (yi) * RowWidth];  // ne
-					_patchHeights[8] =  data[xi + (yi+1) * RowWidth]; //sw
-					_patchHeights[11] =  data[(xi + 1) + (yi + 1) * RowWidth];  // se
+					var h:Number;
+					var lowest:Number = Number.MAX_VALUE;
+					var highest:Number = -Number.MAX_VALUE;
+					_patchHeights[2] = h = data[xi + yi * RowWidth];   // nw
+					if (h < lowest) lowest = h;
+					if (h > highest) highest = h;
+					_patchHeights[5] = h =  data[(xi + 1) + (yi) * RowWidth];  // ne
+					if (h < lowest) lowest = h;
+					if (h > highest) highest = h;
+					_patchHeights[8] =  h = data[xi + (yi + 1) * RowWidth]; //sw
+					if (h < lowest) lowest = h;
+					if (h > highest) highest = h;
+					_patchHeights[11] =  h = data[(xi + 1) + (yi + 1) * RowWidth];  // se
+					if (h < lowest) lowest = h;
+					if (h > highest) highest = h;
+					
+					var minX:Number = xi * tileSize + hxorg;
+					var minY:Number = -yi * tileSize +  hzorg;
+					var maxY:Number = minY + tileSize;
+					var maxX:Number = maxX + tileSize;
+					var boundIntersects:Boolean = cullingInFrustum2(frustum, culling, minX, minY, lowest, maxX, maxY, highest) >= 0;
+					if (!boundIntersects) continue;
+					
 					
 					whichFan = (xi & 1) != (yi & 1) ? TRI_ORDER_TRUE : TRI_ORDER_FALSE;
 					
