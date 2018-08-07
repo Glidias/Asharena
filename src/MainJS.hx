@@ -43,6 +43,11 @@ import altern.ray.Raycaster;
 import altern.culling.CullingPlane;
 //*/
 
+///*  Serialization package
+import hxbit.Serializer;
+import haxe.io.Bytes;
+//*/
+
 
 ///*  Terrain core requirements
 import altern.terrain.QuadTreePage;
@@ -114,7 +119,7 @@ class MainJS
 	static function getPathArr(ref:Array< { pos: Position, name: String } >):Array<String> {
 		var arr:Array<String> = [];
 		var prefix:String = ref[0].name;
-		if (prefix == "haxe" || prefix == "js" || prefix == "neko" || prefix == "cs" || prefix == "cpp" || prefix == "flash") return null;
+		if ( prefix == "js" || prefix == "neko" || prefix == "cs" || prefix == "cpp" || prefix == "flash") return null;
 		for (i in 0...ref.length) {
 			arr.push(ref[i].name);
 		}
