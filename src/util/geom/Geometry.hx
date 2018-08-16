@@ -6,7 +6,6 @@ package util.geom;
  */
  import altern.ray.IRaycastImpl;
  import components.Transform3D;
- import jeash.geom.Vector3D;
  import systems.collisions.EllipsoidCollider;
  import systems.collisions.IECollidable;
  import systems.collisions.ITCollidable;
