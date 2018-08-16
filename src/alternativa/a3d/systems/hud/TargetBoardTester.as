@@ -525,6 +525,14 @@ package alternativa.a3d.systems.hud
 			//*/
 			///*
 			
+			c = c.next = new CullingPlane();
+			v = targPos.subtract(pts[0]);
+			//v.normalize();
+			c.x = v.x;
+			c.y = v.y;
+			c.z = v.z;
+			c.offset = v.dotProduct(pts[0]);
+			
 			///*
 			c = c.next = new CullingPlane();
 			v = pts[0].subtract(targPos);
@@ -535,14 +543,6 @@ package alternativa.a3d.systems.hud
 			c.offset = v.dotProduct(targPos);
 			
 			//*/
-			
-			c = c.next = new CullingPlane();
-			v = targPos.subtract(pts[0]);
-			//v.normalize();
-			c.x = v.x;
-			c.y = v.y;
-			c.z = v.z;
-			c.offset = v.dotProduct(pts[0]);
 			
 			//*/
 			

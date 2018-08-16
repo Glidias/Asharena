@@ -872,15 +872,26 @@ package alternterrain.objects
 				return culling;
 		}
 		
-		public function triInFrustum(frustum:CullingPlane, ax:Number, ay:Number , az:Number, bx:Number , by:Number, bz:Number, cx:Number, cy:Number, cz:Number):Boolean {
-			
-			for (var plane:CullingPlane = frustum; plane != null; plane = plane.next) {
-				if (ax * plane.x + ay * plane.y * az * plane.z < plane.offset && 
-				bx * plane.x + by * plane.y * bz * plane.z < plane.offset && 
-				cx * plane.x + cy * plane.y * cz * plane.z < plane.offset  ) {
+		public function triInFrustum(frustum:CullingPlane, ax:Number, ay:Number , az:Number, bx:Number , by:Number, bz:Number, cx:Number, cy:Number, cz:Number, frustumCorners:Vector.<Vector3D>):Boolean {
+			var p:Vector3D = frustumCorners[0];
+			var count:int = 0;
+			for (var plane:CullingPlane = frustum; plane.next != null; plane = plane.next) {
+				if ((ax-p.x) * plane.x + (ay-p.y) * plane.y * (az-p.z) * plane.z < 0 && 
+				(bx-p.x)  * plane.x + (by-p.y) * plane.y * (bz-p.z) * plane.z < 0 && 
+				(cx - p.x) * plane.x + (cy - p.y) * plane.y * (cz - p.z) * plane.z < 0  ) {
+					
 					return false;
 				}
+				count++;
 			}
+			p = frustumCorners[1];
+			if ((ax-p.x) * plane.x + (ay-p.y) * plane.y * (az-p.z) * plane.z < 0 && 
+				(bx-p.x)  * plane.x + (by-p.y) * plane.y * (bz-p.z) * plane.z < 0 && 
+				(cx - p.x) * plane.x + (cy - p.y) * plane.y * (cz - p.z) * plane.z < 0  ) {
+				
+				return false;
+			}
+			
 			return true;
 		}
 		
@@ -1679,8 +1690,7 @@ package alternterrain.objects
 					var temp:Number = minY;
 					minY = -maxY;
 					maxY = -temp;
-					cCulling = cullingInFrustum2(frustum, culling, cd.xorg + ((o & 1) ? half : 0), cd.zorg + ((o & 2) ? half : 0), c.MinY, cd.xorg + ((o & 1) ? full : half), cd.zorg + ((o & 2) ? full : half), c.MaxY);	
-					//frustumCorners[1].x < minX || frustumCorners[1].x > maxX || frustumCorners[1].y < minY || frustumCorners[1].y > maxY ? -1 : 0; 
+					cCulling = frustumCorners[1].x < minX || frustumCorners[1].x > maxX || frustumCorners[1].y < minY || frustumCorners[1].y > maxY ? -1 : 0; 
 					if (cCulling >= 0) {
 						q = QuadChunkCornerData.create();  
 						s.SetupCornerData(q, cd, index);
@@ -1814,7 +1824,7 @@ package alternterrain.objects
 						}
 					}
 					
-					if ( triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz) ) {
+					if ( triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz, frustumCorners) ) {
 						indices[ii++] = vi * vMult;
 						vertices[vi++] = ax;
 						vertices[vi++] = ay;
@@ -1877,7 +1887,7 @@ package alternterrain.objects
 						}
 					}
 					
-					if ( triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)) {
+					if ( triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz, frustumCorners)) {
 						indices[ii++] = vi * vMult;
 						vertices[vi++] = ax;
 						vertices[vi++] = ay;

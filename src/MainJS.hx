@@ -39,6 +39,11 @@ import util.geom.Geometry;
 import altern.ray.Raycaster;
 //*/
 
+///*  Geometry/Collision utilities
+import util.geom.GeomUtil;
+import util.geom.GeomCollisionSceneUtil;
+//*/
+
 ///* Culling/clipping package
 import altern.culling.CullingPlane;
 //*/

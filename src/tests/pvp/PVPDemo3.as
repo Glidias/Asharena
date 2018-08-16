@@ -214,6 +214,7 @@ package tests.pvp
 			var standardMaterial:StandardTerrainMaterial2 = new StandardTerrainMaterial2(new BitmapTextureResource( new CarribeanTextures.SAND().bitmapData ) , new BitmapTextureResource( _terrainBase.normalMap), null, null  );
 		//	standardMaterial.uvMultiplier2 = _terrainBase.mapScale;
 		
+		
 			//throw new Error([standardMaterial.opaquePass, standardMaterial.alphaThreshold, standardMaterial.transparentPass]);
 			//standardMaterial.transparentPass = false;
 			standardMaterial.normalMapSpace = NormalMapSpace.OBJECT;
