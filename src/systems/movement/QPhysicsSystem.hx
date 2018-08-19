@@ -8,6 +8,7 @@ import components.CollisionResult;
 import components.Jump;
 import components.MoveResult;
 import components.Pos;
+import components.Rot;
 import components.Sticky;
 import components.Vel;
 import systems.collisions.CollisionEvent;
@@ -47,7 +48,7 @@ class QPhysicsSystem extends System
 	// Optional Flags to enable/disable features without commenting, showing what optional features this system supports.
 	public static inline var FLAG_BOUNCE:Int = (1 << 0);
 	public static inline var FLAG_STICKY:Int = (1 << 1);
-	public static inline var FLAGS:Int = (0);
+	public static inline var FLAGS:Int = (FLAG_BOUNCE | FLAG_STICKY);
 
 	public function new() 
 	{
@@ -61,6 +62,40 @@ class QPhysicsSystem extends System
 		if ((FLAGS & FLAG_BOUNCE) != 0) bounceList = engine.getNodeList(QBounceNode);
 		if ((FLAGS & FLAG_STICKY)!=0) stickyList = engine.getNodeList(QStickyNode);
 	}
+	
+	public static inline function applyBounce(collisions:CollisionEvent, velocity:Vec3, T_BOUNCE:Float, N_BOUNCE:Float ):Void {
+		var coll:CollisionEvent = collisions;
+		applyBounceWith(velocity, coll.normal, T_BOUNCE, N_BOUNCE);
+		coll = coll.next;
+		while (coll != null) {
+			applyBounceWith(velocity, coll.normal, T_BOUNCE, N_BOUNCE);
+			coll = coll.next;
+		}
+	}
+	static inline function applyBounceWith(velocity:Vec3, normal:Vec3, T_BOUNCE:Float, N_BOUNCE:Float):Void {
+		var _loc_2:Float = normal.dotProduct( velocity);
+        var _loc_3:Vec3 = normal.clone();
+        _loc_3.scale(-_loc_2);
+        velocity.add(_loc_3);
+        velocity.scale(T_BOUNCE);
+        _loc_3.scale(N_BOUNCE);
+        velocity.add(_loc_3);
+	}
+	
+	// This is rather engine specific? Could be overwritten..
+	public function setRotationFromNormal(rot:Rot, normal:Vec3):Void {
+		/*
+		var v = normal.deepCopy();
+		v.scale(-1);
+		elevation = Math.atan2(v.z, Math.sqrt(v.x * v.x + v.y * v.y));
+		var dTest = 0.01;
+		if (v.x * v.x + v.y * v.y > dTest*dTest)
+		{
+			azimuth = Math.atan2(v.y, v.x);
+		}
+		*/
+	}
+	
 	
 	override public function update(time:Float):Void {
 		
@@ -89,6 +124,7 @@ class QPhysicsSystem extends System
 					b = b.next; 	
 					continue;
 				}
+				applyBounce(b.move.collisions, b.vel, b.bounce.t, b.bounce.n);
 				b = b.next;
 			}
 		}
@@ -100,6 +136,14 @@ class QPhysicsSystem extends System
 				if (s.move.collisions == null || s.move.preventDefault) {
 					s = s.next; 	
 					continue;
+				}
+				s.pos.copyFrom( s.move.collisions.pos );
+				s.vel.x = 0;
+				s.vel.y = 0;
+				s.vel.z = 0;
+				var rot:Rot;
+				if (s.stick.align && (rot=s.entity.get(Rot))!=null ) {
+					setRotationFromNormal(rot, s.move.collisions.normal);
 				}
 				s = s.next;
 			}
@@ -131,7 +175,7 @@ class QPhysicsSystem extends System
 		}
 		
 		
- var invT:Float = 1 / time;  // required because MovementSystem integreates forward by time
+		var invT:Float = 1 / time;  // required because MovementSystem integreates forward by time
 		
 		// preMove
 		m = moveResultList.head;
@@ -218,6 +262,7 @@ class MoveResultNode extends Node<MoveResultNode> {
 // solveCollisions
 class QStickyNode extends Node<QStickyNode> {  // if got collision, need to stick entity and set velocity to zero
 	public var stick:Sticky;
+	public var pos:Pos;
 	public var vel:Vel;
 	public var move:MoveResult;  // if sticky occurs, some trigger should be required! <<< This can be handled by post-solve handler
 }

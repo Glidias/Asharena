@@ -3,6 +3,7 @@ import ash.core.Engine;
 import ash.core.Node;
 import ash.core.NodeList;
 import ash.core.System;
+import components.Damp;
 import components.Vel;
 
 /**
@@ -25,7 +26,7 @@ class DampingSystem extends System
 		var n:DampingNode = nodeList.head;
 		
 		while (n != null) {
-			n.damping.update(n.vel, time);
+			n.damp.update(n.vel, time);
 			n = n.next;
 		}
 	}
@@ -33,7 +34,7 @@ class DampingSystem extends System
 
 
 class DampingNode extends Node<DampingNode> {
-	public var damping:Damping;
+	public var damp:Damp;
 	public var vel:Vel;
 	
 	
