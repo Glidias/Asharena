@@ -87,9 +87,9 @@ class QPhysicsSystem extends System
 		/*
 		var v = normal.deepCopy();
 		v.scale(-1);
-		elevation = Math.atan2(v.z, Math.sqrt(v.x * v.x + v.y * v.y));
-		var dTest = 0.01;
-		if (v.x * v.x + v.y * v.y > dTest*dTest)
+		var sd = Math.sqrt(v.x * v.x + v.y * v.y);
+		elevation = Math.atan2(v.z, sd);
+		if (sd > 0.01)
 		{
 			azimuth = Math.atan2(v.y, v.x);
 		}
