@@ -48,6 +48,11 @@ import util.geom.GeomCollisionSceneUtil;
 import altern.culling.CullingPlane;
 //*/
 
+///* BVH-JS Package
+import altern.partition.js.BVHTree;
+//*/
+
+
 ///*  Serialization package
 import hxbit.Serializer;
 import haxe.io.Bytes;
