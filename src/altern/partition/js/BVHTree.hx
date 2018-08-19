@@ -89,6 +89,8 @@ class BVHTree
 		stack[s++] = this.bvh._rootNode;
 		var bboxArray = this.bvh._bboxArray;
 		var triArray = this.bvh._trianglesArray;
+		geom.numIndices = 0;
+		geom.numVertices = 0;
 		var ii:Int = 0;
 		var vi:Int = 0;
 		while ( --s >= 0) {
@@ -119,13 +121,16 @@ class BVHTree
 				}
 			}
 		}
-		if (ii >0) {
+		if (ii > 0) {
+			geom.numIndices = ii;
+			geom.numVertices = Std.int(vi / 3);
 			collider.addGeometry(geom, baseTransform);
 		}
 	}
 	
 	public function purge() {
 		TypeDefs.setVectorLen(_stack, 0);
+		
 	}
 	
 	/* INTERFACE altern.ray.IRaycastImpl */
