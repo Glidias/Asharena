@@ -7,7 +7,6 @@ import systems.collisions.ITCollidable;
 import util.TypeDefs.Vector3D;
 import util.geom.GeomUtil;
 import util.geom.Geometry;
-import util.geom.PMath;
 import util.TypeDefs;
 
 #if js
@@ -71,6 +70,8 @@ class BVHTree
 	var _result:Vector3D = new Vector3D();
 	var geom(default, null):Geometry = new Geometry();
 	var _stack:Array<BVHNode>;
+	
+	static inline var FLOAT_MAX:Float = 3.40282346638528e+38;
 
 	public function new(bvh:BVH) 
 	{
@@ -135,7 +136,7 @@ class BVHTree
 		var res:Array<IntersectionResult> = bvh.intersectRay(origin, direction, true);
 		if (res!=null) {
 			var highestResult:IntersectionResult = null;
-			var cd:Float = PMath.FLOAT_MAX;
+			var cd:Float = FLOAT_MAX;
 			for (i in 0...res.length) {
 				var r:IntersectionResult = res[i];
 				var dx:Float = r.intersectionPoint.x - origin.x;
