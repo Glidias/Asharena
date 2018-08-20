@@ -10,7 +10,6 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 #end
 
-
 /*
 import arena.pathfinding.GKDijkstra;
 import arena.pathfinding.GKGraph;
@@ -22,14 +21,10 @@ import arena.pathfinding.GKNode;
 import de.polygonal.ds.Graph;
 */
 
+import ashpc.CreateScript;
+
 ///*  Ellipsoid collider for collision scene package
 import systems.collisions.EllipsoidCollider;
-
-import components.MoveResult;
-import components.CollisionResult;
-import components.controller.SurfaceMovement;
-import components.Jump;
-
 #if !flash9
 import jeash.geom.Vector3D;
 #end
@@ -50,9 +45,9 @@ import util.geom.GeomUtil;
 import util.geom.GeomCollisionSceneUtil;
 //*/
 
-///* Culling/clipping package
+/* Culling/clipping package
 import altern.culling.CullingPlane;
-//*/
+*/
 
 ///* BVH-JS Package
 import altern.partition.js.BVHTree;
@@ -87,25 +82,21 @@ import altern.terrain.TerrainCollidable;
 */
 
 
-/* Ash-framework integration (problem compiling to C-sharp code atm)
-import systems.collisions.EllipsoidColliderSystem;
-*/
-
-
 /**
- * Package for deploying to JS and other platforms (like C#) for third-party use (besides Flash)
+ * Package boilerplate for deploying to Ash + Playcanvas framework on Javascript platform
  * @author Glidias
  */
-@:expose("altern")
-class MainJS 
+@:expose("ashpc")
+class AshPCMain 
 {
 	static function main() 
 	{
 		
 		#if js
-
 		exposePackages();
-		
+		//untyped __js__("$hx_exports['$hxClasses'] = $hxClasses");
+		var p = untyped pc.createScript('_ash_');
+		p.prototype.initialize = function(){ untyped __js__("this").entity.script.destroy('_ash_'); }
 		#end
 		
 	}
@@ -113,7 +104,7 @@ class MainJS
 	
 	static macro function exposePackages():Expr {
 		var imports = Context.getLocalImports();
-		var listExpr:Array<Expr> = [macro var me:Dynamic = MainJS];
+		var listExpr:Array<Expr> = [macro var me:Dynamic = AshPCMain];
 		var currentPos = Context.currentPos();
 		var retExpr:Expr = {expr:ExprDef.EBlock(listExpr), pos:currentPos };
 
