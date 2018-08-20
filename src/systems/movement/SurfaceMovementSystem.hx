@@ -4,7 +4,6 @@ import ash.core.Engine;
 import ash.core.Node;
 import ash.core.NodeList;
 import ash.core.System;
-import ash.tools.ListIteratingSystem;
 import components.CollisionResult;
 import components.controller.SurfaceMovement;
 import components.DirectionVectors;
@@ -12,7 +11,6 @@ import components.MoveResult;
 import components.Pos;
 import components.Rot;
 import components.Vel;
-import input.KeyPoll;
 import util.geom.Vec3;
 
 /**

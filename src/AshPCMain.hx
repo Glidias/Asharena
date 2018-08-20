@@ -32,10 +32,6 @@ import ash.core.System;
 import ash.core.Engine;
 import ash.fsm.EngineState; // you may omit this if you aren't using FSM for engine
 
-// Packaged components and systems
-import ashpc.Components;
-import ashpc.Systems;
-
 ///*  Collision scene package
 // ///* If you're gonna set up a collision scene in Playcanvas, these packages are all usually required.
 import altern.collisions.CollisionBoundNode;
@@ -109,6 +105,8 @@ class AshPCMain
 		//untyped __js__("$hx_exports['$hxClasses'] = $hxClasses");
 		var p = untyped pc.createScript('_ash_');
 		p.prototype.initialize = function(){ untyped __js__("this").entity.script.destroy('_ash_'); }
+		untyped AshPCMain.components = new ashpc.Components();
+		untyped AshPCMain.systems = new ashpc.Systems();
 		#end
 		
 	}

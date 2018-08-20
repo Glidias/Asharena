@@ -2,9 +2,7 @@ package systems.movement;
 import ash.core.Engine;
 import ash.core.Node;
 import ash.core.NodeList;
-import ash.core.NodeList;
 import ash.core.System;
-import ash.tools.ListIteratingSystem;
 import components.Pos;
 import components.Vel;
 

@@ -69,7 +69,7 @@ class BVHTree
 	var bvh:BVH;
 	var _result:Vector3D = new Vector3D();
 	var geom(default, null):Geometry = new Geometry();
-	var _stack:Array<BVHNode>;
+	var _stack:Array<BVHNode> = [];
 	
 	static inline var FLOAT_MAX:Float = 3.40282346638528e+38;
 
