@@ -33,6 +33,7 @@ import components.Jump;
 #if !flash9
 import jeash.geom.Vector3D;
 #end
+import util.geom.Vec3;
 //*/
 
 ///*  Collision scene package

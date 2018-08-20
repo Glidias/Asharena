@@ -118,9 +118,11 @@ class SurfaceMovement
 			/*
 			 * Math.cos(this.thingBase.azimuth) * Math.cos(this.thingBase.elevation), Math.sin(this.thingBase.azimuth) * Math.cos(this.thingBase.elevation)
 			 */
-			forwardVec.x = -Math.sin(rotation.z); //Math.cos(rotation.z) * Math.cos(rotation.y);  // frm rotation.z azimith
-			forwardVec.y = Math.cos(rotation.z);//Math.sin(rotation.z) * Math.cos(rotation.y); // frm rotation.x pitch.  //* Math.cos(rotation.x)
-			forwardVec.z = 0;
+			if (rotation !=null) {
+				forwardVec.x = -Math.sin(rotation.z); //Math.cos(rotation.z) * Math.cos(rotation.y);  // frm rotation.z azimith
+				forwardVec.y = Math.cos(rotation.z);//Math.sin(rotation.z) * Math.cos(rotation.y); // frm rotation.x pitch.  //* Math.cos(rotation.x)
+				forwardVec.z = 0;
+			}
 			if ( Vec3Utils.dot( forwardVec, ground_normal) > 0) {
 				//forwardVec.removeComponent(ground_normal);
 				multiplier = forwardVec.x * ground_normal.x + forwardVec.y * ground_normal.y + forwardVec.z * ground_normal.z;
