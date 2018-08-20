@@ -21,37 +21,49 @@ import arena.pathfinding.GKNode;
 import de.polygonal.ds.Graph;
 */
 
+// CORE Game/Framework
 import ashpc.CreateScript;
+import systems.player.PlayerAction;
+import systems.SystemPriorities;
 
-///*  Ellipsoid collider for collision scene package
-import systems.collisions.EllipsoidCollider;
-#if !flash9
-import jeash.geom.Vector3D;
-#end
-//*/
+// CORE Ash
+import ash.core.Entity;
+import ash.core.System;
+import ash.core.Engine;
+import ash.fsm.EngineState; // you may omit this if you aren't using FSM for engine
+
+// Packaged components and systems
+import ashpc.Components;
+import ashpc.Systems;
 
 ///*  Collision scene package
+// ///* If you're gonna set up a collision scene in Playcanvas, these packages are all usually required.
 import altern.collisions.CollisionBoundNode;
 import components.Transform3D;
 import util.geom.Geometry;
+import util.geom.GeomCollisionSceneUtil;
+import util.geom.GeomUtil;
+import altern.partition.js.BVHTree;	// this package required for optimizing "staticCollisionMesh" scripts!
 //*/
 
-///*  Raycasting package
+
+// EXTRA HAXE PACKAGES BELOW
+
+///*  Ellipsoid collider standalone usage
+import systems.collisions.EllipsoidCollider;
+#if !flash9
+import jeash.geom.Vector3D;	// generally useful in certain cases depending on type requirements
+#end
+//*/
+
+///*  Raycasting standalone usage
 import altern.ray.Raycaster;
 //*/
 
-///*  Geometry/Collision utilities
-import util.geom.GeomUtil;
-import util.geom.GeomCollisionSceneUtil;
-//*/
 
 /* Culling/clipping package
 import altern.culling.CullingPlane;
 */
-
-///* BVH-JS Package
-import altern.partition.js.BVHTree;
-//*/
 
 
 /*  Serialization package
