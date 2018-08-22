@@ -24,10 +24,10 @@ class CreateScript
 			jsThis.entity.ash.add(c, chkClass);
 			jsThis.c = c;
 
-			if (jsThis._liveDebug) {
+			if (jsThis._liveEdit) {
 					if (attributes != null) {
 					jsThis.on("attr", function(p, value) {
-						if (p == "_liveDebug") {
+						if (p == "_liveEdit") {
 							return;
 						}
 						untyped c[p] = value;
@@ -48,8 +48,8 @@ class CreateScript
 			for (p in attributeFields) {
 				s.attributes.add(p, untyped attributes[p]);
 			}
+			s.attributes.add("_liveEdit", { type:"boolean"} );
 		}
-		s.attributes.add("_liveDebug", { type:"boolean"} );
 	}
 	
 	public static var jsThis(get, never):Dynamic;

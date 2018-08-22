@@ -21,6 +21,9 @@ import arena.pathfinding.GKNode;
 import de.polygonal.ds.Graph;
 */
 
+// HAXE utilities
+import util.LibUtil;
+;
 // CORE Game/Framework
 import ashpc.CreateScript;
 import systems.player.PlayerAction;
@@ -35,10 +38,12 @@ import ash.fsm.EngineState; // you may omit this if you aren't using FSM for eng
 ///*  Collision scene package
 // ///* If you're gonna set up a collision scene in Playcanvas, these packages are all usually required.
 import altern.collisions.CollisionBoundNode;
+import util.geom.AABBUtils;
 import components.Transform3D;
+import components.BoundBox;
 import util.geom.Geometry;
-import util.geom.GeomCollisionSceneUtil;
-import util.geom.GeomUtil;
+import systems.collisions.ITCollidable;
+import altern.ray.IRaycastImpl;
 import altern.partition.js.BVHTree;	// this package required for optimizing "staticCollisionMesh" scripts!
 //*/
 

@@ -179,7 +179,7 @@ class CollisionBoundNode implements IECollidable
 			collider.calculateSphere(child.globalToLocalTransform);
 			if (child.boundBox != null) {
 				
-				intersects = AABBUtils.checkSphere(boundBox, collider.sphere); // child.boundBox.checkSphere(collider.sphere);
+				intersects = AABBUtils.checkSphere(child.boundBox, collider.sphere); // child.boundBox.checkSphere(collider.sphere);
 			}
 			
 			// Adding the geometry of self content

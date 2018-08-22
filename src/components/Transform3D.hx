@@ -43,6 +43,7 @@ class Transform3D
 			l = 0;
 		}
 
+		///*
 public function compose(x:Float, y:Float, z:Float, rotationX:Float, rotationY:Float, rotationZ:Float, scaleX:Float, scaleY:Float, scaleZ:Float):Void {
 var cosX:Float = Math.cos(rotationX);
 var sinX:Float = Math.sin(rotationX);
@@ -70,7 +71,38 @@ j = cosY*sinXscaleY;
 k = cosY*cosXscaleZ;
 l = z;
 }
+//*/
+/*
+public function compose(x:Float, y:Float, z:Float, rotationX:Float, rotationY:Float, rotationZ:Float, scaleX:Float, scaleY:Float, scaleZ:Float):Void {
+var cosX:Float = Math.cos(-rotationX);
+var sinX:Float = Math.sin(-rotationX);
+var cosY:Float = Math.cos(-rotationY);
+var sinY:Float = Math.sin(-rotationY);
+var cosZ:Float = Math.cos(-rotationZ);
+var sinZ:Float = Math.sin(-rotationZ);
+var cosZsinY:Float = cosZ*sinY;
+var sinZsinY:Float = sinZ*sinY;
+var cosYscaleX:Float = cosY*scaleX;
+var sinXscaleY:Float = sinX*scaleY;
+var cosXscaleY:Float = cosX*scaleY;
+var cosXscaleZ:Float = cosX*scaleZ;
+var sinXscaleZ:Float = sinX*scaleZ;
+a = cosZ*cosYscaleX;
+b = cosZsinY*sinXscaleY + sinZ*cosXscaleY;
+c = cosZsinY*cosXscaleZ - sinZ*sinXscaleZ;
+d = x;
+e = sinZ*cosYscaleX;
+f = sinZsinY*sinXscaleY - cosZ*cosXscaleY;
+g = sinZsinY*cosXscaleZ + cosZ*sinXscaleZ;
+h = y;
+i = sinY*scaleX;
+j = cosY*sinXscaleY;
+k = cosY*cosXscaleZ;
+l = z;
+}
+*/
 
+/* // TODO 
 public function composeInverse(x:Float, y:Float, z:Float, rotationX:Float, rotationY:Float, rotationZ:Float, scaleX:Float, scaleY:Float, scaleZ:Float):Void {
 var cosX:Float = Math.cos(rotationX);
 var sinX:Float = Math.sin(-rotationX);
@@ -96,6 +128,8 @@ j = cosZ*sinXscaleZ + sinY*sinZ*cosXscaleZ;
 k = cosY*cosXscaleZ;
 l = -i*x - j*y - k*z;
 }
+*/
+
 
 public function invert():Void {
 var ta:Float = a;
@@ -139,6 +173,7 @@ j = vector[9];
 k = vector[10];
 l = vector[11];
 }
+
 
 public function append(transform:Transform3D):Void {
 var ta:Float = a;

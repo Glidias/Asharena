@@ -30,16 +30,22 @@ import components.CollisionResult;
 import components.controller.SurfaceMovement;
 import components.Jump;
 
+import util.LibUtil;
+
 #if !flash9
 import jeash.geom.Vector3D;
 #end
 import util.geom.Vec3;
 //*/
 
-///*  Collision scene package
+///*  Collision scene package and utilities
 import altern.collisions.CollisionBoundNode;
+import util.geom.AABBUtils;
 import components.Transform3D;
+import components.BoundBox;
 import util.geom.Geometry;
+import systems.collisions.ITCollidable;
+import altern.ray.IRaycastImpl;
 //*/
 
 ///*  Raycasting package
