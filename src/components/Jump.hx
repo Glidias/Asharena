@@ -45,5 +45,17 @@ class Jump
 		}
 		return result;
 	}
+	
+	inline public function attemptJumpY(velocity:Vec3, time:Float):Bool {
+		var result:Bool = enabled && this.jump_timer <= 0;
+		if (result)
+		{
+				
+			velocity.y += jump_speed;
+			jump_timer = JUMP_COOLDOWN;     
+			
+		}
+		return result;
+	}
 
 }
