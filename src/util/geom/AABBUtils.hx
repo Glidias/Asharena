@@ -1,5 +1,6 @@
 package util.geom;
 import components.BoundBox;
+import components.Transform3D;
 
 #if nme
 import nme.geom.Rectangle;
@@ -47,6 +48,85 @@ class AABBUtils
 	}
 	
 	
+	public static inline function transform(aabb:BoundBox, t:Transform3D):Void {
+
+		var minX = aabb.minX;
+		var minY = aabb.minY;
+		var minZ = aabb.minZ;
+		var maxX = aabb.maxX;
+		var maxY = aabb.maxY;
+		var maxZ = aabb.maxZ;
+		AABBUtils.reset(aabb);
+		
+		var x = minX;
+		var y = minY;
+		var z = minZ;
+		var ex;
+		var ey; 
+		var ez;
+		ex = x * t.a + y * t.b + z * t.c + t.d;
+		ey = x * t.e + y * t.f + z * t.g + t.h;
+		ez = x * t.i + y * t.j + z * t.k + t.l;
+		AABBUtils.expand(ex, ey, ez, aabb);
+		
+		x = maxX;
+		y = minY;
+		z = minZ;
+		ex = x * t.a + y * t.b + z * t.c + t.d;
+		ey = x * t.e + y * t.f + z * t.g + t.h;
+		ez = x * t.i + y * t.j + z * t.k + t.l;
+		AABBUtils.expand(ex, ey, ez, aabb);
+		
+		x = minX;
+		y = maxY;
+		z = minZ;
+		ex = x * t.a + y * t.b + z * t.c + t.d;
+		ey = x * t.e + y * t.f + z * t.g + t.h;
+		ez = x * t.i + y * t.j + z * t.k + t.l;
+		AABBUtils.expand(ex, ey, ez, aabb);
+		
+		x = minX;
+		y = minY;
+		z = maxZ;
+		ex = x * t.a + y * t.b + z * t.c + t.d;
+		ey = x * t.e + y * t.f + z * t.g + t.h;
+		ez = x * t.i + y * t.j + z * t.k + t.l;
+		AABBUtils.expand(ex, ey, ez, aabb);
+		
+		x = aabb.maxX;
+		y = aabb.maxY;
+		z = aabb.minZ;
+		ex = x * t.a + y * t.b + z * t.c + t.d;
+		ey = x * t.e + y * t.f + z * t.g + t.h;
+		ez = x * t.i + y * t.j + z * t.k + t.l;
+		AABBUtils.expand(ex, ey, ez, aabb);
+		
+		x = minX;
+		y = maxY;
+		z = maxZ;
+		ex = x * t.a + y * t.b + z * t.c + t.d;
+		ey = x * t.e + y * t.f + z * t.g + t.h;
+		ez = x * t.i + y * t.j + z * t.k + t.l;
+		AABBUtils.expand(ex, ey, ez, aabb);
+		
+		x = maxX;
+		y = minY;
+		z = maxZ;
+		ex = x * t.a + y * t.b + z * t.c + t.d;
+		ey = x * t.e + y * t.f + z * t.g + t.h;
+		ez = x * t.i + y * t.j + z * t.k + t.l;
+		AABBUtils.expand(ex, ey, ez, aabb);
+		
+		
+		x = aabb.maxX;
+		y = aabb.maxY;
+		z = aabb.maxZ;
+		ex = x * t.a + y * t.b + z * t.c + t.d;
+		ey = x * t.e + y * t.f + z * t.g + t.h;
+		ez = x * t.i + y * t.j + z * t.k + t.l;
+		AABBUtils.expand(ex, ey, ez, aabb);
+	}
+	
 	
 	public static inline function match(aabb:BoundBox, refAABB:BoundBox):Void {
 		aabb.minX = refAABB.minX;
@@ -57,6 +137,7 @@ class AABBUtils
 		aabb.maxY = refAABB.maxY;
 		aabb.maxZ = refAABB.maxZ;
 	}
+	
 	
 	public static inline function reset(aabb:BoundBox):Void {
 		aabb.minX = MAX_VALUE;
