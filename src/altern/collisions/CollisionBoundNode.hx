@@ -150,6 +150,7 @@ class CollisionBoundNode implements IECollidable
 			childDirection.z = child.inverseTransform.i * direction.x + child.inverseTransform.j * direction.y + child.inverseTransform.k * direction.z;
 			childDirection.w = minTime;
 			if (child.boundBox != null && !AABBUtils.intersectRay(child.boundBox, childOrigin, childDirection) ) {
+				child = child.next;
 				continue;
 			}
 			var data:Vector3D =  child.intersectRay(childOrigin, childDirection, output);
