@@ -59,6 +59,7 @@ import util.geom.GeomCollisionSceneUtil;
 
 ///* Culling/clipping package
 import altern.culling.CullingPlane;
+import altern.culling.DefaultCulling;
 //*/
 
 ///* BVH-JS Package

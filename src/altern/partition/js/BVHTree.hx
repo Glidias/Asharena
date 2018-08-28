@@ -122,8 +122,7 @@ class BVHTree
 			}
 		}
 		if (ii > 0) {
-			geom.numIndices = ii;
-			geom.numVertices = Std.int(vi / 3);
+			geom.numVertices = geom.numIndices = ii;
 			collider.addGeometry(geom, baseTransform);
 		}
 	}
