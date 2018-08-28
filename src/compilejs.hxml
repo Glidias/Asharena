@@ -1,5 +1,4 @@
 -js bin/ArenaHaxeJS.js
 -main MainJS
--lib hxbit
 -D triOnly
 -dce no
