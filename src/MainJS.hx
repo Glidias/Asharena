@@ -46,6 +46,8 @@ import components.BoundBox;
 import util.geom.Geometry;
 import systems.collisions.ITCollidable;
 import altern.ray.IRaycastImpl;
+import altern.collisions.dbvt.DBVT;
+import altern.collisions.dbvt.DBVTProxy;
 //*/
 
 ///*  Raycasting package
