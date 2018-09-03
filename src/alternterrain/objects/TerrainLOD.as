@@ -872,35 +872,20 @@ package alternterrain.objects
 				return culling;
 		}
 		
-		public function triInFrustum(frustum:CullingPlane, ax:Number, ay:Number , az:Number, bx:Number , by:Number, bz:Number, cx:Number, cy:Number, cz:Number, frustumCorners:Vector.<Vector3D>):Boolean {
-			var p:Vector3D = frustumCorners[0];
-			var count:int = 0;
-			for (var plane:CullingPlane = frustum; plane.next != null; plane = plane.next) {
-				if ((ax-p.x) * plane.x + (ay-p.y) * plane.y * (az-p.z) * plane.z < 0 && 
-				(bx-p.x)  * plane.x + (by-p.y) * plane.y * (bz-p.z) * plane.z < 0 && 
-				(cx - p.x) * plane.x + (cy - p.y) * plane.y * (cz - p.z) * plane.z < 0  ) {
-					
+		public function triInFrustum(frustum:CullingPlane, ax:Number, ay:Number , az:Number, bx:Number , by:Number, bz:Number, cx:Number, cy:Number, cz:Number):Boolean {
+			for (var plane:CullingPlane = frustum; plane != null; plane = plane.next) {
+				if (ax * plane.x + ay * plane.y + az * plane.z < plane.offset && 
+				bx  * plane.x + by * plane.y + bz * plane.z < plane.offset && 
+				cx * plane.x + cy * plane.y + cz * plane.z < plane.offset  ) {
 					return false;
 				}
-				count++;
 			}
-			p = frustumCorners[1];
-			if ((ax-p.x) * plane.x + (ay-p.y) * plane.y * (az-p.z) * plane.z < 0 && 
-				(bx-p.x)  * plane.x + (by-p.y) * plane.y * (bz-p.z) * plane.z < 0 && 
-				(cx - p.x) * plane.x + (cy - p.y) * plane.y * (cz - p.z) * plane.z < 0  ) {
-				
-				return false;
-			}
-			
 			return true;
 		}
 		
 		
 		public function cullingInFrustum2(frustum:CullingPlane, culling:int, minX:Number, minY:Number, minZ:Number, maxX:Number, maxY:Number, maxZ:Number):int 
 		{
-			
-	
-
 				if (maxZ < waterLevel) return -1;		
 				
 				var temp:Number = minY;
@@ -1683,15 +1668,10 @@ package alternterrain.objects
 					var o:int;
 					o =  QUAD_OFFSETS[index];
 					c = s.Child[index];  
-					var minX:Number = cd.xorg + ((o & 1) ? half : 0);
-					var minY:Number = cd.zorg + ((o & 2) ? half : 0);
-					var maxX:Number = cd.xorg + ((o & 1) ? full : half);
-					var maxY:Number =  cd.zorg + ((o & 2) ? full : half);
-					var temp:Number = minY;
-					minY = -maxY;
-					maxY = -temp;
-					cCulling = frustumCorners[1].x < minX || frustumCorners[1].x > maxX || frustumCorners[1].y < minY || frustumCorners[1].y > maxY ? -1 : 0; 
+					
+					cCulling = culling == 0 ? 0 :  cullingInFrustum2(frustum, culling, cd.xorg + ((o & 1) ? half : 0), cd.zorg + ((o & 2) ? half : 0), c.MinY, cd.xorg + ((o & 1) ? full : half), cd.zorg + ((o & 2) ? full : half), c.MaxY) // frustumCorners[1].x < minX || frustumCorners[1].x > maxX || frustumCorners[1].y < minY || frustumCorners[1].y > maxY ? -1 : 0; 
 					if (cCulling >= 0) {
+						
 						q = QuadChunkCornerData.create();  
 						s.SetupCornerData(q, cd, index);
 						collectTrisForFrustumOfNode(q, frustum, frustumCorners, vertices, indices, cCulling);
@@ -1771,8 +1751,8 @@ package alternterrain.objects
 					if (h > highest) highest = h;
 					
 					var minX:Number = xi * tileSize + hxorg;
-					var minY:Number = -yi * tileSize +  hzorg;
-					var maxY:Number = minY + tileSize;
+					var minY:Number = yi * tileSize +  hzorg;
+					var maxY:Number = maxY + tileSize;
 					var maxX:Number = maxX + tileSize;
 					var boundIntersects:Boolean = cullingInFrustum2(frustum, culling, minX, minY, lowest, maxX, maxY, highest) >= 0;
 					if (!boundIntersects) continue;
@@ -1824,7 +1804,7 @@ package alternterrain.objects
 						}
 					}
 					
-					if ( triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz, frustumCorners) ) {
+					if ( different && triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz) && different   ) {
 						indices[ii++] = vi * vMult;
 						vertices[vi++] = ax;
 						vertices[vi++] = ay;
@@ -1887,7 +1867,7 @@ package alternterrain.objects
 						}
 					}
 					
-					if ( triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz, frustumCorners)) {
+					if (different && triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)   ) {
 						indices[ii++] = vi * vMult;
 						vertices[vi++] = ax;
 						vertices[vi++] = ay;
