@@ -20,6 +20,7 @@ package altern.collisions.dbvt;
 
 import altern.ray.IRaycastImpl;
 import components.Transform3D;
+import jeash.geom.Vector3D;
 import systems.collisions.EllipsoidCollider;
 import systems.collisions.ITCollidable;
 import util.TypeDefs;
@@ -444,6 +445,7 @@ class DBVT implements ITCollidable implements IRaycastImpl {
     }
 
 	
+	
 	/* INTERFACE systems.collisions.ITCollidable */
 	
 	public function collectGeometryAndTransforms(collider:EllipsoidCollider, baseTransform:Transform3D):Void 
@@ -464,7 +466,13 @@ class DBVT implements ITCollidable implements IRaycastImpl {
 				}
 				
 				if (node.proxy != null && node.proxy.collidable != null) {
-					node.proxy.collidable.collectGeometryAndTransforms(collider, baseTransform);
+					if (node.proxy.transform != null) {
+						node.proxy.globalToLocalTransform.combine(node.proxy.inverseTransform, collider.matrix);
+						collider.calculateSphere(node.proxy.globalToLocalTransform);
+						node.proxy.localToGlobalTransform.combine(collider.inverseMatrix, node.proxy.transform); 
+						node.proxy.collidable.collectGeometryAndTransforms(collider, node.proxy.localToGlobalTransform);
+					}
+					else node.proxy.collidable.collectGeometryAndTransforms(collider, baseTransform);
 				}
 			}
 		}
@@ -473,6 +481,8 @@ class DBVT implements ITCollidable implements IRaycastImpl {
 	
 	
 	/* INTERFACE altern.ray.IRaycastImpl */
+	
+
 	
 	public function intersectRay(origin:Vector3D, direction:Vector3D, output:Vector3D):Vector3D 
 	{
@@ -487,6 +497,9 @@ class DBVT implements ITCollidable implements IRaycastImpl {
 		while (--s >= 0) {
 			var node = stack[s];
 			if ( GeomUtil.boundIntersectRay(origin, direction, node.aabb.minX, node.aabb.minY, node.aabb.minZ, node.aabb.maxX, node.aabb.maxY, node.aabb.maxZ, output) ) {
+				
+				
+				
 				if (node.child1!=null) {
 					stack[s++] = node.child1;
 				}
@@ -495,8 +508,26 @@ class DBVT implements ITCollidable implements IRaycastImpl {
 					stack[s++] = node.child2;
 				}
 				
+				
+				
 				if (node.proxy != null && node.proxy.raycastable != null) {
-					var data:Vector3D =  node.proxy.raycastable.intersectRay(origin, direction, output);
+					var childOrigin:Vector3D = output;
+					var childDirection:Vector3D = direction;
+					if (node.proxy.transform != null) {
+						childOrigin = new Vector3D();
+						childDirection = new Vector3D();
+						var childInverseTransform:Transform3D = node.proxy.inverseTransform;
+						childOrigin.x = childInverseTransform.a*origin.x + childInverseTransform.b*origin.y + childInverseTransform.c*origin.z + childInverseTransform.d;
+						childOrigin.y = childInverseTransform.e*origin.x + childInverseTransform.f*origin.y + childInverseTransform.g*origin.z + childInverseTransform.h;
+						childOrigin.z = childInverseTransform.i*origin.x + childInverseTransform.j*origin.y + childInverseTransform.k*origin.z + childInverseTransform.l;
+						childDirection.x = childInverseTransform.a*direction.x + childInverseTransform.b*direction.y + childInverseTransform.c*direction.z;
+						childDirection.y = childInverseTransform.e*direction.x + childInverseTransform.f*direction.y + childInverseTransform.g*direction.z;
+						childDirection.z = childInverseTransform.i * direction.x + childInverseTransform.j * direction.y + childInverseTransform.k * direction.z;
+						childDirection.w = minTime;
+					}
+					
+					
+					var data:Vector3D =  node.proxy.raycastable.intersectRay(childOrigin, childDirection, output);
 					if (data != null && data.w < minTime) {
 						minTime = data.w;
 						minData = data;
