@@ -137,6 +137,14 @@ class AABBUtils
 		aabb.maxZ = refAABB.maxZ;
 	}
 	
+	public static inline function setToMax(aabb:BoundBox):Void {
+		aabb.minX = -MAX_VALUE;
+		aabb.minY = -MAX_VALUE;
+		aabb.minZ = -MAX_VALUE;
+		aabb.maxX = MAX_VALUE;
+		aabb.maxY = MAX_VALUE;
+		aabb.maxZ = MAX_VALUE;
+	}
 	
 	public static inline function reset(aabb:BoundBox):Void {
 		aabb.minX = MAX_VALUE;
