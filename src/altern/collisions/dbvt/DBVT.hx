@@ -448,15 +448,23 @@ class DBVT implements ITCollidable implements IRaycastImpl {
 	
 	/* INTERFACE systems.collisions.ITCollidable */
 	
+	static var COLLIDER_SPHERE:Vector3D = new Vector3D();
+	
 	public function collectGeometryAndTransforms(collider:EllipsoidCollider, baseTransform:Transform3D):Void 
 	{
 		var s:Int = 0;
 		var stack = _stack;
 		stack[s++] = root;
+		var colliderSphere = COLLIDER_SPHERE;
+		colliderSphere.x = collider.sphere.x;
+		colliderSphere.y = collider.sphere.y;
+		colliderSphere.z = collider.sphere.z;
+		colliderSphere.w = collider.sphere.w;
 		
 		while ( --s >= 0) {
 			var node = stack[s];
-			if ( GeomUtil.boundIntersectSphere(collider.sphere, node.aabb.minX, node.aabb.minY, node.aabb.minZ, node.aabb.maxX, node.aabb.maxY, node.aabb.maxZ) ) {
+			
+			if ( GeomUtil.boundIntersectSphere(colliderSphere, node.aabb.minX, node.aabb.minY, node.aabb.minZ, node.aabb.maxX, node.aabb.maxY, node.aabb.maxZ) ) {
 				if (node.child1!=null) {
 					stack[s++] = node.child1;
 				}
