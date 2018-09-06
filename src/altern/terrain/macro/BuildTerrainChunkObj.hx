@@ -68,7 +68,7 @@ class BuildTerrainChunkObj
 		heightMap.flatten();
 		//heightMap.setFromBytes(
 		
-		var vnBuffer:String = "0 1 0\n";
+		var vnBuffer:String = "vn 0 1 0\ng terrain\ns 1\n";
 		var iBuffer:StringBuf = new StringBuf();
 		var i:Int = 0;
 		var len:Int = protoG.geometry.indices.length;
