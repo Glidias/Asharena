@@ -2,6 +2,7 @@ package altern.terrain;
 
 import de.polygonal.ds.NativeInt32Array;
 import de.polygonal.ds.tools.NativeInt32ArrayTools;
+import haxe.io.Bytes;
 
 import hxbit.Serializable;
 
@@ -396,6 +397,46 @@ Data = result;
 		me.ZSize = RowWidth;
 		me.Data =  NativeInt32ArrayTools.alloc(RowWidth * RowWidth);
 		return me;
+	}
+	
+	public function setFromBytes(bytes:Bytes, heightMult:Float, patchesAcross:Int, heightMin:Int=0, tileSize:Int=256):Void 
+	{
+		if (!isBase2(tileSize)) throw ("Tile size isn't base 2!");
+		Scale = Math.round( Math.log((tileSize) ) * PMath.LOG2E );
+		var bWidth:Int; var bHeight:Int;
+		var vertsX:Int = bWidth = patchesAcross + 1;
+		var vertsY:Int = bHeight = patchesAcross + 1;
+		
+		RowWidth = vertsX;
+		XSize = RowWidth;
+		ZSize = vertsY;
+		
+		//if (Data == null) {
+		var data:NativeInt32Array = Data = NativeInt32ArrayTools.alloc((vertsX) * (vertsX));
+		//}
+		var by:Int = patchesAcross + 1;
+
+		var lastValue:UInt = 0;
+		var x:Int = 0;
+		var y:Int = 0;
+		var pos:Int = 0;
+		while (x<  patchesAcross ) {
+			y = 0; 
+			//var x:int = 0; x < patchesAcross; x++
+			while ( y < patchesAcross) {
+				var xer:Int = x < bWidth ? x : bWidth - 1;
+				var yer:Int = y < bHeight ? y : bHeight - 1;
+				data[y * by  +  x] = Std.int(heightMin + (lastValue = bytes.get(pos++)) * heightMult);
+			}
+			data[y * by + x] = Std.int(heightMin + lastValue * heightMult);
+			y++;
+		}
+		x = 0; 
+		while (x < by) {
+			data[y * by + x] = data[(y - 1) * by + x];
+			x++;
+		}
+		
 	}
 	
 	/*
