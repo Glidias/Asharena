@@ -112,7 +112,7 @@ class BuildTerrainChunkObj
 					//heightMap[yi*SRC_SIZE];
 					//heightMap[Std.int(z / patchSize)];
 					vBuffer.add('v ${x} ${y} ${z}\n');
-					vtBuffer.add('vt ${x/MAP_SIZE_METERS} ${y/MAP_SIZE_METERS} ${z/MAP_SIZE_METERS}\n');
+					vtBuffer.add('vt ${x/MAP_SIZE_METERS} ${z/MAP_SIZE_METERS}\n');
 					i += 3;
 				}
 				File.saveContent(EXPORT_PATH_PREFIX+"chunks_high/"+x+"_"+y+".obj", vBuffer.toString() + vtBuffer.toString() + vnBuffer + iBuffer.toString() );
@@ -147,7 +147,7 @@ class BuildTerrainChunkObj
 						//heightMap[yi*SRC_SIZE];
 						//heightMap[Std.int(z / patchSize)];
 						vBuffer.add('v ${x} ${y} ${z}\n');
-						vtBuffer.add('vt ${x/MAP_SIZE_METERS} ${y/MAP_SIZE_METERS} ${z/MAP_SIZE_METERS}\n');
+						vtBuffer.add('vt ${x/MAP_SIZE_METERS} ${z/MAP_SIZE_METERS}\n');
 						i += 3;
 					}
 					File.saveContent(EXPORT_PATH_PREFIX+"chunks_low/"+x+"_"+y+".obj", vBuffer.toString() + vtBuffer.toString() + vnBuffer + iBufferLite.toString() );
