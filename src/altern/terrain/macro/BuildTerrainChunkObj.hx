@@ -58,9 +58,11 @@ class BuildTerrainChunkObj
 		if (!FileSystem.exists(EXPORT_PATH_PREFIX + "chunks_high") || !FileSystem.isDirectory(EXPORT_PATH_PREFIX + "chunks_high")) {
 			FileSystem.createDirectory(EXPORT_PATH_PREFIX + "chunks_high");
 		}
-		if (!FileSystem.exists(EXPORT_PATH_PREFIX + "chunks_low") || !FileSystem.isDirectory(EXPORT_PATH_PREFIX + "chunks_low")) {
-			FileSystem.createDirectory(EXPORT_PATH_PREFIX + "chunks_low");
+		else {
+			//FileSystem.deleteDirectory(EXPORT_PATH_PREFIX + "chunks_high");
+			//FileSystem.createDirectory(EXPORT_PATH_PREFIX + "chunks_high");
 		}
+		
 		var heightMap:HeightMapInfo = new HeightMapInfo();
 		heightMap.setFlat(CHUNK_SIZE, 256);
 		heightMap.flatten();
@@ -118,7 +120,15 @@ class BuildTerrainChunkObj
 		}
 		trace("...commpleted HiRes...");
 		
-		if (protoGLowRes!=null) {
+		if (protoGLowRes != null) {
+			if (!FileSystem.exists(EXPORT_PATH_PREFIX + "chunks_low") || !FileSystem.isDirectory(EXPORT_PATH_PREFIX + "chunks_low")) {
+				FileSystem.createDirectory(EXPORT_PATH_PREFIX + "chunks_low");
+			}
+			else {
+				//FileSystem.deleteDirectory(EXPORT_PATH_PREFIX + "chunks_low");
+				//FileSystem.createDirectory(EXPORT_PATH_PREFIX + "chunks_low");
+			}
+		
 			for (x in 0...chunkLen) {
 				for (y in 0...chunkLen) {
 					var vBuffer:StringBuf = new StringBuf();
@@ -126,9 +136,9 @@ class BuildTerrainChunkObj
 					var i:Int = 0;
 					var len:Int = protoGLowRes.geometry.vertices.length;
 					while (i < len) {
-						var x:Float = protoG.geometry.vertices[i] + 256*x;
-						var y:Float = protoG.geometry.vertices[i+1];
-						var z:Float = protoG.geometry.vertices[i + 2] + 256*y;
+						var x:Float = protoGLowRes.geometry.vertices[i] + 256*x;
+						var y:Float = protoGLowRes.geometry.vertices[i+1];
+						var z:Float = protoGLowRes.geometry.vertices[i + 2] + 256*y;
 						var xi:Int = Std.int(x / 256);
 						var yi:Int = Std.int(y / 256);
 						x *= HL256_TO_METERS;
