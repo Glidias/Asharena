@@ -14,10 +14,10 @@ package tests.pvp
 	 */
 	public class TestTerrainSplatGenner extends Sprite 
 	{
-		[Embed(source="../../../bin/assets/terrains/57738-3s_elevation.bin", mimeType="application/octet-stream")]
+		[Embed(source="../../../bin/assets/terrains/63058-9p_elevation.bin", mimeType="application/octet-stream")]
 		public static var ELEVATION_CLS:Class;
 		
-		[Embed(source="../../../bin/assets/terrains/57738-3s_moisture.bin", mimeType="application/octet-stream")]
+		[Embed(source="../../../bin/assets/terrains/63058-9p_moisture.bin", mimeType="application/octet-stream")]
 		public static var MOISTURE_CLS:Class;
 		/*
 		Generating splat map from Moisture Map + Height Map
@@ -49,34 +49,34 @@ package tests.pvp
 		
 		///*
 		private static var BIOMES:Array = [
-			[100, 0, 0, 0],
-			[95, 5, 0, 0],
-			[90, 10, 0, 0],
-			[70, 30, 0, 0],
-			[60, 40, 0, 0],
-			[100, 0, 0, 0],
-			[100, 0, 0, 0],
-			[90, 10, 0, 0],
-			[80, 20, 0, 0],
-			[60, 40, 0, 0],
-			[0, 0, 100, 0],
-			[0, 0, 70, 30],
-			[0, 0, 0, 100]
+			[100, 0, 0, 0], // SCORCHED
+			[95, 5, 0, 0],  // BARE
+			[90, 10, 0, 0], // TEMPERATE DESERT
+			[85, 15, 0, 0], // SHRUBLAND
+			[80, 20, 0, 0], //SUBTROPICAL DESERT
+			[0, 100, 0, 0], // GRASSLAND
+			[0, 100, 0, 0], //TROPICAL RAINFOREST
+			[0, 90, 10, 0], //TEMPERATE RAINFOREST
+			[0, 80, 20, 0],  //   TROPICAL SEASONAL FOREST
+			[0, 60, 40, 0],  //   TEMPERATE DECIDIOUS FOREST
+			[0, 0, 100, 0], // TAIGA
+			[0, 0, 90, 10],  // TUNDRA
+			[0, 0, 0, 100]	// SNOW
 		];
 		//*/
 		
 		
 		private static var MOISTURE:Array = [
-			[4,2,2,0],
-			[5,5,2,1],
-			[6,7,3,12],
-			[6,9,3,12],
-			[6,9,10,12],
-			[6,7,10,12]
+			[4,2,2,2,2,0],
+			[5,5,5,2,2,1],
+			[6,7,7,3,3,12],
+			[6,9,9,3,3,12],
+			[6,9,9,10,10,12],
+			[6,7,7,10,10,12]
 		];
 		
 		private static const  BASE:int = 256;
-		private static const HEIGHT_LEN:int = 4;
+		private static const HEIGHT_LEN:int = 6;
 
 
 		private function lerp(value1:Number, value2:Number, amount:Number):Number {
@@ -111,13 +111,17 @@ package tests.pvp
 			var right:Vector3D = new Vector3D();
 			var result:Vector3D = new Vector3D();
 			var heightData:BitmapData = new BitmapData(2048, 2048, false, 0);
-			for (var y:int = 0; y < 2048; y++) {
+			for (var x:int = 0; x < 2048; x++) {
 
-				for (var x:int = 0; x < 2048; x++) {
+				for (var y:int = 0; y < 2048; y++) {
 					var elev:int = elevationBytes.readUnsignedByte();
+					var gradient:Number;
+					//gradient = ((elev & 0xFF0000) >> 16) / 255 * 0.3 +((elev & 0x00FF) >> 8) / 255 * 0.59 + (elev & 0xFF) / 255 * 0.11;
+					//gradient *= 255;
+					gradient = elev;
 					var mois:int = moistureBytes.readUnsignedByte();
 					var M:int = Math.floor(mois / BASE * MOISTURE.length);
-					var H:int = Math.floor(elev / BASE * HEIGHT_LEN);
+					var H:int = Math.floor(gradient / BASE * HEIGHT_LEN);
 					var M2:int = M < MOISTURE.length -1 ? M + 1 : M;
 					var H2:int = H < HEIGHT_LEN - 1 ? H + 1 : H;
 					
@@ -142,7 +146,7 @@ package tests.pvp
 					sample = BIOMES[MOISTURE[M2][H2]]; sampleVec = m2h2;
 					sampleVec.x = sample[0] / 100; sampleVec.y = sample[1] / 100; sampleVec.z = sample[2] / 100; sampleVec.w = sample[3] / 100;
 					
-					var blendedH:Number = elev / BASE * HEIGHT_LEN - H;
+					var blendedH:Number = gradient / BASE * HEIGHT_LEN - H;
 					var mBlend:Number = mois / BASE * MOISTURE.length - M;
 					if (blendedH > 1 || blendedH < 0) throw new Error("invalid BlendH:"+blendedH);
 					if (mBlend > 1 || mBlend < 0) throw new Error("invalid mBlend:"+mBlend + " :" + mois);
@@ -157,15 +161,17 @@ package tests.pvp
 					var g:int = Math.round(result.y * 255) << 8;
 					var b:int = Math.round(result.z * 255);
 					
-					//bitmapData.setPixel32(x, y, (255<<24) | r | g | b );
-					bitmapData.setPixel32(x, y, r | g | b | a);
+					bitmapData.setPixel32(x, y, (255<<24) | r | g | b );
+					//bitmapData.setPixel32(x, y, r | g | b | a);
 					heightData.setPixel(x, y,  (elev<<16) | (elev<<8) | elev);
 					alphaBitmapData.setPixel(x, y, (alpha255<<16)|(alpha255<<8)|alpha255);		
 				}
 			}
 			
-			new FileReference().save( PNGEncoder.encode(bitmapData) );
-			//new FileReference().save( PNGEncoder.encode(alphaBitmapData) );
+			//new FileReference().save( PNGEncoder.encode(heightData) );
+			
+			//new FileReference().save( PNGEncoder.encode(bitmapData) );
+			new FileReference().save( PNGEncoder.encode(alphaBitmapData) );
 			
 		} 
 		
