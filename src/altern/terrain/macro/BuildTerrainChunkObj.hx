@@ -30,7 +30,7 @@ class BuildTerrainChunkObj
 	//0.01905 scale to represent 256 HL Unit tile.
 	
 	// SRC files
-	static inline var IMPORT_HEIGHTMAP:String = "bin/assets/terrains/63058-9p_elevation.bin";
+	static inline var IMPORT_HEIGHTMAP:String = "bin/assets/terrains/85882-80p_elevation.bin";
 	
 	// Configurables
 	static inline var SRC_SIZE:Int = 2048;
@@ -78,18 +78,24 @@ class BuildTerrainChunkObj
 			//FileSystem.createDirectory(EXPORT_PATH_PREFIX + "chunks_high");
 		}
 		
-		if (!FileSystem.exists(IMPORT_HEIGHTMAP) || FileSystem.isDirectory(IMPORT_HEIGHTMAP)) {
-			throw "No IMPORT_HEIGHTMAP file found";
-		}
+		
 		
 		var heightMap:HeightMapInfo = new HeightMapInfo();
 		heightMap.XOrigin = 0;
 		heightMap.ZOrigin = 0;
-		//heightMap.setFlat(CHUNK_SIZE, 256);
-		//heightMap.flatten();
 		
-		heightMap.setFromBytes( File.read(IMPORT_HEIGHTMAP).readAll(), (HEIGHT_MAX_METERS - HEIGHT_MIN_METERS) * METERS_TO_HL256 / 255, MAP_SIZE, Std.int(HEIGHT_MIN_METERS * METERS_TO_HL256), 256);
-		trace("Set up heightmap ref src...");
+		if (!FileSystem.exists(IMPORT_HEIGHTMAP) || FileSystem.isDirectory(IMPORT_HEIGHTMAP)) {
+			trace( "No IMPORT_HEIGHTMAP file found.");
+			throw "Could not resolve IMPORT_HEIGHTMAP filepath";
+			heightMap.setFlat(MAP_SIZE, 256);
+			heightMap.flatten();
+			trace("Seting flat height map...");
+		}
+		else {
+			heightMap.setFromBytes( File.read(IMPORT_HEIGHTMAP).readAll(), (HEIGHT_MAX_METERS - HEIGHT_MIN_METERS) * METERS_TO_HL256 / 255, MAP_SIZE, Std.int(HEIGHT_MIN_METERS * METERS_TO_HL256), 256);
+			trace("Set up heightmap ref src...");
+		}
+		
 		
 		var vnBuffer:String = "vn 0 1 0\n"; //g terrain\ns 1\n
 		var iBuffer:StringBuf = new StringBuf();
@@ -130,6 +136,9 @@ class BuildTerrainChunkObj
 					var z:Float = protoG.geometry.vertices[i + 2] - 256*ycc*CHUNK_SIZE;
 					var xi:Int = Std.int(x / 256);
 					var yi:Int = Std.int( -z / 256);
+					//if (yi < 0 || yi >= heightMap.RowWidth) {
+					//	throw "OUT:"+yi;
+					//}
 					y = heightMap.SampleInd(xi, yi);
 					x *= TOTAL_EXPORT_SCALE;
 					y *= TOTAL_EXPORT_SCALE;

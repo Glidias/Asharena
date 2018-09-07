@@ -418,9 +418,10 @@ Data = result;
 	{
 		if (!isBase2(tileSize)) throw ("Tile size isn't base 2!");
 		Scale = Math.round( Math.log((tileSize) ) * PMath.LOG2E );
-		var bWidth:Int; var bHeight:Int;
-		var vertsX:Int = bWidth = patchesAcross + 1;
-		var vertsY:Int = bHeight = patchesAcross + 1;
+
+		var vertsX:Int =  patchesAcross + 1;
+		var vertsY:Int = patchesAcross + 1;
+		
 		
 		RowWidth = vertsX;
 		XSize = RowWidth;
@@ -455,9 +456,19 @@ Data = result;
 			var x:Int = 0; 
 			//var x:int = 0; x < patchesAcross; x++
 			while ( x < by) {
-				var xer:Int = x < bWidth ? x : bWidth - 1;
-				var yer:Int = y < bHeight ? y : bHeight - 1;
-				data[y * by  +  x] = Std.int(heightMin + (lastValue = bytes.get(xer * stride * patchesAcross + yer * stride)) * heightMult);
+				var xb:Int = x * stride;
+				var yb:Int = y * stride;
+				var xer:Int = xb < srcDim ? xb : srcDim - 1;
+				var yer:Int = yb < srcDim ? yb : srcDim - 1;
+				
+				if (xer * srcDim + yer == bytes.length-1) {
+					//throw "Buffer met:"+(xer * srcDim + yer);
+				}
+				
+				if (xer * srcDim + yer >= bytes.length) {
+					throw "Buffer overflow:"+(xer * srcDim + yer);
+				}
+				data[y * by  +  x] = Std.int(heightMin + (lastValue = bytes.get(xer * srcDim + yer)) * heightMult);
 				x++;
 			}
 			//data[y * by + x] = Std.int(heightMin + lastValue * heightMult);
