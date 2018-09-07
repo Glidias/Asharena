@@ -1,4 +1,5 @@
 package altern.terrain.macro;
+import haxe.io.BytesData;
 
 
 #if macro
@@ -28,19 +29,33 @@ class BuildTerrainChunkObj
 	//4.8768 meters for 256 HL Unit tile
 	//0.01905 scale to represent 256 HL Unit tile.
 	
-	static inline var HEIGHT_MULT_METERS:Float = 200;
-	static inline var METERS_PER_HL256:Float = 4.8768;
-	static inline var HL256_TO_METERS:Float = 0.01905;
-	static inline var METERS_TO_HL256:Float = 1 / HL256_TO_METERS;
+	// SRC files
+	static inline var IMPORT_HEIGHTMAP:String = "bin/assets/terrains/63058-9p_elevation.bin";
 	
-	static inline var HEIGHT_MIN_METERS:Float = 0;
-	static inline var HEIGHT_MAX_METERS:Float = 200;
-	static inline var CHUNK_SIZE:Int = 128;
+	// Configurables
 	static inline var SRC_SIZE:Int = 2048;
 	static inline var MAP_SIZE:Int = 1024;
-	static inline var MAP_SIZE_METERS:Float = MAP_SIZE*METERS_PER_HL256;
-	static inline var IMPORT_PATH_PREFIX:String = "bin/imports/terrain/";
+	static inline var HEIGHT_MIN_METERS:Float = 0;
+	static inline var HEIGHT_MAX_METERS:Float = 1500;
+
+	// Wavefront obj export scale per vertex. (Somehow, Playcanvas scales the root node of OBJs by 0.01! Use scale 100 to compensate fully 1 unit for 1 meter)
+	static inline var OBJ_EXPORT_SCALE:Float = 10;	// 100 for full compensation
+
+	static inline var METERS_PER_HL256:Float = 4.8768; // How many meters dimension consist of a HL256 tile
+	
+	// Conventions
+	static inline var CHUNK_SIZE:Int = 128;	
 	static inline var EXPORT_PATH_PREFIX:String = "bin/exports/terrain/";
+	
+	// Derived
+	static inline var HL256_TO_METERS:Float = METERS_PER_HL256/256;
+	static inline var METERS_TO_HL256:Float = 1 / HL256_TO_METERS;
+	static inline var TOTAL_EXPORT_SCALE:Float = OBJ_EXPORT_SCALE * HL256_TO_METERS;
+	static inline var MAP_SIZE_METERS:Float = MAP_SIZE*METERS_PER_HL256;
+	
+
+	
+	
 	
 	static macro function exportFiles():Expr {
 		var noLowRes:Bool = false;
@@ -50,10 +65,10 @@ class BuildTerrainChunkObj
 		}
 		var chunkLen:Int = Std.int(MAP_SIZE / CHUNK_SIZE);
 		
-		var chunkLowResSize:Int = Std.int( CHUNK_SIZE / chunkLen);
+		var chunkLowResSize:Int = Std.int( CHUNK_SIZE / chunkLen );
 		
 		var protoG:GeometryResult = TerrainGeomTools.createLODTerrainChunkForMesh(CHUNK_SIZE, 256);
-		var protoGLowRes:GeometryResult = !noLowRes ? TerrainGeomTools.createLODTerrainChunkForMesh(chunkLowResSize, 256) : null;
+		var protoGLowRes:GeometryResult = !noLowRes ? TerrainGeomTools.createLODTerrainChunkForMesh(chunkLowResSize, Std.int(256*(CHUNK_SIZE/chunkLowResSize))) : null;
 		
 		if (!FileSystem.exists(EXPORT_PATH_PREFIX + "chunks_high") || !FileSystem.isDirectory(EXPORT_PATH_PREFIX + "chunks_high")) {
 			FileSystem.createDirectory(EXPORT_PATH_PREFIX + "chunks_high");
@@ -63,12 +78,20 @@ class BuildTerrainChunkObj
 			//FileSystem.createDirectory(EXPORT_PATH_PREFIX + "chunks_high");
 		}
 		
-		var heightMap:HeightMapInfo = new HeightMapInfo();
-		heightMap.setFlat(CHUNK_SIZE, 256);
-		heightMap.flatten();
-		//heightMap.setFromBytes(
+		if (!FileSystem.exists(IMPORT_HEIGHTMAP) || FileSystem.isDirectory(IMPORT_HEIGHTMAP)) {
+			throw "No IMPORT_HEIGHTMAP file found";
+		}
 		
-		var vnBuffer:String = "vn 0 1 0\ng terrain\ns 1\n";
+		var heightMap:HeightMapInfo = new HeightMapInfo();
+		heightMap.XOrigin = 0;
+		heightMap.ZOrigin = 0;
+		//heightMap.setFlat(CHUNK_SIZE, 256);
+		//heightMap.flatten();
+		
+		heightMap.setFromBytes( File.read(IMPORT_HEIGHTMAP).readAll(), (HEIGHT_MAX_METERS - HEIGHT_MIN_METERS) * METERS_TO_HL256 / 255, MAP_SIZE, Std.int(HEIGHT_MIN_METERS * METERS_TO_HL256), 256);
+		trace("Set up heightmap ref src...");
+		
+		var vnBuffer:String = "vn 0 1 0\n"; //g terrain\ns 1\n
 		var iBuffer:StringBuf = new StringBuf();
 		var i:Int = 0;
 		var len:Int = protoG.geometry.indices.length;
@@ -86,38 +109,39 @@ class BuildTerrainChunkObj
 			var i:Int = 0;
 			var len:Int = protoGLowRes.geometry.indices.length;
 			while (i < len) {
-				var i1:Int = protoG.geometry.indices[i] + 1;
-				var i2:Int = protoG.geometry.indices[i+1] + 1;
-				var i3:Int = protoG.geometry.indices[i + 2] + 1;
+				var i1:Int = protoGLowRes.geometry.indices[i] + 1;
+				var i2:Int = protoGLowRes.geometry.indices[i+1] + 1;
+				var i3:Int = protoGLowRes.geometry.indices[i + 2] + 1;
 				iBufferLite.add('f ${i1}/${i1}/1 ${i2}/${i2}/1 ${i3}/${i3}/1\n');
 				i += 3;
 			}
 		}
 		
-		for (x in 0...chunkLen) {
-			for (y in 0...chunkLen) {
+		
+		for (xcc in 0...chunkLen) {
+			for (ycc in 0...chunkLen) {
 				var vBuffer:StringBuf = new StringBuf();
 				var vtBuffer:StringBuf = new StringBuf();
 				var i:Int = 0;
 				var len:Int = protoG.geometry.vertices.length;
 				while (i < len) {
-					var x:Float = protoG.geometry.vertices[i] + 256*x;
+					var x:Float = protoG.geometry.vertices[i] + 256*xcc*CHUNK_SIZE;
 					var y:Float = protoG.geometry.vertices[i+1];
-					var z:Float = protoG.geometry.vertices[i + 2] + 256*y;
+					var z:Float = protoG.geometry.vertices[i + 2] - 256*ycc*CHUNK_SIZE;
 					var xi:Int = Std.int(x / 256);
-					var yi:Int = Std.int(y / 256);
-					x *= HL256_TO_METERS;
-					y *= HL256_TO_METERS;
-					z *= HL256_TO_METERS;
-					//heightMap[yi*SRC_SIZE];
-					//heightMap[Std.int(z / patchSize)];
+					var yi:Int = Std.int( -z / 256);
+					y = heightMap.SampleInd(xi, yi);
+					x *= TOTAL_EXPORT_SCALE;
+					y *= TOTAL_EXPORT_SCALE;
+					z *= TOTAL_EXPORT_SCALE;
 					vBuffer.add('v ${x} ${y} ${z}\n');
-					vtBuffer.add('vt ${x/MAP_SIZE_METERS} ${z/MAP_SIZE_METERS}\n');
+					vtBuffer.add('vt ${xi/MAP_SIZE} ${yi/MAP_SIZE}\n');
 					i += 3;
 				}
-				File.saveContent(EXPORT_PATH_PREFIX+"chunks_high/"+x+"_"+y+".obj", vBuffer.toString() + vtBuffer.toString() + vnBuffer + iBuffer.toString() );
+				File.saveContent(EXPORT_PATH_PREFIX+"chunks_high/"+xcc+"_"+ycc+".obj", vBuffer.toString() + vtBuffer.toString() + vnBuffer + iBuffer.toString() );
 			}
 		}
+		
 		trace("...commpleted HiRes...");
 		
 		if (protoGLowRes != null) {
@@ -128,29 +152,31 @@ class BuildTerrainChunkObj
 				//FileSystem.deleteDirectory(EXPORT_PATH_PREFIX + "chunks_low");
 				//FileSystem.createDirectory(EXPORT_PATH_PREFIX + "chunks_low");
 			}
-		
-			for (x in 0...chunkLen) {
-				for (y in 0...chunkLen) {
+			
+			for (xcc in 0...chunkLen) {
+				for (ycc in 0...chunkLen) {
 					var vBuffer:StringBuf = new StringBuf();
 					var vtBuffer:StringBuf = new StringBuf();
 					var i:Int = 0;
 					var len:Int = protoGLowRes.geometry.vertices.length;
 					while (i < len) {
-						var x:Float = protoGLowRes.geometry.vertices[i] + 256*x;
+						var x:Float = protoGLowRes.geometry.vertices[i] + 256*xcc*CHUNK_SIZE;
 						var y:Float = protoGLowRes.geometry.vertices[i+1];
-						var z:Float = protoGLowRes.geometry.vertices[i + 2] + 256*y;
+						var z:Float = protoGLowRes.geometry.vertices[i + 2] - 256*ycc*CHUNK_SIZE;
 						var xi:Int = Std.int(x / 256);
-						var yi:Int = Std.int(y / 256);
-						x *= HL256_TO_METERS;
-						y *= HL256_TO_METERS;
-						z *= HL256_TO_METERS;
+						var yi:Int = Std.int(-z / 256);
+						y = heightMap.SampleInd(xi, yi);
+						
+						x *= TOTAL_EXPORT_SCALE;
+						y *= TOTAL_EXPORT_SCALE;
+						z *= TOTAL_EXPORT_SCALE;
 						//heightMap[yi*SRC_SIZE];
 						//heightMap[Std.int(z / patchSize)];
 						vBuffer.add('v ${x} ${y} ${z}\n');
-						vtBuffer.add('vt ${x/MAP_SIZE_METERS} ${z/MAP_SIZE_METERS}\n');
+						vtBuffer.add('vt ${xi/MAP_SIZE} ${yi/MAP_SIZE}\n');
 						i += 3;
 					}
-					File.saveContent(EXPORT_PATH_PREFIX+"chunks_low/"+x+"_"+y+".obj", vBuffer.toString() + vtBuffer.toString() + vnBuffer + iBufferLite.toString() );
+					File.saveContent(EXPORT_PATH_PREFIX+"chunks_low/"+xcc+"_"+ycc+".obj", vBuffer.toString() + vtBuffer.toString() + vnBuffer + iBufferLite.toString() );
 				}
 			}
 		}

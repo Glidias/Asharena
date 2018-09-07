@@ -4,7 +4,9 @@ import de.polygonal.ds.NativeInt32Array;
 import de.polygonal.ds.tools.NativeInt32ArrayTools;
 import haxe.io.Bytes;
 
+#if !macro 
 import hxbit.Serializable;
+#end
 
 import util.TypeDefs;
 import util.geom.PMath;
@@ -250,6 +252,10 @@ Data = result;
 			(s10 * (1-fx) + s11 * fx) * fz );
 	}
 	
+	public inline function SampleInd(xi:Int,  zi:Int):Int  {
+		return Data[zi*RowWidth + xi];
+	}
+	
 	public function clone():HeightMapInfo {
 		var result:HeightMapInfo = new HeightMapInfo();
 		
@@ -399,6 +405,15 @@ Data = result;
 		return me;
 	}
 	
+	static public function createFromBytes(x:Int, y:Int, bytes:Bytes, heightMult:Float, patchesAcross:Int, heightMin:Int=0, tileSize:Int=256):HeightMapInfo {
+		var result:HeightMapInfo = new HeightMapInfo();
+		result.XOrigin = x;
+		result.ZOrigin = y;
+		result.setFromBytes(bytes, heightMult, patchesAcross, heightMin, tileSize);
+		return result;
+	}
+	
+	// TODO: proper options
 	public function setFromBytes(bytes:Bytes, heightMult:Float, patchesAcross:Int, heightMin:Int=0, tileSize:Int=256):Void 
 	{
 		if (!isBase2(tileSize)) throw ("Tile size isn't base 2!");
@@ -411,31 +426,45 @@ Data = result;
 		XSize = RowWidth;
 		ZSize = vertsY;
 		
+		var rootLen:Float = Math.sqrt(bytes.length);
+		var srcDim:Int = Std.int(rootLen);
+		var stride:Int = 1;
+		
+		if (srcDim != rootLen) {
+			throw "Non-square Bytes length detected!";
+		}
+		else {
+			stride = Std.int(srcDim / patchesAcross);
+			if (stride != srcDim / patchesAcross) {
+				throw "MAP_SIZE(patchesAcross) must be divisible by SRC_SIZE(bytes)";
+			}
+		}
+		//throw "stride:" + stride;
+		
 		//if (Data == null) {
 		var data:NativeInt32Array = Data = NativeInt32ArrayTools.alloc((vertsX) * (vertsX));
 		//}
 		var by:Int = patchesAcross + 1;
 
 		var lastValue:UInt = 0;
-		var x:Int = 0;
+		var x:Int;
 		var y:Int = 0;
 		var pos:Int = 0;
-		while (x<  patchesAcross ) {
-			y = 0; 
+		
+		while (y <  by ) {
+			var x:Int = 0; 
 			//var x:int = 0; x < patchesAcross; x++
-			while ( y < patchesAcross) {
+			while ( x < by) {
 				var xer:Int = x < bWidth ? x : bWidth - 1;
 				var yer:Int = y < bHeight ? y : bHeight - 1;
-				data[y * by  +  x] = Std.int(heightMin + (lastValue = bytes.get(pos++)) * heightMult);
+				data[y * by  +  x] = Std.int(heightMin + (lastValue = bytes.get(xer * stride * patchesAcross + yer * stride)) * heightMult);
+				x++;
 			}
-			data[y * by + x] = Std.int(heightMin + lastValue * heightMult);
+			//data[y * by + x] = Std.int(heightMin + lastValue * heightMult);
 			y++;
 		}
-		x = 0; 
-		while (x < by) {
-			data[y * by + x] = data[(y - 1) * by + x];
-			x++;
-		}
+
+	
 		
 	}
 	

@@ -228,13 +228,13 @@ class TerrainGeomTools
 					x = 0;
 					while ( x < patchesAcross) {
 						// ne
-						createFace(indices, vertices, vIndexLookup[y*vAcross + x+2], vIndexLookup[y*vAcross + x+1], vIndexLookup[(y + 1)*vAcross + x + 1], vIndexLookup[(y+1)*vAcross + x + 2], 0, 0, 1, 1, 0, 0, -1, false);
+						createFace(indices, vertices, vIndexLookup[y*vAcross + x+2], vIndexLookup[y*vAcross + x+1], vIndexLookup[(y + 1)*vAcross + x + 1], vIndexLookup[(y+1)*vAcross + x + 2], 0, 0, 1, 1, 0, 0, -1, true);
 						//nw
-						createFace(indices, vertices, vIndexLookup[y * vAcross + x], vIndexLookup[(y + 1) * vAcross + x], vIndexLookup[(y + 1) * vAcross + x + 1], vIndexLookup[y * vAcross + x + 1], 0, 0, 1, 1, 0, 0, -1, false);
+						createFace(indices, vertices, vIndexLookup[y * vAcross + x], vIndexLookup[(y + 1) * vAcross + x], vIndexLookup[(y + 1) * vAcross + x + 1], vIndexLookup[y * vAcross + x + 1], 0, 0, 1, 1, 0, 0, -1, true);
 						// sw
-						createFace(indices, vertices, vIndexLookup[(y+1) * vAcross + x+1], vIndexLookup[(y + 1) * vAcross + x], vIndexLookup[(y + 2) * vAcross + x], vIndexLookup[(y+2) * vAcross + x + 1], 0, 0, 1, 1, 0, 0, -1, false);
+						createFace(indices, vertices, vIndexLookup[(y+1) * vAcross + x+1], vIndexLookup[(y + 1) * vAcross + x], vIndexLookup[(y + 2) * vAcross + x], vIndexLookup[(y+2) * vAcross + x + 1], 0, 0, 1, 1, 0, 0, -1, true);
 						// se
-						createFace(indices, vertices, vIndexLookup[(y + 1) * vAcross + x + 1], vIndexLookup[(y + 2) * vAcross + x + 1], vIndexLookup[(y + 2) * vAcross + x + 2], vIndexLookup[(y + 1) * vAcross + x + 2], 0, 0, 1, 1, 0, 0, -1, false);		 
+						createFace(indices, vertices, vIndexLookup[(y + 1) * vAcross + x + 1], vIndexLookup[(y + 2) * vAcross + x + 1], vIndexLookup[(y + 2) * vAcross + x + 2], vIndexLookup[(y + 1) * vAcross + x + 2], 0, 0, 1, 1, 0, 0, -1, true);		 
 						
 						x += 2;
 					}
@@ -260,7 +260,7 @@ class TerrainGeomTools
 	static function writeVertices(vertices:Vector<Float>, x:Int, y:Int, patchSize:Int, segUVSize:Float, offsetAdditionalData:Int):Void {
 			vertices.push(x*patchSize);
 			vertices.push(0);
-			vertices.push(y*patchSize);
+			vertices.push(-y*patchSize);
 			
 			// TODO: how to write uvs and the rest..
 			//vertices.push(x*segUVSize);
@@ -289,6 +289,7 @@ class TerrainGeomTools
 		indices.push(a);
 		indices.push(b);
 		indices.push(c);
+		
 		indices.push(a);
 		indices.push(c);
 		indices.push(d);
