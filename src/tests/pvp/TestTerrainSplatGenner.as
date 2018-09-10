@@ -168,10 +168,10 @@ package tests.pvp
 				}
 			}
 			
-			//new FileReference().save( PNGEncoder.encode(heightData) );
+			new FileReference().save( PNGEncoder.encode(heightData) );
 			
 			//new FileReference().save( PNGEncoder.encode(bitmapData) );
-			new FileReference().save( PNGEncoder.encode(alphaBitmapData) );
+			//new FileReference().save( PNGEncoder.encode(alphaBitmapData) );
 			
 		} 
 		

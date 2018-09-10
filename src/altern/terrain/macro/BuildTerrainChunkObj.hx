@@ -30,13 +30,13 @@ class BuildTerrainChunkObj
 	//0.01905 scale to represent 256 HL Unit tile.
 	
 	// SRC files
-	static inline var IMPORT_HEIGHTMAP:String = "bin/assets/terrains/85882-80p_elevation.bin";
+	static inline var IMPORT_HEIGHTMAP:String = "bin/assets/terrains/63058-9p_elevation.bin";
 	
 	// Configurables
 	static inline var SRC_SIZE:Int = 2048;
 	static inline var MAP_SIZE:Int = 1024;
 	static inline var HEIGHT_MIN_METERS:Float = 0;
-	static inline var HEIGHT_MAX_METERS:Float = 1500;
+	static inline var HEIGHT_MAX_METERS:Float = 1100;
 
 	// Wavefront obj export scale per vertex. (Somehow, Playcanvas scales the root node of OBJs by 0.01! Use scale 100 to compensate fully 1 unit for 1 meter)
 	static inline var OBJ_EXPORT_SCALE:Float = 10;	// 100 for full compensation
@@ -93,6 +93,7 @@ class BuildTerrainChunkObj
 		}
 		else {
 			heightMap.setFromBytes( File.read(IMPORT_HEIGHTMAP).readAll(), (HEIGHT_MAX_METERS - HEIGHT_MIN_METERS) * METERS_TO_HL256 / 255, MAP_SIZE, Std.int(HEIGHT_MIN_METERS * METERS_TO_HL256), 256);
+			heightMap.BoxFilterHeightMap(true);
 			trace("Set up heightmap ref src...");
 		}
 		
