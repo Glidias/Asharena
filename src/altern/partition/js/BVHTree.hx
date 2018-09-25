@@ -138,7 +138,8 @@ class BVHTree
 	{
 		// for now: use lazy/ use native library function approach...
 		var res:Array<IntersectionResult> = bvh.intersectRay(origin, direction, true);
-		if (res!=null && res.length!=0) {
+		if (res != null && res.length != 0) {
+			var directionLength = direction.length;
 			var highestResult:IntersectionResult = null;
 			var cd:Float = direction.w != 0 ? direction.w : 1e+22;
 			cd *= cd;
@@ -157,7 +158,7 @@ class BVHTree
 				_result.x = highestResult.intersectionPoint.x;
 				_result.y = highestResult.intersectionPoint.y;
 				_result.z = highestResult.intersectionPoint.z;
-				_result.w = Math.sqrt(cd);
+				_result.w = Math.sqrt(cd) / directionLength;
 				return _result;
 			}
 		}
