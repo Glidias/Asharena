@@ -1,10 +1,12 @@
 package altern.partition.js;
 import altern.partition.js.BVHTree.IntersectionResult;
 import altern.ray.IRaycastImpl;
+import components.BoundBox;
 import components.Transform3D;
 import systems.collisions.EllipsoidCollider;
 import systems.collisions.ITCollidable;
 import util.TypeDefs.Vector3D;
+import util.geom.AABBUtils;
 import util.geom.GeomUtil;
 import util.geom.Geometry;
 import util.TypeDefs;
@@ -78,6 +80,52 @@ class BVHTree
 		this.bvh = bvh;
 	}
 	
+	
+	
+	public function collectGeometryFromAABB(aabb:BoundBox):Geometry 
+	{
+		var s:Int = 0;
+		var stack = _stack;
+		stack[s++] = this.bvh._rootNode;
+		var bboxArray = this.bvh._bboxArray;
+		var triArray = this.bvh._trianglesArray;
+		geom.numIndices = 0;
+		geom.numVertices = 0;
+		var ii:Int = 0;
+		var vi:Int = 0;
+		while ( --s >= 0) {
+			var node = stack[s];
+			if ( AABBUtils.intersectsBoundValues(aabb, node._extentsMin.x, node._extentsMin.y, node._extentsMin.z, node._extentsMax.x, node._extentsMax.y, node._extentsMax.z) ) {
+				if (node._node0!=null) {
+					stack[s++] = node._node0;
+				}
+
+				if (node._node1!=null) {
+					stack[s++] = node._node1;
+				}
+				
+				for (i in node._startIndex...node._endIndex) {
+					var triIndex:Int = bboxArray[i * 7];
+					triIndex *= 9;
+					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					
+					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					
+					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+				}
+			}
+		}
+		if (ii > 0) {
+			geom.numVertices = geom.numIndices = ii;
+		}
+		return geom;
+	}
 	
 	/* INTERFACE systems.collisions.ITCollidable */
 

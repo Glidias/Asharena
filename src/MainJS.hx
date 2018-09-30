@@ -68,6 +68,10 @@ import altern.culling.DefaultCulling;
 import altern.partition.js.BVHTree;
 //*/
 
+///* Math utilities for Navmesh/slope/tri intersections
+import altern.geom.IntersectSlopeUtil;
+//*/
+
 
 /*  Serialization package
 import hxbit.Serializer;

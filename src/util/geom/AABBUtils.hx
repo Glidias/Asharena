@@ -47,6 +47,13 @@ class AABBUtils
 		return !(pt.x < aabb.minX || pt.y < aabb.minY || pt.z < aabb.minZ || pt.x > aabb.maxX || pt.y > aabb.maxY || pt.z > aabb.maxZ);
 	}
 	
+	public static inline function intersectsEachOther(a:BoundBox, b:BoundBox):Bool {
+		return !(a.maxX < b.minX || a.maxY < b.minY || a.maxZ < b.minZ || a.minX > b.maxX || a.minY > b.maxY || a.minZ > b.maxZ);
+	}
+	public static inline function intersectsBoundValues(a:BoundBox, minX:Float, minY:Float, minZ:Float, maxX:Float, maxY:Float, maxZ:Float):Bool {
+		return !(a.maxX < minX || a.maxY < minY || a.maxZ < minZ || a.minX > maxX || a.minY > maxY || a.minZ > maxZ);
+	}
+	
 	public static inline function transform(aabb:BoundBox, t:Transform3D):Void {
 
 		var minX = aabb.minX;
