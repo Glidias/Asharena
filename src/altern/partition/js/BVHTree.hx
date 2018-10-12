@@ -73,6 +73,9 @@ class BVHTree
 	var geom(default, null):Geometry = new Geometry();
 	var _stack:Array<BVHNode> = [];
 	
+	var allResults:Array<IntersectionResult>;
+	var lastResult:IntersectionResult;
+	
 	static inline var FLOAT_MAX:Float = 3.40282346638528e+38;
 
 	public function new(bvh:BVH) 
@@ -207,6 +210,8 @@ class BVHTree
 				_result.y = highestResult.intersectionPoint.y;
 				_result.z = highestResult.intersectionPoint.z;
 				_result.w = Math.sqrt(cd) / directionLength;
+				allResults = res;
+				lastResult = highestResult;
 				return _result;
 			}
 		}
