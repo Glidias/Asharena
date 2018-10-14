@@ -1,6 +1,6 @@
 package altern.geom;
 
-import de.polygonal.ds.NativeArray;
+import de.polygonal.ds.NativeFloat32Array;
 import de.polygonal.ds.tools.NativeArrayTools;
 import util.TypeDefs;
 import util.geom.PMath;
@@ -23,8 +23,14 @@ class IntersectSlopeUtil
 	public var velocity:Vector3D = new Vector3D();
 	public var startPosition:Vector3D = new Vector3D();
 	
-	public var intersectTimes:NativeArray<Float> = NativeArrayTools.alloc(2);
-	public var intersectZ:NativeArray<Float> = NativeArrayTools.alloc(2);
+	#if js
+	public var intersectTimes:NativeFloat32Array = new NativeFloat32Array(2);
+	public var intersectZ:NativeFloat32Array = new NativeFloat32Array(2);
+	#else
+	public var intersectTimes:NativeFloat32Array = NativeArrayTools.alloc(2);
+	public var intersectZ:NativeFloat32Array = NativeArrayTools.alloc(2);
+	#end
+	
 	public var gradient:Float;
 	
 	public static inline var RESULT_NONE:Int = 0;

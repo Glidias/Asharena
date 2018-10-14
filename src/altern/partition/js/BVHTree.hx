@@ -3,6 +3,8 @@ import altern.partition.js.BVHTree.IntersectionResult;
 import altern.ray.IRaycastImpl;
 import components.BoundBox;
 import components.Transform3D;
+import de.polygonal.ds.NativeInt32Array;
+import de.polygonal.ds.tools.NativeInt32ArrayTools;
 import systems.collisions.EllipsoidCollider;
 import systems.collisions.ITCollidable;
 import util.TypeDefs.Vector3D;
@@ -84,6 +86,11 @@ class BVHTree
 	}
 	
 	
+	var aabbTris:NativeInt32Array = NativeInt32ArrayTools.alloc(64);
+	var aabbTriCount:Int = 0;
+	public function setBufferAlloc(amt:Int):Void {
+		aabbTris = NativeInt32ArrayTools.alloc(amt);
+	}
 	
 	public function collectGeometryFromAABB(aabb:BoundBox):Geometry 
 	{
@@ -96,6 +103,7 @@ class BVHTree
 		geom.numVertices = 0;
 		var ii:Int = 0;
 		var vi:Int = 0;
+		aabbTriCount = 0;
 		while ( --s >= 0) {
 			var node = stack[s];
 			if ( AABBUtils.intersectsBoundValues(aabb, node._extentsMin.x, node._extentsMin.y, node._extentsMin.z, node._extentsMax.x, node._extentsMax.y, node._extentsMax.z) ) {
@@ -109,6 +117,7 @@ class BVHTree
 				
 				for (i in node._startIndex...node._endIndex) {
 					var triIndex:Int = bboxArray[i * 7];
+					aabbTris[aabbTriCount++] = triIndex;
 					triIndex *= 9;
 					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
 					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;

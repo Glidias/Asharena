@@ -1,5 +1,7 @@
 package components;
+#if ash
 import ash.core.Entity;
+#end
 import systems.collisions.CollisionEvent;
 import util.geom.PMath;
 import util.geom.Vec3;
@@ -20,6 +22,7 @@ class MoveResult extends Vec3
 	// If no handler is used, default behaviour occurs.
 	
 	// MoveResult, Vel,  ENtity
+	#if ash
 	public var preSolve:MoveResult->Vel->Entity->Bool; 
 	//   return  true to preventDefault behaviour, otherwise, any behaviour which the system will use by default (depending on entity's components) will occur. This can be used to overwrite
 	// default collision behaviour of any entity.
@@ -27,8 +30,7 @@ class MoveResult extends Vec3
 	// MoveResult, Vel, Pos, ENtity
 	public var postSolve:MoveResult->Vel->Pos->Entity->Void;  
 	//  after physical collision has been solved by given system and entity has moved to intended position, any further action can occur here. 
-
-
+	#end
 	
 	public var preventDefault:Bool; // for system use only. Basically stored result of preSolve callback.
 	
