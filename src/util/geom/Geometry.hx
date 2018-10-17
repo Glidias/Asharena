@@ -21,6 +21,8 @@ class Geometry implements ITECollidable implements IRaycastImpl
 	public var numVertices:Int;
 	public var numIndices:Int;
 	static public  var IDENTITY:Transform3D = new Transform3D();
+	
+	public var lastHitIndex:Int;
 
 	public function new() 
 	{
@@ -153,6 +155,7 @@ class Geometry implements ITECollidable implements IRaycastImpl
 		var count:Int =  numTriangles * 3;
 		var pIndex:Int = 0;
 		var i:Int = 0;
+		var lastHitI:Int = 0;
 		while ( i < count) {
 			var indexA:UInt = indices[i];
 			var indexB:UInt = indices[(i + 1)];
@@ -240,6 +243,7 @@ class Geometry implements ITECollidable implements IRaycastImpl
 										ncz = cz;
 										
 										nrmZ = normalZ;
+										lastHitI = i;
 									}
 								}
 							}
@@ -255,6 +259,7 @@ class Geometry implements ITECollidable implements IRaycastImpl
 			res.y = point.y;
 			res.z = point.z; 
 			res.w = minTime;
+			lastHitIndex = Math.floor(lastHitI / 3);
 			return res;
 		} else {
 			return null;
