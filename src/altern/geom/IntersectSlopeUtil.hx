@@ -1,9 +1,11 @@
 package altern.geom;
 
+import de.polygonal.ds.NativeArray;
 import de.polygonal.ds.NativeFloat32Array;
+import de.polygonal.ds.NativeInt32Array;
 import de.polygonal.ds.tools.NativeArrayTools;
+//import de.polygonal.ds.tools.NativeInt32ArrayTools;
 import util.TypeDefs;
-import util.geom.PMath;
 
 /**
  * Utility to help calculate trajecotry-based intersections along 3d tri-slopes.
@@ -23,13 +25,16 @@ class IntersectSlopeUtil
 	public var velocity:Vector3D = new Vector3D();
 	public var startPosition:Vector3D = new Vector3D();
 	
+	public var intersectSides:NativeArray<Int> = NativeArrayTools.alloc(2);
 	#if js
 	public var intersectTimes:NativeFloat32Array = new NativeFloat32Array(2);
 	public var intersectZ:NativeFloat32Array = new NativeFloat32Array(2);
 	#else
-	public var intersectTimes:NativeFloat32Array = NativeArrayTools.alloc(2);
-	public var intersectZ:NativeFloat32Array = NativeArrayTools.alloc(2);
+	public var intersectTimes:NativeArray<Float> = NativeArrayTools.alloc(2);
+	public var intersectZ:NativeArray<Float> = NativeArrayTools.alloc(2);
 	#end
+	
+	
 	
 	public var gradient:Float;
 	
@@ -231,6 +236,7 @@ class IntersectSlopeUtil
 		
 			intersectTimes[count] = r;
 			intersectZ[count] = pt2.z * s - pt1.z * s + pt1.z;
+			intersectSides[count] = 1|2;
 			count++;
 			
 		}
@@ -240,6 +246,7 @@ class IntersectSlopeUtil
 			
 			intersectTimes[count] = r;
 			intersectZ[count] = pt3.z * s - pt2.z * s + pt2.z;
+			intersectSides[count] = 2|4;
 			count++;
 		}
 		
@@ -251,6 +258,7 @@ class IntersectSlopeUtil
 				
 				intersectTimes[count] = r;
 				intersectZ[count] = pt1.z * s - pt3.z * s + pt3.z;
+				intersectSides[count] = 1|4;
 				count++;
 			}
 		}
@@ -260,14 +268,17 @@ class IntersectSlopeUtil
 		
 		var temp:Float = intersectTimes[0];
 		var temp2:Float = intersectZ[0];
+		var temp3:Int = intersectSides[0];
 		
 		if (intersectTimes[1] < temp)
 		{
 			intersectTimes[0] = intersectTimes[1];
 			intersectZ[0] = intersectZ[1];
+			intersectSides[0] = intersectSides[1];
 			
 			intersectTimes[1] = temp;
 			intersectZ[1] = temp2;
+			intersectSides[1] = temp3;
 		}
 		
 		 if (intersectTimes[0] < 0) {  // start dot from inside instead mod
