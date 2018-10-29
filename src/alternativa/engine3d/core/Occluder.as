@@ -1338,7 +1338,7 @@ package alternativa.engine3d.core {
 		}
 		
 		
-		private var _disposableFaceCache:Face;
+		public var _disposableFaceCache:Face;
 		
 		public function getDisposableTransformedFace(pos:Vec3,  up:Vec3, right:Vec3, width:Number, height:Number, t:Transform3D):Face {
 			var f:Face = new Face();
@@ -1414,7 +1414,7 @@ package alternativa.engine3d.core {
 		}
 		
 		private var inputNorm:Vector3D = new Vector3D();
-		private var _negativeFaceCache:Face;
+		public var _negativeFaceCache:Face;
 		
 		public function clip(disposableFace:Face):Number {
 			var p:CullingPlane;

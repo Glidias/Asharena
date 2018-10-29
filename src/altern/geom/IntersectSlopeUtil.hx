@@ -17,8 +17,8 @@ class IntersectSlopeUtil
 	public var startPt:Vector3D = new Vector3D(30, 60);
 	public var endPt:Vector3D = new Vector3D();
 	
-	public var pt1:Vector3D = new Vector3D(100, 60, 60);
 	public var pt2:Vector3D = new Vector3D(90, 60, 80);
+	public var pt1:Vector3D = new Vector3D(100, 60, 60);
 	public var pt3:Vector3D = new Vector3D(70, 180, 100);
 	private var r:Float;
 	private var s:Float;

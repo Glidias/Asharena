@@ -54,6 +54,9 @@ import systems.rendering.RenderSystem;
 
 import altern.ray.Raycaster;
 
+import hxd.clipper.Clipper;
+import hxd.earcut.Earcut;
+
 /**
  * ...
  * @author Glenn Ko

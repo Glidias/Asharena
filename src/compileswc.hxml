@@ -2,4 +2,5 @@
 -swf-version 10
 -main TheGame
 -D triOnly
+-D ash
 -dce no

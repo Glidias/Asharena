@@ -49,6 +49,7 @@ package alternativa.a3d.systems.hud
 		private var cameraObj:Object3D;
 		
 		public var testOccluder:Occluder;
+		public var soupOccluder:Occluder = new Occluder();
 		
 		public function TargetBoardTester(scene:Object3D, position:Vec3, cameraObj:Object3D=null, keyPoll:KeyPoll=null, terrainLOD:TerrainLOD=null) 
 		{
@@ -383,9 +384,7 @@ package alternativa.a3d.systems.hud
 					
 				}
 				
-				
-				
-				
+
 				if (keyPoll != null && keyPoll.isDown(Keyboard.SLASH) && terrainLOD != null ) {
 					
 					for (var i:int = 0; i < testFrustumPoints.length; i++) {
@@ -404,6 +403,18 @@ package alternativa.a3d.systems.hud
 					terrainLOD.collectTrisForFrustum(testFrustum, usePoints, testVertices, testIndices);
 					createWireframeCollisionPreview( );
 					
+					
+					soupOccluder.getDisposableTransformedFace(targPos, targUp, targRight, w, h, planes.localToCameraTransform);
+					
+					var pos:Vector3D = terrainLOD.globalToLocal(new Vector3D(cameraObj.x, cameraObj.y, cameraObj.z) );
+					
+					areaSubtracted = collectClipPolygonsFromSoup(testVertices, testIndices, pos.x, pos.y, pos.z);
+					if (areaSubtracted > 0) {
+						Log.trace( int(areaSubtracted/area*100)+"% cover" );
+					}
+					else {
+						Log.trace("Fully exposed");
+					}
 					//throw new Error(testVertices.length / 3);
 				}
 			
@@ -413,6 +424,96 @@ package alternativa.a3d.systems.hud
 			
 			
 		}
+		
+		private function collectClipPolygonsFromSoup(vertices:Vector.<Number>, indices:Vector.<uint>, observerX:Number, observerY:Number, observerZ:Number):Number {
+			var p: CullingPlane;
+			if (soupOccluder.planeList == null) {	// lazy instantiate 3 planes for triangle soup testing
+				soupOccluder.planeList = p = CullingPlane.create();
+				p = p.next = CullingPlane.create();
+				p = p.next = CullingPlane.create();
+			}
+			
+			
+			var areaSubtracted:Number = 0;
+			
+			var len:int = indices.length;
+			for (var i:int = 0; i < len; i += 3) {
+				var ai:int = indices[i] * 3;
+				var bi:int = indices[i+1] * 3;
+				var ci:int = indices[i+2] * 3;
+				
+				var ax:Number = vertices[ai];
+				var ay:Number = vertices[ai+1];
+				var az:Number = vertices[ai+2];
+				
+				var bx:Number = vertices[bi];
+				var by:Number = vertices[bi+1];
+				var bz:Number = vertices[bi + 2];
+				
+				var cx:Number = vertices[ci];
+				var cy:Number = vertices[ci+1];
+				var cz:Number = vertices[ci + 2];
+				
+				var abx:Number;
+				var aby:Number;
+				var abz:Number;
+				
+				var acx:Number;
+				var acy:Number;
+				var acz:Number;
+				
+
+				p = soupOccluder.planeList;
+				abx = ax - observerX;
+				aby = ay - observerY;
+				abz = az - observerZ;
+				acx = bx - observerX;
+				acy = by - observerY;
+				acz = bz - observerZ;
+				p.x = acz*aby - acy*abz;
+				p.y = acx*abz - acz*abx;
+				p.z = acy * abx - acx * aby;
+				p.offset = ax*p.x + ay*p.y + az*p.z;
+
+			
+				p = p.next;
+				
+				abx = bx - observerX;
+				aby = by - observerY;
+				abz = bz - observerZ;
+				acx = cx - observerX;
+				acy = cy - observerY;
+				acz = cz - observerZ;
+				p.x = acz*aby - acy*abz;
+				p.y = acx*abz - acz*abx;
+				p.z = acy * abx - acx * aby;
+				p.offset = bx*p.x + by*p.y + bz*p.z;
+				
+				p = p.next;
+				
+				abx = cx - observerX;
+				aby = cy - observerY;
+				abz = cz - observerZ;
+				acx = ax - observerX;
+				acy = ay - observerY;
+				acz = az - observerZ;
+				p.x = acz*aby - acy*abz;
+				p.y = acx*abz - acz*abx;
+				p.z = acy * abx - acx * aby;
+				p.offset = cx*p.x + cy*p.y + cz*p.z;
+			
+				var retAreaSubtracted:Number = soupOccluder.clip(soupOccluder._disposableFaceCache);
+				if (retAreaSubtracted > 0) {
+					areaSubtracted += retAreaSubtracted;
+				}
+				
+			}
+			
+			return areaSubtracted;
+			
+		}
+		
+		
 		
 		private function extractUnsignedVector(vec:Vector.<uint>, sliceAmt:int):Vector.<uint> {
 			var vect:Vector.<uint> = new Vector.<uint>(sliceAmt, true);
