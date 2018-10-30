@@ -15,6 +15,7 @@ package alternativa.a3d.systems.hud
 	import alternativa.engine3d.primitives.Plane;
 	import alternativa.engine3d.resources.Geometry;
 	import alternativa.engine3d.utils.GeometryUtil;
+	import alternativa.engine3d.utils.Object3DTransformUtil;
 	import alternativa.engine3d.utils.Object3DUtils;
 	import alternterrain.objects.TerrainLOD;
 	import ash.core.Engine;
@@ -305,7 +306,7 @@ package alternativa.a3d.systems.hud
 				testFrustumPoints[f].z = cameraObj.z;
 				
 				
-				f++;
+				f++;		// top left corner
 				p = corners.addNewOrAvailableClone();
 				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
 				p.root.x += targUp.x * h;
@@ -330,7 +331,8 @@ package alternativa.a3d.systems.hud
 				testFrustumPoints[f].y = p.root.y;
 				testFrustumPoints[f].z = p.root.z;
 				
-				f++;
+				
+				f++;	// bottom left corner
 				p = corners.addNewOrAvailableClone();
 				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
 				p.root.x -= targUp.x * h;
@@ -343,7 +345,7 @@ package alternativa.a3d.systems.hud
 				testFrustumPoints[f].y = p.root.y;
 				testFrustumPoints[f].z = p.root.z;
 				
-				f++;
+				f++;	// bottom right corner
 				p = corners.addNewOrAvailableClone();
 				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
 				p.root.x -= targUp.x * h;
@@ -356,7 +358,7 @@ package alternativa.a3d.systems.hud
 				testFrustumPoints[f].y = p.root.y;
 				testFrustumPoints[f].z = p.root.z;
 				
-				f++;
+				f++;	// top right corner
 				p = corners.addNewOrAvailableClone();
 				p.root.x = targPos.x; p.root.y = targPos.y; p.root.z = targPos.z;
 				p.root.x += targUp.x * h;
@@ -403,16 +405,16 @@ package alternativa.a3d.systems.hud
 					terrainLOD.collectTrisForFrustum(testFrustum, usePoints, testVertices, testIndices);
 					createWireframeCollisionPreview( );
 					
-					
-					soupOccluder.getDisposableTransformedFace(targPos, targUp, targRight, w, h, planes.localToCameraTransform);
+					Object3DTransformUtil.calculateGlobalToLocal(terrainLOD);
+					soupOccluder.getDisposableTransformedFace(targPos, targUp, targRight, w, h, terrainLOD.globalToLocalTransform);
 					
 					var pos:Vector3D = terrainLOD.globalToLocal(new Vector3D(cameraObj.x, cameraObj.y, cameraObj.z) );
 					
 					areaSubtracted = collectClipPolygonsFromSoup(testVertices, testIndices, pos.x, pos.y, pos.z);
+					area = soupOccluder._disposableFaceCache.getArea(); // w * h * 4;
 					if (areaSubtracted > 0) {
 						Log.trace( int(areaSubtracted/area*100)+"% cover" );
-					}
-					else {
+					} else {
 						Log.trace("Fully exposed");
 					}
 					//throw new Error(testVertices.length / 3);
@@ -434,10 +436,11 @@ package alternativa.a3d.systems.hud
 			}
 			
 			
+			var mask:int;
 			var areaSubtracted:Number = 0;
-			
 			var len:int = indices.length;
 			for (var i:int = 0; i < len; i += 3) {
+				mask = 0;
 				var ai:int = indices[i] * 3;
 				var bi:int = indices[i+1] * 3;
 				var ci:int = indices[i+2] * 3;
@@ -454,6 +457,13 @@ package alternativa.a3d.systems.hud
 				var cy:Number = vertices[ci+1];
 				var cz:Number = vertices[ci + 2];
 				
+				
+				if ( billboardFarClip.x * ax + billboardFarClip.y * ay + billboardFarClip.z * az < billboardFarClip.offset || billboardFarClip.x * bx + billboardFarClip.y * by + billboardFarClip.z * bz < billboardFarClip.offset || billboardFarClip.x * cx + billboardFarClip.y * cy + billboardFarClip.z * cz < billboardFarClip.offset ) {
+					//Log.trace("Exit");
+					continue;
+				}
+			
+				
 				var abx:Number;
 				var aby:Number;
 				var abz:Number;
@@ -462,7 +472,7 @@ package alternativa.a3d.systems.hud
 				var acy:Number;
 				var acz:Number;
 				
-
+				
 				p = soupOccluder.planeList;
 				abx = ax - observerX;
 				aby = ay - observerY;
@@ -473,7 +483,9 @@ package alternativa.a3d.systems.hud
 				p.x = acz*aby - acy*abz;
 				p.y = acx*abz - acz*abx;
 				p.z = acy * abx - acx * aby;
-				p.offset = ax*p.x + ay*p.y + az*p.z;
+				p.offset = ax * p.x + ay * p.y + az * p.z;
+				//Log.trace(p.x + ", "+p.y + " , "+p.z + ", "+p.offset);
+				mask |=  billboardFarClip.x * ax  + billboardFarClip.y * ay + billboardFarClip.z * az < billboardFarClip.offset && billboardFarClip.x * bx  + billboardFarClip.y * by + billboardFarClip.z * bz < billboardFarClip.offset  ? 1 : 0; 
 
 			
 				p = p.next;
@@ -487,7 +499,9 @@ package alternativa.a3d.systems.hud
 				p.x = acz*aby - acy*abz;
 				p.y = acx*abz - acz*abx;
 				p.z = acy * abx - acx * aby;
-				p.offset = bx*p.x + by*p.y + bz*p.z;
+				p.offset = bx * p.x + by * p.y + bz * p.z;
+				//Log.trace(p.x + ", "+p.y + " , "+p.z + ", "+p.offset);
+			mask |=  billboardFarClip.x * bx  + billboardFarClip.y * by + billboardFarClip.z * bz < billboardFarClip.offset && billboardFarClip.x * cx  + billboardFarClip.y * cy + billboardFarClip.z * cz < billboardFarClip.offset  ? 2 : 0; 
 				
 				p = p.next;
 				
@@ -500,7 +514,12 @@ package alternativa.a3d.systems.hud
 				p.x = acz*aby - acy*abz;
 				p.y = acx*abz - acz*abx;
 				p.z = acy * abx - acx * aby;
-				p.offset = cx*p.x + cy*p.y + cz*p.z;
+				p.offset = cx * p.x + cy * p.y + cz * p.z;
+				//Log.trace(p.x + ", "+p.y + " , "+p.z + ", "+p.offset);
+				mask |=  billboardFarClip.x * ax  + billboardFarClip.y * ay + billboardFarClip.z * az < billboardFarClip.offset && billboardFarClip.x * cx  + billboardFarClip.y * cy + billboardFarClip.z * cz < billboardFarClip.offset  ? 4 : 0; 
+				
+				if (mask != 0) Log.trace("MASK:"+mask);
+				//soupOccluder.clipMask = mask;
 			
 				var retAreaSubtracted:Number = soupOccluder.clip(soupOccluder._disposableFaceCache);
 				if (retAreaSubtracted > 0) {
@@ -633,7 +652,7 @@ package alternativa.a3d.systems.hud
 			c.y = v.y;
 			c.z = v.z;
 			c.offset = v.dotProduct(pts[0]);
-			
+		
 			///*
 			c = c.next = new CullingPlane();
 			v = pts[0].subtract(targPos);
@@ -642,7 +661,7 @@ package alternativa.a3d.systems.hud
 			c.y = v.y;
 			c.z = v.z;
 			c.offset = v.dotProduct(targPos);
-			
+			billboardFarClip = c;
 			//*/
 			
 			//*/
@@ -676,6 +695,7 @@ package alternativa.a3d.systems.hud
 		public var keyPoll:KeyPoll;
 		public var terrainLOD:TerrainLOD;
 		private var objectTransform:Vector.<Vector3D>;
+		private var billboardFarClip:CullingPlane;
 		
 	}
 

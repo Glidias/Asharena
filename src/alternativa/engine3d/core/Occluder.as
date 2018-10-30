@@ -1416,6 +1416,7 @@ package alternativa.engine3d.core {
 		private var inputNorm:Vector3D = new Vector3D();
 		public var _negativeFaceCache:Face;
 		
+		public var clipMask:int = 0;
 		public function clip(disposableFace:Face):Number {
 			var p:CullingPlane;
 			var f:Face = disposableFace;
@@ -1427,14 +1428,17 @@ package alternativa.engine3d.core {
 			//	pCount++;
 				
 			//}
+			var count:int = 0;
 			for (p = planeList; p != null; p = p.next) {
-				
+				if ( (clipMask & (1<<count))!=0 ) {
+					count++;
+					continue;
+				}
 				inputNorm.x = -p.x;
 				inputNorm.y = -p.y;
 				inputNorm.z = -p.z;
 				inputNorm.w = -p.offset;
 				
-				//count++;
 				ClipMacros.computeMeshVerticesLocalOffsets(f, inputNorm);
 				
 				if (negativeFace == null) negativeFace = ClipMacros.newPositiveClipFace(f, inputNorm, inputNorm.w);
@@ -1446,6 +1450,7 @@ package alternativa.engine3d.core {
 					//gotExit = true;
 					break;  
 				}
+				count++;
 			}
 			
 			if (negativeFace != null) {
