@@ -1695,6 +1695,9 @@ class Face {
 	
 	
 	public function overlapsOther2D(face:Face):Boolean {
+		// http://0x80.pl/articles/convex-polygon-intersection/demo/
+		// naive
+		
 		var v2:Vertex = null;
 		var w2:Wrapper;
 		var v:Vertex = null;
