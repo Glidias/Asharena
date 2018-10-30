@@ -1870,9 +1870,14 @@ class Face {
 					collectedVerts.push(tryV2);
 					tryV2 = Vertex.create();
 				}
+				else {
+					collectedVerts.push(v2);
+				}
 			}
+			else collectedVerts.push(v2);
 		}
 		
+		// if nothing occurs here, don't need to sort actualy
 		for (w = face.wrapper; w != null; w = w.next) {
 			v = w.vertex;
 			if (pointInside2D(v.cameraX, v.cameraY)) {
@@ -1949,6 +1954,7 @@ class Face {
     }
 	
 	public function getIntersections(sp0:Vertex, sp1:Vertex, intersect1:Vertex, intersect2:Vertex):int {
+		//http://geomalgorithms.com/a13-_intersect-4.html
 		
 		var tE:Number = 0;
 		var tL:Number = 1;
@@ -1999,8 +2005,10 @@ class Face {
 		mask |= tE < 1 ? 2 : 0;
 		intersect1.cameraX = sp0.cameraX + tE * dSx;
 		intersect1.cameraY = sp0.cameraY + tE * dSy;
+		intersect1.offset = tE;
 		intersect2.cameraX = sp0.cameraX + tL * dSx;
 		intersect2.cameraY = sp0.cameraY + tL * dSy;
+		intersect2.offset = tL;
 		return mask;
 	}
 	
