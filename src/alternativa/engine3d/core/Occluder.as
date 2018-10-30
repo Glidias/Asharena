@@ -1502,14 +1502,17 @@ package alternativa.engine3d.core {
 			var rightZ:Number = right.z - origin.z;
 			
 			var d:Number;
-			d = 1 / Math.sqrt(topX * topX + topY * topY + topZ * topZ);
-			Log.trace("TOP" + "::"+(1/d));
+			var topD:Number = Math.sqrt(topX * topX + topY * topY + topZ * topZ);
+			d = 1 / topD;
+			Log.trace("TOP" + "::"+topD);
 			
 			topX *= d;
 			topY *= d;
 			topZ *= d;
-			d = 1 / Math.sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ);
-			Log.trace("RIGHT" + "::"+(1/d));
+			
+			var rightD:Number = Math.sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ)
+			d = 1 / rightD;
+			Log.trace("RIGHT" + "::"+rightD);
 			rightX *= d;
 			rightY *= d;
 			rightZ *= d;
@@ -1517,7 +1520,7 @@ package alternativa.engine3d.core {
 			var vx:Number;
 			var vy:Number;
 			var vz:Number;
-
+			
 			for (var f:Face = faceList; f != null; f = f.next) {
 				for (var w:Wrapper = f.wrapper; w != null; w = w.next) {
 					var v:Vertex = w.vertex;
@@ -1528,6 +1531,12 @@ package alternativa.engine3d.core {
 						vz = v.z - origin.z;
 						v.cameraX = vx * rightX + vy * rightY * vz * rightZ;
 						v.cameraY = vx * topX + vy * topY * vz * topZ;
+						if (v.cameraX > rightD) {
+							Log.trace("Exceeded x bounds by:" + (v.cameraX - rightD) );
+						}
+						if (v.cameraY > topD) {
+							Log.trace("Exceeded y bounds by:" + (v.cameraY - topD) );
+						}
 						Log.trace(v.cameraX + ", " + v.cameraY + ":: "+ (vx*faceReference.normalX + vy * faceReference.normalY + vz*faceReference.normalZ) );
 						
 					}
