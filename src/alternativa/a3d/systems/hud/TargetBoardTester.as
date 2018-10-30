@@ -542,11 +542,13 @@ package alternativa.a3d.systems.hud
 					return areaSubtracted;
 				}
 				else {
-					Log.trace("Got multiple polies");
+					//Log.trace("Got multiple polies");
 					soupOccluder.calculateFaceCoordinates(soupOccluder.faceList,  soupOccluder._disposableFaceCache);
-					areaSubtracted -= soupOccluder.getTotalAreaIntersections(soupOccluder.faceList);
+					var reduc:Number = soupOccluder.getTotalAreaIntersections(soupOccluder.faceList);
+					if (reduc > 0) Log.trace(int(reduc / soupOccluder._disposableFaceCache.getArea() * 100)+" percent reduction");
+					areaSubtracted -= reduc;
 					
-					//if (areaSubtracted < 0) Log.trace("Area substracted should not exceed total");
+					if (areaSubtracted < -1e-6) Log.trace("Area substracted should not exceed total:" + areaSubtracted);
 					return areaSubtracted;
 				}
 			}
