@@ -458,11 +458,11 @@ package alternativa.a3d.systems.hud
 				var cz:Number = vertices[ci + 2];
 				
 				
+				// Not sure why broadphase didn't detect this case, force-doing this for narrow phase
 				if ( billboardFarClip.x * ax + billboardFarClip.y * ay + billboardFarClip.z * az < billboardFarClip.offset || billboardFarClip.x * bx + billboardFarClip.y * by + billboardFarClip.z * bz < billboardFarClip.offset || billboardFarClip.x * cx + billboardFarClip.y * cy + billboardFarClip.z * cz < billboardFarClip.offset ) {
 					//Log.trace("Exit");
 					continue;
 				}
-			
 				
 				var abx:Number;
 				var aby:Number;
@@ -501,7 +501,7 @@ package alternativa.a3d.systems.hud
 				p.z = acy * abx - acx * aby;
 				p.offset = bx * p.x + by * p.y + bz * p.z;
 				//Log.trace(p.x + ", "+p.y + " , "+p.z + ", "+p.offset);
-			mask |=  billboardFarClip.x * bx  + billboardFarClip.y * by + billboardFarClip.z * bz < billboardFarClip.offset && billboardFarClip.x * cx  + billboardFarClip.y * cy + billboardFarClip.z * cz < billboardFarClip.offset  ? 2 : 0; 
+				mask |=  billboardFarClip.x * bx  + billboardFarClip.y * by + billboardFarClip.z * bz < billboardFarClip.offset && billboardFarClip.x * cx  + billboardFarClip.y * cy + billboardFarClip.z * cz < billboardFarClip.offset  ? 2 : 0; 
 				
 				p = p.next;
 				
@@ -527,6 +527,24 @@ package alternativa.a3d.systems.hud
 				}
 				
 			}
+			
+			/*
+			Take note beforehand for production: Consolidate and transform all geometry vertices to global coordinate space:
+
+			Collect all clipped polygons:
+			Early out check for zero pairwise overlap intersections OR only 1 clip polygon used for subtraction
+
+			Percentage Cover = (SumOf(Individual Subtractions Area) - SumOf(Pairwise Intersections Area)) / InitialArea
+
+			Pairwise=> SAT between shapes, if SAT intersection detected, detect area of overlap intersection
+			Overlap Intersection Polygon: Use Sutherland Hodgeman 
+			OR 
+			Ordered(ConvexSetOf(EdgeIntersections + Fully Contained Inside))
+			
+			https://forum.openframeworks.cc/t/ofpolyline-convex-hull-areas-intersection-solved/28724
+			https://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
+			
+			*/
 			
 			return areaSubtracted;
 			
