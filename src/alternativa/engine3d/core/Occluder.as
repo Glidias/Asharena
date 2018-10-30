@@ -28,7 +28,7 @@ package alternativa.engine3d.core {
 	 */
 	public class Occluder extends Object3D {
 		
-		private var faceList:Face;
+		alternativa3d var faceList:Face;
 		
 		private var edgeList:Edge;
 		
@@ -1351,7 +1351,7 @@ package alternativa.engine3d.core {
 			var w:Wrapper;
 			
 		
-			f.wrapper = w = new Wrapper();
+			f.wrapper = w = new Wrapper();	// top left vertex
 			w.vertex  = v =  new Vertex();
 			vx = pos.x; vy = pos.y; vz = pos.z;
 			vx += up.x*height;
@@ -1364,7 +1364,7 @@ package alternativa.engine3d.core {
 			v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
 			v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
 			
-			w.next = w = new Wrapper();
+			w.next = w = new Wrapper();	 // bottom left
 			w.vertex = v.next = v = new Vertex();
 			vx = pos.x; vy = pos.y; vz = pos.z;
 			vx -= up.x*height;
@@ -1377,7 +1377,7 @@ package alternativa.engine3d.core {
 			v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
 			v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
 			
-			w.next = w = new Wrapper();
+			w.next = w = new Wrapper();	 // bottom right vertex
 			w.vertex =  v.next = v = new Vertex();
 			vx = pos.x; vy = pos.y; vz = pos.z;
 			vx -= up.x*height;
@@ -1392,7 +1392,7 @@ package alternativa.engine3d.core {
 			
 			
 			
-			w.next = w = new Wrapper();
+			w.next = w = new Wrapper();		// top right
 			w.vertex =  v.next = v = new Vertex();
 			vx = pos.x; vy = pos.y; vz = pos.z;
 			vx += up.x*height;
@@ -1463,6 +1463,84 @@ package alternativa.engine3d.core {
 			}
 			
 			return -1;
+		}
+		
+		/*
+			Take note beforehand for production: Consolidate and transform all geometry vertices to global coordinate space:
+
+			Collect all clipped polygons:
+			Early out check for zero pairwise overlap intersections OR only 1 clip polygon used for subtraction
+
+			Percentage Cover = (SumOf(Individual Subtractions Area) - SumOf(Pairwise Intersections Area)) / InitialArea
+
+			Pairwise=> SAT between shapes, if SAT intersection detected, detect area of overlap intersection
+			Overlap Intersection Polygon: Use Sutherland Hodgeman 
+			OR 
+			Ordered(ConvexSetOf(EdgeIntersections + Fully Contained Inside))
+			
+			https://forum.openframeworks.cc/t/ofpolyline-convex-hull-areas-intersection-solved/28724
+			https://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
+			
+			*/
+			
+		private static var calculateId:int = 0;
+		
+		// faceReference approach is temporary until production where faceList runs in global coordinate space with global top/right/origin
+		public function calculateFaceCoordinates(faceList:Face, faceReference:Face):void {
+			calculateId++;
+			
+			var origin:Vertex = faceReference.wrapper.next.vertex;
+			var top:Vertex = faceReference.wrapper.vertex;
+			var right:Vertex = faceReference.wrapper.next.next.vertex;
+			
+			// axes
+			var topX:Number = top.x - origin.x;
+			var topY:Number = top.y - origin.y;
+			var topZ:Number = top.z - origin.z;
+			var rightX:Number = right.x - origin.x;
+			var rightY:Number = right.y - origin.y;
+			var rightZ:Number = right.z - origin.z;
+			
+			var d:Number;
+			d = 1 / Math.sqrt(topX * topX + topY * topY + topZ * topZ);
+			topX *= d;
+			topY *= d;
+			topZ *= d;
+			d = 1/Math.sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ);
+			rightX *= d;
+			rightY *= d;
+			rightZ *= d;
+			
+			var vx:Number;
+			var vy:Number;
+			var vz:Number;
+
+			for (var f:Face = faceList; f != null; f = f.next) {
+				for (var w:Wrapper = f.wrapper; w != null; w = w.next) {
+					var v:Vertex = w.vertex;
+					if (v.transformId != calculateId) {
+						vx = v.x - origin.x;
+						vy = v.y - origin.y;
+						vz = v.z - origin.z;
+						v.cameraX = vx * rightX + vy * rightY * vz * rightZ;
+						v.cameraY = vx * topX + vy * topY * vz * topZ;
+					}
+				}
+			}
+		}
+			
+		public function getTotalAreaIntersections(faceList:Face):Number 
+		{
+			// Retrieves accumulated area of intersections between polygons (pairwise) from face camera coordinates X/Y of polygons
+			var accum:Number = 0;
+			for (var f:Face = faceList; f != null; f = f.next) {
+				for (var p:Face = f.next;  p != null; p = p.next) {
+					if (f.overlapsOther2D(p)) {
+						Log.trace("detected overlap");
+					}
+				}
+			}
+			return accum;
 		}
 		
 	}
@@ -1613,6 +1691,79 @@ class Face {
 		}
 		
 		return areaAccum;
+	}
+	
+	
+	public function overlapsOther2D(face:Face):Boolean {
+		var v2:Vertex = null;
+		var w2:Wrapper;
+		var v:Vertex = null;
+		var w:Wrapper;
+		// naive algorithm
+		var a:Number;
+		var b:Number;
+		var c:Number;
+		var list:Array = [];
+		
+		
+		var vList:Vertex;
+		var lastVertex:Vertex;
+		var lastVertex2:Vertex;
+		
+		
+		for (w = wrapper; w != null; w = w.next) {
+			v = w.vertex;
+		}
+		lastVertex = v;
+		
+		for (w = face.wrapper; w != null; w = w.next) {
+			v = w.vertex;
+		}
+		lastVertex2 = v;
+		
+		for (w = wrapper; w != null; w = w.next) {
+			var v0:Vertex = v != null ? v : lastVertex;
+			v = w.vertex;
+			var v1:Vertex = w.next != null ? w.next.vertex : wrapper.vertex;
+			for (w2 = face.wrapper; w2 != null; w2 = w2.next) {
+				var v2_0:Vertex = v2 != null ? v2 : lastVertex2;
+				v2 = w2.vertex;
+				var v2_1:Vertex =  w.next != null ? w.next.vertex : face.wrapper.vertex;
+				
+				a = (v2.cameraY - v.cameraY);
+				b = -(v2.cameraX - v.cameraX);
+				c = a * v.x + b * v.y;
+				var sideA:Number = get_side(a, b, c, v0, v1);
+				if (isNaN(sideA)) {
+					continue;
+				}
+				var sideB:Number = get_side(a, b, c, v2_0, v2_1);
+				if (isNaN(sideB)) {
+					continue;
+				}
+				if (sideA * sideB < 0.0) {
+					return true;
+				}
+			}
+		}
+	
+		return false;
+		
+	}
+	
+	private function get_side(a:Number , b:Number, c:Number, point1:Vertex, point2:Vertex):Number {
+		var s1:Number = a * point1.x + b * point1.y - c;
+		s1 = s1 > 0 ? 1 : s1 < 0 ? -1 : 0;
+		
+		var s2:Number = a * point2.x + b * point2.y - c;
+		s2 = s2 > 0 ? 1 : s2 < 0 ? -1 : 0;
+		var side:Number = s1 * s2;
+		return side < 0 ? NaN : side > 0 ? s1 : s1 == 0 ? s2 : s2 == 0 ? s1 : NaN;  // could use NUll for haxe?
+	}
+	
+	public function getOverlapIntersect(face:Face):Face {
+		return null;
+		
 	}
 	
 	public function calculateBestSequenceAndNormal():void {

@@ -386,6 +386,8 @@ package alternativa.a3d.systems.hud
 					
 				}
 				
+			
+				
 
 				if (keyPoll != null && keyPoll.isDown(Keyboard.SLASH) && terrainLOD != null ) {
 					
@@ -428,6 +430,8 @@ package alternativa.a3d.systems.hud
 		}
 		
 		private function collectClipPolygonsFromSoup(vertices:Vector.<Number>, indices:Vector.<uint>, observerX:Number, observerY:Number, observerZ:Number):Number {
+			
+			
 			var p: CullingPlane;
 			if (soupOccluder.planeList == null) {	// lazy instantiate 3 planes for triangle soup testing
 				soupOccluder.planeList = p = CullingPlane.create();
@@ -435,6 +439,7 @@ package alternativa.a3d.systems.hud
 				p = p.next = CullingPlane.create();
 			}
 			
+			soupOccluder.faceList = null;
 			
 			var mask:int;
 			var areaSubtracted:Number = 0;
@@ -524,27 +529,27 @@ package alternativa.a3d.systems.hud
 				var retAreaSubtracted:Number = soupOccluder.clip(soupOccluder._disposableFaceCache);
 				if (retAreaSubtracted > 0) {
 					areaSubtracted += retAreaSubtracted;
+					soupOccluder._negativeFaceCache.next = soupOccluder.faceList;
+					soupOccluder.faceList = soupOccluder._negativeFaceCache;
 				}
 				
+				
 			}
-			
-			/*
-			Take note beforehand for production: Consolidate and transform all geometry vertices to global coordinate space:
+				
 
-			Collect all clipped polygons:
-			Early out check for zero pairwise overlap intersections OR only 1 clip polygon used for subtraction
-
-			Percentage Cover = (SumOf(Individual Subtractions Area) - SumOf(Pairwise Intersections Area)) / InitialArea
-
-			Pairwise=> SAT between shapes, if SAT intersection detected, detect area of overlap intersection
-			Overlap Intersection Polygon: Use Sutherland Hodgeman 
-			OR 
-			Ordered(ConvexSetOf(EdgeIntersections + Fully Contained Inside))
-			
-			https://forum.openframeworks.cc/t/ofpolyline-convex-hull-areas-intersection-solved/28724
-			https://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
-			
-			*/
+			if (soupOccluder.faceList != null) {
+				if (soupOccluder.faceList.next == null) {	// early out
+					return areaSubtracted;
+				}
+				else {
+					Log.trace("Got multiple polies");
+					soupOccluder.calculateFaceCoordinates(soupOccluder.faceList,  soupOccluder._disposableFaceCache);
+					areaSubtracted -= soupOccluder.getTotalAreaIntersections(soupOccluder.faceList);
+					
+					//if (areaSubtracted < 0) Log.trace("Area substracted should not exceed total");
+					return areaSubtracted;
+				}
+			}
 			
 			return areaSubtracted;
 			
