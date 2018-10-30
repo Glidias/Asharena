@@ -1483,15 +1483,20 @@ package alternativa.engine3d.core {
 			
 			*/
 			
-		private static var calculateId:int = 0;
+	
 		
 		// faceReference approach is temporary until production where faceList runs in global coordinate space with global top/right/origin
 		public function calculateFaceCoordinates(faceList:Face, faceReference:Face):void {
-			calculateId++;
+			var calculateId:int = ++ClipMacros.transformId;
 			
 			var origin:Vertex = faceReference.wrapper.next.vertex;
 			var top:Vertex = faceReference.wrapper.vertex;
 			var right:Vertex = faceReference.wrapper.next.next.vertex;
+			
+			//var assertNoLastVertex:Boolean = faceReference.wrapper.next.next.next.next == null;
+			//if (!assertNoLastVertex) {
+			//	throw new Error("ASSERTION FAILED");
+			//}
 			
 			// axes
 			var topX:Number = top.x - origin.x;
@@ -1504,7 +1509,7 @@ package alternativa.engine3d.core {
 			var d:Number;
 			var topD:Number = Math.sqrt(topX * topX + topY * topY + topZ * topZ);
 			d = 1 / topD;
-			Log.trace("TOP" + "::"+topD);
+			//Log.trace("TOP" + "::"+topD);
 			
 			topX *= d;
 			topY *= d;
@@ -1512,10 +1517,12 @@ package alternativa.engine3d.core {
 			
 			var rightD:Number = Math.sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ)
 			d = 1 / rightD;
-			Log.trace("RIGHT" + "::"+rightD);
+			//Log.trace("RIGHT" + "::"+rightD);
 			rightX *= d;
 			rightY *= d;
 			rightZ *= d;
+			
+			//Log.trace( new Vector3D(rightX, rightY, rightZ).crossProduct(new Vector3D(topX, topY, topZ)) + " vs " + new Vector3D(faceReference.normalX, faceReference.normalY, faceReference.normalZ));
 			
 			var vx:Number;
 			var vy:Number;
@@ -1529,15 +1536,15 @@ package alternativa.engine3d.core {
 						vx = v.x - origin.x;
 						vy = v.y - origin.y;
 						vz = v.z - origin.z;
-						v.cameraX = vx * rightX + vy * rightY * vz * rightZ;
-						v.cameraY = vx * topX + vy * topY * vz * topZ;
-						if (v.cameraX > rightD) {
+						v.cameraX = vx * rightX + vy * rightY + vz * rightZ;
+						v.cameraY = vx * topX + vy * topY + vz * topZ;
+						if (v.cameraX > rightD+1e6) {
 							Log.trace("Exceeded x bounds by:" + (v.cameraX - rightD) );
 						}
-						if (v.cameraY > topD) {
+						if (v.cameraY > topD+1e6) {
 							Log.trace("Exceeded y bounds by:" + (v.cameraY - topD) );
 						}
-						Log.trace(v.cameraX + ", " + v.cameraY + ":: "+ (vx*faceReference.normalX + vy * faceReference.normalY + vz*faceReference.normalZ) );
+						//Log.trace(v.cameraX + ", " + v.cameraY + ":: "+ (vx*faceReference.normalX + vy * faceReference.normalY + vz*faceReference.normalZ) );
 						
 					}
 				}
@@ -1876,8 +1883,7 @@ class Face {
 		tryV2.next = Vertex.collector;
 		Vertex.collector = tryV;
 		computeCenter2DFromPoints(collectedVerts);
-		collectedVerts = collectedVerts.sort(sortAtan2);
-		
+		collectedVerts = collectedVerts.sort(lessCcw);
 		return get2DAreaFromArray(collectedVerts);	
 	}
 	
