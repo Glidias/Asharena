@@ -1568,7 +1568,7 @@ package alternativa.engine3d.core {
 		///*
 		public static function TEST_INTERSECT():void {
 			var occluder:Occluder = new Occluder();
-			var referFace:Face = occluder.getDisposableTransformedFace(new Vec3(100, 0, 0), new Vec3(0, 1, 0), new Vec3(1, 0, 0), 100/2, 99/2, new Transform3D());
+			var referFace:Face = occluder.getDisposableTransformedFace(new Vec3(148, 0, 0), new Vec3(0, 1, 0), new Vec3(1, 0, 0), 96/2, 100/2, new Transform3D());
 			var referFace2:Face = occluder.getDisposableTransformedFace(new Vec3(0, 0, 0), new Vec3(0, 1, 0), new Vec3(1, 0, 0), 100/2, 100/2, new Transform3D());
 		
 			//occluder.calculateFaceCoordinates(referFace, referFace);
@@ -1776,8 +1776,6 @@ class Face {
 	}
 	
 	
-	
-	//TODO: fix this , doesn't seem to work for containment and certain cases nad vice versa
 	public function overlapsOther2D(face:Face):Boolean {
 		// http://0x80.pl/articles/convex-polygon-intersection/demo/
 		// naive
@@ -1791,8 +1789,7 @@ class Face {
 		var b:Number;
 		var c:Number;
 		var list:Array = [];
-		
-		
+
 		var vList:Vertex;
 		var lastVertex:Vertex;
 		var lastVertex2:Vertex;
@@ -1808,12 +1805,15 @@ class Face {
 		}
 		lastVertex2 = v;
 		
+		v = lastVertex;
 		for (w = wrapper; w != null; w = w.next) {
-			var v0:Vertex = v != null ? v : lastVertex;
+			var v0:Vertex = v;
 			v = w.vertex;
 			var v1:Vertex = w.next != null ? w.next.vertex : wrapper.vertex;
+			
+			v2 = lastVertex2;
 			for (w2 = face.wrapper; w2 != null; w2 = w2.next) {
-				var v2_0:Vertex = v2 != null ? v2 : lastVertex2;
+				var v2_0:Vertex = v2;
 				v2 = w2.vertex;
 				var v2_1:Vertex =  w2.next != null ? w2.next.vertex : face.wrapper.vertex;
 				
@@ -1895,7 +1895,7 @@ class Face {
 		
 		for (w = wrapper; w != null; w = w.next) {
 			v = w.vertex;
-			var v2:Vertex = w.next != null ? w.next.vertex : face.wrapper.vertex;
+			var v2:Vertex = w.next != null ? w.next.vertex : wrapper.vertex;
 			
 
 			var mask:int = face.getIntersectionsUnordered(v, v2, tryV, tryV2);
