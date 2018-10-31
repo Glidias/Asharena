@@ -191,7 +191,7 @@ package tests.pvp
 			//throw new Error(bico(4,0));
 		//	throw new Error(findNumSucceedProb(90, 13, 10)*100);
 			
-			Occluder.TEST_INTERSECT();
+			//Occluder.TEST_INTERSECT();
 			
 			if (root.loaderInfo.parameters.waterSettings) {
 				waterSettings = root.loaderInfo.parameters.waterSettings;

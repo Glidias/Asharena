@@ -430,7 +430,11 @@ package alternativa.a3d.systems.hud
 		}
 		
 		private function collectClipPolygonsFromSoup(vertices:Vector.<Number>, indices:Vector.<uint>, observerX:Number, observerY:Number, observerZ:Number):Number {
-			
+			var ax:Number;
+			var ay:Number;
+			var az:Number;
+			var len:int;
+			var i:int;
 			
 			var p: CullingPlane;
 			if (soupOccluder.planeList == null) {	// lazy instantiate 3 planes for triangle soup testing
@@ -443,16 +447,30 @@ package alternativa.a3d.systems.hud
 			
 			var mask:int;
 			var areaSubtracted:Number = 0;
-			var len:int = indices.length;
-			for (var i:int = 0; i < len; i += 3) {
+			
+			/*
+			var precision:Number = 0.000001;
+			len = vertices.length;
+			for (i = 0; i < len; i += 3) {
+				ax = vertices[i];
+				ay = vertices[i+1];
+				az = vertices[i + 2];
+				vertices[i] = Math.round(ax / precision) * precision;
+				vertices[i+1] = Math.round(ay / precision) * precision;
+				vertices[i+2] = Math.round(az / precision) * precision;
+			}
+			*/
+			
+			len = indices.length;
+			for (i = 0; i < len; i += 3) {
 				mask = 0;
 				var ai:int = indices[i] * 3;
 				var bi:int = indices[i+1] * 3;
 				var ci:int = indices[i+2] * 3;
 				
-				var ax:Number = vertices[ai];
-				var ay:Number = vertices[ai+1];
-				var az:Number = vertices[ai+2];
+				ax = vertices[ai];
+				ay = vertices[ai+1];
+				az = vertices[ai+2];
 				
 				var bx:Number = vertices[bi];
 				var by:Number = vertices[bi+1];
@@ -539,13 +557,16 @@ package alternativa.a3d.systems.hud
 
 			if (soupOccluder.faceList != null) {
 				if (soupOccluder.faceList.next == null) {	// early out
+					soupOccluder.faceList.collect();
+					soupOccluder.faceList = null;
 					return areaSubtracted;
 				}
 				else {
 					//Log.trace("Got multiple polies");
 					soupOccluder.calculateFaceCoordinates(soupOccluder.faceList,  soupOccluder._disposableFaceCache);
-					var reduc:Number = soupOccluder.getTotalAreaIntersections(soupOccluder.faceList);
-					if (reduc > 0) Log.trace(int(reduc / soupOccluder._disposableFaceCache.getArea() * 100)+" percent reduction");
+					var reduc:Number = soupOccluder.disposeTotalAreaIntersections(soupOccluder.faceList);
+					soupOccluder.faceList = null;
+					if (reduc > 0) Log.trace(int(reduc / soupOccluder._disposableFaceCache.getArea() * 100)+" percent reduction overlap");
 					areaSubtracted -= reduc;
 					
 					if (areaSubtracted < -1e-6) Log.trace("Area substracted should not exceed total:" + areaSubtracted);

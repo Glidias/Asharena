@@ -1551,21 +1551,25 @@ package alternativa.engine3d.core {
 			}
 		}
 			
-		public function getTotalAreaIntersections(faceList:Face):Number 
+		public function disposeTotalAreaIntersections(faceList:Face):Number 
 		{
 			// Retrieves accumulated area of intersections between polygons (pairwise) from face camera coordinates X/Y of polygons
 			var accum:Number = 0;
+			var lastFace:Face;
 			for (var f:Face = faceList; f != null; f = f.next) {
 				for (var p:Face = f.next;  p != null; p = p.next) {
 					if (f.overlapsOther2D(p)) {
-						accum += f.getOverlapIntersectArea(p);
-					}
+						accum += f.getOverlapClipArea(p);
+					}	
 				}
+				lastFace = f;
 			}
+			lastFace.next = Face.collector;
+			Face.collector = faceList;
 			return accum;
 		}
 		
-		///*
+		/*
 		public static function TEST_INTERSECT():void {
 			var occluder:Occluder = new Occluder();
 			var referFace:Face = occluder.getDisposableTransformedFace(new Vec3(148, 0, 0), new Vec3(0, 1, 0), new Vec3(1, 0, 0), 96/2, 100/2, new Transform3D());
@@ -1579,6 +1583,7 @@ package alternativa.engine3d.core {
 				throw new Error(referFace.getOverlapIntersectArea(referFace2));
 			}
 		}
+		*/
 		
 		public static function TEST_dummyCalcFaceCoordinates(faceList:Face):void {
 			for (var f:Face = faceList; f != null; f = f.next) {
@@ -1678,6 +1683,24 @@ class Face {
 	
 
 	public static var collector:Face;
+	
+	public function collect():void {
+		next = collector;
+		collector = this;
+	}
+	
+	public function destroy():void {
+		for (var w:Wrapper = wrapper; w != null; w = nextW) {
+			var nextW:Wrapper = w.next;
+			w.next = Wrapper.collector;
+			Wrapper.collector = w;
+			w.vertex.next = Vertex.collector;
+			Vertex.collector = w.vertex;
+			w.vertex = null;
+		}
+		wrapper = null;
+		processNext = null;
+	}
 	
 
 	static public function create():Face {
@@ -1885,6 +1908,64 @@ class Face {
 		*/
 	}
 	
+	public function getOverlapClipArea(face:Face):Number {
+		var v:Vertex;
+		var w:Wrapper;
+		var ax:Number;
+		var ay:Number;
+		var az:Number;
+		var bx:Number;
+		var by:Number;
+		var bz:Number;
+		var negativeFace:Face;
+		ax = normalX;
+		ay = normalY;
+		az = normalZ;
+		var inputNorm:Vector3D = ClipMacros.DUMMY_VECTOR;
+
+		for (w = wrapper; w != null; w = w.next) {
+			v = w.vertex;
+			var v2:Vertex = w.next != null ? w.next.vertex : wrapper.vertex;
+			bx = v2.x - v.x;
+			by = v2.y - v.y;
+			bz = v2.z - v.z;
+			var d:Number = 1 / Math.sqrt(bx * bx + by * by + bz * bz);
+			bx *= d;
+			by *= d;
+			bz *= d;
+			inputNorm.x = bz*ay - by*az;
+			inputNorm.y = bx*az - bz*ax;
+			inputNorm.z = by * ax - bx * ay;
+			
+			inputNorm.w = v.x * inputNorm.x + v.y * inputNorm.y + v.z * inputNorm.z;
+				
+			ClipMacros.computeMeshVerticesLocalOffsets(face, inputNorm);
+			
+			if (negativeFace == null) negativeFace = ClipMacros.newPositiveClipFace(face, inputNorm, inputNorm.w);
+			else ClipMacros.updateClipFace(face, inputNorm, inputNorm.w);
+			if (negativeFace.wrapper == null) negativeFace = null;
+			face = negativeFace;
+			if (face == null) {
+				// face happens to lie completely on the outside of a plane
+				//gotExit = true;
+				break;  
+			}
+				
+		}
+		
+		if (negativeFace != null) {
+			ax =  negativeFace.getArea();
+			negativeFace.destroy();
+			negativeFace.next = Face.collector;
+			Face.collector = negativeFace;
+			return ax;
+			//return "Negative: "+gotExit + ":"+ negativeFace.wrapper + "="+count + "/"+pCount;
+		}
+		
+		return 0;
+	}
+	
+	/*	// NO longer being used. These 2D methods have some problems ATM
 	public function getOverlapIntersectArea(face:Face):Number {
 		var v:Vertex;
 		var w:Wrapper;
@@ -1937,16 +2018,16 @@ class Face {
 		
 		if (collectedVerts.length < 3) {
 			Log.trace("Failed to collect all vertices for intersection:"+collectedVerts.length);
-		///*
+		
 		//throw new Error( collectedVerts.map( function (v:Vertex, index:int, array:Array):Vector3D { return new Vector3D(v.cameraX, v.cameraY); }) );
 		return 0;
-		//*/
+		
 		}
 		//throw new Error( collectedVerts.map( function (v:Vertex, index:int, array:Array):Vector3D { return new Vector3D(v.cameraX, v.cameraY); }) );
 		return get2DAreaFromArray(collectedVerts);	
 	}
 	
-
+	
 	private static const SMALL_NUM:Number = 0.000000001;
 	
 	private static var CENTER:Vector3D = new Vector3D();
@@ -1978,24 +2059,12 @@ class Face {
     {
 		var center:Vector3D = CENTER;
 		
-        // Computes the quadrant for a and b (0-3):
-        //     ^
-        //   1 | 0
-        //  ---+-->
-        //   2 | 3
+       
 
         var dax:int = ((a.cameraX - center.x) > 0) ? 1 : 0;
         var day:int = ((a.cameraY - center.y) > 0) ? 1 : 0;
         var qa :int= (1 - dax) + (1 - day) + ((dax & (1 - day)) << 1);
 
-        /* The previous computes the following:
-
-           const int qa =
-           (  (a.x() > center.x())
-            ? ((a.y() > center.y())
-                ? 0 : 3)
-            : ((a.y() > center.y())
-                ? 1 : 2)); */
 
 		   var  dbx:int = ((b.cameraX - center.x) > 0) ? 1 : 0;
 		   var  dby:int = ((b.cameraY - center.y) > 0) ? 1 : 0;
@@ -2127,7 +2196,7 @@ class Face {
 		intersect2.offset = tL;
 		return mask;
 	}
-	
+	*/
 
 	
 	
@@ -2555,6 +2624,7 @@ import flash.geom.Vector3D;
  class ClipMacros
 	{
 		
+		public static const DUMMY_VECTOR:Vector3D = new Vector3D();
 		
 		public static var transformId:int = 0;
 		
