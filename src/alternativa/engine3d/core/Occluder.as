@@ -1565,6 +1565,33 @@ package alternativa.engine3d.core {
 			return accum;
 		}
 		
+		///*
+		public static function TEST_INTERSECT():void {
+			var occluder:Occluder = new Occluder();
+			var referFace:Face = occluder.getDisposableTransformedFace(new Vec3(100, 0, 0), new Vec3(0, 1, 0), new Vec3(1, 0, 0), 100/2, 99/2, new Transform3D());
+			var referFace2:Face = occluder.getDisposableTransformedFace(new Vec3(0, 0, 0), new Vec3(0, 1, 0), new Vec3(1, 0, 0), 100/2, 100/2, new Transform3D());
+		
+			//occluder.calculateFaceCoordinates(referFace, referFace);
+			//occluder.calculateFaceCoordinates(referFace2, referFace);
+			TEST_dummyCalcFaceCoordinates(referFace);
+			TEST_dummyCalcFaceCoordinates(referFace2);
+			if (referFace.overlapsOther2D(referFace2)) {
+				throw new Error(referFace.getOverlapIntersectArea(referFace2));
+			}
+		}
+		
+		public static function TEST_dummyCalcFaceCoordinates(faceList:Face):void {
+			for (var f:Face = faceList; f != null; f = f.next) {
+				for (var w:Wrapper = f.wrapper; w != null; w = w.next) {
+					var v:Vertex = w.vertex;
+					v.cameraX = v.x;
+					v.cameraY = v.y;
+					Log.trace(v.cameraX + " , " + v.cameraY);
+				}
+			}
+		}
+		//*/
+		
 	}
 		
 
@@ -1720,18 +1747,21 @@ class Face {
 	public static function get2DAreaFromArray(arr:Array):Number {
 		var w:Wrapper;
 		var a:Vertex = arr[0];
-		
+		if (arr.length < 3) throw new Error("Should have at least 3 points:"+arr.length);
 		var areaAccum:Number = 0;
 		var area:Number;
 		var len:int = arr.length - 1;
 		for (var i:int = 1; i < len; i++) {
+
 			var b:Vertex = arr[i];
 			var c:Vertex = arr[i+1];
-			 var ax:Number= b.cameraX - a.cameraX;
-			var ay:Number = b.cameraY - a.cameraY;
-			var bx:Number = c.cameraX - a.cameraX;
-			var by:Number = c.cameraY - a.cameraY;
-			area = bx * ay - ax * by;
+			var xAB:Number = b.cameraX - a.cameraX;
+			var yAB:Number = b.cameraY - a.cameraY;
+			var xAC:Number = c.cameraX - a.cameraX;
+			var yAC:Number = c.cameraY - a.cameraY;
+
+			var cz:Number = xAB*yAC - yAB*xAC;
+			area = Math.sqrt( cz * cz) * 0.5;
 			if (area < -1e-7) {
 				Log.trace("Invalid AREA:" + area);
 			}
@@ -1739,13 +1769,15 @@ class Face {
 				
 				area = 0;
 			}
+			
 			areaAccum +=  area;
 		}
-		
 		return areaAccum;
 	}
 	
 	
+	
+	//TODO: fix this , doesn't seem to work for containment and certain cases nad vice versa
 	public function overlapsOther2D(face:Face):Boolean {
 		// http://0x80.pl/articles/convex-polygon-intersection/demo/
 		// naive
@@ -1783,26 +1815,26 @@ class Face {
 			for (w2 = face.wrapper; w2 != null; w2 = w2.next) {
 				var v2_0:Vertex = v2 != null ? v2 : lastVertex2;
 				v2 = w2.vertex;
-				var v2_1:Vertex =  w.next != null ? w.next.vertex : face.wrapper.vertex;
+				var v2_1:Vertex =  w2.next != null ? w2.next.vertex : face.wrapper.vertex;
 				
 				a = -(v2.cameraY - v.cameraY);
 				b = (v2.cameraX - v.cameraX);	// the other guy's one have this as negative
 				c = a * v.cameraX + b * v.cameraY;	
-				var sideA:Number = get_side(a, b, c, v0, v1);
-				if (isNaN(sideA)) {
+				var sideA:int = get_side(a, b, c, v0, v1);
+				if (sideA < -1) {
 					continue;
 				}
-				var sideB:Number = get_side(a, b, c, v2_0, v2_1);
-				if (isNaN(sideB)) {
+				var sideB:int = get_side(a, b, c, v2_0, v2_1);
+				if (sideB < -1) {
 					continue;
 				}				
-				if (sideA * sideB < 0.0) {
-					return true;
+				if (sideA * sideB < 0) {
+					return false;
 				}
 			}
 		}
 	
-		return false;
+		return true;
 		
 	}
 	
@@ -1821,17 +1853,18 @@ class Face {
 	}
 	
 	
-	private function get_side(a:Number , b:Number, c:Number, point1:Vertex, point2:Vertex):Number {
+	private function get_side(a:Number , b:Number, c:Number, point1:Vertex, point2:Vertex):int {
 		var s1:Number = a * point1.cameraX + b * point1.cameraY - c;
 		s1 = s1 > 0 ? 1 : s1 < 0 ? -1 : 0;
 		
 		var s2:Number = a * point2.cameraX + b * point2.cameraY - c;
 		s2 = s2 > 0 ? 1 : s2 < 0 ? -1 : 0;
 		var side:Number = s1 * s2;
-		//return side < 0 ? NaN : side > 0 ? s1 : s1 == 0 ? s2 : s2 == 0 ? s1 : NaN;  // could use NUll for haxe?
+		return side < 0 ? -2 : side > 0 ? s1 : s1 == 0 ? s2 : s2 == 0 ? s1 : -2; 
+		/*
 		if (side < 0.0) {
 			
-            return NaN;
+            return -2;
         } else if (side > 0.0) {
 			
             return s1;
@@ -1846,7 +1879,10 @@ class Face {
 			
             return s1;
         }
-		return NaN;
+		//throw new Error("A");
+		Log.trace("uncaught case get_side");
+		return -2;
+		*/
 	}
 	
 	public function getOverlapIntersectArea(face:Face):Number {
@@ -1860,39 +1896,58 @@ class Face {
 		for (w = wrapper; w != null; w = w.next) {
 			v = w.vertex;
 			var v2:Vertex = w.next != null ? w.next.vertex : face.wrapper.vertex;
-			var mask:int = face.getIntersections(v, v2, tryV, tryV2);
-			if ((mask & 3) !=0) {
-				if ((mask & 1) !=0) {
+			
+
+			var mask:int = face.getIntersectionsUnordered(v, v2, tryV, tryV2);
+			if (mask > 0) {
+				if (mask & 1) {
 					collectedVerts.push(tryV);
 					tryV = Vertex.create();
 				}
-				if ((mask & 2) !=0) {
+				
+				if (mask & 2) {
 					collectedVerts.push(tryV2);
 					tryV2 = Vertex.create();
 				}
-				else {
-					collectedVerts.push(v2);
-				}
 			}
-			else collectedVerts.push(v2);
 		}
-		
-		// if nothing occurs here, don't need to sort actualy
+
 		for (w = face.wrapper; w != null; w = w.next) {
 			v = w.vertex;
 			if (pointInside2D(v.cameraX, v.cameraY)) {
 				collectedVerts.push(v);
 			}
 		}
+			
+		
+		for (w = wrapper; w != null; w = w.next) {
+			v = w.vertex;
+			if (face.pointInside2D(v.cameraX, v.cameraY)) {
+				collectedVerts.push(v);
+			}
+		}
+		
+		// conseratie collection of vertices
 		tryV.next = tryV2;
 		tryV2.next = Vertex.collector;
 		Vertex.collector = tryV;
+	
 		computeCenter2DFromPoints(collectedVerts);
 		collectedVerts = collectedVerts.sort(lessCcw);
+		
+		if (collectedVerts.length < 3) {
+			Log.trace("Failed to collect all vertices for intersection:"+collectedVerts.length);
+		///*
+		//throw new Error( collectedVerts.map( function (v:Vertex, index:int, array:Array):Vector3D { return new Vector3D(v.cameraX, v.cameraY); }) );
+		return 0;
+		//*/
+		}
+		//throw new Error( collectedVerts.map( function (v:Vertex, index:int, array:Array):Vector3D { return new Vector3D(v.cameraX, v.cameraY); }) );
 		return get2DAreaFromArray(collectedVerts);	
 	}
 	
-	private static const SMALL_NUM:Number = 0.00000001;
+
+	private static const SMALL_NUM:Number = 0.000000001;
 	
 	private static var CENTER:Vector3D = new Vector3D();
 	private static function computeCenter2DFromPoints(points:Array):void { 
@@ -1915,7 +1970,7 @@ class Face {
 	private function sortAtan2(a:Vertex, b:Vertex):Number
     {
 	 var centroid:Vector3D = CENTER;
-	 return   Math.atan2(b.cameraY - centroid.y, b.cameraX - centroid.x) - Math.atan2(a.cameraY - centroid.y, a.cameraX - centroid.x);	
+	 return   Math.atan2(a.cameraY - centroid.y, a.cameraX - centroid.x) - Math.atan2(b.cameraY - centroid.y, b.cameraX - centroid.x);	
 		
 	}
 	
@@ -1947,13 +2002,69 @@ class Face {
 		   var qb:int = (1 - dbx) + (1 - dby) + ((dbx & (1 - dby)) << 1);
 
         if (qa == qb) {
-            return (b.cameraX - center.x) * (a.cameraY - center.y) < (b.cameraY - center.y) * (a.cameraX - center.x) ? 1 : -1;
+            return (b.cameraX - center.x) * (a.cameraY - center.y) - (b.cameraY - center.y) * (a.cameraX - center.x);
         } else {
-            return qa < qb ? 1: -1;
+            return qa - qb;
        } 
     }
 	
-	public function getIntersections(sp0:Vertex, sp1:Vertex, intersect1:Vertex, intersect2:Vertex):int {
+	
+	private function intersect2DLines( S1P0:Vertex, S1P1:Vertex, S2P0:Vertex, S2P1:Vertex,  I0:Vertex):Boolean
+	{
+		var     ux:Number = S1P1.cameraX - S1P0.cameraX;
+		var     uy:Number = S1P1.cameraY - S1P0.cameraY;
+		var    vx:Number = S2P1.cameraX - S2P0.cameraX;
+		var    vy:Number = S2P1.cameraY - S2P0.cameraY;
+		var    wx:Number = S1P0.cameraX - S2P0.cameraX;
+		var    wy:Number = S1P0.cameraY - S2P0.cameraY;
+		var    D:Number = ux * vy - uy * vx;
+		
+
+		// test if  they are parallel (includes either being a point)
+		if (Math.abs(D) < SMALL_NUM) {           // S1 and S2 are parallel
+			return false;	
+		}
+		
+
+		// the segments are skew and may intersect in a point
+		// get the intersect parameter for S1
+		var   sI:Number = (vx * wy - vy * wx) / D; // perp(v, w) / D;
+		if (sI < 0 || sI > 1)                // no intersect with S1
+			return false;
+
+		// get the intersect parameter for S2
+		var  tI:Number = (ux * wy - uy * wx) / D; //perp(u,w) / D;
+		if (tI <= 0 || tI >= 1)                // no intersect with S2
+			return false;
+
+		//*I0 = S1.P0 + sI * u;                // compute S1 intersect point
+		I0.cameraX = S1P0.cameraX + sI * ux;
+		I0.cameraY = S1P0.cameraY + sI * uy;
+		I0.offset = sI;
+		return true;
+	}
+	
+	public function getIntersectionsUnordered(sp0:Vertex, sp1:Vertex, intersect1:Vertex, intersect2:Vertex):int {
+		
+		var referVertex:Vertex = intersect1;
+		var result:int = 0;
+		for (var w:Wrapper = wrapper; w != null; w = w.next) {
+			var v:Vertex = w.vertex;
+			var v2:Vertex = w.next != null ? w.next.vertex : wrapper.vertex;
+			if (intersect2DLines(sp0, sp1, v, v2, referVertex)) {
+				if (referVertex != intersect2) {
+					referVertex = intersect2;
+					result = 1;
+				}
+				else {
+					return 3;
+				}
+			}
+		}
+		return result;
+	}
+	
+	public function getIntersectSegment(sp0:Vertex, sp1:Vertex, intersect1:Vertex, intersect2:Vertex):int {
 		//http://geomalgorithms.com/a13-_intersect-4.html
 		
 		var tE:Number = 0;
@@ -1971,29 +2082,33 @@ class Face {
 			var ey:Number = v2.cameraY - v.cameraY;
 			var vx:Number = sp0.cameraX - v.cameraX;
 			var vy:Number = sp0.cameraY - v.cameraY;
+			
 			N = ex * vy - ey * vx;
 			D = ex * dSy - ey * dSx;
 			D = -D;
 			if (Math.abs(D)	< SMALL_NUM) {
 				 if (N < 0)              // P0 is outside this edge, so
-                 return 0;      // S is outside the polygon
+                 return -1;      // S is outside the polygon
             else                    // S cannot cross this edge, so
                  continue; 		// ignore this edge
 			}
 			
 		    t = N / D;
 			if (D < 0) {            // segment S is entering across this edge
+				throw new Error("enter:"+t +  " ::: "+new Vector3D(sp0.cameraX, sp0.cameraY) + " :: "+new Vector3D(sp1.cameraX, sp1.cameraY) + " VS: "+ [new Vector3D(v.cameraX, v.cameraY), new Vector3D(v2.cameraX, v2.cameraY)] );
 				if (t > tE) {       // new max tE
 					 tE = t;
 					 if (tE > tL)   // S enters after leaving polygon
-						 return 0;
+						 return -1;
 				}
 			}
 			else {                  // segment S is leaving across this edge
+				throw new Error("leave:"+t +  " ::: "+new Vector3D(sp0.cameraX, sp0.cameraY) + " :: "+new Vector3D(sp1.cameraX, sp1.cameraY) + " VS: "+ [new Vector3D(v.cameraX, v.cameraY), new Vector3D(v2.cameraX, v2.cameraY)] );
 				if (t < tL) {       // new min tL
+					
 					 tL = t;
 					 if (tL < tE)   // S leaves before entering polygon
-						 return 0;
+						 return -1;
 				}
 			}
 		}
@@ -2002,7 +2117,8 @@ class Face {
 		//IS->P1 = S.P0 + tL * dS;   // = P(tL) = point where S leaves polygon
 		var mask:int = 0;
 		mask |= tE > 0 ? 1 : 0;
-		mask |= tE < 1 ? 2 : 0;
+		mask |= tL < 1 ? 2 : 0;
+		throw new Error(tE + ", "+tL);
 		intersect1.cameraX = sp0.cameraX + tE * dSx;
 		intersect1.cameraY = sp0.cameraY + tE * dSy;
 		intersect1.offset = tE;
