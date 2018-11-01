@@ -1,4 +1,6 @@
 package altern.geom;
+import components.Transform3D;
+import util.geom.Vec3;
 
 /**
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -8,7 +10,7 @@ package altern.geom;
  * It is desirable to notify that Covered Software was "Powered by AlternativaPlatform" with link to http://www.alternativaplatform.com/ 
  * */
 /**
- * Port over to Haxe
+ * Port over to Haxe with some additional utility methods of my own
  * @author Glidias
  */
 class Face
@@ -254,6 +256,83 @@ class Face
 		return true;
 	}
 	
+	/**
+	 * 
+	 * @param	pos Center position of quad
+	 * @param	up	The normalised up vector
+	 * @param	right	The normalised right vector
+	 * @param	halfWidth	The (half-offset)width from center position
+	 * @param	halfHeight	The (half-offset)height from center position
+	 * @param	t	The transform to use
+	 * @return	A single quad face
+	 */
+	public function getQuad(pos:Vec3, up:Vec3, right:Vec3, halfWidth:Float, halfHeight:Float, t:Transform3D):Face {
+		var f:Face = new Face();
+	
+		var v:Vertex;
+		var vx:Float;
+		var vy:Float;
+		var vz:Float;
+		var w:Wrapper;
+	
+		f.wrapper = w = new Wrapper();	// top left vertex
+		w.vertex  = v =  new Vertex();
+		vx = pos.x; vy = pos.y; vz = pos.z;
+		vx += up.x*halfHeight;
+		vy += up.y*halfHeight;
+		vz += up.z*halfHeight;
+		vx -= right.x*halfWidth;
+		vy -= right.y*halfWidth;
+		vz -= right.z * halfWidth;
+		v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+		v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+		
+		w.next = w = new Wrapper();	 // bottom left
+		w.vertex = v.next = v = new Vertex();
+		vx = pos.x; vy = pos.y; vz = pos.z;
+		vx -= up.x*halfHeight;
+		vy -= up.y*halfHeight;
+		vz -= up.z*halfHeight;
+		vx -= right.x*halfWidth;
+		vy -= right.y*halfWidth;
+		vz -= right.z * halfWidth;
+		v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+		v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+		
+		w.next = w = new Wrapper();	 // bottom right vertex
+		w.vertex =  v.next = v = new Vertex();
+		vx = pos.x; vy = pos.y; vz = pos.z;
+		vx -= up.x*halfHeight;
+		vy -= up.y*halfHeight;
+		vz -= up.z*halfHeight;
+		vx += right.x*halfWidth;
+		vy += right.y*halfWidth;
+		vz += right.z * halfWidth;
+		v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+		v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+		
+		
+		w.next = w = new Wrapper();		// top right
+		w.vertex =  v.next = v = new Vertex();
+		vx = pos.x; vy = pos.y; vz = pos.z;
+		vx += up.x*halfHeight;
+		vy += up.y*halfHeight;
+		vz += up.z*halfHeight;
+		vx += right.x*halfWidth;
+		vy += right.y*halfWidth;
+		vz += right.z*halfWidth;
+		v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+		v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+		
+		f.calculateBestSequenceAndNormal();
+	
+		return f;
+	}
+	
 	
 	private inline function get_side(a:Float , b:Float, c:Float, point1:Vertex, point2:Vertex):Int {
 		var s1:Float = a * point1.cameraX + b * point1.cameraY - c;
@@ -266,60 +345,8 @@ class Face
 		return side < 0 ? -2 : side > 0 ? s1i : s1i == 0 ? s2i : s2i == 0 ? s1i : -2;
 	}
 	
-	/*
-	public function getOverlapClipFace(face:Face):Face {
-		var v:Vertex;
-		var w:Wrapper;
-		var ax:Number;
-		var ay:Number;
-		var az:Number;
-		var bx:Number;
-		var by:Number;
-		var bz:Number;
-		var negativeFace:Face;
-		ax = normalX;
-		ay = normalY;
-		az = normalZ;
-		var inputNorm:Vector3D = ClipMacros.DUMMY_VECTOR;
 
-		for (w = wrapper; w != null; w = w.next) {
-			v = w.vertex;
-			var v2:Vertex = w.next != null ? w.next.vertex : wrapper.vertex;
-			bx = v2.x - v.x;
-			by = v2.y - v.y;
-			bz = v2.z - v.z;
-			var d:Number = 1 / Math.sqrt(bx * bx + by * by + bz * bz);
-			bx *= d;
-			by *= d;
-			bz *= d;
-			inputNorm.x = bz*ay - by*az;
-			inputNorm.y = bx*az - bz*ax;
-			inputNorm.z = by * ax - bx * ay;
-			
-			inputNorm.w = v.x * inputNorm.x + v.y * inputNorm.y + v.z * inputNorm.z;
-				
-			ClipMacros.computeMeshVerticesLocalOffsets(face, inputNorm);
-			
-			if (negativeFace == null) negativeFace = ClipMacros.newPositiveClipFace(face, inputNorm, inputNorm.w);
-			else ClipMacros.updateClipFace(face, inputNorm, inputNorm.w);
-			if (negativeFace.wrapper == null) negativeFace = null;
-			face = negativeFace;
-			if (face == null) {
-				// face happens to lie completely on the outside of a plane
-				//gotExit = true;
-				break;  
-			}
-				
-		}
-		
-		if (negativeFace != null) {
-			return negativeFace;
-			//return "Negative: "+gotExit + ":"+ negativeFace.wrapper + "="+count + "/"+pCount;
-		}
-		
-		return null;
-	}
-	*/
+	
 	
 	
 }
