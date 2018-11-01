@@ -22,6 +22,14 @@ import arena.pathfinding.GKNode;
 import de.polygonal.ds.Graph;
 */
 
+///*  Alternativa3D/Altern geometry core package and utitilies
+import altern.geom.Vertex;
+import altern.geom.Wrapper;
+import altern.geom.Face;
+import altern.geom.Edge;
+import altern.geom.ClipMacros; // utility
+//*/
+
 ///*  Ellipsoid collider for collision scene package
 import systems.collisions.EllipsoidCollider;
 

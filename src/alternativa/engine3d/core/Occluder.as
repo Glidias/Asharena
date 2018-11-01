@@ -1559,7 +1559,13 @@ package alternativa.engine3d.core {
 			for (var f:Face = faceList; f != null; f = f.next) {
 				for (var p:Face = f.next;  p != null; p = p.next) {
 					if (f.overlapsOther2D(p)) {
-						accum += f.getOverlapClipArea(p);
+						var overlapFace:Face = ClipMacros.getOverlapClipFace(f, p);
+						if (overlapFace != null) {
+							accum += overlapFace.getArea();
+							overlapFace.destroy();
+							overlapFace.next = Face.collector;
+							Face.collector = faceList;
+						}
 					}	
 				}
 				lastFace = f;
@@ -1767,38 +1773,6 @@ class Face {
 		return areaAccum;
 	}
 	
-	public static function get2DAreaFromArray(arr:Array):Number {
-		var w:Wrapper;
-		var a:Vertex = arr[0];
-		if (arr.length < 3) throw new Error("Should have at least 3 points:"+arr.length);
-		var areaAccum:Number = 0;
-		var area:Number;
-		var len:int = arr.length - 1;
-		for (var i:int = 1; i < len; i++) {
-
-			var b:Vertex = arr[i];
-			var c:Vertex = arr[i+1];
-			var xAB:Number = b.cameraX - a.cameraX;
-			var yAB:Number = b.cameraY - a.cameraY;
-			var xAC:Number = c.cameraX - a.cameraX;
-			var yAC:Number = c.cameraY - a.cameraY;
-
-			var cz:Number = xAB*yAC - yAB*xAC;
-			area = Math.sqrt( cz * cz) * 0.5;
-			if (area < -1e-7) {
-				Log.trace("Invalid AREA:" + area);
-			}
-			if (area < 0) {
-				
-				area = 0;
-			}
-			
-			areaAccum +=  area;
-		}
-		return areaAccum;
-	}
-	
-	
 	public function overlapsOther2D(face:Face):Boolean {
 		// http://0x80.pl/articles/convex-polygon-intersection/demo/
 		// naive
@@ -1861,20 +1835,6 @@ class Face {
 		
 	}
 	
-	public function pointInside2D(x:Number, y:Number):Boolean {
-		var w:Wrapper;
-		for (w = wrapper; w != null; w = w.next) {
-			var v:Vertex = w.vertex;
-			var v2:Vertex = w.next != null ? w.next.vertex : wrapper.vertex;
-			var a:Number = -(v2.cameraY - v.cameraY);
-			var b:Number = (v2.cameraX - v.cameraX);	
-			if (x * a + y * b < a * v.cameraX + b * v.cameraY) {
-				return false;
-			}
-		}
-		return true;
-	}
-	
 	
 	private function get_side(a:Number , b:Number, c:Number, point1:Vertex, point2:Vertex):int {
 		var s1:Number = a * point1.cameraX + b * point1.cameraY - c;
@@ -1908,64 +1868,55 @@ class Face {
 		*/
 	}
 	
-	public function getOverlapClipArea(face:Face):Number {
-		var v:Vertex;
+	
+	/*	// NO longer being used. Some of These 2D methods have some problems ATM
+	 
+	
+	public function pointInside2D(x:Number, y:Number):Boolean {
 		var w:Wrapper;
-		var ax:Number;
-		var ay:Number;
-		var az:Number;
-		var bx:Number;
-		var by:Number;
-		var bz:Number;
-		var negativeFace:Face;
-		ax = normalX;
-		ay = normalY;
-		az = normalZ;
-		var inputNorm:Vector3D = ClipMacros.DUMMY_VECTOR;
-
 		for (w = wrapper; w != null; w = w.next) {
-			v = w.vertex;
+			var v:Vertex = w.vertex;
 			var v2:Vertex = w.next != null ? w.next.vertex : wrapper.vertex;
-			bx = v2.x - v.x;
-			by = v2.y - v.y;
-			bz = v2.z - v.z;
-			var d:Number = 1 / Math.sqrt(bx * bx + by * by + bz * bz);
-			bx *= d;
-			by *= d;
-			bz *= d;
-			inputNorm.x = bz*ay - by*az;
-			inputNorm.y = bx*az - bz*ax;
-			inputNorm.z = by * ax - bx * ay;
-			
-			inputNorm.w = v.x * inputNorm.x + v.y * inputNorm.y + v.z * inputNorm.z;
-				
-			ClipMacros.computeMeshVerticesLocalOffsets(face, inputNorm);
-			
-			if (negativeFace == null) negativeFace = ClipMacros.newPositiveClipFace(face, inputNorm, inputNorm.w);
-			else ClipMacros.updateClipFace(face, inputNorm, inputNorm.w);
-			if (negativeFace.wrapper == null) negativeFace = null;
-			face = negativeFace;
-			if (face == null) {
-				// face happens to lie completely on the outside of a plane
-				//gotExit = true;
-				break;  
+			var a:Number = -(v2.cameraY - v.cameraY);
+			var b:Number = (v2.cameraX - v.cameraX);	
+			if (x * a + y * b < a * v.cameraX + b * v.cameraY) {
+				return false;
 			}
-				
 		}
-		
-		if (negativeFace != null) {
-			ax =  negativeFace.getArea();
-			negativeFace.destroy();
-			negativeFace.next = Face.collector;
-			Face.collector = negativeFace;
-			return ax;
-			//return "Negative: "+gotExit + ":"+ negativeFace.wrapper + "="+count + "/"+pCount;
-		}
-		
-		return 0;
+		return true;
 	}
 	
-	/*	// NO longer being used. These 2D methods have some problems ATM
+	public static function get2DAreaFromArray(arr:Array):Number {
+		var w:Wrapper;
+		var a:Vertex = arr[0];
+		if (arr.length < 3) throw new Error("Should have at least 3 points:"+arr.length);
+		var areaAccum:Number = 0;
+		var area:Number;
+		var len:int = arr.length - 1;
+		for (var i:int = 1; i < len; i++) {
+
+			var b:Vertex = arr[i];
+			var c:Vertex = arr[i+1];
+			var xAB:Number = b.cameraX - a.cameraX;
+			var yAB:Number = b.cameraY - a.cameraY;
+			var xAC:Number = c.cameraX - a.cameraX;
+			var yAC:Number = c.cameraY - a.cameraY;
+
+			var cz:Number = xAB*yAC - yAB*xAC;
+			area = Math.sqrt( cz * cz) * 0.5;
+			if (area < -1e-7) {
+				Log.trace("Invalid AREA:" + area);
+			}
+			if (area < 0) {
+				
+				area = 0;
+			}
+			
+			areaAccum +=  area;
+		}
+		return areaAccum;
+	}
+	
 	public function getOverlapIntersectArea(face:Face):Number {
 		var v:Vertex;
 		var w:Wrapper;
@@ -2269,6 +2220,7 @@ class Face {
 	
 	
 	
+	/*
 		public function calculateBestSequenceAndNormalTest():void {
 		if (wrapper.next.next.next != null) {
 			var max:Number = -1e+22;
@@ -2338,6 +2290,7 @@ class Face {
 		}
 		offset = a.x*nx + a.y*ny + a.z*nz;
 	}
+	*/
 		
 }
 
@@ -2853,6 +2806,59 @@ import flash.geom.Vector3D;
 			clipFace.wrapper =  getClippedVerticesForFace(face, normal, offset, tailWrapper, wrapperClone);
 		
 			return clipFace;
+		}
+		
+		public static function getOverlapClipFace(clipperFace:Face, face:Face):Face {
+			var v:Vertex;
+			var w:Wrapper;
+			var ax:Number;
+			var ay:Number;
+			var az:Number;
+			var bx:Number;
+			var by:Number;
+			var bz:Number;
+			var negativeFace:Face;
+			ax = clipperFace.normalX;
+			ay = clipperFace.normalY;
+			az = clipperFace.normalZ;
+			var inputNorm:Vector3D = ClipMacros.DUMMY_VECTOR;
+
+			for (w = clipperFace.wrapper; w != null; w = w.next) {
+				v = w.vertex;
+				var v2:Vertex = w.next != null ? w.next.vertex : clipperFace.wrapper.vertex;
+				bx = v2.x - v.x;
+				by = v2.y - v.y;
+				bz = v2.z - v.z;
+				var d:Number = 1 / Math.sqrt(bx * bx + by * by + bz * bz);
+				bx *= d;
+				by *= d;
+				bz *= d;
+				inputNorm.x = bz*ay - by*az;
+				inputNorm.y = bx*az - bz*ax;
+				inputNorm.z = by * ax - bx * ay;
+				
+				inputNorm.w = v.x * inputNorm.x + v.y * inputNorm.y + v.z * inputNorm.z;
+					
+				ClipMacros.computeMeshVerticesLocalOffsets(face, inputNorm);
+				
+				if (negativeFace == null) negativeFace = ClipMacros.newPositiveClipFace(face, inputNorm, inputNorm.w);
+				else ClipMacros.updateClipFace(face, inputNorm, inputNorm.w);
+				if (negativeFace.wrapper == null) negativeFace = null;
+				face = negativeFace;
+				if (face == null) {
+					// face happens to lie completely on the outside of a plane
+					//gotExit = true;
+					break;  
+				}
+					
+			}
+			
+			if (negativeFace != null) {
+				return negativeFace;
+				//return "Negative: "+gotExit + ":"+ negativeFace.wrapper + "="+count + "/"+pCount;
+			}
+			
+			return null;
 		}
 		
 		public static function faceNeedsClipping(face:Face, offset:Number):Boolean {
