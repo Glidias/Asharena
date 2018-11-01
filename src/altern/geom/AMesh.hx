@@ -108,10 +108,16 @@ class AMesh
 		// Unite faces
 		if ((options & OPTION_WELD_FACES)!=0) weldFaces(angleThreshold, convexThreshold);
 		// Calculation of edges and checking for the validity
-		var error:String = calculateEdges();
-		if ((options & OPTION_CONVEX)!=0 && error != null) {
-			destroyForm();
-			throw error;
+		if ( (options & (OPTION_CONVEX | OPTION_CALCULATE_EDGES)) != 0 ) {
+			var error:String = calculateEdges();
+			if ((options & OPTION_CONVEX)!=0 && error != null) {
+				destroyForm();
+				throw error;
+			}
+			
+			if ((options & OPTION_CALCULATE_EDGES) == 0) {
+				edgeList = null;
+			}
 		}
 	}
 	
