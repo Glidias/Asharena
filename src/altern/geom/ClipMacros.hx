@@ -272,6 +272,8 @@ class ClipMacros
 		while (p != null) {
 			if ( (clipMask & (1<<count))!=0 ) {
 				count++;
+				
+				p = p.next;
 				continue;
 			}
 			inputNorm.x = -p.x;

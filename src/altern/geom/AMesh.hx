@@ -6,6 +6,7 @@ import altern.geom.Vertex;
 import altern.geom.Wrapper;
 import haxe.ds.ObjectMap;
 import util.geom.Geometry;
+import util.geom.Vec3;
 
 /**
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -16,7 +17,7 @@ import util.geom.Geometry;
  * */
 
 /**
- * Occluder Port to Haxe. N-gon mesh geometry that can be used to facilitate geometry welding/occlusion culling/clipping/convexity/percentage cover checks.
+ * Occluder Port to Haxe into a general-usage N-gon mesh geometry instance that can be used to facilitate geometry welding/occlusion culling/clipping/convexity/percentage cover checks.
  * Use `createForm(geometry: altern.Geometry)` reference to start your AMesh version of altern.geometry!
  * @author Glidias
  */
@@ -140,73 +141,8 @@ class AMesh
 		edgeList = null;
 		vertexList = null;
 	}
-
-	private function calculateEdges():String {
-		var face:Face;
-		var wrapper:Wrapper;
-		var edge:Edge;
-		// Create edges
-		face = faceList;
-		while (face != null) {
-			// Loop of edge segments
-			var a:Vertex;
-			var b:Vertex;
-			wrapper = face.wrapper;
-			while (wrapper != null) {
-				a = wrapper.vertex;
-				b = (wrapper.next != null) ? wrapper.next.vertex : face.wrapper.vertex;
-				// Loop of created edges
-				edge = edgeList;
-				while (edge != null) {
-					// If geometry is incorrect
-					if (edge.a == a && edge.b == b) {
-						return "The supplied geometry is not valid.";
-					}
-					// If found created edges with these vertices
-					if (edge.a == b && edge.b == a) break;
-					
-					edge = edge.next;
-				}
-				if (edge != null) {
-					edge.right = face;
-				} else {
-					edge = new Edge();
-					edge.a = a;
-					edge.b = b;
-					edge.left = face;
-					edge.next = edgeList;
-					edgeList = edge;
-				}
-				
-				wrapper = wrapper.next;  a = b;
-			}
-			
-			face = face.next;
-		}
-		// Checking for the validity
-		var edge = edgeList;
-		while (edge != null) {
-			// If edge consists of one face
-			if (edge.left == null || edge.right == null) {
-				return "The supplied geometry is non whole.";
-			}
-			var abx:Float = edge.b.x - edge.a.x;
-			var aby:Float = edge.b.y - edge.a.y;
-			var abz:Float = edge.b.z - edge.a.z;
-			var crx:Float = edge.right.normalZ*edge.left.normalY - edge.right.normalY*edge.left.normalZ;
-			var cry:Float = edge.right.normalX*edge.left.normalZ - edge.right.normalZ*edge.left.normalX;
-			var crz:Float = edge.right.normalY*edge.left.normalX - edge.right.normalX*edge.left.normalY;
-			// If bend inside
-			if (abx*crx + aby*cry + abz*crz < 0) {
-				//return "The supplied geometry is non convex.";
-				trace("Warning: " + this + ": geometry is non convex.");
-			}
-			
-			edge = edge.next;
-		}
-		return null;
-	}	
 	
+	// WELDING METHODS
 	
 	private function weldVertices(vertices:Array<Vertex>, distanceThreshold:Float):Vertex {
 		var vertex:Vertex;
@@ -237,6 +173,90 @@ class AMesh
 		return res;
 	}
 	
+	private function group(verts:Array<Vertex>, begin:Int, end:Int, depth:Int, threshold:Float, stack:Array<Int>):Void {
+		var i:Int;
+		var j:Int;
+		var vertex:Vertex;
+		switch (depth) {
+			case 0: // x
+				for (i in begin...end) {
+					vertex = verts[i];
+					vertex.offset = vertex.x;
+				}
+			case 1: // y
+				for (i in begin...end) {
+					vertex = verts[i];
+					vertex.offset = vertex.y;
+				}
+			case 2: // z
+				for (i in begin...end) {
+					vertex = verts[i];
+					vertex.offset = vertex.z;
+				}
+		}
+		// Sorting
+		stack[0] = begin;
+		stack[1] = end - 1;
+		var index:Int = 2;
+		while (index > 0) {
+			index--;
+			var r:Int = stack[index];
+			j = r;
+			index--;
+			var l:Int = stack[index];
+			i = l;
+			vertex = verts[(r + l) >> 1];
+			var median:Float = vertex.offset;
+			while (i <= j) {
+				var left:Vertex = verts[i];
+				while (left.offset > median) {
+					i++;
+					left = verts[i];
+				}
+				var right:Vertex = verts[j];
+				while (right.offset < median) {
+					j--;
+					right = verts[j];
+				}
+				if (i <= j) {
+					verts[i] = right;
+					verts[j] = left;
+					i++;
+					j--;
+				}
+			}
+			if (l < j) {
+				stack[index] = l;
+				index++;
+				stack[index] = j;
+				index++;
+			}
+			if (i < r) {
+				stack[index] = i;
+				index++;
+				stack[index] = r;
+				index++;
+			}
+		}
+		// Divide on groups further
+		i = begin;
+		vertex = verts[i];
+		var compared:Vertex = null;
+		for (j in (i + 1)...(end+1)) {
+			if (j < end) compared = verts[j];
+			if (j == end || vertex.offset - compared.offset > threshold) {
+				if (depth < 2 && j - i > 1) {
+					group(verts, i, j, depth + 1, threshold, stack);
+				}
+				if (j < end) {
+					i = j;
+					vertex = verts[i];
+				}
+			} else if (depth == 2) {
+				compared.value = vertex;
+			}
+		}
+	}
 	
 	private function weldFaces(angleThreshold:Float = 0, convexThreshold:Float = 0):Void {
 		var i:Int;
@@ -435,9 +455,13 @@ class AMesh
 										ny = acx*abz - acz*abx;
 										nz = acy*abx - acx*aby;
 										if (nx < digitThreshold && nx > -digitThreshold && ny < digitThreshold && ny > -digitThreshold && nz < digitThreshold && nz > -digitThreshold) {
-											if (abx*acx + aby*acy + abz*acz > 0) continue;
+											if (abx * acx + aby * acy + abz * acz > 0) {
+												continue;
+											}
 										} else {
-											if (face.normalX*nx + face.normalY*ny + face.normalZ*nz < 0) continue;
+											if (face.normalX * nx + face.normalY * ny + face.normalZ * nz < 0) {
+												continue;
+											}
 										}
 										nl = 1/Math.sqrt(abx*abx + aby*aby + abz*abz);
 										abx *= nl;
@@ -447,7 +471,9 @@ class AMesh
 										acx *= nl;
 										acy *= nl;
 										acz *= nl;
-										if (abx*acx + aby*acy + abz*acz < convexThreshold) continue;
+										if (abx * acx + aby * acy + abz * acz < convexThreshold) {
+											continue;
+										}
 										// Second bend
 										a = s.vertex;
 										b = wm.vertex;
@@ -462,9 +488,14 @@ class AMesh
 										ny = acx*abz - acz*abx;
 										nz = acy*abx - acx*aby;
 										if (nx < digitThreshold && nx > -digitThreshold && ny < digitThreshold && ny > -digitThreshold && nz < digitThreshold && nz > -digitThreshold) {
-											if (abx*acx + aby*acy + abz*acz > 0) continue;
+											if (abx * acx + aby * acy + abz * acz > 0) {
+												continue;
+											}
 										} else {
-											if (face.normalX*nx + face.normalY*ny + face.normalZ*nz < 0) continue;
+											if (face.normalX * nx + face.normalY * ny + face.normalZ * nz < 0) {
+												
+												continue;
+											}
 										}
 										nl = 1/Math.sqrt(abx*abx + aby*aby + abz*abz);
 										abx *= nl;
@@ -474,7 +505,9 @@ class AMesh
 										acx *= nl;
 										acy *= nl;
 										acz *= nl;
-										if (abx*acx + aby*acy + abz*acz < convexThreshold) continue;
+										if (abx * acx + aby * acy + abz * acz < convexThreshold) {
+											continue;
+										}
 										// Unite
 										weld = true;
 										var newFace:Face = new Face();
@@ -534,90 +567,168 @@ class AMesh
 			}
 		}
 	}
-	private function group(verts:Array<Vertex>, begin:Int, end:Int, depth:Int, threshold:Float, stack:Array<Int>):Void {
-		var i:Int;
-		var j:Int;
-		var vertex:Vertex;
-		switch (depth) {
-			case 0: // x
-				for (i in begin...end) {
-					vertex = verts[i];
-					vertex.offset = vertex.x;
+	
+	// EDGE CALCULATION/OCCLUSION METHODS
+	
+	private function calculateEdges():String {
+		var face:Face;
+		var wrapper:Wrapper;
+		var edge:Edge;
+		// Create edges
+		face = faceList;
+		while (face != null) {
+			// Loop of edge segments
+			var a:Vertex;
+			var b:Vertex;
+			wrapper = face.wrapper;
+			while (wrapper != null) {
+				a = wrapper.vertex;
+				b = (wrapper.next != null) ? wrapper.next.vertex : face.wrapper.vertex;
+				// Loop of created edges
+				edge = edgeList;
+				while (edge != null) {
+					// If geometry is incorrect
+					if (edge.a == a && edge.b == b) {
+						return "The supplied geometry is not valid.";
+					}
+					// If found created edges with these vertices
+					if (edge.a == b && edge.b == a) break;
+					
+					edge = edge.next;
 				}
-			case 1: // y
-				for (i in begin...end) {
-					vertex = verts[i];
-					vertex.offset = vertex.y;
+				if (edge != null) {
+					edge.right = face;
+				} else {
+					edge = new Edge();
+					edge.a = a;
+					edge.b = b;
+					edge.left = face;
+					edge.next = edgeList;
+					edgeList = edge;
 				}
-			case 2: // z
-				for (i in begin...end) {
-					vertex = verts[i];
-					vertex.offset = vertex.z;
-				}
+				
+				wrapper = wrapper.next;  a = b;
+			}
+			
+			face = face.next;
 		}
-		// Sorting
-		stack[0] = begin;
-		stack[1] = end - 1;
-		var index:Int = 2;
-		while (index > 0) {
-			index--;
-			var r:Int = stack[index];
-			j = r;
-			index--;
-			var l:Int = stack[index];
-			i = l;
-			vertex = verts[(r + l) >> 1];
-			var median:Float = vertex.offset;
-			while (i <= j) {
-				var left:Vertex = verts[i];
-				while (left.offset > median) {
-					i++;
-					left = verts[i];
-				}
-				var right:Vertex = verts[j];
-				while (right.offset < median) {
-					j--;
-					right = verts[j];
-				}
-				if (i <= j) {
-					verts[i] = right;
-					verts[j] = left;
-					i++;
-					j--;
-				}
+		// Checking for the validity
+		var edge = edgeList;
+		while (edge != null) {
+			// If edge consists of one face
+			if (edge.left == null || edge.right == null) {
+				return "The supplied geometry is non whole.";
 			}
-			if (l < j) {
-				stack[index] = l;
-				index++;
-				stack[index] = j;
-				index++;
+			var abx:Float = edge.b.x - edge.a.x;
+			var aby:Float = edge.b.y - edge.a.y;
+			var abz:Float = edge.b.z - edge.a.z;
+			var crx:Float = edge.right.normalZ*edge.left.normalY - edge.right.normalY*edge.left.normalZ;
+			var cry:Float = edge.right.normalX*edge.left.normalZ - edge.right.normalZ*edge.left.normalX;
+			var crz:Float = edge.right.normalY*edge.left.normalX - edge.right.normalX*edge.left.normalY;
+			// If bend inside
+			if (abx*crx + aby*cry + abz*crz < 0) {
+				//return "The supplied geometry is non convex.";
+				trace("Warning: " + this + ": geometry is non convex.");
 			}
-			if (i < r) {
-				stack[index] = i;
-				index++;
-				stack[index] = r;
-				index++;
-			}
+			
+			edge = edge.next;
 		}
-		// Divide on groups further
-		i = begin;
-		vertex = verts[i];
-		var compared:Vertex = null;
-		for (j in (i + 1)...(end+1)) {
-			if (j < end) compared = verts[j];
-			if (j == end || vertex.offset - compared.offset > threshold) {
-				if (depth < 2 && j - i > 1) {
-					group(verts, i, j, depth + 1, threshold, stack);
-				}
-				if (j < end) {
-					i = j;
-					vertex = verts[i];
-				}
-			} else if (depth == 2) {
-				compared.value = vertex;
-			}
+		return null;
+	}
+	
+	private inline function clearPlanes():Void {
+		var plane:CullingPlane;
+		if (planeList != null) {
+			plane = planeList;
+			while (plane.next != null) plane = plane.next;
+			plane.next = CullingPlane.collector;
+			CullingPlane.collector = planeList;
+			planeList = null;
 		}
 	}
+	
+	// OCCLUSION METHODS
+	
+	/**
+	 * Calculates planes in relation to local-coordinate viewing position of AMesh
+	 * @param	position	Assumed local coordinate position of AMesh
+	 * @param 
+	 */
+	public function calculatePlanes(position:Vec3):Void {
+			var a:Vertex;
+			var b:Vertex;
+			var c:Vertex;
+			var face:Face;
+			var plane:CullingPlane;
+			// Clear of planes
+			clearPlanes();
+			if (faceList == null || edgeList == null) return;		
+			
+			// Visibility of faces
+			var cameraInside:Bool = true;
+			face = faceList;
+			while (face != null) {
+				if (face.normalX*position.x + face.normalY*position.y + face.normalZ*position.z > face.offset) {
+					face.visible = true;
+					cameraInside = false;
+				} else {
+					face.visible = false;
+				}
+				
+				face = face.next;
+			}
+			if (cameraInside) return;
+			
+			
+			// Create planes by contour
+			var t:Float;
+			var ax:Float;
+			var ay:Float;
+			var az:Float;
+			var bx:Float;
+			var by:Float;
+			var bz:Float;
+			var ox:Float;
+			var oy:Float;
+			//var lineList:CullingPlane = null;
+			var occludeAll:Bool = true;
+			var d:Float;
+			var edge:Edge = edgeList;
+			while (edge != null) {
+				// If face is into the contour
+				if (edge.left.visible != edge.right.visible) {
+					// Define the direction (counterclockwise)
+					if (edge.left.visible) {
+						a = edge.a;
+						b = edge.b;
+					} else {
+						a = edge.b;
+						b = edge.a;
+					}
+					ax = a.x;
+					ay = a.y;
+					az = a.z;
+					bx = b.x;
+					by = b.y;
+					bz = b.z;
+				
+					// Create plane by edge
+					plane = CullingPlane.create();
+					plane.next = planeList;
+					planeList = plane;
+					
+					/*	// TODO cross product
+					plane.x = (b.cameraZ*a.cameraY - b.cameraY*a.cameraZ)*camera.correctionY;
+					plane.y = (b.cameraX*a.cameraZ - b.cameraZ*a.cameraX)*camera.correctionX;
+					plane.z = (b.cameraY * a.cameraX - b.cameraX * a.cameraY) * camera.correctionX * camera.correctionY;
+					plane.offset = 0;
+					*/
+					
+					
+					
+				}
+			}
+		}
 	
 	
 	

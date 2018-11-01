@@ -237,10 +237,14 @@ class Face
 				c = a * v.cameraX + b * v.cameraY;	
 				var sideA:Int = get_side(a, b, c, v0, v1);
 				if (sideA < -1) {
+					
+					w2 = w2.next;
 					continue;
 				}
 				var sideB:Int = get_side(a, b, c, v2_0, v2_1);
 				if (sideB < -1) {
+					
+					w2 = w2.next;
 					continue;
 				}				
 				if (sideA * sideB < 0) {
