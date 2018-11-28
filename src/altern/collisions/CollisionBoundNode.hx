@@ -22,12 +22,24 @@ class CollisionBoundNode implements IECollidable
 	public var transform:Transform3D;
 	public var inverseTransform:Transform3D;
 	public var localToGlobalTransform:Transform3D;
-	public var globalToLocalTransform:Transform3D;
+	public var globalToLocalTransform:Transform3D;	
+	public function calculateLocalGlobalTransforms():Void { // temporary
+		
+	}
 	
 	// optional assignables
 	public var collidable:ITCollidable;
 	public var raycastable:IRaycastImpl;
 	public var boundBox:BoundBox;  // sized to match all union of all descendents as well
+	
+	// optional transform precompute assignables (needed for some utilities). 
+	// Call calculateLocalWorldTransforms() once placed in final scene graph.
+	public var localToWorldTransform:Transform3D;
+	public var worldToLocalTransform:Transform3D;
+	public function calculateLocalWorldTransforms():Void {	// permanent
+		
+	}
+	
 		
 	function new() 
 	{

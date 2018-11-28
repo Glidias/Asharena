@@ -74,6 +74,52 @@ class Face
 		
 	}
 	
+	public function calculateNormal():Void {
+		var offset:Float;
+		var nz:Float;
+		var ny:Float;
+		var nx:Float;
+		var w:Wrapper;
+		var acz:Float;
+		var acy:Float;
+		var acx:Float;
+		var abz:Float;
+		var aby:Float;
+		var abx:Float;
+		var nl:Float;
+		var c:Vertex;
+		var b:Vertex;
+		var a:Vertex;
+		
+		w = wrapper;
+		a = w.vertex;
+		w = w.next;
+		b = w.vertex;
+		w = w.next;
+		c = w.vertex;
+		abx = b.x - a.x;
+		aby = b.y - a.y;
+		abz = b.z - a.z;
+		acx = c.x - a.x;
+		acy = c.y - a.y;
+		acz = c.z - a.z;
+		nx = acz*aby - acy*abz;
+		ny = acx*abz - acz*abx;
+		nz = acy*abx - acx*aby;
+		nl = nx*nx + ny*ny + nz*nz;
+		if (nl > 0) {
+			nl = 1/Math.sqrt(nl);
+			nx *= nl;
+			ny *= nl;
+			nz *= nl;
+			normalX = nx;
+			normalY = ny;
+			normalZ = nz;
+		}
+		offset = a.x*nx + a.y*ny + a.z*nz;
+	
+	}
+	
 	public function calculateBestSequenceAndNormal():Void {
 		var nl:Float;
 		var nz:Float;
@@ -270,7 +316,7 @@ class Face
 	 * @param	t	The transform to use
 	 * @return	A single quad face
 	 */
-	public function getQuad(pos:Vec3, up:Vec3, right:Vec3, halfWidth:Float, halfHeight:Float, t:Transform3D):Face {
+	public static function getQuad(pos:Vec3, up:Vec3, right:Vec3, halfWidth:Float, halfHeight:Float, t:Transform3D):Face {
 		var f:Face = new Face();
 	
 		var v:Vertex;
@@ -332,10 +378,105 @@ class Face
 		v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
 		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
 		
-		f.calculateBestSequenceAndNormal();
+		f.calculateNormal();
 	
 		return f;
 	}
+	
+	
+	public static function setupQuad(f:Face, pos:Vec3, up:Vec3, right:Vec3, halfWidth:Float, halfHeight:Float, t:Transform3D):Face {
+		var v:Vertex;
+		var vx:Float;
+		var vy:Float;
+		var vz:Float;
+		var w:Wrapper;
+	
+		w = f.wrapper;	// top left vertex
+		v = w.vertex;
+		vx = pos.x; vy = pos.y; vz = pos.z;
+		vx += up.x*halfHeight;
+		vy += up.y*halfHeight;
+		vz += up.z*halfHeight;
+		vx -= right.x*halfWidth;
+		vy -= right.y*halfWidth;
+		vz -= right.z * halfWidth;
+		v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+		v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+		
+		w = w.next;	 // bottom left
+		v = w.vertex;
+		vx = pos.x; vy = pos.y; vz = pos.z;
+		vx -= up.x*halfHeight;
+		vy -= up.y*halfHeight;
+		vz -= up.z*halfHeight;
+		vx -= right.x*halfWidth;
+		vy -= right.y*halfWidth;
+		vz -= right.z * halfWidth;
+		v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+		v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+		
+		w = w.next;	 // bottom right vertex
+		v = w.vertex;
+		vx = pos.x; vy = pos.y; vz = pos.z;
+		vx -= up.x*halfHeight;
+		vy -= up.y*halfHeight;
+		vz -= up.z*halfHeight;
+		vx += right.x*halfWidth;
+		vy += right.y*halfWidth;
+		vz += right.z * halfWidth;
+		v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+		v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+		
+		
+		w = w.next;		// top right
+		v = w.vertex;
+		vx = pos.x; vy = pos.y; vz = pos.z;
+		vx += up.x*halfHeight;
+		vy += up.y*halfHeight;
+		vz += up.z*halfHeight;
+		vx += right.x*halfWidth;
+		vy += right.y*halfWidth;
+		vz += right.z*halfWidth;
+		v.x = t.a*vx + t.b*vy + t.c*vz + t.d;
+		v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
+		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+		
+		f.calculateNormal();
+		return f;
+	}
+	
+	/*
+	public static function getFromWrapper(pos:Vec3, up:Vec3, right:Vec3, halfWidth:Float, halfHeight:Float, t:Transform3D):Face {
+		var f:Face = new Face();
+		
+		return f;
+	}
+	
+	public static function getValueWrapperFromPoints(pts:Array<Vec3>):Wrapper {
+		var wrapper:Wrapper = new Wrapper();
+		var w:Wrapper;
+		
+		w = wrapper;
+		w.vertex = new Vertex();
+		w.vertex.value = new Vertex();
+		w.vertex.x = pts[0].x;
+		w.vertex.y = pts[0].y;
+		w.vertex.z = pts[0].z;
+		
+		for (i in 1...pts.length) {
+			w = w.next = new Wrapper();
+			w.vertex = new Vertex();
+			w.vertex.value = new Vertex();
+		}
+		
+		
+		
+		return wrapper;
+	}
+	*/
 	
 	
 	private inline function get_side(a:Float , b:Float, c:Float, point1:Vertex, point2:Vertex):Int {

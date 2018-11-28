@@ -31,6 +31,9 @@ import altern.geom.ClipMacros; // utility
 import altern.geom.AMesh;	// mesh/occluder
 //*/
 
+import altern.culling.TargetBoardTester;
+
+
 ///*  Ellipsoid collider for collision scene package
 import systems.collisions.EllipsoidCollider;
 

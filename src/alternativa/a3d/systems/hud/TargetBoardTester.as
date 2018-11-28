@@ -316,6 +316,7 @@ package alternativa.a3d.systems.hud
 				p.root.y -= targRight.y * w;
 				p.root.z -= targRight.z * w;
 				
+				/*
 				vx = p.root.x; vy = p.root.y; vz = p.root.z;
 				p.root.x = t.a*vx + t.b*vy + t.c*vz + t.d;
 				p.root.y = t.e*vx + t.f*vy + t.g*vz + t.h;
@@ -327,6 +328,7 @@ package alternativa.a3d.systems.hud
 				p.root.x = t.a*vx + t.b*vy + t.c*vz + t.d;
 				p.root.y = t.e*vx + t.f*vy + t.g*vz + t.h;
 				p.root.z = t.i * vx + t.j * vy + t.k * vz + t.l;
+				*/
 				testFrustumPoints[f].x = p.root.x;
 				testFrustumPoints[f].y = p.root.y;
 				testFrustumPoints[f].z = p.root.z;
@@ -391,6 +393,7 @@ package alternativa.a3d.systems.hud
 
 				if (keyPoll != null && keyPoll.isDown(Keyboard.SLASH) && terrainLOD != null ) {
 					
+		
 					for (var i:int = 0; i < testFrustumPoints.length; i++) {
 						testFrustumPoints[i] = terrainLOD.globalToLocal(testFrustumPoints[i]);
 					}
@@ -406,13 +409,23 @@ package alternativa.a3d.systems.hud
 					var usePoints:Vector.<Vector3D> = testFrustumPoints;// testFrustumPoints.slice(1, testFrustumPoints.length);
 					terrainLOD.collectTrisForFrustum(testFrustum, usePoints, testVertices, testIndices);
 					createWireframeCollisionPreview( );
-					
+					/*
 					Object3DTransformUtil.calculateGlobalToLocal(terrainLOD);
 					soupOccluder.getDisposableTransformedFace(targPos, targUp, targRight, w, h, terrainLOD.globalToLocalTransform);
 					
 					var pos:Vector3D = terrainLOD.globalToLocal(new Vector3D(cameraObj.x, cameraObj.y, cameraObj.z) );
-					
 					areaSubtracted = collectClipPolygonsFromSoup(testVertices, testIndices, pos.x, pos.y, pos.z);
+					*/
+					Object3DTransformUtil.calculateLocalToGlobal(terrainLOD);
+					soupOccluder.getDisposableTransformedFace(targPos, targUp, targRight, w, h, new Transform3D());
+					transformVertices(terrainLOD.localToGlobalTransform);
+					
+					//createFrustumFromPoints(oldFrustumPoints, new Vector3D(targPos.x, targPos.y, targPos.z));
+					
+					areaSubtracted = collectClipPolygonsFromSoup(testVertices, testIndices, cameraObj.x, cameraObj.y, cameraObj.z);
+					
+					
+					
 					area = soupOccluder._disposableFaceCache.getArea(); // w * h * 4;
 					if (areaSubtracted > 0) {
 						Log.trace( int(areaSubtracted/area*100)+"% cover" );
@@ -427,6 +440,18 @@ package alternativa.a3d.systems.hud
 			}
 			
 			
+		}
+		
+		private function transformVertices(t:Transform3D):void {
+			var vx:Number; var vy:Number; var vz:Number;
+			var len:int = testVertices.length;
+			for (var i:int = 0; i < len; i += 3) {
+				vx = testVertices[i]; vy = testVertices[i+1]; vz = testVertices[i+2];
+				testVertices[i] = t.a*vx + t.b*vy + t.c*vz + t.d;
+				testVertices[i+1] = t.e*vx + t.f*vy + t.g*vz + t.h;
+				testVertices[i+2] = t.i * vx + t.j * vy + t.k * vz + t.l;
+				
+			}
 		}
 		
 		private function collectClipPolygonsFromSoup(vertices:Vector.<Number>, indices:Vector.<uint>, observerX:Number, observerY:Number, observerZ:Number):Number {
@@ -482,10 +507,12 @@ package alternativa.a3d.systems.hud
 				
 				
 				// Not sure why broadphase didn't detect this case, force-doing this for narrow phase
+				/*
 				if ( billboardFarClip.x * ax + billboardFarClip.y * ay + billboardFarClip.z * az < billboardFarClip.offset || billboardFarClip.x * bx + billboardFarClip.y * by + billboardFarClip.z * bz < billboardFarClip.offset || billboardFarClip.x * cx + billboardFarClip.y * cy + billboardFarClip.z * cz < billboardFarClip.offset ) {
 					//Log.trace("Exit");
 					continue;
 				}
+				*/
 				
 				var abx:Number;
 				var aby:Number;
@@ -541,7 +568,7 @@ package alternativa.a3d.systems.hud
 				//Log.trace(p.x + ", "+p.y + " , "+p.z + ", "+p.offset);
 				mask |=  billboardFarClip.x * ax  + billboardFarClip.y * ay + billboardFarClip.z * az < billboardFarClip.offset && billboardFarClip.x * cx  + billboardFarClip.y * cy + billboardFarClip.z * cz < billboardFarClip.offset  ? 4 : 0; 
 				
-				if (mask != 0) Log.trace("MASK:"+mask);
+				//if (mask != 0) Log.trace("MASK:"+mask);
 				//soupOccluder.clipMask = mask;
 			
 				var retAreaSubtracted:Number = soupOccluder.clip(soupOccluder._disposableFaceCache);
