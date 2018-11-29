@@ -24,7 +24,8 @@ class CollisionBoundNode implements IECollidable
 	public var localToGlobalTransform:Transform3D;
 	public var globalToLocalTransform:Transform3D;	
 	public function calculateLocalGlobalTransforms():Void { // temporary
-		
+		calculateLocalToGlobal2(this, localToWorldTransform);
+		globalToLocalTransform.calculateInversion(localToWorldTransform);
 	}
 	
 	// optional assignables
@@ -37,7 +38,35 @@ class CollisionBoundNode implements IECollidable
 	public var localToWorldTransform:Transform3D;
 	public var worldToLocalTransform:Transform3D;
 	public function calculateLocalWorldTransforms():Void {	// permanent
+		if (localToWorldTransform == null) localToWorldTransform = new Transform3D();
+		if (worldToLocalTransform == null) worldToLocalTransform = new Transform3D();
+		calculateLocalToGlobal2(this, localToWorldTransform);
+		calculateGlobalToLocal2(this, worldToLocalTransform);
+		//worldToLocalTransform.calculateInversion(localToWorldTransform);
+	}
+	
+	
+	public static inline function calculateLocalToGlobal2(obj:CollisionBoundNode, trm:Transform3D=null):Transform3D {
+		trm = trm != null ? trm : new Transform3D();
+		trm.copy(obj.transform);
+		var root:CollisionBoundNode = obj;
+		while (root._parent != null) {
+			root = root._parent;
+			trm.append(root.transform);
+		}
+		return trm;
+	}
+	
 		
+	public static inline function calculateGlobalToLocal2(obj:CollisionBoundNode, trm:Transform3D=null):Transform3D {
+		trm = trm != null ? trm : new Transform3D();
+		trm.copy(obj.inverseTransform);
+		var root:CollisionBoundNode = obj;
+		while (root._parent != null) {
+			root = root._parent;
+			trm.prepend(root.inverseTransform);
+		}
+		return trm;
 	}
 	
 		

@@ -306,6 +306,9 @@ class Face
 		return true;
 	}
 	
+	
+	
+	
 	/**
 	 * 
 	 * @param	pos Center position of quad
@@ -338,7 +341,7 @@ class Face
 		v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
 		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
 		
-		w.next = w = new Wrapper();	 // bottom left
+		w = w.next = new Wrapper();	 // bottom left
 		w.vertex = v.next = v = new Vertex();
 		vx = pos.x; vy = pos.y; vz = pos.z;
 		vx -= up.x*halfHeight;
@@ -351,7 +354,7 @@ class Face
 		v.y = t.e*vx + t.f*vy + t.g*vz + t.h;
 		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
 		
-		w.next = w = new Wrapper();	 // bottom right vertex
+		w = w.next = new Wrapper();	 // bottom right vertex
 		w.vertex =  v.next = v = new Vertex();
 		vx = pos.x; vy = pos.y; vz = pos.z;
 		vx -= up.x*halfHeight;
@@ -365,7 +368,7 @@ class Face
 		v.z = t.i * vx + t.j * vy + t.k * vz + t.l;
 		
 		
-		w.next = w = new Wrapper();		// top right
+		w = w.next = new Wrapper();		// top right
 		w.vertex =  v.next = v = new Vertex();
 		vx = pos.x; vy = pos.y; vz = pos.z;
 		vx += up.x*halfHeight;

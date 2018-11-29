@@ -169,7 +169,7 @@ package alternativa.engine3d.controllers
 			}
 			else {
 				raycaster.setIgnoreDistance(_preferedZoom);
-				dataPoint = raycaster.positionAndDirection(camLookAtTarget.x + cameraForward.x *-threshold, camLookAtTarget.y + cameraForward.y *-threshold, camLookAtTarget.z + cameraForward.z *-threshold, cameraReverse.x, cameraReverse.y, cameraReverse.z ).gotHit();
+				//dataPoint = raycaster.positionAndDirection(camLookAtTarget.x + cameraForward.x *-threshold, camLookAtTarget.y + cameraForward.y *-threshold, camLookAtTarget.z + cameraForward.z *-threshold, cameraReverse.x, cameraReverse.y, cameraReverse.z ).gotHit();
 				
 
 			}	

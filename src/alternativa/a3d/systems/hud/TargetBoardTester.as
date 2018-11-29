@@ -409,6 +409,8 @@ package alternativa.a3d.systems.hud
 					var usePoints:Vector.<Vector3D> = testFrustumPoints;// testFrustumPoints.slice(1, testFrustumPoints.length);
 					terrainLOD.collectTrisForFrustum(testFrustum, usePoints, testVertices, testIndices);
 					createWireframeCollisionPreview( );
+					
+					
 					/*
 					Object3DTransformUtil.calculateGlobalToLocal(terrainLOD);
 					soupOccluder.getDisposableTransformedFace(targPos, targUp, targRight, w, h, terrainLOD.globalToLocalTransform);
@@ -416,14 +418,15 @@ package alternativa.a3d.systems.hud
 					var pos:Vector3D = terrainLOD.globalToLocal(new Vector3D(cameraObj.x, cameraObj.y, cameraObj.z) );
 					areaSubtracted = collectClipPolygonsFromSoup(testVertices, testIndices, pos.x, pos.y, pos.z);
 					*/
+					///*
+					
 					Object3DTransformUtil.calculateLocalToGlobal(terrainLOD);
 					soupOccluder.getDisposableTransformedFace(targPos, targUp, targRight, w, h, new Transform3D());
 					transformVertices(terrainLOD.localToGlobalTransform);
 					
-					//createFrustumFromPoints(oldFrustumPoints, new Vector3D(targPos.x, targPos.y, targPos.z));
-					
+					transformCullingPlane(terrainLOD.localToGlobalTransform, billboardFarClip, targPos);
 					areaSubtracted = collectClipPolygonsFromSoup(testVertices, testIndices, cameraObj.x, cameraObj.y, cameraObj.z);
-					
+					//*/
 					
 					
 					area = soupOccluder._disposableFaceCache.getArea(); // w * h * 4;
@@ -440,6 +443,15 @@ package alternativa.a3d.systems.hud
 			}
 			
 			
+		}
+		
+		private function transformCullingPlane(t:Transform3D, c:CullingPlane, pos:Vec3):void {
+			var vx:Number; var vy:Number; var vz:Number;
+			vx = c.x; vy = c.y; vz = c.z;
+			c.x = t.a*vx + t.b*vy + t.c*vz;
+			c.y = t.e*vx + t.f*vy + t.g*vz;
+			c.z = t.i * vx + t.j * vy + t.k * vz;
+			c.offset = c.x * pos.x + c.y * pos.y + c.z * pos.z;
 		}
 		
 		private function transformVertices(t:Transform3D):void {
@@ -506,13 +518,14 @@ package alternativa.a3d.systems.hud
 				var cz:Number = vertices[ci + 2];
 				
 				
-				// Not sure why broadphase didn't detect this case, force-doing this for narrow phase
-				/*
+				// Double checking
+				///*
 				if ( billboardFarClip.x * ax + billboardFarClip.y * ay + billboardFarClip.z * az < billboardFarClip.offset || billboardFarClip.x * bx + billboardFarClip.y * by + billboardFarClip.z * bz < billboardFarClip.offset || billboardFarClip.x * cx + billboardFarClip.y * cy + billboardFarClip.z * cz < billboardFarClip.offset ) {
-					//Log.trace("Exit");
+					Log.trace("Exit");
 					continue;
 				}
-				*/
+				//*/
+				
 				
 				var abx:Number;
 				var aby:Number;

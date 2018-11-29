@@ -873,13 +873,23 @@ package alternterrain.objects
 		}
 		
 		public function triInFrustum(frustum:CullingPlane, ax:Number, ay:Number , az:Number, bx:Number , by:Number, bz:Number, cx:Number, cy:Number, cz:Number):Boolean {
+			var lastPlane:CullingPlane;
 			for (var plane:CullingPlane = frustum; plane != null; plane = plane.next) {
 				if (ax * plane.x + ay * plane.y + az * plane.z < plane.offset && 
 				bx  * plane.x + by * plane.y + bz * plane.z < plane.offset && 
 				cx * plane.x + cy * plane.y + cz * plane.z < plane.offset  ) {
 					return false;
 				}
+				lastPlane = plane;
 			}
+			
+			plane = lastPlane;  // far clip special case
+			if (ax * plane.x + ay * plane.y + az * plane.z < plane.offset || 
+				bx  * plane.x + by * plane.y + bz * plane.z < plane.offset || 
+				cx * plane.x + cy * plane.y + cz * plane.z < plane.offset  ) {
+					return false;
+				}
+			
 			return true;
 		}
 		
@@ -1785,42 +1795,50 @@ package alternterrain.objects
 					normalX = acz*aby - acy*abz;
 					normalY = acx*abz - acz*abx;
 					normalZ = acy * abx - acx * aby;
-					offset = ax*normalX + ay*normalY + az*normalZ;
+					offset = ax * normalX + ay * normalY + az * normalZ;
 					
-					outside = false;
-					inside = false;
-					different = false;
-					for (i = 0; i < cLen; i++) {
-						c = frustumCorners[i];
-						if ( normalX * c.x + normalY * c.y + normalZ * c.z >= offset) {
-							inside = true;
-						}
-						else {
-							outside = true;
-						}
-						if (inside && outside) {
-							different = true;
-							break;
-						}
-					}
+					var facingCorrect:Boolean;
 					
-					if ( different && triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)   ) {
-						indices[ii++] = vi * vMult;
-						vertices[vi++] = ax;
-						vertices[vi++] = ay;
-						vertices[vi++] = az;
+					
+					
+					facingCorrect= normalX * frustumCorners[0].x + normalY * frustumCorners[0].y + normalZ * frustumCorners[0].z >= offset;
+					
+					if (facingCorrect) {
+						outside = false;
+						inside = false;
+						different = false;
+						for (i = 0; i < cLen; i++) {
+							c = frustumCorners[i];
+							if ( normalX * c.x + normalY * c.y + normalZ * c.z >= offset) {
+								inside = true;
+							}
+							else {
+								outside = true;
+							}
+							if (inside && outside) {
+								different = true;
+								break;
+							}
+						}
 						
-						indices[ii++] = vi * vMult;
-						vertices[vi++] = bx;
-						vertices[vi++] = by;
-						vertices[vi++] = bz;
-						
-						indices[ii++] = vi * vMult;
-						vertices[vi++] = cx;
-						vertices[vi++] = cy;
-						vertices[vi++] = cz;
+						if ( triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)   ) {
+							indices[ii++] = vi * vMult;
+							vertices[vi++] = ax;
+							vertices[vi++] = ay;
+							vertices[vi++] = az;
 							
-						numCollisionTriangles++;
+							indices[ii++] = vi * vMult;
+							vertices[vi++] = bx;
+							vertices[vi++] = by;
+							vertices[vi++] = bz;
+							
+							indices[ii++] = vi * vMult;
+							vertices[vi++] = cx;
+							vertices[vi++] = cy;
+							vertices[vi++] = cz;
+								
+							numCollisionTriangles++;
+						}
 					}
 					
 					
@@ -1848,45 +1866,50 @@ package alternterrain.objects
 					normalX = acz*aby - acy*abz;
 					normalY = acx*abz - acz*abx;
 					normalZ = acy * abx - acx * aby;
-					offset = ax*normalX + ay*normalY + az*normalZ;
+					offset = ax * normalX + ay * normalY + az * normalZ;
 					
-					outside = false;
-					inside = false;
-					different = false;
-					for (i = 0; i < cLen; i++) {
-						c = frustumCorners[i];
-						if ( normalX * c.x + normalY * c.y + normalZ * c.z >= offset) {
-							inside = true;
-						}
-						else {
-							outside = true;
-						}
-						if (inside && outside) {
-							different = true;
-							break;
-						}
-					}
+					facingCorrect= normalX * frustumCorners[0].x + normalY * frustumCorners[0].y + normalZ * frustumCorners[0].z >= offset;
 					
-					if (different && triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)   ) {
-						indices[ii++] = vi * vMult;
-						vertices[vi++] = ax;
-						vertices[vi++] = ay;
-						vertices[vi++] = az;
+					if (facingCorrect) {
+						outside = false;
+						inside = false;
+						different = false;
+						for (i = 0; i < cLen; i++) {
+							c = frustumCorners[i];
+							if ( normalX * c.x + normalY * c.y + normalZ * c.z >= offset) {
+								inside = true;
+							}
+							else {
+								outside = true;
+							}
+							if (inside && outside) {
+								different = true;
+								break;
+							}
+						}
 						
-						indices[ii++] = vi * vMult;
-						vertices[vi++] = bx;
-						vertices[vi++] = by;
-						vertices[vi++] = bz;
-						
-						indices[ii++] = vi * vMult;
-						vertices[vi++] = cx;
-						vertices[vi++] = cy;
-						vertices[vi++] = cz;
-						
-						numCollisionTriangles++;
+						if (triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)   ) {
+							indices[ii++] = vi * vMult;
+							vertices[vi++] = ax;
+							vertices[vi++] = ay;
+							vertices[vi++] = az;
+							
+							indices[ii++] = vi * vMult;
+							vertices[vi++] = bx;
+							vertices[vi++] = by;
+							vertices[vi++] = bz;
+							
+							indices[ii++] = vi * vMult;
+							vertices[vi++] = cx;
+							vertices[vi++] = cy;
+							vertices[vi++] = cz;
+							
+							numCollisionTriangles++;
+						}
 					}
 						
 					}
+
 				}
 			}
 			

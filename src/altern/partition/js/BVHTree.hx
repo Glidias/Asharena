@@ -1,5 +1,7 @@
 package altern.partition.js;
-import altern.partition.js.BVHTree.IntersectionResult;
+import altern.culling.CullingPlane;
+import altern.culling.DefaultCulling;
+import altern.culling.IFrustumCollectTri;
 import altern.ray.IRaycastImpl;
 import components.BoundBox;
 import components.Transform3D;
@@ -7,7 +9,6 @@ import de.polygonal.ds.NativeInt32Array;
 import de.polygonal.ds.tools.NativeInt32ArrayTools;
 import systems.collisions.EllipsoidCollider;
 import systems.collisions.ITCollidable;
-import util.TypeDefs.Vector3D;
 import util.geom.AABBUtils;
 import util.geom.GeomUtil;
 import util.geom.Geometry;
@@ -67,6 +68,7 @@ class BVHTree
 #if js
 	implements ITCollidable
 	implements IRaycastImpl
+	implements IFrustumCollectTri
 #end
 {
 	#if js
@@ -74,6 +76,7 @@ class BVHTree
 	var _result:Vector3D = new Vector3D();
 	var geom(default, null):Geometry = new Geometry();
 	var _stack:Array<BVHNode> = [];
+	var _stackCulling:Array<Int> = [];
 	
 	var allResults:Array<IntersectionResult>;
 	var lastResult:IntersectionResult;
@@ -225,6 +228,86 @@ class BVHTree
 			}
 		}
 		return null;
+	}
+	
+	
+	/* INTERFACE altern.culling.IFrustumCollectTri */
+	
+	public function collectTrisForFrustum(frustum:CullingPlane, culling:Int, frustumCorners:Vector<Vector3D>, vertices:Vector<Float>, indices:Vector<UInt>):Void 
+	{
+		var vi:Int = vertices.length;
+		var ii:Int = indices.length;
+		
+		var s:Int = 0;
+		var stack = _stack;
+		var stackCulling = _stackCulling;
+		stack[s] = this.bvh._rootNode;
+		stackCulling[s] = culling;
+		s++;
+		var bboxArray = this.bvh._bboxArray;
+		var triArray = this.bvh._trianglesArray;
+		geom.numIndices = 0;
+		geom.numVertices = 0;
+		
+		var x:Float = frustumCorners[0].x;
+		var y:Float = frustumCorners[0].y;
+		var z:Float = frustumCorners[0].z;
+		
+		
+
+		aabbTriCount = 0;
+		while ( --s >= 0) {
+			var node = stack[s];
+			var nodeCulling:Int = stackCulling[s];
+			if ( (nodeCulling = DefaultCulling.cullingInFrustumOf(frustum, nodeCulling, node._extentsMin.x, node._extentsMin.y, node._extentsMin.z, node._extentsMax.x, node._extentsMax.y, node._extentsMax.z)) >= 0 ) {
+				if (node._node0!=null) {
+					stack[s] = node._node0;
+					stackCulling[s] = nodeCulling;
+					s++;
+				}
+
+				if (node._node1!=null) {
+					stack[s] = node._node1;
+					stackCulling[s] = nodeCulling;
+					s++;
+				}
+				
+				for (i in node._startIndex...node._endIndex) {
+					var triIndex:Int = bboxArray[i * 7];
+					triIndex *= 9;
+					
+					// test individual triangle in frustum based off exit of: all points outside a frustum plane 
+					// OR/AND all frustum points lie on one side of the plane
+					
+					var ax:Float= triArray[triIndex++];
+					var ay:Float= triArray[triIndex++];
+					var az:Float= triArray[triIndex++];
+					
+					var bx:Float= triArray[triIndex++];
+					var by:Float= triArray[triIndex++];
+					var bz:Float= triArray[triIndex++];
+					
+					var cx:Float= triArray[triIndex++];
+					var cy:Float= triArray[triIndex++];
+					var cz:Float= triArray[triIndex++];
+		
+					
+					if (DefaultCulling.isNonBackFace(ax, ay, az, bx, by, bz, cx,cy,cz,x,y,z) && DefaultCulling.triInFrustumCover(frustum, ax, ay, az, bx, by, bz, cx,cy,cz)) {
+						vertices[vi++] = ax; indices[ii] = ii++;
+						vertices[vi++] = ay; indices[ii] = ii++;
+						vertices[vi++] = az; indices[ii] = ii++;
+						
+						vertices[vi++] = bx; indices[ii] = ii++;
+						vertices[vi++] = by; indices[ii] = ii++;
+						vertices[vi++] = bz; indices[ii] = ii++;
+						
+						vertices[vi++] = cx; indices[ii] = ii++;
+						vertices[vi++] = cy; indices[ii] = ii++;
+						vertices[vi++] = cz; indices[ii] = ii++;
+					}
+				}
+			}
+		}
 	}
 	#end
 	

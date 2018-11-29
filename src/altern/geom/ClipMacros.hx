@@ -1,5 +1,7 @@
 package altern.geom;
 import altern.culling.CullingPlane;
+import haxe.Log;
+import jeash.geom.Vector3D;
 import util.geom.Vec3;
 
 /**
@@ -21,9 +23,8 @@ class ClipMacros
 	 * Modify vertex.offset values for each faces' vertices relative to a given plane in camera coordinates.
 	 * @param	faceList	The faces to consider
 	 * @param	camNormal	The clip normal plane
-	 * @param   offset		The plane offset in relation to transformed vertices of face
 	 */
-	public static function computeMeshVerticesLocalOffsets(faceList:Face, camNormal:Vec3, camOffset:Float):Void {
+	public static function computeMeshVerticesLocalOffsets(faceList:Face, camNormal:Vec3):Void {
 		var wrapper:Wrapper;
 		var f:Face;
 		transformId++;
@@ -33,7 +34,7 @@ class ClipMacros
 			while (wrapper != null) {
 				var vertex:Vertex = wrapper.vertex;
 				if (vertex.transformId != transformId) {
-					vertex.offset = vertex.x * camNormal.x + vertex.y * camNormal.y + vertex.z * camNormal.z + camOffset;
+					vertex.offset = vertex.x * camNormal.x + vertex.y * camNormal.y + vertex.z * camNormal.z;
 					vertex.transformId = transformId;
 				}
 				
@@ -140,6 +141,115 @@ class ClipMacros
 		return headWrapper;
 	}
 	
+	public static function calculateFaceCoordinates2(faceList:Face, faceReference:Face):Void {
+		var calculateId:Int = ++ClipMacros.transformId;
+		
+		var origin:Vertex = faceReference.wrapper.next.vertex;
+		var top:Vertex = faceReference.wrapper.vertex;
+		var right:Vertex = faceReference.wrapper.next.next.vertex;
+		
+		
+		// axes
+		var topX:Float = top.x - origin.x;
+		var topY:Float = top.y - origin.y;
+		var topZ:Float = top.z - origin.z;
+		var rightX:Float = right.x - origin.x;
+		var rightY:Float = right.y - origin.y;
+		var rightZ:Float = right.z - origin.z;
+		
+		var d:Float;
+		var topD:Float = Math.sqrt(topX * topX + topY * topY + topZ * topZ);
+		d = 1 / topD;
+		
+		topX *= d;
+		topY *= d;
+		topZ *= d;
+		
+		var rightD:Float = Math.sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ);
+		d = 1 / rightD;
+		//Log.trace("RIGHT" + "::"+rightD);
+		rightX *= d;
+		rightY *= d;
+		rightZ *= d;
+		
+	
+		var vx:Float;
+		var vy:Float;
+		var vz:Float;
+		
+		var f:Face = faceList;
+		while (f != null) {
+			var w:Wrapper = f.wrapper;
+			while ( w != null) {
+				var v:Vertex = w.vertex;
+				if (v.transformId != calculateId) {
+					v.transformId = calculateId;
+					vx = v.x - origin.x;
+					vy = v.y - origin.y;
+					vz = v.z - origin.z;
+					v.cameraX = vx * rightX + vy * rightY + vz * rightZ;
+					v.cameraY = vx * topX + vy * topY + vz * topZ;
+					/*
+					if (v.cameraX > rightD+1e6) {
+						trace("Exceeded x bounds by:" + (v.cameraX - rightD) );
+					}
+					if (v.cameraY > topD+1e6) {
+						trace("Exceeded y bounds by:" + (v.cameraY - topD) );
+					}
+					*/
+					//Log.trace(v.cameraX + ", " + v.cameraY + ":: "+ (vx*faceReference.normalX + vy * faceReference.normalY + vz*faceReference.normalZ) );
+					
+				}
+				w = w.next;
+			}
+			f = f.next;
+		}
+	}
+	
+	public static function calculateFaceCoordinates(faceList:Face, top:Vec3, right:Vec3, origin:Vec3):Void {
+		var calculateId:Int = ++ClipMacros.transformId;
+
+		// axes
+		var topX:Float = top.x;
+		var topY:Float = top.y;
+		var topZ:Float = top.z;
+		var rightX:Float = right.x;
+		var rightY:Float = right.y;
+		var rightZ:Float = right.z;
+
+		var vx:Float;
+		var vy:Float;
+		var vz:Float;
+		
+		var f:Face = faceList;
+		while (f != null) {
+			var w:Wrapper = f.wrapper;
+			while (w != null) {
+				var v:Vertex = w.vertex;
+				if (v.transformId != calculateId) {
+					v.transformId = calculateId;
+					vx = v.x - origin.x;
+					vy = v.y - origin.y;
+					vz = v.z - origin.z;
+					v.cameraX = vx * rightX + vy * rightY + vz * rightZ;
+					v.cameraY = vx * topX + vy * topY + vz * topZ;
+					/*
+					if (v.cameraX > rightD+1e6) {
+						Log.trace("Exceeded x bounds by:" + (v.cameraX - rightD) );
+					}
+					if (v.cameraY > topD+1e6) {
+						Log.trace("Exceeded y bounds by:" + (v.cameraY - topD) );
+					}
+					*/
+					//Log.trace(v.cameraX + ", " + v.cameraY + ":: "+ (vx*faceReference.normalX + vy * faceReference.normalY + vz*faceReference.normalZ) );
+					
+				}
+				w = w.next;
+			}
+			f = f.next;
+		}
+	}
+	
 	/**
 	 * Updates an existing cloned face to be clipped against a plane. 
 	 * @param	face
@@ -228,9 +338,8 @@ class ClipMacros
 			inputNorm.z = by * ax - bx * ay;
 			
 			var offset:Float = v.x * inputNorm.x + v.y * inputNorm.y + v.z * inputNorm.z;
-
 				
-			ClipMacros.computeMeshVerticesLocalOffsets(face, inputNorm, offset);
+			ClipMacros.computeMeshVerticesLocalOffsets(face, inputNorm);
 			
 			if (negativeFace == null) negativeFace = ClipMacros.newPositiveClipFace(face, inputNorm, offset);
 			else ClipMacros.updateClipFace(face, inputNorm, offset);
@@ -281,7 +390,7 @@ class ClipMacros
 			inputNorm.z = -p.z;
 			var offset:Float = -p.offset;
 			
-			ClipMacros.computeMeshVerticesLocalOffsets(f, inputNorm, offset);
+			ClipMacros.computeMeshVerticesLocalOffsets(f, inputNorm);
 			
 			if (negativeFace == null) negativeFace = ClipMacros.newPositiveClipFace(f, inputNorm, offset);
 			else ClipMacros.updateClipFace(f, inputNorm, offset);
@@ -298,8 +407,10 @@ class ClipMacros
 		if (negativeFace != null) {
 			return negativeFace;
 		}
+		/*
 		else {
 		}
+		*/
 		
 		return null;
 	}
