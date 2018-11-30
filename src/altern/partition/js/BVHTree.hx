@@ -249,9 +249,7 @@ class BVHTree
 		geom.numIndices = 0;
 		geom.numVertices = 0;
 		
-		var x:Float = frustumCorners[0].x;
-		var y:Float = frustumCorners[0].y;
-		var z:Float = frustumCorners[0].z;
+		
 		
 		
 
@@ -292,7 +290,7 @@ class BVHTree
 					var cz:Float= triArray[triIndex++];
 		
 					
-					if (DefaultCulling.isNonBackFace(ax, ay, az, bx, by, bz, cx,cy,cz,x,y,z) && DefaultCulling.triInFrustumCover(frustum, ax, ay, az, bx, by, bz, cx,cy,cz)) {
+					if (DefaultCulling.isInFrontOfFrustum(ax, ay, az, bx, by, bz, cx,cy,cz, frustumCorners) && DefaultCulling.triInFrustumCover(frustum, ax, ay, az, bx, by, bz, cx,cy,cz)) {
 						vertices[vi++] = ax; indices[ii] = ii++;
 						vertices[vi++] = ay; indices[ii] = ii++;
 						vertices[vi++] = az; indices[ii] = ii++;

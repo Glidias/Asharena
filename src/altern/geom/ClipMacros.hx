@@ -415,29 +415,35 @@ class ClipMacros
 		return null;
 	}
 		
-	public static function disposeTotalAreaIntersections(faceList:Face):Float 
+	public static function disposeTotalAreaIntersections(faceList:Face, limit:Float=3.40282346638528e+38):Float 
 	{
 		// Retrieves accumulated area of intersections between polygons (pairwise) 
 		var accum:Float = 0;
 		var lastFace:Face = null;
 		var f:Face = faceList;
+		var limitReached:Bool = false;
 		while (f != null) {
 			var p:Face = f.next;
-			while (p != null) {
+			while (p != null && !limitReached) {
 				if (f.overlapsOther2D(p)) {
 					var overlapFace:Face = ClipMacros.getOverlapClipFace(f, p);
 					if (overlapFace != null) {
 						accum += overlapFace.getArea();
 						overlapFace.destroy();
 						overlapFace.next = Face.collector;
-						Face.collector = faceList;
+						overlapFace.destroy();
+						Face.collector = overlapFace;
+						limitReached = accum >= limit;
+						if (limitReached) {
+							accum = limit;
+							break;
+						}
 					}
 				}	
-				
 				p = p.next;
 			}
 			lastFace = f;
-			
+			f.destroy();
 			f = f.next;
 		}
 		lastFace.next = Face.collector;

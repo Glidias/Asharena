@@ -492,12 +492,12 @@ class TargetBoardTester
 				else {
 					Log.trace("Got multiple polies");
 					
-					ClipMacros.calculateFaceCoordinates2(soupFaceList, disposableFace);
-					//ClipMacros.calculateFaceCoordinates(soupFaceList, targUp, targRight, targPos );
-					
-					var reduc:Float = ClipMacros.disposeTotalAreaIntersections(soupFaceList);
+					//ClipMacros.calculateFaceCoordinates2(soupFaceList, disposableFace);
+					ClipMacros.calculateFaceCoordinates(soupFaceList, targUp, targRight, targPos );
+					var faceArea:Float = disposableFace.getArea();
+					var reduc:Float = ClipMacros.disposeTotalAreaIntersections(soupFaceList, faceArea);
 					soupFaceList = null;
-					if (reduc > 0) Log.trace(Std.int(reduc / disposableFace.getArea() * 100)+" percent reduction overlap");
+					if (reduc > 0) Log.trace(Std.int(reduc / faceArea * 100)+" percent reduction overlap");
 					areaSubtracted -= reduc;
 					
 					if (areaSubtracted < -1e-6) Log.trace("Area substracted should not exceed total:" + areaSubtracted);

@@ -1,5 +1,8 @@
 package altern.culling;
 import altern.terrain.ICuller;
+import util.TypeDefs.Vector;
+import util.TypeDefs.Vector3D;
+
 
 /**
  * ...
@@ -61,7 +64,10 @@ class DefaultCulling implements ICuller
 			return culling;
 	}
 	
-	public static function isNonBackFace(ax:Float, ay:Float , az:Float, bx:Float , by:Float, bz:Float, cx:Float, cy:Float, cz:Float, x:Float, y:Float, z:Float):Bool {
+	public static function isInFrontOfFrustum(ax:Float, ay:Float , az:Float, bx:Float , by:Float, bz:Float, cx:Float, cy:Float, cz:Float, frustumCorners:Vector<Vector3D>):Bool {
+		var x:Float = frustumCorners[0].x;
+		var y:Float = frustumCorners[0].y;
+		var z:Float = frustumCorners[0].z;
 		var acz:Float;
 		var normalX:Float;
 		var normalY:Float;
@@ -80,12 +86,51 @@ class DefaultCulling implements ICuller
 		normalX = acz*aby - acy*abz;
 		normalY = acx*abz - acz*abx;
 		normalZ = acy * abx - acx * aby;
-		return normalX * x + normalY * y + normalZ * z > ax * normalX + ay * normalY + az * normalZ;
+		var offset:Float = ax * normalX + ay * normalY + az * normalZ;
+		
+		if (normalX * x + normalY * y + normalZ * z <= offset) {
+			return false;
+		}
+		
+		/*
+		var v:Vector3D;
+		for (i in 0...frustumCorners.length) {
+			v = frustumCorners[i];
+			x = v.x;
+			y = v.y;
+			z = v.z;
+			
+		}
+		*/
+		
+		var outside:Bool;
+		var inside:Bool;
+		var different:Bool;
+		var c:Vector3D;
+		outside = false;
+		inside = false;
+		different = false;
+		for (i in 0...frustumCorners.length) {
+			c = frustumCorners[i];
+			if ( normalX * c.x + normalY * c.y + normalZ * c.z >= offset) {
+				inside = true;
+			}
+			else {
+				outside = true;
+			}
+			if (inside && outside) {
+				different = true;
+				break;
+			}
+			
+		}
+
+		return different;
 	}
 	
 	
 	public static function triInFrustumCover(frustum:CullingPlane, ax:Float, ay:Float , az:Float, bx:Float , by:Float, bz:Float, cx:Float, cy:Float, cz:Float):Bool {
-			var lastPlane:CullingPlane = null;
+			//var lastPlane:CullingPlane = null;
 			var plane:CullingPlane = frustum;
 			while ( plane != null) {
 				if (ax * plane.x + ay * plane.y + az * plane.z < plane.offset && 
@@ -93,18 +138,19 @@ class DefaultCulling implements ICuller
 				cx * plane.x + cy * plane.y + cz * plane.z < plane.offset  ) {
 					return false;
 				}
-				lastPlane = plane;
+				//lastPlane = plane;
 				
 				plane = plane.next;
 			}
 			
-			
+			/*
 			plane = lastPlane;  // far-clip special case, intersecting it counts
 			if (ax * plane.x + ay * plane.y + az * plane.z < plane.offset || 
 				bx  * plane.x + by * plane.y + bz * plane.z < plane.offset || 
 				cx * plane.x + cy * plane.y + cz * plane.z < plane.offset  ) {
 				return false;
 			}
+			*/
 			
 			return true;
 		}

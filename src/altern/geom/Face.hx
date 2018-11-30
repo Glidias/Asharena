@@ -41,10 +41,7 @@ class Face
 			var nextW:Wrapper = w.next;
 			w.next = Wrapper.collector;
 			Wrapper.collector = w;
-			w.vertex.next = Vertex.collector;
-			Vertex.collector = w.vertex;
 			w.vertex = null;
-			
 			w = nextW;
 		}
 		wrapper = null;
