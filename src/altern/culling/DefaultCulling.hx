@@ -92,21 +92,44 @@ class DefaultCulling implements ICuller
 			return false;
 		}
 		
-		/*
-		var v:Vector3D;
-		for (i in 0...frustumCorners.length) {
-			v = frustumCorners[i];
-			x = v.x;
-			y = v.y;
-			z = v.z;
-			
-		}
-		*/
-		
+		var c:Vector3D;
 		var outside:Bool;
 		var inside:Bool;
 		var different:Bool;
-		var c:Vector3D;
+		
+		
+
+		/*
+		for (i in 1...frustumCorners.length) {
+			c = frustumCorners[i];
+			if ( normalX * c.x + normalY * c.y + normalZ * c.z > offset) { //inside = true;
+				return false;
+			}
+		}
+		*/
+		
+		outside = false;
+		inside = false;
+		different = false;
+		for (i in 1...frustumCorners.length) {
+			c = frustumCorners[i];
+			if ( normalX * c.x + normalY * c.y + normalZ * c.z >= offset) {
+				inside = true;
+			}
+			else {
+				outside = true;
+			}
+			if (inside && outside) {
+				different = true;
+				break;
+			}
+			
+		}
+		if (different) return false;
+	
+		
+	
+		
 		outside = false;
 		inside = false;
 		different = false;
