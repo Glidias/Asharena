@@ -46,6 +46,7 @@ class Face
 		}
 		wrapper = null;
 		processNext = null;
+		visible = false;
 	}
 	
 
@@ -303,6 +304,26 @@ class Face
 		return true;
 	}
 	
+	public function isPointInside2D(centerX:Float, centerY:Float):Bool {
+		var w:Wrapper  = wrapper;
+		var v:Vertex;
+		var nx:Float;
+		var ny:Float;
+		var offset:Float;
+		while (w != null) {
+			v = w.vertex;
+			var v2:Vertex = w.next != null ? w.next.vertex : wrapper.vertex;
+			nx = -(v2.cameraY - v.cameraY);
+			ny = (v2.cameraX - v.cameraX);	
+			offset = nx * v.cameraX + ny * v.cameraY;
+			if (nx * centerX + ny * centerY < offset) {
+				return false;
+			}
+			w = w.next;
+		}
+		return true;
+	}
+	
 	
 	
 	
@@ -477,6 +498,7 @@ class Face
 		return wrapper;
 	}
 	*/
+	
 	
 	
 	private inline function get_side(a:Float , b:Float, c:Float, point1:Vertex, point2:Vertex):Int {

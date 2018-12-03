@@ -1,7 +1,5 @@
 package altern.geom;
 import altern.culling.CullingPlane;
-import haxe.Log;
-import jeash.geom.Vector3D;
 import util.geom.Vec3;
 
 /**
@@ -308,6 +306,7 @@ class ClipMacros
 		return clipFace;
 	}
 	
+	
 	public static function getOverlapClipFace(clipperFace:Face, face:Face):Face {
 		var v:Vertex;
 		var w:Wrapper;
@@ -414,7 +413,9 @@ class ClipMacros
 		
 		return null;
 	}
-		
+	
+	
+	/*	// This method is disproved
 	public static function disposeTotalAreaIntersections(faceList:Face, limit:Float=3.40282346638528e+38):Float 
 	{
 		// Retrieves accumulated area of intersections between polygons (pairwise) 
@@ -450,5 +451,6 @@ class ClipMacros
 		Face.collector = faceList;
 		return accum;
 	}
+	*/
 	
 }

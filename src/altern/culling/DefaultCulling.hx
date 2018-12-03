@@ -1,7 +1,12 @@
 package altern.culling;
+import altern.geom.ClipMacros;
+import altern.geom.Face;
+import altern.geom.Vertex;
+import altern.geom.Wrapper;
 import altern.terrain.ICuller;
 import util.TypeDefs.Vector;
 import util.TypeDefs.Vector3D;
+import util.geom.Vec3;
 
 
 /**
@@ -64,6 +69,8 @@ class DefaultCulling implements ICuller
 			return culling;
 	}
 	
+	
+	
 	public static function isInFrontOfFrustum(ax:Float, ay:Float , az:Float, bx:Float , by:Float, bz:Float, cx:Float, cy:Float, cz:Float, frustumCorners:Vector<Vector3D>):Bool {
 		var x:Float = frustumCorners[0].x;
 		var y:Float = frustumCorners[0].y;
@@ -96,39 +103,7 @@ class DefaultCulling implements ICuller
 		var outside:Bool;
 		var inside:Bool;
 		var different:Bool;
-		
-		
 
-		/*
-		for (i in 1...frustumCorners.length) {
-			c = frustumCorners[i];
-			if ( normalX * c.x + normalY * c.y + normalZ * c.z > offset) { //inside = true;
-				return false;
-			}
-		}
-		*/
-		
-		outside = false;
-		inside = false;
-		different = false;
-		for (i in 1...frustumCorners.length) {
-			c = frustumCorners[i];
-			if ( normalX * c.x + normalY * c.y + normalZ * c.z >= offset) {
-				inside = true;
-			}
-			else {
-				outside = true;
-			}
-			if (inside && outside) {
-				different = true;
-				break;
-			}
-			
-		}
-		if (different) return false;
-	
-		
-	
 		
 		outside = false;
 		inside = false;
@@ -151,31 +126,81 @@ class DefaultCulling implements ICuller
 		return different;
 	}
 	
+	static var clippingTri:Face;
+	static var clippingNormal:Vec3;
+	static function createNewTri():Face {
+		var f:Face = new Face();
+		var w:Wrapper;
+		var v:Vertex;
+		f.wrapper = w = new Wrapper();	
+		w.vertex  = v =  new Vertex();
+		
+		w = w.next = new Wrapper();	 
+		w.vertex = v.next = v = new Vertex();
+		
+		w = w.next = new Wrapper();	 
+		w.vertex = v.next = v = new Vertex();
+		
+		return f;
+	}
+	public static var clippedFace:Face;
+	public static inline function collectClippedFace():Void {
+		var f:Face = clippedFace;
+		f.destroy();
+		f.collect();
+	}
 	
-	public static function triInFrustumCover(frustum:CullingPlane, ax:Float, ay:Float , az:Float, bx:Float , by:Float, bz:Float, cx:Float, cy:Float, cz:Float):Bool {
-			//var lastPlane:CullingPlane = null;
+	public static function triInFrustumCover(frustum:CullingPlane, ax:Float, ay:Float , az:Float, bx:Float , by:Float, bz:Float, cx:Float, cy:Float, cz:Float):Int {
+			var lastPlane:CullingPlane = null;	// assumed lastPlane is farClipping plane
+			
 			var plane:CullingPlane = frustum;
 			while ( plane != null) {
 				if (ax * plane.x + ay * plane.y + az * plane.z < plane.offset && 
 				bx  * plane.x + by * plane.y + bz * plane.z < plane.offset && 
 				cx * plane.x + cy * plane.y + cz * plane.z < plane.offset  ) {
-					return false;
+					return -1;
 				}
-				//lastPlane = plane;
+				lastPlane = plane;
 				
 				plane = plane.next;
 			}
 			
-			/*
+			
 			plane = lastPlane;  // far-clip special case, intersecting it counts
 			if (ax * plane.x + ay * plane.y + az * plane.z < plane.offset || 
 				bx  * plane.x + by * plane.y + bz * plane.z < plane.offset || 
-				cx * plane.x + cy * plane.y + cz * plane.z < plane.offset  ) {
-				return false;
-			}
-			*/
+				cx * plane.x + cy * plane.y + cz * plane.z < plane.offset  ) 
+			{
 			
-			return true;
+				if (clippingTri == null) {
+					clippingTri = createNewTri();
+					clippingNormal = new Vec3();
+				}
+			
+				clippingTri.wrapper.vertex.x = ax;
+				clippingTri.wrapper.vertex.y = ay;
+				clippingTri.wrapper.vertex.z = az;
+				
+				clippingTri.wrapper.next.vertex.x = bx;
+				clippingTri.wrapper.next.vertex.y = by;
+				clippingTri.wrapper.next.vertex.z = bz;
+				
+				clippingTri.wrapper.next.next.vertex.x = cx;
+				clippingTri.wrapper.next.next.vertex.y = cy;
+				clippingTri.wrapper.next.next.vertex.z = cz;
+				
+				clippingNormal.x = plane.x;
+				clippingNormal.y = plane.y;
+				clippingNormal.z = plane.z;
+				
+				ClipMacros.computeMeshVerticesLocalOffsets(clippingTri, clippingNormal);
+				clippedFace = ClipMacros.newPositiveClipFace(clippingTri, clippingNormal, plane.offset);
+				
+				
+				return 1;
+			}
+			
+			return 0;
 		}
 	
 	/* INTERFACE altern.terrain.ICuller */

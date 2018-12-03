@@ -2,6 +2,8 @@ package altern.culling;
 import altern.collisions.CollisionBoundNode;
 import altern.geom.ClipMacros;
 import altern.geom.Face;
+import altern.geom.Vertex;
+import altern.geom.Wrapper;
 import components.Transform3D;
 import haxe.Log;
 import util.LibUtil;
@@ -9,6 +11,11 @@ import util.TypeDefs;
 import util.TypeDefs.Vector;
 import util.TypeDefs.Vector3D;
 import util.geom.Vec3;
+
+#if js
+// import js.html.Float32Array;
+import altern.js.Delaunator;
+#end
 
 /**
  * General utility class to calculate target board percentage cover
@@ -177,7 +184,7 @@ class TargetBoardTester
 		testFrustumPoints[f].z = proot.z;
 		
 		// disposableFace != null ? Face.setupQuad(disposableFace, targPos, targUp, targRight, w, h, IDENTITY) : 
-		disposableFace = Face.getQuad(targPos, targUp, targRight, w, h, IDENTITY);
+		disposableFace = disposableFace != null ? Face.setupQuad(disposableFace, targPos, targUp, targRight, w, h, IDENTITY) : Face.getQuad(targPos, targUp, targRight, w, h, IDENTITY);
 		
 		TypeDefs.setVectorLen(testIndices, 0);
 		TypeDefs.setVectorLen(testVertices, 0);
@@ -245,7 +252,12 @@ class TargetBoardTester
 		
 		// calculate area subtracted from soup
 		var areaSubtracted:Float = collectClipPolygonsFromSoup(testVertices, testIndices, position.x, position.y, position.z);
+		
+		
+		
 		var area:Float = disposableFace.getArea(); // w * h * 4;
+		
+		//Log.trace("Of area:" + area);
 		var ratioCover:Float = 0;
 		if (areaSubtracted > 0) {
 			ratioCover = areaSubtracted / area;
@@ -269,6 +281,8 @@ class TargetBoardTester
 			i += 3;
 		}
 	}
+	
+
 	
 	public  function createFrustumFromPoints(pts:Array<Vector3D>, targPos:Vec3):CullingPlane {
 			var cullingPlane:CullingPlane = new CullingPlane();
@@ -471,10 +485,10 @@ class TargetBoardTester
 				var retFace:Face = ClipMacros.clipWithPlaneList(soupPlaneList, disposableFace );
 				soupNegativeFace = retFace;
 				
-				var retAreaSubtracted:Float = retFace != null ? retFace.getArea() : 0;
+				//var retAreaSubtracted:Float = retFace != null ? retFace.getArea() : 0;
 				//var retAreaSubtracted:Float = soupOccluder.clip(soupOccluder._disposableFaceCache);
-				if (retAreaSubtracted > 0) {
-					areaSubtracted += retAreaSubtracted;
+				if (retFace != null) {
+					//areaSubtracted += retAreaSubtracted;
 					soupNegativeFace.next = soupFaceList;
 					soupFaceList = soupNegativeFace;
 				}
@@ -485,6 +499,7 @@ class TargetBoardTester
 
 			if (soupFaceList != null) {
 				if (soupFaceList.next == null) {	// early out
+					areaSubtracted = soupFaceList.getArea();
 					soupFaceList.collect();
 					soupFaceList = null;
 					return areaSubtracted;
@@ -493,14 +508,27 @@ class TargetBoardTester
 					Log.trace("Got multiple polies");
 					
 					//ClipMacros.calculateFaceCoordinates2(soupFaceList, disposableFace);
+					/*
 					ClipMacros.calculateFaceCoordinates(soupFaceList, targUp, targRight, targPos );
+					
+					*/
+					
+					
+					/*
 					var faceArea:Float = disposableFace.getArea();
+					
 					var reduc:Float = ClipMacros.disposeTotalAreaIntersections(soupFaceList, faceArea);
 					soupFaceList = null;
 					if (reduc > 0) Log.trace(Std.int(reduc / faceArea * 100)+" percent reduction overlap");
 					areaSubtracted -= reduc;
 					
 					if (areaSubtracted < -1e-6) Log.trace("Area substracted should not exceed total:" + areaSubtracted);
+					*/
+					//ClipMacros.calculateFaceCoordinates2(soupFaceList, disposableFace);
+					ClipMacros.calculateFaceCoordinates(soupFaceList, targUp, targRight, targPos );
+					areaSubtracted = disposeGetTotalArea(soupFaceList);
+					
+					
 					
 					return areaSubtracted;
 				}
@@ -509,6 +537,225 @@ class TargetBoardTester
 			return areaSubtracted;
 			
 		}
+		
+	
+	public function disposeGetTotalArea(faceList:Face):Float 
+	{
+		// Retrieves accumulated area of intersections between polygons (pairwise) 
+		var accum:Float = 0;
+		var lastFace:Face = null;
+		var f:Face = faceList;
+		var p:Face;
+		var processList:Face = null;
+		
+		var firstFace:Face = null;
+		var count:Int = 0;
+
+		f = faceList;
+		while (f != null) {
+			var fNext:Face = f.next;
+			f.next = null;
+			p = fNext;
+			while (p != null) {
+				if ( (!f.visible || !p.visible) && f.overlapsOther2D(p)) {
+					if (!f.visible) {
+						f.visible = true;
+						f.processNext = processList;
+						processList = f;
+						count++;
+					}
+				    if (!p.visible) {
+						p.visible = true;
+						p.processNext = processList;
+						processList = p;
+					}
+				}	
+				p = p.next;
+			}
+
+			if (!f.visible) {
+				// add area
+				accum += f.getArea();
+				
+				// todo: disposable cleanup
+				f.destroy();
+				if (firstFace == null) {
+					firstFace = f;
+				}
+				lastFace = f;
+			}		
+
+			f = fNext;
+		}
+		
+		
+		if (lastFace != null) {
+			lastFace.next = Face.collector;
+			Face.collector = firstFace;
+		}
+		
+		
+		var retFace:Face; 	
+		
+		// only 2 intersecting faces
+		if (processList != null && processList.processNext.processNext == null) {
+			accum += processList.getArea() + processList.processNext.getArea();
+			retFace = ClipMacros.getOverlapClipFace(processList, processList.processNext);
+			accum -= retFace != null ? retFace.getArea() : 0;
+			
+			
+			processList.processNext.collect();
+			processList.collect();
+			
+			processList.processNext.destroy();
+			processList.destroy();
+			return accum;
+		}
+		
+
+		var retFaceList:Face;
+		var newList:Face = null;
+		
+		var d:Int = 0;
+		var w:Wrapper;
+		var v:Vertex;
+		var lastP:Face;
+		
+		var delauneyId:Int = ++ClipMacros.transformId;
+		
+		f = processList;
+		while ( f != null) {
+			retFaceList = null;
+			lastP = null;
+			f.next = newList;
+			newList = f;
+			
+			p = f.processNext;
+			while (p != null) {
+				if (f.overlapsOther2D(p)) {		// no cache, redo check.. bleh..
+					retFace = ClipMacros.getOverlapClipFace(f, p);
+					if (retFace != null) {
+						lastP = p;
+						retFace.next = retFaceList;
+						retFaceList = retFace;
+					}
+					
+				}
+				p = p.processNext;
+			}
+			
+			if (retFaceList != null) {
+				/*
+				if (retFaceList.next == null) {	// only 1 overlapping face between f and p, add total Faces area
+					accum += f.getArea() + lastP.getArea() - retFaceList.getArea();
+				}
+				else {  // >=2 overlapping faces, might require delauney if all overlap clip faces have intersections among each other. simply assume delauney
+					// add all delauney points from retFaceList faces
+				*/
+					p = retFaceList;
+					while (p != null) {
+						w = p.wrapper;
+						while (w != null) {
+							v = w.vertex;
+							if (v.transformId != delauneyId) {
+								delaunatorPts[d++] = [v.cameraX, v.cameraY];
+								v.transformId = delauneyId;
+							}
+							w = w.next;
+						}
+						p = p.next;
+					}
+					
+					
+				//}
+			}
+			f = f.processNext;
+		}
+
+		
+		p = newList;
+		while ( p != null) {
+			w = p.wrapper;
+			while (w != null) {
+				v = w.vertex;
+				if (v.transformId != delauneyId) {
+					delaunatorPts[d++] = [v.cameraX, v.cameraY];
+					v.transformId = delauneyId;
+				}
+				w = w.next;
+			}
+			p = p.next;
+		}
+
+		// Only wish to execute 1 final delauney per target
+		//Log.trace("Using delaunator method");
+		
+		#if js
+		// requires JS atm until port Delaunator to haxe
+		TypeDefs.setVectorLen(delaunatorPts, d);
+		
+		if (newList !=null) {
+			// later consider using typed vector buffer for performance
+			var delaunator:Delaunator = Delaunator.from(delaunatorPts);
+			
+			// create delauney triangulation from points
+			var triangles = delaunator.triangles;
+			var i = 0;
+			while (i < triangles.length) {
+				var ax:Float, ay:Float, bx:Float, by:Float, cx:Float, cy:Float;
+	
+				ax = delaunatorPts[triangles[i]][0];
+				ay = delaunatorPts[triangles[i]][1];
+				
+				
+				bx = delaunatorPts[triangles[i+1]][0];
+				by = delaunatorPts[triangles[i+1]][1];
+				
+				cx = delaunatorPts[triangles[i+2]][0];
+				cy = delaunatorPts[triangles[i+2]][1];
+			
+				
+				var centerX:Float = (ax + bx + cx) / 3;
+				var centerY:Float = (ay + by + cy) / 3;
+				// for each triangle centroid, check if inside newList polygon soup. If it is, add area of triangle to accum..
+				f = newList;
+				var inside = false;
+				while ( f != null) {
+					if (f.isPointInside2D(centerX, centerY)) {
+						inside = true;
+						break;
+					}
+					f = f.next;
+				}
+				
+				if (inside) {
+					accum +=  Math.abs(0.5*(ax*(by-cy)+bx*(cy-ay)+cx*(ay-by)));
+				}
+				i += 3;
+			}
+			
+			
+			
+			p = newList;
+			while ( p != null) {
+				p.destroy();
+				lastFace = p;
+				p = p.next;
+			}
+			lastFace.next = Face.collector;
+			Face.collector = newList;
+		}
+		#end
+
+		
+		
+		
+		return accum;
+	}
+	
+
+	
+	private var delaunatorPts:Vector<Array<Float>> = [];
 	
 	
 	

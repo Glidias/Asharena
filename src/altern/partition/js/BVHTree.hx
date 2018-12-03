@@ -2,6 +2,9 @@ package altern.partition.js;
 import altern.culling.CullingPlane;
 import altern.culling.DefaultCulling;
 import altern.culling.IFrustumCollectTri;
+import altern.geom.Face;
+import altern.geom.Vertex;
+import altern.geom.Wrapper;
 import altern.ray.IRaycastImpl;
 import components.BoundBox;
 import components.Transform3D;
@@ -289,19 +292,48 @@ class BVHTree
 					var cy:Float= triArray[triIndex++];
 					var cz:Float= triArray[triIndex++];
 		
-					
-					if (DefaultCulling.isInFrontOfFrustum(ax, ay, az, bx, by, bz, cx,cy,cz, frustumCorners) && DefaultCulling.triInFrustumCover(frustum, ax, ay, az, bx, by, bz, cx,cy,cz)) {
-						vertices[vi++] = ax; indices[ii] = ii++;
-						vertices[vi++] = ay; indices[ii] = ii++;
-						vertices[vi++] = az; indices[ii] = ii++;
+					var triFrustumCover:Int;
+					if (DefaultCulling.isInFrontOfFrustum(ax, ay, az, bx, by, bz, cx, cy, cz, frustumCorners) && (triFrustumCover = DefaultCulling.triInFrustumCover(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)) >= 0) {
+						if (triFrustumCover == 0) {	
+							vertices[vi++] = ax; indices[ii] = ii++;
+							vertices[vi++] = ay; indices[ii] = ii++;
+							vertices[vi++] = az; indices[ii] = ii++;
+							
+							vertices[vi++] = bx; indices[ii] = ii++;
+							vertices[vi++] = by; indices[ii] = ii++;
+							vertices[vi++] = bz; indices[ii] = ii++;
+							
+							vertices[vi++] = cx; indices[ii] = ii++;
+							vertices[vi++] = cy; indices[ii] = ii++;
+							vertices[vi++] = cz; indices[ii] = ii++;
+						}
+						else if (DefaultCulling.clippedFace != null) {	// need to clip farPlane, fan out from clip face for tris
+							var w:Wrapper;
+							var f:Face = DefaultCulling.clippedFace;
+							var a:Vertex = f.wrapper.vertex;
+							
+							w = f.wrapper.next;
+							var wn:Wrapper = w.next;
+							while (wn != null) {
+								var b:Vertex = w.vertex;
+								var c:Vertex = wn.vertex;
+								vertices[vi++] = a.x; indices[ii] = ii++;
+								vertices[vi++] = a.y; indices[ii] = ii++;
+								vertices[vi++] = a.z; indices[ii] = ii++;
+								
+								vertices[vi++] = b.x; indices[ii] = ii++;
+								vertices[vi++] = b.y; indices[ii] = ii++;
+								vertices[vi++] = b.z; indices[ii] = ii++;
+								
+								vertices[vi++] = c.x; indices[ii] = ii++;
+								vertices[vi++] = c.y; indices[ii] = ii++;
+								vertices[vi++] = c.z; indices[ii] = ii++;
+								w = w.next;
+								wn = wn.next;
+							}
+							DefaultCulling.collectClippedFace();
+						}
 						
-						vertices[vi++] = bx; indices[ii] = ii++;
-						vertices[vi++] = by; indices[ii] = ii++;
-						vertices[vi++] = bz; indices[ii] = ii++;
-						
-						vertices[vi++] = cx; indices[ii] = ii++;
-						vertices[vi++] = cy; indices[ii] = ii++;
-						vertices[vi++] = cz; indices[ii] = ii++;
 					}
 				}
 			}
