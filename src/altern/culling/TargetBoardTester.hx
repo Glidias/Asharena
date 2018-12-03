@@ -251,21 +251,21 @@ class TargetBoardTester
 		// end loop
 		
 		// calculate area subtracted from soup
-		var areaSubtracted:Float = collectClipPolygonsFromSoup(testVertices, testIndices, position.x, position.y, position.z);
-		
-		
-		
 		var area:Float = disposableFace.getArea(); // w * h * 4;
-		
+		var areaSubtracted:Float = collectClipPolygonsFromSoup(testVertices, testIndices, position.x, position.y, position.z, area);
+
 		//Log.trace("Of area:" + area);
+		/*
 		var ratioCover:Float = 0;
 		if (areaSubtracted > 0) {
 			ratioCover = areaSubtracted / area;
-			Log.trace( Std.int(ratioCover*100)+"% cover" );
-		} else {
+			//Log.trace( Std.int(ratioCover*100)+"% cover" );
+		} 
+		else {
 			Log.trace("Fully exposed");
 		}
-		
+		*/
+		var ratioCover:Float = areaSubtracted / area;
 		return ratioCover;
 	}
 	
@@ -391,12 +391,14 @@ class TargetBoardTester
 		private var soupFaceList:Face;
 		private var soupNegativeFace:Face;
 		
-		private function collectClipPolygonsFromSoup(vertices:Vector<Float>, indices:Vector<UInt>, observerX:Float, observerY:Float, observerZ:Float):Float {
+		private function collectClipPolygonsFromSoup(vertices:Vector<Float>, indices:Vector<UInt>, observerX:Float, observerY:Float, observerZ:Float, ofArea:Float):Float {
 			var ax:Float;
 			var ay:Float;
 			var az:Float;
 			var len:Int;
 			var i:Int;
+			var earlyOutFull:Bool = false;
+			var retFace:Face;
 			
 			var p: CullingPlane;
 			if (soupPlaneList == null) {	// lazy instantiate 3 planes for triangle soup testing
@@ -482,18 +484,39 @@ class TargetBoardTester
 
 				//soupOccluder.clipMask = mask;
 				
-				var retFace:Face = ClipMacros.clipWithPlaneList(soupPlaneList, disposableFace );
+				retFace = ClipMacros.clipWithPlaneList(soupPlaneList, disposableFace );
 				soupNegativeFace = retFace;
 				
 				//var retAreaSubtracted:Float = retFace != null ? retFace.getArea() : 0;
 				//var retAreaSubtracted:Float = soupOccluder.clip(soupOccluder._disposableFaceCache);
 				if (retFace != null) {
+					
+
 					//areaSubtracted += retAreaSubtracted;
 					soupNegativeFace.next = soupFaceList;
 					soupFaceList = soupNegativeFace;
+					if (retFace.getArea() >= ofArea) {
+						earlyOutFull = true;
+						break;
+					}
 				}
 				
 				i += 3;
+			}
+			
+			if (earlyOutFull) 
+			{
+				//Log.trace("early out full!");
+				var lastRetFace:Face = null;
+				retFace = soupFaceList;
+				while ( retFace != null) {
+					retFace.destroy();
+					lastRetFace = retFace;
+					retFace = retFace.next;
+				}
+				lastRetFace.next = Face.collector;
+				Face.collector = soupFaceList;
+				return ofArea;
 			}
 			
 
@@ -505,7 +528,7 @@ class TargetBoardTester
 					return areaSubtracted;
 				}
 				else {
-					Log.trace("Got multiple polies");
+					//Log.trace("Got multiple polies");
 					
 					//ClipMacros.calculateFaceCoordinates2(soupFaceList, disposableFace);
 					/*
@@ -626,11 +649,16 @@ class TargetBoardTester
 		f = processList;
 		while ( f != null) {
 			retFaceList = null;
+			var processNext:Face = f.processNext;
 			lastP = null;
+			
+			
 			f.next = newList;
 			newList = f;
 			
-			p = f.processNext;
+			p = processNext;
+			
+				
 			while (p != null) {
 				if (f.overlapsOther2D(p)) {		// no cache, redo check.. bleh..
 					retFace = ClipMacros.getOverlapClipFace(f, p);
@@ -644,14 +672,17 @@ class TargetBoardTester
 				p = p.processNext;
 			}
 			
-			if (retFaceList != null) {
-				/*
-				if (retFaceList.next == null) {	// only 1 overlapping face between f and p, add total Faces area
+			if (retFaceList != null) {	// there are intersecting faces under f
+				/*	// This method doesn't seem to work, hmmm..
+				if (retFaceList.next == null) {	// confirmed only 1 overlapping face between f and p, add total Faces area now without adding f to delauney set. 
 					accum += f.getArea() + lastP.getArea() - retFaceList.getArea();
+					// f can be discarded now as it'll no longer be processed
+					Log.trace("early accum:" + accum);
+					f.destroy();
+					f.collect();
 				}
-				else {  // >=2 overlapping faces, might require delauney if all overlap clip faces have intersections among each other. simply assume delauney
+				else {*/  // >=2 overlapping faces, might require delauney if all overlap clip faces have intersections among each other. simply assume delauney
 					// add all delauney points from retFaceList faces
-				*/
 					p = retFaceList;
 					while (p != null) {
 						w = p.wrapper;
@@ -666,10 +697,20 @@ class TargetBoardTester
 						p = p.next;
 					}
 					
-					
+					// got more than 1 intersecting face under f, add to delauney set
+					/*
+					f.next = newList;
+					newList = f;		
+					*/
 				//}
 			}
-			f = f.processNext;
+			/*
+			else {	// no intersecting faces under f, but might still need to be considered in delanuey set
+				f.next = newList;
+				newList = f;
+			}
+			*/
+			f = processNext;
 		}
 
 		
