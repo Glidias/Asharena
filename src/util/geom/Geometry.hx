@@ -4,6 +4,12 @@ package util.geom;
  * Basic geometry class to support collision detection/raycasting/etc., or some basic 3D
  * @author Glenn Ko
  */
+ import altern.culling.CullingPlane;
+ import altern.culling.DefaultCulling;
+ import altern.culling.IFrustumCollectTri;
+ import altern.geom.Face;
+ import altern.geom.Vertex;
+ import altern.geom.Wrapper;
  import altern.ray.IRaycastImpl;
  import components.Transform3D;
  import systems.collisions.EllipsoidCollider;
@@ -11,7 +17,7 @@ package util.geom;
  import systems.collisions.ITCollidable;
  import util.TypeDefs;
  
-class Geometry implements ITECollidable implements IRaycastImpl
+class Geometry implements ITECollidable implements IRaycastImpl implements IFrustumCollectTri
 {
 	public var vertices:Vector<Float>;
 	
@@ -266,6 +272,7 @@ class Geometry implements ITECollidable implements IRaycastImpl
 		throw "Sorry, not implemented yet for n-gon (non-tri) interesctRay! Compile haxe build with triOnly.";
 		return null;
 	}
+	
 	#end
 	
 	
@@ -276,6 +283,84 @@ class Geometry implements ITECollidable implements IRaycastImpl
 	}
 	*/
 	
+	
+	/* INTERFACE altern.culling.IFrustumCollectTri */
+	
+	public function collectTrisForFrustum(frustum:CullingPlane, culling:Int, frustumCorners:Vector<Vector3D>, vertices:Vector<Float>, indices:Vector<UInt>):Void 
+	{
+		var vi:Int = vertices.length;
+		var ii:Int = indices.length;
+		
+		var len:Int = numIndices;
+		var i:Int = 0;
+		var pIndex:Int;
+		while (i < len) {
+			var indexA:UInt = indices[i];
+			var indexB:UInt = indices[(i + 1)];
+			var indexC:UInt = indices[(i + 2)];
+		
+			pIndex = indexA*3;
+			var ax:Float = vertices[pIndex++];
+			var ay:Float = vertices[pIndex++];
+			var az:Float = vertices[pIndex];
+			
+			pIndex = indexB*3;
+			var bx:Float = vertices[pIndex++];
+			var by:Float = vertices[pIndex++];
+			var bz:Float = vertices[pIndex];
+
+			pIndex = indexC*3;
+			var cx:Float = vertices[pIndex++];
+			var cy:Float = vertices[pIndex++];
+			var cz:Float = vertices[pIndex];
+
+			var triFrustumCover:Int;
+			if (DefaultCulling.isInFrontOfFrustum(ax, ay, az, bx, by, bz, cx, cy, cz, frustumCorners) && (triFrustumCover = DefaultCulling.triInFrustumCover(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)) >= 0) {
+				if (triFrustumCover == 0) {	
+					vertices[vi++] = ax; indices[ii] = ii++;
+					vertices[vi++] = ay; indices[ii] = ii++;
+					vertices[vi++] = az; indices[ii] = ii++;
+					
+					vertices[vi++] = bx; indices[ii] = ii++;
+					vertices[vi++] = by; indices[ii] = ii++;
+					vertices[vi++] = bz; indices[ii] = ii++;
+					
+					vertices[vi++] = cx; indices[ii] = ii++;
+					vertices[vi++] = cy; indices[ii] = ii++;
+					vertices[vi++] = cz; indices[ii] = ii++;
+				}
+				else if (DefaultCulling.clippedFace != null) {	// need to clip farPlane, fan out from clip face for tris
+					var w:Wrapper;
+					var f:Face = DefaultCulling.clippedFace;
+					var a:Vertex = f.wrapper.vertex;
+					
+					w = f.wrapper.next;
+					var wn:Wrapper = w.next;
+					while (wn != null) {
+						var b:Vertex = w.vertex;
+						var c:Vertex = wn.vertex;
+						vertices[vi++] = a.x; indices[ii] = ii++;
+						vertices[vi++] = a.y; indices[ii] = ii++;
+						vertices[vi++] = a.z; indices[ii] = ii++;
+						
+						vertices[vi++] = b.x; indices[ii] = ii++;
+						vertices[vi++] = b.y; indices[ii] = ii++;
+						vertices[vi++] = b.z; indices[ii] = ii++;
+						
+						vertices[vi++] = c.x; indices[ii] = ii++;
+						vertices[vi++] = c.y; indices[ii] = ii++;
+						vertices[vi++] = c.z; indices[ii] = ii++;
+						w = w.next;
+						wn = wn.next;
+					}
+					DefaultCulling.collectClippedFace();
+				}
+				
+			}
+			i += 3;
+		}
+			
+	}
 	
 }
 

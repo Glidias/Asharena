@@ -5,7 +5,6 @@ import altern.geom.Face;
 import altern.geom.Vertex;
 import altern.geom.Wrapper;
 import components.Transform3D;
-import haxe.Log;
 import util.LibUtil;
 import util.TypeDefs;
 import util.TypeDefs.Vector;
@@ -39,9 +38,9 @@ class TargetBoardTester
 	
 	private var testIndices:Vector<UInt> = new Vector<UInt>();
 	private var testVertices:Vector<Float> = new Vector<Float>();
-	private var testFrustum:CullingPlane;
 	private var testFrustumPoints:Vector<Vector3D> = new Vector<Vector3D>();
 	private var testFrustumPoints2:Vector<Vector3D> = new Vector<Vector3D>();
+	private var testFrustum:CullingPlane;
 	
 	private var dummyVec:Vec3 = new Vec3();
 	private static var IDENTITY:Transform3D = new Transform3D();
@@ -50,6 +49,10 @@ class TargetBoardTester
 	public static inline var PRIORITY_CONCEALMENT:Int = 0;
 	public static inline var PRIORITY_COVER:Int = 1;
 	private var priorityCover:Int = 0;
+	
+	private var dfsStack:Array<CollisionBoundNode> = [];
+	private var dfsStackCulling:Vector<Int> = new Vector<Int>();
+	
 	
 	public function new() 
 	{
@@ -66,6 +69,8 @@ class TargetBoardTester
 		testFrustumPoints2[2] = new Vector3D();
 		testFrustumPoints2[3] = new Vector3D();
 		testFrustumPoints2[4] = new Vector3D();
+		
+		testFrustum = setupNewFrustum();
 }
 	
 
@@ -190,63 +195,80 @@ class TargetBoardTester
 		TypeDefs.setVectorLen(testVertices, 0);
 		
 		var startI:Int = 0;
+		var di:Int = 0;
+		dfsStack[di] = testBoundNode;
+		dfsStackCulling[di] = 63;
+		di++;
 		
-		// Go through entire scene graph, for all objects , attempt collidables collection into testIndices, testVertices aray
-		var obj:CollisionBoundNode = testBoundNode;
-		var culling:Int = 63;
+		while(--di >= 0) {
+			// Go through entire scene graph, for all objects , attempt collidables collection into testIndices, testVertices aray
+			var obj:CollisionBoundNode = dfsStack[di];
+			var culling:Int = dfsStackCulling[di];
+			
+			if (obj.worldToLocalTransform == null) {
+				obj.calculateLocalWorldTransforms();
+			}
+			// convert frustum points to local coordinate space and build test frstum
 		
-		if (obj.worldToLocalTransform == null) {
-			obj.calculateLocalWorldTransforms();
-		}
-		// convert frustum points to local coordinate space and build test frstum
-	
-		var t:Transform3D = obj.worldToLocalTransform;
-		
-		for (i in 0...testFrustumPoints.length) {
-			var v = testFrustumPoints2[i];
-			var r = testFrustumPoints[i];
-			// testFrustumPoints2[i] = terrainLOD.globalToLocal();
-			v.x = t.a*r.x + t.b*r.y + t.c*r.z + t.d;
-			v.y = t.e*r.x + t.f*r.y + t.g*r.z + t.h;
-			v.z = t.i * r.x + t.j * r.y + t.k * r.z + t.l;
-		}
-		
-		// todo: reuse same frustum across loop
-		dummyVec.x = t.a * targPos.x + t.b * targPos.y + t.c * targPos.z + t.d;
-        dummyVec.y = t.e * targPos.x + t.f * targPos.y + t.g * targPos.z + t.h;
-        dummyVec.z = t.i * targPos.x + t.j * targPos.y + t.k * targPos.z + t.l;
-		testFrustum = createFrustumFromPoints(testFrustumPoints2, dummyVec);
-		
-		//consider: testFrustum against local bounding box of obj bound node to skip
-		if (obj.boundBox != null) {
+			var t:Transform3D = obj.worldToLocalTransform;
+			
+			for (i in 0...testFrustumPoints.length) {
+				var v = testFrustumPoints2[i];
+				var r = testFrustumPoints[i];
+				// testFrustumPoints2[i] = terrainLOD.globalToLocal();
+				v.x = t.a*r.x + t.b*r.y + t.c*r.z + t.d;
+				v.y = t.e*r.x + t.f*r.y + t.g*r.z + t.h;
+				v.z = t.i * r.x + t.j * r.y + t.k * r.z + t.l;
+			}
+			
+			dummyVec.x = t.a * targPos.x + t.b * targPos.y + t.c * targPos.z + t.d;
+			dummyVec.y = t.e * targPos.x + t.f * targPos.y + t.g * targPos.z + t.h;
+			dummyVec.z = t.i * targPos.x + t.j * targPos.y + t.k * targPos.z + t.l;
+			createFrustumFromPoints(testFrustumPoints2, dummyVec);
+			
+			// testFrustum against local bounding box of obj (if availble)
+			if (obj.boundBox != null) {
+				culling = DefaultCulling.cullingInFrustumOf(testFrustum, culling, obj.boundBox.minX, obj.boundBox.minY, obj.boundBox.minZ, obj.boundBox.maxX, obj.boundBox.maxY, obj.boundBox.maxZ);
+			}
+			
+			if (culling >= 0) {
+				var c = obj.childrenList;
+				while (c != null) {
+				
+					dfsStack[di] = c;
+					dfsStackCulling[di] = culling;
+					di++;
+					
+					c = c.next;
+				}
+				
+				var collectable:IFrustumCollectTri;
+				//terrainLOD.collectTrisForFrustum(testFrustum, testFrustumPoints, testVertices, testIndices);
+				if (priorityCover != PRIORITY_CONCEALMENT) { // PRIORITY_COVER
+					if (obj.collidable != null && (collectable = LibUtil.as(obj.collidable, IFrustumCollectTri))!=null) {
+						collectable.collectTrisForFrustum(testFrustum, culling, testFrustumPoints2, testVertices, testIndices);
+					}
+					else if (obj.raycastable != null && (collectable = LibUtil.as(obj.raycastable, IFrustumCollectTri))!=null) {
+						collectable.collectTrisForFrustum(testFrustum, culling, testFrustumPoints2, testVertices, testIndices);
+					}
+				}
+				else {	// PRIORITY_CONCEALMENT
+					if (obj.raycastable != null && (collectable = LibUtil.as(obj.raycastable, IFrustumCollectTri))!=null) {
+						collectable.collectTrisForFrustum(testFrustum, culling, testFrustumPoints2, testVertices, testIndices);
+					}
+					else if (obj.collidable != null && (collectable = LibUtil.as(obj.collidable, IFrustumCollectTri))!=null) {
+						collectable.collectTrisForFrustum(testFrustum, culling, testFrustumPoints2, testVertices, testIndices);
+					}
+				}
+				
+				t = obj.localToWorldTransform; 
+				transformVertices(t, startI);
+				startI = testVertices.length;
+			}
+
+			
 			
 		}
-		
-		var collectable:IFrustumCollectTri;
-		//terrainLOD.collectTrisForFrustum(testFrustum, testFrustumPoints, testVertices, testIndices);
-		if (priorityCover != PRIORITY_CONCEALMENT) { // PRIORITY_COVER
-			if (obj.collidable != null && (collectable = LibUtil.as(obj.collidable, IFrustumCollectTri))!=null) {
-				collectable.collectTrisForFrustum(testFrustum, culling, testFrustumPoints2, testVertices, testIndices);
-			}
-			else if (obj.raycastable != null && (collectable = LibUtil.as(obj.raycastable, IFrustumCollectTri))!=null) {
-				collectable.collectTrisForFrustum(testFrustum, culling, testFrustumPoints2, testVertices, testIndices);
-			}
-		}
-		else {	// PRIORITY_CONCEALMENT
-			if (obj.raycastable != null && (collectable = LibUtil.as(obj.raycastable, IFrustumCollectTri))!=null) {
-				collectable.collectTrisForFrustum(testFrustum, culling, testFrustumPoints2, testVertices, testIndices);
-			}
-			else if (obj.collidable != null && (collectable = LibUtil.as(obj.collidable, IFrustumCollectTri))!=null) {
-				collectable.collectTrisForFrustum(testFrustum, culling, testFrustumPoints2, testVertices, testIndices);
-			}
-		}
-		
-		t = obj.localToWorldTransform;
-		transformVertices(t, startI);
-		startI = testVertices.length;
-		
-		//createWireframeCollisionPreview( );	
-		//Object3DTransformUtil.calculateGlobalToLocal(terrainLOD);
 		
 		// end loop
 		
@@ -282,13 +304,24 @@ class TargetBoardTester
 		}
 	}
 	
+	public  function setupNewFrustum():CullingPlane {
+		var cullingPlane:CullingPlane = new CullingPlane();
+		var c:CullingPlane = cullingPlane;
+		c = c.next = new CullingPlane();
+		c = c.next = new CullingPlane();
+		c = c.next = new CullingPlane();
+		c = c.next = new CullingPlane();
+		c = c.next = new CullingPlane();
+		return cullingPlane;
+	}
+	
 
 	
-	public  function createFrustumFromPoints(pts:Array<Vector3D>, targPos:Vec3):CullingPlane {
-			var cullingPlane:CullingPlane = new CullingPlane();
+	public  function createFrustumFromPoints(pts:Array<Vector3D>, targPos:Vec3):Void {
+	
+			var cullingPlane:CullingPlane = testFrustum;
 			var c:CullingPlane = cullingPlane;
 			var v:Vector3D;
-			
 
 			//var lineList:Vector<Vector3D> = new Vector<Vector3D>();
 			
@@ -302,7 +335,7 @@ class TargetBoardTester
 		
 			
 			///*
-			c = c.next = new CullingPlane();
+			c = c.next;
 			v = pts[3].subtract(pts[0]).crossProduct(pts[2].subtract(pts[0]));
 			//v.normalize();
 			c.x = v.x;
@@ -312,7 +345,7 @@ class TargetBoardTester
 			//lineList.push(pts[0], pts[3], pts[2], pts[0], pts[2], pts[3]);
 				
 			
-			c = c.next = new CullingPlane();
+			c = c.next;
 			v = pts[4].subtract(pts[0]).crossProduct(pts[3].subtract(pts[0]));
 			//v.normalize();
 			c.x = v.x;
@@ -322,7 +355,7 @@ class TargetBoardTester
 			//lineList.push(pts[0], pts[4], pts[0], pts[3], pts[3], pts[4]);
 			
 			
-			c = c.next = new CullingPlane();
+			c = c.next;
 			v = pts[1].subtract(pts[0]).crossProduct(pts[4].subtract(pts[0]));
 			//v.normalize();
 			c.x = v.x;
@@ -334,7 +367,7 @@ class TargetBoardTester
 			//*/
 			///*
 			
-			c = c.next = new CullingPlane();
+			c = c.next;
 			//v = targPos.subtract(pts[0]);
 			v.x = targPos.x - pts[0].x;
 			v.y = targPos.y - pts[0].y;
@@ -347,7 +380,7 @@ class TargetBoardTester
 			c.offset = v.x * pts[0].x + v.y * pts[0].y + v.z * pts[0].z; //v.dotProduct(pts[0]);
 		
 			///*
-			c = c.next = new CullingPlane();
+			c = c.next;
 			//v = pts[0].subtract(targPos);
 			v.x = pts[0].x - targPos.x;
 			v.y = pts[0].y - targPos.y;
@@ -364,6 +397,7 @@ class TargetBoardTester
 			
 			// For testing only
 			//v = targPos.subtract(pts[0]);
+			/*
 			v.x = targPos.x - pts[0].x;
 			v.y = targPos.y - pts[0].y;
 			v.z = targPos.z - pts[0].z;
@@ -380,10 +414,7 @@ class TargetBoardTester
 				}
 				c = c.next;
 			}
-			
-		
-			
-			return cullingPlane;
+			*/
 		}
 		
 		
@@ -564,7 +595,7 @@ class TargetBoardTester
 	
 	public function disposeGetTotalArea(faceList:Face):Float 
 	{
-		// Retrieves accumulated area of intersections between polygons (pairwise) 
+		//  Get total area covering target from polygon soup, and dispose recycle polygon soup back to pool
 		var accum:Float = 0;
 		var lastFace:Face = null;
 		var f:Face = faceList;
@@ -600,7 +631,6 @@ class TargetBoardTester
 				// add area
 				accum += f.getArea();
 				
-				// todo: disposable cleanup
 				f.destroy();
 				if (firstFace == null) {
 					firstFace = f;

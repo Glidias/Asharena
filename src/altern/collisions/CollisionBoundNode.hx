@@ -24,8 +24,8 @@ class CollisionBoundNode implements IECollidable
 	public var localToGlobalTransform:Transform3D;
 	public var globalToLocalTransform:Transform3D;	
 	public function calculateLocalGlobalTransforms():Void { // temporary
-		calculateLocalToGlobal2(this, localToWorldTransform);
-		globalToLocalTransform.calculateInversion(localToWorldTransform);
+		calculateLocalToGlobal2(this, localToGlobalTransform);
+		globalToLocalTransform.calculateInversion(localToGlobalTransform);
 	}
 	
 	// optional assignables
@@ -37,9 +37,11 @@ class CollisionBoundNode implements IECollidable
 	// Call calculateLocalWorldTransforms() once placed in final scene graph.
 	public var localToWorldTransform:Transform3D;
 	public var worldToLocalTransform:Transform3D;
+	
 	public function calculateLocalWorldTransforms():Void {	// permanent
-		if (localToWorldTransform == null) localToWorldTransform = new Transform3D();
 		if (worldToLocalTransform == null) worldToLocalTransform = new Transform3D();
+		if (localToWorldTransform == null) localToWorldTransform = new Transform3D();
+		
 		calculateLocalToGlobal2(this, localToWorldTransform);
 		calculateGlobalToLocal2(this, worldToLocalTransform);
 		//worldToLocalTransform.calculateInversion(localToWorldTransform);
