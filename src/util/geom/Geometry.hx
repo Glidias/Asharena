@@ -295,24 +295,24 @@ class Geometry implements ITECollidable implements IRaycastImpl implements IFrus
 		var i:Int = 0;
 		var pIndex:Int;
 		while (i < len) {
-			var indexA:UInt = indices[i];
-			var indexB:UInt = indices[(i + 1)];
-			var indexC:UInt = indices[(i + 2)];
+			var indexA:UInt = this.indices[i];
+			var indexB:UInt = this.indices[(i + 1)];
+			var indexC:UInt = this.indices[(i + 2)];
 		
 			pIndex = indexA*3;
-			var ax:Float = vertices[pIndex++];
-			var ay:Float = vertices[pIndex++];
-			var az:Float = vertices[pIndex];
+			var ax:Float = this.vertices[pIndex++];
+			var ay:Float = this.vertices[pIndex++];
+			var az:Float = this.vertices[pIndex];
 			
 			pIndex = indexB*3;
-			var bx:Float = vertices[pIndex++];
-			var by:Float = vertices[pIndex++];
-			var bz:Float = vertices[pIndex];
+			var bx:Float = this.vertices[pIndex++];
+			var by:Float = this.vertices[pIndex++];
+			var bz:Float = this.vertices[pIndex];
 
 			pIndex = indexC*3;
-			var cx:Float = vertices[pIndex++];
-			var cy:Float = vertices[pIndex++];
-			var cz:Float = vertices[pIndex];
+			var cx:Float = this.vertices[pIndex++];
+			var cy:Float = this.vertices[pIndex++];
+			var cz:Float = this.vertices[pIndex];
 
 			var triFrustumCover:Int;
 			if (DefaultCulling.isInFrontOfFrustum(ax, ay, az, bx, by, bz, cx, cy, cz, frustumCorners) && (triFrustumCover = DefaultCulling.triInFrustumCover(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)) >= 0) {
