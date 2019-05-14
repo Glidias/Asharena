@@ -51,6 +51,21 @@ abstract Pixels(PixelsData)
     return this.bytes.get((i & ~CHANNEL_MASK) + this.format.channelMap[i & CHANNEL_MASK]);
   }
 
+  public static function isMatchingPixel(color1:Pixel, color2:Pixel, tolerance:Float=0):Bool {
+	return Math.abs(color1.R - color2.R) <= tolerance && Math.abs(color1.G - color2.G) <= tolerance && Math.abs(color1.B - color2.B) <= tolerance;
+  }
+  
+  public static function newPixel(r:Int, g:Int, b:Int):Pixel {
+	return Pixel.create(255, r, g, b);
+  }
+  public static function newPixel32(r:Int, g:Int, b:Int, a:Int):Pixel {
+	return Pixel.create(a, r, g, b);
+  }
+  
+  public static function isMatchingPixelAt(me:Pixels, x:Int, y:Int, forPixel:Pixel, tolerance:Int=0):Bool {
+	return isMatchingPixel(me.getPixel(x, y), forPixel, tolerance);
+  }
+  
   /**
    * Returns the raw pixel value (32-bits) at `i` position.
    *
