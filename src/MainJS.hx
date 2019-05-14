@@ -116,7 +116,6 @@ import altern.terrain.TerrainCollidable;
 
 ///* Geometry algorithms to help generate terrain world environment stuffs *
 import hxGeomAlgo.IsoContoursPixels;
-import haxe.io.Bytes;
 import hxGeomAlgo.Tess2;
 import hxGeomAlgo.Tess2.WindingRule;
 import hxGeomAlgo.Tess2.ResultType;
