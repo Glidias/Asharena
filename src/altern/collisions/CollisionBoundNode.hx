@@ -43,8 +43,8 @@ class CollisionBoundNode implements IECollidable
 		if (localToWorldTransform == null) localToWorldTransform = new Transform3D();
 		
 		calculateLocalToGlobal2(this, localToWorldTransform);
-		calculateGlobalToLocal2(this, worldToLocalTransform);
-		//worldToLocalTransform.calculateInversion(localToWorldTransform);
+		//calculateGlobalToLocal2(this, worldToLocalTransform);
+		worldToLocalTransform.calculateInversion(localToWorldTransform);
 	}
 	
 	
