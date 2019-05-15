@@ -1,7 +1,7 @@
 package altern.ds;
 
 /**
- * ...
+ * An interface to help in generic implementations of AABB representations of anything
  * @author Glidias
  */
 interface IAbsAABB 
@@ -14,9 +14,7 @@ interface IAbsAABB
 	var maxY(get, set):Float;
 	var maxZ(get, set):Float;
 	
-	function combine(aabb1:IAbsAABB, aabb2:IAbsAABB):Float;
+	function combine(aabb1:IAbsAABB, aabb2:IAbsAABB):Void;
 	function surfaceArea():Float;
-	
 
-	
 }
