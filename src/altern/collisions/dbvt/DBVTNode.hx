@@ -17,6 +17,11 @@
  * SOFTWARE.
  */
 package altern.collisions.dbvt;
+import altern.ray.IRaycastImpl;
+import components.Transform3D;
+import systems.collisions.ITCollidable;
+import util.LibUtil;
+import util.geom.AABBUtils;
 
 /**
  * A node of the dynamic bounding volume tree.
@@ -57,6 +62,24 @@ class DBVTNode {
     
     public function new() {
         aabb = new AbstractAABB();
+    }
+	
+	public static function createFrom(obj:Dynamic, aabb:AbstractAABB, transform:Transform3D = null):DBVTNode {
+		var node = new DBVTNode();
+        var me = new DBVTProxy();
+		node.aabb = new AbstractAABB();
+		AABBUtils.match(cast node.aabb, cast aabb);
+		me.collidable = LibUtil.as(obj, ITCollidable);
+		me.raycastable = LibUtil.as(obj, IRaycastImpl);
+		if (transform != null) {
+			me.transform = transform;
+			me.inverseTransform = new Transform3D();
+			me.inverseTransform.calculateInversion(transform);
+			me.localToGlobalTransform = new Transform3D();
+			me.globalToLocalTransform = new Transform3D();
+		}
+		node.proxy = me;
+		return node;
     }
 	
 }

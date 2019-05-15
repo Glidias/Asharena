@@ -16,14 +16,15 @@ class DBVTProxy
 	public var inverseTransform:Transform3D;
 	public var localToGlobalTransform:Transform3D;
 	public var globalToLocalTransform:Transform3D;
-	public var leaf:DBVTNode;
+	//public var leaf:DBVTNode;
 	
 	public function new() 
 	{
-		leaf = new DBVTNode();
-		leaf.proxy = this;
+		//leaf = new DBVTNode();
+		///leaf.proxy = this;
 	}
 	
+	/*
 	public static function createFrom(obj:Dynamic, aabb:AbstractAABB, transform:Transform3D=null):DBVTProxy {
         var me = new DBVTProxy();
 		AABBUtils.match(cast me.leaf.aabb, cast aabb);
@@ -38,5 +39,6 @@ class DBVTProxy
 		}
 		return me;
     }
+	*/
 	
 }

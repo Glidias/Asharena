@@ -170,6 +170,7 @@ class DBVT implements ITCollidable implements IRaycastImpl {
         return node.child1.height - node.child2.height;
     }
     
+	/*
     public function print(node:DBVTNode, indent:Int, text:String):String {
         var hasChild:Bool = node.proxy == null;
 		
@@ -190,6 +191,7 @@ class DBVT implements ITCollidable implements IRaycastImpl {
 		
         return text;
     }
+	*/
     
     /**
 	 * Delete a leaf from the tree.
@@ -435,7 +437,7 @@ class DBVT implements ITCollidable implements IRaycastImpl {
 	
 	/* From DBVTBroadPhase */
 
-    
+    /*
     inline public function addProxy(p:DBVTProxy) {
         insertLeaf(p.leaf);
     }
@@ -443,6 +445,7 @@ class DBVT implements ITCollidable implements IRaycastImpl {
     inline public function removeProxy(p:DBVTProxy) {
         deleteLeaf(p.leaf);
     }
+	*/
 
 	
 	
