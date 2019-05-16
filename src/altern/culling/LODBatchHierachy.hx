@@ -70,6 +70,7 @@ class LODBatchHierachy
 	public function createWithAABBAndPositions(aabb:AbstractAABB, positions:Array<Float>):Void {
 		var len:Int = positions.length;
 		var i:Int = 0;
+		var leafCount:Int = 0;
 		while (i < len) {
 			var x:Float = positions[i];
 			var y:Float = positions[i + 1];
@@ -80,7 +81,7 @@ class LODBatchHierachy
 			sampleAABB.maxX = x + aabb.maxX;
 			sampleAABB.maxY = y + aabb.maxY;
 			sampleAABB.maxZ = z + aabb.maxZ;
-			tree.insertLeaf(getLeafWithAABB(sampleAABB, i));
+			tree.insertLeaf(getLeafWithAABB(sampleAABB, leafCount++));
 			i += 3;
 		}
 		
@@ -155,10 +156,13 @@ class LODBatchHierachy
 		
 		while (--s2 >= 0) {
 			node = stack2[s2];
+			var lastCulling:Int = node.data.culling;
 			node.data.culling = -1;
 			if (node.isLeaf()) {
-				batch = lodBatches[node.data.maxLOD];
-				batch.removeInstance(node.data.instance);
+				if (lastCulling != -1) {
+					batch = lodBatches[node.data.maxLOD];
+					batch.removeInstance(node.data.instance);
+				}
 				continue;
 			}
 			//if (node.child1!=null) {
