@@ -26,7 +26,7 @@ package terraingen.island
 		public function MapGen2Main() 
 		{
 			MarchingSquaresPackage;
-			haxe.init(this);
+			//haxe.init(this);
 			
 			uiInitial = new VBox(this, 0, 0);
 			var hBox:HBox;
