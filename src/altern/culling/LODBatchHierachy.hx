@@ -122,9 +122,7 @@ class LODBatchHierachy
 			node = stack[s];
 			culling = culler.cullingInFrustum(culling, node.aabb.minX, node.aabb.minY, node.aabb.minZ, node.aabb.maxX, node.aabb.maxY, node.aabb.maxZ);
 			
-			if (culling == node.data.culling && culling < 1) {
-				continue;
-			}
+			var lastCulling:Int = node.data.culling;
 			node.data.culling = culling;
 			
 			if (culling >= 0) {
@@ -135,7 +133,11 @@ class LODBatchHierachy
 						node.data.lodTimestamp = lodTimestamp;
 					}
 					batch = lodBatches[node.data.maxLOD];
-					batch.addInstance(node.data.instance);
+					if (lastCulling == -1) batch.addInstance(node.data.instance);
+					continue;
+				}
+				
+				if (lastCulling == culling && culling < 1) { 
 					continue;
 				}
 				//if (node.child1!=null) {
@@ -145,6 +147,9 @@ class LODBatchHierachy
 				stack[s++] = node.child2;
 				//}
 			} else {
+				if (lastCulling == culling) { 
+					continue;
+				}
 				stack2[s2++] = node;
 			}
 		}
