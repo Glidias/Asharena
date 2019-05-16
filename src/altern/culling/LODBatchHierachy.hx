@@ -21,6 +21,9 @@ class LODBatchHierachy
 	public var tree:DBVHTree<LODNodeData> = new DBVHTree<LODNodeData>();
 	public var culler:ICuller;
 	
+	var _stack:Array<DBVHNode<LODNodeData>> = [];
+	var _stack2:Array<DBVHNode<LODNodeData>> = [];  // stack to remove
+	
 	// may assume 4x4 matrix pallette array for batching? (<- Playcanvas engine uses this)
 	// Or seperate it out to differnet function references:
 	
@@ -100,16 +103,79 @@ class LODBatchHierachy
 	
 	public function cull(culling:Int):Void {
 		//culler.cullingInFrustum(culling,
+		
 		for (i in 0...lodBatches.length) {
 			lodBatches[i].reset();
 		}
 		
+		var s:Int = 0;
+		var s2:Int = 0;
+		var stack = _stack;
+		var stack2 = _stack2;
+		stack[s++] = tree.root;
+		
+
+		var culling:Int = -1;
+		var node:DBVHNode<LODNodeData>;
+		var batch:LODBatch;
+		while (--s >= 0) {
+			node = stack[s];
+			culling = culler.cullingInFrustum(culling, node.aabb.minX, node.aabb.minY, node.aabb.minZ, node.aabb.maxX, node.aabb.maxY, node.aabb.maxZ);
+			
+			if (culling == node.data.culling && culling < 1) {
+				continue;
+			}
+			node.data.culling = culling;
+			
+			if (culling >= 0) {
+				if (node.isLeaf()) {
+					// for lod, need to check if need to update node's maxLOD if outdated 
+					if (node.data.lodTimestamp != lodTimestamp) {
+						// remember to remove instance from old LOD if maxLOD changes
+						node.data.lodTimestamp = lodTimestamp;
+					}
+					batch = lodBatches[node.data.maxLOD];
+					batch.addInstance(node.data.instance);
+					continue;
+				}
+				//if (node.child1!=null) {
+				stack[s++] = node.child1;
+				//}
+				//if (node.child2!=null) {
+				stack[s++] = node.child2;
+				//}
+			} else {
+				stack2[s2++] = node;
+			}
+		}
+		
+		
+		while (--s2 >= 0) {
+			node = stack2[s2];
+			node.data.culling = -1;
+			if (node.isLeaf()) {
+				batch = lodBatches[node.data.maxLOD];
+				batch.removeInstance(node.data.instance);
+				continue;
+			}
+			//if (node.child1!=null) {
+			stack2[s2++] = node.child1;
+			//}
+			//if (node.child2!=null) {
+			stack2[s2++] = node.child2;
+		}
+
 	}
+	
+
 	
 	
 	public function updateLOD():Void {
 		var timestamp:Int = lodTimestamp++;
 		
+		var s:Int = 0;
+		var stack = _stack;
+		stack[s++] = tree.root;
 		for (i in 0...lodBatches.length) {
 			lodBatches[i].reset();
 		}
