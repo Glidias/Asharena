@@ -101,7 +101,7 @@ class LODBatchHierachy
 	}
 	*/
 	
-	public function cull(culling:Int):Void {
+	public function cull():Void {
 		//culler.cullingInFrustum(culling,
 		
 		for (i in 0...lodBatches.length) {
@@ -115,7 +115,7 @@ class LODBatchHierachy
 		stack[s++] = tree.root;
 		
 
-		var culling:Int = -1;
+		var culling:Int = 63;
 		var node:DBVHNode<LODNodeData>;
 		var batch:LODBatch;
 		while (--s >= 0) {
@@ -125,6 +125,10 @@ class LODBatchHierachy
 			var lastCulling:Int = node.data.culling;
 			node.data.culling = culling;
 			
+			if (lastCulling == culling && culling < 1) { 
+				continue;
+			}
+				
 			if (culling >= 0) {
 				if (node.isLeaf()) {
 					// for lod, need to check if need to update node's maxLOD if outdated 
@@ -137,9 +141,6 @@ class LODBatchHierachy
 					continue;
 				}
 				
-				if (lastCulling == culling && culling < 1) { 
-					continue;
-				}
 				//if (node.child1!=null) {
 				stack[s++] = node.child1;
 				//}
@@ -147,9 +148,6 @@ class LODBatchHierachy
 				stack[s++] = node.child2;
 				//}
 			} else {
-				if (lastCulling == culling) { 
-					continue;
-				}
 				stack2[s2++] = node;
 			}
 		}
