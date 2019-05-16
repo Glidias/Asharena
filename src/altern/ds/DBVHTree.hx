@@ -1,62 +1,63 @@
 package altern.ds;
-import haxe.Constraints.Constructible;
+import altern.collisions.dbvt.AbstractAABB;
 import util.TypeDefs;
+import util.geom.AABBUtils;
 
 
 
 /**
- * Generic version of Dynamic Bounding Volume Hierachy tree
+ * Generic version of Dynamic Bounding Volume Hierachy tree to support extra data per node
  * @author Glidias
  */
 @:generic
-class DBVHTree<P, A:(IAbsAABB,Constructible<IAbsAABB>)>
+class DBVHTree<P>
 {
 	 /**
 	 * The root of the tree.
 	 */
-    public var root:DBVHNode<P,A>;
+    public var root:DBVHNode<P>;
     
-    private var freeNodes:Array<DBVHNode<P,A>>;
+    private var freeNodes:Array<DBVHNode<P>>;
     private var numFreeNodes:Int;
-    private var aabb:IAbsAABB;
+    private var aabb:AbstractAABB;
+	
+	public var nodeDataFactoryMethod:Void->P;
 	
 	// For ITCollidable and IRaycastImpl
-	var _stack:Array<DBVHNode<P,A>> = [];
+	var _stack:Array<DBVHNode<P>> = [];
 	public function purge() {
 		TypeDefs.setVectorLen(_stack, 0);
 	}
 	
     
-    public function new(aabb:IAbsAABB) {
+    public function new() {
         freeNodes = [];
         numFreeNodes = 0;
-		this.aabb = aabb;
+		this.aabb = new AbstractAABB();
     }
     
 
 
-    public function moveLeaf(leaf:DBVHNode<P,A>) {
+    public function moveLeaf(leaf:DBVHNode<P>) {
         deleteLeaf(leaf);
         insertLeaf(leaf);
     }
-    
-	
    
-    public function insertLeaf(leaf:DBVHNode<P,A>) {
+    public function insertLeaf(leaf:DBVHNode<P>) {
         if (root == null) {
             root = leaf;
             return;
         }
-        var lb:IAbsAABB = leaf.aabb;
-        var sibling:DBVHNode<P,A> = root;
+        var lb:AbstractAABB = leaf.aabb;
+        var sibling:DBVHNode<P> = root;
         var oldArea:Float;
         var newArea:Float;
-        while (sibling.proxy == null) {  // descend the node to search the best pair  
-            var c1:DBVHNode<P,A> = sibling.child1;
-            var c2:DBVHNode<P,A> = sibling.child2;
-            var b:IAbsAABB = sibling.aabb;
-            var c1b:IAbsAABB = c1.aabb;
-            var c2b:IAbsAABB = c2.aabb;
+        while (!sibling.isLeaf()) {  // descend the node to search the best pair  
+            var c1:DBVHNode<P> = sibling.child1;
+            var c2:DBVHNode<P> = sibling.child2;
+            var b:AbstractAABB = sibling.aabb;
+            var c1b:AbstractAABB = c1.aabb;
+            var c2b:AbstractAABB = c2.aabb;
             
             oldArea = b.surfaceArea();
             aabb.combine(lb, b);
@@ -66,7 +67,7 @@ class DBVHTree<P, A:(IAbsAABB,Constructible<IAbsAABB>)>
             
             var discendingCost1:Float = incrementalCost;
             aabb.combine(lb, c1b);
-            if (c1.proxy != null) {
+            if (c1.isLeaf()) {
                 // leaf cost = area(combined aabb)
                 discendingCost1 += aabb.surfaceArea();
             }
@@ -77,7 +78,7 @@ class DBVHTree<P, A:(IAbsAABB,Constructible<IAbsAABB>)>
             
             var discendingCost2:Float = incrementalCost;
             aabb.combine(lb, c2b);
-            if (c2.proxy != null) {
+            if (c2.isLeaf()) {
                 // leaf cost = area(combined aabb)
                 discendingCost2 += aabb.surfaceArea();
             }
@@ -103,13 +104,14 @@ class DBVHTree<P, A:(IAbsAABB,Constructible<IAbsAABB>)>
                 }
             }
         }
-        var oldParent:DBVHNode<P,A> = sibling.parent;
-        var newParent:DBVHNode<P,A>;
+        var oldParent:DBVHNode<P> = sibling.parent;
+        var newParent:DBVHNode<P>;
         if (numFreeNodes > 0) {
             newParent = freeNodes[--numFreeNodes];
         }
         else {
-            newParent = new DBVHNode<P,A>();
+            newParent = new DBVHNode<P>();
+			if (nodeDataFactoryMethod != null) newParent.data = nodeDataFactoryMethod();
         }
         newParent.parent = oldParent;
         newParent.child1 = leaf;
@@ -139,43 +141,21 @@ class DBVHTree<P, A:(IAbsAABB,Constructible<IAbsAABB>)>
         }        while ((newParent != null));
     }
     
-    public function getBalance(node:DBVHNode<P,A>):Int {
-        if (node.proxy != null) {
+    public function getBalance(node:DBVHNode<P>):Int {
+        if (node.isLeaf()) {
 			return 0;
 		}
         return node.child1.height - node.child2.height;
     }
     
-	/*
-    public function print(node:DBVHNode<P,A>, indent:Int, text:String):String {
-        var hasChild:Bool = node.proxy == null;
-		
-        if (hasChild) {
-            text = print(node.child1, indent + 1, text);
-		}
-		
-        var i:Int = indent * 2;
-        while (i >= 0){
-            text += " ";
-            i--;
-        }
-		
-        text += ((hasChild) ? getBalance(node) + "" : "[" + node.proxy.leaf.aabb.minX + "]") + "\n"; 
-        if (hasChild) {
-            text = print(node.child2, indent + 1, text);
-		}
-		
-        return text;
-    }
-    */
   
-    public function deleteLeaf(leaf:DBVHNode<P,A>) {
+    public function deleteLeaf(leaf:DBVHNode<P>) {
         if (leaf == root) {
             root = null;
             return;
         }
-        var parent:DBVHNode<P,A> = leaf.parent;
-        var sibling:DBVHNode<P,A>;
+        var parent:DBVHNode<P> = leaf.parent;
+        var sibling:DBVHNode<P>;
         if (parent.child1 == leaf) {
             sibling = parent.child2;
         }
@@ -187,7 +167,7 @@ class DBVHTree<P, A:(IAbsAABB,Constructible<IAbsAABB>)>
             sibling.parent = null;
             return;
         }
-        var grandParent:DBVHNode<P,A> = parent.parent;
+        var grandParent:DBVHNode<P> = parent.parent;
         sibling.parent = grandParent;
         if (grandParent.child1 == parent) {
             grandParent.child1 = sibling;
@@ -206,15 +186,15 @@ class DBVHTree<P, A:(IAbsAABB,Constructible<IAbsAABB>)>
     }
 	
     
-    private function balance(node:DBVHNode<P,A>):DBVHNode<P,A> {
+    private function balance(node:DBVHNode<P>):DBVHNode<P> {
         var nh:Int = node.height;
         if (nh < 2) {
             return node;
         }
 		
-        var p:DBVHNode<P,A> = node.parent;
-        var l:DBVHNode<P,A> = node.child1;
-        var r:DBVHNode<P,A> = node.child2;
+        var p:DBVHNode<P> = node.parent;
+        var l:DBVHNode<P> = node.child1;
+        var r:DBVHNode<P> = node.child2;
         var lh:Int = l.height;
         var rh:Int = r.height;
         var balance:Int = lh - rh;
@@ -228,8 +208,8 @@ class DBVHTree<P, A:(IAbsAABB,Constructible<IAbsAABB>)>
         
         // Is the tree balanced?
         if (balance > 1) {
-            var ll:DBVHNode<P,A> = l.child1;
-            var lr:DBVHNode<P,A> = l.child2;
+            var ll:DBVHNode<P> = l.child1;
+            var lr:DBVHNode<P> = l.child2;
             var llh:Int = ll.height;
             var lrh:Int = lr.height;
             
@@ -310,8 +290,8 @@ class DBVHTree<P, A:(IAbsAABB,Constructible<IAbsAABB>)>
             return l;
         }
         else if (balance < -1) {
-            var rl:DBVHNode<P,A> = r.child1;
-            var rr:DBVHNode<P,A> = r.child2;
+            var rl:DBVHNode<P> = r.child1;
+            var rr:DBVHNode<P> = r.child2;
             var rlh:Int = rl.height;
             var rrh:Int = rr.height;
             
@@ -393,9 +373,9 @@ class DBVHTree<P, A:(IAbsAABB,Constructible<IAbsAABB>)>
         return node;
     }
     
-    inline private function fix(node:DBVHNode<P,A>) {
-        var c1:DBVHNode<P,A> = node.child1;
-        var c2:DBVHNode<P,A> = node.child2;
+    inline private function fix(node:DBVHNode<P>) {
+        var c1:DBVHNode<P> = node.child1;
+        var c2:DBVHNode<P> = node.child2;
         node.aabb.combine(c1.aabb, c2.aabb);
         var h1:Int = c1.height;
         var h2:Int = c2.height;
@@ -412,28 +392,32 @@ class DBVHTree<P, A:(IAbsAABB,Constructible<IAbsAABB>)>
 	
 }
 
+/**
+ * Generic AABB tree node to store extended data
+ * @author Glidias
+ */
 @:generic
-class DBVHNode<P, A:(IAbsAABB, Constructible<IAbsAABB>)> {
+class DBVHNode<P> {
 	
     /**
 	 * The first child node of this node.
 	 */
-    public var child1:DBVHNode<P,A>;
+    public var child1:DBVHNode<P>;
     
     /**
 	 * The second child node of this node.
 	 */
-    public var child2:DBVHNode<P,A>;
+    public var child2:DBVHNode<P>;
     
     /**
 	 * The parent node of this tree.
 	 */
-    public var parent:DBVHNode<P,A>;
+    public var parent:DBVHNode<P>;
     
     /**
-	 * The proxy of this node. This has no value if this node is not leaf.
+	 * Any extra data of this node. 
 	 */
-    public var proxy:P;
+    public var data:P;
     
     /**
 	 * The maximum distance from leaf nodes.
@@ -441,12 +425,16 @@ class DBVHNode<P, A:(IAbsAABB, Constructible<IAbsAABB>)> {
     public var height:Int;
     
     /**
-	 * The IAbsAABB of this node.
+	 * The AbstractAABB of this node.
 	 */
-    public var aabb:A;
+    public var aabb:AbstractAABB;
+	
+	public inline function isLeaf():Bool {
+		return child1 == null;
+	}
 	
      public function new() {
-        this.aabb = new A();
+        this.aabb = new AbstractAABB();
     }
   
 }

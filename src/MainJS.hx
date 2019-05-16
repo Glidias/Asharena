@@ -124,6 +124,7 @@ import hxGeomAlgo.Tess2.ResultType;
 
 
 import altern.ds.DBVHTree;
+import altern.culling.LODBatchHierachy;
 
 /* Ash-framework integration (problem compiling to C-sharp code atm)
 import systems.collisions.EllipsoidColliderSystem;

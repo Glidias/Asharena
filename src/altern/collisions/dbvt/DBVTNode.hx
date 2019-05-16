@@ -21,7 +21,6 @@ import altern.ray.IRaycastImpl;
 import components.Transform3D;
 import systems.collisions.ITCollidable;
 import util.LibUtil;
-import util.geom.AABBUtils;
 
 /**
  * A node of the dynamic bounding volume tree.
@@ -67,8 +66,7 @@ class DBVTNode {
 	public static function createFrom(obj:Dynamic, aabb:AbstractAABB, transform:Transform3D = null):DBVTNode {
 		var node = new DBVTNode();
         var me = new DBVTProxy();
-		node.aabb = new AbstractAABB();
-		AABBUtils.match(cast node.aabb, cast aabb);
+		node.aabb.matchWith(aabb);
 		me.collidable = LibUtil.as(obj, ITCollidable);
 		me.raycastable = LibUtil.as(obj, IRaycastImpl);
 		if (transform != null) {

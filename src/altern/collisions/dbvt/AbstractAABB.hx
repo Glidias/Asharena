@@ -110,6 +110,17 @@ abstract AbstractAABB(BoundBox)
         this.maxY += margin;
         this.maxZ += margin;
     }
+	
+	inline public function matchWith(aabb:AbstractAABB):Void {
+		this.minX = aabb.minX;
+		this.minY = aabb.minY;
+		this.minZ = aabb.minZ;
+		
+		this.maxX = aabb.maxX;
+		this.maxY = aabb.maxY;
+		this.maxZ = aabb.maxZ;
+		
+	}
     
     /**
 	 * Get the surface area.

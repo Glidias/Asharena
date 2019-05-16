@@ -1,9 +1,8 @@
 package altern.culling;
 import altern.collisions.dbvt.AbstractAABB;
-import altern.collisions.dbvt.DBVT;
-import altern.collisions.dbvt.DBVTNode;
-import altern.collisions.dbvt.DBVTProxy;
+import altern.ds.DBVHTree;
 import altern.terrain.ICuller;
+import components.BoundBox;
 import de.polygonal.ds.NativeFloat32Array;
 
 /**
@@ -16,10 +15,11 @@ class LODBatchHierachy
 	//public var tree:BVHTree
 	var lodDistances:NativeFloat32Array;
 	var lodGroupBoundSizes:NativeFloat32Array;
-	public var tree:DBVT;
-	public var culler:ICuller;
+	public var lodBatches:Array<LODBatch>;
+	var lodTimestamp:Int = 0;
 	
-	public var culling:Int;
+	public var tree:DBVHTree<LODNodeData> = new DBVHTree<LODNodeData>();
+	public var culler:ICuller;
 	
 	// may assume 4x4 matrix pallette array for batching? (<- Playcanvas engine uses this)
 	// Or seperate it out to differnet function references:
@@ -33,41 +33,143 @@ class LODBatchHierachy
 	// DynamicClones.prototype.updateMatrixPaletteAtWithPos = function(i, pe)
 	// DynamicClones.prototype.invalidateMatrixPalette = ...
 
-	
 	// need to notify if matrix palllete invalidationn for refresh as well
-	
-	public function new(culler:ICuller, lodDistances:NativeFloat32Array=null, lodGroupBoundSizes:NativeFloat32Array=null) 
+
+	public function new(culler:ICuller, lodDists:Array<Float>=null, lodBoundSizes:Array<Float>=null) 
 	{
-		this.lodDistances = lodDistances;
-		this.lodGroupBoundSizes = lodGroupBoundSizes;
-		tree = new DBVT();
-		
-		culling = -1;
+		this.culler = culler;
+		tree.nodeDataFactoryMethod = LODNodeData.create;
+		lodBatches = [];
+		if (lodDists != null) {
+			for (i in 0...lodDists.length) {
+				lodBatches[i] = new LODBatch();
+			}
+			if (lodBoundSizes != null) {
+				
+			}
+		} else {
+			lodBatches[0] = new LODBatch();
+		}
 	}
 	
-	
-	// Clone placements
-	public function insertWithAABBAndPositions(aabb:AbstractAABB, positions:NativeFloat32Array, obj:Dynamic):Void {
-		
-	}
-	public function insertWithAABBAndPositionAndRots(aabb:AbstractAABB, posRots:NativeFloat32Array, obj:Dynamic):Void {
-		
-	}
-	public function insertWithAABBAndTransforms(aabb:AbstractAABB, posRots:NativeFloat32Array, obj:Dynamic):Void {
-		
+	public inline function getLeafWithAABB(aabb:BoundBox, leafInstance:Int):DBVHNode<LODNodeData> {
+		var n = new DBVHNode<LODNodeData>();
+		n.aabb.init(aabb.minX, aabb.maxX, aabb.minY, aabb.maxY, aabb.minZ, aabb.maxZ);
+		n.data = new LODNodeData();
+		n.data.instance = leafInstance;
+		return n;
 	}
 	
-	public function insertLeaves(leaves:Array<DBVTNode>):Void {
+	var sampleAABB:BoundBox = new BoundBox();
+
+	
+	// Create tree
+	public function createWithAABBAndPositions(aabb:AbstractAABB, positions:Array<Float>):Void {
+		var len:Int = positions.length;
+		var i:Int = 0;
+		while (i < len) {
+			var x:Float = positions[i];
+			var y:Float = positions[i + 1];
+			var z:Float = positions[i + 2];
+			sampleAABB.minX = x + aabb.minX;
+			sampleAABB.minY = y + aabb.minY;
+			sampleAABB.minZ = z + aabb.minZ;
+			sampleAABB.maxX = x + aabb.maxX;
+			sampleAABB.maxY = y + aabb.maxY;
+			sampleAABB.maxZ = z + aabb.maxZ;
+			tree.insertLeaf(getLeafWithAABB(sampleAABB, i));
+			i += 3;
+		}
+		
+
+	}
+	public function createWithAABBAndPositionAndRots(aabb:AbstractAABB, posRots:Array<Float>, processAABBTransform:Bool=true):Void {
 		
 	}
+	public function createWithAABBAndTransforms(aabb:AbstractAABB, transforms:Array<Float>, processAABBTransform:Bool=true, fourByFour:Bool = false):Void {
+		
+	}
+	
+	/*
+	function insertLeaves(leaves:Array<DBVHNode<LODNodeData>>):Void {
+		for (i in 0...leaves.length) {
+			tree.insertLeaf(leaves[i]);
+		}
+	}
+	*/
 	
 	public function cull(culling:Int):Void {
 		//culler.cullingInFrustum(culling,
-	}
-	
-	
-	public function update():Void {
+		for (i in 0...lodBatches.length) {
+			lodBatches[i].reset();
+		}
 		
 	}
 	
+	
+	public function updateLOD():Void {
+		var timestamp:Int = lodTimestamp++;
+		
+		for (i in 0...lodBatches.length) {
+			lodBatches[i].reset();
+		}
+	}
+	
+}
+
+/**
+ * ...
+ * @author Glidias
+ */
+class LODNodeData {
+	
+	// Assumption, everything starts from -1 hidden from camera at lowest lod 0
+	// CUlling runs first before LOD
+	public var culling:Int = -1;
+	public var maxLOD:Int = 0;
+	public var lodTimestamp:Int = -1;
+	public var instance:Int;
+	
+	public function new() {
+
+	}
+	
+	public static function create():LODNodeData {
+		return new LODNodeData();
+	}
+}
+
+/*
+class LODInstance {
+	public var index:Int;
+	public var indices:Array<Int>;
+	public var raycastable
+	public var collidable
+}
+*/
+
+class LODBatch {
+	public var addCount:Int = 0;
+	public var removeCount:Int = 0;
+	
+	public var addIndices:Array<Int>;
+	public var removeIndices:Array<Int>;
+	
+
+	public inline function reset():Void {
+		addCount = 0;
+		removeCount = 0;
+	}
+	
+	public inline function addInstance(instance:Int):Void {
+		addIndices[addCount++] = instance;
+	}
+	public inline function removeInstance(instance:Int):Void {
+		removeIndices[removeCount++] = instance;
+	}
+	
+	public function new() {
+		addIndices = [];
+		removeIndices = [];
+	}
 }
