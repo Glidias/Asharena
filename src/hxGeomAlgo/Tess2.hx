@@ -124,6 +124,92 @@ class Tess2
 		};
 	}
 	
+	static public function getTotalAreaOfTriResult(result:TessResult, areaDistrib:Array<Float>=null, normaliseDistrib:Bool=false):Float {
+		var i:Int = 0;
+		var len:Int = result.elements.length;
+		var vertices:Array<Float> = result.vertices;
+		var areaAccum:Float = 0;
+		while (i < len) {
+			var a:Int = result.elements[i];
+			var b:Int = result.elements[i+1];
+			var c:Int = result.elements[i + 2];
+			var area:Float = getAreaOfTri2D(vertices[(a << 1)], vertices[(a << 1) + 1], vertices[(b << 1)], vertices[(b << 1) + 1], vertices[(c << 1)], vertices[(c << 1) + 1] );
+			if (areaDistrib != null) {
+				areaDistrib.push(area);
+			}
+			areaAccum += area;
+			i += 3;
+		}
+		
+		if (areaDistrib != null && normaliseDistrib) {
+			for (i in 0...areaDistrib.length) {
+				areaDistrib[i] /= areaAccum;
+			}
+		}
+		return areaAccum;
+	}
+	
+	static public inline function getAreaOfTri2D(x1:Float, y1:Float, x2:Float, y2:Float, x3:Float, y3:Float):Float {
+		return Math.abs(0.5 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)));
+	}
+	
+	static public function pickRandomDistribIndex(areaDistrib:Array<Float>, totalArea:Float=1):Int {
+		var rand:Float = Math.random() * totalArea;
+		var accum:Float = 0;
+		for (i in 0...areaDistrib.length) {
+			accum += areaDistrib[i];
+			if (accum >= rand) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	static public function setRandomPointInTri2D(coord:{x:Float,y:Float}, x1:Float, y1:Float, x2:Float, y2:Float, x3:Float, y3:Float):Void {
+		var ABx:Float = x2 - x1;
+		var ABy:Float = y2 - y1;
+		var ACx:Float = x3 - x1;
+		var ACy:Float = y3 - y1;
+		var r1:Float = Math.random();
+		var r2:Float = Math.random();
+		var Dx:Float = ABx * r1 + ACx * r2;
+		var Dy:Float = ABy * r1 + ACy * r2;
+		Dx += x1;
+		Dy += y1;
+
+		var BCx:Float = x3 - x2;
+		var BCy:Float = y3 - y2;
+		
+		//  "outward" pointing mirror vector, perp to BC surface
+		var mnx:Float = BCy;
+		var mny:Float = -BCx;
+		
+		// support any handednesss system flip check (dot product)..must be along same direction else flip
+		if (mnx * ABx + mny * ABy < 0) {
+			mnx = -mnx;
+			mny = -mny;
+		}
+		// mirror offset
+		var mno:Float = mnx * x2 + mny * y2;
+		var offsetD:Float = Dx * mnx + Dy * mny;
+		if (offsetD > mno) {	// outside mirror? then need to flip
+			// convert to midpoint of BC for mirror flip origin reference
+			BCx = x2 + BCx * 0.5;
+			BCy = y2 + BCy * 0.5;
+			Dx = -BCx*2 - Dx;
+			Dy = -BCy*2 - Dy;
+			
+		}
+		
+		coord.x = Dx;
+		coord.y = Dy;
+	}
+	
+
+	
+	
+	
+	
 	/** 
 	 * Computes the union between `contoursA` and `contoursB`. 
 	 *

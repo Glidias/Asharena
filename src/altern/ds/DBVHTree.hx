@@ -1,47 +1,30 @@
-/* Copyright (c) 2012-2013 EL-EMENT saharan
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this
- * software and associated documentation  * files (the "Software"), to deal in the Software
- * without restriction, including without limitation the rights to use, copy,  * modify, merge,
- * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to
- * whom the Software is furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
- * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-package altern.collisions.dbvt;
-
-import altern.ray.IRaycastImpl;
-import components.Transform3D;
-import jeash.geom.Vector3D;
-import systems.collisions.EllipsoidCollider;
-import systems.collisions.ITCollidable;
+package altern.ds;
+import altern.collisions.dbvt.AbstractAABB;
 import util.TypeDefs;
-import util.geom.GeomUtil;
+import util.geom.AABBUtils;
+
+
 
 /**
- * A dynamic bounding volume tree for the broad-phase algorithm.
- * @author saharan
+ * Generic version of Dynamic Bounding Volume Hierachy tree to support extra data per node
+ * @author Glidias
  */
-class DBVT implements ITCollidable implements IRaycastImpl {
-    /**
+@:generic
+class DBVHTree<P>
+{
+	 /**
 	 * The root of the tree.
 	 */
-    public var root:DBVTNode;
+    public var root:DBVHNode<P>;
     
-    private var freeNodes:Array<DBVTNode>;
+    private var freeNodes:Array<DBVHNode<P>>;
     private var numFreeNodes:Int;
     private var aabb:AbstractAABB;
 	
+	public var nodeDataFactoryMethod:Void->P;
+	
 	// For ITCollidable and IRaycastImpl
-	var _stack:Array<DBVTNode> = [];
+	var _stack:Array<DBVHNode<P>> = [];
 	public function purge() {
 		TypeDefs.setVectorLen(_stack, 0);
 	}
@@ -50,34 +33,28 @@ class DBVT implements ITCollidable implements IRaycastImpl {
     public function new() {
         freeNodes = [];
         numFreeNodes = 0;
-        aabb = new AbstractAABB();
+		this.aabb = new AbstractAABB();
     }
     
-    /**
-	 * Move a leaf.
-	 * @param	leaf
-	 */
-    public function moveLeaf(leaf:DBVTNode) {
+
+
+    public function moveLeaf(leaf:DBVHNode<P>) {
         deleteLeaf(leaf);
         insertLeaf(leaf);
     }
-    
-    /**
-	 * Insert a leaf to the tree.
-	 * @param	node
-	 */
-    public function insertLeaf(leaf:DBVTNode) {
+   
+    public function insertLeaf(leaf:DBVHNode<P>) {
         if (root == null) {
             root = leaf;
             return;
         }
         var lb:AbstractAABB = leaf.aabb;
-        var sibling:DBVTNode = root;
+        var sibling:DBVHNode<P> = root;
         var oldArea:Float;
         var newArea:Float;
-        while (sibling.proxy == null) {  // descend the node to search the best pair  
-            var c1:DBVTNode = sibling.child1;
-            var c2:DBVTNode = sibling.child2;
+        while (!sibling.isLeaf()) {  // descend the node to search the best pair  
+            var c1:DBVHNode<P> = sibling.child1;
+            var c2:DBVHNode<P> = sibling.child2;
             var b:AbstractAABB = sibling.aabb;
             var c1b:AbstractAABB = c1.aabb;
             var c2b:AbstractAABB = c2.aabb;
@@ -90,7 +67,7 @@ class DBVT implements ITCollidable implements IRaycastImpl {
             
             var discendingCost1:Float = incrementalCost;
             aabb.combine(lb, c1b);
-            if (c1.proxy != null) {
+            if (c1.isLeaf()) {
                 // leaf cost = area(combined aabb)
                 discendingCost1 += aabb.surfaceArea();
             }
@@ -101,7 +78,7 @@ class DBVT implements ITCollidable implements IRaycastImpl {
             
             var discendingCost2:Float = incrementalCost;
             aabb.combine(lb, c2b);
-            if (c2.proxy != null) {
+            if (c2.isLeaf()) {
                 // leaf cost = area(combined aabb)
                 discendingCost2 += aabb.surfaceArea();
             }
@@ -127,13 +104,14 @@ class DBVT implements ITCollidable implements IRaycastImpl {
                 }
             }
         }
-        var oldParent:DBVTNode = sibling.parent;
-        var newParent:DBVTNode;
+        var oldParent:DBVHNode<P> = sibling.parent;
+        var newParent:DBVHNode<P>;
         if (numFreeNodes > 0) {
             newParent = freeNodes[--numFreeNodes];
         }
         else {
-            newParent = new DBVTNode();
+            newParent = new DBVHNode<P>();
+			if (nodeDataFactoryMethod != null) newParent.data = nodeDataFactoryMethod();
         }
         newParent.parent = oldParent;
         newParent.child1 = leaf;
@@ -163,47 +141,21 @@ class DBVT implements ITCollidable implements IRaycastImpl {
         }        while ((newParent != null));
     }
     
-    public function getBalance(node:DBVTNode):Int {
-        if (node.proxy != null) {
+    public function getBalance(node:DBVHNode<P>):Int {
+        if (node.isLeaf()) {
 			return 0;
 		}
         return node.child1.height - node.child2.height;
     }
     
-	/*
-    public function print(node:DBVTNode, indent:Int, text:String):String {
-        var hasChild:Bool = node.proxy == null;
-		
-        if (hasChild) {
-            text = print(node.child1, indent + 1, text);
-		}
-		
-        var i:Int = indent * 2;
-        while (i >= 0){
-            text += " ";
-            i--;
-        }
-		
-        text += ((hasChild) ? getBalance(node) + "" : "[" + node.proxy.leaf.aabb.minX + "]") + "\n"; 
-        if (hasChild) {
-            text = print(node.child2, indent + 1, text);
-		}
-		
-        return text;
-    }
-	*/
-    
-    /**
-	 * Delete a leaf from the tree.
-	 * @param	node
-	 */
-    public function deleteLeaf(leaf:DBVTNode) {
+  
+    public function deleteLeaf(leaf:DBVHNode<P>) {
         if (leaf == root) {
             root = null;
             return;
         }
-        var parent:DBVTNode = leaf.parent;
-        var sibling:DBVTNode;
+        var parent:DBVHNode<P> = leaf.parent;
+        var sibling:DBVHNode<P>;
         if (parent.child1 == leaf) {
             sibling = parent.child2;
         }
@@ -215,7 +167,7 @@ class DBVT implements ITCollidable implements IRaycastImpl {
             sibling.parent = null;
             return;
         }
-        var grandParent:DBVTNode = parent.parent;
+        var grandParent:DBVHNode<P> = parent.parent;
         sibling.parent = grandParent;
         if (grandParent.child1 == parent) {
             grandParent.child1 = sibling;
@@ -234,15 +186,15 @@ class DBVT implements ITCollidable implements IRaycastImpl {
     }
 	
     
-    private function balance(node:DBVTNode):DBVTNode {
+    private function balance(node:DBVHNode<P>):DBVHNode<P> {
         var nh:Int = node.height;
         if (nh < 2) {
             return node;
         }
 		
-        var p:DBVTNode = node.parent;
-        var l:DBVTNode = node.child1;
-        var r:DBVTNode = node.child2;
+        var p:DBVHNode<P> = node.parent;
+        var l:DBVHNode<P> = node.child1;
+        var r:DBVHNode<P> = node.child2;
         var lh:Int = l.height;
         var rh:Int = r.height;
         var balance:Int = lh - rh;
@@ -256,8 +208,8 @@ class DBVT implements ITCollidable implements IRaycastImpl {
         
         // Is the tree balanced?
         if (balance > 1) {
-            var ll:DBVTNode = l.child1;
-            var lr:DBVTNode = l.child2;
+            var ll:DBVHNode<P> = l.child1;
+            var lr:DBVHNode<P> = l.child2;
             var llh:Int = ll.height;
             var lrh:Int = lr.height;
             
@@ -338,8 +290,8 @@ class DBVT implements ITCollidable implements IRaycastImpl {
             return l;
         }
         else if (balance < -1) {
-            var rl:DBVTNode = r.child1;
-            var rr:DBVTNode = r.child2;
+            var rl:DBVHNode<P> = r.child1;
+            var rr:DBVHNode<P> = r.child2;
             var rlh:Int = rl.height;
             var rrh:Int = rr.height;
             
@@ -421,9 +373,9 @@ class DBVT implements ITCollidable implements IRaycastImpl {
         return node;
     }
     
-    inline private function fix(node:DBVTNode) {
-        var c1:DBVTNode = node.child1;
-        var c2:DBVTNode = node.child2;
+    inline private function fix(node:DBVHNode<P>) {
+        var c1:DBVHNode<P> = node.child1;
+        var c2:DBVHNode<P> = node.child2;
         node.aabb.combine(c1.aabb, c2.aabb);
         var h1:Int = c1.height;
         var h2:Int = c2.height;
@@ -435,119 +387,54 @@ class DBVT implements ITCollidable implements IRaycastImpl {
         }
     }
 	
-	/* From DBVTBroadPhase */
+	
 
-    /*
-    inline public function addProxy(p:DBVTProxy) {
-        insertLeaf(p.leaf);
-    }
+	
+}
+
+/**
+ * Generic AABB tree node to store extended data
+ * @author Glidias
+ */
+@:generic
+class DBVHNode<P> {
+	
+    /**
+	 * The first child node of this node.
+	 */
+    public var child1:DBVHNode<P>;
     
-    inline public function removeProxy(p:DBVTProxy) {
-        deleteLeaf(p.leaf);
+    /**
+	 * The second child node of this node.
+	 */
+    public var child2:DBVHNode<P>;
+    
+    /**
+	 * The parent node of this tree.
+	 */
+    public var parent:DBVHNode<P>;
+    
+    /**
+	 * Any extra data of this node. 
+	 */
+    public var data:P;
+    
+    /**
+	 * The maximum distance from leaf nodes.
+	 */
+    public var height:Int;
+    
+    /**
+	 * The AbstractAABB of this node.
+	 */
+    public var aabb:AbstractAABB;
+	
+	public inline function isLeaf():Bool {
+		return child1 == null;
+	}
+	
+     public function new() {
+        this.aabb = new AbstractAABB();
     }
-	*/
-
-	
-	
-	/* INTERFACE systems.collisions.ITCollidable */
-	
-	static var COLLIDER_SPHERE:Vector3D = new Vector3D();
-	
-	public function collectGeometryAndTransforms(collider:EllipsoidCollider, baseTransform:Transform3D):Void 
-	{
-		var s:Int = 0;
-		var stack = _stack;
-		stack[s++] = root;
-		var colliderSphere = COLLIDER_SPHERE;
-		colliderSphere.x = collider.sphere.x;
-		colliderSphere.y = collider.sphere.y;
-		colliderSphere.z = collider.sphere.z;
-		colliderSphere.w = collider.sphere.w;
-		
-		while ( --s >= 0) {
-			var node = stack[s];
-			
-			if ( GeomUtil.boundIntersectSphere(colliderSphere, node.aabb.minX, node.aabb.minY, node.aabb.minZ, node.aabb.maxX, node.aabb.maxY, node.aabb.maxZ) ) {
-				if (node.child1!=null) {
-					stack[s++] = node.child1;
-				}
-
-				if (node.child2!=null) {
-					stack[s++] = node.child2;
-				}
-				
-				if (node.proxy != null && node.proxy.collidable != null) {
-					if (node.proxy.transform != null) {
-						node.proxy.globalToLocalTransform.combine(node.proxy.inverseTransform, collider.matrix);
-						collider.calculateSphere(node.proxy.globalToLocalTransform);
-						node.proxy.localToGlobalTransform.combine(collider.inverseMatrix, node.proxy.transform); 
-						node.proxy.collidable.collectGeometryAndTransforms(collider, node.proxy.localToGlobalTransform);
-					}
-					else node.proxy.collidable.collectGeometryAndTransforms(collider, baseTransform);
-				}
-			}
-		}
-		
-	}
-	
-	
-	/* INTERFACE altern.ray.IRaycastImpl */
-	
-
-	
-	public function intersectRay(origin:Vector3D, direction:Vector3D, output:Vector3D):Vector3D 
-	{
-		var s:Int = 0;
-		var stack = _stack;
-		stack[s++] = root;
-		
-		var minData:Vector3D = null;
-		var minTime:Float = output.w != 0 ? output.w : direction.w != 0 ? direction.w : 1e22; 
-		
-		
-		while (--s >= 0) {
-			var node = stack[s];
-			if ( GeomUtil.boundIntersectRay(origin, direction, node.aabb.minX, node.aabb.minY, node.aabb.minZ, node.aabb.maxX, node.aabb.maxY, node.aabb.maxZ, output) ) {
-				
-				
-				
-				if (node.child1!=null) {
-					stack[s++] = node.child1;
-				}
-
-				if (node.child2!=null) {
-					stack[s++] = node.child2;
-				}
-				
-				
-				
-				if (node.proxy != null && node.proxy.raycastable != null) {
-					var childOrigin:Vector3D = output;
-					var childDirection:Vector3D = direction;
-					if (node.proxy.transform != null) {
-						childOrigin = new Vector3D();
-						childDirection = new Vector3D();
-						var childInverseTransform:Transform3D = node.proxy.inverseTransform;
-						childOrigin.x = childInverseTransform.a*origin.x + childInverseTransform.b*origin.y + childInverseTransform.c*origin.z + childInverseTransform.d;
-						childOrigin.y = childInverseTransform.e*origin.x + childInverseTransform.f*origin.y + childInverseTransform.g*origin.z + childInverseTransform.h;
-						childOrigin.z = childInverseTransform.i*origin.x + childInverseTransform.j*origin.y + childInverseTransform.k*origin.z + childInverseTransform.l;
-						childDirection.x = childInverseTransform.a*direction.x + childInverseTransform.b*direction.y + childInverseTransform.c*direction.z;
-						childDirection.y = childInverseTransform.e*direction.x + childInverseTransform.f*direction.y + childInverseTransform.g*direction.z;
-						childDirection.z = childInverseTransform.i * direction.x + childInverseTransform.j * direction.y + childInverseTransform.k * direction.z;
-						childDirection.w = minTime;
-					}
-					
-					
-					var data:Vector3D =  node.proxy.raycastable.intersectRay(childOrigin, childDirection, output);
-					if (data != null && data.w < minTime) {
-						minTime = data.w;
-						minData = data;
-					}
-				}
-			}
-		}
-		return minData;
-	}
-	
-	
+  
 }

@@ -480,11 +480,15 @@ package alternativa.a3d.systems.hud
 				p = p.next = CullingPlane.create();
 			}
 			
+			
+			
 			soupOccluder.faceList = null;
+			
+			var theFaceArea:Number = soupOccluder._disposableFaceCache.getArea();
 			
 			var mask:int;
 			var areaSubtracted:Number = 0;
-			
+			var fullEarlyOut:Boolean  = false;
 			/*
 			var precision:Number = 0.000001;
 			len = vertices.length;
@@ -519,12 +523,12 @@ package alternativa.a3d.systems.hud
 				
 				
 				// Double checking
-				///*
+				/*
 				if ( billboardFarClip.x * ax + billboardFarClip.y * ay + billboardFarClip.z * az < billboardFarClip.offset || billboardFarClip.x * bx + billboardFarClip.y * by + billboardFarClip.z * bz < billboardFarClip.offset || billboardFarClip.x * cx + billboardFarClip.y * cy + billboardFarClip.z * cz < billboardFarClip.offset ) {
 					Log.trace("Exit");
 					continue;
 				}
-				//*/
+				*/
 				
 				
 				var abx:Number;
@@ -586,17 +590,38 @@ package alternativa.a3d.systems.hud
 			
 				var retAreaSubtracted:Number = soupOccluder.clip(soupOccluder._disposableFaceCache);
 				if (retAreaSubtracted > 0) {
+					/*
+					if (retAreaSubtracted >= theFaceArea) {
+						areaSubtracted = theFaceArea;
+						fullEarlyOut = true;
+						Log.trace("early out");
+						break;
+					}
+					*/
 					areaSubtracted += retAreaSubtracted;
 					soupOccluder._negativeFaceCache.next = soupOccluder.faceList;
 					soupOccluder.faceList = soupOccluder._negativeFaceCache;
+					
+					
+					
 				}
 				
 				
 			}
-				
+		///*
+			if (fullEarlyOut) {
+				if (soupOccluder.faceList != null) {
+					soupOccluder.faceList.collect();
+					soupOccluder.faceList.destroy();
+					soupOccluder.faceList = null;
+				}
+				return areaSubtracted;
+			}
+		//	*/
 
 			if (soupOccluder.faceList != null) {
 				if (soupOccluder.faceList.next == null) {	// early out
+					soupOccluder.faceList.destroy();
 					soupOccluder.faceList.collect();
 					soupOccluder.faceList = null;
 					return areaSubtracted;
@@ -606,7 +631,7 @@ package alternativa.a3d.systems.hud
 					soupOccluder.calculateFaceCoordinates(soupOccluder.faceList,  soupOccluder._disposableFaceCache);
 					var reduc:Number = soupOccluder.disposeTotalAreaIntersections(soupOccluder.faceList);
 					soupOccluder.faceList = null;
-					if (reduc > 0) Log.trace(int(reduc / soupOccluder._disposableFaceCache.getArea() * 100)+" percent reduction overlap");
+					if (reduc > 0) Log.trace(int(reduc / theFaceArea * 100)+" percent reduction overlap");
 					areaSubtracted -= reduc;
 					
 					if (areaSubtracted < -1e-6) Log.trace("Area substracted should not exceed total:" + areaSubtracted);

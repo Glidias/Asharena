@@ -82,6 +82,21 @@ implements Serializable
 		}
 		
 		
+		#if !macro
+		@:keep
+		public function customSerialize(ctx : hxbit.Serializer) {
+			
+		}
+
+		@:keep
+		public function customUnserialize(ctx : hxbit.Serializer) {
+			EnabledFlags = 0;
+
+			SubEnabledCount = NativeInt32ArrayTools.alloc(2);// TypeDefs.createVector(2, true);// new Vector<Int>(2, true);
+			SubEnabledCount[0] = 0;
+			SubEnabledCount[1] = 0;
+		}
+		#end
 		
 		public function destroy():Void {
 			/*

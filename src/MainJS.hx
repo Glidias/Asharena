@@ -16,22 +16,23 @@ import arena.pathfinding.GKDijkstra;
 import arena.pathfinding.GKGraph;
 import arena.pathfinding.GKGrapher;
 import arena.pathfinding.GKNode;
+import hxGeomAlgo.IsoContoursPixels;
 */
 
 /*
 import de.polygonal.ds.Graph;
 */
 
-///*  Alternativa3D/Altern geometry core package and utitilies
+/*  Alternativa3D/Altern geometry core package and utitilies
 import altern.geom.Vertex;
 import altern.geom.Wrapper;
 import altern.geom.Face;
 import altern.geom.Edge;
 import altern.geom.ClipMacros; // utility
 import altern.geom.AMesh;	// mesh/occluder
-//*/
+*/
 
-import altern.culling.TargetBoardTester;
+//import altern.culling.TargetBoardTester;
 
 
 ///*  Ellipsoid collider for collision scene package
@@ -59,6 +60,7 @@ import util.geom.Geometry;
 import systems.collisions.ITCollidable;
 import altern.ray.IRaycastImpl;
 import altern.collisions.dbvt.DBVT;
+import altern.collisions.dbvt.DBVTNode;
 import altern.collisions.dbvt.DBVTProxy;
 //*/
 
@@ -85,13 +87,13 @@ import altern.geom.IntersectSlopeUtil;
 //*/
 
 
-/*  Serialization package
+///*  Serialization package
 import hxbit.Serializer;
 import haxe.io.Bytes;
-*/
+//*/
 
 
-/*  Terrain core requirements
+///*  Terrain core requirements
 import altern.terrain.QuadTreePage;
 import altern.terrain.QuadSquareChunk;
 import altern.terrain.QuadChunkCornerData;
@@ -105,13 +107,25 @@ import altern.terrain.QuadCornerData;
 import altern.terrain.GeometryResult;
 
 import altern.culling.CullingPlane;
-*/
+//*/
 
 
-/* Terrain collision requirements
+///* Terrain collision requirements
 import altern.terrain.TerrainCollidable;
-*/
+//*/
 
+
+///* Geometry algorithms to help generate terrain world environment stuffs *
+import hxGeomAlgo.IsoContoursPixels;
+import hxGeomAlgo.Tess2;
+import hxGeomAlgo.Tess2.WindingRule;
+import hxGeomAlgo.Tess2.ResultType;
+//*/
+
+
+///* Batch/LOD culling
+import altern.culling.LODBatchHierachy;
+//*/
 
 /* Ash-framework integration (problem compiling to C-sharp code atm)
 import systems.collisions.EllipsoidColliderSystem;

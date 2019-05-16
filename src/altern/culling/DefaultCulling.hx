@@ -150,6 +150,8 @@ class DefaultCulling implements ICuller
 		f.collect();
 	}
 	
+
+	
 	public static function triInFrustumCover(frustum:CullingPlane, ax:Float, ay:Float , az:Float, bx:Float , by:Float, bz:Float, cx:Float, cy:Float, cz:Float):Int {
 			var lastPlane:CullingPlane = null;	// assumed lastPlane is farClipping plane
 			
@@ -248,6 +250,17 @@ class DefaultCulling implements ICuller
 			plane = plane.next;
 			}
 			return culling;
+	}
+	
+	public static function pointInFrustum(frustum:CullingPlane, x:Float, y:Float , z:Float):Bool {
+		var plane:CullingPlane = frustum;
+		while ( plane != null) {
+			if (x * plane.x + y * plane.y + z * plane.z < plane.offset ) {
+				return false;
+			}
+			plane = plane.next;
+		}
+		return true;
 	}
 	
 }
