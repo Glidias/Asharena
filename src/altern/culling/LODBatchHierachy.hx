@@ -113,44 +113,70 @@ class LODBatchHierachy
 		var s2:Int = 0;
 		var stack = _stack;
 		var stack2 = _stack2;
-		stack[s++] = tree.root;
+		//stack[s++] = tree.root;
 		
 
 		var culling:Int = 63;
+		
 		var node:DBVHNode<LODNodeData>;
+		
+		node = tree.root;
+		culling = culler.cullingInFrustum(culling, node.aabb.minX, node.aabb.minY, node.aabb.minZ, node.aabb.maxX, node.aabb.maxY, node.aabb.maxZ);
+		
+		node.data.culling = culling;
+		if (culling >= 0) {
+			stack[s++] = tree.root;
+		} else {
+			stack2[s2++] = tree.root;
+		}
+		
 		var batch:LODBatch;
+		var child;
+		var cCulling:Int;
 		while (--s >= 0) {
 			node = stack[s];
-			culling = culler.cullingInFrustum(culling, node.aabb.minX, node.aabb.minY, node.aabb.minZ, node.aabb.maxX, node.aabb.maxY, node.aabb.maxZ);
-			
-			var lastCulling:Int = node.data.culling;
-			node.data.culling = culling;
-			
-			if (lastCulling == culling && culling < 1) { 
-				continue;
-			}
+
+			child = node.child1;
+			cCulling = culler.cullingInFrustum(node.data.culling, child.aabb.minX, child.aabb.minY, child.aabb.minZ, child.aabb.maxX, child.aabb.maxY, child.aabb.maxZ);
+			if (child.data.culling != cCulling || cCulling >= 1) {
 				
-			if (culling >= 0) {
-				if (node.isLeaf()) {
-					// for lod, need to check if need to update node's maxLOD if outdated 
-					if (node.data.lodTimestamp != lodTimestamp) {
-						// remember to remove instance from old LOD if maxLOD changes
-						node.data.lodTimestamp = lodTimestamp;
+				if (cCulling >= 0) {
+					if (!child.isLeaf()) {
+						stack[s++] = child;
+					} else if (child.data.culling == -1) {
+						if (child.data.lodTimestamp != lodTimestamp) {
+							child.data.lodTimestamp = lodTimestamp;
+						}
+						batch = lodBatches[child.data.maxLOD];
+						batch.addInstance(child.data.instance);
 					}
-					batch = lodBatches[node.data.maxLOD];
-					if (lastCulling == -1) batch.addInstance(node.data.instance);
-					continue;
+					child.data.culling = cCulling;
+				} else {
+					stack2[s2++] = child;
+				}
+			}
+			
+			
+			child = node.child2;
+			cCulling = culler.cullingInFrustum(node.data.culling, child.aabb.minX, child.aabb.minY, child.aabb.minZ, child.aabb.maxX, child.aabb.maxY, child.aabb.maxZ);
+			if (child.data.culling != cCulling || cCulling >= 1) {
+				if (cCulling >= 0) {
+					if (!child.isLeaf()) {
+						stack[s++] = child;
+					} else if (child.data.culling == -1) {
+						if (child.data.lodTimestamp != lodTimestamp) {
+							child.data.lodTimestamp = lodTimestamp;
+						}
+						batch = lodBatches[child.data.maxLOD];
+						batch.addInstance(child.data.instance);
+					}
+					child.data.culling = cCulling;
+				} else {
+					stack2[s2++] = child;
 				}
 				
-				//if (node.child1!=null) {
-				stack[s++] = node.child1;
-				//}
-				//if (node.child2!=null) {
-				stack[s++] = node.child2;
-				//}
-			} else {
-				stack2[s2++] = node;
 			}
+			
 		}
 		
 		
@@ -158,8 +184,9 @@ class LODBatchHierachy
 			node = stack2[s2];
 			var lastCulling:Int = node.data.culling;
 			node.data.culling = -1;
+			
 			if (node.isLeaf()) {
-				if (lastCulling != -1) {
+				if (lastCulling >= 0) {
 					batch = lodBatches[node.data.maxLOD];
 					batch.removeInstance(node.data.instance);
 				}
@@ -170,6 +197,10 @@ class LODBatchHierachy
 			//}
 			//if (node.child2!=null) {
 			stack2[s2++] = node.child2;
+		}
+		
+		for (i in 0...lodBatches.length) {
+			lodBatches[i].updateInstanceLen();
 		}
 
 	}
@@ -232,6 +263,13 @@ class LODBatch {
 	public inline function reset():Void {
 		addCount = 0;
 		removeCount = 0;
+	}
+	
+	public var lastInstanceLen:Int = 0;
+	public var instanceLen:Int = 0;
+	public inline function updateInstanceLen():Void {
+		lastInstanceLen = instanceLen;
+		instanceLen += (addCount - removeCount);
 	}
 	
 	public inline function addInstance(instance:Int):Void {
