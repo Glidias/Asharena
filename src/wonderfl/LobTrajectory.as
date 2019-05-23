@@ -147,7 +147,7 @@ package wonderfl
             _displace.y = displace.y;
 			var optimalAngle:Number = -Math.atan2(2 *-displace.y, displace.x);
 			
-			//optimalAngle -= Math.PI * 0.5 * 16/90;
+			optimalAngle -= Math.PI * 0.5 * 32/90;
 			if (optimalAngle <= -Math.PI * 0.5) {
 				optimalAngle = -Math.PI * 0.5; // + 0.0001;
 			}
