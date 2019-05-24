@@ -1821,7 +1821,7 @@ package alternterrain.objects
 							}
 						}
 						
-						if ( triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)   ) {
+						if ( different && triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)   ) {
 							indices[ii++] = vi * vMult;
 							vertices[vi++] = ax;
 							vertices[vi++] = ay;
@@ -1888,7 +1888,7 @@ package alternterrain.objects
 							}
 						}
 						
-						if (triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)   ) {
+						if (different && triInFrustum(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)   ) {
 							indices[ii++] = vi * vMult;
 							vertices[vi++] = ax;
 							vertices[vi++] = ay;

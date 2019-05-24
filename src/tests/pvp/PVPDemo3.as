@@ -1956,7 +1956,7 @@ package tests.pvp
 			
 		thirdPersonController.thirdPerson.preferedMinDistance = 0.1;// 100;
 		thirdPersonController.thirdPerson.controller.minDistance = 0;
-		thirdPersonController.thirdPerson.controller.maxDistance = 2240;
+		thirdPersonController.thirdPerson.controller.maxDistance = 12240;
 		thirdPersonController.thirdPerson.offsetZ = 22;// CHASE_Z_OFFSET
 		thirdPersonController.thirdPerson.raycaster = raycasterCameraBackRay;
 		//thirdPersonController.thirdPerson.offsetX = 22;

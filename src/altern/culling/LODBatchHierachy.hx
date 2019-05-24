@@ -4,6 +4,10 @@ import altern.ds.DBVHTree;
 import altern.terrain.ICuller;
 import components.BoundBox;
 import de.polygonal.ds.NativeFloat32Array;
+#if !js
+import de.polygonal.ds.tools.NativeArrayTools;
+#end
+import util.geom.Vec3;
 
 /**
  * Integrated LOD/Culling solution targeted for 3D engine platforms
@@ -14,7 +18,9 @@ class LODBatchHierachy
 {
 	//public var tree:BVHTree
 	var lodDistances:NativeFloat32Array;
+	var minLODVertical:Int;
 	var lodGroupBoundSizes:NativeFloat32Array;
+	var numLODs:Int;
 	public var lodBatches:Array<LODBatch>;
 	var lodTimestamp:Int = 0;
 	
@@ -40,6 +46,18 @@ class LODBatchHierachy
 
 	public function new(culler:ICuller, lodDists:Array<Float>=null, lodBoundSizes:Array<Float>=null) 
 	{
+		this.minLODVertical = 0;
+		if (lodDists!=null) {
+			#if js
+			this.lodDistances = new NativeFloat32Array(lodDists.length);
+			#else
+			this.lodDistances = NativeArrayTools.alloc(lodDists.length);
+			#end
+			for (i in 0...lodDists.length) {
+				this.lodDistances[i] = lodDists[i];
+			}
+		}
+		
 		this.culler = culler;
 		tree.nodeDataFactoryMethod = LODNodeData.create;
 		lodBatches = [];
@@ -102,7 +120,11 @@ class LODBatchHierachy
 	}
 	*/
 	
-	public function cull():Void {
+	/**
+	 * Frame coherant culling + (on-the-fly lod switching) method
+	 * @param	cameraPos
+	 */
+	public function cull(cameraPos:Vec3):Void {
 		//culler.cullingInFrustum(culling,
 		
 		for (i in 0...lodBatches.length) {
@@ -137,14 +159,14 @@ class LODBatchHierachy
 			node = stack[s];
 
 			child = node.child1;
-			cCulling = culler.cullingInFrustum(node.data.culling, child.aabb.minX, child.aabb.minY, child.aabb.minZ, child.aabb.maxX, child.aabb.maxY, child.aabb.maxZ);
+			cCulling = node.data.culling >= 1 ? culler.cullingInFrustum(node.data.culling, child.aabb.minX, child.aabb.minY, child.aabb.minZ, child.aabb.maxX, child.aabb.maxY, child.aabb.maxZ) : node.data.culling;
 			if (child.data.culling != cCulling || cCulling >= 1) {
-				
 				if (cCulling >= 0) {
 					if (!child.isLeaf()) {
 						stack[s++] = child;
 					} else if (child.data.culling == -1) {
 						if (child.data.lodTimestamp != lodTimestamp) {
+							child.data.maxLOD = node.data.maxLOD >= 1 ? getLOD(cameraPos, child, node.data.maxLOD) : 0;
 							child.data.lodTimestamp = lodTimestamp;
 						}
 						batch = lodBatches[child.data.maxLOD];
@@ -158,13 +180,14 @@ class LODBatchHierachy
 			
 			
 			child = node.child2;
-			cCulling = culler.cullingInFrustum(node.data.culling, child.aabb.minX, child.aabb.minY, child.aabb.minZ, child.aabb.maxX, child.aabb.maxY, child.aabb.maxZ);
+			cCulling = node.data.culling >= 1 ? culler.cullingInFrustum(node.data.culling, child.aabb.minX, child.aabb.minY, child.aabb.minZ, child.aabb.maxX, child.aabb.maxY, child.aabb.maxZ) : node.data.culling;
 			if (child.data.culling != cCulling || cCulling >= 1) {
 				if (cCulling >= 0) {
 					if (!child.isLeaf()) {
 						stack[s++] = child;
 					} else if (child.data.culling == -1) {
 						if (child.data.lodTimestamp != lodTimestamp) {
+							child.data.maxLOD =  node.data.maxLOD >= 1 ? getLOD(cameraPos, child, node.data.maxLOD) : 0;
 							child.data.lodTimestamp = lodTimestamp;
 						}
 						batch = lodBatches[child.data.maxLOD];
@@ -205,19 +228,236 @@ class LODBatchHierachy
 
 	}
 	
+	 function getLOD(cameraPos:Vec3, node:DBVHNode<LODNodeData>, lod:Int):Int { //inline
+		var ex = (node.aabb.maxX - node.aabb.minX) * 0.5;
+		var ez = (node.aabb.maxZ - node.aabb.minZ) * 0.5;
+		var bcx = node.aabb.minX + ex;
+		var bcz = node.aabb.minZ + ez;
+		
+		var ey = (node.aabb.maxY - node.aabb.minY) * 0.5;
+		var bcy = node.aabb.minY + ey;
+		
+		if (node.isLeaf()) {	// non conservative LOD check for leafs
+			ex = 0;
+			ey = 0;
+			ez = 0;
+		}
 
+		while (lod >=1) {
+			var distThreshold:Float = lodDistances[lod];
+			var	dx = Math.abs(bcx - cameraPos.x) - ex;
+			var	dz = Math.abs(bcz - cameraPos.z) - ez;
+			var	d:Float = dx >= dz ? dx : dz;
+			if (d < distThreshold) {
+				break;
+			}
+			if (lod >= minLODVertical) {
+				dz = Math.abs(bcy - cameraPos.y) - ey;
+				if (dz >= d && dz < distThreshold) {
+					break;
+				}
+			}
+			lod--;
+		}
+		return lod;
+	}
 	
 	
-	public function updateLOD():Void {
+	/**
+	 * If you are using LOD, use this frame coherant LOD update switching method for every movement interval of camera,
+	 * taking into account culling of current frame where cull(cameraPos) must be called first for the current frame
+	 * with the same cameraPos.
+	 * @param	cameraPos
+	 */
+	public function updateLOD(cameraPos:Vec3):Void {
 		var timestamp:Int = lodTimestamp++;
 		
 		var s:Int = 0;
+
 		var stack = _stack;
-		stack[s++] = tree.root;
+		
+		var child;
+		var node:DBVHNode<LODNodeData>;
+		var cLOD:Int;
+
+		if (tree.root.data.culling >= 0) {
+			cLOD = getLOD(cameraPos, tree.root, numLODs);
+			if (cLOD >= 1 || tree.root.data.maxLOD != cLOD) {
+				stack[s++] = tree.root;
+				tree.root.data.maxLOD = cLOD;
+				tree.root.data.lodTimestamp = timestamp;
+			}
+		}
+		
+		while (--s >= 0) {
+			node = stack[s];
+		
+			child = node.child1;
+			if (child.data.culling >= 0) {
+				cLOD = node.data.maxLOD >= 1 ? getLOD(cameraPos, child, node.data.maxLOD) : 0;
+				if (child.isLeaf()) {
+					if (child.data.maxLOD != cLOD) {
+						lodBatches[child.data.maxLOD].removeInstance(child.data.instance);
+						lodBatches[cLOD].addInstance(child.data.instance);
+					}
+				}
+				else if (cLOD >= 1 || child.data.maxLOD != cLOD) {
+					stack[s++] = child;
+				}	
+				child.data.maxLOD = cLOD;
+				child.data.lodTimestamp = timestamp;
+			}
+			
+			child = node.child2;
+			if (child.data.culling >= 0) {
+				cLOD = node.data.maxLOD >= 1 ? getLOD(cameraPos, child, node.data.maxLOD) : 0;
+				if (child.isLeaf()) {
+					if (child.data.maxLOD != cLOD) {
+						lodBatches[child.data.maxLOD].removeInstance(child.data.instance);
+						lodBatches[cLOD].addInstance(child.data.instance);
+					}
+				}
+				else if (cLOD >= 1 || child.data.maxLOD != cLOD) {
+					stack[s++] = child;
+				}	
+				child.data.maxLOD = cLOD;
+				child.data.lodTimestamp = timestamp;
+			}
+			
+		}
+
+		
+	}
+
+	
+	/**
+	 *  If you are using LOD, this method is required to be called first (before first culling operation)
+	 * to ensure all maxLODs of non-leaf nodes reflect (possible non-zero starting LOD values). It is assumed all nodes 
+	 * start at their initial lowest LOD setting at zero and would require a pre-scan before first (ignoring culling)
+	 * to start activating possible higher maxLODs.
+	 * 
+	 * This method can be used as an alternative, for async LOD updates that doesnt depend on hierachical frustum culling..
+	 * 
+	 * If you want to consider  hierachical frustum culling for current frame in sync manner, use updateLOD(cameraPos) instead and
+	 * to only update visible nodes in camera frustum after your frame's cull(), but make sure you do an initial
+	 * scanLOD(cameraPos) first before your first cull().
+	 * 
+	 * @param	cameraPos
+	 */
+	///*
+	public function scanLOD(cameraPos:Vec3):Void {
+		
 		for (i in 0...lodBatches.length) {
 			lodBatches[i].reset();
 		}
+		
+		var s:Int = 0;
+		var stack = _stack;
+		
+		var child;
+		var node:DBVHNode<LODNodeData>;
+		var cLOD:Int;
+
+		cLOD = getLOD(cameraPos, tree.root, numLODs);
+		if (cLOD >= 1 || tree.root.data.maxLOD != cLOD) {
+			stack[s++] = tree.root;
+			tree.root.data.maxLOD = cLOD;
+			tree.root.data.lodTimestamp = lodTimestamp;
+		}
+		
+		while (--s >= 0) {
+			node = stack[s];
+		
+			child = node.child1;
+			cLOD = node.data.maxLOD >= 1 ? getLOD(cameraPos, child, node.data.maxLOD) : 0;
+			if (child.isLeaf()) {
+				if (child.data.culling >= 0 && child.data.maxLOD != cLOD) {
+					lodBatches[child.data.maxLOD].removeInstance(child.data.instance);
+					lodBatches[cLOD].addInstance(child.data.instance);
+				}
+			}
+		    else if ((cLOD >= 1 || child.data.maxLOD != cLOD)) {
+				stack[s++] = child;
+			}	
+			child.data.maxLOD = cLOD;
+			child.data.lodTimestamp = lodTimestamp;
+			
+			child = node.child2;
+			cLOD = node.data.maxLOD >= 1 ? getLOD(cameraPos, child, node.data.maxLOD) : 0;
+			if (child.isLeaf()) {
+				if (child.data.culling >= 0 && child.data.maxLOD != cLOD) {
+					lodBatches[child.data.maxLOD].removeInstance(child.data.instance);
+					lodBatches[cLOD].addInstance(child.data.instance);
+				}
+			}
+			else if ((cLOD >= 1 || child.data.maxLOD != cLOD)) {
+				stack[s++] = child;
+			}	
+			child.data.maxLOD = cLOD;
+			child.data.lodTimestamp = lodTimestamp;
+		}
+		
+		for (i in 0...lodBatches.length) {
+			lodBatches[i].updateInstanceLen();
+		}
 	}
+	//*/
+	
+		/*
+	function getLODBox(cameraPos:Vec3, node:DBVHNode<LODNodeData>, lod:Int):Int {
+		var ex = (node.aabb.maxX - node.aabb.minX) * 0.5;
+		var ez = (node.aabb.maxZ - node.aabb.minZ) * 0.5;
+		var bcx = node.aabb.minX + ex;
+		var bcz = node.aabb.minZ + ez;
+		
+		var ey = (node.aabb.maxY - node.aabb.minY) * 0.5;
+		var bcy = node.aabb.minY + ey;
+
+		while (lod >=0) {
+			var distThreshold:Float = lodDistances[lod];
+			var	dx = Math.abs(bcx - cameraPos.x) - ex;
+			var	dz = Math.abs(bcz - cameraPos.z) - ez;
+			var	d:Float = dx >= dz ? dx : dz;
+			if (d < distThreshold) {
+				return lod;
+			}
+			if (lod >= minLODVertical) {
+				dz = Math.abs(bcy - cameraPos.y) - ey;
+				if (dz >= d && dz < distThreshold) {
+					return lod;
+				}
+			}
+			lod--;
+		}
+		return 0;
+	}
+	*/
+	
+	/*
+	function getLODCenter(cameraPos:Vec3, node:DBVHNode<LODNodeData>, lod:Int):Int {
+		var bcx = node.aabb.minX + (node.aabb.maxX - node.aabb.minX) * 0.5;
+		var bcz = node.aabb.minZ + (node.aabb.maxZ - node.aabb.minZ) * 0.5;
+		var bcy = node.aabb.minY + (node.aabb.maxY - node.aabb.minY) * 0.5;
+
+		while (lod >=0) {
+			var distThreshold:Float = lodDistances[lod];
+			var	dx = Math.abs(bcx - cameraPos.x);
+			var	dz = Math.abs(bcz - cameraPos.z);
+			var	d:Float = dx >= dz ? dx : dz;
+			if (d <= distThreshold) {
+				return lod;
+			}
+			if (lod >= minLODVertical) {
+				dz = Math.abs(bcy - cameraPos.y);
+				if (dz >= d && dz < distThreshold) {
+					return lod;
+				}
+			}
+			lod--;
+		}
+		return 0;
+	}
+	*/
 	
 }
 
@@ -263,12 +503,12 @@ class LODBatch {
 	public inline function reset():Void {
 		addCount = 0;
 		removeCount = 0;
+		lastInstanceLen = instanceLen;
 	}
 	
 	public var lastInstanceLen:Int = 0;
 	public var instanceLen:Int = 0;
 	public inline function updateInstanceLen():Void {
-		lastInstanceLen = instanceLen;
 		instanceLen += (addCount - removeCount);
 	}
 	
