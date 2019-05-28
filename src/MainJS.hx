@@ -125,6 +125,7 @@ import hxGeomAlgo.Tess2.ResultType;
 
 ///* Batch/LOD culling
 import altern.culling.LODBatchHierachy;
+import altern.culling.ModFarClipCulling;
 //*/
 
 /* Ash-framework integration (problem compiling to C-sharp code atm)
