@@ -626,6 +626,7 @@ var troshx_sos_vue_tests_TestUI = function() {
 	window.document.body.style.overflow = "hidden";
 	window.document.body.style.width = "100%";
 	window.document.body.style.height = "100%";
+	window.document.body.style.position = "fixed";
 	this.boot.startVueWithRootComponent("#app",new troshx_sos_vue_combat_ImageMapTester());
 };
 troshx_sos_vue_tests_TestUI.__name__ = ["troshx","sos","vue","tests","TestUI"];
