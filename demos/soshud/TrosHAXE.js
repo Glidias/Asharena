@@ -53,6 +53,21 @@ Type.getClassName = function(c) {
 };
 var haxe_IMap = function() { };
 haxe_IMap.__name__ = ["haxe","IMap"];
+var haxe_ds_IntMap = function() {
+	this.h = { };
+};
+haxe_ds_IntMap.__name__ = ["haxe","ds","IntMap"];
+haxe_ds_IntMap.__interfaces__ = [haxe_IMap];
+haxe_ds_IntMap.prototype = {
+	remove: function(key) {
+		if(!this.h.hasOwnProperty(key)) {
+			return false;
+		}
+		delete(this.h[key]);
+		return true;
+	}
+	,__class__: haxe_ds_IntMap
+};
 var haxe_ds_StringMap = function() {
 	this.h = { };
 };
@@ -428,12 +443,89 @@ js_Boot.__string_rec = function(o,s) {
 		return String(o);
 	}
 };
+js_Boot.__interfLoop = function(cc,cl) {
+	if(cc == null) {
+		return false;
+	}
+	if(cc == cl) {
+		return true;
+	}
+	var intf = cc.__interfaces__;
+	if(intf != null) {
+		var _g1 = 0;
+		var _g = intf.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			var i1 = intf[i];
+			if(i1 == cl || js_Boot.__interfLoop(i1,cl)) {
+				return true;
+			}
+		}
+	}
+	return js_Boot.__interfLoop(cc.__super__,cl);
+};
+js_Boot.__instanceof = function(o,cl) {
+	if(cl == null) {
+		return false;
+	}
+	switch(cl) {
+	case Array:
+		if((o instanceof Array)) {
+			return o.__enum__ == null;
+		} else {
+			return false;
+		}
+		break;
+	case Bool:
+		return typeof(o) == "boolean";
+	case Dynamic:
+		return true;
+	case Float:
+		return typeof(o) == "number";
+	case Int:
+		if(typeof(o) == "number") {
+			return (o|0) === o;
+		} else {
+			return false;
+		}
+		break;
+	case String:
+		return typeof(o) == "string";
+	default:
+		if(o != null) {
+			if(typeof(cl) == "function") {
+				if(o instanceof cl) {
+					return true;
+				}
+				if(js_Boot.__interfLoop(js_Boot.getClass(o),cl)) {
+					return true;
+				}
+			} else if(typeof(cl) == "object" && js_Boot.__isNativeObj(cl)) {
+				if(o instanceof cl) {
+					return true;
+				}
+			}
+		} else {
+			return false;
+		}
+		if(cl == Class ? o.__name__ != null : false) {
+			return true;
+		}
+		if(cl == Enum ? o.__ename__ != null : false) {
+			return true;
+		}
+		return o.__enum__ == cl;
+	}
+};
 js_Boot.__nativeClassName = function(o) {
 	var name = js_Boot.__toStr.call(o).slice(8,-1);
 	if(name == "Object" || name == "Function" || name == "Math" || name == "JSON") {
 		return null;
 	}
 	return name;
+};
+js_Boot.__isNativeObj = function(o) {
+	return js_Boot.__nativeClassName(o) != null;
 };
 js_Boot.__resolveNativeClass = function(name) {
 	return $global[name];
@@ -450,6 +542,117 @@ troshx_sos_vue_combat_DollView.prototype = $extend(haxevx_vuex_core_VComponent.p
 	}
 	,__class__: troshx_sos_vue_combat_DollView
 });
+var troshx_sos_vue_combat_HammerJSCombat = function(element,imageMapData) {
+	this._hoverAct = new troshx_sos_vue_combat_UInteract(-1,2);
+	this.activeTouches = new haxe_ds_IntMap();
+	var _g = new haxe_ds_StringMap();
+	if(__map_reserved["panup"] != null) {
+		_g.setReserved("panup",256);
+	} else {
+		_g.h["panup"] = 256;
+	}
+	if(__map_reserved["pandown"] != null) {
+		_g.setReserved("pandown",1024);
+	} else {
+		_g.h["pandown"] = 1024;
+	}
+	if(__map_reserved["tap"] != null) {
+		_g.setReserved("tap",4);
+	} else {
+		_g.h["tap"] = 4;
+	}
+	if(__map_reserved["press"] != null) {
+		_g.setReserved("press",8);
+	} else {
+		_g.h["press"] = 8;
+	}
+	if(__map_reserved["swipeleft"] != null) {
+		_g.setReserved("swipeleft",128);
+	} else {
+		_g.h["swipeleft"] = 128;
+	}
+	if(__map_reserved["swiperight"] != null) {
+		_g.setReserved("swiperight",32);
+	} else {
+		_g.h["swiperight"] = 32;
+	}
+	if(__map_reserved["swipeup"] != null) {
+		_g.setReserved("swipeup",16);
+	} else {
+		_g.h["swipeup"] = 16;
+	}
+	this.hammerEventMap = _g;
+	this.imageMapData = imageMapData;
+	this.hammer = new Hammer(element);
+	this.interactionList = troshx_sos_vue_combat_UIInteraction.getDollViewInteracts(imageMapData.layoutItemList,imageMapData.titleList,imageMapData.classList);
+	this.hammer.on("hammer.input move panup pandown tap press swipeleft swiperight swipeup",$bind(this,this.handleUIGesture));
+};
+troshx_sos_vue_combat_HammerJSCombat.__name__ = ["troshx","sos","vue","combat","HammerJSCombat"];
+troshx_sos_vue_combat_HammerJSCombat.prototype = {
+	handleUIGesture: function(e) {
+		var pt = e.changedPointers[0];
+		var id;
+		var touch = null;
+		var pointer = null;
+		var u;
+		var v;
+		var canvasWidth = this.imageMapData.scaleX * this.imageMapData.refWidth;
+		var canvasHeight = this.imageMapData.scaleY * this.imageMapData.refHeight;
+		if(js_Boot.__instanceof(pt,Touch)) {
+			touch = pt;
+			id = touch.identifier;
+			u = touch.screenX / canvasWidth;
+			v = touch.screenY / canvasHeight;
+		} else {
+			pointer = pt;
+			id = pointer.pointerId;
+			u = pointer.screenX / canvasWidth;
+			v = pointer.screenY / canvasHeight;
+		}
+		var act;
+		if(e.isFirst && e.type == "hammer.input") {
+			act = troshx_sos_vue_combat_UIInteraction.findHit(u,v,this.imageMapData,this.interactionList);
+			if(act != null) {
+				if(act.mask >= 2) {
+					this.activeTouches.h[id] = act;
+					console.log("Added id:" + id);
+				}
+			} else {
+				this.activeTouches.h[id] = this._hoverAct;
+			}
+		} else {
+			if(!this.activeTouches.h.hasOwnProperty(id)) {
+				return;
+			}
+			act = this.activeTouches.h[id];
+			if(e.type == "hammer.input") {
+				if(e.eventType == Hammer.INPUT_MOVE) {
+					if((act.mask & 2) != 0) {
+						var act2 = troshx_sos_vue_combat_UIInteraction.findHit(u,v,this.imageMapData,this.interactionList);
+						if(act2 != null) {
+							if(act2.mask >= 2) {
+								this.activeTouches.h[id] = act2;
+								console.log("Added act2 id:" + id);
+							}
+						}
+					}
+				} else if(e.eventType == Hammer.INPUT_END || e.eventType == Hammer.INPUT_CANCEL) {
+					this.activeTouches.remove(id);
+				} else {
+					throw new js__$Boot_HaxeError("Could not resolve event type:" + e.eventType);
+				}
+				return;
+			}
+			var _this = this.hammerEventMap;
+			var key = e.type;
+			var interactType = __map_reserved[key] != null ? _this.getReserved(key) : _this.h[key];
+			if((act.mask & interactType) != 0) {
+				var tmp = (interactType & 4) == 0;
+			}
+		}
+	}
+	,__class__: troshx_sos_vue_combat_HammerJSCombat
+};
 var troshx_sos_vue_combat_ImageMapTester = function() {
 	haxevx_vuex_core_VComponent.call(this);
 };
@@ -461,6 +664,9 @@ troshx_sos_vue_combat_ImageMapTester.prototype = $extend(haxevx_vuex_core_VCompo
 	}
 	,Components: function() {
 		return { zone : new troshx_sos_vue_combat_components_LayoutItemView()};
+	}
+	,setupUIInteraction: function() {
+		new troshx_sos_vue_combat_HammerJSCombat(this.$refs.container,this.$data);
 	}
 	,Mounted: function() {
 		var _gthis = this;
@@ -494,6 +700,7 @@ troshx_sos_vue_combat_ImageMapTester.prototype = $extend(haxevx_vuex_core_VCompo
 		troshx_sos_vue_combat_LayoutConstraints.applyDollView(arr,this.titleList,this.classList,this.refWidth,this.refHeight);
 		window.addEventListener("resize",$bind(this,this.onResize));
 		this.onResize();
+		this.setupUIInteraction();
 	}
 	,onResize: function() {
 		var container = this.$refs.container;
@@ -512,7 +719,7 @@ troshx_sos_vue_combat_ImageMapTester.prototype = $extend(haxevx_vuex_core_VCompo
 		}
 	}
 	,Template: function() {
-		return "<div style=\"position:absolute;top:0;left:0;width:100%;height:100%\"  ref=\"container\">\r\n\t<div class=\"image-map-holder\" style=\"position:relative; overflow:hidden;width:100%;height:100%\">\r\n\t\t<img src=\"images/dollscreen.png\" style=\"transform-origin:0 0; pointer-events:none; opacity:0.12\" usemap=\"#map\" ref=\"image\" />\r\n\t\t<map name=\"map\" ref=\"map\">\r\n\t\t\t<area shape=\"poly\" coords=\"316, 519, 314, 580, 305, 622, 317, 659, 374, 585\" alt=\"swing\" title=\"SWING_LOWER_LEG-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"124, 567, 170, 525, 172, 576, 179, 619, 160, 663\" alt=\"swing\" title=\"SWING_LOWER_LEG-r\" />\r\n\t\t\t<area shape=\"rect\" coords=\"224, 478, 261, 585\" title=\"enemyStatus\" />\r\n\t\t\t<area shape=\"poly\" coords=\"238, 76, 254, 78, 262, 85, 267, 115, 262, 115, 255, 96, 244, 95, 234, 97, 223, 115, 217, 115, 223, 85, 238, 76\" alt=\"part\" title=\"UPPER_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"309, 400, 310, 483, 313, 506, 378, 574, 366, 421\" alt=\"swing\" title=\"SWING_UPPER_LEG-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"124, 432, 172, 409, 175, 499, 115, 557\" alt=\"swing\" title=\"SWING_UPPER_LEG-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"302, 332, 351, 364, 364, 413, 306, 390\" alt=\"swing\" title=\"SWING_GROIN-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"142, 358, 181, 334, 171, 392, 124, 418\" alt=\"swing\" title=\"SWING_GROIN-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"302, 254, 331, 307, 361, 333, 349, 349, 307, 318, 300, 315\" alt=\"swing\" title=\"SWING_TORSO-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"137, 319, 172, 278, 183, 259, 185, 322, 141, 351\" alt=\"swing\" title=\"SWING_TORSO-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"356, 263, 399, 235, 411, 300, 387, 311\" alt=\"swing\" title=\"SWING_LOWER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"319, 168, 352, 254, 399, 224, 366, 168\" alt=\"swing\" title=\"SWING_UPPER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"271, 77, 272, 127, 306, 83\" alt=\"swing\" title=\"SWING_UPWARD_HEAD-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"166, 82, 213, 132, 210, 77\" alt=\"swing\" title=\"SWING_UPWARD_HEAD-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"313, 83, 269, 144, 285, 158, 366, 162\" alt=\"swing\" title=\"SWING_NECK-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"219, 78, 242, 46, 264, 79, 267, 91, 220, 93\" alt=\"swing\" title=\"SWING_UPWARD_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"89, 226, 133, 258, 101, 309, 67, 310\" alt=\"swing\" title=\"SWING_LOWER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"87, 213, 139, 250, 159, 186, 170, 164, 115, 162\" alt=\"swing\" title=\"SWING_UPPER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"153, 85, 219, 144, 200, 159, 120, 157\" alt=\"swing\" title=\"SWING_NECK-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"224, 124, 228, 144, 247, 149, 258, 142, 269, 123, 263, 123, 250, 134, 237, 134, 228, 124\" alt=\"part\" title=\"LOWER_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"322, 192, 339, 250, 315, 256, 308, 243, 306, 223, 322, 192\" alt=\"part\" title=\"UPPER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"98, 321, 106, 322, 111, 333, 97, 367, 94, 338, 79, 330, 98, 321\" alt=\"part\" title=\"HAND-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"393, 328, 399, 346, 395, 359, 384, 357, 370, 329, 386, 320\" alt=\"part\" title=\"HAND-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"356, 283, 381, 313, 368, 324, 347, 311, 327, 279, 349, 270\" alt=\"part\" title=\"FOREARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"334, 253, 345, 263, 325, 273, 318, 260, 338, 253\" alt=\"part\" title=\"ELBOW-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"138, 267, 155, 281, 116, 327, 105, 317\" alt=\"part\" title=\"FOREARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"284, 620, 294, 619, 299, 650, 312, 666, 309, 671, 284, 672, 279, 637\" alt=\"part\" title=\"FOOT-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"188, 619, 202, 619, 207, 633, 205, 668, 199, 673, 169, 669, 183, 647, 188, 630\" alt=\"part\" title=\"FOOT-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"250, 383, 267, 368, 297, 367, 302, 390, 298, 457, 298, 480, 286, 481, 271, 486, 261, 421\" alt=\"part\" title=\"THIGH-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"301, 517, 306, 520, 308, 534, 306, 580, 297, 622, 284, 621, 275, 563, 274, 519, 291, 524, 301, 517\" alt=\"part\" title=\"SHIN-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"180, 516, 195, 523, 210, 518, 211, 558, 202, 614, 186, 614, 182, 600, 177, 571, 180, 516\" alt=\"part\" title=\"SHIN-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"274, 496, 289, 492, 301, 494, 302, 508, 292, 520, 273, 511\" alt=\"part\" title=\"KNEE-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"193, 488, 213, 497, 211, 509, 199, 516, 183, 508, 185, 492, 193, 488\" alt=\"part\" title=\"KNEE-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"189, 367, 220, 367, 237, 381, 213, 491, 205, 484, 191, 484, 186, 480, 183, 385, 189, 367\" alt=\"part\" title=\"THIGH-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"243, 343, 258, 367, 248, 379, 239, 380, 228, 366, 243, 343\" alt=\"part\" title=\"GROIN\" />\r\n\t\t\t<area shape=\"poly\" coords=\"287, 326, 293, 332, 295, 363, 262, 363, 253, 350, 253, 342, 269, 331, 287, 326\" alt=\"part\" title=\"HIP-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"197, 324, 220, 331, 235, 341, 223, 363, 188, 363, 197, 324\" alt=\"part\" title=\"HIP-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"195, 259, 218, 266, 208, 295, 213, 325, 197, 319, 195, 259\" alt=\"part\" title=\"SIDE-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"288, 259, 292, 259, 293, 266, 289, 315, 286, 320, 271, 324, 278, 294, 269, 266, 288, 259\" alt=\"part\" title=\"SIDE-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"237, 256, 257, 261, 271, 287, 268, 317, 261, 328, 246, 337, 224, 329, 212, 302, 217, 273, 237, 256\" alt=\"part\" title=\"BELLY\" />\r\n\t\t\t<area shape=\"poly\" coords=\"240, 99, 254, 102, 258, 108, 259, 123, 250, 133, 238, 132, 231, 129, 225, 118, 231, 104, 240, 99\" alt=\"part\" title=\"FACE\" />\r\n\t\t\t<area shape=\"poly\" coords=\"259, 144, 262, 157, 270, 165, 245, 179, 209, 163, 225, 158, 230, 146, 244, 154, 258, 150\" alt=\"part\" title=\"NECK\" />\r\n\t\t\t<area shape=\"poly\" coords=\"286, 169, 307, 171, 317, 186, 305, 217\" alt=\"part\" title=\"SHOULDER-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"200, 174, 180, 217, 166, 186, 176, 171, 191, 168\" alt=\"part\" title=\"SHOULDER-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"164, 196, 180, 224, 169, 257, 151, 245, 164, 196\" alt=\"part\" title=\"UPPER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"151, 253, 166, 263, 158, 276, 140, 261, 149, 249\" alt=\"part\" title=\"ELBOW-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"276, 170, 299, 223, 294, 252, 264, 260, 242, 250, 221, 260, 190, 250, 188, 220, 210, 171, 246, 186, 276, 170\" alt=\"part\" title=\"CHEST\" />\r\n\t\t\t<area shape=\"rect\" coords=\"39, 688, 118, 721\" title=\"handLeftText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"351, 689, 430, 722\" title=\"handRightText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"1, 177, 13, 723\" title=\"cpMeter\" />\r\n\t\t\t<area shape=\"rect\" coords=\"331, 3, 487, 106\" title=\"incomingManuevers\" />\r\n\t\t\t<area shape=\"rect\" coords=\"71, 3, 320, 34\" title=\"opponentSwiper\" />\r\n\t\t\t<area shape=\"rect\" coords=\"8, 3, 65, 31\" title=\"roundCount\" />\r\n\t\t\t<area shape=\"rect\" coords=\"7, 37, 74, 163\" title=\"vitals\" />\r\n\t\t\t<area shape=\"rect\" coords=\"401, 334, 435, 391\" title=\"enemyHandLeft\" />\r\n\t\t\t<area shape=\"rect\" coords=\"59, 336, 92, 393\" title=\"enemyHandRight\" />\r\n\t\t\t<area shape=\"rect\" coords=\"21, 175, 72, 229\" title=\"cpText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"421, 143, 487, 203\" title=\"advManuever1\" />\r\n\t\t\t<area shape=\"rect\" coords=\"423, 239, 486, 298\" title=\"advManuever2\" />\r\n\t\t\t<area shape=\"rect\" coords=\"424, 425, 489, 481\" title=\"advManuever3\" />\r\n\t\t\t<area shape=\"rect\" coords=\"423, 517, 487, 576\" title=\"advManuever4\" />\r\n\t\t\t<area shape=\"rect\" coords=\"50, 509, 102, 560\" title=\"btnBlock\" />\r\n\t\t\t<area shape=\"rect\" coords=\"391, 610, 443, 661\" title=\"btnParry\" />\r\n\t\t\t<area shape=\"rect\" coords=\"49, 612, 101, 663\" title=\"btnVoid\" />\r\n\t\t\t<area shape=\"rect\" coords=\"271, 684, 347, 721\" title=\"handRightAlt\" />\r\n\t\t\t<area shape=\"rect\" coords=\"123, 684, 199, 721\" title=\"handLeftAlt\" />\r\n\t\t\t<area shape=\"poly\" coords=\"239, 605, 219, 619, 210, 727, 266, 727, 258, 617\" title=\"initRange\" />\r\n\t\t</map>\r\n\t</div>\r\n\t<div>\r\n\t\t<zone v-for=\"(li, i) in layoutItemList\" :title=\"titleList[i]\" :class=\"classList[i]\" :key=\"i\" :x=\"positionList[i].x*refWidth*scaleX\" :y=\"positionList[i].y*refHeight*scaleY\" :width=\"scaleList[i].x*refWidth*scaleX\" :height=\"scaleList[i].y*refHeight*scaleY\" :item=\"li\" />\r\n\t</div>\r\n</div>";
+		return "<div style=\"position:fixed;top:0;left:0;width:100%;height:100%\"  ref=\"container\">\r\n\t<div class=\"image-map-holder\" style=\"position:relative; display:none\">\r\n\t\t<img src=\"images/dollscreen.png\" style=\"transform-origin:0 0; pointer-events:none; opacity:0.12\" usemap=\"#map\" ref=\"image\" />\r\n\t\t<map name=\"map\" ref=\"map\">\r\n\t\t\t<area shape=\"poly\" coords=\"316, 519, 314, 580, 305, 622, 317, 659, 374, 585\" alt=\"swing\" title=\"SWING_LOWER_LEG-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"124, 567, 170, 525, 172, 576, 179, 619, 160, 663\" alt=\"swing\" title=\"SWING_LOWER_LEG-r\" />\r\n\t\t\t<area shape=\"rect\" coords=\"224, 478, 261, 585\" title=\"enemyStatus\" />\r\n\t\t\t<area shape=\"poly\" coords=\"238, 76, 254, 78, 262, 85, 267, 115, 262, 115, 255, 96, 244, 95, 234, 97, 223, 115, 217, 115, 223, 85, 238, 76\" alt=\"part\" title=\"UPPER_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"309, 400, 310, 483, 313, 506, 378, 574, 366, 421\" alt=\"swing\" title=\"SWING_UPPER_LEG-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"124, 432, 172, 409, 175, 499, 115, 557\" alt=\"swing\" title=\"SWING_UPPER_LEG-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"302, 332, 351, 364, 364, 413, 306, 390\" alt=\"swing\" title=\"SWING_GROIN-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"142, 358, 181, 334, 171, 392, 124, 418\" alt=\"swing\" title=\"SWING_GROIN-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"302, 254, 331, 307, 361, 333, 349, 349, 307, 318, 300, 315\" alt=\"swing\" title=\"SWING_TORSO-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"137, 319, 172, 278, 183, 259, 185, 322, 141, 351\" alt=\"swing\" title=\"SWING_TORSO-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"356, 263, 399, 235, 411, 300, 387, 311\" alt=\"swing\" title=\"SWING_LOWER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"319, 168, 352, 254, 399, 224, 366, 168\" alt=\"swing\" title=\"SWING_UPPER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"271, 77, 272, 127, 306, 83\" alt=\"swing\" title=\"SWING_UPWARD_HEAD-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"166, 82, 213, 132, 210, 77\" alt=\"swing\" title=\"SWING_UPWARD_HEAD-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"313, 83, 269, 144, 285, 158, 366, 162\" alt=\"swing\" title=\"SWING_NECK-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"219, 78, 242, 46, 264, 79, 267, 91, 220, 93\" alt=\"swing\" title=\"SWING_UPWARD_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"89, 226, 133, 258, 101, 309, 67, 310\" alt=\"swing\" title=\"SWING_LOWER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"87, 213, 139, 250, 159, 186, 170, 164, 115, 162\" alt=\"swing\" title=\"SWING_UPPER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"153, 85, 219, 144, 200, 159, 120, 157\" alt=\"swing\" title=\"SWING_NECK-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"224, 124, 228, 144, 247, 149, 258, 142, 269, 123, 263, 123, 250, 134, 237, 134, 228, 124\" alt=\"part\" title=\"LOWER_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"322, 192, 339, 250, 315, 256, 308, 243, 306, 223, 322, 192\" alt=\"part\" title=\"UPPER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"98, 321, 106, 322, 111, 333, 97, 367, 94, 338, 79, 330, 98, 321\" alt=\"part\" title=\"HAND-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"393, 328, 399, 346, 395, 359, 384, 357, 370, 329, 386, 320\" alt=\"part\" title=\"HAND-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"356, 283, 381, 313, 368, 324, 347, 311, 327, 279, 349, 270\" alt=\"part\" title=\"FOREARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"334, 253, 345, 263, 325, 273, 318, 260, 338, 253\" alt=\"part\" title=\"ELBOW-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"138, 267, 155, 281, 116, 327, 105, 317\" alt=\"part\" title=\"FOREARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"284, 620, 294, 619, 299, 650, 312, 666, 309, 671, 284, 672, 279, 637\" alt=\"part\" title=\"FOOT-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"188, 619, 202, 619, 207, 633, 205, 668, 199, 673, 169, 669, 183, 647, 188, 630\" alt=\"part\" title=\"FOOT-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"250, 383, 267, 368, 297, 367, 302, 390, 298, 457, 298, 480, 286, 481, 271, 486, 261, 421\" alt=\"part\" title=\"THIGH-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"301, 517, 306, 520, 308, 534, 306, 580, 297, 622, 284, 621, 275, 563, 274, 519, 291, 524, 301, 517\" alt=\"part\" title=\"SHIN-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"180, 516, 195, 523, 210, 518, 211, 558, 202, 614, 186, 614, 182, 600, 177, 571, 180, 516\" alt=\"part\" title=\"SHIN-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"274, 496, 289, 492, 301, 494, 302, 508, 292, 520, 273, 511\" alt=\"part\" title=\"KNEE-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"193, 488, 213, 497, 211, 509, 199, 516, 183, 508, 185, 492, 193, 488\" alt=\"part\" title=\"KNEE-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"189, 367, 220, 367, 237, 381, 213, 491, 205, 484, 191, 484, 186, 480, 183, 385, 189, 367\" alt=\"part\" title=\"THIGH-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"243, 343, 258, 367, 248, 379, 239, 380, 228, 366, 243, 343\" alt=\"part\" title=\"GROIN\" />\r\n\t\t\t<area shape=\"poly\" coords=\"287, 326, 293, 332, 295, 363, 262, 363, 253, 350, 253, 342, 269, 331, 287, 326\" alt=\"part\" title=\"HIP-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"197, 324, 220, 331, 235, 341, 223, 363, 188, 363, 197, 324\" alt=\"part\" title=\"HIP-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"195, 259, 218, 266, 208, 295, 213, 325, 197, 319, 195, 259\" alt=\"part\" title=\"SIDE-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"288, 259, 292, 259, 293, 266, 289, 315, 286, 320, 271, 324, 278, 294, 269, 266, 288, 259\" alt=\"part\" title=\"SIDE-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"237, 256, 257, 261, 271, 287, 268, 317, 261, 328, 246, 337, 224, 329, 212, 302, 217, 273, 237, 256\" alt=\"part\" title=\"BELLY\" />\r\n\t\t\t<area shape=\"poly\" coords=\"240, 99, 254, 102, 258, 108, 259, 123, 250, 133, 238, 132, 231, 129, 225, 118, 231, 104, 240, 99\" alt=\"part\" title=\"FACE\" />\r\n\t\t\t<area shape=\"poly\" coords=\"259, 144, 262, 157, 270, 165, 245, 179, 209, 163, 225, 158, 230, 146, 244, 154, 258, 150\" alt=\"part\" title=\"NECK\" />\r\n\t\t\t<area shape=\"poly\" coords=\"286, 169, 307, 171, 317, 186, 305, 217\" alt=\"part\" title=\"SHOULDER-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"200, 174, 180, 217, 166, 186, 176, 171, 191, 168\" alt=\"part\" title=\"SHOULDER-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"164, 196, 180, 224, 169, 257, 151, 245, 164, 196\" alt=\"part\" title=\"UPPER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"151, 253, 166, 263, 158, 276, 140, 261, 149, 249\" alt=\"part\" title=\"ELBOW-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"276, 170, 299, 223, 294, 252, 264, 260, 242, 250, 221, 260, 190, 250, 188, 220, 210, 171, 246, 186, 276, 170\" alt=\"part\" title=\"CHEST\" />\r\n\t\t\t<area shape=\"rect\" coords=\"1, 177, 13, 723\" title=\"cpMeter\" />\r\n\t\t\t<area shape=\"rect\" coords=\"331, 3, 487, 106\" title=\"incomingManuevers\" />\r\n\t\t\t<area shape=\"rect\" coords=\"71, 3, 320, 34\" title=\"opponentSwiper\" />\r\n\t\t\t<area shape=\"rect\" coords=\"8, 3, 65, 31\" title=\"roundCount\" />\r\n\t\t\t<area shape=\"rect\" coords=\"7, 37, 74, 163\" title=\"vitals\" />\r\n\t\t\t<area shape=\"rect\" coords=\"401, 334, 435, 391\" title=\"enemyHandLeft\" />\r\n\t\t\t<area shape=\"rect\" coords=\"59, 336, 92, 393\" title=\"enemyHandRight\" />\r\n\t\t\t<area shape=\"rect\" coords=\"21, 175, 72, 229\" title=\"cpText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"421, 143, 487, 203\" title=\"advManuever1\" />\r\n\t\t\t<area shape=\"rect\" coords=\"423, 239, 486, 298\" title=\"advManuever2\" />\r\n\t\t\t<area shape=\"rect\" coords=\"424, 425, 489, 481\" title=\"advManuever3\" />\r\n\t\t\t<area shape=\"rect\" coords=\"423, 517, 487, 576\" title=\"advManuever4\" />\r\n\t\t\t<area shape=\"rect\" coords=\"50, 509, 102, 560\" title=\"btnBlock\" />\r\n\t\t\t<area shape=\"rect\" coords=\"391, 610, 443, 661\" title=\"btnParry\" />\r\n\t\t\t<area shape=\"rect\" coords=\"49, 612, 101, 663\" title=\"btnVoid\" />\r\n\t\t\t<area shape=\"rect\" coords=\"39, 688, 118, 721\" title=\"handLeftText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"351, 688, 470, 721\" title=\"handRightText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"271, 684, 347, 721\" title=\"handRightAlt\" />\r\n\t\t\t<area shape=\"rect\" coords=\"123, 684, 199, 721\" title=\"handLeftAlt\" />\r\n\t\t\t<area shape=\"poly\" coords=\"239, 605, 219, 619, 210, 727, 266, 727, 258, 617\" title=\"initRange\" />\r\n\t\t</map>\r\n\t</div>\r\n\t<div style=\"width:100%;height:100%;top:0;left;0;position:absolute;background-repeat:no-repeat;background-image:url(images/dollscreen.png); background-position:50% 50%; background-size:contain\">\r\n\t\t<zone v-for=\"(li, i) in layoutItemList\" :title=\"titleList[i]\" :class=\"classList[i]\" :key=\"i\" :x=\"positionList[i].x*refWidth*scaleX\" :y=\"positionList[i].y*refHeight*scaleY\" :width=\"scaleList[i].x*refWidth*scaleX\" :height=\"scaleList[i].y*refHeight*scaleY\" :item=\"li\" />\r\n\t</div>\r\n</div>";
 	}
 	,_Init: function() {
 		var cls = troshx_sos_vue_combat_ImageMapTester;
@@ -521,7 +728,7 @@ troshx_sos_vue_combat_ImageMapTester.prototype = $extend(haxevx_vuex_core_VCompo
 		this.components = this.Components();
 		this.mounted = clsP.Mounted;
 		this.template = this.Template();
-		this.methods = { handleImageMap : clsP.handleImageMap, onResize : clsP.onResize, refreshLayout : clsP.refreshLayout};
+		this.methods = { setupUIInteraction : clsP.setupUIInteraction, handleImageMap : clsP.handleImageMap, onResize : clsP.onResize, refreshLayout : clsP.refreshLayout};
 	}
 	,__class__: troshx_sos_vue_combat_ImageMapTester
 });
@@ -547,25 +754,113 @@ troshx_sos_vue_combat_LayoutConstraints.applyDollView = function(layoutItems,nam
 			item.pin(troshx_util_layout_PointScaleConstraint.createRelative(0.5,0.5).scaleMaxRelative(1.75,0)).pivot(troshx_util_layout_PointScaleConstraint.createRelative(name != "btnParry" ? 1 : 0,1).scaleMinRelative(0.5,0.5)).aspect(troshx_util_layout_AspectConstraint.createRelative(1,1));
 			break;
 		case "cpMeter":
-			item.pivot(troshx_util_layout_PointScaleConstraint.createRelative(0,1).scaleMaxRelative(1.25,1.2));
+			item.pin(troshx_util_layout_PointScaleConstraint.createRelative(0,0).scaleMinRelative(0.5,0.5).scaleMaxRelative(3,3)).pivot(troshx_util_layout_PointScaleConstraint.createRelative(0,0).scaleMaxRelative(2.25,0));
 			break;
 		case "cpText":
-			item.pivot(troshx_util_layout_PointScaleConstraint.createRelative(0,1).scaleMinRelative(0.5,0.5).scaleMaxRelative(1,1.2)).pin(troshx_util_layout_PointScaleConstraint.createRelative(0,1).scaleMaxRelative(2.2,1));
+			item.pin(troshx_util_layout_PointScaleConstraint.createRelative(0,0).scaleMinRelative(0.5,0.5).scaleMaxRelative(2.25,3)).pivot(troshx_util_layout_PointScaleConstraint.createRelative(0,1).scaleMinRelative(0.5,0.5).scaleMaxRelative(1,1.1));
 			break;
 		case "handLeftText":case "handRightText":
-			item.pin(troshx_util_layout_PointScaleConstraint.createRelative(0.5 + footMiddleOffset * (name == "handLeftText" ? -1 : 1),1).scaleMaxRelative(1,1)).pivot(troshx_util_layout_PointScaleConstraint.createRelative(name == "handLeftText" ? 1 : 0,1).scaleMaxRelative(999,1.6));
+			item.pin(troshx_util_layout_PointScaleConstraint.createRelative(0.5 + footMiddleOffset * (name == "handLeftText" ? -1 : 1),1).scaleMaxRelative(1,1)).pivot(troshx_util_layout_PointScaleConstraint.createRelative(name == "handLeftText" ? 1 : 0,1).scaleMaxRelative(0,1.2));
+			if(name == "handLeftText") {
+				item.border(3,0,1);
+				item.border(1,0,1.1,0.5 + footMiddleOffset * -1);
+			} else {
+				item.border(1,0,1);
+				item.border(3,0,1.1,0.5 + footMiddleOffset);
+			}
 			break;
 		case "handLeftAlt":case "handRightAlt":
-			item.pin(troshx_util_layout_PointScaleConstraint.createRelative(0.5 + footMiddleOffset * (name == "handLeftAlt" ? -1 : 1),1).scaleMaxRelative(1,1)).pivot(troshx_util_layout_PointScaleConstraint.createRelative(name == "handLeftAlt" ? 1 : 0,1).scaleMaxRelative(1.2,1)).aspect(troshx_util_layout_AspectConstraint.createRelative(1.2,1));
+			item.pin(troshx_util_layout_PointScaleConstraint.createRelative(0.5 + footMiddleOffset * (name == "handLeftAlt" ? -1 : 1),1).scaleMaxRelative(1,1)).pivot(troshx_util_layout_PointScaleConstraint.createRelative(name == "handLeftAlt" ? 1 : 0,1).scaleMaxRelative(1.0,1.1)).aspect(troshx_util_layout_AspectConstraint.createRelative(1.0,0));
 			break;
 		case "initRange":
 			item.pin(troshx_util_layout_PointScaleConstraint.createRelative(0.5,0.5).scaleMinRelative(1,0)).pivot(troshx_util_layout_PointScaleConstraint.createRelative(0.5,1)).aspect(troshx_util_layout_AspectConstraint.createRelative(1,1).enablePreflight());
 			break;
+		case "opponentSwiper":
+			item.pivot(troshx_util_layout_PointScaleConstraint.createRelative(0,0).scaleMinRelative(0,0.5));
+			break;
+		case "roundCount":
+			item.pivot(troshx_util_layout_PointScaleConstraint.createRelative(0,0).scaleMinRelative(0,0.5));
+			break;
 		case "vitals":
-			item.pivot(troshx_util_layout_PointScaleConstraint.createRelative(0,0).scaleMinRelative(0.82,0.82).scaleMaxRelative(3,3));
+			item.pin(troshx_util_layout_PointScaleConstraint.createRelative(0,0).scaleMinRelative(0,0.5)).pivot(troshx_util_layout_PointScaleConstraint.createRelative(0,0).scaleMinRelative(0.85,0.5).scaleMaxRelative(3,3));
 			break;
 		}
 	}
+};
+var troshx_sos_vue_combat_UIInteraction = function() { };
+troshx_sos_vue_combat_UIInteraction.__name__ = ["troshx","sos","vue","combat","UIInteraction"];
+troshx_sos_vue_combat_UIInteraction.requiresTracking = function(mask) {
+	return mask >= 2;
+};
+troshx_sos_vue_combat_UIInteraction.getDollViewInteracts = function(layoutItems,names,tags) {
+	var arr = [];
+	var _g1 = 0;
+	var _g = layoutItems.length;
+	while(_g1 < _g) {
+		var i = _g1++;
+		var item = layoutItems[i];
+		var name = names[i];
+		var tag = tags[i];
+		if(tag == "part" || tag == "swing") {
+			item.hitPadding = 8;
+		}
+		if(tag == "part" || tag == "swing" || name == "enemyHandLeft" || name == "enemyHandRight") {
+			arr.push(new troshx_sos_vue_combat_UInteract(i,3));
+			continue;
+		}
+		switch(name) {
+		case "advManuever1":case "advManuever2":case "advManuever3":case "advManuever4":
+			break;
+		case "btnBlock":case "btnParry":case "btnVoid":
+			arr.push(new troshx_sos_vue_combat_UInteract(i,3));
+			break;
+		case "cpMeter":
+			break;
+		case "cpText":
+			break;
+		case "handLeftText":case "handRightText":
+			break;
+		case "handLeftAlt":case "handRightAlt":
+			break;
+		case "initRange":
+			arr.push(new troshx_sos_vue_combat_UInteract(i,3));
+			break;
+		case "opponentSwiper":
+			break;
+		case "roundCount":
+			break;
+		case "vitals":
+			break;
+		}
+	}
+	return arr;
+};
+troshx_sos_vue_combat_UIInteraction.findHit = function(u,v,mapData,interacts) {
+	var layoutList = mapData.layoutItemList;
+	var positionList = mapData.positionList;
+	var scaleList = mapData.scaleList;
+	var closestHit;
+	var closestHitDist;
+	var _g1 = 0;
+	var _g = interacts.length;
+	while(_g1 < _g) {
+		var i = _g1++;
+		var act = interacts[i];
+		var layout = layoutList[act.index];
+		var padding = layout.hitPadding;
+	}
+	return null;
+};
+troshx_sos_vue_combat_UIInteraction.confirmHit = function(u,v,mapData,act) {
+	return false;
+};
+var troshx_sos_vue_combat_UInteract = function(index,mask) {
+	this.index = index;
+	this.mask = mask;
+};
+troshx_sos_vue_combat_UInteract.__name__ = ["troshx","sos","vue","combat","UInteract"];
+troshx_sos_vue_combat_UInteract.prototype = {
+	__class__: troshx_sos_vue_combat_UInteract
 };
 var troshx_sos_vue_combat_components_LayoutItemView = function() {
 	haxevx_vuex_core_VComponent.call(this);
@@ -626,7 +921,7 @@ var troshx_sos_vue_tests_TestUI = function() {
 	window.document.body.style.overflow = "hidden";
 	window.document.body.style.width = "100%";
 	window.document.body.style.height = "100%";
-	window.document.body.style.position = "fixed";
+	window.document.body.style.backgroundColor = "#e4e5e7";
 	this.boot.startVueWithRootComponent("#app",new troshx_sos_vue_combat_ImageMapTester());
 };
 troshx_sos_vue_tests_TestUI.__name__ = ["troshx","sos","vue","tests","TestUI"];
@@ -792,10 +1087,52 @@ troshx_util_layout_AspectConstraint.prototype = {
 var troshx_util_layout_BorderConstraint = function() {
 };
 troshx_util_layout_BorderConstraint.__name__ = ["troshx","util","layout","BorderConstraint"];
+troshx_util_layout_BorderConstraint.isHorizontal = function(side) {
+	return (side & 1) != 0;
+};
+troshx_util_layout_BorderConstraint.isMaximalSide = function(side) {
+	if(side != 1) {
+		return side == 2;
+	} else {
+		return true;
+	}
+};
+troshx_util_layout_BorderConstraint.createRelative = function(coord,minScale,maxScale) {
+	if(maxScale == null) {
+		maxScale = 0;
+	}
+	if(minScale == null) {
+		minScale = 2;
+	}
+	var me = new troshx_util_layout_BorderConstraint();
+	me.coord = coord;
+	me.minScale = minScale;
+	me.maxScale = maxScale;
+	return me;
+};
 troshx_util_layout_BorderConstraint.prototype = {
-	__class__: troshx_util_layout_BorderConstraint
+	solveCoord: function(value,scale) {
+		var ratio = this.findScaleRatio(scale);
+		return this.coord + (value - this.coord) * ratio;
+	}
+	,findScaleRatio: function(scale) {
+		var result = 1;
+		if(this.maxScale >= 1) {
+			if(scale > 1) {
+				result = 1 / scale * Math.min(scale,this.maxScale);
+			}
+		}
+		if(this.minScale <= 1) {
+			if(scale < 1) {
+				result = 1 / scale * Math.max(scale,this.minScale);
+			}
+		}
+		return result;
+	}
+	,__class__: troshx_util_layout_BorderConstraint
 };
 var troshx_util_layout_LayoutItem = function() {
+	this.hitPadding = 0;
 	this.shape = 0;
 };
 troshx_util_layout_LayoutItem.__name__ = ["troshx","util","layout","LayoutItem"];
@@ -909,7 +1246,33 @@ troshx_util_layout_LayoutItem.prototype = {
 		var minV = resultPosition.y;
 		var maxU = minU + resultScale.x * this.uDim;
 		var maxV = minV + resultScale.y * this.vDim;
-		var tmp = this._border != null;
+		if(this._borders != null) {
+			var b;
+			if(this._borders[0] != null) {
+				b = this._borders[0];
+				var value = this.v;
+				var ratio = b.findScaleRatio(scaleY);
+				minV = b.coord + (value - b.coord) * ratio;
+			}
+			if(this._borders[1] != null) {
+				b = this._borders[1];
+				var value1 = this.u + this.uDim;
+				var ratio1 = b.findScaleRatio(scaleX);
+				maxU = b.coord + (value1 - b.coord) * ratio1;
+			}
+			if(this._borders[2] != null) {
+				b = this._borders[2];
+				var value2 = this.v + this.vDim;
+				var ratio2 = b.findScaleRatio(scaleY);
+				maxV = b.coord + (value2 - b.coord) * ratio2;
+			}
+			if(this._borders[3] != null) {
+				b = this._borders[3];
+				var value3 = this.u;
+				var ratio3 = b.findScaleRatio(scaleX);
+				minU = b.coord + (value3 - b.coord) * ratio3;
+			}
+		}
 		resultPosition.x = minU;
 		resultPosition.y = minV;
 		resultScale.x = maxU - minU;
@@ -949,6 +1312,37 @@ troshx_util_layout_LayoutItem.prototype = {
 	}
 	,aspect: function(val) {
 		this._aspect = val;
+		return this;
+	}
+	,border: function(side,scaleMin,scaleMax,coord) {
+		if(coord == null) {
+			coord = -1;
+		}
+		if(this._borders == null) {
+			this._borders = [null,null,null,null];
+		}
+		if(coord < 0) {
+			if(side == 1 || side == 2) {
+				coord = 1;
+			} else {
+				coord = 0;
+			}
+		} else if(side == 1 || side == 2) {
+			if((side & 1) != 0) {
+				if(coord < this.u + this.uDim) {
+					coord = this.u + this.uDim;
+				}
+			} else if(coord < this.v + this.vDim) {
+				coord = this.v + this.vDim;
+			}
+		} else if((side & 1) != 0) {
+			if(coord > this.u) {
+				coord = this.u;
+			}
+		} else if(coord > this.v) {
+			coord = this.v;
+		}
+		this._borders[side] = troshx_util_layout_BorderConstraint.createRelative(coord,scaleMin,scaleMax);
 		return this;
 	}
 	,__class__: troshx_util_layout_LayoutItem
@@ -1024,13 +1418,41 @@ function $bind(o,m) { if( m == null ) return null; if( m.__id__ == null ) m.__id
 String.prototype.__class__ = String;
 String.__name__ = ["String"];
 Array.__name__ = ["Array"];
+var Int = { __name__ : ["Int"]};
+var Dynamic = { __name__ : ["Dynamic"]};
+var Float = Number;
+Float.__name__ = ["Float"];
+var Bool = Boolean;
+Bool.__ename__ = ["Bool"];
+var Class = { __name__ : ["Class"]};
+var Enum = { };
 var __map_reserved = {};
 haxevx_vuex_core_Singletons.NAMES = new haxe_ds_StringMap();
 haxevx_vuex_core_Singletons.SINGLETON_CACHE = new haxe_ds_StringMap();
 haxevx_vuex_core_ModuleStack.stack = [];
 js_Boot.__toStr = ({ }).toString;
+troshx_sos_vue_combat_UIInteraction.COMPLETED = 0;
+troshx_sos_vue_combat_UIInteraction.DOWN = 1;
+troshx_sos_vue_combat_UIInteraction.MOVE = 2;
+troshx_sos_vue_combat_UIInteraction.TAP = 4;
+troshx_sos_vue_combat_UIInteraction.HOLD = 8;
+troshx_sos_vue_combat_UIInteraction.SWIPE_UP = 16;
+troshx_sos_vue_combat_UIInteraction.SWIPE_RIGHT = 32;
+troshx_sos_vue_combat_UIInteraction.SWIPE_DOWN = 64;
+troshx_sos_vue_combat_UIInteraction.SWIPE_LEFT = 128;
+troshx_sos_vue_combat_UIInteraction.SWIPE = 240;
+troshx_sos_vue_combat_UIInteraction.PAN_UP = 256;
+troshx_sos_vue_combat_UIInteraction.PAN_RIGHT = 512;
+troshx_sos_vue_combat_UIInteraction.PAN_DOWN = 1024;
+troshx_sos_vue_combat_UIInteraction.PAN_LEFT = 2048;
+troshx_sos_vue_combat_UIInteraction.PAN = 3840;
+troshx_sos_vue_combat_UIInteraction.REQUIRE_CONFIRMATION = 4;
 troshx_sos_vue_tests_layout_LayoutItemTest.TEST_POS = new troshx_util_layout_Vec2();
 troshx_sos_vue_tests_layout_LayoutItemTest.TEST_SCALE = new troshx_util_layout_Vec2();
+troshx_util_layout_BorderConstraint.SIDE_TOP = 0;
+troshx_util_layout_BorderConstraint.SIDE_RIGHT = 1;
+troshx_util_layout_BorderConstraint.SIDE_BOTTOM = 2;
+troshx_util_layout_BorderConstraint.SIDE_LEFT = 3;
 troshx_util_layout_LayoutItem.SHAPE_RECT = 0;
 troshx_util_layout_LayoutItem.SHAPE_CIRCLE = 1;
 troshx_util_layout_LayoutItem.SHAPE_POLYGON = 2;

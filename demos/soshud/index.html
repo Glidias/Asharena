@@ -1,20 +1,28 @@
 <!DOCTYPE html>
-<html lang="en" style="touch-action:manipulation;">
+<html lang="en">
 <head>
 	<meta charset="utf-8"/>
 	<title>TrosHAXE</title>
-	<meta name="description" content="" />
-	<meta id="viewport" name="viewport" content="initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,width=device-width,user-scalable=no">
-	<script src="https://cdn.jsdelivr.net/npm/vue"></script>
-		<script>
-		document.addEventListener('touchstart',
-			function(e) {
-				e.preventDefault();
-			}, {passive:false});
+	<meta name="viewport" content="user-scalable=no,initial-scale:1.0,maximum-scale=1.0,width=device-width" />
+	<script src="js/vue.js"></script>
+	<script src="js/hammer.min.js"></script>
+	
+	<script language="javascript">
+	document.ontouchstart = function(e){ 
+		var n = ""+e.target.nodeName;
+		n = n.toLowerCase();
+		if (n != "input" && n != "textarea" && n !="button" && n!="select")  {
+			e.preventDefault(); 
+		}
+	}
+	document.ontouchmove = function(e){ 
+		e.preventDefault(); 
+	}
 	</script>
+	
 </head>
-<body style="touch-action:manipulation;">
+<body>
 	<div id="app"></div>
-	<script src="TrosHAXE.js?1"></script>
+	<script src="TrosHAXE.js"></script>
 </body>
 </html>
