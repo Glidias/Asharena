@@ -1,0 +1,6 @@
+.layout-item{box-sizing:border-box;}
+.dollview .textarea-region{border:1px solid #bebebe;overflow:hidden;}
+.dollview .hover-tag{position:absolute;bottom:0;background-color:beige;}
+.dollview .cpMeter{overflow:hidden;display:flex;flex-direction:column-reverse;align-items:center;text-align:center;}
+.dollview .thrust-point{background-color:black;border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+
