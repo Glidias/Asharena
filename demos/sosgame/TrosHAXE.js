@@ -9228,9 +9228,6 @@ troshx_sos_vue_combat_components_LayoutItemView.__super__ = haxevx_vuex_core_VCo
 troshx_sos_vue_combat_components_LayoutItemView.prototype = $extend(haxevx_vuex_core_VComponent.prototype,{
 	get_computedStyle: function() {
 		var obj = { left : this.x + "px", top : this.y + "px", width : this.width + "px", height : this.height + "px", boxSizing : "border-box"};
-		if(troshx_sos_vue_GlobalCanvas2D.CONTEXT != null) {
-			return obj;
-		}
 		if(!this.gotSVG) {
 			if(this.showShape || this.debug) {
 				obj.outline = this.strokeColor + " solid " + this.strokeWidth + "px";
@@ -9271,57 +9268,6 @@ troshx_sos_vue_combat_components_LayoutItemView.prototype = $extend(haxevx_vuex_
 		}
 		return pts.join(" ");
 	}
-	,Updated: function() {
-		if(this.showShape && troshx_sos_vue_GlobalCanvas2D.CONTEXT != null) {
-			this.renderToCanvas();
-		}
-	}
-	,renderToCanvas: function() {
-		var canvas = troshx_sos_vue_GlobalCanvas2D.CANVAS;
-		var ctx = troshx_sos_vue_GlobalCanvas2D.CONTEXT;
-		ctx.clearRect(0,0,canvas.width,canvas.height);
-		var shape = this.item.shape;
-		ctx.fillStyle = this.fillColor;
-		ctx.strokeStyle = this.strokeColor;
-		ctx.lineWidth = this.strokeWidth;
-		var x = this.x;
-		var y = this.y;
-		var xScale = this.width;
-		var yScale = this.height;
-		switch(shape) {
-		case 0:
-			ctx.fillRect(x,y,xScale,yScale);
-			ctx.strokeRect(x,y,xScale,yScale);
-			break;
-		case 1:
-			var centerX = x * this.width * 0.5;
-			var centerY = y * this.height * 0.5;
-			var width = this.width;
-			var height = this.height;
-			ctx.beginPath();
-			ctx.moveTo(centerX,centerY - height * .5);
-			ctx.bezierCurveTo(centerX + width * .5,centerY - height * .5,centerX + width * .5,centerY + height * .5,centerX,centerY + height / 2);
-			ctx.bezierCurveTo(centerX - width * .5,centerY + height * .5,centerX - width * .5,centerY - height * .5,centerX,centerY - height / 2);
-			ctx.closePath();
-			ctx.fill();
-			ctx.stroke();
-			break;
-		case 2:
-			var poly = this.item.uvs;
-			ctx.beginPath();
-			ctx.moveTo(x + poly[0].x * xScale,y + poly[0].y * yScale);
-			var _g1 = 1;
-			var _g = poly.length;
-			while(_g1 < _g) {
-				var i = _g1++;
-				ctx.lineTo(x + poly[i].x * xScale,y + poly[i].y * yScale);
-			}
-			ctx.closePath();
-			ctx.fill();
-			ctx.stroke();
-			break;
-		}
-	}
 	,get_polyDecompPoints: function() {
 		if(this.item.hitDecomposition != null) {
 			return this.item.hitDecomposition.map($bind(this,this.getPolyString));
@@ -9345,10 +9291,9 @@ troshx_sos_vue_combat_components_LayoutItemView.prototype = $extend(haxevx_vuex_
 	,_Init: function() {
 		var cls = troshx_sos_vue_combat_components_LayoutItemView;
 		var clsP = cls.prototype;
-		this.updated = clsP.Updated;
 		this.template = this.Template();
 		this.computed = { computedStyle : clsP.get_computedStyle, gotSVG : clsP.get_gotSVG, pStyle : clsP.get_pStyle, polyPoints : clsP.get_polyPoints, polyDecompPoints : clsP.get_polyDecompPoints, titleClasses : clsP.get_titleClasses};
-		this.methods = { get_computedStyle : clsP.get_computedStyle, get_gotSVG : clsP.get_gotSVG, get_pStyle : clsP.get_pStyle, get_polyPoints : clsP.get_polyPoints, getPolyString : clsP.getPolyString, renderToCanvas : clsP.renderToCanvas, get_polyDecompPoints : clsP.get_polyDecompPoints, get_titleClasses : clsP.get_titleClasses};
+		this.methods = { get_computedStyle : clsP.get_computedStyle, get_gotSVG : clsP.get_gotSVG, get_pStyle : clsP.get_pStyle, get_polyPoints : clsP.get_polyPoints, getPolyString : clsP.getPolyString, get_polyDecompPoints : clsP.get_polyDecompPoints, get_titleClasses : clsP.get_titleClasses};
 		this.props = { item : { type : Object}, debug : { "default" : false, type : Boolean}, fillColor : { "default" : "rgba(0,255,0,0.4)", type : String}, strokeColor : { "default" : "#00F", type : String}, showShape : { "default" : false, type : Boolean}, strokeWidth : { "default" : 1, type : Number}, title : { type : String}, y : { type : Number}, height : { type : Number}, width : { type : Number}, x : { type : Number}};
 	}
 	,__class__: troshx_sos_vue_combat_components_LayoutItemView
