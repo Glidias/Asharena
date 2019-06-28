@@ -9032,13 +9032,16 @@ var troshx_sos_vue_combat_components_DollView = function() {
 };
 $hxClasses["troshx.sos.vue.combat.components.DollView"] = troshx_sos_vue_combat_components_DollView;
 troshx_sos_vue_combat_components_DollView.__name__ = ["troshx","sos","vue","combat","components","DollView"];
+troshx_sos_vue_combat_components_DollView.getRenderTrackedImageData = function() {
+	return { renderCount : 0};
+};
 troshx_sos_vue_combat_components_DollView.getBlankImageMapData = function() {
 	return { layoutItemList : null, positionList : [], scaleList : [], titleList : [], classList : [], refWidth : 0, refHeight : 0, scaleX : 1, scaleY : 1};
 };
 troshx_sos_vue_combat_components_DollView.__super__ = haxevx_vuex_core_VComponent;
 troshx_sos_vue_combat_components_DollView.prototype = $extend(haxevx_vuex_core_VComponent.prototype,{
 	Data: function() {
-		return { mapData : troshx_sos_vue_combat_components_DollView.getBlankImageMapData(), viewModel : new troshx_sos_vue_combat_CombatViewModel()};
+		return { mapData : troshx_sos_vue_combat_components_DollView.getRenderTrackedImageData(), viewModel : new troshx_sos_vue_combat_CombatViewModel()};
 	}
 	,getPartPropsOf: function(name) {
 		var p = this.layoutViewPropsOf(name);
@@ -9066,6 +9069,7 @@ troshx_sos_vue_combat_components_DollView.prototype = $extend(haxevx_vuex_core_V
 		var d = this.mapData;
 		var _this = d.idIndices;
 		var i = __map_reserved[name] != null ? _this.getReserved(name) : _this.h[name];
+		var R = this.mapData.renderCount;
 		return { title : d.titleList[i], x : d.positionList[i].x * d.refWidth * d.scaleX, y : d.positionList[i].y * d.refHeight * d.scaleY, width : d.scaleList[i].x * d.refWidth * d.scaleX, height : d.scaleList[i].y * d.refHeight * d.scaleY, item : d.layoutItemList[i]};
 	}
 	,get_focusedTextLbl: function() {
@@ -9095,6 +9099,7 @@ troshx_sos_vue_combat_components_DollView.prototype = $extend(haxevx_vuex_core_V
 	,get_dollScale: function() {
 		var x = this.mapData.scaleX;
 		var y = this.mapData.scaleY;
+		var R = this.mapData.renderCount;
 		if(y < x) {
 			return y;
 		} else {
@@ -9148,6 +9153,11 @@ troshx_sos_vue_combat_components_DollView.prototype = $extend(haxevx_vuex_core_V
 		var d = this.mapData;
 		d.refWidth = img.width;
 		d.refHeight = img.height;
+		d.layoutItemList = [];
+		d.positionList = [];
+		d.scaleList = [];
+		d.titleList = [];
+		d.classList = [];
 		var idIndices = new haxe_ds_StringMap();
 		var count = 0;
 		var arr = [];
@@ -9194,9 +9204,10 @@ troshx_sos_vue_combat_components_DollView.prototype = $extend(haxevx_vuex_core_V
 			var i = _g1++;
 			d.layoutItemList[i].solve(d.positionList[i],d.scaleList[i],d.scaleX,d.scaleY);
 		}
+		d.renderCount++;
 	}
 	,Template: function() {
-		return "<div class=\"dollview\" style=\"position:absolute;top:0;left:0;width:100%;height:100%\"  ref=\"container\">\r\n\t<div v-if=\"mapData.positionList.length\" style=\"width:100%;height:100%;top:0;left;0;position:absolute;background-repeat:no-repeat; background-image:url(images/dollscreen_clear.png); background-position:50% 50%; background-size:contain\">\r\n\t\t<zone v-bind=\"layoutViewPropsOf('vitals')\" style=\"padding:5px\" class=\"textarea-region\">\r\n\t\t\tVitals\r\n\t\t</zone>\r\n\t\t<zone v-bind=\"layoutViewPropsOf('incomingManuevers')\" style=\"padding:5px\" class=\"textarea-region\">\r\n\t\t\t<div v-show=\"viewModel.observeOpponent\">observing..</div>\r\n\t\t\t<div class=\"hover-tag\" v-show=\"viewModel.showFocusedTag\">{{focusedTextLbl}}</div>\r\n\t\t</zone>\r\n\t\t<zone v-bind=\"layoutViewPropsOf('cpMeter')\">\r\n\t\t\t<div v-for=\"i in 22\">{{i}}</div>\r\n\t\t</zone>\r\n\t\t\r\n\t\t<div class=\"parts\">\t\r\n\t\t\t<zone v-bind=\"getPartPropsOf(li)\" v-for=\"(li, i) in viewModel.DOLL_PART_Slugs\" :key=\"li\">\r\n\t\t\t\t<div class=\"thrust-point\" v-if=\"viewModel.isDollPartThrustable(i)\" :style=\"thrustPointStyle\"></div>\r\n\t\t\t</zone>\r\n\t\t</div>\r\n\t\t\r\n\t\t<div class=\"swings\">\r\n\t\t\t<zone v-bind=\"getSwingPropsOf(li)\" v-for=\"(li, i) in viewModel.DOLL_SWING_Slugs\" :key=\"li\"></zone>\r\n\t\t</div>\r\n\t\t\r\n\t\t\r\n\t</div>\r\n\t<div class=\"image-map-holder\" style=\"position:relative; display:none\">\r\n\t\t<img src=\"images/dollscreen.png\" style=\"transform-origin:0 0; pointer-events:none; opacity:0.12\" usemap=\"#map\" ref=\"image\" />\r\n\t\t<map name=\"map\" ref=\"map\">\r\n\t\t\t<area shape=\"poly\" coords=\"316, 519, 314, 580, 305, 622, 317, 659, 374, 585\" alt=\"swing\" title=\"SWING_LOWER_LEG-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"124, 567, 170, 525, 172, 576, 179, 619, 160, 663\" alt=\"swing\" title=\"SWING_LOWER_LEG-r\" />\r\n\t\t\t<area shape=\"rect\" coords=\"224, 478, 261, 585\" title=\"enemyStatus\" />\r\n\t\t\t<area shape=\"poly\" coords=\"238, 76, 254, 78, 262, 85, 267, 115, 262, 115, 255, 96, 244, 95, 234, 97, 223, 115, 217, 115, 223, 85, 238, 76\" alt=\"part\" title=\"UPPER_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"309, 400, 310, 483, 313, 506, 378, 574, 366, 421\" alt=\"swing\" title=\"SWING_UPPER_LEG-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"124, 432, 172, 409, 175, 499, 115, 557\" alt=\"swing\" title=\"SWING_UPPER_LEG-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"302, 332, 351, 364, 364, 413, 306, 390\" alt=\"swing\" title=\"SWING_GROIN-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"142, 358, 181, 334, 171, 392, 124, 418\" alt=\"swing\" title=\"SWING_GROIN-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"302, 254, 331, 307, 361, 333, 349, 349, 307, 318, 300, 315\" alt=\"swing\" title=\"SWING_TORSO-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"137, 319, 172, 278, 183, 259, 185, 322, 141, 351\" alt=\"swing\" title=\"SWING_TORSO-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"356, 263, 399, 235, 411, 300, 387, 311\" alt=\"swing\" title=\"SWING_LOWER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"319, 168, 352, 254, 399, 224, 366, 168\" alt=\"swing\" title=\"SWING_UPPER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"271, 77, 272, 127, 306, 83\" alt=\"swing\" title=\"SWING_DOWNWARD_HEAD-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"166, 82, 213, 132, 210, 77\" alt=\"swing\" title=\"SWING_DOWNWARD_HEAD-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"313, 83, 269, 144, 285, 158, 366, 162\" alt=\"swing\" title=\"SWING_NECK-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"219, 78, 242, 46, 264, 79, 267, 91, 220, 93\" alt=\"swing\" title=\"SWING_UPWARD_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"89, 226, 133, 258, 101, 309, 67, 310\" alt=\"swing\" title=\"SWING_LOWER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"87, 213, 139, 250, 159, 186, 170, 164, 115, 162\" alt=\"swing\" title=\"SWING_UPPER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"153, 85, 219, 144, 200, 159, 120, 157\" alt=\"swing\" title=\"SWING_NECK-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"224, 124, 228, 144, 247, 149, 258, 142, 269, 123, 263, 123, 250, 134, 237, 134, 228, 124\" alt=\"part\" title=\"LOWER_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"322, 192, 339, 250, 315, 256, 308, 243, 306, 223, 322, 192\" alt=\"part\" title=\"UPPER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"98, 321, 106, 322, 111, 333, 97, 367, 94, 338, 79, 330, 98, 321\" alt=\"part\" title=\"HAND-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"393, 328, 399, 346, 395, 359, 384, 357, 370, 329, 386, 320\" alt=\"part\" title=\"HAND-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"356, 283, 381, 313, 368, 324, 347, 311, 327, 279, 349, 270\" alt=\"part\" title=\"FOREARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"334, 253, 345, 263, 325, 273, 318, 260\" alt=\"part\" title=\"ELBOW-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"138, 267, 155, 281, 116, 327, 105, 317\" alt=\"part\" title=\"FOREARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"284, 620, 294, 619, 299, 650, 312, 666, 309, 671, 284, 672, 279, 637\" alt=\"part\" title=\"FOOT-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"188, 619, 202, 619, 207, 633, 205, 668, 199, 673, 169, 669, 183, 647, 188, 630\" alt=\"part\" title=\"FOOT-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"250, 383, 267, 368, 297, 367, 302, 390, 298, 457, 298, 480, 286, 481, 271, 486, 261, 421\" alt=\"part\" title=\"THIGH-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"301, 517, 306, 520, 308, 534, 306, 580, 297, 622, 284, 621, 275, 563, 274, 519, 291, 524, 301, 517\" alt=\"part\" title=\"SHIN-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"180, 516, 195, 523, 210, 518, 211, 558, 202, 614, 186, 614, 182, 600, 177, 571, 180, 516\" alt=\"part\" title=\"SHIN-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"274, 496, 289, 492, 301, 494, 302, 508, 292, 520, 273, 511\" alt=\"part\" title=\"KNEE-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"193, 488, 213, 497, 211, 509, 199, 516, 183, 508, 185, 492, 193, 488\" alt=\"part\" title=\"KNEE-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"189, 367, 220, 367, 237, 381, 213, 491, 205, 484, 191, 484, 186, 480, 183, 385, 189, 367\" alt=\"part\" title=\"THIGH-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"243, 343, 258, 367, 248, 379, 239, 380, 228, 366, 243, 343\" alt=\"part\" title=\"GROIN\" />\r\n\t\t\t<area shape=\"poly\" coords=\"287, 326, 293, 332, 295, 363, 262, 363, 253, 350, 253, 342, 269, 331, 287, 326\" alt=\"part\" title=\"HIP-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"197, 324, 220, 331, 235, 341, 223, 363, 188, 363, 197, 324\" alt=\"part\" title=\"HIP-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"195, 259, 218, 266, 208, 295, 213, 325, 197, 319, 195, 259\" alt=\"part\" title=\"SIDE-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"288, 259, 292, 259, 293, 266, 289, 315, 286, 320, 271, 324, 278, 294, 269, 266, 288, 259\" alt=\"part\" title=\"SIDE-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"237, 256, 257, 261, 271, 287, 268, 317, 261, 328, 246, 337, 224, 329, 212, 302, 217, 273, 237, 256\" alt=\"part\" title=\"BELLY\" />\r\n\t\t\t<area shape=\"poly\" coords=\"240, 99, 254, 102, 258, 108, 259, 123, 250, 133, 238, 132, 231, 129, 225, 118, 231, 104, 240, 99\" alt=\"part\" title=\"FACE\" />\r\n\t\t\t<area shape=\"poly\" coords=\"259, 144, 262, 157, 270, 165, 245, 179, 209, 163, 225, 158, 230, 146, 244, 154, 258, 150\" alt=\"part\" title=\"NECK\" />\r\n\t\t\t<area shape=\"poly\" coords=\"286, 169, 307, 171, 317, 186, 305, 217\" alt=\"part\" title=\"SHOULDER-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"200, 174, 180, 217, 166, 186, 176, 171, 191, 168\" alt=\"part\" title=\"SHOULDER-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"164, 196, 180, 224, 169, 257, 151, 245, 164, 196\" alt=\"part\" title=\"UPPER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"151, 253, 166, 263, 158, 276, 140, 261, 149, 249\" alt=\"part\" title=\"ELBOW-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"276, 170, 299, 223, 294, 252, 264, 260, 242, 250, 221, 260, 190, 250, 188, 220, 210, 171, 246, 186, 276, 170\" alt=\"part\" title=\"CHEST\" />\r\n\t\t\t<area shape=\"rect\" coords=\"1, 177, 13, 723\" title=\"cpMeter\" />\r\n\t\t\t<area shape=\"rect\" coords=\"331, 3, 487, 106\" title=\"incomingManuevers\" />\r\n\t\t\t<area shape=\"rect\" coords=\"71, 3, 320, 34\" title=\"opponentSwiper\" />\r\n\t\t\t<area shape=\"rect\" coords=\"8, 3, 65, 31\" title=\"roundCount\" />\r\n\t\t\t<area shape=\"rect\" coords=\"7, 37, 74, 163\" title=\"vitals\" />\r\n\t\t\t<area shape=\"rect\" coords=\"401, 334, 435, 391\" title=\"enemyHandLeft\" />\r\n\t\t\t<area shape=\"rect\" coords=\"59, 336, 92, 393\" title=\"enemyHandRight\" />\r\n\t\t\t<area shape=\"rect\" coords=\"21, 175, 72, 229\" title=\"cpText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"421, 143, 487, 203\" title=\"advManuever1\" />\r\n\t\t\t<area shape=\"rect\" coords=\"423, 239, 486, 298\" title=\"advManuever2\" />\r\n\t\t\t<area shape=\"rect\" coords=\"424, 425, 489, 481\" title=\"advManuever3\" />\r\n\t\t\t<area shape=\"rect\" coords=\"423, 517, 487, 576\" title=\"advManuever4\" />\r\n\t\t\t<area shape=\"rect\" coords=\"50, 509, 102, 560\" title=\"btnBlock\" />\r\n\t\t\t<area shape=\"rect\" coords=\"391, 610, 443, 661\" title=\"btnParry\" />\r\n\t\t\t<area shape=\"rect\" coords=\"49, 612, 101, 663\" title=\"btnVoid\" />\r\n\t\t\t<area shape=\"rect\" coords=\"39, 688, 118, 721\" title=\"handLeftText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"351, 688, 470, 721\" title=\"handRightText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"271, 684, 347, 721\" title=\"handRightAlt\" />\r\n\t\t\t<area shape=\"rect\" coords=\"123, 684, 199, 721\" title=\"handLeftAlt\" />\r\n\t\t\t<area shape=\"poly\" coords=\"239, 605, 219, 619, 210, 727, 266, 727, 258, 617\" title=\"initRange\" />\r\n\t\t</map>\r\n\t</div>\r\n</div>";
+		return "<div class=\"dollview\" style=\"position:absolute;top:0;left:0;width:100%;height:100%\"  ref=\"container\">\r\n\t<div v-if=\"mapData.renderCount!=0\" style=\"width:100%;height:100%;top:0;left;0;position:absolute;background-repeat:no-repeat; background-image:url(images/dollscreen_clear.png); background-position:50% 50%; background-size:contain\">\r\n\t\t<zone v-bind=\"layoutViewPropsOf('vitals')\" style=\"padding:5px\" class=\"textarea-region\">\r\n\t\t\tVitals\r\n\t\t</zone>\r\n\t\t<zone v-bind=\"layoutViewPropsOf('incomingManuevers')\" style=\"padding:5px\" class=\"textarea-region\">\r\n\t\t\t<div v-show=\"viewModel.observeOpponent\">observing..</div>\r\n\t\t\t<div class=\"hover-tag\" v-show=\"viewModel.showFocusedTag\">{{focusedTextLbl}}</div>\r\n\t\t</zone>\r\n\t\t<zone v-bind=\"layoutViewPropsOf('cpMeter')\">\r\n\t\t\t<div v-for=\"i in 22\">{{i}}</div>\r\n\t\t</zone>\r\n\t\t\r\n\t\t<div class=\"parts\">\t\r\n\t\t\t<zone v-bind=\"getPartPropsOf(li)\" v-for=\"(li, i) in viewModel.DOLL_PART_Slugs\" :key=\"li\">\r\n\t\t\t\t<div class=\"thrust-point\" v-if=\"viewModel.isDollPartThrustable(i)\" :style=\"thrustPointStyle\"></div>\r\n\t\t\t</zone>\r\n\t\t</div>\r\n\t\t\r\n\t\t<div class=\"swings\">\r\n\t\t\t<zone v-bind=\"getSwingPropsOf(li)\" v-for=\"(li, i) in viewModel.DOLL_SWING_Slugs\" :key=\"li\"></zone>\r\n\t\t</div>\r\n\t\t\r\n\t\t\r\n\t</div>\r\n\t<div class=\"image-map-holder\" style=\"position:relative; display:none\">\r\n\t\t<img src=\"images/dollscreen.png\" style=\"transform-origin:0 0; pointer-events:none; opacity:0.12\" usemap=\"#map\" ref=\"image\" />\r\n\t\t<map name=\"map\" ref=\"map\">\r\n\t\t\t<area shape=\"poly\" coords=\"316, 519, 314, 580, 305, 622, 317, 659, 374, 585\" alt=\"swing\" title=\"SWING_LOWER_LEG-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"124, 567, 170, 525, 172, 576, 179, 619, 160, 663\" alt=\"swing\" title=\"SWING_LOWER_LEG-r\" />\r\n\t\t\t<area shape=\"rect\" coords=\"224, 478, 261, 585\" title=\"enemyStatus\" />\r\n\t\t\t<area shape=\"poly\" coords=\"238, 76, 254, 78, 262, 85, 267, 115, 262, 115, 255, 96, 244, 95, 234, 97, 223, 115, 217, 115, 223, 85, 238, 76\" alt=\"part\" title=\"UPPER_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"309, 400, 310, 483, 313, 506, 378, 574, 366, 421\" alt=\"swing\" title=\"SWING_UPPER_LEG-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"124, 432, 172, 409, 175, 499, 115, 557\" alt=\"swing\" title=\"SWING_UPPER_LEG-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"302, 332, 351, 364, 364, 413, 306, 390\" alt=\"swing\" title=\"SWING_GROIN-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"142, 358, 181, 334, 171, 392, 124, 418\" alt=\"swing\" title=\"SWING_GROIN-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"302, 254, 331, 307, 361, 333, 349, 349, 307, 318, 300, 315\" alt=\"swing\" title=\"SWING_TORSO-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"137, 319, 172, 278, 183, 259, 185, 322, 141, 351\" alt=\"swing\" title=\"SWING_TORSO-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"356, 263, 399, 235, 411, 300, 387, 311\" alt=\"swing\" title=\"SWING_LOWER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"319, 168, 352, 254, 399, 224, 366, 168\" alt=\"swing\" title=\"SWING_UPPER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"271, 77, 272, 127, 306, 83\" alt=\"swing\" title=\"SWING_DOWNWARD_HEAD-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"166, 82, 213, 132, 210, 77\" alt=\"swing\" title=\"SWING_DOWNWARD_HEAD-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"313, 83, 269, 144, 285, 158, 366, 162\" alt=\"swing\" title=\"SWING_NECK-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"219, 78, 242, 46, 264, 79, 267, 91, 220, 93\" alt=\"swing\" title=\"SWING_UPWARD_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"89, 226, 133, 258, 101, 309, 67, 310\" alt=\"swing\" title=\"SWING_LOWER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"87, 213, 139, 250, 159, 186, 170, 164, 115, 162\" alt=\"swing\" title=\"SWING_UPPER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"153, 85, 219, 144, 200, 159, 120, 157\" alt=\"swing\" title=\"SWING_NECK-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"224, 124, 228, 144, 247, 149, 258, 142, 269, 123, 263, 123, 250, 134, 237, 134, 228, 124\" alt=\"part\" title=\"LOWER_HEAD\" />\r\n\t\t\t<area shape=\"poly\" coords=\"322, 192, 339, 250, 315, 256, 308, 243, 306, 223, 322, 192\" alt=\"part\" title=\"UPPER_ARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"98, 321, 106, 322, 111, 333, 97, 367, 94, 338, 79, 330, 98, 321\" alt=\"part\" title=\"HAND-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"393, 328, 399, 346, 395, 359, 384, 357, 370, 329, 386, 320\" alt=\"part\" title=\"HAND-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"356, 283, 381, 313, 368, 324, 347, 311, 327, 279, 349, 270\" alt=\"part\" title=\"FOREARM-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"334, 253, 345, 263, 325, 273, 318, 260\" alt=\"part\" title=\"ELBOW-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"138, 267, 155, 281, 116, 327, 105, 317\" alt=\"part\" title=\"FOREARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"284, 620, 294, 619, 299, 650, 312, 666, 309, 671, 284, 672, 279, 637\" alt=\"part\" title=\"FOOT-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"188, 619, 202, 619, 207, 633, 205, 668, 199, 673, 169, 669, 183, 647, 188, 630\" alt=\"part\" title=\"FOOT-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"250, 383, 267, 368, 297, 367, 302, 390, 298, 457, 298, 480, 286, 481, 271, 486, 261, 421\" alt=\"part\" title=\"THIGH-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"301, 517, 306, 520, 308, 534, 306, 580, 297, 622, 284, 621, 275, 563, 274, 519, 291, 524, 301, 517\" alt=\"part\" title=\"SHIN-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"180, 516, 195, 523, 210, 518, 211, 558, 202, 614, 186, 614, 182, 600, 177, 571, 180, 516\" alt=\"part\" title=\"SHIN-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"274, 496, 289, 492, 301, 494, 302, 508, 292, 520, 273, 511\" alt=\"part\" title=\"KNEE-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"193, 488, 213, 497, 211, 509, 199, 516, 183, 508, 185, 492, 193, 488\" alt=\"part\" title=\"KNEE-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"189, 367, 220, 367, 237, 381, 213, 491, 205, 484, 191, 484, 186, 480, 183, 385, 189, 367\" alt=\"part\" title=\"THIGH-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"243, 343, 258, 367, 248, 379, 239, 380, 228, 366, 243, 343\" alt=\"part\" title=\"GROIN\" />\r\n\t\t\t<area shape=\"poly\" coords=\"287, 326, 293, 332, 295, 363, 262, 363, 253, 350, 253, 342, 269, 331, 287, 326\" alt=\"part\" title=\"HIP-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"197, 324, 220, 331, 235, 341, 223, 363, 188, 363, 197, 324\" alt=\"part\" title=\"HIP-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"195, 259, 218, 266, 208, 295, 213, 325, 197, 319, 195, 259\" alt=\"part\" title=\"SIDE-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"288, 259, 292, 259, 293, 266, 289, 315, 286, 320, 271, 324, 278, 294, 269, 266, 288, 259\" alt=\"part\" title=\"SIDE-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"237, 256, 257, 261, 271, 287, 268, 317, 261, 328, 246, 337, 224, 329, 212, 302, 217, 273, 237, 256\" alt=\"part\" title=\"BELLY\" />\r\n\t\t\t<area shape=\"poly\" coords=\"240, 99, 254, 102, 258, 108, 259, 123, 250, 133, 238, 132, 231, 129, 225, 118, 231, 104, 240, 99\" alt=\"part\" title=\"FACE\" />\r\n\t\t\t<area shape=\"poly\" coords=\"259, 144, 262, 157, 270, 165, 245, 179, 209, 163, 225, 158, 230, 146, 244, 154, 258, 150\" alt=\"part\" title=\"NECK\" />\r\n\t\t\t<area shape=\"poly\" coords=\"286, 169, 307, 171, 317, 186, 305, 217\" alt=\"part\" title=\"SHOULDER-l\" />\r\n\t\t\t<area shape=\"poly\" coords=\"200, 174, 180, 217, 166, 186, 176, 171, 191, 168\" alt=\"part\" title=\"SHOULDER-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"164, 196, 180, 224, 169, 257, 151, 245, 164, 196\" alt=\"part\" title=\"UPPER_ARM-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"151, 253, 166, 263, 158, 276, 140, 261, 149, 249\" alt=\"part\" title=\"ELBOW-r\" />\r\n\t\t\t<area shape=\"poly\" coords=\"276, 170, 299, 223, 294, 252, 264, 260, 242, 250, 221, 260, 190, 250, 188, 220, 210, 171, 246, 186, 276, 170\" alt=\"part\" title=\"CHEST\" />\r\n\t\t\t<area shape=\"rect\" coords=\"1, 177, 13, 723\" title=\"cpMeter\" />\r\n\t\t\t<area shape=\"rect\" coords=\"331, 3, 487, 106\" title=\"incomingManuevers\" />\r\n\t\t\t<area shape=\"rect\" coords=\"71, 3, 320, 34\" title=\"opponentSwiper\" />\r\n\t\t\t<area shape=\"rect\" coords=\"8, 3, 65, 31\" title=\"roundCount\" />\r\n\t\t\t<area shape=\"rect\" coords=\"7, 37, 74, 163\" title=\"vitals\" />\r\n\t\t\t<area shape=\"rect\" coords=\"401, 334, 435, 391\" title=\"enemyHandLeft\" />\r\n\t\t\t<area shape=\"rect\" coords=\"59, 336, 92, 393\" title=\"enemyHandRight\" />\r\n\t\t\t<area shape=\"rect\" coords=\"21, 175, 72, 229\" title=\"cpText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"421, 143, 487, 203\" title=\"advManuever1\" />\r\n\t\t\t<area shape=\"rect\" coords=\"423, 239, 486, 298\" title=\"advManuever2\" />\r\n\t\t\t<area shape=\"rect\" coords=\"424, 425, 489, 481\" title=\"advManuever3\" />\r\n\t\t\t<area shape=\"rect\" coords=\"423, 517, 487, 576\" title=\"advManuever4\" />\r\n\t\t\t<area shape=\"rect\" coords=\"50, 509, 102, 560\" title=\"btnBlock\" />\r\n\t\t\t<area shape=\"rect\" coords=\"391, 610, 443, 661\" title=\"btnParry\" />\r\n\t\t\t<area shape=\"rect\" coords=\"49, 612, 101, 663\" title=\"btnVoid\" />\r\n\t\t\t<area shape=\"rect\" coords=\"39, 688, 118, 721\" title=\"handLeftText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"351, 688, 470, 721\" title=\"handRightText\" />\r\n\t\t\t<area shape=\"rect\" coords=\"271, 684, 347, 721\" title=\"handRightAlt\" />\r\n\t\t\t<area shape=\"rect\" coords=\"123, 684, 199, 721\" title=\"handLeftAlt\" />\r\n\t\t\t<area shape=\"poly\" coords=\"239, 605, 219, 619, 210, 727, 266, 727, 258, 617\" title=\"initRange\" />\r\n\t\t</map>\r\n\t</div>\r\n</div>";
 	}
 	,_Init: function() {
 		var cls = troshx_sos_vue_combat_components_DollView;
@@ -9228,6 +9239,9 @@ troshx_sos_vue_combat_components_LayoutItemView.__super__ = haxevx_vuex_core_VCo
 troshx_sos_vue_combat_components_LayoutItemView.prototype = $extend(haxevx_vuex_core_VComponent.prototype,{
 	get_computedStyle: function() {
 		var obj = { left : this.x + "px", top : this.y + "px", width : this.width + "px", height : this.height + "px", boxSizing : "border-box"};
+		if(troshx_sos_vue_GlobalCanvas2D.CONTEXT != null) {
+			return obj;
+		}
 		if(!this.gotSVG) {
 			if(this.showShape || this.debug) {
 				obj.outline = this.strokeColor + " solid " + this.strokeWidth + "px";
@@ -9268,6 +9282,57 @@ troshx_sos_vue_combat_components_LayoutItemView.prototype = $extend(haxevx_vuex_
 		}
 		return pts.join(" ");
 	}
+	,Updated: function() {
+		if(this.showShape && troshx_sos_vue_GlobalCanvas2D.CONTEXT != null) {
+			this.renderToCanvas();
+		}
+	}
+	,renderToCanvas: function() {
+		var canvas = troshx_sos_vue_GlobalCanvas2D.CANVAS;
+		var ctx = troshx_sos_vue_GlobalCanvas2D.CONTEXT;
+		ctx.clearRect(0,0,canvas.width,canvas.height);
+		var shape = this.item.shape;
+		ctx.fillStyle = this.fillColor;
+		ctx.strokeStyle = this.strokeColor;
+		ctx.lineWidth = this.strokeWidth;
+		var x = this.x;
+		var y = this.y;
+		var xScale = this.width;
+		var yScale = this.height;
+		switch(shape) {
+		case 0:
+			ctx.fillRect(x,y,xScale,yScale);
+			ctx.strokeRect(x,y,xScale,yScale);
+			break;
+		case 1:
+			var centerX = x * this.width * 0.5;
+			var centerY = y * this.height * 0.5;
+			var width = this.width;
+			var height = this.height;
+			ctx.beginPath();
+			ctx.moveTo(centerX,centerY - height * .5);
+			ctx.bezierCurveTo(centerX + width * .5,centerY - height * .5,centerX + width * .5,centerY + height * .5,centerX,centerY + height / 2);
+			ctx.bezierCurveTo(centerX - width * .5,centerY + height * .5,centerX - width * .5,centerY - height * .5,centerX,centerY - height / 2);
+			ctx.closePath();
+			ctx.fill();
+			ctx.stroke();
+			break;
+		case 2:
+			var poly = this.item.uvs;
+			ctx.beginPath();
+			ctx.moveTo(x + poly[0].x * xScale,y + poly[0].y * yScale);
+			var _g1 = 1;
+			var _g = poly.length;
+			while(_g1 < _g) {
+				var i = _g1++;
+				ctx.lineTo(x + poly[i].x * xScale,y + poly[i].y * yScale);
+			}
+			ctx.closePath();
+			ctx.fill();
+			ctx.stroke();
+			break;
+		}
+	}
 	,get_polyDecompPoints: function() {
 		if(this.item.hitDecomposition != null) {
 			return this.item.hitDecomposition.map($bind(this,this.getPolyString));
@@ -9291,9 +9356,10 @@ troshx_sos_vue_combat_components_LayoutItemView.prototype = $extend(haxevx_vuex_
 	,_Init: function() {
 		var cls = troshx_sos_vue_combat_components_LayoutItemView;
 		var clsP = cls.prototype;
+		this.updated = clsP.Updated;
 		this.template = this.Template();
 		this.computed = { computedStyle : clsP.get_computedStyle, gotSVG : clsP.get_gotSVG, pStyle : clsP.get_pStyle, polyPoints : clsP.get_polyPoints, polyDecompPoints : clsP.get_polyDecompPoints, titleClasses : clsP.get_titleClasses};
-		this.methods = { get_computedStyle : clsP.get_computedStyle, get_gotSVG : clsP.get_gotSVG, get_pStyle : clsP.get_pStyle, get_polyPoints : clsP.get_polyPoints, getPolyString : clsP.getPolyString, get_polyDecompPoints : clsP.get_polyDecompPoints, get_titleClasses : clsP.get_titleClasses};
+		this.methods = { get_computedStyle : clsP.get_computedStyle, get_gotSVG : clsP.get_gotSVG, get_pStyle : clsP.get_pStyle, get_polyPoints : clsP.get_polyPoints, getPolyString : clsP.getPolyString, renderToCanvas : clsP.renderToCanvas, get_polyDecompPoints : clsP.get_polyDecompPoints, get_titleClasses : clsP.get_titleClasses};
 		this.props = { item : { type : Object}, debug : { "default" : false, type : Boolean}, fillColor : { "default" : "rgba(0,255,0,0.4)", type : String}, strokeColor : { "default" : "#00F", type : String}, showShape : { "default" : false, type : Boolean}, strokeWidth : { "default" : 1, type : Number}, title : { type : String}, y : { type : Number}, height : { type : Number}, width : { type : Number}, x : { type : Number}};
 	}
 	,__class__: troshx_sos_vue_combat_components_LayoutItemView
@@ -10363,3 +10429,4 @@ troshx_util_layout_LayoutItem.SHAPE_POLYGON = 2;
 troshx_util_layout_LayoutItem.SCRATCH = hxGeomAlgo__$HxPoint_HxPoint_$Impl_$._new();
 troshx_sos_vue_tests_TestUI.main();
 })(typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
+
