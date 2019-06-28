@@ -8077,6 +8077,33 @@ troshx_sos_sheets_FatiqueTable.getFatiqueLevel = function(fatique,hlt) {
 troshx_sos_sheets_FatiqueTable.getNewTable = function() {
 	return [{ name : "Fresh", cp : 0, mob : 0, skill : 0},{ name : "Winded", cp : -1, mob : -1, skill : -1},{ name : "Tired", cp : -2, mob : -2, skill : -2},{ name : "Very Tired", cp : -4, mob : -4, skill : -4},{ name : "Exhausted", cp : -6, mob : -6, skill : -6}];
 };
+var troshx_sos_vue_GlobalCanvas2D = function() { };
+$hxClasses["troshx.sos.vue.GlobalCanvas2D"] = troshx_sos_vue_GlobalCanvas2D;
+troshx_sos_vue_GlobalCanvas2D.__name__ = ["troshx","sos","vue","GlobalCanvas2D"];
+troshx_sos_vue_GlobalCanvas2D.getContext = function() {
+	return troshx_sos_vue_GlobalCanvas2D.CONTEXT;
+};
+troshx_sos_vue_GlobalCanvas2D.__setupContext = function(canvas,context,fullScreen) {
+	if(fullScreen == null) {
+		fullScreen = false;
+	}
+	if(troshx_sos_vue_GlobalCanvas2D.CANVAS != null) {
+		console.log("GlobalCanvas2D:: Global canvas already set! Cannot set again");
+		return;
+	}
+	troshx_sos_vue_GlobalCanvas2D.CANVAS = canvas;
+	troshx_sos_vue_GlobalCanvas2D.CONTEXT = context;
+	if(fullScreen) {
+		window.addEventListener("resize",troshx_sos_vue_GlobalCanvas2D.canvasResizeHandler);
+		troshx_sos_vue_GlobalCanvas2D.canvasResizeHandler();
+	}
+};
+troshx_sos_vue_GlobalCanvas2D.canvasResizeHandler = function(e) {
+	var wd = window;
+	var c = troshx_sos_vue_GlobalCanvas2D.CANVAS;
+	c.width = wd.innerWidth;
+	c.height = wd.innerHeight;
+};
 var troshx_sos_vue_combat_CombatViewModel = function(boutModel) {
 	this.thrustAvailabilityMask = 0;
 	this.swingAvailabilityMask = 0;
@@ -9188,13 +9215,22 @@ var troshx_sos_vue_combat_components_LayoutItemView = function() {
 };
 $hxClasses["troshx.sos.vue.combat.components.LayoutItemView"] = troshx_sos_vue_combat_components_LayoutItemView;
 troshx_sos_vue_combat_components_LayoutItemView.__name__ = ["troshx","sos","vue","combat","components","LayoutItemView"];
+troshx_sos_vue_combat_components_LayoutItemView.drawEllipse = function(context,centerX,centerY,width,height) {
+	context.beginPath();
+	context.moveTo(centerX,centerY - height * .5);
+	context.bezierCurveTo(centerX + width * .5,centerY - height * .5,centerX + width * .5,centerY + height * .5,centerX,centerY + height / 2);
+	context.bezierCurveTo(centerX - width * .5,centerY + height * .5,centerX - width * .5,centerY - height * .5,centerX,centerY - height / 2);
+	context.closePath();
+	context.fill();
+	context.stroke();
+};
 troshx_sos_vue_combat_components_LayoutItemView.__super__ = haxevx_vuex_core_VComponent;
 troshx_sos_vue_combat_components_LayoutItemView.prototype = $extend(haxevx_vuex_core_VComponent.prototype,{
 	get_computedStyle: function() {
-		var obj = { left : this.x + "px", top : this.y + "px"};
-		obj.width = this.width + "px";
-		obj.height = this.height + "px";
-		obj.boxSizing = "border-box";
+		var obj = { left : this.x + "px", top : this.y + "px", width : this.width + "px", height : this.height + "px", boxSizing : "border-box"};
+		if(troshx_sos_vue_GlobalCanvas2D.CONTEXT != null) {
+			return obj;
+		}
 		if(!this.gotSVG) {
 			if(this.showShape || this.debug) {
 				obj.outline = this.strokeColor + " solid " + this.strokeWidth + "px";
@@ -9211,10 +9247,10 @@ troshx_sos_vue_combat_components_LayoutItemView.prototype = $extend(haxevx_vuex_
 		return obj;
 	}
 	,get_gotSVG: function() {
+		if(troshx_sos_vue_GlobalCanvas2D.CONTEXT != null) {
+			return false;
+		}
 		return this.item.shape == 2;
-	}
-	,get_gStyle: function() {
-		return { };
 	}
 	,get_pStyle: function() {
 		return { strokeWidth : this.strokeWidth + "px", stroke : this.strokeColor, fill : this.fillColor};
@@ -9235,6 +9271,55 @@ troshx_sos_vue_combat_components_LayoutItemView.prototype = $extend(haxevx_vuex_
 		}
 		return pts.join(" ");
 	}
+	,Updated: function() {
+		if(this.showShape && troshx_sos_vue_GlobalCanvas2D.CONTEXT != null) {
+			this.renderToCanvas();
+		}
+	}
+	,renderToCanvas: function() {
+		var ctx = troshx_sos_vue_GlobalCanvas2D.CONTEXT;
+		var shape = this.item.shape;
+		ctx.fillStyle = this.fillColor;
+		ctx.strokeStyle = this.strokeColor;
+		ctx.lineWidth = this.strokeWidth;
+		var x = this.x;
+		var y = this.y;
+		var xScale = this.width;
+		var yScale = this.height;
+		switch(shape) {
+		case 0:
+			ctx.fillRect(x,y,xScale,yScale);
+			ctx.strokeRect(x,y,xScale,yScale);
+			break;
+		case 1:
+			var centerX = x * this.width * 0.5;
+			var centerY = y * this.height * 0.5;
+			var width = this.width;
+			var height = this.height;
+			ctx.beginPath();
+			ctx.moveTo(centerX,centerY - height * .5);
+			ctx.bezierCurveTo(centerX + width * .5,centerY - height * .5,centerX + width * .5,centerY + height * .5,centerX,centerY + height / 2);
+			ctx.bezierCurveTo(centerX - width * .5,centerY + height * .5,centerX - width * .5,centerY - height * .5,centerX,centerY - height / 2);
+			ctx.closePath();
+			ctx.fill();
+			ctx.stroke();
+			break;
+		case 2:
+			var poly = this.item.uvs;
+			ctx.beginPath();
+			ctx.moveTo(x + poly[0].x * xScale,y + poly[0].y * yScale);
+			var _g1 = 1;
+			var _g = poly.length;
+			while(_g1 < _g) {
+				var i = _g1++;
+				ctx.lineTo(x + poly[i].x * xScale,y + poly[i].y * yScale);
+			}
+			ctx.closePath();
+			ctx.fill();
+			ctx.stroke();
+			break;
+		}
+	}
 	,get_polyDecompPoints: function() {
 		if(this.item.hitDecomposition != null) {
 			return this.item.hitDecomposition.map($bind(this,this.getPolyString));
@@ -9253,14 +9338,15 @@ troshx_sos_vue_combat_components_LayoutItemView.prototype = $extend(haxevx_vuex_
 		return splits;
 	}
 	,Template: function() {
-		return "<div class=\"layout-item\" :class=\"[{debug}, titleClasses]\" :data-title=\"title\" style=\"position:absolute;z-index:1;\" :style=\"computedStyle\">\r\n\t\t\t<svg v-if=\"gotSVG\" v-show=\"debug || showShape\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.2\" baseProfile=\"tiny\" :width=\"width\" :height=\"height\" style=\"position:absolute\">\r\n\t\t\t\t<g style=\"transform-origin:0 0;\" :style=\"gStyle\">\r\n\t\t\t\t\t<polygon :style=\"pStyle\" :points=\"polyPoints\"></polygon>\r\n\t\t\t\t</g>\r\n\t\t\t\t<g v-if=\"debug\" style=\"transform-origin:0 0;position:absolute\" :style=\"gStyle\" v-for=\"(p, i) in polyDecompPoints\">\r\n\t\t\t\t\t<polygon style=\"stroke-width:0.5, stroke:#ff0000; fill:transparent\" :points=\"p\" :key=\"i\"></polygon>\r\n\t\t\t\t</g>\r\n\t\t\t</svg>\r\n\t\t\t<slot />\r\n\t\t</div>";
+		return "<div class=\"layout-item\" :class=\"[{debug}, titleClasses]\" :data-vis=\"showShape\" :data-title=\"title\" style=\"position:absolute;z-index:1;\" :style=\"computedStyle\">\r\n\t\t\t<svg v-if=\"gotSVG\" v-show=\"debug || showShape\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.2\" baseProfile=\"tiny\" :width=\"width\" :height=\"height\" style=\"position:absolute\">\r\n\t\t\t\t<g style=\"transform-origin:0 0;\" :style=\"gStyle\">\r\n\t\t\t\t\t<polygon :style=\"pStyle\" :points=\"polyPoints\"></polygon>\r\n\t\t\t\t</g>\r\n\t\t\t\t<g v-if=\"debug\" style=\"transform-origin:0 0;position:absolute\" v-for=\"(p, i) in polyDecompPoints\">\r\n\t\t\t\t\t<polygon style=\"stroke-width:0.5, stroke:#ff0000; fill:transparent\" :points=\"p\" :key=\"i\"></polygon>\r\n\t\t\t\t</g>\r\n\t\t\t</svg>\r\n\t\t\t<slot />\r\n\t\t</div>";
 	}
 	,_Init: function() {
 		var cls = troshx_sos_vue_combat_components_LayoutItemView;
 		var clsP = cls.prototype;
+		this.updated = clsP.Updated;
 		this.template = this.Template();
-		this.computed = { computedStyle : clsP.get_computedStyle, gotSVG : clsP.get_gotSVG, gStyle : clsP.get_gStyle, pStyle : clsP.get_pStyle, polyPoints : clsP.get_polyPoints, polyDecompPoints : clsP.get_polyDecompPoints, titleClasses : clsP.get_titleClasses};
-		this.methods = { get_computedStyle : clsP.get_computedStyle, get_gotSVG : clsP.get_gotSVG, get_gStyle : clsP.get_gStyle, get_pStyle : clsP.get_pStyle, get_polyPoints : clsP.get_polyPoints, getPolyString : clsP.getPolyString, get_polyDecompPoints : clsP.get_polyDecompPoints, get_titleClasses : clsP.get_titleClasses};
+		this.computed = { computedStyle : clsP.get_computedStyle, gotSVG : clsP.get_gotSVG, pStyle : clsP.get_pStyle, polyPoints : clsP.get_polyPoints, polyDecompPoints : clsP.get_polyDecompPoints, titleClasses : clsP.get_titleClasses};
+		this.methods = { get_computedStyle : clsP.get_computedStyle, get_gotSVG : clsP.get_gotSVG, get_pStyle : clsP.get_pStyle, get_polyPoints : clsP.get_polyPoints, getPolyString : clsP.getPolyString, renderToCanvas : clsP.renderToCanvas, get_polyDecompPoints : clsP.get_polyDecompPoints, get_titleClasses : clsP.get_titleClasses};
 		this.props = { item : { type : Object}, debug : { "default" : false, type : Boolean}, fillColor : { "default" : "rgba(0,255,0,0.4)", type : String}, strokeColor : { "default" : "#00F", type : String}, showShape : { "default" : false, type : Boolean}, strokeWidth : { "default" : 1, type : Number}, title : { type : String}, y : { type : Number}, height : { type : Number}, width : { type : Number}, x : { type : Number}};
 	}
 	,__class__: troshx_sos_vue_combat_components_LayoutItemView
@@ -9273,6 +9359,14 @@ var troshx_sos_vue_tests_TestUI = function() {
 	window.document.body.style.width = "100%";
 	window.document.body.style.height = "100%";
 	window.document.body.style.backgroundColor = "#e4e5e7";
+	var cvsGL = window.document.getElementById("canvasGL");
+	if(cvsGL != null) {
+		cvsGL.style.pointerEvents = "none";
+		cvsGL.style.position = "fixed";
+		WebGL2D.enable(cvsGL);
+		var ctx = cvsGL.getContext("webgl-2d");
+		troshx_sos_vue_GlobalCanvas2D.__setupContext(cvsGL,ctx,true);
+	}
 	this.boot.startVueWithRootComponent("#app",new troshx_sos_vue_combat_components_DollView());
 };
 $hxClasses["troshx.sos.vue.tests.TestUI"] = troshx_sos_vue_tests_TestUI;
