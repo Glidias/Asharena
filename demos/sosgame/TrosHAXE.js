@@ -10429,4 +10429,3 @@ troshx_util_layout_LayoutItem.SHAPE_POLYGON = 2;
 troshx_util_layout_LayoutItem.SCRATCH = hxGeomAlgo__$HxPoint_HxPoint_$Impl_$._new();
 troshx_sos_vue_tests_TestUI.main();
 })(typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
-
