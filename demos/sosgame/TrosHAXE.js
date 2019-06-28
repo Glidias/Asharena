@@ -9277,7 +9277,9 @@ troshx_sos_vue_combat_components_LayoutItemView.prototype = $extend(haxevx_vuex_
 		}
 	}
 	,renderToCanvas: function() {
+		var canvas = troshx_sos_vue_GlobalCanvas2D.CANVAS;
 		var ctx = troshx_sos_vue_GlobalCanvas2D.CONTEXT;
+		ctx.clearRect(0,0,canvas.width,canvas.height);
 		var shape = this.item.shape;
 		ctx.fillStyle = this.fillColor;
 		ctx.strokeStyle = this.strokeColor;
