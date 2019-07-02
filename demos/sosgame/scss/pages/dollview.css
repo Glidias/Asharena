@@ -55,6 +55,7 @@
   font-size: 16px;
   background-color: #333333;
   z-index: 2;
+  position: absolute !important;
   -webkit-overflow-scrolling: touch;
 }
 .pregen-select-view .checkbox-holder input:checked + label {

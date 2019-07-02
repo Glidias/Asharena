@@ -7,7 +7,7 @@
 .dollview .thrust-point{background-color:black;border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
 .dollview .select-opponent{text-align:center;display:flex;align-items:center;flex-direction:row;position:absolute;height:100%;width:100%;justify-content:center;}
 .dollview .select-opponent>button{display:block;padding:15px;}
-.pregen-select-view{font-size:16px;background-color:#333333;z-index:2;-webkit-overflow-scrolling:touch;}
+.pregen-select-view{font-size:16px;background-color:#333333;z-index:2;position:absolute!important;-webkit-overflow-scrolling:touch;}
 .pregen-select-view .checkbox-holder input:checked+label{text-decoration:underline;color:yellow;}
 .pregen-select-view label{color:white;}
 .pregen-select-view h1{text-align:center;color:white;font-size:20px;}
