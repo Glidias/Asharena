@@ -13842,7 +13842,7 @@ troshx_sos_vue_pregen_PregenSelectView.prototype = $extend(haxevx_vuex_core_VCom
 		this.$emit("close");
 	}
 	,Template: function() {
-		return "<div style=\"position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto\" class=\"pregen-select-view\">\r\n\t<h1 v-if=\"header\">{{header}}</h1>\r\n\t<ul v-if=\"characters\">\r\n\t\t<li v-for=\"(li, i) in characters\" :key=\"i\">\r\n\t\t\t<div class=\"checkbox-holder\">\r\n\t\t\t\t<input v-if=\"multiSelect\" type=\"checkbox\" v-model.number=\"selectedChars\" :value=\"i\" :id=\"'popup_cb_'+i\"></input>\r\n\t\t\t\t<input v-else type=\"radio\" :checked=\"selectedChar==i\" :value=\"i\" @click=\"selectedChar=i\" :id=\"'popup_cb_'+i\"></input>\r\n\t\t\t\t<label :for=\"'popup_cb_'+i\">{{li.label}}</label>\r\n\t\t\t\t<div class=\"desc\">{{li.description}}</div>\r\n\t\t\t</div>\r\n\t\t</li>\r\n\t</ul>\r\n\t<div class=\"btn-zone\">\r\n\t\t<a class=\"btn ok\" v-show=\"(multiSelect && selectedChars.length) || (!multiSelect && selectedChar>=0)\" v-on:click=\"onConfirm\"><span>[✓]</span> Okay</a>\r\n\t\t<a class=\"btn close\" v-on:click=\"onClose\"><span>[x]</span> Cancel</a>\r\n\t</div>\r\n</div>";
+		return "<div style=\"position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto\" class=\"pregen-select-view\">\r\n\t <vue-scroll>\r\n\t<h1 v-if=\"header\">{{header}}</h1>\r\n\t<ul v-if=\"characters\">\r\n\t\t<li v-for=\"(li, i) in characters\" :key=\"i\">\r\n\t\t\t<div class=\"checkbox-holder\">\r\n\t\t\t\t<input v-if=\"multiSelect\" type=\"checkbox\" v-model.number=\"selectedChars\" :value=\"i\" :id=\"'popup_cb_'+i\"></input>\r\n\t\t\t\t<input v-else type=\"radio\" :checked=\"selectedChar==i\" :value=\"i\" @click=\"selectedChar=i\" :id=\"'popup_cb_'+i\"></input>\r\n\t\t\t\t<label :for=\"'popup_cb_'+i\">{{li.label}}</label>\r\n\t\t\t\t<div class=\"desc\">{{li.description}}</div>\r\n\t\t\t</div>\r\n\t\t</li>\r\n\t</ul>\r\n\t<div class=\"btn-zone\">\r\n\t\t<a class=\"btn ok\" v-show=\"(multiSelect && selectedChars.length) || (!multiSelect && selectedChar>=0)\" v-on:click=\"onConfirm\"><span>[✓]</span> Okay</a>\r\n\t\t<a class=\"btn close\" v-on:click=\"onClose\"><span>[x]</span> Cancel</a>\r\n\t</div>\r\n\t</vue-scroll>\r\n</div>";
 	}
 	,_Init: function() {
 		var cls = troshx_sos_vue_pregen_PregenSelectView;
@@ -13862,6 +13862,7 @@ var troshx_sos_vue_tests_TestUI = function() {
 	window.document.body.style.width = "100%";
 	window.document.body.style.height = "100%";
 	window.document.body.style.backgroundColor = "#e4e5e7";
+	Vue["use"](vuescroll);
 	var cvsGL = window.document.getElementById("canvasGL");
 	if(cvsGL != null) {
 		cvsGL.style.pointerEvents = "none";

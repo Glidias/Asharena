@@ -6,14 +6,18 @@
 	<meta name="viewport" content="user-scalable=no,initial-scale:1.0,maximum-scale=1.0,width=device-width" />
 	<script src="js/vue.js"></script>
 	<script src="js/hammer.min.js"></script>
-	<script src="js/webgl-2d.min.js"></script>
-	<link rel="stylesheet" type="text/css" href="scss/pages/dollview.min.css?ds">
+	<!--<script src="js/webgl-2d.min.js"></script>-->
+	<script src="https://unpkg.com/vuescroll"></script>
+	<!-- import vuescroll-slide -->
+	<script src="https://unpkg.com/vuescroll/dist/vuescroll-slide.js"></script>
+	<!-- import vuescroll-native -->
+	<script src="https://unpkg.com/vuescroll/dist/vuescroll-native.js"></script>
+	<link rel="stylesheet" type="text/css" href="scss/pages/dollview.css?2">
 		
 	<script language="javascript">
 	if (!window.Touch) {
 		window.Touch = {};
 	}
-	/*
 	document.ontouchstart = function(e){ 
 		var n = ""+e.target.nodeName;
 		n = n.toLowerCase();
@@ -21,17 +25,14 @@
 			e.preventDefault(); 
 		}
 	}
-	*/
-	/*
 	document.ontouchmove = function(e){ 
 		e.preventDefault(); 
 	}
-	*/
 	</script>
 	
 </head>
 <body>
 	<div id="app"></div>
-	<script src="TrosHAXE.js?1"></script>
+	<script src="TrosHAXE.js?2"></script>
 </body>
 </html>
