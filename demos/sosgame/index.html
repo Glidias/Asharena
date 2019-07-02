@@ -6,6 +6,7 @@
 	<meta name="viewport" content="user-scalable=no,initial-scale:1.0,maximum-scale=1.0,width=device-width" />
 	<script src="js/vue.js"></script>
 	<script src="js/hammer.min.js"></script>
+	<script src="js/webgl-2d.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="scss/pages/dollview.css">
 		
 	<script language="javascript">
@@ -15,7 +16,7 @@
 	document.ontouchstart = function(e){ 
 		var n = ""+e.target.nodeName;
 		n = n.toLowerCase();
-		if (n != "input" && n != "textarea" && n !="button" && n!="select")  {
+		if (n !== "a" && n !== "input" && n!== "label" && n !== "textarea" && n !=="button" && n!=="select")  {
 			e.preventDefault(); 
 		}
 	}
@@ -27,6 +28,6 @@
 </head>
 <body>
 	<div id="app"></div>
-	<script src="TrosHAXE.js?7"></script>
+	<script src="TrosHAXE.js"></script>
 </body>
 </html>
