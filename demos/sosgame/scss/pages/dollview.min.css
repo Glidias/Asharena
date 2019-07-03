@@ -1,6 +1,8 @@
 @charset "UTF-8";@font-face{font-family:"FontAwesome";src:url("../font-awesome/fontawesome-webfont.eot?v=4.6.3");src:url("../font-awesome/fontawesome-webfont.eot?#iefix&v=4.6.3") format("embedded-opentype"),url("../font-awesome/fontawesome-webfont.woff2?v=4.6.3") format("woff2"),url("../font-awesome/fontawesome-webfont.woff?v=4.6.3") format("woff"),url("../font-awesome/fontawesome-webfont.ttf?v=4.6.3") format("truetype"),url("../font-awesome/fontawesome-webfont.svg?v=4.6.3#fontawesomeregular") format("svg");font-weight:normal;font-style:normal;}
-.layout-item{box-sizing:border-box;}
+.layout-item{box-sizing:border-box;pointer-events:none;touch-action:none;}
 .dollview{font-size:12px;}
+.dollview .enableinput{pointer-events:auto;touch-action:auto;}
+.dollview .bg{pointer-events:none;touch-action:none;}
 .dollview button{border-radius:0;}
 .dollview ul{list-style-type:none;padding:0;margin:0;}
 .dollview .textarea-region{border:1px solid #bebebe;overflow:hidden;}
