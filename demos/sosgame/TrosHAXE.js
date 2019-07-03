@@ -9491,11 +9491,14 @@ troshx_sos_core_Inventory.prototype = {
 			return null;
 		}
 	}
-	,getSortedWeapons: function(ranged,profs,reverse) {
+	,getSortedWeapons: function(ranged,profs,reverse,unheld) {
+		if(unheld == null) {
+			unheld = false;
+		}
 		if(reverse == null) {
 			reverse = false;
 		}
-		var weaps = this.getWeildableWeaponsTypeFiltered(ranged,profs);
+		var weaps = this.getWeildableWeaponsTypeFiltered(ranged,profs,unheld);
 		var arr = [];
 		var w;
 		var _g1 = 0;
@@ -9508,7 +9511,10 @@ troshx_sos_core_Inventory.prototype = {
 		arr.sort(reverse ? troshx_sos_core_Inventory.sortBetweenSortedReversed : troshx_sos_core_Inventory.sortBetweenSorted);
 		return arr;
 	}
-	,getSortedShields: function(reverse) {
+	,getSortedShields: function(reverse,unheld) {
+		if(unheld == null) {
+			unheld = false;
+		}
 		if(reverse == null) {
 			reverse = false;
 		}
@@ -9519,18 +9525,27 @@ troshx_sos_core_Inventory.prototype = {
 		while(_g1 < _g) {
 			var i = _g1++;
 			s = this.shields[i];
-			arr[i] = { assign : s, sortVal : 10 - s.shield.size + s.shield.blockTN / 10};
+			if(unheld && s.unheld != 0) {
+				continue;
+			}
+			arr.push({ assign : s, sortVal : 10 - s.shield.size + s.shield.blockTN / 10});
 		}
 		arr.sort(reverse ? troshx_sos_core_Inventory.sortBetweenSortedReversed : troshx_sos_core_Inventory.sortBetweenSorted);
 		return arr;
 	}
-	,getWeildableWeaponsTypeFiltered: function(ranged,profs) {
+	,getWeildableWeaponsTypeFiltered: function(ranged,profs,unheld) {
+		if(unheld == null) {
+			unheld = false;
+		}
 		var arr = [];
 		var _g1 = 0;
 		var _g = this.weapons.length;
 		while(_g1 < _g) {
 			var i = _g1++;
 			var wp = this.weapons[i];
+			if(unheld && wp.held != 0) {
+				continue;
+			}
 			var w = wp.weapon;
 			var c = w.matchesTypes(ranged,profs);
 			var tmp;
@@ -9921,7 +9936,7 @@ troshx_sos_core_Inventory.prototype = {
 		var shieldPicks;
 		if(masterItem == null) {
 			if(weaponPicks == null) {
-				weaponPicks = this.getSortedWeapons(false,profs,true);
+				weaponPicks = this.getSortedWeapons(false,profs,true,true);
 			}
 			if(weaponPicks.length > 0) {
 				w = weaponPicks.pop();
@@ -9932,13 +9947,13 @@ troshx_sos_core_Inventory.prototype = {
 			}
 		}
 		if(secItem == null) {
-			shieldPicks = this.getSortedShields(true);
+			shieldPicks = this.getSortedShields(true,true);
 			if(shieldPicks.length > 0) {
 				this.holdEquiped(shieldPicks.pop().assign,2);
 				return;
 			}
 			if(weaponPicks == null) {
-				weaponPicks = this.getSortedWeapons(false,profs,true);
+				weaponPicks = this.getSortedWeapons(false,profs,true,true);
 			}
 			while(weaponPicks.length > 0) {
 				w = weaponPicks.pop();
