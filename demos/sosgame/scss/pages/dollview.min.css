@@ -1,12 +1,19 @@
+@charset "UTF-8";@font-face{font-family:"FontAwesome";src:url("../font-awesome/fontawesome-webfont.eot?v=4.6.3");src:url("../font-awesome/fontawesome-webfont.eot?#iefix&v=4.6.3") format("embedded-opentype"),url("../font-awesome/fontawesome-webfont.woff2?v=4.6.3") format("woff2"),url("../font-awesome/fontawesome-webfont.woff?v=4.6.3") format("woff"),url("../font-awesome/fontawesome-webfont.ttf?v=4.6.3") format("truetype"),url("../font-awesome/fontawesome-webfont.svg?v=4.6.3#fontawesomeregular") format("svg");font-weight:normal;font-style:normal;}
 .layout-item{box-sizing:border-box;}
 .dollview{font-size:12px;}
 .dollview ul{list-style-type:none;padding:0;margin:0;}
 .dollview .textarea-region{border:1px solid #bebebe;overflow:hidden;}
 .dollview .hover-tag{position:absolute;bottom:0;background-color:beige;}
 .dollview .cpMeter{overflow:hidden;display:flex;flex-direction:column-reverse;align-items:center;text-align:center;overflow:visible;letter-spacing:-2px;}
+.dollview .cpMeter>div{position:relative;z-index:1;}
+.dollview .cpMeter:before{position:absolute;background-color:#cccccc;height:100%;display:block;content:"";left:100%;top:0;width:1px;margin-left:-0.5px;}
 .dollview .thrust-point{background-color:black;border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+.dollview .opponentSwiper ul{text-align:center;}
 .dollview .select-opponent{text-align:center;display:flex;align-items:center;flex-direction:row;position:absolute;height:100%;width:100%;justify-content:center;}
 .dollview .select-opponent>button{display:block;padding:15px;}
+.dollview .shieldmark{position:absolute;-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;top:50%;left:50%;transform-origin:0 0;}
+.dollview .shieldmark:after{font-family:FontAwesome;content:"";}
+.dollview .shieldmark.flip{transform:scaleX(-1);}
 .pregen-select-view{font-size:16px;background-color:#333333;z-index:2;-webkit-overflow-scrolling:touch;}
 .pregen-select-view .checkbox-holder input:checked+label{text-decoration:underline;color:yellow;}
 .pregen-select-view label{color:white;}
