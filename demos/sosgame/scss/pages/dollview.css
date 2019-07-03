@@ -1,213 +1,177 @@
-@charset "UTF-8";
 @font-face {
-  font-family: "FontAwesome";
+  font-family: 'FontAwesome';
   src: url("../font-awesome/fontawesome-webfont.eot?v=4.6.3");
   src: url("../font-awesome/fontawesome-webfont.eot?#iefix&v=4.6.3") format("embedded-opentype"), url("../font-awesome/fontawesome-webfont.woff2?v=4.6.3") format("woff2"), url("../font-awesome/fontawesome-webfont.woff?v=4.6.3") format("woff"), url("../font-awesome/fontawesome-webfont.ttf?v=4.6.3") format("truetype"), url("../font-awesome/fontawesome-webfont.svg?v=4.6.3#fontawesomeregular") format("svg");
   font-weight: normal;
-  font-style: normal;
-}
+  font-style: normal; }
 .layout-item {
   box-sizing: border-box;
   pointer-events: none;
-  touch-action: none;
-}
+  touch-action: none; }
 
 .dollview {
-  font-size: 12px;
-}
-.dollview .enableinput {
-  pointer-events: auto;
-  touch-action: auto;
-}
-.dollview .bg {
-  pointer-events: none;
-  touch-action: none;
-}
-.dollview button {
-  border-radius: 0;
-}
-.dollview ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-.dollview .textarea-region {
-  border: 1px solid #bebebe;
-  overflow: hidden;
-}
-.dollview .hover-tag {
-  position: absolute;
-  bottom: 0;
-  background-color: beige;
-}
-.dollview .cpMeter {
-  overflow: hidden;
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  text-align: center;
-  overflow: visible;
-  letter-spacing: -2px;
-}
-.dollview .cpMeter > div {
-  position: relative;
-  z-index: 1;
-}
-.dollview .cpMeter:before {
-  position: absolute;
-  background-color: #cccccc;
-  height: 100%;
-  display: block;
-  content: "";
-  left: 100%;
-  top: 0;
-  width: 1px;
-  margin-left: -0.5px;
-}
-.dollview .thrust-point {
-  background-color: black;
-  border-radius: 50%;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-.dollview .opponentSwiper ul {
-  text-align: center;
-}
-.dollview .handLeftText, .dollview .handLeftAlt, .dollview .handRightText, .dollview .handRightAlt {
-  display: flex;
-  align-items: center;
-}
-.dollview .handLeftText .lbl, .dollview .handLeftAlt .lbl, .dollview .handRightText .lbl, .dollview .handRightAlt .lbl {
-  position: relative;
-  width: 100%;
-}
-.dollview .handLeftText .lbl {
-  text-align: right;
-}
-.dollview .handLeftAlt {
-  overflow: hidden;
-  padding: 5px;
-}
-.dollview .handLeftAlt .lbl {
-  text-align: left;
-}
-.dollview .handLeftAlt:after {
-  border-radius: 2px;
-  border: 1px solid #888888;
-  box-sizing: border-box;
-  width: 50%;
-  height: 1em;
-  content: "";
-  display: inline-block;
-}
-.dollview .handRightText .lbl {
-  text-align: left;
-}
-.dollview .handRightAlt {
-  overflow: hidden;
-  padding: 5px;
-}
-.dollview .handRightAlt .lbl {
-  text-align: right;
-}
-.dollview .handRightAlt:before {
-  border-radius: 2px;
-  border: 1px solid #888888;
-  box-sizing: border-box;
-  width: 50%;
-  height: 1em;
-  content: "";
-  display: inline-block;
-}
-.dollview .select-opponent {
-  text-align: center;
-  display: flex;
-  align-items: center;
-  flex-direction: row;
-  position: absolute;
-  height: 100%;
-  width: 100%;
-  justify-content: center;
-}
-.dollview .select-opponent > button {
-  display: block;
-  padding: 15px;
-}
-.dollview .shieldmark {
-  position: absolute;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
-  top: 50%;
-  left: 50%;
-  transform-origin: 0 0;
-}
-.dollview .shieldmark:after {
-  font-family: FontAwesome;
-  content: "";
-}
-.dollview .shieldmark.flip {
-  transform: scaleX(-1);
-}
+  font-size: 12px; }
+  .dollview .enemy-handbox {
+    font-size: 11px;
+    text-align: center; }
+    .dollview .enemy-handbox .lbl {
+      width: 100%;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%); }
+  .dollview .enableinput {
+    pointer-events: auto;
+    touch-action: auto; }
+  .dollview .bg {
+    pointer-events: none;
+    touch-action: none; }
+  .dollview button {
+    border-radius: 0; }
+  .dollview ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0; }
+  .dollview .textarea-region {
+    border: 1px solid #bebebe;
+    overflow: hidden; }
+  .dollview .hover-tag {
+    position: absolute;
+    bottom: 0;
+    background-color: beige; }
+  .dollview .cpMeter {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    text-align: center;
+    overflow: visible;
+    letter-spacing: -2px; }
+    .dollview .cpMeter > div {
+      position: relative;
+      z-index: 1; }
+    .dollview .cpMeter:before {
+      position: absolute;
+      background-color: #cccccc;
+      height: 100%;
+      display: block;
+      content: '';
+      left: 100%;
+      top: 0;
+      width: 1px;
+      margin-left: -0.5px; }
+  .dollview .thrust-point {
+    background-color: black;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); }
+  .dollview .opponentSwiper ul {
+    text-align: center; }
+  .dollview .handLeftText, .dollview .handLeftAlt, .dollview .handRightText, .dollview .handRightAlt {
+    display: flex;
+    align-items: center; }
+    .dollview .handLeftText .lbl, .dollview .handLeftAlt .lbl, .dollview .handRightText .lbl, .dollview .handRightAlt .lbl {
+      position: relative;
+      width: 100%; }
+  .dollview .handLeftText .lbl {
+    text-align: right; }
+  .dollview .handLeftAlt {
+    overflow: hidden;
+    padding: 5px; }
+    .dollview .handLeftAlt .lbl {
+      text-align: left; }
+    .dollview .handLeftAlt:after {
+      border-radius: 2px;
+      border: 1px solid #888888;
+      box-sizing: border-box;
+      width: 50%;
+      height: 1em;
+      content: '';
+      display: inline-block; }
+  .dollview .handRightText .lbl {
+    text-align: left; }
+  .dollview .handRightAlt {
+    overflow: hidden;
+    padding: 5px; }
+    .dollview .handRightAlt .lbl {
+      text-align: right; }
+    .dollview .handRightAlt:before {
+      border-radius: 2px;
+      border: 1px solid #888888;
+      box-sizing: border-box;
+      width: 50%;
+      height: 1em;
+      content: '';
+      display: inline-block; }
+  .dollview .select-opponent {
+    text-align: center;
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    justify-content: center; }
+    .dollview .select-opponent > button {
+      display: block;
+      padding: 15px; }
+  .dollview .shieldmark {
+    position: absolute;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    top: 50%;
+    left: 50%;
+    transform-origin: 0 0; }
+    .dollview .shieldmark:after {
+      font-family: FontAwesome;
+      content: '\f132'; }
+    .dollview .shieldmark.flip {
+      transform: scaleX(-1); }
 
 .pregen-select-view {
   font-size: 16px;
   background-color: #333333;
   z-index: 2;
-  -webkit-overflow-scrolling: touch;
-}
-.pregen-select-view .checkbox-holder input:checked + label {
-  text-decoration: underline;
-  color: yellow;
-}
-.pregen-select-view label {
-  color: white;
-}
-.pregen-select-view h1 {
-  text-align: center;
-  color: white;
-  font-size: 20px;
-}
-.pregen-select-view a {
-  color: white;
-  font-size: 16px;
-}
-.pregen-select-view ul {
-  list-style-type: none;
-  text-align: center;
-  padding-left: 0;
-}
-.pregen-select-view li {
-  margin-bottom: 15px;
-  text-indent: 0;
-}
-.pregen-select-view li .desc {
-  font-size: 11px;
-  color: #aaaaaa;
-  font-family: "Lucida Console", Monaco, monospace;
-}
-.pregen-select-view .btn-zone {
-  text-align: center;
-  margin-top: 45px;
-  margin-bottom: 35px;
-}
-.pregen-select-view .btn-zone .btn {
-  padding: 10px 5px;
-  border: 1px solid white;
-  margin-right: 30px;
-}
-.pregen-select-view .btn-zone .btn:last-child {
-  margin-right: 0;
-}
-.pregen-select-view .btn-zone .ok span {
-  color: #00ff00;
-}
-.pregen-select-view .btn-zone .close span {
-  color: #ff0000;
-}
-.pregen-select-view button {
-  padding: 8px 15px;
-}
+  -webkit-overflow-scrolling: touch; }
+  .pregen-select-view .checkbox-holder input:checked + label {
+    text-decoration: underline;
+    color: yellow; }
+  .pregen-select-view label {
+    color: white; }
+  .pregen-select-view h1 {
+    text-align: center;
+    color: white;
+    font-size: 20px; }
+  .pregen-select-view a {
+    color: white;
+    font-size: 16px; }
+  .pregen-select-view ul {
+    list-style-type: none;
+    text-align: center;
+    padding-left: 0; }
+  .pregen-select-view li {
+    margin-bottom: 15px;
+    text-indent: 0; }
+    .pregen-select-view li .desc {
+      font-size: 11px;
+      color: #aaaaaa;
+      font-family: "Lucida Console", Monaco, monospace; }
+  .pregen-select-view .btn-zone {
+    text-align: center;
+    margin-top: 45px;
+    margin-bottom: 35px; }
+    .pregen-select-view .btn-zone .btn {
+      padding: 10px 5px;
+      border: 1px solid white;
+      margin-right: 30px; }
+      .pregen-select-view .btn-zone .btn:last-child {
+        margin-right: 0; }
+    .pregen-select-view .btn-zone .ok span {
+      color: #00ff00; }
+    .pregen-select-view .btn-zone .close span {
+      color: #ff0000; }
+  .pregen-select-view button {
+    padding: 8px 15px; }
 
 /*# sourceMappingURL=dollview.css.map */
