@@ -12,6 +12,9 @@
 .dollview {
   font-size: 12px; }
   .dollview .enemy-handbox {
+    background-color: #e4e5e7;
+    box-sizing: border-box;
+    border: 1px solid #666666;
     font-size: 11px;
     text-align: center; }
     .dollview .enemy-handbox .lbl {
