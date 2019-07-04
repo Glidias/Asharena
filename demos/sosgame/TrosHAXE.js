@@ -13060,6 +13060,8 @@ troshx_sos_vue_combat_CombatViewModel.prototype = {
 var troshx_sos_vue_combat_HammerJSCombat = function(element,imageMapData,callback,cursorDomRef) {
 	this.requiredActs = 0;
 	this.DEFAULT_ACT_HOVER = new troshx_sos_vue_combat_UInteract(-1,4096);
+	this.pointerOffsetY = 0;
+	this.pointerOffsetX = 0;
 	this.activeTouches = new haxe_ds_IntMap();
 	var _g = new haxe_ds_StringMap();
 	if(__map_reserved["panup"] != null) {
@@ -13201,6 +13203,7 @@ troshx_sos_vue_combat_HammerJSCombat.prototype = {
 			viewModel.showFocusedTag = true;
 		}
 		if(gesture != null) {
+			this.pointerOffsetY = val && gesture.pointerType == "touch" ? -40 : 0;
 			if(this.cursorDomRef != null) {
 				this.cursorDomRef.style.transform = "translate3d(" + gesture.center.x + "px, " + gesture.center.y + "px, 0)";
 			}
@@ -13219,13 +13222,13 @@ troshx_sos_vue_combat_HammerJSCombat.prototype = {
 		if(js_Boot.__instanceof(pt,Touch)) {
 			touch = pt;
 			id = touch.identifier;
-			u = touch.pageX / canvasWidth;
-			v = touch.pageY / canvasHeight;
+			u = (touch.pageX + this.pointerOffsetX) / canvasWidth;
+			v = (touch.pageY + this.pointerOffsetY) / canvasHeight;
 		} else {
 			pointer = pt;
 			id = pointer.pointerId;
-			u = pointer.pageX / canvasWidth;
-			v = pointer.pageY / canvasHeight;
+			u = (pointer.pageX + this.pointerOffsetX) / canvasWidth;
+			v = (pointer.pageY + this.pointerOffsetY) / canvasHeight;
 		}
 		var act;
 		var mask = this.requiredActs;
@@ -15765,6 +15768,7 @@ troshx_sos_sheets_CharSheet.LIQUIDATE_ASSET_BASE = 6;
 troshx_sos_vue_combat_CombatViewModel.ACTING_DOLL_DECLARE = 0;
 troshx_sos_vue_combat_CombatViewModel.ACTING_DOLL_DRAG_CP = 1;
 troshx_sos_vue_combat_CombatViewModel.ACTING_NONE = 2;
+troshx_sos_vue_combat_HammerJSCombat.HIT_OFFSET_OBSERVE_Y = -40;
 troshx_sos_vue_combat_UIInteraction.DOWN = 1;
 troshx_sos_vue_combat_UIInteraction.MOVE = 2;
 troshx_sos_vue_combat_UIInteraction.TAP = 4;
