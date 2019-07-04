@@ -1,6 +1,14 @@
-@charset "UTF-8";@font-face{font-family:"FontAwesome";src:url("../font-awesome/fontawesome-webfont.eot?v=4.6.3");src:url("../font-awesome/fontawesome-webfont.eot?#iefix&v=4.6.3") format("embedded-opentype"),url("../font-awesome/fontawesome-webfont.woff2?v=4.6.3") format("woff2"),url("../font-awesome/fontawesome-webfont.woff?v=4.6.3") format("woff"),url("../font-awesome/fontawesome-webfont.ttf?v=4.6.3") format("truetype"),url("../font-awesome/fontawesome-webfont.svg?v=4.6.3#fontawesomeregular") format("svg");font-weight:normal;font-style:normal;}
+@font-face{font-family:'FontAwesome';src:url("../font-awesome/fontawesome-webfont.eot?v=4.6.3");src:url("../font-awesome/fontawesome-webfont.eot?#iefix&v=4.6.3") format("embedded-opentype"),url("../font-awesome/fontawesome-webfont.woff2?v=4.6.3") format("woff2"),url("../font-awesome/fontawesome-webfont.woff?v=4.6.3") format("woff"),url("../font-awesome/fontawesome-webfont.ttf?v=4.6.3") format("truetype"),url("../font-awesome/fontawesome-webfont.svg?v=4.6.3#fontawesomeregular") format("svg");font-weight:normal;font-style:normal;}
+.fa{font-family:'FontAwesome';}
 .layout-item{box-sizing:border-box;pointer-events:none;touch-action:none;}
 .dollview{font-size:12px;}
+.dollview .mouse-cursor{position:absolute;top:0;left:0;z-index:99999;transform:translate3d(0,0,0);pointer-events:none;transform-style:preserve-3d;touch-action:none;}
+.dollview .mouse-cursor.observe:before{content:'\f06e';display:block;transform:translate3d(-50%,-50%,0);margin-top:-55px;font-family:'FontAwesome';}
+.dollview .incomingManuevers{overflow:visible!important;}
+.dollview .incomingManuevers .scroll-container{overflow:hidden;}
+.dollview .enemy-handbox{background-color:#e4e5e7;box-sizing:border-box;border:1px solid #666666;font-size:11px;text-align:center;}
+.dollview .enemy-handbox .lbl{width:100%;position:absolute;top:50%;transform:translateY(-50%);}
+.dollview .enemy-handbox.dummy{border:0;background-color:transparent;}
 .dollview .enableinput{pointer-events:auto;touch-action:auto;}
 .dollview .bg{pointer-events:none;touch-action:none;}
 .dollview button{border-radius:0;}
@@ -9,7 +17,7 @@
 .dollview .hover-tag{position:absolute;bottom:0;background-color:beige;}
 .dollview .cpMeter{overflow:hidden;display:flex;flex-direction:column-reverse;align-items:center;text-align:center;overflow:visible;letter-spacing:-2px;}
 .dollview .cpMeter>div{position:relative;z-index:1;}
-.dollview .cpMeter:before{position:absolute;background-color:#cccccc;height:100%;display:block;content:"";left:100%;top:0;width:1px;margin-left:-0.5px;}
+.dollview .cpMeter:before{position:absolute;background-color:#cccccc;height:100%;display:block;content:'';left:100%;top:0;width:1px;margin-left:-0.5px;}
 .dollview .thrust-point{background-color:black;border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
 .dollview .opponentSwiper ul{text-align:center;}
 .dollview .handLeftText,.dollview .handLeftAlt,.dollview .handRightText,.dollview .handRightAlt{display:flex;align-items:center;}
@@ -17,15 +25,15 @@
 .dollview .handLeftText .lbl{text-align:right;}
 .dollview .handLeftAlt{overflow:hidden;padding:5px;}
 .dollview .handLeftAlt .lbl{text-align:left;}
-.dollview .handLeftAlt:after{border-radius:2px;border:1px solid #888888;box-sizing:border-box;width:50%;height:1em;content:"";display:inline-block;}
+.dollview .handLeftAlt:after{border-radius:2px;border:1px solid #888888;box-sizing:border-box;width:50%;height:1em;content:'';display:inline-block;}
 .dollview .handRightText .lbl{text-align:left;}
 .dollview .handRightAlt{overflow:hidden;padding:5px;}
 .dollview .handRightAlt .lbl{text-align:right;}
-.dollview .handRightAlt:before{border-radius:2px;border:1px solid #888888;box-sizing:border-box;width:50%;height:1em;content:"";display:inline-block;}
+.dollview .handRightAlt:before{border-radius:2px;border:1px solid #888888;box-sizing:border-box;width:50%;height:1em;content:'';display:inline-block;}
 .dollview .select-opponent{text-align:center;display:flex;align-items:center;flex-direction:row;position:absolute;height:100%;width:100%;justify-content:center;}
 .dollview .select-opponent>button{display:block;padding:15px;}
 .dollview .shieldmark{position:absolute;-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;top:50%;left:50%;transform-origin:0 0;}
-.dollview .shieldmark:after{font-family:FontAwesome;content:"";}
+.dollview .shieldmark:after{font-family:FontAwesome;content:'\f132';}
 .dollview .shieldmark.flip{transform:scaleX(-1);}
 .pregen-select-view{font-size:16px;background-color:#333333;z-index:2;-webkit-overflow-scrolling:touch;}
 .pregen-select-view .checkbox-holder input:checked+label{text-decoration:underline;color:yellow;}
