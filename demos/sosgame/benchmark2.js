@@ -13193,7 +13193,7 @@ troshx_sos_vue_combat_HammerJSCombat.prototype = {
 		}
 		if(gesture != null) {
 			var isTouchMode = val && gesture.pointerType == "touch";
-			this.pointerOffsetY = isTouchMode ? -40 : 0;
+			this.pointerOffsetY = isTouchMode ? -55 : 0;
 			if(this.cursorDomRef != null) {
 				this.cursorDomRef.style.transform = "translate3d(" + gesture.center.x + "px, " + gesture.center.y + "px, 0)";
 			}
@@ -15787,7 +15787,7 @@ troshx_sos_sheets_CharSheet.LIQUIDATE_ASSET_BASE = 6;
 troshx_sos_vue_combat_CombatViewModel.ACTING_DOLL_DECLARE = 0;
 troshx_sos_vue_combat_CombatViewModel.ACTING_DOLL_DRAG_CP = 1;
 troshx_sos_vue_combat_CombatViewModel.ACTING_NONE = 2;
-troshx_sos_vue_combat_HammerJSCombat.HIT_OFFSET_OBSERVE_Y = -40;
+troshx_sos_vue_combat_HammerJSCombat.HIT_OFFSET_OBSERVE_Y = -55;
 troshx_sos_vue_combat_UIInteraction.DOWN = 1;
 troshx_sos_vue_combat_UIInteraction.MOVE = 2;
 troshx_sos_vue_combat_UIInteraction.TAP = 4;
