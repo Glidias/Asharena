@@ -32,7 +32,7 @@ import altern.geom.ClipMacros; // utility
 import altern.geom.AMesh;	// mesh/occluder
 */
 
-//import altern.culling.TargetBoardTester;
+import altern.culling.TargetBoardTester;
 
 
 ///*  Ellipsoid collider for collision scene package
@@ -93,7 +93,7 @@ import haxe.io.Bytes;
 //*/
 
 
-///*  Terrain core requirements
+/*  Terrain core requirements
 import altern.terrain.QuadTreePage;
 import altern.terrain.QuadSquareChunk;
 import altern.terrain.QuadChunkCornerData;
@@ -107,12 +107,12 @@ import altern.terrain.QuadCornerData;
 import altern.terrain.GeometryResult;
 
 import altern.culling.CullingPlane;
-//*/
+*/
 
 
-///* Terrain collision requirements
+/* Terrain collision requirements
 import altern.terrain.TerrainCollidable;
-//*/
+*/
 
 
 ///* Geometry algorithms to help generate terrain world environment stuffs *
@@ -123,10 +123,10 @@ import hxGeomAlgo.Tess2.ResultType;
 //*/
 
 
-///* Batch/LOD culling
+/* Batch/LOD culling
 import altern.culling.LODBatchHierachy;
 import altern.culling.ModFarClipCulling;
-//*/
+*/
 
 /* Ash-framework integration (problem compiling to C-sharp code atm)
 import systems.collisions.EllipsoidColliderSystem;

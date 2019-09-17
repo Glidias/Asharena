@@ -46,6 +46,9 @@ class TargetBoardTester
 	private static var IDENTITY:Transform3D = new Transform3D();
 	private var disposableFace:Face;
 	
+	public var yLockedNearClip:Bool = false;
+	public var planeOrientedFarclip:Bool = false;
+	
 	public static inline var PRIORITY_CONCEALMENT:Int = 0;
 	public static inline var PRIORITY_COVER:Int = 1;
 	private var priorityCover:Int = 0;
@@ -91,8 +94,10 @@ class TargetBoardTester
 	 * @param	right	Target right vector
 	 * @param	sx	Radius h-width of target
 	 * @param	sz	Radius h-height of target
+	 * @param 	testBoundNode	Local coordinate space to begin with from "root" of target board location
+	 * @param 	customDisposableFace  An optional custom disposable face along the up/right plane of the face
 	 */
-	public function setupTargetBoard(pos:Vec3, up:Vec3, right:Vec3, sx:Float, sz:Float, testBoundNode:CollisionBoundNode):Float {
+	public function setupTargetBoard(pos:Vec3, up:Vec3, right:Vec3, sx:Float, sz:Float, testBoundNode:CollisionBoundNode, customDisposableFace:Face=null):Float {
 		
 		var dx:Float;
 		var dy:Float;
@@ -189,7 +194,8 @@ class TargetBoardTester
 		testFrustumPoints[f].z = proot.z;
 		
 		// disposableFace != null ? Face.setupQuad(disposableFace, targPos, targUp, targRight, w, h, IDENTITY) : 
-		disposableFace = disposableFace != null ? Face.setupQuad(disposableFace, targPos, targUp, targRight, w, h, IDENTITY) : Face.getQuad(targPos, targUp, targRight, w, h, IDENTITY);
+		var useFace = customDisposableFace != null ? customDisposableFace : disposableFace != null ? Face.setupQuad(disposableFace, targPos, targUp, targRight, w, h, IDENTITY) : Face.getQuad(targPos, targUp, targRight, w, h, IDENTITY);
+		if (customDisposableFace == null) disposableFace = useFace;
 		
 		TypeDefs.setVectorLen(testIndices, 0);
 		TypeDefs.setVectorLen(testVertices, 0);
@@ -273,8 +279,8 @@ class TargetBoardTester
 		// end loop
 		
 		// calculate area subtracted from soup
-		var area:Float = disposableFace.getArea(); // w * h * 4;
-		var areaSubtracted:Float = collectClipPolygonsFromSoup(testVertices, testIndices, position.x, position.y, position.z, area);
+		var area:Float = useFace.getArea(); // w * h * 4;
+		var areaSubtracted:Float = collectClipPolygonsFromSoup(testVertices, testIndices, position.x, position.y, position.z, area, useFace);
 
 		//Log.trace("Of area:" + area);
 		/*
@@ -316,7 +322,7 @@ class TargetBoardTester
 	}
 	
 
-	
+	// TODO: minmise garbade instantation, use Vec3 instead
 	public  function createFrustumFromPoints(pts:Array<Vector3D>, targPos:Vec3):Void {
 	
 			var cullingPlane:CullingPlane = testFrustum;
@@ -370,7 +376,7 @@ class TargetBoardTester
 			c = c.next;
 			//v = targPos.subtract(pts[0]);
 			v.x = targPos.x - pts[0].x;
-			v.y = targPos.y - pts[0].y;
+			v.y = yLockedNearClip ? 0 : targPos.y - pts[0].y;
 			v.z = targPos.z - pts[0].z;
 			
 			//v.normalize();
@@ -382,9 +388,13 @@ class TargetBoardTester
 			///*
 			c = c.next;
 			//v = pts[0].subtract(targPos);
-			v.x = pts[0].x - targPos.x;
-			v.y = pts[0].y - targPos.y;
-			v.z = pts[0].z - targPos.z;
+			if (!planeOrientedFarclip) { // view aligned
+				v.x = pts[0].x - targPos.x;
+				v.y = pts[0].y - targPos.y;
+				v.z = pts[0].z - targPos.z;
+			} else { // plane aligned
+				v = pts[3].subtract(pts[2]).crossProduct(pts[1].subtract(pts[2]));
+			}
 			//v.normalize();
 			c.x = v.x;
 			c.y = v.y;
@@ -422,7 +432,7 @@ class TargetBoardTester
 		private var soupFaceList:Face;
 		private var soupNegativeFace:Face;
 		
-		private function collectClipPolygonsFromSoup(vertices:Vector<Float>, indices:Vector<UInt>, observerX:Float, observerY:Float, observerZ:Float, ofArea:Float):Float {
+		private function collectClipPolygonsFromSoup(vertices:Vector<Float>, indices:Vector<UInt>, observerX:Float, observerY:Float, observerZ:Float, ofArea:Float, disposableFace:Face):Float {
 			var ax:Float;
 			var ay:Float;
 			var az:Float;
