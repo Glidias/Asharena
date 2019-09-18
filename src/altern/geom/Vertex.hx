@@ -26,6 +26,7 @@ class Vertex
 	public var z:Float;
 	
 	public var offset:Float;
+	public var temp:Bool;
 	
 	public var cameraX:Float;
 	public var cameraY:Float;
@@ -34,12 +35,16 @@ class Vertex
 	public var transformId:Int = 0;
 	
 	public static var collector:Vertex;
-	public static function create():Vertex {
+	
+	// Creates a temporary vertex to that can be destroyed alongisde Face.destroy()
+	public static function create():Vertex {	
 		if (collector != null) {
 			var res:Vertex = collector;
 			collector = res.next;
 			res.next = null;
 			res.transformId = 0;
+			
+			res.temp = true;
 			//res.drawId = 0;
 			return res;
 		} else {

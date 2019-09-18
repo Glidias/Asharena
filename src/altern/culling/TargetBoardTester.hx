@@ -114,30 +114,41 @@ class TargetBoardTester
 		targRight.y = right.y;
 		targRight.z = right.z;
 		
-		// horizontal extent
-		dummyVec.x = targRight.x;
-		dummyVec.y = 0;
-		dummyVec.z = targRight.z;
-		dummyVec.normalize();
-		dummyVec.scale(sx);
 		
-		// project right vector over horizontal/vertical extents to see which width to use
-		dx = targRight.dotProduct(dummyVec);  
-		dy = targRight.y * sz; 
-		dx = dx < 0 ? -dx : dx;
-		dy = dy < 0 ? -dy : dy;
-		var w:Float = dx < dy ? dy : dx;
+		var w:Float;
+		var h:Float;
 		
-		// project up vector over horizontal/vertical extents to see which height to use
-		dx = targUp.dotProduct(dummyVec); 
-		dy = targUp.y * sz; 
-		dx = dx < 0 ? -dx : dx;
-		dy = dy < 0 ? -dy : dy;
-		var h:Float = dx < dy ? dy : dx;
-		
-		h = h >= w ? h : w;  // always enforce square or tall rectangle always for target board
+		if (customDisposableFace == null) {
+			// horizontal extent
+			dummyVec.x = targRight.x;
+			dummyVec.y = 0;
+			dummyVec.z = targRight.z;
+			dummyVec.normalize();
+			dummyVec.scale(sx);
+			
+			// project right vector over horizontal/vertical extents to see which width to use
+			dx = targRight.dotProduct(dummyVec);  
+			dy = targRight.y * sz; 
+			dx = dx < 0 ? -dx : dx;
+			dy = dy < 0 ? -dy : dy;
+			w =  dx < dy ? dy : dx;
+			
+			// project up vector over horizontal/vertical extents to see which height to use
+			dx = targUp.dotProduct(dummyVec); 
+			dy = targUp.y * sz; 
+			dx = dx < 0 ? -dx : dx;
+			dy = dy < 0 ? -dy : dy;
+			h= dx < dy ? dy : dx;
+			
+			h = h >= w ? h : w;  // always enforce square or tall rectangle always for target board
+		}
+		else {
+			w = sx;
+			h = sz;
+		}
 		
 		var f:Int = 0;
+		
 		
 		// cone tip
 		testFrustumPoints[f].x = position.x;
