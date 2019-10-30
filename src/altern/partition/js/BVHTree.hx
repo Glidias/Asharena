@@ -307,31 +307,63 @@ class BVHTree
 							vertices[vi++] = cy; indices[ii] = ii++;
 							vertices[vi++] = cz; indices[ii] = ii++;
 						}
-						else if (DefaultCulling.clippedFace != null) {	// need to clip farPlane, fan out from clip face for tris
+						else  {	// need to clip farPlane/nearclip, fan out from clip face for tris
 							var w:Wrapper;
-							var f:Face = DefaultCulling.clippedFace;
-							var a:Vertex = f.wrapper.vertex;
+							var f:Face;
+							var a:Vertex;
+							var wn:Wrapper;
+							var b:Vertex;
+							var c:Vertex;
 							
-							w = f.wrapper.next;
-							var wn:Wrapper = w.next;
-							while (wn != null) {
-								var b:Vertex = w.vertex;
-								var c:Vertex = wn.vertex;
-								vertices[vi++] = a.x; indices[ii] = ii++;
-								vertices[vi++] = a.y; indices[ii] = ii++;
-								vertices[vi++] = a.z; indices[ii] = ii++;
-								
-								vertices[vi++] = b.x; indices[ii] = ii++;
-								vertices[vi++] = b.y; indices[ii] = ii++;
-								vertices[vi++] = b.z; indices[ii] = ii++;
-								
-								vertices[vi++] = c.x; indices[ii] = ii++;
-								vertices[vi++] = c.y; indices[ii] = ii++;
-								vertices[vi++] = c.z; indices[ii] = ii++;
-								w = w.next;
-								wn = wn.next;
+							f = DefaultCulling.clippedFace;
+							if ((triFrustumCover & 1)!=0 && f!=null) {
+								a = f.wrapper.vertex;
+								w = f.wrapper.next;
+								wn = w.next;
+								while (wn != null) {
+									b = w.vertex;
+									c = wn.vertex;
+									vertices[vi++] = a.x; indices[ii] = ii++;
+									vertices[vi++] = a.y; indices[ii] = ii++;
+									vertices[vi++] = a.z; indices[ii] = ii++;
+									
+									vertices[vi++] = b.x; indices[ii] = ii++;
+									vertices[vi++] = b.y; indices[ii] = ii++;
+									vertices[vi++] = b.z; indices[ii] = ii++;
+									
+									vertices[vi++] = c.x; indices[ii] = ii++;
+									vertices[vi++] = c.y; indices[ii] = ii++;
+									vertices[vi++] = c.z; indices[ii] = ii++;
+									w = w.next;
+									wn = wn.next;
+								}
+								DefaultCulling.collectClippedFace();
 							}
-							DefaultCulling.collectClippedFace();
+							f = DefaultCulling.clippedFace2;
+							if ((triFrustumCover & 2)!=0 && f!=null) {
+								a = f.wrapper.vertex;
+								w = f.wrapper.next;
+								wn = w.next;
+								while (wn != null) {
+									b = w.vertex;
+									c = wn.vertex;
+									vertices[vi++] = a.x; indices[ii] = ii++;
+									vertices[vi++] = a.y; indices[ii] = ii++;
+									vertices[vi++] = a.z; indices[ii] = ii++;
+									
+									vertices[vi++] = b.x; indices[ii] = ii++;
+									vertices[vi++] = b.y; indices[ii] = ii++;
+									vertices[vi++] = b.z; indices[ii] = ii++;
+									
+									vertices[vi++] = c.x; indices[ii] = ii++;
+									vertices[vi++] = c.y; indices[ii] = ii++;
+									vertices[vi++] = c.z; indices[ii] = ii++;
+									w = w.next;
+									wn = wn.next;
+								}
+								DefaultCulling.collectClippedFace2();
+							}
+							
 						}
 						
 					}

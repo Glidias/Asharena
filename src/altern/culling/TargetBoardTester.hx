@@ -40,6 +40,8 @@ class TargetBoardTester
 	private var testVertices:Vector<Float> = new Vector<Float>();
 	private var testFrustumPoints:Vector<Vector3D> = new Vector<Vector3D>();
 	private var testFrustumPoints2:Vector<Vector3D> = new Vector<Vector3D>();
+	private var nearClipPointRef:Vector3D = new Vector3D();
+	private var nearClipPointRef2:Vector3D = new Vector3D();
 	private var testFrustum:CullingPlane;
 	
 	private var dummyVec:Vec3 = new Vec3();
@@ -48,6 +50,7 @@ class TargetBoardTester
 	
 	public var yLockedNearClip:Bool = false;
 	public var planeOrientedFarclip:Bool = false;
+	public var nearClip:Float = 0;
 	
 	public static inline var PRIORITY_CONCEALMENT:Int = 0;
 	public static inline var PRIORITY_COVER:Int = 1;
@@ -55,6 +58,7 @@ class TargetBoardTester
 	
 	private var dfsStack:Array<CollisionBoundNode> = [];
 	private var dfsStackCulling:Vector<Int> = new Vector<Int>();
+	
 	
 	
 	public function new() 
@@ -217,6 +221,16 @@ class TargetBoardTester
 		dfsStackCulling[di] = 63;
 		di++;
 		
+
+		targLook.x = targPos.x - position.x;
+		targLook.y = targPos.y - position.y;
+		targLook.z = targPos.z - position.z;
+		targLook.normalize();
+		nearClipPointRef.x =  position.x + nearClip*targLook.x;
+		nearClipPointRef.y =  position.y + nearClip*targLook.y;
+		nearClipPointRef.z =  position.z + nearClip*targLook.z;
+	
+	
 		while(--di >= 0) {
 			// Go through entire scene graph, for all objects , attempt collidables collection into testIndices, testVertices aray
 			var obj:CollisionBoundNode = dfsStack[di];
@@ -241,7 +255,13 @@ class TargetBoardTester
 			dummyVec.x = t.a * targPos.x + t.b * targPos.y + t.c * targPos.z + t.d;
 			dummyVec.y = t.e * targPos.x + t.f * targPos.y + t.g * targPos.z + t.h;
 			dummyVec.z = t.i * targPos.x + t.j * targPos.y + t.k * targPos.z + t.l;
-			createFrustumFromPoints(testFrustumPoints2, dummyVec);
+
+			
+			nearClipPointRef2.x = t.a * nearClipPointRef.x + t.b * nearClipPointRef.y + t.c * nearClipPointRef.z + t.d;
+			nearClipPointRef2.y = t.e * nearClipPointRef.x + t.f * nearClipPointRef.y + t.g * nearClipPointRef.z + t.h;
+			nearClipPointRef2.z = t.i * nearClipPointRef.x + t.j * nearClipPointRef.y + t.k * nearClipPointRef.z + t.l;
+			
+			createFrustumFromPoints(testFrustumPoints2, dummyVec, nearClipPointRef2);
 			
 			// testFrustum against local bounding box of obj (if availble)
 			if (obj.boundBox != null) {
@@ -334,7 +354,7 @@ class TargetBoardTester
 	
 
 	// TODO: minmise garbade instantation, use Vec3 instead
-	public  function createFrustumFromPoints(pts:Array<Vector3D>, targPos:Vec3):Void {
+	public  function createFrustumFromPoints(pts:Array<Vector3D>, targPos:Vec3, nearClipPt:Vector3D):Void {
 	
 			var cullingPlane:CullingPlane = testFrustum;
 			var c:CullingPlane = cullingPlane;
@@ -383,18 +403,17 @@ class TargetBoardTester
 			
 			//*/
 			///*
-			
 			c = c.next;
 			//v = targPos.subtract(pts[0]);
-			v.x = targPos.x - pts[0].x;
-			v.y = yLockedNearClip ? 0 : targPos.y - pts[0].y;
-			v.z = targPos.z - pts[0].z;
+			v.x = targPos.x - nearClipPt.x;
+			v.y = yLockedNearClip ? 0 : targPos.y - nearClipPt.y;
+			v.z = targPos.z - nearClipPt.z;
 			
 			//v.normalize();
 			c.x = v.x;
 			c.y = v.y;
 			c.z = v.z;
-			c.offset = v.x * pts[0].x + v.y * pts[0].y + v.z * pts[0].z; //v.dotProduct(pts[0]);
+			c.offset = v.x * nearClipPt.x + v.y * nearClipPt.y + v.z * nearClipPt.z; //v.dotProduct(pts[0]);
 		
 			///*
 			c = c.next;

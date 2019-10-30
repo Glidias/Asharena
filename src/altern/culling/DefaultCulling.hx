@@ -128,6 +128,10 @@ class DefaultCulling implements ICuller
 	
 	static var clippingTri:Face;
 	static var clippingNormal:Vec3;
+	
+	static var clippingTri2:Face;
+	static var clippingNormal2:Vec3;
+	
 	static function createNewTri():Face {
 		var f:Face = new Face();
 		var w:Wrapper;
@@ -150,10 +154,20 @@ class DefaultCulling implements ICuller
 		f.collect();
 	}
 	
-
+	public static var clippedFace2:Face;
+	public static inline function collectClippedFace2():Void {
+		var f:Face = clippedFace2;
+		f.destroy();
+		f.collect();
+	}
+	
+	public static var CLIP_NEAR:Bool = false;
 	
 	public static function triInFrustumCover(frustum:CullingPlane, ax:Float, ay:Float , az:Float, bx:Float , by:Float, bz:Float, cx:Float, cy:Float, cz:Float):Int {
 			var lastPlane:CullingPlane = null;	// assumed lastPlane is farClipping plane
+			var clipNear:Bool = CLIP_NEAR;
+			
+			var nearClipPlane:CullingPlane = null;
 			
 			var plane:CullingPlane = frustum;
 			while ( plane != null) {
@@ -162,12 +176,17 @@ class DefaultCulling implements ICuller
 				cx * plane.x + cy * plane.y + cz * plane.z < plane.offset  ) {
 					return -1;
 				}
-				lastPlane = plane;
 				
+				lastPlane = plane;
 				plane = plane.next;
+				
+				// 2nd last nearclip plane check
+				if (clipNear && plane != null && plane.next == null) {
+					nearClipPlane = plane;
+				}
 			}
-			
-			
+
+			var result:Int = 0;
 			plane = lastPlane;  // far-clip special case, intersecting it counts
 			if (ax * plane.x + ay * plane.y + az * plane.z < plane.offset || 
 				bx  * plane.x + by * plane.y + bz * plane.z < plane.offset || 
@@ -198,11 +217,47 @@ class DefaultCulling implements ICuller
 				ClipMacros.computeMeshVerticesLocalOffsets(clippingTri, clippingNormal);
 				clippedFace = ClipMacros.newPositiveClipFace(clippingTri, clippingNormal, plane.offset);
 				
-				
-				return 1;
+				result |= 1;
 			}
 			
-			return 0;
+						
+			if (clipNear) {
+				plane = nearClipPlane;
+				if (ax * plane.x + ay * plane.y + az * plane.z < plane.offset || 
+				bx  * plane.x + by * plane.y + bz * plane.z < plane.offset || 
+				cx * plane.x + cy * plane.y + cz * plane.z < plane.offset  ) 
+				{
+				
+					if (clippingTri2 == null) {
+						clippingTri2 = createNewTri();
+						clippingNormal2 = new Vec3();
+					}
+				
+					clippingTri2.wrapper.vertex.x = ax;
+					clippingTri2.wrapper.vertex.y = ay;
+					clippingTri2.wrapper.vertex.z = az;
+					
+					clippingTri2.wrapper.next.vertex.x = bx;
+					clippingTri2.wrapper.next.vertex.y = by;
+					clippingTri2.wrapper.next.vertex.z = bz;
+					
+					clippingTri2.wrapper.next.next.vertex.x = cx;
+					clippingTri2.wrapper.next.next.vertex.y = cy;
+					clippingTri2.wrapper.next.next.vertex.z = cz;
+					
+					clippingNormal2.x = plane.x;
+					clippingNormal2.y = plane.y;
+					clippingNormal2.z = plane.z;
+					
+					ClipMacros.computeMeshVerticesLocalOffsets(clippingTri2, clippingNormal2);
+					clippedFace2 = ClipMacros.newPositiveClipFace(clippingTri2, clippingNormal2, plane.offset);
+					
+					result |= 2;
+				}
+				
+			}
+			
+			return result;
 		}
 	
 	/* INTERFACE altern.terrain.ICuller */
