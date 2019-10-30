@@ -1553,21 +1553,52 @@ package alternativa.engine3d.core {
 			
 		public function disposeTotalAreaIntersections(faceList:Face):Number 
 		{
+			var theAreaLimit:Number = _disposableFaceCache.getArea();
 			// Retrieves accumulated area of intersections between polygons (pairwise) from face camera coordinates X/Y of polygons
 			var accum:Number = 0;
 			var lastFace:Face;
 			for (var f:Face = faceList; f != null; f = f.next) {
 				for (var p:Face = f.next;  p != null; p = p.next) {
-					if (f.overlapsOther2D(p)) {
-						var overlapFace:Face = ClipMacros.getOverlapClipFace(f, p);
+					if (f.overlapsOther2D(p) != p.overlapsOther2D(f) ) {
+						Log.trace("overlapsOther2D is non commutative!");
+						
+					}
+					//if (f.overlapsOther2D(p)) {
+						var overlapFace:Face = ClipMacros.getOverlapClipFace2D(f, p);
 						if (overlapFace != null) {
-							accum += overlapFace.getArea();
+							var areaToAdd:Number = overlapFace.getArea();
+							if (!f.overlapsOther2D(p) && areaToAdd > 1e-5) throw new Error("!overlapsOther2D is wrong:"+areaToAdd);
+							
+							var overlapFace2:Face = ClipMacros.getOverlapClipFace2D(p, f);
+							if (Math.abs( (overlapFace2 != null ? overlapFace2.getArea():0) - areaToAdd)>1e-5 ) {
+								Log.trace( "getOverlapClipFace is not commutative:" + (overlapFace2!=null ? overlapFace2.getArea() : "none") + " vs "+areaToAdd);
+							}
+							if (areaToAdd > theAreaLimit) {
+								throw new Error("EXCEEDED:" + (areaToAdd - theAreaLimit));
+							}
+							
+							//Log.trace("minus:" + (areaToAdd / theAreaLimit));
+							accum += areaToAdd;
+							Log.trace("total:" + (accum / theAreaLimit));
+							if (accum >= theAreaLimit) {
+								accum = theAreaLimit;
+								
+						
+							}
 							overlapFace.destroy();
 							overlapFace.next = Face.collector;
-							Face.collector = faceList;
+							Face.collector = overlapFace;
+							
+							//Face.collector = faceList; // <- why this?
 						}
-					}	
+						else {
+							if (f.overlapsOther2D(p)) {
+								//Log.trace("SHOULD have intersect");
+							}
+						}
+					//}	
 				}
+				f.destroy();
 				lastFace = f;
 			}
 			lastFace.next = Face.collector;
@@ -1631,6 +1662,8 @@ class Vertex {
 	
 	public static var collector:Vertex;
 	public static function create():Vertex {
+		//return new Vertex();
+		
 		if (collector != null) {
 			var res:Vertex = collector;
 			collector = res.next;
@@ -1644,6 +1677,8 @@ class Vertex {
 		}
 	}
 	public function create():Vertex {
+			//return new Vertex();
+		
 		if (collector != null) {
 			var res:Vertex = collector;
 			collector = res.next;
@@ -1700,8 +1735,6 @@ class Face {
 			var nextW:Wrapper = w.next;
 			w.next = Wrapper.collector;
 			Wrapper.collector = w;
-			w.vertex.next = Vertex.collector;
-			Vertex.collector = w.vertex;
 			w.vertex = null;
 		}
 		wrapper = null;
@@ -1710,6 +1743,8 @@ class Face {
 	
 
 	static public function create():Face {
+		//return new Face();
+		
 		if (collector != null) {
 			var res:Face = collector;
 			collector = res.next;
@@ -1727,6 +1762,8 @@ class Face {
 	
 	
 	public function create():Face {
+		//return new Face();
+		
 		if (collector != null) {
 			var res:Face = collector;
 			collector = res.next;
@@ -2303,6 +2340,8 @@ class Wrapper {
 	static public var collector:Wrapper;
 	
 	static public function create():Wrapper {
+		//return new Wrapper();
+		
 			if (collector != null) {
 				var res:Wrapper = collector;
 				collector = collector.next;
@@ -2315,6 +2354,8 @@ class Wrapper {
 		}
 	
 	public function create():Wrapper {
+		//return new Wrapper();
+		
 		if (collector != null) {
 			var res:Wrapper = collector;
 			collector = collector.next;
@@ -2619,6 +2660,19 @@ import flash.geom.Vector3D;
 			}
 		}
 		
+		public static function computeMeshVerticesLocalOffsets2D(faceList:Face, camNormal:Vector3D):void {
+			transformId++;
+			for (var f:Face = faceList; f != null; f = f.processNext) {
+				for (var wrapper:Wrapper =  f.wrapper; wrapper != null; wrapper = wrapper.next) {
+					var vertex:Vertex = wrapper.vertex;
+					if (vertex.transformId != transformId) {
+						vertex.offset = vertex.cameraX * camNormal.x + vertex.cameraY * camNormal.y;
+						vertex.transformId = transformId;
+					}
+				}
+			}
+		}
+		
 		/**
 		 * Clones a wrapper deeply, cloning all chained sibling references too.
 		 * @param	wrapper
@@ -2808,6 +2862,58 @@ import flash.geom.Vector3D;
 			return clipFace;
 		}
 		
+		public static function getOverlapClipFace2D(clipperFace:Face, face:Face):Face {
+			var v:Vertex;
+			var w:Wrapper;
+
+			
+			var bx:Number;
+			var by:Number;
+
+			var negativeFace:Face;
+
+			// it is assumed both face and clipperFace is coplanar!
+		
+			var inputNorm:Vector3D = ClipMacros.DUMMY_VECTOR;
+
+			for (w = clipperFace.wrapper; w != null; w = w.next) {
+				v = w.vertex;
+				var v2:Vertex = w.next != null ? w.next.vertex : clipperFace.wrapper.vertex;
+				bx = v2.cameraX - v.cameraX;
+				by = v2.cameraY - v.cameraY;
+			
+				var d:Number = 1 / Math.sqrt(bx * bx + by * by);
+				bx *= d;
+				by *= d;
+				inputNorm.x = -by;
+				inputNorm.y = bx;
+				inputNorm.z = 0;
+				inputNorm.w = inputNorm.x * v.cameraX + inputNorm.y * v.cameraY;
+				//throw new Error(inputNorm.w);
+				
+				ClipMacros.computeMeshVerticesLocalOffsets2D(face, inputNorm);
+				
+				if (negativeFace == null) negativeFace = ClipMacros.newPositiveClipFace(face, inputNorm, inputNorm.w);
+				else ClipMacros.updateClipFace(face, inputNorm, inputNorm.w);
+				if (negativeFace.wrapper == null) negativeFace = null;
+				face = negativeFace;
+				if (face == null) {
+					// face happens to lie completely on the outside of a plane
+					//gotExit = true;
+					break;  
+				}
+					
+			}
+			
+			if (negativeFace != null) {
+				return negativeFace;
+				//return "Negative: "+gotExit + ":"+ negativeFace.wrapper + "="+count + "/"+pCount;
+			}
+			
+			return null;
+		}
+		
+		
 		public static function getOverlapClipFace(clipperFace:Face, face:Face):Face {
 			var v:Vertex;
 			var w:Wrapper;
@@ -2821,6 +2927,12 @@ import flash.geom.Vector3D;
 			ax = clipperFace.normalX;
 			ay = clipperFace.normalY;
 			az = clipperFace.normalZ;
+
+			
+			// it is assumed both face and clipperFace is coplanar!
+			if (ax != face.normalX || ay != face.normalY || az != face.normalZ || clipperFace.offset != face.offset) {
+				throw new Error("Mismatch normal/offset");
+			}
 			var inputNorm:Vector3D = ClipMacros.DUMMY_VECTOR;
 
 			for (w = clipperFace.wrapper; w != null; w = w.next) {
@@ -2860,6 +2972,7 @@ import flash.geom.Vector3D;
 			
 			return null;
 		}
+		
 		
 		public static function faceNeedsClipping(face:Face, offset:Number):Boolean {
 					// First 3 vertices quick-check with their precomputed plane offset values
@@ -2974,4 +3087,4 @@ if (negFace != null) {
 	faceArea -= getTotalAreaOfFace(negFace);
 }
 	
-*/
+*/

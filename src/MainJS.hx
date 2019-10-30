@@ -28,7 +28,7 @@ import altern.geom.Vertex;
 import altern.geom.Wrapper;
 import altern.geom.Face;
 import altern.geom.Edge;
-//import altern.geom.ClipMacros; // utility
+import altern.geom.ClipMacros; // utility
 //import altern.geom.AMesh;	// mesh/occluder
 //*/
 
@@ -87,7 +87,7 @@ import altern.geom.IntersectSlopeUtil;
 //*/
 
 
-///*  Serialization package
+/*  Serialization package
 import hxbit.Serializer;
 import haxe.io.Bytes;
 //*/
@@ -115,12 +115,12 @@ import altern.terrain.TerrainCollidable;
 */
 
 
-///* Geometry algorithms to help generate terrain world environment stuffs *
+/* Geometry algorithms to help generate terrain world environment stuffs *
 import hxGeomAlgo.IsoContoursPixels;
 import hxGeomAlgo.Tess2;
 import hxGeomAlgo.Tess2.WindingRule;
 import hxGeomAlgo.Tess2.ResultType;
-//*/
+*/
 
 
 /* Batch/LOD culling

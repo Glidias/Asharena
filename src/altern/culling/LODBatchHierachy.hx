@@ -392,7 +392,7 @@ class LODBatchHierachy
 
 	}
 	
-	/*
+	///*
 	public function scanLOD(cameraPos:Vec3):Void {
 		
 		for (i in 0...lodBatches.length) {
@@ -449,7 +449,7 @@ class LODBatchHierachy
 			lodBatches[i].updateInstanceLen();
 		}
 	}
-	*/
+	//*/
 	
 	/*
 	function getLODBox(cameraPos:Vec3, node:DBVHNode<LODNodeData>, lod:Int):Int {
