@@ -112,6 +112,10 @@ class AMesh
 		}
 	}
 	
+	public inline function checkConvex() {
+		return calculateEdges() == null;
+	}
+	
 	public function createEdges(options:Int = (OPTION_CONVEX | OPTION_CALCULATE_EDGES)) {
 		var error:String = calculateEdges();
 		if ((options & OPTION_CONVEX)!=0 && error != null) {
