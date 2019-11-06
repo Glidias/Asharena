@@ -102,23 +102,25 @@ class AMesh
 			faceList = face;
 		}
 		
-		
-		
 		// Unite vertices if needed
-		vertexList = ((options & OPTION_WELD_VERTICES)!=0) ? weldVertices(vertices, distanceThreshold) : getVerticesFromArray(vertices);
+		vertexList = ((options & OPTION_WELD_VERTICES) != 0) ? weldVertices(vertices, distanceThreshold) : getVerticesFromArray(vertices);
 		// Unite faces
-		if ((options & OPTION_WELD_FACES)!=0) weldFaces(angleThreshold, convexThreshold);
-		// Calculation of edges and checking for the validity
+		if ((options & OPTION_WELD_FACES) != 0) weldFaces(angleThreshold, convexThreshold);
+		
 		if ( (options & (OPTION_CONVEX | OPTION_CALCULATE_EDGES)) != 0 ) {
-			var error:String = calculateEdges();
-			if ((options & OPTION_CONVEX)!=0 && error != null) {
-				destroyForm();
-				throw error;
-			}
-			
-			if ((options & OPTION_CALCULATE_EDGES) == 0) {
-				edgeList = null;
-			}
+			createEdges(options);
+		}
+	}
+	
+	public function createEdges(options:Int = (OPTION_CONVEX | OPTION_CALCULATE_EDGES)) {
+		var error:String = calculateEdges();
+		if ((options & OPTION_CONVEX)!=0 && error != null) {
+			destroyForm();
+			throw error;
+		}
+		
+		if ((options & OPTION_CALCULATE_EDGES) == 0) {
+			edgeList = null;
 		}
 	}
 	
