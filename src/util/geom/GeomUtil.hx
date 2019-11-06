@@ -8,8 +8,8 @@ import util.TypeDefs;
  */
 class GeomUtil 
 {	
-	public static function transformVertices(vertices:Vector<Float>, t:Transform3D):Void {
-		var len:Int = vertices.length;
+	public static function transformVertices(vertices:Vector<Float>, t:Transform3D, len:Int=-1):Void {
+		if (len < 0) len = vertices.length;
 		var i:Int = 0;
 		while ( i < len) {
 			var x:Float = vertices[i];

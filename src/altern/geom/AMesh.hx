@@ -627,8 +627,8 @@ class AMesh
 			var crz:Float = edge.right.normalY*edge.left.normalX - edge.right.normalX*edge.left.normalY;
 			// If bend inside
 			if (abx*crx + aby*cry + abz*crz < 0) {
-				//return "The supplied geometry is non convex.";
-				trace("Warning: " + this + ": geometry is non convex.");
+				return "The supplied geometry is non convex.";
+				//trace("Warning: " + this + ": geometry is non convex.");
 			}
 			
 			edge = edge.next;

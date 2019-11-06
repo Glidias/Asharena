@@ -29,7 +29,7 @@ import altern.geom.Wrapper;
 import altern.geom.Face;
 import altern.geom.Edge;
 import altern.geom.ClipMacros; // utility
-//import altern.geom.AMesh;	// mesh/occluder
+import altern.geom.AMesh;	// mesh/occluder
 //*/
 
 import altern.culling.TargetBoardTester;

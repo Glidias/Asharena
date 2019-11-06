@@ -4,6 +4,7 @@ import components.BoundBox;
 import components.Transform3D;
 import util.TypeDefs;
 import util.TypeDefs.Vector;
+import util.geom.AABBUtils;
 
 /**
  * Generic Culling DFS recursion utility
@@ -18,11 +19,13 @@ class CullingDFS
 	var root:CollisionBoundNode;
 	
 	public var initialCulling:Int = 63;
-	public var checkBoundBox:BoundBox->Int->Int;
+	public var checkBoundBox:BoundBox->Int->CollisionBoundNode->Int;
 	public var checkChild:CollisionBoundNode->Int->Bool;
 	public var processWorldToLocal:Transform3D->CollisionBoundNode-> Void;
 	public var processLocalToWorld:Transform3D->CollisionBoundNode-> Void;
-	public var processChild:CollisionBoundNode->Int->Bool;
+	public var processChild:CollisionBoundNode-> Int->Bool;
+	
+	private var _aabb:BoundBox = new BoundBox();
 
 	public function new() 
 	{
@@ -57,7 +60,9 @@ class CullingDFS
 			
 			// testFrustum against local bounding box of obj (if availble)
 			if (checkBoundBox != null && obj.boundBox != null) {
-				culling = checkBoundBox(obj.boundBox,  culling);
+				AABBUtils.match(_aabb, obj.boundBox);
+				AABBUtils.transform(_aabb, obj.localToWorldTransform);
+				culling = checkBoundBox(_aabb,  culling, obj);
 			} else {
 				culling = 0;
 			}
