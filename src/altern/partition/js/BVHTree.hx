@@ -125,16 +125,16 @@ class BVHTree
 					var triIndex:Int = bboxArray[i * 7];
 					aabbTris[aabbTriCount++] = triIndex;
 					triIndex *= 9;
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
-					
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					geom.vertices[vi++] = triArray[triIndex++];
+					geom.vertices[vi++] = triArray[triIndex++]; 
 					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
 					
+					geom.vertices[vi++] = triArray[triIndex++]; 
+					geom.vertices[vi++] = triArray[triIndex++];
 					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					
+					geom.vertices[vi++] = triArray[triIndex++];
+					geom.vertices[vi++] = triArray[triIndex++]; 
 					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
 				}
 			}
@@ -173,16 +173,16 @@ class BVHTree
 				for (i in node._startIndex...node._endIndex) {
 					var triIndex:Int = bboxArray[i * 7];
 					triIndex *= 9;
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
-					
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					geom.vertices[vi++] = triArray[triIndex++]; 
+					geom.vertices[vi++] = triArray[triIndex++]; 
 					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
 					
+					geom.vertices[vi++] = triArray[triIndex++]; 
+					geom.vertices[vi++] = triArray[triIndex++]; 
 					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
-					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
+					
+					geom.vertices[vi++] = triArray[triIndex++];
+					geom.vertices[vi++] = triArray[triIndex++]; 
 					geom.vertices[vi++] = triArray[triIndex++]; geom.indices[ii] = ii++;
 				}
 			}
@@ -295,16 +295,16 @@ class BVHTree
 					var triFrustumCover:Int;
 					if (DefaultCulling.isInFrontOfFrustum(ax, ay, az, bx, by, bz, cx, cy, cz, frustumCorners) && (triFrustumCover = DefaultCulling.triInFrustumCover(frustum, ax, ay, az, bx, by, bz, cx, cy, cz)) >= 0) {
 						if (triFrustumCover == 0) {	
-							vertices[vi++] = ax; indices[ii] = ii++;
-							vertices[vi++] = ay; indices[ii] = ii++;
+							vertices[vi++] = ax;
+							vertices[vi++] = ay; 
 							vertices[vi++] = az; indices[ii] = ii++;
 							
-							vertices[vi++] = bx; indices[ii] = ii++;
-							vertices[vi++] = by; indices[ii] = ii++;
+							vertices[vi++] = bx; 
+							vertices[vi++] = by; 
 							vertices[vi++] = bz; indices[ii] = ii++;
 							
-							vertices[vi++] = cx; indices[ii] = ii++;
-							vertices[vi++] = cy; indices[ii] = ii++;
+							vertices[vi++] = cx; 
+							vertices[vi++] = cy; 
 							vertices[vi++] = cz; indices[ii] = ii++;
 						}
 						else  {	// need to clip farPlane/nearclip, fan out from clip face for tris
@@ -323,16 +323,16 @@ class BVHTree
 								while (wn != null) {
 									b = w.vertex;
 									c = wn.vertex;
-									vertices[vi++] = a.x; indices[ii] = ii++;
-									vertices[vi++] = a.y; indices[ii] = ii++;
+									vertices[vi++] = a.x;
+									vertices[vi++] = a.y;
 									vertices[vi++] = a.z; indices[ii] = ii++;
 									
-									vertices[vi++] = b.x; indices[ii] = ii++;
-									vertices[vi++] = b.y; indices[ii] = ii++;
+									vertices[vi++] = b.x; 
+									vertices[vi++] = b.y; 
 									vertices[vi++] = b.z; indices[ii] = ii++;
 									
-									vertices[vi++] = c.x; indices[ii] = ii++;
-									vertices[vi++] = c.y; indices[ii] = ii++;
+									vertices[vi++] = c.x; 
+									vertices[vi++] = c.y; 
 									vertices[vi++] = c.z; indices[ii] = ii++;
 									w = w.next;
 									wn = wn.next;
@@ -347,16 +347,16 @@ class BVHTree
 								while (wn != null) {
 									b = w.vertex;
 									c = wn.vertex;
-									vertices[vi++] = a.x; indices[ii] = ii++;
-									vertices[vi++] = a.y; indices[ii] = ii++;
+									vertices[vi++] = a.x; 
+									vertices[vi++] = a.y; 
 									vertices[vi++] = a.z; indices[ii] = ii++;
 									
-									vertices[vi++] = b.x; indices[ii] = ii++;
-									vertices[vi++] = b.y; indices[ii] = ii++;
+									vertices[vi++] = b.x; 
+									vertices[vi++] = b.y; 
 									vertices[vi++] = b.z; indices[ii] = ii++;
 									
-									vertices[vi++] = c.x; indices[ii] = ii++;
-									vertices[vi++] = c.y; indices[ii] = ii++;
+									vertices[vi++] = c.x; 
+									vertices[vi++] = c.y;
 									vertices[vi++] = c.z; indices[ii] = ii++;
 									w = w.next;
 									wn = wn.next;
