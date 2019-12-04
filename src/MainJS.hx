@@ -37,6 +37,7 @@ import altern.culling.TargetBoardTester;
 
 ///*  Ellipsoid collider for collision scene package
 import systems.collisions.EllipsoidCollider;
+import systems.collisions.CollisionEvent;
 
 import components.MoveResult;
 import components.CollisionResult;
