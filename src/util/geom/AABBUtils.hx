@@ -17,7 +17,7 @@ import util.TypeDefs;
  * ...
  * @author Glenn Ko
  */
-
+#if alternExpose @:expose #end
 class AABBUtils 
 {
 	public static inline var MAX_VALUE:Float = 1.7976931348623157e+308;

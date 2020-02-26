@@ -11,6 +11,7 @@ import util.TypeDefs.Vector3D;
  * }
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class Raycaster
 {
 	/**

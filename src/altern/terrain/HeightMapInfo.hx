@@ -18,7 +18,7 @@ import util.geom.PMath;
  * @author Glenn Ko
  */
 class HeightMapInfo 
-#if !macro 
+#if (!macro && !alternExpose)
 implements Serializable 
 #end
 {
@@ -37,7 +37,7 @@ implements Serializable
 	@:s public var RowWidth:Int;
 	@:s public var Scale:Int = 8;
 	
-	#if !macro
+	#if (!macro && !alternExpose)
 	@:keep
     public function customSerialize(ctx : hxbit.Serializer) {
 		var len:Int = NativeInt32ArrayTools.size(Data);

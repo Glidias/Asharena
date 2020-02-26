@@ -13,6 +13,7 @@ import util.geom.Vec3;
  * ...
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class DefaultCulling implements ICuller
 {
 

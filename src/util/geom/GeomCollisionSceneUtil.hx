@@ -7,6 +7,7 @@ import components.Transform3D;
  * To handle collision scene graph, geometries and transforms
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class GeomCollisionSceneUtil 
 {
 

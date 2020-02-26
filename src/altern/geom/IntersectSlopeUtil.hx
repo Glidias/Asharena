@@ -11,6 +11,7 @@ import util.TypeDefs;
  * Utility to help calculate trajecotry-based intersections along 3d tri-slopes.
  * @author Glenn Ko
  */
+#if alternExpose @:expose #end
 class IntersectSlopeUtil
 {
 	

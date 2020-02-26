@@ -30,6 +30,7 @@ import util.geom.GeomUtil;
  * A dynamic bounding volume tree for the broad-phase algorithm.
  * @author saharan
  */
+#if alternExpose @:expose #end
 class DBVT implements ITCollidable implements IRaycastImpl {
     /**
 	 * The root of the tree.

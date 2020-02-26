@@ -4,6 +4,7 @@ package altern.culling;
  * ...
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class CullingPlane
 {
 	

@@ -9,7 +9,7 @@ import util.TypeDefs;
  * @author Glidias
  */
 class QuadChunkCornerData
-#if !macro 
+#if (!macro && !alternExpose)
 implements Serializable 
 #end
 {

@@ -17,6 +17,7 @@ package util.geom;
  import systems.collisions.ITCollidable;
  import util.TypeDefs;
  
+ #if alternExpose @:expose #end
 class Geometry implements ITECollidable implements IRaycastImpl implements IFrustumCollectTri
 {
 	public var vertices:Vector<Float>;

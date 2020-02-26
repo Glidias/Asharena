@@ -29,7 +29,7 @@
 package jeash.geom;
 import util.geom.XYZW;
 
-
+#if alternExpose @:expose("altern.Vector3D") #end
 class Vector3D implements XYZW {
 	public var length(get_length,null):Float;
 	public inline function get_length():Float {

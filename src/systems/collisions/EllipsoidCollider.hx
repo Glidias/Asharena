@@ -9,6 +9,7 @@
  /**
   * This source code is modified and re-factored in Haxe to support varied situations across different target platforms, including n-gons.
   */
+
 package systems.collisions;
 
 	import components.Transform3D;
@@ -770,10 +771,18 @@ package systems.collisions;
 						dest.z += collisionPlane.z * offset;
 						
 						// Fixing up the current sphere coordinates for the next iteration
+						///*
 						src.x = collisionPoint.x + collisionPlane.x*(radius + threshold);
 						src.y = collisionPoint.y + collisionPlane.y*(radius + threshold);
-						src.z = collisionPoint.z + collisionPlane.z*(radius + threshold);
+						src.z = collisionPoint.z + collisionPlane.z * (radius + threshold);
+						//*/
 						
+						// alt approach?
+						/*
+						src.x += t * displ.x;
+						src.y += t * displ.y;
+						src.z += t * displ.z;
+						*/
 						
 						if (requireEvents) {
 							resultVector.x = matrix.a * src.x + matrix.b * src.y + matrix.c * src.z + matrix.d; 
@@ -786,9 +795,21 @@ package systems.collisions;
 						
 						
 						// Fixing up velocity vector. The result ordered along plane of collision.
+						/*
 						displ.x = dest.x - src.x;
 						displ.y = dest.y - src.y;
 						displ.z = dest.z - src.z;
+						*/
+						
+						// alt approach
+						// ( 1 + elastic ) * 
+						var e: Float = ( collisionPlane.x * displ.x + collisionPlane.y * displ.y + collisionPlane.z*  displ.z);
+						displ.x -= collisionPlane.x * e;
+						displ.y -= collisionPlane.y * e;
+						displ.z -= collisionPlane.z * e;
+						
+						
+						
 						if (displ.length < threshold) break;
 					} else break;
 				}

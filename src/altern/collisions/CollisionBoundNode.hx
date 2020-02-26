@@ -13,6 +13,7 @@ import util.TypeDefs;
  * optional collidable/raycasting implementations within each node. Useful to set up any collision/raycastable scene graph accordingly.
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class CollisionBoundNode implements IECollidable
 {
 	public var childrenList:CollisionBoundNode;

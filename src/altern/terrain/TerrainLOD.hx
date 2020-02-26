@@ -16,6 +16,7 @@ import util.geom.Vec3;
  * Striped down class to manage LOD of quadtree displaying in general fashion (3d engine agnostic with hooks for 3d engine to overwrite)
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class TerrainLOD implements ICuller implements IRaycastImpl
 {
 	public static inline var PATCHES_ACROSS:Int = 32;  // todo: we fix this for now, later we allow for customising this

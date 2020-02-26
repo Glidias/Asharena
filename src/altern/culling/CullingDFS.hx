@@ -10,6 +10,7 @@ import util.geom.AABBUtils;
  * Generic Culling DFS recursion utility
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class CullingDFS 
 {
 

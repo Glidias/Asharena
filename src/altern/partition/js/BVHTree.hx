@@ -67,6 +67,7 @@ extern class BVHNode {
  * ...
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class BVHTree 
 #if js
 	implements ITCollidable
