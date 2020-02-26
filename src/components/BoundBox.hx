@@ -17,6 +17,7 @@ import util.geom.IAABB;
 	 * Ray intersection always made  boundBox check at first, but it's possible to check on crossing  boundBox  only.
 	 *
 	 */
+	#if alternExpose @:expose #end
 	 class BoundBox implements IAABB {
 
 		public var minX:Float;

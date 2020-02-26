@@ -9,6 +9,7 @@ import util.geom.Vec3;
  * 
  * @author Glenn Ko
  */
+#if alternExpose @:expose #end
 class SurfaceMovement 
 {
 	// State settings

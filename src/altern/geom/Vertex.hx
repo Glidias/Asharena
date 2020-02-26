@@ -11,6 +11,7 @@ package altern.geom;
  * Port over to Haxe
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class Vertex
 {
 

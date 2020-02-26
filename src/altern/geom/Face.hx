@@ -13,6 +13,7 @@ import util.geom.Vec3;
  * Port over to Haxe with some additional utility methods of my own
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class Face
 {
 

@@ -6,7 +6,7 @@
 package components;
 import util.geom.Vec3;
 
-
+#if alternExpose @:expose #end
 class Jump 
 {
 	// State Settings

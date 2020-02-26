@@ -26,6 +26,7 @@ import util.LibUtil;
  * A node of the dynamic bounding volume tree.
  * @author saharan
  */
+#if alternExpose @:expose #end
 class DBVTNode {
 	
     /**

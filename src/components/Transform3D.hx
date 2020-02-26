@@ -4,7 +4,7 @@ package components;
  * ...
  * @author Glenn Ko
  */
-
+#if alternExpose @:expose #end
 class Transform3D
 {
 

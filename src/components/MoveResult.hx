@@ -12,6 +12,7 @@ import util.geom.Vec3Utils;
  * when it moves.  It also allows supply of custom collision event handlers for an entity to hook onto. Also stores the final result move positions.
  * @author Glenn Ko
  */
+#if alternExpose @:expose #end
 class MoveResult extends Vec3
 {
 	public var collisions:CollisionEvent;  // any collisions that occur if any

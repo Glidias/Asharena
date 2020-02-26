@@ -20,6 +20,7 @@ import altern.js.Delaunator;
  * General utility class to calculate target board percentage cover
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class TargetBoardTester 
 {
 	private var position:Vector3D;

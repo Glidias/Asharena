@@ -10,6 +10,7 @@ import util.TypeDefs;
 /**
  * Library of static Vec3 methods, and generic Vec3 tuple values for parameters.
  */
+#if alternExpose @:expose #end
 class Vec3Utils 
 {
 

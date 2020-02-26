@@ -21,6 +21,7 @@ import util.geom.Vec3;
  * Use `createForm(geometry: altern.Geometry)` reference to start your AMesh version of altern.geometry!
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class AMesh 
 {
 	// Core Mesh geometry

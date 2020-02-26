@@ -4,7 +4,7 @@
  */
 
 package util.geom;
-
+#if alternExpose @:expose #end
 class Vec3 
 {
 	public static var ZERO:Vec3 = new Vec3(0, 0, 0);

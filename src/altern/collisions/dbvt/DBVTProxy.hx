@@ -8,6 +8,7 @@ import util.geom.AABBUtils;
 /**
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class DBVTProxy 
 {
 	public var raycastable:IRaycastImpl;

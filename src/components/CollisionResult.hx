@@ -5,7 +5,7 @@ import util.geom.Vec3;
  * A component to help calculate and store required collision results
  * @author Glenn Ko
  */
-
+#if alternExpose @:expose #end
 class CollisionResult 
 {
 	// Settings

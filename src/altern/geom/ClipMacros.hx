@@ -6,6 +6,7 @@ import util.geom.Vec3;
  * ...
  * @author Glidias
  */
+#if alternExpose @:expose #end
 class ClipMacros
 {
 	public static var DUMMY_VECTOR:Vec3 = new Vec3();
