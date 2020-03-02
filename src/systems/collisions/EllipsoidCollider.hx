@@ -13,6 +13,7 @@
 package systems.collisions;
 
 	import components.Transform3D;
+	import haxe.ds.Vector;
 	
 	import haxe.Log;
 	import util.geom.PMath;
@@ -52,19 +53,25 @@ package systems.collisions;
 		
 		// flag header 4 bits in 32 bit integer, for determining number of sides for convex n-gons. (up to 16 sides), leaving behind 28 bits (up to 268435456) possible vertex indices per geometry. 
 		// You can add /reduce space if required in the inline variable, but 16 sides should be sufficient for most cases.
-
+		
 		
 		private var geometries:Vector<Geometry>;
 		private var numGeometries:Int;
 		private var transforms:Vector<Transform3D>;
+		static var TRANSFORMS:Vector<Transform3D> = new Vector<Transform3D>();
+		static var GEOMETRIES:Vector<Geometry> = new Vector<Geometry>();
 		
 		public var vertices:Vector<Float>;
+		static var VERTICES:Vector<Float> = new Vector<Float>();
 		
 		
 		public var normals:Vector<Float>;
 		public var indices:Vector<Int>;
 		public var numFaces(default,null):Int;
-		public var numI(default,null):Int;
+		public var numI(default, null):Int;
+		
+		static var NORMALS:Vector<Float> = new Vector<Float>();
+		static var INDICES:Vector<Int> = new Vector<Int>();
 		
 		private var radius:Float;
 		private var rad:Float;
@@ -91,7 +98,21 @@ package systems.collisions;
 		
 		public var collisions:CollisionEvent;
 		
+		public static function purgeBuffers():Void {
+			TypeDefs.setVectorLen(TRANSFORMS, 0);
+			TypeDefs.setVectorLen(GEOMETRIES, 0);
+			TypeDefs.setVectorLen(NORMALS, 0);
+			TypeDefs.setVectorLen(INDICES, 0);
+			TypeDefs.setVectorLen(VERTICES, 0);
+		}
 		
+		public function purge():Void {
+			TypeDefs.setVectorLen(transforms, 0);
+			TypeDefs.setVectorLen(geometries, 0);
+			TypeDefs.setVectorLen(normals, 0);
+			TypeDefs.setVectorLen(indices, 0);
+			TypeDefs.setVectorLen(vertices, 0);
+		}
 		
 		/**
 		 * Creates a EllipsoidCollider object.
@@ -126,12 +147,12 @@ package systems.collisions;
 			resCollisionPoint = new Vector3D();
 			resCollisionPlane = new Vector3D();
 			
-			geometries = new Vector<Geometry>();
-			transforms = new Vector<Transform3D>();
+			geometries = GEOMETRIES;
+			transforms = TRANSFORMS;
 			numGeometries = 0;
-			vertices =   new Vector<Float>();
-			normals =  new Vector<Float>();
-			indices = new Vector<Int>();
+			vertices =   VERTICES; 
+			normals =  NORMALS;
+			indices = INDICES;  
 			numI = 0;
 			
 			displ =  new Vector3D();
