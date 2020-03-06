@@ -172,35 +172,17 @@ class Tess2
 		var ACy:Float = y3 - y1;
 		var r1:Float = Math.random();
 		var r2:Float = Math.random();
+		
+		if (r1 + r2 > 1) {
+			r1 = 1 - r1
+		    r2 = 1 - r2
+		}
+	
 		var Dx:Float = ABx * r1 + ACx * r2;
 		var Dy:Float = ABy * r1 + ACy * r2;
 		Dx += x1;
 		Dy += y1;
 
-		var BCx:Float = x3 - x2;
-		var BCy:Float = y3 - y2;
-		
-		//  "outward" pointing mirror vector, perp to BC surface
-		var mnx:Float = BCy;
-		var mny:Float = -BCx;
-		
-		// support any handednesss system flip check (dot product)..must be along same direction else flip
-		if (mnx * ABx + mny * ABy < 0) {
-			mnx = -mnx;
-			mny = -mny;
-		}
-		// mirror offset
-		var mno:Float = mnx * x2 + mny * y2;
-		var offsetD:Float = Dx * mnx + Dy * mny;
-		if (offsetD > mno) {	// outside mirror? then need to flip
-			// convert to midpoint of BC for mirror flip origin reference
-			BCx = x2 + BCx * 0.5;
-			BCy = y2 + BCy * 0.5;
-			Dx = -BCx*2 - Dx;
-			Dy = -BCy*2 - Dy;
-			
-		}
-		
 		coord.x = Dx;
 		coord.y = Dy;
 	}
