@@ -13,6 +13,7 @@
   touch-action: none; }
 
 .dollview {
+  overflow: hidden;
   /*
   .observe-indicator {
   	position:absolute;
