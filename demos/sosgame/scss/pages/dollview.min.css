@@ -2,10 +2,14 @@
 .fa{font-family:'FontAwesome';}
 .layout-item{box-sizing:border-box;pointer-events:none;touch-action:none;}
 .dollview{font-size:12px;}
+.dollview button,.dollview a{pointer-events:auto;touch-action:auto;}
+.dollview .cp-tray{position:absolute;left:0;top:0;background-color:#ffffd3;font-family:'Lucida Console',monospace;font-size:44px;line-height:1;letter-spacing:0.14em;z-index:2;transform-origin:0 0;}
 .dollview .mouse-cursor{position:absolute;top:0;left:0;z-index:99999;transform:translate3d(0,0,0);pointer-events:none;transform-style:preserve-3d;touch-action:none;}
 .dollview .mouse-cursor.observe:before{content:'\f06e';display:block;transform:translate3d(-50%,-50%,0);margin-top:-55px;font-family:'FontAwesome';}
 .dollview .incomingManuevers{overflow:visible!important;}
 .dollview .incomingManuevers .scroll-container{overflow:hidden;}
+.dollview .initRange .bger{width:112%;height:112%;position:absolute;top:0;left:0;background-size:100% 100%;background-image:url(../../images/arrowpiece.png);}
+.dollview .initRange:after{content:'';width:100%;background-color:black;position:absolute;bottom:-1px;height:2px;left:2px;}
 .dollview .enemy-handbox{background-color:#e4e5e7;box-sizing:border-box;border:1px solid #666666;font-size:11px;text-align:center;}
 .dollview .enemy-handbox .lbl{width:100%;position:absolute;top:50%;transform:translateY(-50%);}
 .dollview .enemy-handbox.dummy{border:0;background-color:transparent;}
@@ -42,7 +46,7 @@
 .pregen-select-view a{color:white;font-size:16px;}
 .pregen-select-view ul{list-style-type:none;text-align:center;padding-left:0;}
 .pregen-select-view li{margin-bottom:15px;text-indent:0;}
-.pregen-select-view li .desc{font-size:11px;color:#aaaaaa;font-family:"Lucida Console",Monaco,monospace;}
+.pregen-select-view li .desc{font-size:11px;color:#aaaaaa;font-family:"Courier New",monospace;}
 .pregen-select-view .btn-zone{text-align:center;margin-top:45px;margin-bottom:35px;}
 .pregen-select-view .btn-zone .btn{padding:10px 5px;border:1px solid white;margin-right:30px;}
 .pregen-select-view .btn-zone .btn:last-child{margin-right:0;}
