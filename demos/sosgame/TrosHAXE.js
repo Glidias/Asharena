@@ -13456,8 +13456,11 @@ troshx_sos_vue_combat_HammerJSCombat.prototype = {
 		var canvasWidth = window.innerWidth;
 		var canvasHeight = window.innerHeight;
 		var valY = Math.min(canvasWidth / 2 / 5,canvasHeight / 2 / 6);
-		if(valY > 60) {
-			valY = 60;
+		if(valY > 64) {
+			valY = 64;
+		}
+		if(valY < 36) {
+			valY = 36;
 		}
 		this.viewModel.trayGridSizeY = Math.floor(valY);
 		this.viewModel.trayGridShelfSize = Math.floor(0.65 * valY);
@@ -16252,7 +16255,8 @@ troshx_sos_vue_combat_CombatViewModel.ACTING_DOLL_DECLARE = 0;
 troshx_sos_vue_combat_CombatViewModel.ACTING_DOLL_DRAG_CP = 1;
 troshx_sos_vue_combat_CombatViewModel.ACTING_NONE = 2;
 troshx_sos_vue_combat_HammerJSCombat.HIT_OFFSET_OBSERVE_Y = -55;
-troshx_sos_vue_combat_HammerJSCombat.MAX_GRID_SIZE = 60;
+troshx_sos_vue_combat_HammerJSCombat.MAX_GRID_SIZE = 64;
+troshx_sos_vue_combat_HammerJSCombat.MIN_GRID_SIZE = 36;
 troshx_sos_vue_combat_UIInteraction.DOWN = 1;
 troshx_sos_vue_combat_UIInteraction.MOVE = 2;
 troshx_sos_vue_combat_UIInteraction.TAP = 4;
